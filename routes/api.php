@@ -10,6 +10,10 @@ use App\Http\Controllers\RoleController;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
+Route::middleware('auth:sanctum')->group(function() {
+
+
+});
 Route::post('/login', [AuthController::class, 'store']);
 
 

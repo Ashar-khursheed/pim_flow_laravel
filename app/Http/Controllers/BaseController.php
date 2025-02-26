@@ -27,7 +27,21 @@ use App\Http\Controllers\Controller;
  *     name="JWT",
  *     description="To generate Json Web Token"
  * )
+ *
+ * @OA\Tag(
+ *     name="Product",
+ *     description="For product related work"
+ * )
+
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ *     description="Enter JWT token to access secured endpoints"
+ * )
  */
+
 class BaseController extends Controller
 {
 	// use ResponseTrait;

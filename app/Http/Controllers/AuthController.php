@@ -14,7 +14,7 @@ class AuthController extends BaseController
      * @OA\Post(
      *     path="/api/login",
      *     summary="User Login",
-     *     tags={"Authentication"},
+     *     tags={"JWT"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
