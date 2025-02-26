@@ -7,7 +7,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
@@ -50,5 +52,27 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+  /**
+     * Relationship: User has many roles.
+     *
+     * @return BelongsToMany
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(Role::class, 'role_users');
+    }
+
+    // Relationship: User has one Avatar (from Media)
+    public function avatar()
+    {
+        return $this->belongsTo(MediaFile::class, 'avatar_id');
+    }
+
+    // Relationship: User has many media files
+    public function mediaFiles()
+    {
+        return $this->hasMany(MediaFile::class, 'user_id');
     }
 }
