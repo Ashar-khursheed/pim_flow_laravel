@@ -8,4 +8,8 @@ use App\Http\Controllers\AuthController;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
+Route::middleware('auth:sanctum')->group(function() {
+
+
+});
 Route::post('/login', [AuthController::class, 'store']);
