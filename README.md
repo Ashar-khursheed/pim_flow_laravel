@@ -25,6 +25,7 @@
   c. memory_limit = 1024M
   d. max_execution_time = 360
   e. max_input_time = 120
+  f. max_input_vars = 10000
 2. Create a folder named "omr" in the storage folder with write permission.
 
 ## Mail Settings
