@@ -14,16 +14,22 @@ Route::middleware('auth:sanctum')->group(function() {
 
 
 });
-Route::post('/login', [AuthController::class, 'store']);
+// routes/api.php
+Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 
-Route::prefix('users')->group(function () {
-    Route::post('/', [UserController::class, 'store']); // Create User
-    Route::get('/', [UserController::class, 'index']); // Get Users
-    Route::get('/{id}', [UserController::class, 'show']); // Get Single User
-    Route::post('/{id}', [UserController::class, 'update']); // Update User
-    Route::delete('/{id}', [UserController::class, 'destroy']); // Delete User
-})->middleware('auth:sanctum');
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::prefix('users')->group(function () {
+        Route::post('/', [UserController::class, 'store']);
+        Route::get('/', [UserController::class, 'index']);
+        Route::get('/{id}', [UserController::class, 'show']);
+        Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/{id}', [UserController::class, 'destroy']);
+        Route::put('/{id}', [UserController::class, 'update']);
+    });
+});
+
+
 
 
 
