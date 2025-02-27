@@ -5,16 +5,21 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\WebsiteController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
-Route::middleware('auth:sanctum')->group(function() {
-
-
-});
 Route::post('/login', [AuthController::class, 'store']);
+
+/* Protect routes with authentication */
+Route::middleware('auth:api')->group(function() {
+    Route::resource('categories', CategoryController::class)->only(['index']);
+    Route::resource('websites', WebsiteController::class)->only(['index']);
+});
+
 
 
 Route::prefix('users')->group(function () {
@@ -25,8 +30,8 @@ Route::prefix('users')->group(function () {
     Route::delete('/{id}', [UserController::class, 'destroy']); // Delete User
 })->middleware('auth:sanctum');
 
-
-
+Route::resource('categories', CategoryController::class)->only(['index']);
+Route::resource('websites', WebsiteController::class)->only(['index']);
 
 Route::prefix('roles')->group(function () {
     Route::get('/', [RoleController::class, 'index']);

@@ -33,14 +33,17 @@ use App\Http\Controllers\Controller;
  *     description="For product related work"
  * )
 
- * @OA\SecurityScheme(
- *     securityScheme="bearerAuth",
- *     type="http",
- *     scheme="bearer",
- *     bearerFormat="JWT",
- *     description="Enter JWT token to access secured endpoints"
- * )
- */
+
+*
+* @OA\SecurityScheme(
+*    securityScheme="bearerAuth",
+*    in="header",
+*    name="bearerAuth",
+*    type="http",
+*    scheme="bearer",
+*    bearerFormat="JWT",
+* )
+*/
 
 class BaseController extends Controller
 {
