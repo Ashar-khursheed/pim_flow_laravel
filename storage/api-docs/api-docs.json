@@ -16,6 +16,200 @@
         }
     },
     "paths": {
+        "/api/attribute-families": {
+            "get": {
+                "tags": [
+                    "Attribute Families"
+                ],
+                "summary": "Get all attribute families",
+                "operationId": "08cb577886652b812870fc2f408cb83d",
+                "responses": {
+                    "200": {
+                        "description": "List of attribute families"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Attribute Families"
+                ],
+                "summary": "Create an attribute family",
+                "operationId": "5d7ea6540c0365f64b10b4cbc1923414",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully"
+                    },
+                    "400": {
+                        "description": "Invalid category"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attribute-families/{id}": {
+            "get": {
+                "tags": [
+                    "Attribute Families"
+                ],
+                "summary": "Get a specific attribute family",
+                "operationId": "10dc870a43b57219d13f92c211a5a33b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Attribute family found"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Attribute Families"
+                ],
+                "summary": "Update an attribute family",
+                "operationId": "9e61b34ee2a6d0e8c19278cb0c5706fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Attribute Families"
+                ],
+                "summary": "Delete an attribute family",
+                "operationId": "9831d036d67509363cc7244748bd1611",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/last-child": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get all last-child categories (categories with no children)",
+                "operationId": "6f2471659fa5cf38fc2b6a675d1e569e",
+                "responses": {
+                    "200": {
+                        "description": "List of last-child categories"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/login": {
             "post": {
                 "tags": [
@@ -806,12 +1000,20 @@
     },
     "tags": [
         {
+            "name": "Attribute Families",
+            "description": "API Endpoints for Attribute Families"
+        },
+        {
             "name": "JWT",
             "description": "To generate Json Web Token"
         },
         {
             "name": "Roles",
             "description": "API Endpoints for managing Roles"
+        },
+        {
+            "name": "Categories",
+            "description": "Categories"
         },
         {
             "name": "Products",

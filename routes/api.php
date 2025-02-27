@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
+use App\Http\Controllers\AttributeFamilyController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -26,12 +27,15 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
         Route::delete('/{id}', [UserController::class, 'destroy']);
         Route::put('/{id}', [UserController::class, 'update']);
+      
     });
+
+    Route::apiResource('attribute-families', AttributeFamilyController::class);
+    Route::get('/categories/last-child', [AttributeFamilyController::class, 'lastChildCategories']);
+
+
+
 });
-
-
-
-
 
 
 Route::prefix('roles')->group(function () {
