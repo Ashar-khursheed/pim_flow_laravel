@@ -217,6 +217,12 @@ return [
                 */
             ],
             'security' => [
+
+                    'BearerAuth' => [
+                    'type' => 'apiKey',
+                    'in' => 'header',
+                    'name' => 'Authorization',
+                ],
                 /*
                  * Examples of Securities
                  */
