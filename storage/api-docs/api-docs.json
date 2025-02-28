@@ -323,20 +323,7 @@
                     "200": {
                         "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category List"
-                                        },
-                                        "categories": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -347,13 +334,14 @@
                 ]
             }
         },
-        "/api/products/store": {
+        "/api/products": {
             "post": {
                 "tags": [
                     "Products"
                 ],
                 "summary": "Create a new product",
-                "operationId": "90841008e6d2f8cb3655547d2377fb01",
+                "description": "Creates a new product with the required details.",
+                "operationId": "e8185e307706e2cd84bbcf5171e2f09d",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -361,286 +349,33 @@
                             "schema": {
                                 "required": [
                                     "name",
+                                    "product_family",
                                     "sku",
-                                    "status",
-                                    "is_featured",
-                                    "brand_id",
-                                    "stock_status",
-                                    "price",
-                                    "store_id"
+                                    "website"
                                 ],
                                 "properties": {
                                     "name": {
+                                        "description": "Name of the product",
                                         "type": "string",
                                         "example": "Sample Product"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Product description",
-                                        "nullable": true
-                                    },
-                                    "content": {
-                                        "type": "string",
-                                        "example": "Product content details",
-                                        "nullable": true
-                                    },
-                                    "warranty_information": {
-                                        "type": "string",
-                                        "example": "2 years",
-                                        "nullable": true
+                                    "product_family": {
+                                        "description": "ID of the product family",
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "sku": {
+                                        "description": "Stock Keeping Unit (SKU) of the product",
                                         "type": "string",
-                                        "example": "SKU12345"
+                                        "example": "PROD-123"
                                     },
-                                    "status": {
-                                        "type": "string",
-                                        "example": "active"
-                                    },
-                                    "delivery_days": {
-                                        "type": "string",
-                                        "example": "3-5",
-                                        "nullable": true
-                                    },
-                                    "is_featured": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "brand_id": {
-                                        "type": "string",
-                                        "example": "2"
-                                    },
-                                    "images": {
+                                    "websites": {
+                                        "description": "Array of website IDs where the product is available",
                                         "type": "array",
                                         "items": {
-                                            "type": "string"
-                                        },
-                                        "example": [
-                                            "image1.jpg",
-                                            "image2.jpg"
-                                        ]
-                                    },
-                                    "video_path": {
-                                        "type": "string",
-                                        "example": "video.mp4",
-                                        "nullable": true
-                                    },
-                                    "stock_status": {
-                                        "type": "string",
-                                        "example": "in_stock"
-                                    },
-                                    "with_storehouse_management": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "unit_of_measurement_id": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "quantity": {
-                                        "type": "string",
-                                        "example": "100",
-                                        "nullable": true
-                                    },
-                                    "cost_per_item": {
-                                        "type": "string",
-                                        "example": "50.00",
-                                        "nullable": true
-                                    },
-                                    "price": {
-                                        "type": "string",
-                                        "example": "100.00"
-                                    },
-                                    "sale_price": {
-                                        "type": "string",
-                                        "example": "90.00",
-                                        "nullable": true
-                                    },
-                                    "start_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-02-26",
-                                        "nullable": true
-                                    },
-                                    "end_date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-03-10",
-                                        "nullable": true
-                                    },
-                                    "sale_type": {
-                                        "type": "string",
-                                        "example": "percentage"
-                                    },
-                                    "weight": {
-                                        "type": "string",
-                                        "example": "1.5",
-                                        "nullable": true
-                                    },
-                                    "weight_unit_id": {
-                                        "type": "string",
-                                        "example": "kg"
-                                    },
-                                    "length": {
-                                        "type": "string",
-                                        "example": "10",
-                                        "nullable": true
-                                    },
-                                    "width": {
-                                        "type": "string",
-                                        "example": "5",
-                                        "nullable": true
-                                    },
-                                    "height": {
-                                        "type": "string",
-                                        "example": "2",
-                                        "nullable": true
-                                    },
-                                    "depth": {
-                                        "type": "string",
-                                        "example": "3",
-                                        "nullable": true
-                                    },
-                                    "shipping_weight_option": {
-                                        "type": "string",
-                                        "example": "kg"
-                                    },
-                                    "shipping_weight": {
-                                        "type": "string",
-                                        "example": "1.7",
-                                        "nullable": true
-                                    },
-                                    "shipping_dimension_option": {
-                                        "type": "string",
-                                        "example": "cm"
-                                    },
-                                    "shipping_width": {
-                                        "type": "string",
-                                        "example": "6",
-                                        "nullable": true
-                                    },
-                                    "shipping_depth": {
-                                        "type": "string",
-                                        "example": "3",
-                                        "nullable": true
-                                    },
-                                    "shipping_height": {
-                                        "type": "string",
-                                        "example": "2",
-                                        "nullable": true
-                                    },
-                                    "shipping_length": {
-                                        "type": "string",
-                                        "example": "12",
-                                        "nullable": true
-                                    },
-                                    "frequently_bought_together": {
-                                        "type": "string",
-                                        "example": "product1,product2"
-                                    },
-                                    "compare_products": {
-                                        "type": "string",
-                                        "example": "product3,product4"
-                                    },
-                                    "refund": {
-                                        "type": "string",
-                                        "example": "No refund policy"
-                                    },
-                                    "currency_id": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "variant_1_title": {
-                                        "type": "string",
-                                        "example": "Size",
-                                        "nullable": true
-                                    },
-                                    "variant_1_value": {
-                                        "type": "string",
-                                        "example": "M",
-                                        "nullable": true
-                                    },
-                                    "variant_1_products": {
-                                        "type": "string",
-                                        "example": "variant1",
-                                        "nullable": true
-                                    },
-                                    "variant_2_title": {
-                                        "type": "string",
-                                        "example": "Color",
-                                        "nullable": true
-                                    },
-                                    "variant_2_value": {
-                                        "type": "string",
-                                        "example": "Red",
-                                        "nullable": true
-                                    },
-                                    "variant_2_products": {
-                                        "type": "string",
-                                        "example": "variant2",
-                                        "nullable": true
-                                    },
-                                    "variant_3_title": {
-                                        "type": "string",
-                                        "example": "Material",
-                                        "nullable": true
-                                    },
-                                    "variant_3_value": {
-                                        "type": "string",
-                                        "example": "Cotton",
-                                        "nullable": true
-                                    },
-                                    "variant_3_products": {
-                                        "type": "string",
-                                        "example": "variant3",
-                                        "nullable": true
-                                    },
-                                    "variant_color_title": {
-                                        "type": "string",
-                                        "example": "Color",
-                                        "nullable": true
-                                    },
-                                    "variant_color_value": {
-                                        "type": "string",
-                                        "example": "Blue",
-                                        "nullable": true
-                                    },
-                                    "variant_color_products": {
-                                        "type": "string",
-                                        "example": "variant4",
-                                        "nullable": true
-                                    },
-                                    "barcode": {
-                                        "type": "string",
-                                        "example": "123456789012",
-                                        "nullable": true
-                                    },
-                                    "minimum_order_quantity": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "variant_requires_shipping": {
-                                        "type": "string",
-                                        "example": "1"
-                                    },
-                                    "google_shopping_category": {
-                                        "type": "string",
-                                        "example": "Electronics",
-                                        "nullable": true
-                                    },
-                                    "google_shopping_mpn": {
-                                        "type": "string",
-                                        "example": "MPN12345",
-                                        "nullable": true
-                                    },
-                                    "box_quantity": {
-                                        "type": "string",
-                                        "example": "10",
-                                        "nullable": true
-                                    },
-                                    "store_id": {
-                                        "type": "string",
-                                        "example": "5"
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -649,27 +384,11 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Product added successfully",
+                    "201": {
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Product created successfully"
-                                        },
-                                        "product": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized"
                     }
                 },
                 "security": [

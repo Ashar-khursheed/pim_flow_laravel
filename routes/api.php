@@ -8,20 +8,13 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\AttributeFamilyController;
-
+use App\Http\Controllers\ProductController;
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
-Route::middleware('auth:api')->group(function() {
-    Route::resource('categories', CategoryController::class)->only(['index']);
-    Route::resource('websites', WebsiteController::class)->only(['index']);
-});
-
-
-
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::prefix('users')->group(function () {
         Route::post('/', [UserController::class, 'store']);
@@ -37,9 +30,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/categories/last-child', [AttributeFamilyController::class, 'lastChildCategories']);
 
 	Route::resource('categories', CategoryController::class)->only(['index']);
-	Route::resource('websites', WebsiteController::class)->only(['index']);
-
-
+    Route::resource('websites', WebsiteController::class)->only(['index']);
+	Route::resource('products', ProductController::class);
 });
 
 

@@ -10,6 +10,7 @@ class Product extends Model
 
     protected $fillable = [
         'name',
+        'website_id',
         'description',
         'content',
         'image', // Featured image
@@ -95,4 +96,19 @@ class Product extends Model
         'variant_3_products' => 'nullable|string',
         'google_shopping_category',
     ];
+
+    public function categories()
+    {
+        return $this->belongsToMany(
+            Category::class,
+            'ec_product_category_product',
+            'product_id',
+            'category_id'
+        );
+    }
+
+    public function specifications()
+    {
+        return $this->hasMany(Specification::class);
+    }
 }
