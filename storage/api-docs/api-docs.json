@@ -497,7 +497,12 @@
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/products/{product}": {
@@ -804,12 +809,17 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Product updated successfully",
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/products/product-input": {
@@ -822,12 +832,17 @@
                 "operationId": "getProductInputs",
                 "responses": {
                     "201": {
-                        "description": "Product input fields retrieved successfully",
+                        "description": "Success",
                         "content": {
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/roles": {

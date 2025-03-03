@@ -379,10 +379,19 @@ class ProductController extends BaseController
 		}
 
 		/* Unit ID validation for length, weight, and shipping */
-		$unitArray = Unit::pluck("id")->all();
+		$lengthUnitArray = [
+			1 => "cm",
+			3 => "inch",
+			11 => "mm",
+		];
+		$weightUnitArray = [
+			5 => "kg",
+			6 => "g",
+			9 => "lbs",
+		];
 
 		if (isset($input['length_unit_id'])) {
-			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], $unitArray)) {
+			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], $lengthUnitArray)) {
 				$rowError[] = "Invalid length unit value.";
 			} else {
 				$product->length_unit_id = (int) $input['length_unit_id'];
@@ -391,7 +400,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['weight_unit_id'])) {
-			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], $unitArray)) {
+			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], $weightUnitArray)) {
 				$rowError[] = "Invalid weight unit value.";
 			} else {
 				$product->weight_unit_id = (int) $input['weight_unit_id'];
@@ -400,7 +409,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['shipping_length_id'])) {
-			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], $unitArray)) {
+			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], $lengthUnitArray)) {
 				$rowError[] = "Invalid shipping length value.";
 			} else {
 				$product->shipping_length_id = (int) $input['shipping_length_id'];
@@ -506,10 +515,18 @@ class ProductController extends BaseController
 		$currency['values'] = Currency::pluck("title", "id")->all();
 
 		$lengthUnit['type'] = 'Dropdown';
-		$lengthUnit['values'] = Unit::pluck("symbol", "id")->all();
+		$lengthUnit['values'] = [
+			1 => "cm",
+			3 => "inch",
+			11 => "mm",
+		];
 
 		$weightUnit['type'] = 'Dropdown';
-		$weightUnit['values'] = Unit::pluck("symbol", "id")->all();
+		$weightUnit['values'] = [
+			5 => "kg",
+			6 => "g",
+			9 => "lbs",
+		];
 
 		$shippingWeightOption['type'] = 'Dropdown';
 		$shippingWeightOption['values'] = [
@@ -526,7 +543,11 @@ class ProductController extends BaseController
 		];
 
 		$shippingLength['type'] = 'Dropdown';
-		$shippingLength['values'] = Unit::pluck("symbol", "id")->all();
+		$shippingLength['values'] = [
+			1 => "cm",
+			3 => "inch",
+			11 => "mm",
+		];
 
 		$isVariation['type'] = 'checkbox';
 		$isVariation['values'] = [
