@@ -88,9 +88,10 @@ class CategoryController extends BaseController
 			$categories = $categories->offset(($page - 1)*$length)->limit($length);
 		}
 
-		$categoriesList = $categories->get();
+		$categoriesList = $categories->get(['id', 'name', 'parent_id', 'image', 'slug', 'is_featured']);
 
 		return response()->json([
+			'success' => true,
 			'message' => 'Category List',
 			'categories' => $categoriesList
 		]);

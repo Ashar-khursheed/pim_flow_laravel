@@ -263,6 +263,53 @@
                 }
             }
         },
+        "/api/brands": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Get brands List",
+                "description": "Fetches a list of all brands.",
+                "operationId": "3c41aa2e65314941e37a634e810c5f73",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/categories": {
             "get": {
                 "tags": [
@@ -396,6 +443,391 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/products/{product_id}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product details",
+                "description": "Fetches product details based on the given product ID and attribute type.",
+                "operationId": "3b646880fbf58e1a9d37fad9bfed30bb",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "attr_type",
+                        "in": "query",
+                        "description": "Filter product attributes by category",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "General",
+                                "Inventory & Stock Management",
+                                "Pricing & Sales",
+                                "Marketing",
+                                "Media",
+                                "Shipping & Dimensions",
+                                "Product Variations",
+                                "Store & Vendor Information",
+                                "Performance & Analytics",
+                                "Comparison & Bundling",
+                                "SEO",
+                                "Other",
+                                "All"
+                            ],
+                            "example": "General"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/{product}": {
+            "put": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Update a product",
+                "description": "Updates an existing product based on the provided JSON payload.",
+                "operationId": "updateProduct",
+                "parameters": [
+                    {
+                        "name": "product",
+                        "in": "path",
+                        "description": "ID of the product to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "PROD-123"
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "example": "9509297558375"
+                                    },
+                                    "warranty_information": {
+                                        "type": "string",
+                                        "example": "One Year Warranty"
+                                    },
+                                    "refund": {
+                                        "type": "string",
+                                        "example": "non-refundable"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "allow_checkout_when_out_of_stock": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "with_storehouse_management": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "stock_status": {
+                                        "type": "string",
+                                        "example": "in_stock"
+                                    },
+                                    "variant_inventory_tracker": {
+                                        "type": "string",
+                                        "example": "shopify"
+                                    },
+                                    "variant_inventory_quantity": {
+                                        "type": "integer",
+                                        "example": 50
+                                    },
+                                    "variant_inventory_policy": {
+                                        "type": "string",
+                                        "example": "deny"
+                                    },
+                                    "variant_fulfillment_service": {
+                                        "type": "string",
+                                        "example": "manual"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 199.99
+                                    },
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 149.99
+                                    },
+                                    "sale_type": {
+                                        "type": "string",
+                                        "example": "percentage"
+                                    },
+                                    "cost_per_item": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "tax_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "currency_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "minimum_order_quantity": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "maximum_order_quantity": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Sample Product"
+                                    },
+                                    "content": {
+                                        "type": "string",
+                                        "example": "Detailed content about the product."
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Short description."
+                                    },
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "product1.jpg"
+                                        }
+                                    },
+                                    "image": {
+                                        "type": "string",
+                                        "example": "main_image.jpg"
+                                    },
+                                    "video_url": {
+                                        "type": "string",
+                                        "example": "https://www.youtube.com/watch?v=xyz"
+                                    },
+                                    "video_path": {
+                                        "type": "string",
+                                        "example": "videos/product.mp4"
+                                    },
+                                    "documents": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "manual.pdf"
+                                        }
+                                    },
+                                    "length": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "length_unit_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "width": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "height": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3
+                                    },
+                                    "depth": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2
+                                    },
+                                    "weight": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1.5
+                                    },
+                                    "weight_unit_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "shipping_weight_option": {
+                                        "type": "string",
+                                        "example": "lbs"
+                                    },
+                                    "shipping_weight": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 2
+                                    },
+                                    "shipping_dimension_option": {
+                                        "type": "string",
+                                        "example": "inch"
+                                    },
+                                    "shipping_width": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 6
+                                    },
+                                    "shipping_depth": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 4
+                                    },
+                                    "shipping_height": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 3.5
+                                    },
+                                    "shipping_length": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 11
+                                    },
+                                    "shipping_length_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "is_variation": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "variant_grams": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 500
+                                    },
+                                    "variant_requires_shipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "variant_barcode": {
+                                        "type": "string",
+                                        "example": "123456789012"
+                                    },
+                                    "variant_color_title": {
+                                        "type": "string",
+                                        "example": "Red"
+                                    },
+                                    "variant_color_value": {
+                                        "type": "string",
+                                        "example": "#FF0000"
+                                    },
+                                    "store_id": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "brand_id": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "views": {
+                                        "type": "integer",
+                                        "example": 200
+                                    },
+                                    "units_sold": {
+                                        "type": "integer",
+                                        "example": 50
+                                    },
+                                    "frequently_bought_together": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 101
+                                        }
+                                    },
+                                    "compare_type": {
+                                        "type": "string",
+                                        "example": "similar"
+                                    },
+                                    "compare_products": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 102
+                                        }
+                                    },
+                                    "google_shopping_category": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "google_shopping_mpn": {
+                                        "type": "string",
+                                        "example": "123-ABC"
+                                    },
+                                    "order": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "box_quantity": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "delivery_days": {
+                                        "type": "integer",
+                                        "example": 3
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
+        "/api/products/product-input": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product input fields",
+                "description": "Fetches all available product input fields.",
+                "operationId": "getProductInputs",
+                "responses": {
+                    "201": {
+                        "description": "Product input fields retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
             }
         },
         "/api/roles": {
@@ -566,6 +998,53 @@
                         "description": "Role not found"
                     }
                 }
+            }
+        },
+        "/api/stores": {
+            "get": {
+                "tags": [
+                    "Stores"
+                ],
+                "summary": "Get stores List",
+                "description": "Fetches a list of all stores.",
+                "operationId": "789854b8f9730d47f1ba52ca5e610238",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/users": {
@@ -888,6 +1367,10 @@
             "description": "To generate Json Web Token"
         },
         {
+            "name": "Products",
+            "description": "For product mnagement"
+        },
+        {
             "name": "Roles",
             "description": "API Endpoints for managing Roles"
         },
@@ -896,8 +1379,12 @@
             "description": "Categories"
         },
         {
-            "name": "Products",
-            "description": "Products"
+            "name": "Brands",
+            "description": "Brands"
+        },
+        {
+            "name": "Stores",
+            "description": "Stores"
         },
         {
             "name": "Users",

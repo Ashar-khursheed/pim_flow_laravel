@@ -16,29 +16,30 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::prefix('users')->group(function () {
-        Route::post('/', [UserController::class, 'store']);
-        Route::get('/', [UserController::class, 'index']);
-        Route::get('/{id}', [UserController::class, 'show']);
-        Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
-        Route::delete('/{id}', [UserController::class, 'destroy']);
-        Route::put('/{id}', [UserController::class, 'update']);
+	Route::prefix('users')->group(function () {
+		Route::post('/', [UserController::class, 'store']);
+		Route::get('/', [UserController::class, 'index']);
+		Route::get('/{id}', [UserController::class, 'show']);
+		Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
+		Route::delete('/{id}', [UserController::class, 'destroy']);
+		Route::put('/{id}', [UserController::class, 'update']);
 
-    });
+	});
 
-    Route::apiResource('attribute-families', AttributeFamilyController::class);
-    Route::get('/categories/last-child', [AttributeFamilyController::class, 'lastChildCategories']);
+	Route::apiResource('attribute-families', AttributeFamilyController::class);
+	Route::get('/categories/last-child', [AttributeFamilyController::class, 'lastChildCategories']);
 
 	Route::resource('categories', CategoryController::class)->only(['index']);
-    Route::resource('websites', WebsiteController::class)->only(['index']);
+	Route::resource('websites', WebsiteController::class)->only(['index']);
+	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::resource('products', ProductController::class);
 });
 
 
 Route::prefix('roles')->group(function () {
-    Route::get('/', [RoleController::class, 'index']);
-    Route::post('/', [RoleController::class, 'store']);
-    Route::get('/{id}', [RoleController::class, 'show']);
-    Route::put('/{id}', [RoleController::class, 'update']);
-    Route::delete('/{id}', [RoleController::class, 'destroy']);
+	Route::get('/', [RoleController::class, 'index']);
+	Route::post('/', [RoleController::class, 'store']);
+	Route::get('/{id}', [RoleController::class, 'show']);
+	Route::put('/{id}', [RoleController::class, 'update']);
+	Route::delete('/{id}', [RoleController::class, 'destroy']);
 });

@@ -29,8 +29,8 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
- *     name="Product",
- *     description="For product related work"
+ *     name="Products",
+ *     description="For product mnagement"
  * )
 
 

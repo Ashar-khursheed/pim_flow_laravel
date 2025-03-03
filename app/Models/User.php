@@ -75,4 +75,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(MediaFile::class, 'user_id');
     }
+
+    protected function getNameAttribute()
+    {
+        return ucfirst($this->first_name) . ' ' . ucfirst($this->last_name);
+    }
 }
