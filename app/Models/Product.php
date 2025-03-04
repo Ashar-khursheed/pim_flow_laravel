@@ -141,6 +141,7 @@ class Product extends Model
 		return $this->morphOne(Metabox::class, 'reference')->where('meta_key', 'seo_meta');
 	}
 
+
 	public function specifications()
 	{
 		return $this->hasMany(Specification::class);
