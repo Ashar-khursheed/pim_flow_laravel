@@ -138,7 +138,7 @@ class Product extends Model
 
 	public function seoMetaData()
 	{
-		return $this->morphOne(MetaBox::class, 'reference')->where('meta_key', 'seo_meta');
+		return $this->morphOne(Metabox::class, 'reference')->where('meta_key', 'seo_meta');
 	}
 
 	public function specifications()
