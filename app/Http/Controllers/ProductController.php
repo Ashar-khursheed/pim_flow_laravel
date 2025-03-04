@@ -181,10 +181,18 @@ class ProductController extends BaseController
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
 
+
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Product detail',
-			'product' => $product->toArray()
+			'product' => $product
 		]);
 	}
 
@@ -291,6 +299,12 @@ class ProductController extends BaseController
 	 */
 	public function update(Request $request, Product $product)
 	{
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
 		/* Retrieve all input fields from the request */
 		$input = $request->all();
 
