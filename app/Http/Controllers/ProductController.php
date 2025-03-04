@@ -297,8 +297,9 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, Product $product)
+	public function update(Request $request, $productId)
 	{
+		$product = Product::find($productId);
 		if (!$product) {
 			return response()->json([
 				'success' => false,
