@@ -13,6 +13,6 @@ class AttributeFamily extends Model
 
     public function category()
     {
-        return $this->belongsTo(EcProductCategory::class, 'category_id');
+        return $this->belongsTo(Category::class, 'category_id');
     }
 }
