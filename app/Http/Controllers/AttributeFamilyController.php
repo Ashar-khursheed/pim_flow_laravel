@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AttributeFamily;
-use App\Models\EcProductCategory;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -57,7 +57,7 @@ class AttributeFamilyController extends Controller
         ]);
 
         // Ensure the category is a last-child category
-        $category = EcProductCategory::where('id', $request->category_id)
+        $category = Category::where('id', $request->category_id)
             ->whereDoesntHave('children') // Must not have children
             ->first();
 
@@ -122,7 +122,7 @@ class AttributeFamilyController extends Controller
         ]);
 
         // Ensure the category is a last-child category
-        $category = EcProductCategory::where('id', $request->category_id)
+        $category = Category::where('id', $request->category_id)
             ->whereDoesntHave('children')
             ->first();
 
@@ -168,7 +168,7 @@ class AttributeFamilyController extends Controller
      */
     public function lastChildCategories()
     {
-        $categories = EcProductCategory::whereDoesntHave('children')->get();
+        $categories = Category::whereDoesntHave('children')->get();
         return response()->json($categories);
     }
 }

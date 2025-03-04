@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Models\EcProductCategory;
+use App\Models\Category;
 
 class StoreAttributeFamilyRequest extends FormRequest
 {
@@ -20,7 +20,7 @@ class StoreAttributeFamilyRequest extends FormRequest
                 'required',
                 'exists:ec_product_categories,id',
                 function ($attribute, $value, $fail) {
-                    $category = EcProductCategory::where('id', $value)->where('parent_id', 0)->exists();
+                    $category = Category::where('id', $value)->where('parent_id', 0)->exists();
                     if (!$category) {
                         $fail('The selected category_id must belong to a category with parent_id = 0.');
                     }
