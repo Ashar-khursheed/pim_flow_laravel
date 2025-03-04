@@ -219,9 +219,9 @@ class ProductController extends BaseController
 			'Other' => ['order', 'box_quantity', 'delivery_days'],
 			'All' => []
 		];
-	
+
 		$attributeGroups['All'] = array_merge(...array_values(array_filter($attributeGroups, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
-	
+
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title'],
@@ -230,33 +230,33 @@ class ProductController extends BaseController
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
 		];
-	
+
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
 		$with = $relations[$attrType] ?? [];
-	
+
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
-	
+
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
 		}
-	
+
 		if (!empty($product->images) && is_string($product->images)) {
 			$product->images = json_decode($product->images, true);
 		}
-	
+
 		$formattedProduct = [];
-	
+
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
-	
+
 			switch ($attribute) {
 				case 'refund':
 					$formattedProduct[$attribute] = [['value' => $value]];
-					
+
 					break;
 				case 'allow_checkout_when_out_of_stock':
 				case 'with_storehouse_management':
@@ -329,14 +329,14 @@ class ProductController extends BaseController
 					break;
 			}
 		}
-	
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Product detail',
 			'product' => $formattedProduct
 		]);
 	}
-	
+
 
 
 	/**

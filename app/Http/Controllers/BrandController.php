@@ -48,7 +48,7 @@ class BrandController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index()
+	public function index(Request $request)
 	{
 		$brands = Brand::query();
 
