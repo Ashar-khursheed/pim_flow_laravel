@@ -9,6 +9,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
 use App\Http\Controllers\AttributeFamilyController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryPageController;
+
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -33,9 +35,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::resource('products', ProductController::class);
+
+
+	Route::post('/category-pages', [CategoryPageController::class, 'store']);
+	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
+    Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
+
 });
 
-
+    Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
+   
 Route::prefix('roles')->group(function () {
 	Route::get('/', [RoleController::class, 'index']);
 	Route::post('/', [RoleController::class, 'store']);

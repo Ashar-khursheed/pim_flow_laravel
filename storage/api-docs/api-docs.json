@@ -381,6 +381,239 @@
                 ]
             }
         },
+        "/api/category-pages/{category_id}": {
+            "get": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Get category page data",
+                "description": "Fetch dynamic category page details by category ID.",
+                "operationId": "10002b62388ccd4602821dcdcb4fbc7d",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "404": {
+                        "description": "Category page not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Update category page details",
+                "operationId": "e9dd722f1501176cc0cf804c2943f77a",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Updated Category"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Updated description"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Category page updated"
+                    },
+                    "404": {
+                        "description": "Category page not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Delete a category page",
+                "operationId": "b479dae43abf48d995c6663827bdb77b",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category page deleted"
+                    },
+                    "404": {
+                        "description": "Category page not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/category-pages": {
+            "post": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Create or update a category page",
+                "operationId": "ac3407b1639673ffccb449b660925066",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "title"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "banner_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "banner_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "inner_categories": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            3,
+                                            4,
+                                            5
+                                        ]
+                                    },
+                                    "six_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "four_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "related_products": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102,
+                                            103
+                                        ]
+                                    },
+                                    "section_title": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "section_description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "extra_heading": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "extra_description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Category page created"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products": {
             "post": {
                 "tags": [
@@ -1396,6 +1629,10 @@
         {
             "name": "Brands",
             "description": "Brands"
+        },
+        {
+            "name": "Category Pages",
+            "description": "Category Pages"
         },
         {
             "name": "Stores",

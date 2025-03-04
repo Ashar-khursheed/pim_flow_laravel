@@ -146,6 +146,62 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function show($productId, Request $request)
+	// {
+	// 	$attributeGroups = [
+	// 		'General' => ['sku', 'barcode', 'warranty_information', 'refund'],
+	// 		'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
+	// 		'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
+	// 		'Marketing' => ['name', 'content', 'description'],
+	// 		'Media' => ['images', 'image', 'video_url', 'video_path', 'documents'],
+	// 		'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
+	// 		'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
+	// 		'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
+	// 		'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
+	// 		'Comparison & Bundling' => ['compare_type', 'compare_products'],
+	// 		'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
+	// 		'Other' => ['order', 'box_quantity', 'delivery_days'],
+	// 		'All' => []
+	// 	];
+
+	// 	$attributeGroups['All'] = array_merge(...array_values(array_filter($attributeGroups, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
+
+	// 	$relations = [
+	// 		'General' => ['categories:id,name,parent_id'],
+	// 		'Pricing & Sales' => ['currency:id,title'],
+	// 		'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
+	// 		'Store & Vendor Information' => ['store:id,name', 'brand:id,name', 'creator:id,name'],
+	// 		'SEO' => ['seoMetaData:id,reference_id,meta_value'],
+	// 		'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
+	// 	];
+
+	// 	$attrType = $request->attr_type ?? 'All';
+	// 	$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
+	// 	$with = $relations[$attrType] ?? [];
+
+	// 	/* Fetch product with requested attributes and relations */
+	// 	$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+
+	// 	/* Check if product exists */
+	// 	if (!$product) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Product does not exist.'
+	// 		]);
+	// 	}
+
+	// 	/* Decode images if stored as a JSON string */
+	// 	if (!empty($product->images) && is_string($product->images)) {
+	// 		$product->images = json_decode($product->images, true); // Ensure it's converted to an array
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Product detail',
+	// 		'product' => $product
+	// 	]);
+	// }
+
 	public function show($productId, Request $request)
 	{
 		$attributeGroups = [
@@ -163,9 +219,9 @@ class ProductController extends BaseController
 			'Other' => ['order', 'box_quantity', 'delivery_days'],
 			'All' => []
 		];
-
+	
 		$attributeGroups['All'] = array_merge(...array_values(array_filter($attributeGroups, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
-
+	
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title'],
@@ -174,33 +230,113 @@ class ProductController extends BaseController
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
 		];
-
+	
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
 		$with = $relations[$attrType] ?? [];
-
-		/* Fetch product with requested attributes and relations */
+	
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
-
-		/* Check if product exists */
+	
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
 		}
-
-		/* Decode images if stored as a JSON string */
+	
 		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = json_decode($product->images, true); // Ensure it's converted to an array
+			$product->images = json_decode($product->images, true);
 		}
-
+	
+		$formattedProduct = [];
+	
+		foreach ($attributes as $attribute) {
+			$value = $product->$attribute ?? null;
+	
+			switch ($attribute) {
+				case 'refund':
+					$formattedProduct[$attribute] = ['value' => $value];
+					break;
+				case 'allow_checkout_when_out_of_stock':
+				case 'with_storehouse_management':
+				case 'variant_requires_shipping':
+				case 'is_variation':
+				case 'shipping_dimension_option':
+				case 'shipping_weight_option':
+					$formattedProduct[$attribute] = ['enabled' => (bool) $value];
+					break;
+				case 'stock_status':
+					$formattedProduct[$attribute] = ['status' => $value];
+					break;
+				case 'tax_id':
+					$formattedProduct['tax'] = ['rate' => $value];
+					break;
+				case 'currency_id':
+					$formattedProduct['currency'] = $product->currency ? [
+						'id' => $product->currency->id,
+						'title' => $product->currency->title
+					] : null;
+					break;
+				case 'brand_id':
+					$formattedProduct['brand'] = $product->brand ? [
+						'id' => $product->brand->id,
+						'name' => $product->brand->name
+					] : null;
+					break;
+				case 'store_id':
+					$formattedProduct['store'] = $product->store ? [
+						'id' => $product->store->id,
+						'name' => $product->store->name
+					] : null;
+					break;
+				case 'shipping_length_id':
+					$formattedProduct['shipping_length'] = [
+						'value' => $value,
+						'unit' => optional($product->shippingLengthUnit)->symbol
+					];
+					break;
+				case 'weight_unit_id':
+					$formattedProduct['weight_unit'] = [
+						'symbol' => optional($product->weightUnit)->symbol
+					];
+					break;
+				case 'length_unit_id':
+					$formattedProduct['length_unit'] = [
+						'symbol' => optional($product->lengthUnit)->symbol
+					];
+					break;
+				case 'categories':
+					$formattedProduct['categories'] = $product->categories->map(function ($category) use ($product) {
+						return [
+							'id' => $category->id,
+							'name' => $category->name,
+							'parent_id' => $category->parent_id,
+							'pivot' => [
+								'product_id' => $product->id,
+								'category_id' => $category->id
+							]
+						];
+					});
+					break;
+				case 'content':
+					// Extract <li> items from the content and remove HTML tags
+					preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
+					$formattedProduct[$attribute] = $matches[1] ?? [];
+					break;
+				default:
+					$formattedProduct[$attribute] = $value;
+					break;
+			}
+		}
+	
 		return response()->json([
 			'success' => true,
 			'message' => 'Product detail',
-			'product' => $product
+			'product' => $formattedProduct
 		]);
 	}
+	
+
 
 	/**
 	 * Show the form for editing the specified resource.
