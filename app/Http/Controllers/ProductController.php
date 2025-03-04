@@ -179,14 +179,20 @@ class ProductController extends BaseController
 		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
 		$with = $relations[$attrType] ?? [];
 
+		/* Fetch product with requested attributes and relations */
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
 
-
+		/* Check if product exists */
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
+		}
+
+		/* Decode images if stored as a JSON string */
+		if (!empty($product->images) && is_string($product->images)) {
+			$product->images = json_decode($product->images, true); // Ensure it's converted to an array
 		}
 
 		return response()->json([
