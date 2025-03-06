@@ -549,7 +549,7 @@ class ProductController extends BaseController
 		];
 
 		if (isset($input['length_unit_id'])) {
-			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], $lengthUnitArray)) {
+			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], array_keys($lengthUnitArray))) {
 				$rowError[] = "Invalid length unit value.";
 			} else {
 				$product->length_unit_id = (int) $input['length_unit_id'];
@@ -558,7 +558,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['weight_unit_id'])) {
-			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], $weightUnitArray)) {
+			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], array_keys($weightUnitArray))) {
 				$rowError[] = "Invalid weight unit value.";
 			} else {
 				$product->weight_unit_id = (int) $input['weight_unit_id'];
@@ -567,7 +567,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['shipping_length_id'])) {
-			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], $lengthUnitArray)) {
+			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], array_keys($lengthUnitArray))) {
 				$rowError[] = "Invalid shipping length value.";
 			} else {
 				$product->shipping_length_id = (int) $input['shipping_length_id'];
