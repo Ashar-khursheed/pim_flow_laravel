@@ -353,6 +353,22 @@ class ProductController extends BaseController
 					preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
 					$formattedProduct[$attribute] = $matches[1] ?? [];
 					break;
+				
+				case 'frequently_bought_together':
+					$decoded = json_decode($value, true) ?? [];
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => $item['value']], $decoded);
+					break;
+			
+				case 'compare_type':
+					$decoded = json_decode($value, true) ?? [];
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
+			
+				case 'compare_products':
+					$decoded = json_decode($value, true) ?? [];
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
+				
 				default:
 					$formattedProduct[$attribute] = $value;
 					break;
