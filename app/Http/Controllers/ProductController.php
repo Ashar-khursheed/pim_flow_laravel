@@ -86,7 +86,7 @@ class ProductController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Product created successfully',
-			'user' => $product
+			'product' => $product
 		]);
 	}
 
@@ -258,14 +258,43 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = [['value' => $value]];
 					
 					break;
-				case 'allow_checkout_when_out_of_stock':
-				case 'with_storehouse_management':
-				case 'variant_requires_shipping':
-				case 'is_variation':
-				case 'shipping_dimension_option':
-				case 'shipping_weight_option':
-					$formattedProduct[$attribute] = [['enabled' => (bool) $value]];
-					break;
+					case 'allow_checkout_when_out_of_stock':
+						case 'with_storehouse_management':
+						case 'variant_requires_shipping':
+						case 'is_variation':
+							$formattedProduct[$attribute] = [
+								'type' => 'checkbox',
+								'selected' => (int) $value,
+								'values' => [
+									'0' => 'unchecked',
+									'1' => 'checked'
+								]
+							];
+							break;
+			
+						case 'shipping_weight_option':
+							$formattedProduct[$attribute] = [
+								'type' => 'Dropdown',
+								'selected' => $value,
+								'values' => [
+									'lbs' => 'LBS',
+									'kg' => 'KG',
+									'g' => 'Grams'
+								]
+							];
+							break;
+			
+						case 'shipping_dimension_option':
+							$formattedProduct[$attribute] = [
+								'type' => 'Dropdown',
+								'selected' => $value,
+								'values' => [
+									'inch' => 'Inch',
+									'cm' => 'CM',
+									'mm' => 'MM'
+								]
+							];
+							break;
 				case 'stock_status':
 					$formattedProduct[$attribute] = [['status' => $value]];
 					break;
@@ -336,7 +365,8 @@ class ProductController extends BaseController
 			'product' => $formattedProduct
 		]);
 	}
-	
+
+
 
 
 	/**
