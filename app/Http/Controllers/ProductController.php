@@ -219,9 +219,9 @@ class ProductController extends BaseController
 			'Other' => ['order', 'box_quantity', 'delivery_days'],
 			'All' => []
 		];
-	
+
 		$attributeGroups['All'] = array_merge(...array_values(array_filter($attributeGroups, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
-	
+
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title'],
@@ -230,33 +230,33 @@ class ProductController extends BaseController
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
 		];
-	
+
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
 		$with = $relations[$attrType] ?? [];
-	
+
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
-	
+
 		if (!$product) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Product does not exist.'
 			]);
 		}
-	
+
 		if (!empty($product->images) && is_string($product->images)) {
 			$product->images = json_decode($product->images, true);
 		}
-	
+
 		$formattedProduct = [];
-	
+
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
-	
+
 			switch ($attribute) {
 				case 'refund':
 					$formattedProduct[$attribute] = [['value' => $value]];
-					
+
 					break;
 					case 'allow_checkout_when_out_of_stock':
 						case 'with_storehouse_management':
@@ -358,14 +358,13 @@ class ProductController extends BaseController
 					break;
 			}
 		}
-	
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Product detail',
 			'product' => $formattedProduct
 		]);
 	}
-
 
 
 
@@ -579,7 +578,7 @@ class ProductController extends BaseController
 		];
 
 		if (isset($input['length_unit_id'])) {
-			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], $lengthUnitArray)) {
+			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], array_keys($lengthUnitArray))) {
 				$rowError[] = "Invalid length unit value.";
 			} else {
 				$product->length_unit_id = (int) $input['length_unit_id'];
@@ -588,7 +587,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['weight_unit_id'])) {
-			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], $weightUnitArray)) {
+			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], array_keys($weightUnitArray))) {
 				$rowError[] = "Invalid weight unit value.";
 			} else {
 				$product->weight_unit_id = (int) $input['weight_unit_id'];
@@ -597,7 +596,7 @@ class ProductController extends BaseController
 		}
 
 		if (isset($input['shipping_length_id'])) {
-			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], $lengthUnitArray)) {
+			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], array_keys($lengthUnitArray))) {
 				$rowError[] = "Invalid shipping length value.";
 			} else {
 				$product->shipping_length_id = (int) $input['shipping_length_id'];
