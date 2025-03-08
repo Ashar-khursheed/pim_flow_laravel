@@ -13,6 +13,10 @@ use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\MediaController;
+
+
+
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -46,6 +50,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/category-pages', [CategoryPageController::class, 'store']);
 	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
     Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
+
+	Route::apiResource('media', MediaController::class)->parameters([
+        'media' => 'folder'
+    ]);
 
 });
 

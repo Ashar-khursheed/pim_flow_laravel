@@ -843,6 +843,110 @@
                 ]
             }
         },
+        "/api/media": {
+            "get": {
+                "summary": "Fetch all folders inside the 'production' directory from S3",
+                "operationId": "bb530491f2016ed20ade75ea5b28329b",
+                "responses": {
+                    "200": {
+                        "description": "List of folders"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "summary": "Upload file to a specific folder inside 'production'",
+                "operationId": "eeaf63768829900435c84f27180703fb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "folder": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "File uploaded successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/media/{folder}": {
+            "get": {
+                "summary": "List all files in a specific folder inside 'production'",
+                "operationId": "98b5d7ca06da7e9deaf7ba97ec93b426",
+                "parameters": [
+                    {
+                        "name": "folder",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of files"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/media/{file}": {
+            "delete": {
+                "summary": "Delete file from S3 inside 'production'",
+                "operationId": "83fc90392d55408818601871a6110882",
+                "parameters": [
+                    {
+                        "name": "file",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "File deleted successfully"
+                    },
+                    "404": {
+                        "description": "File not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products": {
             "post": {
                 "tags": [
