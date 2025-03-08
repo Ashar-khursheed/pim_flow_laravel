@@ -23,7 +23,7 @@ class CategoryController extends BaseController
 	 *         description="Filter categories by type. Options: 'All' (default), 'Parent'",
 	 *         @OA\Schema(
 	 *             type="string",
-	 *             enum={"All", "Parent"},
+	 *             enum={"All", "Super Parent", "Leaf Child"},
 	 *             default="All"
 	 *         )
 	 *     ),
@@ -74,12 +74,14 @@ class CategoryController extends BaseController
 		// dd(auth()->user());
 		$categories = Category::query();
 
-		if ($request->has('parent_id') && is_numeric($request->parent_id)) {
-			$categories = $categories->where('parent_id', (int) $request->parent_id);
-		}
 
-		elseif ($request->type == 'Parent') {
+
+		if ($request->type == 'Super Parent') {
 			$categories = $categories->where('parent_id', 0);
+		} elseif ($request->type == 'Leaf Child') {
+			$categories = $categories->whereDoesntHave('children');
+		} elseif ($request->has('parent_id') && is_numeric($request->parent_id)) {
+			$categories = $categories->where('parent_id', (int) $request->parent_id);
 		}
 
 		if($request->filled('page') && $request->filled('length')){
