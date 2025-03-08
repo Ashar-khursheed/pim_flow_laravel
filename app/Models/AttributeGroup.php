@@ -4,16 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Attribute extends Model
+class AttributeGroup extends Model
 {
-	/* Relation with AttributeGroup */
-	public function attributeGroups()
+	protected $guarded = [];
+
+	public function attributes()
 	{
 		return $this->belongsToMany(
-			AttributeGroup::class,
+			Attribute::class,
 			'attribute_group_attributes',
-			'attribute_id',
-			'attribute_group_id'
+			'attribute_group_id',
+			'attribute_id'
 		);
 	}
 

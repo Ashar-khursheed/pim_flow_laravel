@@ -17,6 +17,51 @@
     },
     "paths": {
         "/api/attributes": {
+            "get": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Get Attribute List",
+                "description": "Fetches a list of attributes.",
+                "operationId": "e48983aaee64bf1da038f1378aff0c81",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "Attributes"
@@ -89,7 +134,7 @@
                     }
                 ],
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Success",
                         "content": {
                             "application/json": {}
@@ -177,60 +222,132 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Attribute updated successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Attribute updated successfully"
-                                        },
-                                        "attribute": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "name": {
-                                                    "type": "string",
-                                                    "example": "Size"
-                                                },
-                                                "code": {
-                                                    "type": "string",
-                                                    "example": "size"
-                                                },
-                                                "type": {
-                                                    "type": "string",
-                                                    "example": "dropdown"
-                                                },
-                                                "is_required": {
-                                                    "type": "boolean",
-                                                    "example": true
-                                                },
-                                                "validations": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    },
-                                                    "example": [
-                                                        "required",
-                                                        "max:255"
-                                                    ]
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Delete an attribute",
+                "description": "Deletes an attribute.",
+                "operationId": "deleteAttribute",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attribute-groups": {
+            "get": {
+                "tags": [
+                    "Attribute Group"
+                ],
+                "summary": "Get Attribute Group List",
+                "description": "Fetches a list of attribute groups.",
+                "operationId": "2333f9a67da035f9d6d7da7e486f23f4",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Attribute Group"
+                ],
+                "summary": "Create an attribute group",
+                "operationId": "02790c8c32dcd7b88032448ebb5cbd00",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_ids"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Electronics Equipments"
                                     },
-                                    "type": "object"
-                                }
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
-                    },
+                    }
+                },
+                "responses": {
                     "201": {
                         "description": "Success",
                         "content": {
@@ -245,90 +362,32 @@
                 ]
             }
         },
-        "/api/attribute-families": {
+        "/api/attribute-groups/{attribute_group_id}": {
             "get": {
                 "tags": [
-                    "Attribute Families"
+                    "Attribute Group"
                 ],
-                "summary": "Get all attribute families",
-                "operationId": "08cb577886652b812870fc2f408cb83d",
-                "responses": {
-                    "200": {
-                        "description": "List of attribute families"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Attribute Families"
-                ],
-                "summary": "Create an attribute family",
-                "operationId": "5d7ea6540c0365f64b10b4cbc1923414",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "category_id"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "category_id": {
-                                        "type": "integer"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Created successfully"
-                    },
-                    "400": {
-                        "description": "Invalid category"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/attribute-families/{id}": {
-            "get": {
-                "tags": [
-                    "Attribute Families"
-                ],
-                "summary": "Get a specific attribute family",
-                "operationId": "10dc870a43b57219d13f92c211a5a33b",
+                "summary": "Get attribute group details",
+                "description": "Fetches attribute group details based on the given attribute group ID.",
+                "operationId": "8950e468c4916507283ef97e6a1dcaa3",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "attribute_group_id",
                         "in": "path",
+                        "description": "ID of the attribute group",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Attribute family found"
-                    },
-                    "404": {
-                        "description": "Not found"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -339,20 +398,11 @@
             },
             "put": {
                 "tags": [
-                    "Attribute Families"
+                    "Attribute Group"
                 ],
-                "summary": "Update an attribute family",
-                "operationId": "9e61b34ee2a6d0e8c19278cb0c5706fc",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Update a attribute group",
+                "description": "Updates an existing attribute group based on the provided JSON payload.",
+                "operationId": "updateAttributeGroup",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -360,14 +410,19 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "category_id"
+                                    "attribute_ids"
                                 ],
                                 "properties": {
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "General Attribute"
                                     },
-                                    "category_id": {
-                                        "type": "integer"
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -377,40 +432,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Updated successfully"
-                    },
-                    "404": {
-                        "description": "Not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Attribute Families"
-                ],
-                "summary": "Delete an attribute family",
-                "operationId": "9831d036d67509363cc7244748bd1611",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Deleted successfully"
-                    },
-                    "404": {
-                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -420,16 +445,32 @@
                 ]
             }
         },
-        "/api/categories/last-child": {
-            "get": {
+        "/api/attribute-groups/{id}": {
+            "delete": {
                 "tags": [
-                    "Categories"
+                    "Attribute Group"
                 ],
-                "summary": "Get all last-child categories (categories with no children)",
-                "operationId": "6f2471659fa5cf38fc2b6a675d1e569e",
+                "summary": "Delete an attribute group",
+                "description": "Deletes an attribute group along with its associated records in the attribute_group_attributes table.",
+                "operationId": "deleteAttributeGroup",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute group to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of last-child categories"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -539,6 +580,153 @@
                 ]
             }
         },
+        "/api/category-attributes": {
+            "get": {
+                "tags": [
+                    "Category Attribute Group"
+                ],
+                "summary": "Get Categrory List with Atribute & Attribute Group",
+                "description": "Fetches a list of categrory with atribute & attribute group.",
+                "operationId": "0cda0840f5805f6fc9ab8a4a60288735",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/category-attributes/{category_id}": {
+            "get": {
+                "tags": [
+                    "Category Attribute Group"
+                ],
+                "summary": "Get Specific Categrory with Atribute & Attribute Group",
+                "description": "Fetches a categrory with atribute attribute group based on the given attribute group ID.",
+                "operationId": "9671ac4d09c21e931defb0c6f7b8e69f",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "ID of the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Category Attribute Group"
+                ],
+                "summary": "Update a Categrory Atribute & Attribute Group",
+                "description": "Updates Atribute & Attribute Group of a category based on the provided JSON payload.",
+                "operationId": "844daefa5b3b3a11210e66b99218fecf",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "ID of the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attribute_ids",
+                                    "attribute_group_ids"
+                                ],
+                                "properties": {
+                                    "attribute_ids": {
+                                        "description": "Array of attribute IDs to associate with the category",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "attribute_group_ids": {
+                                        "description": "Array of attribute group IDs to associate with the category",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/categories": {
             "get": {
                 "tags": [
@@ -558,7 +746,8 @@
                             "default": "All",
                             "enum": [
                                 "All",
-                                "Parent"
+                                "Super Parent",
+                                "Leaf Child"
                             ]
                         }
                     },
@@ -1940,28 +2129,32 @@
     },
     "tags": [
         {
-            "name": "Attribute Families",
-            "description": "API Endpoints for Attribute Families"
-        },
-        {
             "name": "JWT",
             "description": "To generate Json Web Token"
         },
         {
+            "name": "Attributes",
+            "description": "API Endpoints for Attribute Management"
+        },
+        {
+            "name": "Attribute Group",
+            "description": "API Endpoints for Attribute Group Management"
+        },
+        {
+            "name": "Category Attribute Group",
+            "description": "API Endpoints for Managing Category Attributes and Groups"
+        },
+        {
             "name": "Products",
-            "description": "For product mnagement"
+            "description": "API Endpoints for Product Management"
+        },
+        {
+            "name": "Categories",
+            "description": "API Endpoints for Category Management"
         },
         {
             "name": "Roles",
             "description": "API Endpoints for managing Roles"
-        },
-        {
-            "name": "Attributes",
-            "description": "Attributes"
-        },
-        {
-            "name": "Categories",
-            "description": "Categories"
         },
         {
             "name": "Brands",
