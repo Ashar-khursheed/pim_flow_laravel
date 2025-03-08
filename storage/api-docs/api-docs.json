@@ -973,7 +973,7 @@
                     "Products"
                 ],
                 "summary": "Update a product",
-                "description": "Updates an existing product based on the provided JSON payload.",
+                "description": "Updates an existing product based on the provided form data.",
                 "operationId": "updateProduct",
                 "parameters": [
                     {
@@ -990,7 +990,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
                                     "sku": {
@@ -1088,16 +1088,16 @@
                                         "type": "string",
                                         "example": "Short description."
                                     },
-                                    "images": {
+                                    "images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "example": "product1.jpg"
+                                            "format": "binary"
                                         }
                                     },
                                     "image": {
                                         "type": "string",
-                                        "example": "main_image.jpg"
+                                        "format": "binary"
                                     },
                                     "video_url": {
                                         "type": "string",
@@ -1105,13 +1105,13 @@
                                     },
                                     "video_path": {
                                         "type": "string",
-                                        "example": "videos/product.mp4"
+                                        "format": "binary"
                                     },
-                                    "documents": {
+                                    "documents[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "example": "manual.pdf"
+                                            "format": "binary"
                                         }
                                     },
                                     "length": {
@@ -1225,7 +1225,7 @@
                                         "type": "integer",
                                         "example": 50
                                     },
-                                    "frequently_bought_together": {
+                                    "frequently_bought_together[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
@@ -1236,7 +1236,7 @@
                                         "type": "string",
                                         "example": "similar"
                                     },
-                                    "compare_products": {
+                                    "compare_products[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",

@@ -393,98 +393,99 @@ class ProductController extends BaseController
 	}
 
 	/**
-	 * Update the specified resource in storage.
-	 */
-	/**
-	 * @OA\Put(
-	 *     path="/api/products/{product}",
-	 *     summary="Update a product",
-	 *     description="Updates an existing product based on the provided JSON payload.",
-	 *     operationId="updateProduct",
-	 *     tags={"Products"},
-	 *     @OA\Parameter(
-	 *         name="product",
-	 *         in="path",
-	 *         description="ID of the product to update",
-	 *         required=true,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="sku", type="string", example="PROD-123"),
-	 *             @OA\Property(property="barcode", type="string", example="9509297558375"),
-	 *             @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
-	 *             @OA\Property(property="refund", type="string", example="non-refundable"),
-	 *             @OA\Property(property="quantity", type="integer", example=100),
-	 *             @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
-	 *             @OA\Property(property="with_storehouse_management", type="boolean", example=true),
-	 *             @OA\Property(property="stock_status", type="string", example="in_stock"),
-	 *             @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
-	 *             @OA\Property(property="variant_inventory_quantity", type="integer", example=50),
-	 *             @OA\Property(property="variant_inventory_policy", type="string", example="deny"),
-	 *             @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
-	 *             @OA\Property(property="price", type="number", format="float", example=199.99),
-	 *             @OA\Property(property="sale_price", type="number", format="float", example=149.99),
-	 *             @OA\Property(property="sale_type", type="string", example="percentage"),
-	 *             @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
-	 *             @OA\Property(property="tax_id", type="integer", example=3),
-	 *             @OA\Property(property="currency_id", type="integer", example=1),
-	 *             @OA\Property(property="minimum_order_quantity", type="integer", example=1),
-	 *             @OA\Property(property="maximum_order_quantity", type="integer", example=10),
-	 *             @OA\Property(property="name", type="string", example="Sample Product"),
-	 *             @OA\Property(property="content", type="string", example="Detailed content about the product."),
-	 *             @OA\Property(property="description", type="string", example="Short description."),
-	 *             @OA\Property(property="images", type="array", @OA\Items(type="string", example="product1.jpg")),
-	 *             @OA\Property(property="image", type="string", example="main_image.jpg"),
-	 *             @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
-	 *             @OA\Property(property="video_path", type="string", example="videos/product.mp4"),
-	 *             @OA\Property(property="documents", type="array", @OA\Items(type="string", example="manual.pdf")),
-	 *             @OA\Property(property="length", type="number", format="float", example=10.5),
-	 *             @OA\Property(property="length_unit_id", type="integer", example=2),
-	 *             @OA\Property(property="width", type="number", format="float", example=5.0),
-	 *             @OA\Property(property="height", type="number", format="float", example=3.0),
-	 *             @OA\Property(property="depth", type="number", format="float", example=2.0),
-	 *             @OA\Property(property="weight", type="number", format="float", example=1.5),
-	 *             @OA\Property(property="weight_unit_id", type="integer", example=1),
-	 *             @OA\Property(property="shipping_weight_option", type="string", example="lbs"),
-	 *             @OA\Property(property="shipping_weight", type="number", format="float", example=2.0),
-	 *             @OA\Property(property="shipping_dimension_option", type="string", example="inch"),
-	 *             @OA\Property(property="shipping_width", type="number", format="float", example=6.0),
-	 *             @OA\Property(property="shipping_depth", type="number", format="float", example=4.0),
-	 *             @OA\Property(property="shipping_height", type="number", format="float", example=3.5),
-	 *             @OA\Property(property="shipping_length", type="number", format="float", example=11.0),
-	 *             @OA\Property(property="shipping_length_id", type="integer", example=2),
-	 *             @OA\Property(property="is_variation", type="boolean", example=false),
-	 *             @OA\Property(property="variant_grams", type="number", format="float", example=500),
-	 *             @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
-	 *             @OA\Property(property="variant_barcode", type="string", example="123456789012"),
-	 *             @OA\Property(property="variant_color_title", type="string", example="Red"),
-	 *             @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
-	 *             @OA\Property(property="store_id", type="integer", example=10),
-	 *             @OA\Property(property="brand_id", type="integer", example=3),
-	 *             @OA\Property(property="views", type="integer", example=200),
-	 *             @OA\Property(property="units_sold", type="integer", example=50),
-	 *             @OA\Property(property="frequently_bought_together", type="array", @OA\Items(type="integer", example=101)),
-	 *             @OA\Property(property="compare_type", type="string", example="similar"),
-	 *             @OA\Property(property="compare_products", type="array", @OA\Items(type="integer", example=102)),
-	 *             @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
-	 *             @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
-	 *             @OA\Property(property="order", type="integer", example=1),
-	 *             @OA\Property(property="box_quantity", type="integer", example=5),
-	 *             @OA\Property(property="delivery_days", type="integer", example=3)
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+ * @OA\Put(
+ *     path="/api/products/{product}",
+ *     summary="Update a product",
+ *     description="Updates an existing product based on the provided form data.",
+ *     operationId="updateProduct",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="product",
+ *         in="path",
+ *         description="ID of the product to update",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 @OA\Property(property="sku", type="string", example="PROD-123"),
+ *                 @OA\Property(property="barcode", type="string", example="9509297558375"),
+ *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
+ *                 @OA\Property(property="refund", type="string", example="non-refundable"),
+ *                 @OA\Property(property="quantity", type="integer", example=100),
+ *                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
+ *                 @OA\Property(property="with_storehouse_management", type="boolean", example=true),
+ *                 @OA\Property(property="stock_status", type="string", example="in_stock"),
+ *                 @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
+ *                 @OA\Property(property="variant_inventory_quantity", type="integer", example=50),
+ *                 @OA\Property(property="variant_inventory_policy", type="string", example="deny"),
+ *                 @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
+ *                 @OA\Property(property="price", type="number", format="float", example=199.99),
+ *                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
+ *                 @OA\Property(property="sale_type", type="string", example="percentage"),
+ *                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
+ *                 @OA\Property(property="tax_id", type="integer", example=3),
+ *                 @OA\Property(property="currency_id", type="integer", example=1),
+ *                 @OA\Property(property="minimum_order_quantity", type="integer", example=1),
+ *                 @OA\Property(property="maximum_order_quantity", type="integer", example=10),
+ *                 @OA\Property(property="name", type="string", example="Sample Product"),
+ *                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
+ *                 @OA\Property(property="description", type="string", example="Short description."),
+ *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="image", type="string", format="binary"),
+ *                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
+ *                 @OA\Property(property="video_path", type="string", format="binary"),
+ *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="length", type="number", format="float", example=10.5),
+ *                 @OA\Property(property="length_unit_id", type="integer", example=2),
+ *                 @OA\Property(property="width", type="number", format="float", example=5.0),
+ *                 @OA\Property(property="height", type="number", format="float", example=3.0),
+ *                 @OA\Property(property="depth", type="number", format="float", example=2.0),
+ *                 @OA\Property(property="weight", type="number", format="float", example=1.5),
+ *                 @OA\Property(property="weight_unit_id", type="integer", example=1),
+ *                 @OA\Property(property="shipping_weight_option", type="string", example="lbs"),
+ *                 @OA\Property(property="shipping_weight", type="number", format="float", example=2.0),
+ *                 @OA\Property(property="shipping_dimension_option", type="string", example="inch"),
+ *                 @OA\Property(property="shipping_width", type="number", format="float", example=6.0),
+ *                 @OA\Property(property="shipping_depth", type="number", format="float", example=4.0),
+ *                 @OA\Property(property="shipping_height", type="number", format="float", example=3.5),
+ *                 @OA\Property(property="shipping_length", type="number", format="float", example=11.0),
+ *                 @OA\Property(property="shipping_length_id", type="integer", example=2),
+ *                 @OA\Property(property="is_variation", type="boolean", example=false),
+ *                 @OA\Property(property="variant_grams", type="number", format="float", example=500),
+ *                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
+ *                 @OA\Property(property="variant_barcode", type="string", example="123456789012"),
+ *                 @OA\Property(property="variant_color_title", type="string", example="Red"),
+ *                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
+ *                 @OA\Property(property="store_id", type="integer", example=10),
+ *                 @OA\Property(property="brand_id", type="integer", example=3),
+ *                 @OA\Property(property="views", type="integer", example=200),
+ *                 @OA\Property(property="units_sold", type="integer", example=50),
+ *                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
+ *                 @OA\Property(property="compare_type", type="string", example="similar"),
+ *                 @OA\Property(property="compare_products[]", type="array", @OA\Items(type="integer", example=102)),
+ *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
+ *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
+ *                 @OA\Property(property="order", type="integer", example=1),
+ *                 @OA\Property(property="box_quantity", type="integer", example=5),
+ *                 @OA\Property(property="delivery_days", type="integer", example=3)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Success",
+ *         @OA\MediaType(
+ *             mediaType="application/json"
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
 	public function update(Request $request, $productId)
 	{
 		$product = Product::find($productId);
@@ -494,9 +495,34 @@ class ProductController extends BaseController
 				'message' => 'Product does not exist.'
 			]);
 		}
-		/* Retrieve all input fields from the request */
 		$input = $request->all();
 
+		/* Handle Image, Video & Document Uploads */
+		$uploadPath = 'products/';
+
+		// Handle multiple images
+		$uploadedImages = [];
+		if ($request->hasFile('images') && is_array($request->file('images', []))) {
+			$uploadedImages = array_map(fn($image) => $image->store($uploadPath, 'public'), $request->file('images'));
+		}
+		$input['images'] = !empty($uploadedImages) ? json_encode($uploadedImages) : null;
+
+		// Handle single image upload
+		if ($request->hasFile('image')) {
+			$input['image'] = $request->file('image')->store($uploadPath, 'public');
+		}
+
+		// Handle video upload
+		if ($request->hasFile('video_path')) {
+			$input['video_path'] = $request->file('video_path')->store($uploadPath, 'public');
+		}
+
+		// Handle multiple document uploads
+		$uploadedDocs = [];
+		if ($request->hasFile('documents') && is_array($request->file('documents', []))) {
+			$uploadedDocs = array_map(fn($doc) => $doc->store($uploadPath, 'public'), $request->file('documents'));
+		}
+		$input['documents'] = !empty($uploadedDocs) ? json_encode($uploadedDocs) : null;
 		/* List of valid fields allowed for updating */
 		$validArray = [
 			"sku", "barcode", "warranty_information", "refund", "quantity",
