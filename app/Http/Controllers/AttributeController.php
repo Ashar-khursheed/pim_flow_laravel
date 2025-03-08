@@ -10,18 +10,55 @@ class AttributeController extends BaseController
 	/**
 	 * Display a listing of the resource.
 	 */
-
-	public function index()
-	{
-		//
-	}
-
 	/**
-	 * Show the form for creating a new resource.
+	 * @OA\Get(
+	 *     path="/api/attributes",
+	 *     summary="Get Attribute List",
+	 *     description="Fetches a list of attributes.",
+	 *     tags={"Attributes"},
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination. Starts from 1.",
+	 *         required=true,
+	 *         example=1,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="length",
+	 *         in="query",
+	 *         description="Number of records per page.",
+	 *         required=true,
+	 *         example=20,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
 	 */
-	public function create()
+	public function index(Request $request)
 	{
-		//
+		$records = Attribute::query();
+
+		if($request->filled('page') && $request->filled('length')){
+			$page = $request->input('page');
+			$length = $request->input('length');
+			$records = $records->offset(($page - 1)*$length)->limit($length);
+		}
+
+		$records = $records->get();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Attribute List',
+			'attributes' => $records
+		]);
 	}
 
 	/**
@@ -42,13 +79,7 @@ class AttributeController extends BaseController
 	 *             @OA\Property(property="type", type="string", example="text")
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
+	 *     @OA\Response(response=201, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -92,13 +123,7 @@ class AttributeController extends BaseController
 	 *         description="ID of the attribute",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -119,14 +144,6 @@ class AttributeController extends BaseController
 			'message' => 'Attribute detail',
 			'attribute' => $attribute
 		]);
-	}
-
-	/**
-	 * Show the form for editing the specified resource.
-	 */
-	public function edit(Attribute $attribute)
-	{
-		//
 	}
 
 	/**
@@ -162,40 +179,10 @@ class AttributeController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Attribute updated successfully",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Attribute updated successfully"),
-	 *             @OA\Property(
-	 *                 property="attribute",
-	 *                 type="object",
-	 *                 @OA\Property(property="id", type="integer", example=1),
-	 *                 @OA\Property(property="name", type="string", example="Size"),
-	 *                 @OA\Property(property="code", type="string", example="size"),
-	 *                 @OA\Property(property="type", type="string", example="dropdown"),
-	 *                 @OA\Property(property="is_required", type="boolean", example=true),
-	 *                 @OA\Property(
-	 *                     property="validations",
-	 *                     type="array",
-	 *                     @OA\Items(type="string"),
-	 *                     example={"required", "max:255"}
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function update(Request $request, $attributeId)
 	{
 		$attribute = Attribute::find($attributeId);
@@ -239,8 +226,49 @@ class AttributeController extends BaseController
 	/**
 	 * Remove the specified resource from storage.
 	 */
-	public function destroy(Attribute $attribute)
+	/**
+	 * @OA\Delete(
+	 *     path="/api/attributes/{id}",
+	 *     summary="Delete an attribute",
+	 *     description="Deletes an attribute.",
+	 *     operationId="deleteAttribute",
+	 *     tags={"Attributes"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="ID of the attribute to delete",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function destroy($id)
 	{
-		//
+		$attribute = Attribute::find($id);
+
+		if (!$attribute) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Record does not exist with given ID.'
+			], 404);
+		}
+
+		/* Check if attribute is attached to any attribute group */
+		if ($attribute->attributeGroups()->exists()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Attribute is associated with an attribute group and cannot be deleted.'
+			], 400);
+		}
+
+		/* Proceed with deletion */
+		$attribute->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Attribute deleted successfully'
+		], 200);
 	}
 }

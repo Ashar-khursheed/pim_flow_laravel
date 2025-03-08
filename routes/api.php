@@ -7,12 +7,13 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\WebsiteController;
-use App\Http\Controllers\AttributeFamilyController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CategoryPageController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\StoreController;
 use App\Http\Controllers\AttributeController;
+use App\Http\Controllers\AttributeGroupController;
+use App\Http\Controllers\CategoryAttributeController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -30,9 +31,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 		Route::put('/{id}', [UserController::class, 'update']);
 
 	});
-
-	Route::apiResource('attribute-families', AttributeFamilyController::class);
-	Route::get('/categories/last-child', [AttributeFamilyController::class, 'lastChildCategories']);
+	Route::resource('attributes', AttributeController::class);
+	Route::resource('attribute-groups', AttributeGroupController::class);
+	Route::resource('category-attributes', CategoryAttributeController::class);
 
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
@@ -40,7 +41,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('products', ProductController::class);
 	Route::resource('brands', BrandController::class);
 	Route::resource('stores', StoreController::class);
-	Route::resource('attributes', AttributeController::class);
+
 
 
 	Route::post('/category-pages', [CategoryPageController::class, 'store']);

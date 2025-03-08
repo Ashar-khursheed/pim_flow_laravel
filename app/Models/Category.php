@@ -7,25 +7,16 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Category extends Model
 {
-
-	use HasFactory;
-
     protected $table = 'ec_product_categories';
 
     protected $fillable = [
-        'name', 'parent_id', 'description', 'status', 'order', 
+        'name', 'parent_id', 'description', 'status', 'order',
         'image', 'is_featured', 'icon', 'icon_image', 'slug'
     ];
 
     public function parent()
     {
         return $this->belongsTo(Category::class, 'parent_id');
-    }
-
-
-    public function attributeFamilies()
-    {
-        return $this->hasMany(AttributeFamily::class, 'category_id');
     }
 
     public function scopeLastChildCategories($query, $parentId)
@@ -46,4 +37,13 @@ class Category extends Model
 		return $this->hasMany(Category::class, 'parent_id');
 	}
 
+    public function attributes()
+    {
+        return $this->morphedByMany(Attribute::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
+    }
+
+    public function attributeGroups()
+    {
+        return $this->morphedByMany(AttributeGroup::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
+    }
 }

@@ -29,8 +29,28 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
+ *     name="Attributes",
+ *     description="API Endpoints for Attribute Management"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Attribute Group",
+ *     description="API Endpoints for Attribute Group Management"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Category Attribute Group",
+ *     description="API Endpoints for Managing Category Attributes and Groups"
+ * )
+ *
+ * @OA\Tag(
  *     name="Products",
- *     description="For product mnagement"
+ *     description="API Endpoints for Product Management"
+ * )
+ *
+ * @OA\Tag(
+ *     name="Categories",
+ *     description="API Endpoints for Category Management"
  * )
 
 
