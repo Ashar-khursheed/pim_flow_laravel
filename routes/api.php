@@ -51,6 +51,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
     Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
 
+
 	Route::apiResource('media', MediaController::class)->parameters([
         'media' => 'folder'
     ]);
