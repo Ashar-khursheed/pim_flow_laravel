@@ -245,7 +245,7 @@ class ProductController extends BaseController
 			]);
 		}
 
-		$siteUrl = config('app.url'); // Get the site URL from .env
+		$siteUrl = 'https://flow.testhssite.com/'; // HARD-CODED SITE URL
 
 		if (!empty($product->images) && is_string($product->images)) {
 			$product->images = array_map(fn($image) => $siteUrl . Storage::url($image), json_decode($product->images, true) ?? []);
