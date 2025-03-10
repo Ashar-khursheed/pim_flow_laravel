@@ -245,18 +245,16 @@ class ProductController extends BaseController
 			]);
 		}
 
-		$siteUrl = 'https://flow.testhssite.com/'; // HARD-CODED SITE URL
-
 		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = array_map(fn($image) => $siteUrl . Storage::url($image), json_decode($product->images, true) ?? []);
+			$product->images = json_decode($product->images, true) ?? [];
 		}
-
+		
 		if (!empty($product->video_path) && is_string($product->video_path)) {
-			$product->video_path = array_map(fn($video) => $siteUrl . Storage::url($video), json_decode($product->video_path, true) ?? []);
+			$product->video_path = json_decode($product->video_path, true) ?? [];
 		}
-
+		
 		if (!empty($product->documents) && is_string($product->documents)) {
-			$product->documents = array_map(fn($doc) => $siteUrl . Storage::url($doc), json_decode($product->documents, true) ?? []);
+			$product->documents = json_decode($product->documents, true) ?? [];
 		}
 
 		$formattedProduct = [];
@@ -537,64 +535,47 @@ class ProductController extends BaseController
 	 // Get all input data except '_method'
 	 $input = $request->except('_method');
  
-	 /* Handle Image, Video & Document Uploads */
-	 $uploadPath = 'products/';
+	
+	 $imagePath = 'production/products';
+	 $videoPath = 'production/videos';
+	 $documentPath = 'production/documents';
  
-	 // Handle multiple images
-	 $uploadedImages = [];
-	 if ($request->hasFile('images')) {
-		 foreach ($request->file('images') as $image) {
-			 $uploadedImages[] = $image->store($uploadPath, 'public');
-		 }
-		 $input['images'] = !empty($uploadedImages) ? json_encode($uploadedImages) : null;
-	 }
- 
-	 // Handle single image upload
+	 /* ✅ Handle Single Image Upload */
 	 if ($request->hasFile('image')) {
-		 $input['image'] = $request->file('image')->store($uploadPath, 'public');
+		 $path = $request->file('image')->store($imagePath, 's3');
+		 $input['image'] = Storage::disk('s3')->url($path); // ✅ Full S3 URL
 	 }
  
-			// Handle multiple video uploads
-		$uploadedVideos = [];
-		if ($request->hasFile('video_path')) {
-			$videos = $request->file('video_path');
-
-			foreach ((is_array($videos) ? $videos : [$videos]) as $video) {
-				if ($video->isValid()) {
-					$uploadedVideos[] = $video->store($uploadPath, 'public');
-				}
-			}
-		}
-
-		// Ensure existing videos are retained (if required)
-		$existingVideos = json_decode($product->videos ?? '[]', true);
-		$mergedVideos = array_merge($existingVideos, $uploadedVideos);
-
-		// Ensure $input['video_path'] is an array
-		$input['video_path'] = $mergedVideos;
-
-		// If more videos are uploaded, store them
-		if ($request->hasFile('video_path')) {
-			foreach ($request->file('video_path') as $video) {
-				if ($video->isValid()) {
-					$input['video_path'][] = $video->store($uploadPath, 'public');
-				}
-			}
-		}
-
-		// Convert to JSON for storage in the database
-		$input['video_path'] = json_encode($input['video_path']);
-
-		
-	 // Handle multiple document uploads
-	 $uploadedDocs = [];
-	 if ($request->hasFile('documents')) {
-		 foreach ($request->file('documents') as $doc) {
-			 $uploadedDocs[] = $doc->store($uploadPath, 'public');
+	 /* ✅ Handle Multiple Images Upload (Fix: Store as array) */
+	 if ($request->hasFile('images')) {
+		 $uploadedImages = [];
+		 foreach ($request->file('images') as $image) {
+			 $path = $image->store($imagePath, 's3');
+			 $uploadedImages[] = Storage::disk('s3')->url($path);
 		 }
-		 $input['documents'] = !empty($uploadedDocs) ? json_encode($uploadedDocs) : null;
+		 $input['images'] = $uploadedImages; // ✅ Store as array (No json_encode)
 	 }
-
+ 
+	 /* ✅ Handle Video Upload */
+	 if ($request->hasFile('video_path')) {
+		 $uploadedVideos = [];
+		 foreach ($request->file('video_path') as $video) {
+			 $path = $video->store($videoPath, 's3');
+			 $uploadedVideos[] = Storage::disk('s3')->url($path);
+		 }
+		 $input['video_path'] = $uploadedVideos; // ✅ Store as array
+	 }
+ 
+	 /* ✅ Handle Document Upload */
+	 if ($request->hasFile('documents')) {
+		 $uploadedDocs = [];
+		 foreach ($request->file('documents') as $doc) {
+			 $path = $doc->store($documentPath, 's3');
+			 $uploadedDocs[] = Storage::disk('s3')->url($path);
+		 }
+		 $input['documents'] = $uploadedDocs; // ✅ Store as array
+	 }
+ 
 
 	 $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 	$input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
