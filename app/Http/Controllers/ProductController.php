@@ -245,7 +245,15 @@ class ProductController extends BaseController
 		}
 
 		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = json_decode($product->images, true);
+			$product->images = json_decode($product->images, true) ?? [];
+		}
+		
+		if (!empty($product->video_path) && is_string($product->video_path)) {
+			$product->video_path = json_decode($product->video_path, true) ?? [];
+		}
+		
+		if (!empty($product->documents) && is_string($product->documents)) {
+			$product->documents = json_decode($product->documents, true) ?? [];
 		}
 
 		$formattedProduct = [];
@@ -369,6 +377,12 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
 					break;
 				
+				case 'images':
+				case 'video_path':
+				case 'documents':
+					$formattedProduct[$attribute] = is_array($value) ? $value : [];
+					break;
+
 				default:
 					$formattedProduct[$attribute] = $value;
 					break;
@@ -392,12 +406,12 @@ class ProductController extends BaseController
 		//
 	}
 
-	/**
- * @OA\Put(
+/**
+ * @OA\Post(
  *     path="/api/products/{product}",
- *     summary="Update a product",
- *     description="Updates an existing product based on the provided form data.",
- *     operationId="updateProduct",
+ *     summary="Update a product using POST with _method=PUT",
+ *     description="Updates an existing product based on the provided form data using POST with _method=PUT.",
+ *     operationId="updateProductPost",
  *     tags={"Products"},
  *     @OA\Parameter(
  *         name="product",
@@ -411,6 +425,7 @@ class ProductController extends BaseController
  *         @OA\MediaType(
  *             mediaType="multipart/form-data",
  *             @OA\Schema(
+ *                 @OA\Property(property="_method", type="string", example="PUT"),
  *                 @OA\Property(property="sku", type="string", example="PROD-123"),
  *                 @OA\Property(property="barcode", type="string", example="9509297558375"),
  *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
@@ -437,7 +452,7 @@ class ProductController extends BaseController
  *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="image", type="string", format="binary"),
  *                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
- *                 @OA\Property(property="video_path", type="string", format="binary"),
+ * 				   @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="length", type="number", format="float", example=10.5),
  *                 @OA\Property(property="length_unit_id", type="integer", example=2),
@@ -482,215 +497,281 @@ class ProductController extends BaseController
  *             mediaType="application/json"
  *         )
  *     ),
+ * 		@OA\Response(
+ *         response=400,
+ *         description="Validation Error",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="array", @OA\Items(type="string"), example={
+ *                 "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
+ *                 "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
+ *                 "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+ *                 "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
+ *                 "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+ *                 "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
+ *                 "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
+ *             })
+ *         )
+ *     ),
  *     security={{"bearerAuth":{}}}
  * )
  */
 
-	public function update(Request $request, $productId)
-	{
-		$product = Product::find($productId);
-		if (!$product) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
-		}
-		$input = $request->all();
-
-		/* Handle Image, Video & Document Uploads */
-		$uploadPath = 'products/';
-
-		// Handle multiple images
-		$uploadedImages = [];
-		if ($request->hasFile('images') && is_array($request->file('images', []))) {
-			$uploadedImages = array_map(fn($image) => $image->store($uploadPath, 'public'), $request->file('images'));
-		}
-		$input['images'] = !empty($uploadedImages) ? json_encode($uploadedImages) : null;
-
-		// Handle single image upload
-		if ($request->hasFile('image')) {
-			$input['image'] = $request->file('image')->store($uploadPath, 'public');
-		}
-
-		// Handle video upload
+ public function update(Request $request, $productId)
+ {
+	 // Log the incoming request for debugging
+	 \Log::info('Product update request:', $request->all());
+ 
+	 $product = Product::find($productId);
+	 if (!$product) {
+		 return response()->json([
+			 'success' => false,
+			 'message' => 'Product does not exist.'
+		 ]);
+	 }
+	 
+	 // Get all input data except '_method'
+	 $input = $request->except('_method');
+ 
+	 /* Handle Image, Video & Document Uploads */
+	 $uploadPath = 'products/';
+ 
+	 // Handle multiple images
+	 $uploadedImages = [];
+	 if ($request->hasFile('images')) {
+		 foreach ($request->file('images') as $image) {
+			 $uploadedImages[] = $image->store($uploadPath, 'public');
+		 }
+		 $input['images'] = !empty($uploadedImages) ? json_encode($uploadedImages) : null;
+	 }
+ 
+	 // Handle single image upload
+	 if ($request->hasFile('image')) {
+		 $input['image'] = $request->file('image')->store($uploadPath, 'public');
+	 }
+ 
+			// Handle multiple video uploads
+		$uploadedVideos = [];
 		if ($request->hasFile('video_path')) {
-			$input['video_path'] = $request->file('video_path')->store($uploadPath, 'public');
-		}
+			$videos = $request->file('video_path');
 
-		// Handle multiple document uploads
-		$uploadedDocs = [];
-		if ($request->hasFile('documents') && is_array($request->file('documents', []))) {
-			$uploadedDocs = array_map(fn($doc) => $doc->store($uploadPath, 'public'), $request->file('documents'));
-		}
-		$input['documents'] = !empty($uploadedDocs) ? json_encode($uploadedDocs) : null;
-		/* List of valid fields allowed for updating */
-		$validArray = [
-			"sku", "barcode", "warranty_information", "refund", "quantity",
-			"allow_checkout_when_out_of_stock", "with_storehouse_management",
-			"stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
-			"variant_inventory_policy", "variant_fulfillment_service", "price",
-			"sale_price", "sale_type", "cost_per_item", "tax_id", "currency_id",
-			"minimum_order_quantity", "maximum_order_quantity", "name", "content",
-			"description", "images", "image", "video_url", "video_path", "documents",
-			"length", "length_unit_id", "width", "height", "depth", "weight",
-			"weight_unit_id", "shipping_weight_option", "shipping_weight",
-			"shipping_dimension_option", "shipping_width", "shipping_depth",
-			"shipping_height", "shipping_length", "shipping_length_id", "is_variation",
-			"variant_grams", "variant_requires_shipping", "variant_barcode",
-			"variant_color_title", "variant_color_value", "store_id", "brand_id",
-			"views", "units_sold", "frequently_bought_together", "compare_type",
-			"compare_products", "google_shopping_category", "google_shopping_mpn",
-			"order", "box_quantity", "delivery_days"
-		];
-
-		/* Check for invalid fields */
-		$invalidFields = array_diff(array_keys($input), $validArray);
-		if (!empty($invalidFields)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
-			]);
-		}
-
-		/* Initialize an error array to store validation errors */
-		$rowError = [];
-
-		/* Refund policy validation */
-		$usRefundPolicyArray = [
-			1 => "non-refundable",
-			2 => "15 days",
-			3 => "90 days"
-		];
-		if (isset($input['refund'])) {
-			if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
-				$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-			} else {
-				$product->refund = $usRefundPolicyArray[(int) $input['refund']];
-				unset($input['refund']); /* Remove processed field */
+			foreach ((is_array($videos) ? $videos : [$videos]) as $video) {
+				if ($video->isValid()) {
+					$uploadedVideos[] = $video->store($uploadPath, 'public');
+				}
 			}
 		}
 
-		/* Stock status validation */
-		$usStockStatusArray = [
-			1 => "in_stock",
-			2 => "out_of_stock",
-			3 => "on_backorder"
-		];
-		if (isset($input['stock_status'])) {
-			if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
-				$rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
-			} else {
-				$product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
-				unset($input['stock_status']); /* Remove processed field */
+		// Ensure existing videos are retained (if required)
+		$existingVideos = json_decode($product->videos ?? '[]', true);
+		$mergedVideos = array_merge($existingVideos, $uploadedVideos);
+
+		// Ensure $input['video_path'] is an array
+		$input['video_path'] = $mergedVideos;
+
+		// If more videos are uploaded, store them
+		if ($request->hasFile('video_path')) {
+			foreach ($request->file('video_path') as $video) {
+				if ($video->isValid()) {
+					$input['video_path'][] = $video->store($uploadPath, 'public');
+				}
 			}
 		}
 
-		/* Tax ID validation */
-		$taxArray = Tax::pluck("id")->all();
-		if (isset($input['tax_id'])) {
-			if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
-				$rowError[] = "Invalid tax value.";
-			} else {
-				$product->tax_id = (int) $input['tax_id'];
-				unset($input['tax_id']); /* Remove processed field */
-			}
-		}
+		// Convert to JSON for storage in the database
+		$input['video_path'] = json_encode($input['video_path']);
 
-		/* Currency ID validation */
-		$currencyArray = Currency::pluck("id")->all();
-		if (isset($input['currency_id'])) {
-			if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
-				$rowError[] = "Invalid currency value.";
-			} else {
-				$product->currency_id = (int) $input['currency_id'];
-				unset($input['currency_id']); /* Remove processed field */
-			}
-		}
+		
+	 // Handle multiple document uploads
+	 $uploadedDocs = [];
+	 if ($request->hasFile('documents')) {
+		 foreach ($request->file('documents') as $doc) {
+			 $uploadedDocs[] = $doc->store($uploadPath, 'public');
+		 }
+		 $input['documents'] = !empty($uploadedDocs) ? json_encode($uploadedDocs) : null;
+	 }
 
-		/* Unit ID validation for length, weight, and shipping */
-		$lengthUnitArray = [
-			1 => "cm",
-			3 => "inch",
-			11 => "mm",
-		];
-		$weightUnitArray = [
-			5 => "kg",
-			6 => "g",
-			9 => "lbs",
-		];
 
-		if (isset($input['length_unit_id'])) {
-			if (!is_numeric($input['length_unit_id']) || !in_array((int) $input['length_unit_id'], array_keys($lengthUnitArray))) {
-				$rowError[] = "Invalid length unit value.";
-			} else {
-				$product->length_unit_id = (int) $input['length_unit_id'];
-				unset($input['length_unit_id']); /* Remove processed field */
-			}
-		}
+	 $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+	$input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
 
-		if (isset($input['weight_unit_id'])) {
-			if (!is_numeric($input['weight_unit_id']) || !in_array((int) $input['weight_unit_id'], array_keys($weightUnitArray))) {
-				$rowError[] = "Invalid weight unit value.";
-			} else {
-				$product->weight_unit_id = (int) $input['weight_unit_id'];
-				unset($input['weight_unit_id']); /* Remove processed field */
-			}
-		}
+ 
+	 /* List of valid fields allowed for updating */
+	 $validArray = [
+		 "sku", "barcode", "warranty_information", "refund", "quantity",
+		 "allow_checkout_when_out_of_stock", "with_storehouse_management",
+		 "stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
+		 "variant_inventory_policy", "variant_fulfillment_service", "price",
+		 "sale_price", "sale_type", "cost_per_item", "tax_id", "currency_id",
+		 "minimum_order_quantity", "maximum_order_quantity", "name", "content",
+		 "description", "images", "image", "video_url", "video_path", "videos", "documents",
+		 "length", "length_unit_id", "width", "height", "depth", "weight",
+		 "weight_unit_id", "shipping_weight_option", "shipping_weight",
+		 "shipping_dimension_option", "shipping_width", "shipping_depth",
+		 "shipping_height", "shipping_length", "shipping_length_id", "is_variation",
+		 "variant_grams", "variant_requires_shipping", "variant_barcode",
+		 "variant_color_title", "variant_color_value", "store_id", "brand_id",
+		 "views", "units_sold", "frequently_bought_together", "compare_type",
+		 "compare_products", "google_shopping_category", "google_shopping_mpn",
+		 "order", "box_quantity", "delivery_days"
+	 ];
+ 
+	 /* Check for invalid fields */
+	 $invalidFields = array_diff(array_keys($input), $validArray);
+	 if (!empty($invalidFields)) {
+		 return response()->json([
+			 'success' => false,
+			 'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
+		 ]);
+	 }
+ 
+	 /* Initialize an error array to store validation errors */
+	 $rowError = [];
+ 
+	 /* Refund policy validation */
+	 $usRefundPolicyArray = [
+		 1 => "non-refundable",
+		 2 => "15 days",
+		 3 => "90 days"
+	 ];
+	 if (isset($input['refund'])) {
+		 if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
+			 $rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
+		 } else {
+			 $product->refund = $usRefundPolicyArray[(int) $input['refund']];
+			 unset($input['refund']); /* Remove processed field */
+		 }
+	 }
 
-		if (isset($input['shipping_length_id'])) {
-			if (!is_numeric($input['shipping_length_id']) || !in_array((int) $input['shipping_length_id'], array_keys($lengthUnitArray))) {
-				$rowError[] = "Invalid shipping length value.";
-			} else {
-				$product->shipping_length_id = (int) $input['shipping_length_id'];
-				unset($input['shipping_length_id']); /* Remove processed field */
-			}
-		}
-
-		/* Store ID validation */
-		$storeArray = Store::pluck("id")->all();
-		if (isset($input['store_id'])) {
-			if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
-				$rowError[] = "Invalid store value.";
-			} else {
-				$product->store_id = (int) $input['store_id'];
-				unset($input['store_id']); /* Remove processed field */
-			}
-		}
-
-		/* Brand ID validation */
-		$brandArray = Brand::pluck("id")->all();
-		if (isset($input['brand_id'])) {
-			if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
-				$rowError[] = "Invalid brand value.";
-			} else {
-				$product->brand_id = (int) $input['brand_id'];
-				unset($input['brand_id']); /* Remove processed field */
-			}
-		}
-
-		/* If any validation errors exist, return them */
-		if (!empty($rowError)) {
-			return response()->json([
-				'success' => false,
-				'message' => $rowError
-			]);
-		}
-
-		/* Assign remaining valid fields to the product */
-		foreach ($input as $key => $value) {
-			$product->$key = $value;
-		}
-
-		/* Save the product */
-		$product->save();
-
-		/* Return success response */
-		return response()->json([
-			'success' => true,
-			'message' => 'Product updated successfully.',
-			'product' => $product->toArray()
-		]);
-	}
+	 
+ 
+	 /* Stock status validation */
+	 $usStockStatusArray = [
+		 1 => "in_stock",
+		 2 => "out_of_stock",
+		 3 => "on_backorder"
+	 ];
+	 if (isset($input['stock_status'])) {
+		 if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
+			 $rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
+		 } else {
+			 $product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
+			 unset($input['stock_status']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* Tax ID validation */
+	 if (isset($input['tax_id'])) {
+		 $taxArray = Tax::pluck("id")->toArray();
+		 if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
+			 $rowError[] = "Invalid tax value. Please select a valid tax ID.";
+		 } else {
+			 $product->tax_id = (int) $input['tax_id'];
+			 unset($input['tax_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* Currency ID validation */
+	 if (isset($input['currency_id'])) {
+		 $currencyArray = Currency::pluck("id")->toArray();
+		 if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
+			 $rowError[] = "Invalid currency value. Please select a valid currency ID.";
+		 } else {
+			 $product->currency_id = (int) $input['currency_id'];
+			 unset($input['currency_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* Unit ID validation for length, weight, and shipping */
+	 $lengthUnitArray = [
+		 1 => "cm",
+		 3 => "inch",
+		 11 => "mm",
+	 ];
+	 $weightUnitArray = [
+		 5 => "kg",
+		 6 => "g",
+		 9 => "lbs",
+	 ];
+ 
+	 if (isset($input['length_unit_id'])) {
+		 if (!is_numeric($input['length_unit_id']) || !array_key_exists((int) $input['length_unit_id'], $lengthUnitArray)) {
+			 $rowError[] = "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
+		 } else {
+			 $product->length_unit_id = (int) $input['length_unit_id'];
+			 unset($input['length_unit_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 if (isset($input['weight_unit_id'])) {
+		 if (!is_numeric($input['weight_unit_id']) || !array_key_exists((int) $input['weight_unit_id'], $weightUnitArray)) {
+			 $rowError[] = "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).";
+		 } else {
+			 $product->weight_unit_id = (int) $input['weight_unit_id'];
+			 unset($input['weight_unit_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 if (isset($input['shipping_length_id'])) {
+		 if (!is_numeric($input['shipping_length_id']) || !array_key_exists((int) $input['shipping_length_id'], $lengthUnitArray)) {
+			 $rowError[] = "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
+		 } else {
+			 $product->shipping_length_id = (int) $input['shipping_length_id'];
+			 unset($input['shipping_length_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* Store ID validation */
+	 if (isset($input['store_id'])) {
+		 $storeArray = Store::pluck("id")->toArray();
+		 if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
+			 $storeList = implode(', ', $storeArray);
+			 $rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
+		 } else {
+			 $product->store_id = (int) $input['store_id'];
+			 unset($input['store_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* Brand ID validation */
+	 if (isset($input['brand_id'])) {
+		 $brandArray = Brand::pluck("id")->toArray();
+		 if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
+			 $brandList = implode(', ', $brandArray);
+			 $rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
+		 } else {
+			 $product->brand_id = (int) $input['brand_id'];
+			 unset($input['brand_id']); /* Remove processed field */
+		 }
+	 }
+ 
+	 /* If any validation errors exist, return them */
+	 if (!empty($rowError)) {
+		 return response()->json([
+			 'success' => false,
+			 'message' => $rowError
+		 ]);
+	 }
+ 
+	 /* Assign remaining valid fields to the product */
+	 foreach ($input as $key => $value) {
+		 $product->$key = $value;
+	 }
+ 
+	 /* Save the product */
+	 $product->save();
+ 
+	 /* Return success response */
+	 return response()->json([
+		 'success' => true,
+		 'message' => 'Product updated successfully.',
+		 'product' => $product->toArray()
+	 ]);
+ }
 
 	/**
 	 * @OA\Get(
