@@ -10,7 +10,6 @@ use App\Models\Unit;
 use App\Models\Store;
 use App\Models\Brand;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Storage;
 
 class ProductController extends BaseController
 {
