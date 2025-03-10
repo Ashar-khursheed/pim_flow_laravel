@@ -9,6 +9,7 @@ use App\Models\Currency;
 use App\Models\Unit;
 use App\Models\Store;
 use App\Models\Brand;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends BaseController
 {
@@ -245,15 +246,15 @@ class ProductController extends BaseController
 		}
 
 		if (!empty($product->images) && is_string($product->images)) {
-			$product->images = json_decode($product->images, true) ?? [];
+			$product->images = array_map(fn($image) => Storage::url($image), json_decode($product->images, true) ?? []);
 		}
 		
 		if (!empty($product->video_path) && is_string($product->video_path)) {
-			$product->video_path = json_decode($product->video_path, true) ?? [];
+			$product->video_path = array_map(fn($video) => Storage::url($video), json_decode($product->video_path, true) ?? []);
 		}
 		
 		if (!empty($product->documents) && is_string($product->documents)) {
-			$product->documents = json_decode($product->documents, true) ?? [];
+			$product->documents = array_map(fn($doc) => Storage::url($doc), json_decode($product->documents, true) ?? []);
 		}
 
 		$formattedProduct = [];

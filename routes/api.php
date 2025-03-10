@@ -15,6 +15,10 @@ use App\Http\Controllers\AttributeController;
 use App\Http\Controllers\MediaController;
 use App\Http\Controllers\AttributeGroupController;
 use App\Http\Controllers\CategoryAttributeController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\FaqCategoryController;
+
+
 
 
 // Route::get('/user', function (Request $request) {
@@ -54,6 +58,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('media', MediaController::class)->parameters([
         'media' => 'folder'
     ]);
+
+	Route::apiResource('faqs', FaqController::class);
+	Route::apiResource('faq-categories', FaqCategoryController::class);
 
 });
 
