@@ -60,7 +60,7 @@ class AttributeGroupController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute Group List',
-			'attribute_groups' => $records
+			'data' => $records
 		]);
 	}
 
@@ -116,7 +116,7 @@ class AttributeGroupController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Attribute group created successfully',
-				'attribute_group' => $attributeGroup->load('categories:id,name,parent_id')
+				'data' => $attributeGroup->load('categories:id,name,parent_id')
 			], 201);
 
 		} catch (\Exception $e) {
@@ -165,7 +165,7 @@ class AttributeGroupController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'attribute_group' => $record
+			'data' => $record
 		]);
 	}
 
@@ -226,7 +226,7 @@ class AttributeGroupController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Attribute group updated successfully',
-				'attribute_group' => $attributeGroup->load('attributes')
+				'data' => $attributeGroup->load('attributes')
 			], 200);
 
 		} catch (\Exception $e) {
