@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Models;
-
+use App\Models\Slug; // Import the Slug model
 use Illuminate\Database\Eloquent\Model;
 
 class Product extends Model
@@ -146,4 +146,10 @@ class Product extends Model
 	{
 		return $this->hasMany(Specification::class);
 	}
+
+	public function slug()
+	{
+		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
+	}
+
 }

@@ -9,17 +9,115 @@ use App\Models\Currency;
 use App\Models\Unit;
 use App\Models\Store;
 use App\Models\Brand;
+use App\Models\Slug;
 use Illuminate\Support\Facades\Storage;
+
 
 class ProductController extends BaseController
 {
 	/**
-	 * Display a listing of the resource.
-	 */
-	public function index()
-	{
-		//
-	}
+ * @OA\Get(
+ *     path="/api/products",
+ *     summary="Get paginated list of products",
+ *     description="Retrieves a paginated list of products with brand, store, categories, and slug details.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number for pagination",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Number of products per page (default: 50)",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=50)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="Sample Product"),
+ *                     @OA\Property(property="sku", type="string", example="PROD-123"),
+ *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg"),
+ *                     @OA\Property(property="brand", type="string", example="Brand Name"),
+ *                     @OA\Property(property="store", type="string", example="Store Name"),
+ *                     @OA\Property(property="status", type="string", example="active"),
+ *                     @OA\Property(
+ *                         property="product_family",
+ *                         type="array",
+ *                         @OA\Items(type="string", example="Category Name")
+ *                     ),
+ *                     @OA\Property(property="taxonomy_path", type="string", example="category/product-name")
+ *                 )
+ *             ),
+ *             @OA\Property(
+ *                 property="pagination",
+ *                 type="object",
+ *                 @OA\Property(property="total", type="integer", example=100),
+ *                 @OA\Property(property="per_page", type="integer", example=50),
+ *                 @OA\Property(property="current_page", type="integer", example=1),
+ *                 @OA\Property(property="last_page", type="integer", example=5),
+ *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://example.com/api/products?page=2"),
+ *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null)
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+	public function index(Request $request)
+    {
+        $perPage = 50;
+
+        $products = Product::with([
+            'brand:id,name',
+            'store:id,name',
+            'categories:id,name',
+            'slug:id,key,reference_id'
+        ])
+        ->select(['id', 'name', 'sku', 'image', 'brand_id', 'store_id', 'status'])
+        ->paginate($perPage);
+
+        // Formatting response
+        $formattedProducts = $products->map(function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+				'image' => filter_var($product->image, FILTER_VALIDATE_URL) ? $product->image : asset('storage/products/' . $product->image),
+                'brand' => optional($product->brand)->name,
+                'store' => optional($product->store)->name,
+                'status' => $product->status,
+                'product_family' => $product->categories->pluck('name')->toArray(),
+                'taxonomy_path' => optional($product->slug)->key ?? '',
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Products retrieved successfully',
+            'data' => $formattedProducts,
+            'pagination' => [
+                'total' => $products->total(),
+                'per_page' => $products->perPage(),
+                'current_page' => $products->currentPage(),
+                'last_page' => $products->lastPage(),
+                'next_page_url' => $products->nextPageUrl(),
+                'prev_page_url' => $products->previousPageUrl(),
+            ],
+        ]);
+    }
 
 	/**
 	 * Show the form for creating a new resource.
