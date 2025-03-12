@@ -7,118 +7,132 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
+
 /**
- * @OA\Tag(
- *     name="Roles",
- *     description="API Endpoints for managing Roles"
- * )
+ * @OA\Tag(name="Roles", description="API Endpoints for managing roles")
  */
 class RoleController extends Controller
 {
     /**
      * @OA\Get(
      *     path="/api/roles",
+     *     summary="Get list of roles",
      *     tags={"Roles"},
-     *     summary="Get all roles",
-     *     @OA\Response(response=200, description="Success")
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of roles",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/Role")
+     *         )
+     *     )
      * )
      */
     public function index()
     {
         return response()->json(Role::all(), 200);
     }
-
     /**
      * @OA\Post(
      *     path="/api/roles",
-     *     tags={"Roles"},
      *     summary="Create a new role",
+     *     description="Create a new role with given details",
+     *     tags={"Roles"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"slug","name","permissions"},
+     *             required={"slug", "name"},
      *             @OA\Property(property="slug", type="string", example="admin"),
      *             @OA\Property(property="name", type="string", example="Administrator"),
-     *             @OA\Property(property="permissions", type="object", example={"users.create": true, "users.delete": false}),
-     *             @OA\Property(property="description", type="string", example="Admin role"),
+     *             @OA\Property(property="permissions", type="array", @OA\Items(type="string"), example={"manage_users", "edit_posts"}),
+     *             @OA\Property(property="description", type="string", example="Full access to all functionalities"),
      *             @OA\Property(property="is_default", type="boolean", example=false)
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Role created")
+     *     @OA\Response(
+     *         response=201,
+     *         description="Role created successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Role")
+     *     )
      * )
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'slug' => 'required|unique:roles',
-            'name' => 'required',
-            'permissions' => 'required|json',
+            'slug' => 'required|string|unique:roles,slug',
+            'name' => 'required|string',
+            'permissions' => 'nullable|array',
+            'description' => 'nullable|string',
+            'is_default' => 'boolean',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 400);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $role = Role::create($request->all());
+
         return response()->json($role, 201);
     }
 
     /**
      * @OA\Get(
      *     path="/api/roles/{id}",
+     *     summary="Get role details",
+     *     description="Retrieve details of a specific role by ID",
      *     tags={"Roles"},
-     *     summary="Get a specific role",
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *         description="Role ID",
      *         @OA\Schema(type="integer")
      *     ),
-     *     @OA\Response(response=200, description="Success"),
-     *     @OA\Response(response=404, description="Role not found")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role details",
+     *         @OA\JsonContent(ref="#/components/schemas/Role")
+     *     )
      * )
      */
-    public function show($id)
+    public function show(Role $role)
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
         return response()->json($role, 200);
     }
 
     /**
      * @OA\Put(
      *     path="/api/roles/{id}",
-     *     tags={"Roles"},
      *     summary="Update a role",
+     *     description="Update an existing role by ID",
+     *     tags={"Roles"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *         description="Role ID",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="slug", type="string"),
-     *             @OA\Property(property="name", type="string"),
-     *             @OA\Property(property="permissions", type="object"),
-     *             @OA\Property(property="description", type="string"),
-     *             @OA\Property(property="is_default", type="boolean")
+     *             @OA\Property(property="name", type="string", example="Super Admin"),
+     *             @OA\Property(property="permissions", type="array", @OA\Items(type="string"), example={"manage_users", "edit_posts", "delete_posts"})
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Role updated"),
-     *     @OA\Response(response=404, description="Role not found")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role updated successfully",
+     *         @OA\JsonContent(ref="#/components/schemas/Role")
+     *     )
      * )
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Role $role)
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
-
         $role->update($request->all());
         return response()->json($role, 200);
     }
@@ -126,25 +140,26 @@ class RoleController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/roles/{id}",
-     *     tags={"Roles"},
      *     summary="Delete a role",
+     *     description="Remove an existing role by ID",
+     *     tags={"Roles"},
+     *    security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
      *         required=true,
+     *         description="Role ID",
      *         @OA\Schema(type="integer")
      *     ),
-     *     @OA\Response(response=200, description="Role deleted"),
-     *     @OA\Response(response=404, description="Role not found")
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role deleted successfully",
+     *         @OA\JsonContent(type="object", @OA\Property(property="message", type="string", example="Role deleted successfully"))
+     *     )
      * )
      */
-    public function destroy($id)
+    public function destroy(Role $role)
     {
-        $role = Role::find($id);
-        if (!$role) {
-            return response()->json(['message' => 'Role not found'], 404);
-        }
-
         $role->delete();
         return response()->json(['message' => 'Role deleted successfully'], 200);
     }

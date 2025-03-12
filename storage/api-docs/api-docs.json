@@ -2286,19 +2286,35 @@
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Get all roles",
+                "summary": "Get list of roles",
                 "operationId": "77e3636d8592997ce9d6d27b50857a69",
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "List of roles",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Role"
+                                    }
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "post": {
                 "tags": [
                     "Roles"
                 ],
                 "summary": "Create a new role",
+                "description": "Create a new role with given details",
                 "operationId": "4a563842fbfcad237f63da43065fca3d",
                 "requestBody": {
                     "required": true,
@@ -2307,8 +2323,7 @@
                             "schema": {
                                 "required": [
                                     "slug",
-                                    "name",
-                                    "permissions"
+                                    "name"
                                 ],
                                 "properties": {
                                     "slug": {
@@ -2320,15 +2335,18 @@
                                         "example": "Administrator"
                                     },
                                     "permissions": {
-                                        "type": "object",
-                                        "example": {
-                                            "users.create": true,
-                                            "users.delete": false
-                                        }
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "manage_users",
+                                            "edit_posts"
+                                        ]
                                     },
                                     "description": {
                                         "type": "string",
-                                        "example": "Admin role"
+                                        "example": "Full access to all functionalities"
                                     },
                                     "is_default": {
                                         "type": "boolean",
@@ -2342,9 +2360,21 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Role created"
+                        "description": "Role created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Role"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/roles/{id}": {
@@ -2352,12 +2382,14 @@
                 "tags": [
                     "Roles"
                 ],
-                "summary": "Get a specific role",
+                "summary": "Get role details",
+                "description": "Retrieve details of a specific role by ID",
                 "operationId": "7fb0667a295b7678a30353aa11739683",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Role ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2366,23 +2398,34 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success"
-                    },
-                    "404": {
-                        "description": "Role not found"
+                        "description": "Role details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Role"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
                     "Roles"
                 ],
                 "summary": "Update a role",
+                "description": "Update an existing role by ID",
                 "operationId": "786d6990093a8eb3a56931f19a827e43",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Role ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2395,20 +2438,20 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "slug": {
-                                        "type": "string"
-                                    },
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "Super Admin"
                                     },
                                     "permissions": {
-                                        "type": "object"
-                                    },
-                                    "description": {
-                                        "type": "string"
-                                    },
-                                    "is_default": {
-                                        "type": "boolean"
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "manage_users",
+                                            "edit_posts",
+                                            "delete_posts"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -2418,23 +2461,34 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Role updated"
-                    },
-                    "404": {
-                        "description": "Role not found"
+                        "description": "Role updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Role"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
                     "Roles"
                 ],
                 "summary": "Delete a role",
+                "description": "Remove an existing role by ID",
                 "operationId": "8285c46981c60ad600aa4077307aec04",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Role ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2443,12 +2497,27 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role deleted"
-                    },
-                    "404": {
-                        "description": "Role not found"
+                        "description": "Role deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Role deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/stores": {
@@ -2852,6 +2921,58 @@
                     }
                 },
                 "type": "object"
+            },
+            "Role": {
+                "title": "Role",
+                "description": "Role model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "admin"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Administrator"
+                    },
+                    "permissions": {
+                        "type": "object",
+                        "example": {
+                            "create": true,
+                            "delete": false
+                        }
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Admin role with all permissions"
+                    },
+                    "is_default": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "created_by": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "updated_by": {
+                        "type": "integer",
+                        "example": 2
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-08-01T12:00:00Z"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-08-02T12:00:00Z"
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -2891,7 +3012,7 @@
         },
         {
             "name": "Roles",
-            "description": "API Endpoints for managing Roles"
+            "description": "API Endpoints for managing roles"
         },
         {
             "name": "Brands",

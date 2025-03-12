@@ -62,14 +62,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('faqs', FaqController::class);
 	Route::apiResource('faq-categories', FaqCategoryController::class);
 
-});
 
+    Route::apiResource('roles', RoleController::class);
+	
+
+});
     Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 
-Route::prefix('roles')->group(function () {
-	Route::get('/', [RoleController::class, 'index']);
-	Route::post('/', [RoleController::class, 'store']);
-	Route::get('/{id}', [RoleController::class, 'show']);
-	Route::put('/{id}', [RoleController::class, 'update']);
-	Route::delete('/{id}', [RoleController::class, 'destroy']);
-});
