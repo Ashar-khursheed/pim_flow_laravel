@@ -57,7 +57,7 @@ class AttributeController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute List',
-			'attributes' => $records
+			'data' => $records
 		]);
 	}
 
@@ -103,7 +103,7 @@ class AttributeController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute created successfully',
-			'user' => $attribute
+			'data' => $attribute
 		]);
 	}
 
@@ -142,7 +142,7 @@ class AttributeController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute detail',
-			'attribute' => $attribute
+			'data' => $attribute
 		]);
 	}
 
@@ -219,7 +219,7 @@ class AttributeController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute updated successfully.',
-			'attribute' => $attribute->toArray()
+			'data' => $attribute->toArray()
 		]);
 	}
 
