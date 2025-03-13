@@ -17,7 +17,7 @@ use App\Http\Controllers\AttributeGroupController;
 use App\Http\Controllers\CategoryAttributeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
-
+use App\Http\Controllers\ReviewController;
 
 
 
@@ -63,9 +63,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('faq-categories', FaqCategoryController::class);
 
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
+	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
     Route::apiResource('roles', RoleController::class);
 	
 
+
+	Route::apiResource('reviews', ReviewController::class);
+	
 
 });
     Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

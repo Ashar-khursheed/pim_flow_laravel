@@ -13,26 +13,26 @@ use Illuminate\Support\Facades\Validator;
  */
 class RoleController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/roles",
-     *     summary="Get list of roles",
-     *     tags={"Roles"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of roles",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/Role")
-     *         )
-     *     )
-     * )
-     */
-    public function index()
-    {
-        return response()->json(Role::all(), 200);
-    }
+        /**
+         * @OA\Get(
+         *     path="/api/roles",
+         *     summary="Get list of roles",
+         *     tags={"Roles"},
+         *     security={{"bearerAuth":{}}},
+         *     @OA\Response(
+         *         response=200,
+         *         description="List of roles",
+         *         @OA\JsonContent(
+         *             type="array",
+         *             @OA\Items(ref="#/components/schemas/Role")
+         *         )
+         *     )
+         * )
+         */
+        public function index()
+        {
+            return response()->json(Role::all(), 200);
+        }
 
     
 
@@ -191,5 +191,96 @@ class RoleController extends Controller
     {
         return response()->json(Role::select('id', 'name')->get(), 200);
     }
+
+
+
+        /**
+     * @OA\Get(
+     *     path="/api/roles/{id}/permissions",
+     *     summary="Get role permissions",
+     *     description="Retrieve a structured list of permissions for a specific role.",
+     *     tags={"Roles"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Role ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Role permissions fetched successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="permissions",
+     *                 type="object",
+     *                 example={
+     *                     "ads": {
+     *                         "create": true,
+     *                         "edit": false,
+     *                         "delete": true,
+     *                         "update": true
+     *                     },
+     *                     "posts": {
+     *                         "create": true,
+     *                         "edit": true,
+     *                         "delete": false,
+     *                         "update": true
+     *                     }
+     *                 }
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Role not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Role not found")
+     *         )
+     *     )
+     * )
+     */
+
+     public function getRolePermissions(Role $role)
+{
+    // Ensure permissions exist and are an array
+    if (!is_array($role->permissions)) {
+        return response()->json(['message' => 'No permissions found for this role.'], 404);
+    }
+
+    $permissions = [];
+
+    // Iterate through permissions (keys are permission names)
+    foreach ($role->permissions as $permissionName => $allowed) {
+        if (!$allowed) {
+            continue; // Skip if permission is set to false
+        }
+
+        // Extract module and action (e.g., "ads.create" → ["ads", "create"])
+        [$module, $action] = explode('.', $permissionName);
+
+        // Ensure module exists in the result array
+        if (!isset($permissions[$module])) {
+            $permissions[$module] = [
+                'index' => false,
+                'create' => false,
+                'edit' => false,
+                'destroy' => false,
+                'cms' => false
+            ];
+        }
+
+        $permissions[$module][$action] = true; // Set the correct action to true
+    }
+
+    return response()->json(['permissions' => $permissions], 200);
+}
+
+     
+
+
 
 }
