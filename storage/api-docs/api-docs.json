@@ -2377,6 +2377,45 @@
                 ]
             }
         },
+        "/api/roles/names": {
+            "get": {
+                "tags": [
+                    "Roles"
+                ],
+                "summary": "Get list of roles with only ID and Name",
+                "operationId": "6b91dd5a93782467c95df3f389b0bfd9",
+                "responses": {
+                    "200": {
+                        "description": "List of roles with only ID and Name",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Admin"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/roles/{id}": {
             "get": {
                 "tags": [

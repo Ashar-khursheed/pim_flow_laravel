@@ -33,6 +33,9 @@ class RoleController extends Controller
     {
         return response()->json(Role::all(), 200);
     }
+
+    
+
     /**
      * @OA\Post(
      *     path="/api/roles",
@@ -163,4 +166,30 @@ class RoleController extends Controller
         $role->delete();
         return response()->json(['message' => 'Role deleted successfully'], 200);
     }
+
+
+        /**
+     * @OA\Get(
+     *     path="/api/roles/names",
+     *     summary="Get list of roles with only ID and Name",
+     *     tags={"Roles"},
+     *     security={{"bearerAuth":{}}}, 
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of roles with only ID and Name",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Admin")
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getRoleNames()
+    {
+        return response()->json(Role::select('id', 'name')->get(), 200);
+    }
+
 }

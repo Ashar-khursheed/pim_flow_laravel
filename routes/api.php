@@ -62,9 +62,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('faqs', FaqController::class);
 	Route::apiResource('faq-categories', FaqCategoryController::class);
 
-
+	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
     Route::apiResource('roles', RoleController::class);
 	
+
 
 });
     Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
