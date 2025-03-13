@@ -29,39 +29,74 @@ class UserController extends Controller
         return response()->json(User::with('roles')->get());
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/users",
-     *     summary="Create a new user",
-     *     tags={"Users"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password","role_id"},
-     *             @OA\Property(property="email", type="string", example="test@example.com"),
-     *             @OA\Property(property="password", type="string", example="password"),
-     *             @OA\Property(property="first_name", type="string", example="John"),
-     *             @OA\Property(property="last_name", type="string", example="Doe"),
-     *             @OA\Property(property="role_id", type="integer", example=1)
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="User created"),
-     *     @OA\Response(response=400, description="Validation error")
-     * )
-     */
-    public function store(UserRequest $request)
-    {
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name
-        ]);
+ /**
+ * @OA\Post(
+ *     path="/api/users",
+ *     summary="Create a new user",
+ *     tags={"Users"},
+ *     security={{"bearerAuth":{}}}, 
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"email","password","role_id"},
+ *             @OA\Property(property="email", type="string", example="test@example.com"),
+ *             @OA\Property(property="password", type="string", example="password"),
+ *             @OA\Property(property="first_name", type="string", example="John"),
+ *             @OA\Property(property="last_name", type="string", example="Doe"),
+ *             @OA\Property(property="role_id", type="integer", example=1)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201, 
+ *         description="User created successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="id", type="integer", example=1),
+ *             @OA\Property(property="email", type="string", example="test@example.com"),
+ *             @OA\Property(property="first_name", type="string", example="John"),
+ *             @OA\Property(property="last_name", type="string", example="Doe"),
+ *             @OA\Property(property="roles", type="array", @OA\Items(type="string"))
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=400, 
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Validation error"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=409, 
+ *         description="User already exists",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="User already exists")
+ *         )
+ *     )
+ * )
+ */
 
-        $user->roles()->attach($request->role_id);
-
-        return response()->json($user->load('roles'), 201);
+public function store(UserRequest $request)
+{
+    // Check if user already exists
+    if (User::where('email', $request->email)->exists()) {
+        return response()->json(['message' => 'User already exists'], 409, ['Content-Type' => 'application/json']);
     }
+
+    // Create new user
+    $user = User::create([
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'first_name' => $request->first_name,
+        'last_name' => $request->last_name
+    ]);
+
+    // Attach role
+    $user->roles()->attach($request->role_id);
+
+    return response()->json($user->load('roles'), 201, ['Content-Type' => 'application/json']);
+}
+
+
 
     /**
      * @OA\Get(
@@ -257,6 +292,7 @@ class UserController extends Controller
      * @OA\Delete(
      *     path="/api/users/{id}",
      *     summary="Delete a user",
+     *     security={{"bearerAuth":{}}},
      *     tags={"Users"},
      *     @OA\Parameter(name="id", in="path", required=true, description="User ID", @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="User deleted"),
