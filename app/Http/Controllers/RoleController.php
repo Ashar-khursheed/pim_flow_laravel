@@ -37,48 +37,53 @@ class RoleController extends Controller
     
 
     /**
-     * @OA\Post(
-     *     path="/api/roles",
-     *     summary="Create a new role",
-     *     description="Create a new role with given details",
-     *     tags={"Roles"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"slug", "name"},
-     *             @OA\Property(property="slug", type="string", example="admin"),
-     *             @OA\Property(property="name", type="string", example="Administrator"),
-     *             @OA\Property(property="permissions", type="array", @OA\Items(type="string"), example={"manage_users", "edit_posts"}),
-     *             @OA\Property(property="description", type="string", example="Full access to all functionalities"),
-     *             @OA\Property(property="is_default", type="boolean", example=false)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Role created successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Role")
-     *     )
-     * )
-     */
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'slug' => 'required|string|unique:roles,slug',
-            'name' => 'required|string',
-            'permissions' => 'nullable|array',
-            'description' => 'nullable|string',
-            'is_default' => 'boolean',
-        ]);
+ * @OA\Post(
+ *     path="/api/roles",
+ *     summary="Create a new role",
+ *     description="Create a new role with given details",
+ *     tags={"Roles"},
+ *     security={{"bearerAuth":{}}}, 
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"slug", "name"},
+ *             @OA\Property(property="slug", type="string", example="admin"),
+ *             @OA\Property(property="name", type="string", example="Administrator"),
+ *             @OA\Property(property="description", type="string", example="Full access to all functionalities"),
+ *             @OA\Property(property="is_default", type="boolean", example=false)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Role created successfully",
+ *         @OA\JsonContent(ref="#/components/schemas/Role")
+ *     )
+ * )
+ */
+public function store(Request $request)
+{
+    $validator = Validator::make($request->all(), [
+        'slug' => 'required|string|unique:roles,slug',
+        'name' => 'required|string',
+        'description' => 'nullable|string',
+        'is_default' => 'boolean',
+    ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        $role = Role::create($request->all());
-
-        return response()->json($role, 201);
+    if ($validator->fails()) {
+        return response()->json(['errors' => $validator->errors()], 422);
     }
+
+    $role = Role::create([
+        'slug' => $request->slug,
+        'name' => $request->name,
+        'description' => $request->description,
+        'is_default' => $request->is_default ?? false,
+        'created_by' => auth()->id() ?? null,
+        'updated_by' => auth()->id() ?? null, // Ensures updated_by is set
+    ]);
+
+    return response()->json($role, 201);
+}
 
     /**
      * @OA\Get(

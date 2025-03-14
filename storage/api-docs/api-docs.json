@@ -2608,16 +2608,6 @@
                                         "type": "string",
                                         "example": "Administrator"
                                     },
-                                    "permissions": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        },
-                                        "example": [
-                                            "manage_users",
-                                            "edit_posts"
-                                        ]
-                                    },
                                     "description": {
                                         "type": "string",
                                         "example": "Full access to all functionalities"
