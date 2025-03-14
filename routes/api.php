@@ -18,7 +18,7 @@ use App\Http\Controllers\CategoryAttributeController;
 use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
-
+use App\Http\Controllers\ProductExportController;
 
 
 // Route::get('/user', function (Request $request) {
@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
+	Route::get('/products/export', [ProductExportController::class, 'export']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::resource('products', ProductController::class);
 	Route::resource('brands', BrandController::class);
@@ -69,7 +70,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 	Route::apiResource('reviews', ReviewController::class);
-	
+
+
 
 });
     Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

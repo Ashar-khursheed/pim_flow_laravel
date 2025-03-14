@@ -131,10 +131,18 @@ class Product extends Model
 		return $this->belongsTo(Brand::class, 'brand_id');
 	}
 
+
+
 	public function creator()
 	{
 		return $this->morphTo();
 	}
+
+	public function tags()
+	{
+		return $this->belongsToMany(Tag::class, 'ec_product_tag_product', 'product_id', 'tag_id');
+	}
+
 
 	public function seoMetaData()
 	{
