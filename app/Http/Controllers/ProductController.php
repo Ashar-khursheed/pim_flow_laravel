@@ -304,7 +304,7 @@ class ProductController extends BaseController
 	public function show($productId, Request $request)
 	{
 		$attributeGroups = [
-			'General' => ['sku', 'barcode', 'warranty_information', 'refund'],
+			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status'],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
 			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
 			'Marketing' => ['name', 'content', 'description'],
@@ -481,6 +481,11 @@ class ProductController extends BaseController
 				case 'documents':
 					$formattedProduct[$attribute] = is_array($value) ? $value : [];
 					break;
+				
+				case 'status':
+					$formattedProduct[$attribute] = [['value' => $value]];
+					break;
+						
 
 				default:
 					$formattedProduct[$attribute] = $value;
@@ -531,6 +536,7 @@ class ProductController extends BaseController
  *                 @OA\Property(property="refund", type="string", example="non-refundable"),
  *                 @OA\Property(property="quantity", type="integer", example=100),
  *                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
+ *                @OA\Property(property="status", type="string", example="draft"),
  *                 @OA\Property(property="with_storehouse_management", type="boolean", example=true),
  *                 @OA\Property(property="stock_status", type="string", example="in_stock"),
  *                 @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
@@ -680,11 +686,11 @@ class ProductController extends BaseController
 	$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 	$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 	$input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
-
+     
  
 	 /* List of valid fields allowed for updating */
 	 $validArray = [
-		 "sku", "barcode", "warranty_information", "refund", "quantity",
+		 "sku", "status" , "barcode", "warranty_information", "refund", "quantity",
 		 "allow_checkout_when_out_of_stock", "with_storehouse_management",
 		 "stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
 		 "variant_inventory_policy", "variant_fulfillment_service", "price",
@@ -728,6 +734,20 @@ class ProductController extends BaseController
 			 unset($input['refund']); /* Remove processed field */
 		 }
 	 }
+
+	 if (isset($input['status'])) {
+		$validStatuses = ['draft', 'published', 'pending']; // Define allowed statuses
+	
+		if (!in_array($input['status'], $validStatuses)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid status value. Allowed values: draft, published, archived.'
+			]);
+		}
+	
+		$product->status = $input['status']; // Assign status
+	}
+
 
 	 
  
