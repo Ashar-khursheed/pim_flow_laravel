@@ -30,6 +30,9 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
+
+	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+
 	Route::prefix('users')->group(function () {
 		Route::post('/', [UserController::class, 'store']);
 		Route::get('/', [UserController::class, 'index']);
