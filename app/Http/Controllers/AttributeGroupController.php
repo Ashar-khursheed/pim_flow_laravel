@@ -165,7 +165,7 @@ class AttributeGroupController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'data' => $record
+			'data' => $record->load('categories:id,name,parent_id')
 		]);
 	}
 
