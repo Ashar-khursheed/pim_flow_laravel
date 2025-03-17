@@ -19,7 +19,7 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductExportController;
-
+use App\Http\Controllers\SliderController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -70,6 +70,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 	Route::apiResource('reviews', ReviewController::class);
+	Route::apiResource('sliders', SliderController::class);
 
 
 
