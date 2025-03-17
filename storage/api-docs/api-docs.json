@@ -1000,6 +1000,106 @@
                 ]
             }
         },
+        "/api/allcategories": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get All Categories",
+                "description": "Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+                "operationId": "eb14550fcdd69cd4f3101a43bf81d8d2",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Electronics"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "electronics"
+                                            },
+                                            "children_recursive": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 2
+                                                        },
+                                                        "name": {
+                                                            "type": "string",
+                                                            "example": "Mobile Phones"
+                                                        },
+                                                        "slug": {
+                                                            "type": "string",
+                                                            "example": "mobile-phones"
+                                                        },
+                                                        "children_recursive": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 3
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "Smartphones"
+                                                                    },
+                                                                    "slug": {
+                                                                        "type": "string",
+                                                                        "example": "smartphones"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages/{category_id}": {
             "get": {
                 "tags": [
@@ -2498,6 +2598,15 @@
                         "name": "category_id",
                         "in": "query",
                         "description": "Filter products by category ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "brand_id",
+                        "in": "query",
+                        "description": "Filter products by brand ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
