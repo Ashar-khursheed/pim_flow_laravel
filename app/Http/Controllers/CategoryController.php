@@ -6,6 +6,7 @@ use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log; // ✅ Add this line
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends BaseController
 {
@@ -157,19 +158,19 @@ class CategoryController extends BaseController
 
  public function allcategories(): JsonResponse
  {
-	 $categories = Category::where('parent_id', 0) // Change NULL to 0
-		 ->with('childrenRecursive')
-		 ->get(['id', 'name', 'slug']);
-
-	 // Log for debugging
-	 Log::info($categories);
-
+	 $categories = Cache::remember('all_categories', 3600, function () {
+		 return Category::where('parent_id', 0)
+			 ->with(['children.children'])
+			 ->get(['id', 'name', 'slug']);
+	 });
+ 
 	 return response()->json([
 		 'success' => true,
 		 'message' => 'All Categories List',
 		 'categories' => $categories
 	 ]);
  }
+
  
 
 	/**
