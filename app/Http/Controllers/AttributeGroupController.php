@@ -179,6 +179,13 @@ class AttributeGroupController extends BaseController
 	 *     description="Updates an existing attribute group based on the provided JSON payload.",
 	 *     operationId="updateAttributeGroup",
 	 *     tags={"Attribute Group"},
+	 *     @OA\Parameter(
+	 *         name="attribute_group_id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="ID of the attribute group",
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(

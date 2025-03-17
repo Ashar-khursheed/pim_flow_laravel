@@ -403,6 +403,18 @@
                 "summary": "Update a attribute group",
                 "description": "Updates an existing attribute group based on the provided JSON payload.",
                 "operationId": "updateAttributeGroup",
+                "parameters": [
+                    {
+                        "name": "attribute_group_id",
+                        "in": "path",
+                        "description": "ID of the attribute group",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
