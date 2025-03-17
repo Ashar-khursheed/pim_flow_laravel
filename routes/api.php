@@ -21,6 +21,8 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
 
+
+
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -46,8 +48,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('/products/export', [ProductExportController::class, 'export']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::resource('products', ProductController::class);
-	Route::resource('brands', BrandController::class);
-	Route::resource('stores', StoreController::class);
+	Route::apiResource('brands', BrandController::class);
+	Route::apiResource('stores', StoreController::class);
 
 
 
@@ -71,7 +73,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('reviews', ReviewController::class);
 	Route::apiResource('sliders', SliderController::class);
-
 
 
 });
