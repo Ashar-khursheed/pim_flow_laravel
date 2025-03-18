@@ -21,4 +21,10 @@ class Attribute extends Model
 	{
 		return $this->morphToMany(Category::class, 'relational', 'attribute_group_categories', 'relational_id', 'category_id');
 	}
+
+	/* Relation with AttributeValue */
+	public function attributeValues()
+	{
+		return $this->hasMany(AttributeValue::class, 'attribute_id');
+	}
 }

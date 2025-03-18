@@ -4,9 +4,30 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Attribute;
+use App\Models\Category;
+use App\Models\Product;
+
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+use App\Repository\ExcelRepository;
 
 class AttributeController extends BaseController
 {
+	/**
+	 * The excel repository instance.
+	 */
+	protected $excel;
+
+	/**
+	 * Create a new job instance.
+	 */
+	public function __construct(ExcelRepository $excel)
+	{
+		$this->excel = $excel;
+	}
+
 	/**
 	 * Display a listing of the resource.
 	 */
@@ -270,5 +291,133 @@ class AttributeController extends BaseController
 			'success' => true,
 			'message' => 'Attribute deleted successfully'
 		], 200);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/attributes/export",
+	 *     summary="Export attributes data to Excel",
+	 *     tags={"Attributes"},
+	 *     security={{"bearerAuth": {}}},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"parent_category_id", "range_from", "range_to"},
+	 *             @OA\Property(property="parent_category_id", type="integer", example=1, description="Parent category ID"),
+	 *             @OA\Property(property="range_from", type="integer", example=10, description="Starting range"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success",
+	 *         @OA\MediaType(
+	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         )
+	 * 	   ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	// public function export(Request $request): StreamedResponse
+	public function export(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'parent_category_id' => 'required|integer',
+			'range_from' => 'required|integer',
+			'range_to' => 'required|integer',
+		]);
+
+		$parentCategory = Category::find($request->parent_category_id);
+
+		if (!$parentCategory) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Parent category does not exist.'
+			]);
+		}
+
+		$leafCategories = Category::getLeafCategories($parentCategory);
+		$leafCategoryIds = $leafCategories ? $leafCategories->pluck('id')->toArray() : [];
+
+		/* Fetch products with range */
+		$products = Product::whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get(['id', 'sku', 'name']);
+
+		/* Fetch category specifications and transform */
+		$catSpecs = Category::with('attributes:id,name,type')
+		->whereIn('id', $leafCategoryIds)
+		->get(['id']);
+
+		/* Flatten attributes and remove duplicates by 'id' */
+		$uniqueAttributes = collect($catSpecs->pluck('attributes')->flatten())
+		->unique('id')
+		->map(fn($attr) => [
+			'attribute_id' => $attr['id'],
+			'name' => $attr['name'],
+			'type' => $attr['type'],
+			'value' => $attr->attributeValues->pluck('attribute_value')->toArray() ?? [],
+		])
+		->sortBy('attribute_id')
+	    ->keyBy('attribute_id') // Set attribute_id as the key
+	    ->map(fn($attr) => [
+	        'name' => $attr['name'],
+	        'type' => $attr['type'],
+	        'value' => $attr['value'],
+	    ])
+	    ->toArray();
+
+		/* Prepare spreadsheet */
+		$attributeNames = array_column($uniqueAttributes, 'name');
+		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
+
+		$spreadsheet = $this->excel->newSpreadsheet();
+		$spreadsheet->setActiveSheetIndex(0);
+		$sheet = $spreadsheet->getActiveSheet();
+
+		/* Set headers */
+		$this->excel->setHeader($sheet, $header);
+
+		/* Populate data */
+		$row = 2;
+		foreach ($products as $product) {
+
+			$existingAttributes = $product->attributes->pluck('value', 'attribute_id')->toArray();
+			$col = 'A';
+
+			/* Set basic product details */
+			$sheet->setCellValue($col++ . $row, $product->id);
+			$sheet->setCellValue($col++ . $row, $product->sku);
+			$sheet->setCellValue($col++ . $row, $product->name);
+
+			foreach ($uniqueAttributes as $attributeId => $attributeDetail) {
+				$existingVal = $existingAttributes[$attributeId] ?? '';
+
+				$cell = $col++ . $row;
+				if (!empty($attributeDetail['value']) && $attributeDetail['type'] == 'select') {
+					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['value'], $existingVal);
+				} else {
+					$sheet->setCellValue($cell, $existingVal);
+				}
+			}
+			$row++;
+		}
+
+		// Create response
+		$response = new StreamedResponse(function () use ($spreadsheet) {
+			$writer = new Xlsx($spreadsheet);
+			$writer->save('php://output');
+		});
+
+		$fileName = "$parentCategory->name Products $request->range_from-$request->range_to.xlsx";
+		$fileName = strtolower(str_replace(' ', '_', trim($fileName)));
+
+		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
+		));
+
+		return $response;
 	}
 }

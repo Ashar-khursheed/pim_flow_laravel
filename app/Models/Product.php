@@ -131,8 +131,6 @@ class Product extends Model
 		return $this->belongsTo(Brand::class, 'brand_id');
 	}
 
-
-
 	public function creator()
 	{
 		return $this->morphTo();
@@ -160,4 +158,18 @@ class Product extends Model
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
 	}
 
+	// public function attributes()
+	// {
+	// 	return $this->belongsToMany(
+	// 		Attribute::class,
+	// 		'product_attributes',
+	// 		'product_id',
+	// 		'attribute_id'
+	// 	);
+	// }
+
+	public function attributes()
+	{
+		return $this->hasMany(ProductAttribute::class);
+	}
 }
