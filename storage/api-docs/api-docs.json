@@ -268,6 +268,60 @@
                 ]
             }
         },
+        "/api/attributes/export": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Export attributes data to Excel",
+                "operationId": "2dbb4b40158242a96fa2dcd1efb85f74",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "parent_category_id",
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "parent_category_id": {
+                                        "description": "Parent category ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/attribute-groups": {
             "get": {
                 "tags": [
@@ -1956,6 +2010,10 @@
                                     "allow_checkout_when_out_of_stock": {
                                         "type": "boolean",
                                         "example": false
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "draft"
                                     },
                                     "with_storehouse_management": {
                                         "type": "boolean",
