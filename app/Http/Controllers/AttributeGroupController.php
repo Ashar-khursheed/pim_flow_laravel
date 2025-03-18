@@ -214,8 +214,9 @@ class AttributeGroupController extends BaseController
 
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name,'.$id,
-			'attribute_ids' => 'required|array|min:1',
-			'attribute_ids.*' => 'integer|exists:attributes,id'
+			'attribute_ids' => 'array',
+			// 'attribute_ids' => 'required|array|min:1',
+			// 'attribute_ids.*' => 'integer|exists:attributes,id'
 		]);
 
 		DB::beginTransaction();
@@ -226,7 +227,10 @@ class AttributeGroupController extends BaseController
 			$attributeGroup->save();
 
 			// Sync attributes in pivot table
-			$attributeGroup->attributes()->sync($request->attribute_ids);
+			if ($request->attribute_ids) {
+				// code...
+				$attributeGroup->attributes()->sync($request->attribute_ids);
+			}
 
 			DB::commit();
 
