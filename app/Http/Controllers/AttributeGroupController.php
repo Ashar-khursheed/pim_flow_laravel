@@ -47,7 +47,7 @@ class AttributeGroupController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = AttributeGroup::with('attributes');
+		$records = AttributeGroup::with(['categories:id,name,parent_id', 'attributes:id,name']);
 
 		if($request->filled('page') && $request->filled('length')){
 			$page = $request->input('page');
@@ -165,7 +165,7 @@ class AttributeGroupController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'data' => $record->load('categories:id,name,parent_id')
+			'data' => $record->load(['categories:id,name,parent_id', 'attributes:id,name'])
 		]);
 	}
 
@@ -237,7 +237,7 @@ class AttributeGroupController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Attribute group updated successfully',
-				'data' => $attributeGroup->load('attributes')
+				'data' => $attributeGroup->load('attributes:id,name')
 			], 200);
 
 		} catch (\Exception $e) {
