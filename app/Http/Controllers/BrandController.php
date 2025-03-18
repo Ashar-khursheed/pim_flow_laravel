@@ -68,50 +68,189 @@ class BrandController extends BaseController
 	}
 
 	/**
-	 * Show the form for creating a new resource.
-	 */
-	public function create()
-	{
-		//
-	}
+     * @OA\Post(
+     *     path="/api/brands",
+     *     summary="Create a new brand",
+     *     tags={"Brands"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name", "status", "order", "is_featured"},
+     *             @OA\Property(property="name", type="string", example="Nike"),
+     *             @OA\Property(property="description", type="string", example="A global sports brand"),
+     *             @OA\Property(property="website", type="string", example="https://nike.com"),
+     *             @OA\Property(property="logo", type="string", format="binary"),
+     *             @OA\Property(property="status", type="string", example="published"),
+     *             @OA\Property(property="order", type="integer", example=1),
+     *             @OA\Property(property="is_featured", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Brand created successfully"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url|max:191',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'required|string|in:published,draft',
+            'order' => 'required|integer|min:0',
+            'is_featured' => 'required|boolean',
+        ]);
 
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request)
-	{
-		//
-	}
+        if ($request->hasFile('logo')) {
+            $validated['logo'] = $request->file('logo')->store('brands', 'public');
+        }
 
-	/**
-	 * Display the specified resource.
-	 */
-	public function show(string $id)
-	{
-		//
-	}
+        $brand = Brand::create($validated);
 
-	/**
-	 * Show the form for editing the specified resource.
-	 */
-	public function edit(string $id)
-	{
-		//
-	}
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand created successfully',
+            'brand' => $brand
+        ], 201);
+    }
 
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, string $id)
-	{
-		//
-	}
+    /**
+     * @OA\Get(
+     *     path="/api/brands/{id}",
+     *     summary="Get a brand by ID",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Brand ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Success"),
+     *     @OA\Response(response=404, description="Brand not found"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function show($id)
+    {
+        $brand = Brand::find($id);
 
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy(string $id)
-	{
-		//
-	}
+        if (!$brand) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Brand not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'brand' => $brand
+        ]);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/brands/{id}",
+     *     summary="Update an existing brand",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Brand ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="Nike Updated"),
+     *             @OA\Property(property="description", type="string", example="Updated description"),
+     *             @OA\Property(property="website", type="string", example="https://nike.com"),
+     *             @OA\Property(property="logo", type="string", format="binary"),
+     *             @OA\Property(property="status", type="string", example="published"),
+     *             @OA\Property(property="order", type="integer", example=2),
+     *             @OA\Property(property="is_featured", type="boolean", example=false)
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Brand updated successfully"),
+     *     @OA\Response(response=404, description="Brand not found"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function update(Request $request, $id)
+    {
+        $brand = Brand::find($id);
+
+        if (!$brand) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Brand not found'
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:191',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url|max:191',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'status' => 'sometimes|required|string|in:published,draft',
+            'order' => 'sometimes|required|integer|min:0',
+            'is_featured' => 'sometimes|required|boolean',
+        ]);
+
+        if ($request->hasFile('logo')) {
+            if ($brand->logo) {
+                Storage::disk('public')->delete($brand->logo);
+            }
+            $validated['logo'] = $request->file('logo')->store('brands', 'public');
+        }
+
+        $brand->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand updated successfully',
+            'brand' => $brand
+        ]);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/brands/{id}",
+     *     summary="Delete a brand",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Brand ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Brand deleted successfully"),
+     *     @OA\Response(response=404, description="Brand not found"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function destroy($id)
+    {
+        $brand = Brand::find($id);
+
+        if (!$brand) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Brand not found'
+            ], 404);
+        }
+
+        if ($brand->logo) {
+            Storage::disk('public')->delete($brand->logo);
+        }
+
+        $brand->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand deleted successfully'
+        ]);
+    }
 }

@@ -4,6 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Log; // ✅ Add this line
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends BaseController
 {
@@ -69,6 +72,8 @@ class CategoryController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+
+
 	public function index(Request $request)
 	{
 		// dd(auth()->user());
@@ -99,6 +104,74 @@ class CategoryController extends BaseController
 		]);
 	}
 
+
+	/**
+ * @OA\Get(
+ *     path="/api/allcategories",
+ *     summary="Get All Categories",
+ *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+ *     tags={"Categories"},
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful operation",
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="name", type="string", example="Electronics"),
+ *                 @OA\Property(property="slug", type="string", example="electronics"),
+ *                 @OA\Property(
+ *                     property="children_recursive",
+ *                     type="array",
+ *                     @OA\Items(
+ *                         type="object",
+ *                         @OA\Property(property="id", type="integer", example=2),
+ *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
+ *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
+ *                         @OA\Property(
+ *                             property="children_recursive",
+ *                             type="array",
+ *                             @OA\Items(
+ *                                 type="object",
+ *                                 @OA\Property(property="id", type="integer", example=3),
+ *                                 @OA\Property(property="name", type="string", example="Smartphones"),
+ *                                 @OA\Property(property="slug", type="string", example="smartphones")
+ *                             )
+ *                         )
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+
+ public function allcategories(): JsonResponse
+ {
+	 $categories = Cache::remember('all_categories', 3600, function () {
+		 return Category::where('parent_id', 0)
+			 ->with(['children.children'])
+			 ->get(['id', 'name', 'slug']);
+	 });
+ 
+	 return response()->json([
+		 'success' => true,
+		 'message' => 'All Categories List',
+		 'categories' => $categories
+	 ]);
+ }
+
+ 
 
 	/**
 	 * Show the form for creating a new resource.

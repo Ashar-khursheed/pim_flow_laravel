@@ -19,6 +19,8 @@ use App\Http\Controllers\FaqController;
 use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductExportController;
+use App\Http\Controllers\SliderController;
+
 
 
 // Route::get('/user', function (Request $request) {
@@ -28,6 +30,9 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
+
+	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+
 	Route::prefix('users')->group(function () {
 		Route::post('/', [UserController::class, 'store']);
 		Route::get('/', [UserController::class, 'index']);
@@ -48,8 +53,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('/products/export', [ProductExportController::class, 'export']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 	Route::resource('products', ProductController::class);
-	Route::resource('brands', BrandController::class);
-	Route::resource('stores', StoreController::class);
+	Route::apiResource('brands', BrandController::class);
+	Route::apiResource('stores', StoreController::class);
 
 
 
@@ -72,7 +77,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 	Route::apiResource('reviews', ReviewController::class);
-
+	Route::apiResource('sliders', SliderController::class);
 
 
 });

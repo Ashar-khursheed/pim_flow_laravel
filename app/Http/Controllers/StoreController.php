@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+use Illuminate\Http\JsonResponse;
 
 use Illuminate\Http\Request;
 use App\Models\Store;
@@ -66,51 +67,153 @@ class StoreController extends BaseController
 		]);
 	}
 
-	/**
-	 * Show the form for creating a new resource.
-	 */
-	public function create()
-	{
-		//
-	}
+	
+    /**
+     * @OA\Post(
+     *     path="/api/stores",
+     *     summary="Create a new store",
+     *     tags={"Stores"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"name"},
+     *             @OA\Property(property="name", type="string", example="New Store"),
+     *             @OA\Property(property="description", type="string", example="Store Description"),
+     *             @OA\Property(property="website", type="string", example="https://store.com"),
+     *             @OA\Property(property="status", type="string", example="active")
+     *         )
+     *     ),
+     *     @OA\Response(response=201, description="Store Created"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function store(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url',
+            'status' => 'nullable|string|max:60'
+        ]);
 
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request)
-	{
-		//
-	}
+        $store = Store::create($validated);
 
-	/**
-	 * Display the specified resource.
-	 */
-	public function show(string $id)
-	{
-		//
-	}
+        return response()->json([
+            'success' => true,
+            'message' => 'Store Created',
+            'store' => $store
+        ], 201);
+    }
 
-	/**
-	 * Show the form for editing the specified resource.
-	 */
-	public function edit(string $id)
-	{
-		//
-	}
+    /**
+     * @OA\Get(
+     *     path="/api/stores/{id}",
+     *     summary="Get store details",
+     *     tags={"Stores"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Store ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Store Details"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function show($id): JsonResponse
+    {
+        $store = Store::find($id);
 
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, string $id)
-	{
-		//
-	}
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => 'Store Not Found'], 404);
+        }
 
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy(string $id)
-	{
-		//
-	}
+        return response()->json([
+            'success' => true,
+            'message' => 'Store Details',
+            'store' => $store
+        ]);
+    }
+
+    /**
+     * @OA\Put(
+     *     path="/api/stores/{id}",
+     *     summary="Update an existing store",
+     *     tags={"Stores"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Store ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             @OA\Property(property="name", type="string", example="Updated Store"),
+     *             @OA\Property(property="description", type="string", example="Updated Description"),
+     *             @OA\Property(property="website", type="string", example="https://updatedstore.com"),
+     *             @OA\Property(property="status", type="string", example="inactive")
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Store Updated"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function update(Request $request, $id): JsonResponse
+    {
+        $store = Store::find($id);
+
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => 'Store Not Found'], 404);
+        }
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:191',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url',
+            'status' => 'nullable|string|max:60'
+        ]);
+
+        $store->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Store Updated',
+            'store' => $store
+        ]);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/stores/{id}",
+     *     summary="Delete a store",
+     *     tags={"Stores"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Store ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Store Deleted"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function destroy($id): JsonResponse
+    {
+        $store = Store::find($id);
+
+        if (!$store) {
+            return response()->json(['success' => false, 'message' => 'Store Not Found'], 404);
+        }
+
+        $store->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Store Deleted'
+        ]);
+    }
 }
