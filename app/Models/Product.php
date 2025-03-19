@@ -1,7 +1,8 @@
 <?php
 
 namespace App\Models;
-use App\Models\Slug; // Import the Slug model
+use App\Models\Slug;
+use App\Models\ProductCategory;
 use Illuminate\Database\Eloquent\Model;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -33,7 +34,7 @@ class Product extends Model
 		'website_id',
 		'description',
 		'content',
-		'image', // Featured image
+		'image',
 		'images',
 		'sku',
 		'order',
@@ -188,15 +189,48 @@ class Product extends Model
 	// 	);
 	// }
 
-	public function attributes()
+	public function productAttributes()
 	{
 		return $this->hasMany(ProductAttribute::class);
 	}
 
 	public function discounts(): BelongsToMany
-    {
-        return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
-    }
+	{
+		return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
+	}
 
-	
+	/* Get the latest category associated with the product */
+	public function latestCategory()
+	{
+		return $this->categories()->orderByDesc('ec_product_category_product.created_at')->orderByDesc('ec_product_category_product.category_id')->first();
+	}
+
+	/* Get unique attributes associated with the product's latest category */
+	public function productCategoryAttributes()
+	{
+		// $latestCategory = $this->latestCategory();
+
+		// if (!$latestCategory) {
+		// 	return collect(); /* No category found */
+		// }
+
+		// $category = Category::find($latestCategory->id);
+
+		$category = $this->latestCategory();
+		// dd($category->toArray());
+		dd($category->categoryAttributes->values());
+
+		if (!$category) {
+			return collect();
+		}
+
+		/* Fetch attributes from groups */
+		$groupAttributes = $category->attributeGroups->flatMap->attributes;
+
+		/* Fetch direct attributes */
+		$directAttributes = $category->attributes;
+
+		/* Merge and return unique attributes */
+		return $groupAttributes->merge($directAttributes)->unique('id')->values();
+	}
 }

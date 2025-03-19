@@ -8,7 +8,7 @@ class AttributeGroup extends Model
 {
 	protected $guarded = [];
 
-	public function attributes()
+	public function groupAttributes()
 	{
 		return $this->belongsToMany(
 			Attribute::class,

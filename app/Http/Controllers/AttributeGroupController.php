@@ -47,7 +47,7 @@ class AttributeGroupController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = AttributeGroup::with(['categories:id,name,parent_id', 'attributes:id,code,name']);
+		$records = AttributeGroup::with(['categories:id,name,parent_id', 'groupAttributes:id,code,name']);
 
 		if($request->filled('page') && $request->filled('length')){
 			$page = $request->input('page');
@@ -116,7 +116,7 @@ class AttributeGroupController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Attribute group created successfully',
-				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'attributes:id,code,name'])
+				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
 			], 201);
 
 		} catch (\Exception $e) {
@@ -165,7 +165,7 @@ class AttributeGroupController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'data' => $record->load(['categories:id,name,parent_id', 'attributes:id,code,name'])
+			'data' => $record->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
 		]);
 	}
 
@@ -229,7 +229,7 @@ class AttributeGroupController extends BaseController
 			// Sync attributes in pivot table
 			if ($request->attribute_ids) {
 				// code...
-				$attributeGroup->attributes()->sync($request->attribute_ids);
+				$attributeGroup->groupAttributes()->sync($request->attribute_ids);
 			}
 
 			DB::commit();
@@ -237,7 +237,7 @@ class AttributeGroupController extends BaseController
 			return response()->json([
 				'success' => true,
 				'message' => 'Attribute group updated successfully',
-				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'attributes:id,code,name'])
+				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
 			], 200);
 
 		} catch (\Exception $e) {
@@ -284,7 +284,7 @@ class AttributeGroupController extends BaseController
 
 		try {
 			/* Delete related records in related tables */
-			$attributeGroup->attributes()->detach();
+			$attributeGroup->groupAttributes()->detach();
 			$attributeGroup->categories()->detach();
 
 			/* Delete the attribute group */

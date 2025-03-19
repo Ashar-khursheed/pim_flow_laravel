@@ -47,7 +47,7 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = Category::with(['attributes:id,name', 'attributeGroups:id,name'])->whereDoesntHave('children');
+		$records = Category::with(['categoryAttributes:id,name', 'attributeGroups:id,name'])->whereDoesntHave('children');
 
 		if($request->filled('page') && $request->filled('length')){
 			$page = $request->input('page');
@@ -60,7 +60,7 @@ class CategoryAttributeController extends BaseController
 		// Hide pivot data manually
 		$records->each(function ($category) {
 			$category->attributeGroups->each->makeHidden(['pivot']);
-			$category->attributes->each->makeHidden(['pivot']);
+			$category->categoryAttributes->each->makeHidden(['pivot']);
 		});
 
 		return response()->json([
@@ -93,7 +93,7 @@ class CategoryAttributeController extends BaseController
 	public function show($id)
 	{
 		$record = Category::with([
-			'attributes:id,name',
+			'categoryAttributes:id,name',
 			'attributeGroups:id,name'
 		])->whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
@@ -107,7 +107,7 @@ class CategoryAttributeController extends BaseController
 			]);
 		} else {
 			$record->attributeGroups->each->makeHidden(['pivot']);
-			$record->attributes->each->makeHidden(['pivot']);
+			$record->categoryAttributes->each->makeHidden(['pivot']);
 
 		}
 
@@ -160,7 +160,7 @@ class CategoryAttributeController extends BaseController
 	{
 		$record = Category::whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
-		->with(['attributes:id,name', 'attributeGroups:id,name'])
+		->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
 		->where('id', $id)
 		->first();
 
@@ -181,20 +181,20 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$record->attributes()->sync($request->attribute_ids);
+			$record->categoryAttributes()->sync($request->attribute_ids);
 			$record->attributeGroups()->sync($request->attribute_group_ids);
 
 			/* Fetch updated data with only required fields */
 			$updatedRecord = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with(['attributes:id,name', 'attributeGroups:id,name'])
+			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
 			->where('id', $id)
 			->first();
 
 			/* Ensure we don't try to access null values */
 			if ($updatedRecord) {
 				$updatedRecord->attributeGroups->each->makeHidden(['pivot']);
-				$updatedRecord->attributes->each->makeHidden(['pivot']);
+				$updatedRecord->categoryAttributes->each->makeHidden(['pivot']);
 			}
 
 			DB::commit();

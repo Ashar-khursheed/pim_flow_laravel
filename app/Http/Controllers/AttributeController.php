@@ -352,12 +352,12 @@ class AttributeController extends BaseController
 		->get(['id', 'sku', 'name']);
 
 		/* Fetch category specifications and transform */
-		$catSpecs = Category::with('attributes:id,name,type')
+		$catSpecs = Category::with('categoryAttributes:id,name,type')
 		->whereIn('id', $leafCategoryIds)
 		->get(['id']);
 
 		/* Flatten attributes and remove duplicates by 'id' */
-		$uniqueAttributes = collect($catSpecs->pluck('attributes')->flatten())
+		$uniqueAttributes = collect($catSpecs->pluck('categoryAttributes')->flatten())
 		->unique('id')
 		->map(fn($attr) => [
 			'attribute_id' => $attr['id'],
@@ -389,7 +389,7 @@ class AttributeController extends BaseController
 		$row = 2;
 		foreach ($products as $product) {
 
-			$existingAttributes = $product->attributes->pluck('value', 'attribute_id')->toArray();
+			$existingAttributes = $product->productAttributes->pluck('value', 'attribute_id')->toArray();
 			$col = 'A';
 
 			/* Set basic product details */
@@ -475,6 +475,10 @@ class AttributeController extends BaseController
 				]);
 			}
 
+			// dd($data[0][0]);
+			$product = Product::find($data[0][0]);
+			dd($product->productCategoryAttributes()->toArray());
+
 			$totalRecords = count($data);
 			if ($totalRecords == 0) {
 				return response()->json([
@@ -521,7 +525,7 @@ class AttributeController extends BaseController
 					'header' => $header,
 					'chunk' => $chunk
 				];
-				$batch->add(new ImportProductSpecificationJob($data));
+				$batch->add(new ImportProductAttributeJob($data));
 			}
 			return response()->json([
 				'success' => true,
