@@ -94,7 +94,8 @@ class CategoryAttributeController extends BaseController
 	{
 		$record = Category::with([
 			'categoryAttributes:id,name',
-			'attributeGroups:id,name'
+			'attributeGroups:id,name',
+			'attributeGroups.groupAttributes:id,name'
 		])->whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
 		->where('id', $id)
@@ -105,15 +106,16 @@ class CategoryAttributeController extends BaseController
 				'success' => false,
 				'message' => 'Record does not exist with given ID.'
 			]);
-		} else {
-			$record->attributeGroups->each->makeHidden(['pivot']);
-			$record->categoryAttributes->each->makeHidden(['pivot']);
-
 		}
+		$record->categoryAttributes->each->makeHidden(['pivot']);
+		$record->attributeGroups->each->makeHidden(['pivot']);
+		$record->attributeGroups->each(function ($group) {
+			$group->groupAttributes->each->makeHidden(['pivot']);
+		});
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Categrory with Atribute & Attribute Group',
+			'message' => 'Category with Attribute & Attribute Group',
 			'data' => $record
 		]);
 	}
