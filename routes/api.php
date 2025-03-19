@@ -20,7 +20,9 @@ use App\Http\Controllers\FaqCategoryController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\ProductExportController;
 use App\Http\Controllers\SliderController;
-
+use App\Http\Controllers\DiscountController;
+use App\Http\Controllers\FlashSaleController;
+use App\Http\Controllers\NewsletterController;
 
 
 // Route::get('/user', function (Request $request) {
@@ -79,6 +81,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('reviews', ReviewController::class);
 	Route::apiResource('sliders', SliderController::class);
+
+	// Discount API Routes
+	Route::apiResource('discounts', DiscountController::class);
+
+	// Flash Sale API Routes
+	Route::apiResource('flash-sales', FlashSaleController::class);
+
+	Route::apiResource('newsletters', NewsletterController::class);
 
 
 });

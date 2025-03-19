@@ -4,7 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Schema(
+ *     schema="Category",
+ *     title="Category",
+ *     description="Product Category model",
+ *     type="object",
+ *     required={"id", "name"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="Electronics"),
+ *     @OA\Property(property="description", type="string", example="All electronic devices"),
+ *     @OA\Property(property="status", type="string", example="active"),
+ *     @OA\Property(property="image", type="string", example="https://example.com/category.jpg"),
+ *     @OA\Property(property="parent_id", type="integer", nullable=true, example=null),
+ *     @OA\Property(property="slug", type="string", example="electronics"),
+ *     @OA\Property(property="children", type="array", @OA\Items(ref="#/components/schemas/Category"))
+ * )
+ */
 class Category extends Model
 {
 	protected $table = 'ec_product_categories';
