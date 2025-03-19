@@ -4,7 +4,7 @@ namespace App\Models;
 use App\Models\Slug; // Import the Slug model
 use Illuminate\Database\Eloquent\Model;
 use OpenApi\Annotations as OA;
-
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @OA\Schema(
@@ -192,4 +192,11 @@ class Product extends Model
 	{
 		return $this->hasMany(ProductAttribute::class);
 	}
+
+	public function discounts(): BelongsToMany
+    {
+        return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
+    }
+
+	
 }
