@@ -1345,6 +1345,310 @@
                 ]
             }
         },
+        "/api/discounts": {
+            "get": {
+                "tags": [
+                    "Discounts"
+                ],
+                "summary": "Get paginated discounts",
+                "operationId": "c34129a2b20b11a1bb914f9657376fb5",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Number of records per page (default: 20)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of discounts with pagination",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 100
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Discount"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Discounts"
+                ],
+                "summary": "Create a new discount",
+                "operationId": "9123c70fc44b58b641612d7f6f90469e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "value",
+                                    "type",
+                                    "type_option",
+                                    "target"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "maxLength": 20,
+                                        "nullable": true
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "nullable": true
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "value": {
+                                        "type": "number"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "type_option": {
+                                        "type": "string"
+                                    },
+                                    "target": {
+                                        "type": "string"
+                                    },
+                                    "min_order_price": {
+                                        "type": "number",
+                                        "nullable": true
+                                    },
+                                    "apply_via_url": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    },
+                                    "display_at_checkout": {
+                                        "type": "boolean",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "store_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Discount created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Discount"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/discounts/{id}": {
+            "get": {
+                "tags": [
+                    "Discounts"
+                ],
+                "summary": "Get a specific discount",
+                "operationId": "fbf1f3a350b69a823f2d71699d2da78b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Discount ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discount details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Discount"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Discount not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Discounts"
+                ],
+                "summary": "Update a discount",
+                "operationId": "17bf23d3850f2a65449514eb5f490fe0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Discount ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "maxLength": 120
+                                    },
+                                    "value": {
+                                        "type": "number"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "type_option": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Discount updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Discount"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Discount not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Discounts"
+                ],
+                "summary": "Delete a discount",
+                "operationId": "cab56bd386823e47377b3584990cb58b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Discount ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Discount deleted successfully"
+                    },
+                    "404": {
+                        "description": "Discount not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/faq-categories": {
             "get": {
                 "tags": [
@@ -1853,6 +2157,227 @@
                 ]
             }
         },
+        "/api/flash-sales": {
+            "get": {
+                "tags": [
+                    "Flash Sales"
+                ],
+                "summary": "Get all flash sales",
+                "operationId": "76b86dc6acbc0efea3033d5806224b85",
+                "responses": {
+                    "200": {
+                        "description": "List of flash sales",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/FlashSale"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Flash Sales"
+                ],
+                "summary": "Create a new flash sale",
+                "operationId": "4a6b44ac63386c512154ed5a9ac2666d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "end_date",
+                                    "status"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 191
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Flash sale created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FlashSale"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/flash-sales/{id}": {
+            "get": {
+                "tags": [
+                    "Flash Sales"
+                ],
+                "summary": "Get a specific flash sale",
+                "operationId": "dd888367b46b39ce53b6b9526820db18",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Flash Sale ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flash sale details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FlashSale"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Flash Sale not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Flash Sales"
+                ],
+                "summary": "Update a flash sale",
+                "operationId": "2d818802ed1c70d352a3588ab1a712c7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Flash Sale ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 191
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Flash sale updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FlashSale"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Flash Sale not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Flash Sales"
+                ],
+                "summary": "Delete a flash sale",
+                "operationId": "51058bfdb1aaa67f53e989d782ad801f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Flash Sale ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Flash Sale deleted successfully"
+                    },
+                    "404": {
+                        "description": "Flash Sale not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/media": {
             "get": {
                 "summary": "Fetch all folders inside the 'production' directory from S3",
@@ -1948,6 +2473,234 @@
                     },
                     "404": {
                         "description": "File not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/newsletters": {
+            "get": {
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Get a paginated list of newsletters",
+                "operationId": "48b508c17e56d6af5aab416ff8ad4451",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Newsletter"
+                                            }
+                                        },
+                                        "links": {
+                                            "type": "object"
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Subscribe a new email",
+                "operationId": "adebf94e671e5ae506b61feb3d04e8eb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "subscribed",
+                                            "unsubscribed"
+                                        ],
+                                        "example": "subscribed"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Newsletter subscription created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Newsletter"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/newsletters/{id}": {
+            "get": {
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Get a specific newsletter by ID",
+                "operationId": "e8958d5c0889357c083250261b5fb625",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the newsletter",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Newsletter"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Update a newsletter subscription",
+                "operationId": "da7233e26d80a9cb79a2da766c246043",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the newsletter",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "subscribed",
+                                            "unsubscribed"
+                                        ],
+                                        "example": "subscribed"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Newsletter"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Newsletters"
+                ],
+                "summary": "Delete a newsletter subscription",
+                "operationId": "0fa008516368952d0ead38bceeecce1f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the newsletter",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Successfully deleted"
                     }
                 },
                 "security": [
@@ -2619,6 +3372,15 @@
                         "name": "brand_id",
                         "in": "query",
                         "description": "Filter products by brand ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "store_id",
+                        "in": "query",
+                        "description": "Filter products by Store ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
@@ -4180,6 +4942,193 @@
                 },
                 "type": "object"
             },
+            "Brand": {
+                "title": "Brand",
+                "description": "Brand model",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Apple"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Premium electronics brand"
+                    },
+                    "website": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://www.apple.com"
+                    },
+                    "logo": {
+                        "type": "string",
+                        "format": "url",
+                        "example": "https://example.com/logo.jpg"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "order": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "is_featured": {
+                        "type": "boolean",
+                        "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "Category": {
+                "title": "Category",
+                "description": "Product Category model",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Electronics"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "All electronic devices"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "active"
+                    },
+                    "image": {
+                        "type": "string",
+                        "example": "https://example.com/category.jpg"
+                    },
+                    "parent_id": {
+                        "type": "integer",
+                        "example": null,
+                        "nullable": true
+                    },
+                    "slug": {
+                        "type": "string",
+                        "example": "electronics"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Category"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "Discount": {
+                "title": "Discount",
+                "description": "Discount model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Black Friday Sale"
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "BLACKFRIDAY2024",
+                        "nullable": true
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-11-25",
+                        "nullable": true
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-11-30",
+                        "nullable": true
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 100,
+                        "nullable": true
+                    },
+                    "total_used": {
+                        "type": "integer",
+                        "example": 25,
+                        "nullable": true
+                    },
+                    "value": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 15.5
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "percentage"
+                    },
+                    "can_use_with_promotion": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "discount_on": {
+                        "type": "string",
+                        "example": "product"
+                    },
+                    "product_quantity": {
+                        "type": "integer",
+                        "example": 2,
+                        "nullable": true
+                    },
+                    "type_option": {
+                        "type": "string",
+                        "example": "fixed"
+                    },
+                    "target": {
+                        "type": "string",
+                        "example": "order"
+                    },
+                    "min_order_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50,
+                        "nullable": true
+                    },
+                    "apply_via_url": {
+                        "type": "boolean",
+                        "example": false
+                    },
+                    "display_at_checkout": {
+                        "type": "boolean",
+                        "example": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Get 15% off for Black Friday!",
+                        "nullable": true
+                    },
+                    "store_id": {
+                        "type": "integer",
+                        "example": 3,
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
             "Faq": {
                 "title": "FAQ",
                 "description": "FAQ model",
@@ -4230,6 +5179,119 @@
                     "updated_at": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "FlashSale": {
+                "title": "Flash Sale",
+                "description": "Flash sale model",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Summer Sale"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2024-08-30"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "published"
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Product"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "Newsletter": {
+                "title": "Newsletter",
+                "required": [
+                    "email"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "email": {
+                        "type": "string",
+                        "example": "user@example.com"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "status": {
+                        "type": "string",
+                        "example": "subscribed"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "Product": {
+                "title": "Product",
+                "description": "Product model",
+                "required": [
+                    "id",
+                    "name",
+                    "price"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "iPhone 14"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Latest iPhone with A16 chip"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 999.99
+                    },
+                    "sku": {
+                        "type": "string",
+                        "example": "IPH14-256GB-BLK"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "image": {
+                        "type": "string",
+                        "example": "https://example.com/product.jpg"
+                    },
+                    "categories": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Category"
+                        }
+                    },
+                    "brand": {
+                        "$ref": "#/components/schemas/Brand"
                     }
                 },
                 "type": "object"
@@ -4418,6 +5480,14 @@
             "description": "API Endpoints for Category Management"
         },
         {
+            "name": "Discounts",
+            "description": "API Endpoints for managing discounts"
+        },
+        {
+            "name": "Newsletters",
+            "description": "API Endpoints for managing newsletters"
+        },
+        {
             "name": "Roles",
             "description": "API Endpoints for managing roles"
         },
@@ -4440,6 +5510,10 @@
         {
             "name": "FAQs",
             "description": "FAQs"
+        },
+        {
+            "name": "Flash Sales",
+            "description": "Flash Sales"
         },
         {
             "name": "Reviews",

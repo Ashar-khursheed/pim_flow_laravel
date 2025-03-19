@@ -3,7 +3,27 @@
 namespace App\Models;
 use App\Models\Slug; // Import the Slug model
 use Illuminate\Database\Eloquent\Model;
+use OpenApi\Annotations as OA;
 
+
+/**
+ * @OA\Schema(
+ *     schema="Product",
+ *     title="Product",
+ *     description="Product model",
+ *     type="object",
+ *     required={"id", "name", "price"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="name", type="string", example="iPhone 14"),
+ *     @OA\Property(property="description", type="string", example="Latest iPhone with A16 chip"),
+ *     @OA\Property(property="price", type="number", format="float", example=999.99),
+ *     @OA\Property(property="sku", type="string", example="IPH14-256GB-BLK"),
+ *     @OA\Property(property="quantity", type="integer", example=100),
+ *     @OA\Property(property="image", type="string", example="https://example.com/product.jpg"),
+ *     @OA\Property(property="categories", type="array", @OA\Items(ref="#/components/schemas/Category")),
+ *     @OA\Property(property="brand", ref="#/components/schemas/Brand")
+ * )
+ */
 class Product extends Model
 {
 	protected $table = 'ec_products';

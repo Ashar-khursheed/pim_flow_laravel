@@ -25,6 +25,20 @@ class ProductExportController extends Controller
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Parameter(
+     *         name="brand_id",
+     *         in="query",
+     *         description="Filter products by brand ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *      @OA\Parameter(
+     *         name="store_id",
+     *         in="query",
+     *         description="Filter products by Store ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
      *         name="limit",
      *         in="query",
      *         description="Limit the number of products (default 100)",
@@ -53,6 +67,7 @@ class ProductExportController extends Controller
      *     )
      * )
      */
+
     public function export(Request $request)
     {
         // Start with detailed logging
@@ -65,6 +80,10 @@ class ProductExportController extends Controller
         
         // Parse input parameters
         $categoryId = $request->input('category_id');
+        $brandId = $request->input('brand_id');
+        $storeId = $request->input('store_id');
+        
+
         $limit = $request->input('limit', 100); // Default limit 100
         
         // Parse fields from comma-separated string to array if provided
@@ -75,13 +94,23 @@ class ProductExportController extends Controller
         $query = Product::query();
         
         // Eager load relationships 
-        $query->with(['categories', 'brand', 'tags' , 'seoMetaData']);
+        $query->with(['categories', 'brand', 'store', 'tags' , 'seoMetaData']);
         
         if ($categoryId) {
             Log::info('Filtering by category ID: ' . $categoryId);
             $query->whereHas('categories', function ($q) use ($categoryId) {
                 $q->where('category_id', $categoryId);
             });
+        }
+
+        if ($brandId) {
+            Log::info('Filtering by brand ID: ' . $brandId);
+            $query->where('brand_id', $brandId);
+        }
+        
+        if ($storeId) {
+            Log::info('Filtering by Vendor ID: ' . $storeId);
+            $query->where('store_id', $storeId);
         }
         
         // Get products
@@ -156,18 +185,10 @@ class ProductExportController extends Controller
                             }
                             break;
                             
-                        case 'vendor':
-                            // Extract just the vendor name
-                            if (is_string($product->vendor) && json_decode($product->vendor)) {
-                                $vendorData = json_decode($product->vendor, true);
-                                $row[] = $vendorData['name'] ?? '';
-                            } elseif (is_object($product->vendor) || is_array($product->vendor)) {
-                                $vendorData = is_array($product->vendor) ? $product->vendor : $product->vendor->toArray();
-                                $row[] = $vendorData['name'] ?? '';
-                            } else {
-                                $row[] = $product->vendor ?? '';
-                            }
-                            break;
+                            case 'vendor':
+                                $row[] = $product->store->name ?? ''; // Get store (vendor) name from the relationship
+                                break;
+                            
                             
                         case 'images':
                             // Format images as clean URLs
