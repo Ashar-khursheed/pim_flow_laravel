@@ -44,6 +44,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 		Route::put('/{id}', [UserController::class, 'update']);
 
 	});
+
+	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::resource('category-attributes', CategoryAttributeController::class);
@@ -73,7 +75,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
     Route::apiResource('roles', RoleController::class);
-	
+
 
 
 	Route::apiResource('reviews', ReviewController::class);

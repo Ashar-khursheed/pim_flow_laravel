@@ -20,6 +20,21 @@ return new class extends Migration
 			$table->longText('validations')->nullable();
 			$table->timestamps();
 		});
+
+		Schema::create('attribute_values', function (Blueprint $table) {
+			$table->id();
+			$table->integer('attribute_id')->index();
+			$table->string('attribute_value')->index();
+			$table->timestamps();
+		});
+
+		Schema::create('product_attributes', function (Blueprint $table) {
+			$table->id();
+			$table->integer('product_id')->index();
+			$table->integer('attribute_id')->index();
+			$table->string('value')->index();
+			$table->timestamps();
+		});
 	}
 
 	/**
@@ -28,5 +43,7 @@ return new class extends Migration
 	public function down(): void
 	{
 		Schema::dropIfExists('attributes');
+		Schema::dropIfExists('attribute_values');
+		Schema::dropIfExists('product_attributes');
 	}
 };
