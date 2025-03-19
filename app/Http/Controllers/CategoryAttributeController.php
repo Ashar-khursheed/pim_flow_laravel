@@ -47,7 +47,11 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = Category::with(['categoryAttributes:id,name', 'attributeGroups:id,name'])->whereDoesntHave('children');
+		$records = Category::with([
+			'categoryAttributes:id,name',
+			'attributeGroups:id,name',
+			'attributeGroups.groupAttributes:id,name'
+		])->whereDoesntHave('children');
 
 		if($request->filled('page') && $request->filled('length')){
 			$page = $request->input('page');
@@ -59,8 +63,11 @@ class CategoryAttributeController extends BaseController
 
 		// Hide pivot data manually
 		$records->each(function ($category) {
-			$category->attributeGroups->each->makeHidden(['pivot']);
 			$category->categoryAttributes->each->makeHidden(['pivot']);
+			$category->attributeGroups->each->makeHidden(['pivot']);
+			$category->attributeGroups->each(function ($group) {
+				$group->groupAttributes->each->makeHidden(['pivot']);
+			});
 		});
 
 		return response()->json([
