@@ -43,6 +43,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	});
 
+	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);

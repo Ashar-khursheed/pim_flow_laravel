@@ -3,15 +3,23 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+
+use Botble\Base\Supports\Breadcrumb;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
 use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\TransactionLog;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 use App\Repository\ExcelRepository;
+
+use App\Jobs\ImportProductAttributeJob;
 
 class AttributeController extends BaseController
 {
@@ -296,9 +304,8 @@ class AttributeController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/export",
-	 *     summary="Export attributes data to Excel",
+	 *     summary="Export product attributes data to Excel",
 	 *     tags={"Attributes"},
-	 *     security={{"bearerAuth": {}}},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
@@ -316,7 +323,6 @@ class AttributeController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	// public function export(Request $request): StreamedResponse
 	public function export(Request $request)
 	{
 		/* Validate request data */
@@ -360,13 +366,13 @@ class AttributeController extends BaseController
 			'value' => $attr->attributeValues->pluck('attribute_value')->toArray() ?? [],
 		])
 		->sortBy('attribute_id')
-	    ->keyBy('attribute_id') // Set attribute_id as the key
-	    ->map(fn($attr) => [
-	        'name' => $attr['name'],
-	        'type' => $attr['type'],
-	        'value' => $attr['value'],
-	    ])
-	    ->toArray();
+		->keyBy('attribute_id') // Set attribute_id as the key
+		->map(fn($attr) => [
+			'name' => $attr['name'],
+			'type' => $attr['type'],
+			'value' => $attr['value'],
+		])
+		->toArray();
 
 		/* Prepare spreadsheet */
 		$attributeNames = array_column($uniqueAttributes, 'name');
@@ -419,5 +425,113 @@ class AttributeController extends BaseController
 		));
 
 		return $response;
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/attributes/import",
+	 *     summary="Import product attributes from an Excel file",
+	 *     tags={"Attributes"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"upload_file"},
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="Excel file (.xlsx) max 2MB")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success",
+	 *         @OA\MediaType(
+	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+	 *         )
+	 * 	   ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function import(Request $request)
+	{
+		try {
+			/* Validate request data */
+			$request->validate([
+				'upload_file' => 'required|file|mimes:xlsx|max:5120',
+			]);
+
+			$mandatoryHeaders = ['ID', 'SKU', 'Name'];
+
+			$file = $request->file('upload_file');
+			$spreadsheet = $this->excel->loadFile($file->getRealPath());
+			$sheet = $spreadsheet->getActiveSheet();
+			$data = $sheet->toArray();
+			$header = array_shift($data);
+
+			/* Check required header */
+			$missingHeaders = array_diff($mandatoryHeaders, $header);
+			if (!empty($missingHeaders)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
+				]);
+			}
+
+			$totalRecords = count($data);
+			if ($totalRecords == 0) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
+				]);
+			}
+
+			/* Create batch */
+			$batch = Bus::batch([])
+			->before(function (Batch $batch) use ($totalRecords) {
+				$descArray = [
+					"Total Count" => $totalRecords,
+					"Success Count" => 0,
+					"Failed Count" => 0,
+					"Errors" => []
+				];
+				/* Save transaction log */
+				$log = new TransactionLog();
+				$log->module = "Product Specification";
+				$log->action = "Import";
+				$log->identifier = $batch->id;
+				$log->status = 'In-progress';
+				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+				$log->created_by = auth()->id() ?? null;
+				$log->created_at = now();
+				$log->save();
+			})
+			->finally(function (Batch $batch) {
+				$log = TransactionLog::where('identifier', $batch->id)->first();
+				TransactionLog::where('id', $log->id)->update([
+					'status' => 'Completed',
+				]);
+			})
+			->name("Import Product Attributes")
+			->dispatch();
+
+			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+			$chunkSize = 100;
+			$chunks = array_chunk($data, $chunkSize);
+
+			foreach ($chunks as $chunk) {
+				$data = [
+					'header' => $header,
+					'chunk' => $chunk
+				];
+				$batch->add(new ImportProductSpecificationJob($data));
+			}
+			return response()->json([
+				'success' => true,
+				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+			]);
+		} catch(\Exception $exception) {
+			return response()->json([
+				'success' => false,
+				'message' => $exception->getMessage()
+			]);
+		}
 	}
 }

@@ -273,7 +273,7 @@
                 "tags": [
                     "Attributes"
                 ],
-                "summary": "Export attributes data to Excel",
+                "summary": "Export product attributes data to Excel",
                 "operationId": "2dbb4b40158242a96fa2dcd1efb85f74",
                 "requestBody": {
                     "required": true,
@@ -300,6 +300,48 @@
                                         "description": "Ending range",
                                         "type": "integer",
                                         "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attributes/import": {
+            "post": {
+                "tags": [
+                    "Attributes"
+                ],
+                "summary": "Import product attributes from an Excel file",
+                "operationId": "5c44003aff53ab53cae2bb072afe4b77",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "Excel file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
                                     }
                                 },
                                 "type": "object"
@@ -2664,15 +2706,6 @@
                         "name": "category_id",
                         "in": "query",
                         "description": "Filter products by category ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "brand_id",
-                        "in": "query",
-                        "description": "Filter products by brand ID",
                         "required": false,
                         "schema": {
                             "type": "integer"
