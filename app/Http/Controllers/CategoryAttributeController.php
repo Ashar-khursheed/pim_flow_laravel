@@ -105,15 +105,20 @@ class CategoryAttributeController extends BaseController
 				'success' => false,
 				'message' => 'Record does not exist with given ID.'
 			]);
-		} else {
-			$record->attributeGroups->each->makeHidden(['pivot']);
-			$record->attributes->each->makeHidden(['pivot']);
-
 		}
+
+		$record->attributeGroups->each(function ($group) {
+			$group->makeHidden(['pivot']); /* Hide pivot table information */
+			$group->attributes = $group->attributes()->select('attributes.id', 'attributes.name')->get();
+
+			$group->attributes->each->makeHidden(['pivot']);
+		});
+
+		$record->attributes->each->makeHidden(['pivot']);
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Categrory with Atribute & Attribute Group',
+			'message' => 'Category with Attribute & Attribute Group',
 			'data' => $record
 		]);
 	}
