@@ -13,10 +13,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
-use Botble\Ecommerce\Models\Product;
-use Botble\Ecommerce\Models\Specification;
-use Botble\Ecommerce\Models\CategorySpecification;
 use App\Models\TransactionLog;
+use App\Models\Product;
 
 class ImportProductAttributeJob implements ShouldQueue
 {
@@ -89,42 +87,39 @@ class ImportProductAttributeJob implements ShouldQueue
 			DB::beginTransaction();
 
 			try {
-				/* Delete existing specifications */
-				$product->productAttributes()->delete();
+				$attributeData = [];
+				$attributeIds = [];
 
-				/* Insert new specifications */
-				foreach ($productCategorySpecifications as $spec) {
-					if (!empty($spec) && isset($rowData[$spec]) && trim($rowData[$spec]) !== '') {
-						Specification::create([
-							'product_id' => $product->id,
-							'spec_name' => $spec,
-							'spec_value' => trim($rowData[$spec]),
+				foreach ($productCategoryAttributes as $categoryAttribute) {
+					$attributeValue = trim($rowData[$categoryAttribute->name] ?? '');
+
+					if (!empty($attributeValue)) {
+						/* Ensure attribute value exists */
+						$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
+							'attribute_value' => $attributeValue
 						]);
 
-						/* Get latest category ID */
-						$latestCategoryId = $product->categories()->orderByRaw('COALESCE(ec_product_category_product.created_at, "1970-01-01 00:00:00") DESC')->orderBy('ec_product_category_product.category_id', 'DESC')->value('category_id');
+						/* Collect attribute data */
+						$attributeData[] = [
+							'product_id' => $product->id,
+							'attribute_id' => $categoryAttribute->id,
+							'attribute_value' => $attribute->attribute_value
+						];
 
-						if ($latestCategoryId) {
-							/* Check existing specification */
-							$categorySpec = CategorySpecification::where('category_id', $latestCategoryId)->where('specification_name', $spec)->first();
-
-							if ($categorySpec) {
-								$existingValues = explode('|', $categorySpec->specification_values);
-								$newValue = trim($rowData[$spec]);
-
-								/* Append new value if it's not already present */
-								if (!in_array($newValue, $existingValues)) {
-									$existingValues[] = $newValue;
-									$categorySpec->update([
-										'specification_values' => implode('|', $existingValues),
-									]);
-								}
-							}
-						}
+						$attributeIds[] = $categoryAttribute->id;
 					}
 				}
 
+				/* Delete old attributes that are not in the provided list */
+				$product->productAttributes()->whereNotIn('attribute_id', $attributeIds)->delete();
 
+				/* Insert or update new attributes */
+				foreach ($attributeData as $data) {
+					$product->productAttributes()->updateOrCreate(
+						['product_id' => $data['product_id'], 'attribute_id' => $data['attribute_id']],
+						['attribute_value' => $data['attribute_value']]
+					);
+				}
 				DB::commit();
 				$success++;
 			} catch (Throwable $e) {

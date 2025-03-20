@@ -24,7 +24,7 @@ return new class extends Migration
 		Schema::create('attribute_values', function (Blueprint $table) {
 			$table->id();
 			$table->integer('attribute_id')->index();
-			$table->string('attribute_value')->index();
+			$table->longText('attribute_value');
 			$table->timestamps();
 		});
 
@@ -32,7 +32,7 @@ return new class extends Migration
 			$table->id();
 			$table->integer('product_id')->index();
 			$table->integer('attribute_id')->index();
-			$table->string('value')->index();
+			$table->longText('attribute_value');
 			$table->timestamps();
 		});
 	}

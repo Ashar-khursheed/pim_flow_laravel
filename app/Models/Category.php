@@ -80,4 +80,17 @@ class Category extends Model
 			return self::getLeafCategories($child);
 		});
 	}
+
+	/* Get unique attributes associated with the product's latest category */
+	public function categoryAllAttributes()
+	{
+		/* Fetch attributes from groups */
+		$groupAttributes = $this->attributeGroups->flatMap->groupAttributes;
+
+		/* Fetch direct attributes */
+		$directAttributes = $this->categoryAttributes;
+
+		/* Merge and return unique attributes */
+		return $groupAttributes->merge($directAttributes)->unique('id')->values();
+	}
 }
