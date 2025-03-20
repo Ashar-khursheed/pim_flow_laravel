@@ -292,12 +292,12 @@
                                         "example": 1
                                     },
                                     "range_from": {
-                                        "description": "Starting range",
+                                        "description": "Starting range (must be >=1)",
                                         "type": "integer",
-                                        "example": 10
+                                        "example": 1
                                     },
                                     "range_to": {
-                                        "description": "Ending range",
+                                        "description": "Ending range (must be >= range_from and max 2000 more)",
                                         "type": "integer",
                                         "example": 50
                                     }
@@ -311,7 +311,7 @@
                     "200": {
                         "description": "Success",
                         "content": {
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                            "application/json": {}
                         }
                     }
                 },

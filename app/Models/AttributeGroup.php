@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttributeGroup extends Model
 {
-	protected $guarded = [];
+	protected $fillable = ['name'];
 
 	public function groupAttributes()
 	{
