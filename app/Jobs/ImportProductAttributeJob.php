@@ -74,8 +74,9 @@ class ImportProductAttributeJob implements ShouldQueue
 			}
 
 			/* Validate Required Specifications */
-			$productCategorySpecifications = $product->latestCategorySpecifications->pluck('specification_name')->toArray();
-			$missingSpecifications = array_diff($productCategorySpecifications, $this->header);
+			$productCategoryAttributes = $product->productCategoryAttributes();
+			$productCategoryAttributeNames = $productCategoryAttributes->pluck('name')->toArray();
+			$missingSpecifications = array_diff($productCategoryAttributeNames, $this->header);
 
 			if (!empty($missingSpecifications)) {
 				$rowError[] = "Missing specifications: " . implode(', ', $missingSpecifications);
@@ -89,7 +90,7 @@ class ImportProductAttributeJob implements ShouldQueue
 
 			try {
 				/* Delete existing specifications */
-				$product->specifications()->delete();
+				$product->productAttributes()->delete();
 
 				/* Insert new specifications */
 				foreach ($productCategorySpecifications as $spec) {

@@ -208,27 +208,17 @@ class Product extends Model
 	/* Get unique attributes associated with the product's latest category */
 	public function productCategoryAttributes()
 	{
-		// $latestCategory = $this->latestCategory();
-
-		// if (!$latestCategory) {
-		// 	return collect(); /* No category found */
-		// }
-
-		// $category = Category::find($latestCategory->id);
-
 		$category = $this->latestCategory();
-		// dd($category->toArray());
-		dd($category->categoryAttributes->values());
 
 		if (!$category) {
 			return collect();
 		}
 
 		/* Fetch attributes from groups */
-		$groupAttributes = $category->attributeGroups->flatMap->attributes;
+		$groupAttributes = $category->attributeGroups->flatMap->groupAttributes;
 
 		/* Fetch direct attributes */
-		$directAttributes = $category->attributes;
+		$directAttributes = $category->categoryAttributes;
 
 		/* Merge and return unique attributes */
 		return $groupAttributes->merge($directAttributes)->unique('id')->values();
