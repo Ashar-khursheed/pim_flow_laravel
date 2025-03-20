@@ -50,7 +50,7 @@ class CategoryAttributeController extends BaseController
 		$records = Category::with([
 			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
-			'attributeGroups.groupAttributes:id,name'
+			'attributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children');
 
 		if($request->filled('page') && $request->filled('length')){
@@ -102,7 +102,7 @@ class CategoryAttributeController extends BaseController
 		$record = Category::with([
 			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
-			'attributeGroups.groupAttributes:id,name'
+			'attributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
 		->where('id', $id)
