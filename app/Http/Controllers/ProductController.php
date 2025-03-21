@@ -406,9 +406,15 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = [['status' => $value]];
 					
 					break;
-				case 'tax_id':
-					$formattedProduct['tax'] = [['rate' => $value]];
-					break;
+					case 'tax_id':
+						$tax = Tax::find($value);
+						if ($tax) {
+							$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+						} else {
+							$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+						}
+						break;
+					
 				case 'currency_id':
 					$formattedProduct['currency'] = $product->currency ? [[
 						'id' => $product->currency->id,
