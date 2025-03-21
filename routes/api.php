@@ -49,7 +49,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);
+
+
+	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
+	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
+
 
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
@@ -63,19 +68,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::post('/category-pages', [CategoryPageController::class, 'store']);
 	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
-    Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
+	Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
 
 
 	Route::apiResource('media', MediaController::class)->parameters([
-        'media' => 'folder'
-    ]);
+		'media' => 'folder'
+	]);
 
 	Route::apiResource('faqs', FaqController::class);
 	Route::apiResource('faq-categories', FaqCategoryController::class);
 
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
-    Route::apiResource('roles', RoleController::class);
+	Route::apiResource('roles', RoleController::class);
 
 
 
@@ -92,5 +97,5 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 
 });
-    Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
+Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 

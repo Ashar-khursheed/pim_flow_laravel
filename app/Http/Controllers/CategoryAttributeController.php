@@ -225,4 +225,149 @@ class CategoryAttributeController extends BaseController
 		}
 	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/category-attributes/{id}/add-attribute",
+	 *     summary="Add specific attributes or attribute groups to a category",
+	 *     tags={"Category Attribute Group"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Category ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
+	 *             @OA\Property(property="attribute_group_ids", type="array", @OA\Items(type="integer"))
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function addAttributes(Request $request, $id)
+	{
+		$record = Category::whereDoesntHave('children')->find($id);
+		if (!$record) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Record does not exist with given ID.'
+			]);
+		}
+
+		$request->validate([
+			'attribute_ids' => 'array',
+			'attribute_ids.*' => 'integer|exists:attributes,id',
+			'attribute_group_ids' => 'array',
+			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
+		]);
+
+		DB::beginTransaction();
+
+		try {
+			$record->categoryAttributes()->syncWithoutDetaching($request->attribute_ids);
+			$record->attributeGroups()->syncWithoutDetaching($request->attribute_group_ids);
+
+			/* Updated record */
+			$record = Category::whereDoesntHave('children')
+			->select(['id', 'name', 'parent_id'])
+			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+			->where('id', $id)
+			->first();
+			$record->attributeGroups->each->makeHidden(['pivot']);
+			$record->categoryAttributes->each->makeHidden(['pivot']);
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Attributes and attribute groups added successfully.',
+				'data' => $record,
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'An error occurred while adding attributes.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
+
+	/**
+	 * @OA\Delete(
+	 *     path="/api/category-attributes/{id}/remove-attribute",
+	 *     summary="Remove specific attributes or attribute groups from a category",
+	 *     tags={"Category Attribute Group"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Category ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
+	 *             @OA\Property(property="attribute_group_ids", type="array", @OA\Items(type="integer"))
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function removeAttributes(Request $request, $id)
+	{
+		$record = Category::whereDoesntHave('children')->find($id);
+
+		if (!$record) {
+			return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+		}
+
+		$request->validate([
+			'attribute_ids' => 'array',
+			'attribute_ids.*' => 'integer|exists:attributes,id',
+			'attribute_group_ids' => 'array',
+			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
+		]);
+
+		DB::beginTransaction();
+
+		try {
+			$record->categoryAttributes()->detach($request->attribute_ids);
+			$record->attributeGroups()->detach($request->attribute_group_ids);
+
+			/* Updated record */
+			$record = Category::whereDoesntHave('children')
+			->select(['id', 'name', 'parent_id'])
+			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+			->where('id', $id)
+			->first();
+			$record->attributeGroups->each->makeHidden(['pivot']);
+			$record->categoryAttributes->each->makeHidden(['pivot']);
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Attributes and attribute groups removed successfully.',
+				'data' => $record
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'An error occurred while removing attributes.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
 }
