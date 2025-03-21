@@ -404,6 +404,7 @@ class ProductController extends BaseController
 							break;
 				case 'stock_status':
 					$formattedProduct[$attribute] = [['status' => $value]];
+					
 					break;
 				case 'tax_id':
 					$formattedProduct['tax'] = [['rate' => $value]];
@@ -461,10 +462,19 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = $matches[1] ?? [];
 					break;
 				
-				case 'frequently_bought_together':
-					$decoded = json_decode($value, true) ?? [];
-					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => $item['value']], $decoded);
-					break;
+					case 'frequently_bought_together':
+						// Ensure $value is a valid JSON string
+						$decoded = json_decode($value, true);
+					
+						if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+							$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
+						} else {
+							// Convert each item correctly based on its type
+							$formattedProduct[$attribute] = array_map(fn($item) => ['value' => is_array($item) ? ($item['value'] ?? null) : $item], $decoded);
+						}
+						break;
+					
+					
 			
 				case 'compare_type':
 					$decoded = json_decode($value, true) ?? [];
@@ -741,7 +751,7 @@ class ProductController extends BaseController
 		if (!in_array($input['status'], $validStatuses)) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Invalid status value. Allowed values: draft, published, archived.'
+				'message' => 'Invalid status value. Allowed values: draft, published, pending.'
 			]);
 		}
 	
@@ -752,30 +762,55 @@ class ProductController extends BaseController
 	 
  
 	 /* Stock status validation */
-	 $usStockStatusArray = [
-		 1 => "in_stock",
-		 2 => "out_of_stock",
-		 3 => "on_backorder"
-	 ];
-	 if (isset($input['stock_status'])) {
-		 if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
-			 $rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
-		 } else {
-			 $product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
-			 unset($input['stock_status']); /* Remove processed field */
-		 }
-	 }
+	// Backend stock status mapping for saving in the database
+		$usStockStatusArray = [
+			1 => "in_stock",
+			2 => "out_of_stock",
+			3 => "on_backorder"
+		];
+
+		// Frontend stock status mapping for display
+		$frontendStockStatusArray = [
+			1 => "In Stock",
+			2 => "Out of Stock",
+			3 => "Pre Order"
+		];
+
+		// Simulated input (e.g., from a form submission)
+		$input = [
+			'stock_status' => 1  // Example: User selects "In Stock" (1)
+		];
+
+		// Validation & Saving to Database
+		if (isset($input['stock_status'])) {
+			if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
+				$rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for Pre Order.";
+			} else {
+				$product = new stdClass(); // Simulating a product object
+				$product->stock_status = $usStockStatusArray[(int) $input['stock_status']]; // Save database format
+				unset($input['stock_status']); // Remove processed field
+			}
+		}
+
+		// Simulate fetching product stock status for frontend display
+		if (isset($product->stock_status)) {
+			$displayStockStatus = array_search($product->stock_status, $usStockStatusArray);
+			echo "Frontend Display: " . $frontendStockStatusArray[$displayStockStatus]; // Output: In Stock
+		}
  
 	 /* Tax ID validation */
-	 if (isset($input['tax_id'])) {
-		 $taxArray = Tax::pluck("id")->toArray();
-		 if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
-			 $rowError[] = "Invalid tax value. Please select a valid tax ID.";
-		 } else {
-			 $product->tax_id = (int) $input['tax_id'];
-			 unset($input['tax_id']); /* Remove processed field */
-		 }
-	 }
+		if (isset($input['tax_id'])) {
+			// Fetch tax IDs and their corresponding titles
+			$taxList = Tax::pluck("title", "id")->toArray(); // Fetch [id => title]
+
+			if (!is_numeric($input['tax_id']) || !array_key_exists((int) $input['tax_id'], $taxList)) {
+				$rowError[] = "Invalid tax value. Please select a valid tax ID.";
+			} else {
+				$product->tax_id = (int) $input['tax_id']; // Store tax ID
+				unset($input['tax_id']); /* Remove processed field */
+			}
+		}
+
  
 	 /* Currency ID validation */
 	 if (isset($input['currency_id'])) {
