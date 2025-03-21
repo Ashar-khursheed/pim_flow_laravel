@@ -45,6 +45,16 @@ class AttributeController extends BaseController
 	 *     summary="Get Attribute List",
 	 *     description="Fetches a list of attributes.",
 	 *     tags={"Attributes"},
+	 * @OA\Parameter(
+	 *     name="has_group",
+	 *     in="query",
+	 *     required=true,
+	 *     @OA\Schema(
+	 *         type="boolean",
+	 *         default=false
+	 *     ),
+	 *     description="Filter attributes that have at least one associated group. Accepts true or false. Default is false."
+	 * ),
 	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
@@ -73,20 +83,41 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = Attribute::query();
+		$hasGroup = filter_var($request->query('has_group', false), FILTER_VALIDATE_BOOLEAN);
+		$recordsQuery = Attribute::with('attributeGroups:id,name');
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$records = $records->offset(($page - 1)*$length)->limit($length);
+		if ($hasGroup) {
+			$recordsQuery = $recordsQuery->whereHas('attributeGroups');
 		}
 
-		$records = $records->get();
+		/* Get total record count before applying pagination */
+		$totalRecords = $recordsQuery->count();
+
+		$page = $request->input('page', 1);
+
+		$length = $request->input('length', 10);
+
+		/* Apply Pagination */
+		$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
+
+		/* Hide pivot field */
+		$records->each(function ($attribute) {
+			$attribute->attributeGroups->each->makeHidden(['pivot']);
+		});
+
+		/* Calculate total pages */
+		$totalPages = ceil($totalRecords / $length);
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute List',
-			'data' => $records
+			'data' => $records,
+			'pagination' => [
+				'current_page' => $page,
+				'per_page' => $length,
+				'total_records' => $totalRecords,
+				'total_pages' => $totalPages
+			]
 		]);
 	}
 
