@@ -396,7 +396,7 @@ class AttributeController extends BaseController
 				$existingVal = $existingAttributes[$attributeId] ?? '';
 				$cell = $col++ . $row;
 
-				if (!empty($attributeDetail['attribute_value']) && $attributeDetail['type'] == 'text') {
+				if (!empty($attributeDetail['attribute_value']) && $attributeDetail['type'] == 'select') {
 					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
 				} else {
 					$sheet->setCellValue($cell, $existingVal);
