@@ -503,7 +503,7 @@ class ProductController extends BaseController
 
 
 	/**
-	 * Show the form for editing the specified resource.
+	 * Show the form for editing the specified resource.d
 	 */
 	public function edit(Product $product)
 	{
