@@ -26,6 +26,16 @@
                 "operationId": "e48983aaee64bf1da038f1378aff0c81",
                 "parameters": [
                     {
+                        "name": "has_group",
+                        "in": "query",
+                        "description": "Filter attributes that have at least one associated group. Accepts true or false. Default is false.",
+                        "required": true,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    {
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination. Starts from 1.",
