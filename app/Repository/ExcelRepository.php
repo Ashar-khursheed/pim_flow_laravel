@@ -56,9 +56,9 @@ class ExcelRepository
 			throw new \Exception('Dropdown values must be a non-empty array.');
 		}
 
-		/* Escape double quotes in values */
-		$dropdownVals = array_map(fn($val) => str_replace('"', '""', $val), $dropdownVals);
-		$formula = '"' . implode(',', $dropdownVals) . '"';
+		/* Escape quotes ONLY for the formula */
+		$escapedDropdownVals = array_map(fn($val) => str_replace('"', '""', $val), $dropdownVals);
+		$formula = '"' . implode(',', $escapedDropdownVals) . '"';
 
 		/* Check if formula exceeds Excel's 255-character limit */
 		if (strlen($formula) > 255) {

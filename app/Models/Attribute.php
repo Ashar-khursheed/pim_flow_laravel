@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attribute extends Model
 {
+	protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+
 	/* Relation with AttributeGroup */
 	public function attributeGroups()
 	{
