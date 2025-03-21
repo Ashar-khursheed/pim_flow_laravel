@@ -405,9 +405,15 @@ class ProductController extends BaseController
 				case 'stock_status':
 					$formattedProduct[$attribute] = [['status' => $value]];
 					break;
-				case 'tax_id':
-					$formattedProduct['tax'] = [['rate' => $value]];
-					break;
+					case 'tax_id':
+						$tax = Tax::find($value);
+						if ($tax) {
+							$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+						} else {
+							$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+						}
+						break;
+					
 				case 'currency_id':
 					$formattedProduct['currency'] = $product->currency ? [[
 						'id' => $product->currency->id,
@@ -461,10 +467,17 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = $matches[1] ?? [];
 					break;
 				
-				case 'frequently_bought_together':
-					$decoded = json_decode($value, true) ?? [];
-					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => $item['value']], $decoded);
-					break;
+					case 'frequently_bought_together':
+						// Ensure $value is a valid JSON string
+						$decoded = json_decode($value, true);
+					
+						if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+							$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
+						} else {
+							// Convert each item correctly based on its type
+							$formattedProduct[$attribute] = array_map(fn($item) => ['value' => is_array($item) ? ($item['value'] ?? null) : $item], $decoded);
+						}
+						break;
 			
 				case 'compare_type':
 					$decoded = json_decode($value, true) ?? [];
@@ -503,7 +516,7 @@ class ProductController extends BaseController
 
 
 	/**
-	 * Show the form for editing the specified resource.
+	 * Show the form for editing the specified resource.d
 	 */
 	public function edit(Product $product)
 	{

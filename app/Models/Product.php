@@ -223,4 +223,24 @@ class Product extends Model
 		/* Merge and return unique attributes */
 		return $groupAttributes->merge($directAttributes)->unique('id')->values();
 	}
+
+	// public function seo()
+	// {
+	// 	return $this->hasOne(SeoSchema::class, 'type_id')->where('type', 'product');
+	// }
+
+		public function seo()
+	{
+		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
+	}
+
+	public function seoSchema()
+	{
+		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
+	}
+	public function tax()
+    {
+        return $this->belongsTo(Tax::class, 'tax_id');
+    }
+	
 }
