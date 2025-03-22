@@ -1089,4 +1089,68 @@ class ProductController extends BaseController
 	{
 		//
 	}
+	/**
+	 * @OA\Get(
+	 *     path="/api/products/{productId}/product-category-attribute-groups",
+	 *     summary="Get product category attribute groups list",
+	 *     description="Retrieve attribute groups of the latest category for a given product.",
+	 *     tags={"Products"},
+	 *     @OA\Parameter(
+	 *         name="productId",
+	 *         in="path",
+	 *         description="Product ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function productCategoryAttributeGroups($productId)
+	{
+		$product = Product::find($productId);
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			], 404);
+		}
+
+		$category = $product->latestCategory();
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No category found for this product.'
+			], 404);
+		}
+
+		$productAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id');
+
+		$attributeGroups = $category->attributeGroups()
+		->with(['groupAttributes'])
+		->get()
+		->map(function ($group) use ($productAttributes) {
+			return [
+				'id' => $group->id,
+				'name' => $group->name,
+				'group_attributes' => $group->groupAttributes->map(function ($attribute) use ($productAttributes) {
+					return [
+						'id' => $attribute->id,
+						'name' => $attribute->name,
+						'code' => $attribute->code,
+						'type' => $attribute->type,
+						'validations' => json_decode($attribute->validations, true),
+					'attributeValues' => $attribute->attributeValues->pluck('attribute_value')->values()->all(), // Reset array keys
+					'currentValue' => $productAttributes[$attribute->id] ?? null,
+				];
+			})->toArray(),
+			];
+		});
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Product category attribute groups',
+			'data' => $attributeGroups
+		]);
+	}
 }

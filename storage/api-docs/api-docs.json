@@ -3571,6 +3571,41 @@
                 ]
             }
         },
+        "/api/products/{productId}/product-category-attribute-groups": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get product category attribute groups list",
+                "description": "Retrieve attribute groups of the latest category for a given product.",
+                "operationId": "8c18881149633e237e5c8e4ea0004715",
+                "parameters": [
+                    {
+                        "name": "productId",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/export": {
             "get": {
                 "tags": [
