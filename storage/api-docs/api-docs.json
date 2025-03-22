@@ -203,6 +203,14 @@
                                         "type": "string",
                                         "example": "dropdown"
                                     },
+                                    "attribute_values": {
+                                        "description": "Array of attribute values",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "value1"
+                                        }
+                                    },
                                     "is_required": {
                                         "type": "boolean",
                                         "example": true
