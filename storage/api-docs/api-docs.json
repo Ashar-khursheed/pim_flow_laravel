@@ -4736,6 +4736,82 @@
                 ]
             }
         },
+        "/api/transaction-logs": {
+            "get": {
+                "tags": [
+                    "Transaction Logs"
+                ],
+                "summary": "Get Transaction Log List",
+                "description": "Fetches a list of all transaction logs.",
+                "operationId": "83addc73b5adab6c0ca229d3e5994a23",
+                "parameters": [
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "Filter transaction logs by module (All, Product, Product Attribute).",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "All",
+                                "Product",
+                                "Product Attribute"
+                            ]
+                        },
+                        "example": "Product"
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "Filter transaction logs by action (All, Import).",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "All",
+                                "Import"
+                            ]
+                        },
+                        "example": "Import"
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [
@@ -5742,6 +5818,10 @@
         {
             "name": "Stores",
             "description": "Stores"
+        },
+        {
+            "name": "Transaction Logs",
+            "description": "Transaction Logs"
         },
         {
             "name": "Users",
