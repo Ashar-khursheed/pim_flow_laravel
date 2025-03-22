@@ -23,6 +23,9 @@ use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\FlashSaleController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\SeoSchemaController;
+
+
 
 
 // Route::get('/user', function (Request $request) {
@@ -32,6 +35,9 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
+
+	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
+	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
