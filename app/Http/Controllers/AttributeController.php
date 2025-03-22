@@ -84,40 +84,34 @@ class AttributeController extends BaseController
 	public function index(Request $request)
 	{
 		$hasGroup = filter_var($request->query('has_group', false), FILTER_VALIDATE_BOOLEAN);
-		$recordsQuery = Attribute::with('attributeGroups:id,name');
+		$records = Attribute::with('attributeGroups:id,name');
 
 		if ($hasGroup) {
-			$recordsQuery = $recordsQuery->whereHas('attributeGroups');
+			$records = $records->whereHas('attributeGroups');
 		}
 
-		/* Get total record count before applying pagination */
-		$totalRecords = $recordsQuery->count();
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
 
-		$page = $request->input('page', 1);
-
-		$length = $request->input('length', 10);
-
-		/* Apply Pagination */
-		$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+		}
 
 		/* Hide pivot field */
 		$records->each(function ($attribute) {
 			$attribute->attributeGroups->each->makeHidden(['pivot']);
 		});
 
-		/* Calculate total pages */
-		$totalPages = ceil($totalRecords / $length);
-
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute List',
 			'data' => $records,
-			'pagination' => [
-				'current_page' => $page,
-				'per_page' => $length,
-				'total_records' => $totalRecords,
-				'total_pages' => $totalPages
-			]
+			'total_pages' => $totalPages ?? 1,
 		]);
 	}
 
@@ -520,7 +514,7 @@ class AttributeController extends BaseController
 				];
 				/* Save transaction log */
 				$log = new TransactionLog();
-				$log->module = "Product Specification";
+				$log->module = "Product Attribute";
 				$log->action = "Import";
 				$log->identifier = $batch->id;
 				$log->status = 'In-progress';

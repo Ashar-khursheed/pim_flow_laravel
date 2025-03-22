@@ -23,6 +23,7 @@ use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\FlashSaleController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\TransactionLogController;
 
 
 // Route::get('/user', function (Request $request) {
@@ -56,6 +57,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 
+	Route::resource('transaction-logs', TransactionLogController::class)->only(['index']);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 	Route::get('/products/export', [ProductExportController::class, 'export']);
