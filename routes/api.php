@@ -63,7 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('/products/export', [ProductExportController::class, 'export']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 
-	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
+	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
 	Route::apiResource('brands', BrandController::class);
 	Route::apiResource('stores', StoreController::class);
