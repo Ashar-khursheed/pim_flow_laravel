@@ -100,6 +100,7 @@ class AttributeController extends BaseController
 			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
 		} else {
 			$records = $records->get();
+			$totalRecords = $records->count();
 		}
 
 		/* Hide pivot field */
@@ -112,6 +113,7 @@ class AttributeController extends BaseController
 			'message' => 'Attribute List',
 			'data' => $records,
 			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
