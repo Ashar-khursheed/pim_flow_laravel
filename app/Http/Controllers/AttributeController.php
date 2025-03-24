@@ -37,6 +37,7 @@ class AttributeController extends BaseController
 		$this->excel = $excel;
 	}
 
+
 	/**
 	 * Display a listing of the resource.
 	 */
