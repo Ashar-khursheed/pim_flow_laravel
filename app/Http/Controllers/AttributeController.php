@@ -45,16 +45,17 @@ class AttributeController extends BaseController
 	 *     summary="Get Attribute List",
 	 *     description="Fetches a list of attributes.",
 	 *     tags={"Attributes"},
-	 * @OA\Parameter(
-	 *     name="has_group",
-	 *     in="query",
-	 *     required=true,
-	 *     @OA\Schema(
-	 *         type="boolean",
-	 *         default=false
+	 *     @OA\Parameter(
+	 *         name="has_group",
+	 *         in="query",
+	 *         required=false,
+	 *         @OA\Schema(
+	 *             type="string",
+	 *             enum={"true", "false"},
+	 *             nullable=true
+	 *         ),
+	 *         description="Filter attributes that have at least one associated group. Accepts 'true' or 'false'. If omitted, no filtering is applied."
 	 *     ),
-	 *     description="Filter attributes that have at least one associated group. Accepts true or false. Default is false."
-	 * ),
 	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
@@ -83,11 +84,17 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$hasGroup = filter_var($request->query('has_group', false), FILTER_VALIDATE_BOOLEAN);
+		$hasGroup = $request->query('has_group', $request->input('has_group'));
+
+		if ($hasGroup !== null) {
+			$hasGroup = filter_var($hasGroup, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		}
 		$records = Attribute::with(['attributeGroups:id,name', 'attributeValues:id,attribute_id,attribute_value']);
 
-		if ($hasGroup) {
+		if ($hasGroup === true) {
 			$records = $records->whereHas('attributeGroups');
+		} elseif ($hasGroup === false) {
+			$records = $records->whereDoesntHave('attributeGroups');
 		}
 
 		/* Pagination */
