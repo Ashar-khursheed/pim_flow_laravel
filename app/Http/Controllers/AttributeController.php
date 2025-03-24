@@ -56,6 +56,17 @@ class AttributeController extends BaseController
 	 *     description="Filter attributes that have at least one associated group. Accepts true or false. Default is false."
 	 * ),
 	 *     @OA\Parameter(
+	 *         name="has_group",
+	 *         in="query",
+	 *         required=false,
+	 *         @OA\Schema(
+	 *             type="string",
+	 *             enum={"true", "false"},
+	 *             nullable=true
+	 *         ),
+	 *         description="Filter attributes that have at least one associated group. Accepts 'true' or 'false'. If omitted, no filtering is applied."
+	 *     ),
+	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
 	 *         description="Page number for pagination. Starts from 1.",
@@ -83,11 +94,17 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$hasGroup = filter_var($request->query('has_group', false), FILTER_VALIDATE_BOOLEAN);
-		$records = Attribute::with('attributeGroups:id,name');
+		$hasGroup = $request->query('has_group', $request->input('has_group'));
 
-		if ($hasGroup) {
+		if ($hasGroup !== null) {
+			$hasGroup = filter_var($hasGroup, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
+		}
+		$records = Attribute::with(['attributeGroups:id,name', 'attributeValues:id,attribute_id,attribute_value']);
+
+		if ($hasGroup === true) {
 			$records = $records->whereHas('attributeGroups');
+		} elseif ($hasGroup === false) {
+			$records = $records->whereDoesntHave('attributeGroups');
 		}
 
 		/* Pagination */
@@ -185,7 +202,7 @@ class AttributeController extends BaseController
 	 */
 	public function show($attributeId)
 	{
-		$attribute = Attribute::find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value'])->find($attributeId);
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
@@ -225,6 +242,12 @@ class AttributeController extends BaseController
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
 	 *             @OA\Property(property="type", type="string", example="dropdown"),
+	 *             @OA\Property(
+	 *                 property="attribute_values",
+	 *                 type="array",
+	 *                 description="Array of attribute values",
+	 *                 @OA\Items(type="string", example="value1")
+	 *             ),
 	 *             @OA\Property(property="is_required", type="boolean", example=true),
 	 *             @OA\Property(
 	 *                 property="validations",
@@ -241,6 +264,8 @@ class AttributeController extends BaseController
 	 */
 	public function update(Request $request, $attributeId)
 	{
+		// dd($request->toArray());
+		dd(count($request->attribute_values));
 		$attribute = Attribute::find($attributeId);
 		if (!$attribute) {
 			return response()->json([
@@ -263,6 +288,25 @@ class AttributeController extends BaseController
 			unset($input['validations']); /* Remove processed field */
 		}
 
+		if (array_key_exists('attribute_values', $input)) {
+			$providedValues = $input['attribute_values'];
+
+			$existingValues = $attribute->attributeValues->pluck('value')->toArray();
+
+			$valuesToDelete = array_diff($existingValues, $providedValues);
+
+			$valuesToAdd = array_diff($providedValues, $existingValues);
+
+			if (!empty($valuesToDelete)) {
+				$attribute->attributeValues()->whereIn('value', $valuesToDelete)->delete();
+			}
+
+			foreach ($valuesToAdd as $newValue) {
+				$attribute->attributeValues()->create(['value' => $newValue]);
+			}
+			unset($input['attribute_values']);
+		}
+
 		/* Assign remaining valid fields to the attribute */
 		foreach ($input as $key => $value) {
 			$attribute->$key = $value;
@@ -275,7 +319,7 @@ class AttributeController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute updated successfully.',
-			'data' => $attribute->toArray()
+			'data' => $attribute
 		]);
 	}
 
