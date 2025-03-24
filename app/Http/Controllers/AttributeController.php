@@ -45,6 +45,16 @@ class AttributeController extends BaseController
 	 *     summary="Get Attribute List",
 	 *     description="Fetches a list of attributes.",
 	 *     tags={"Attributes"},
+	 * @OA\Parameter(
+	 *     name="has_group",
+	 *     in="query",
+	 *     required=true,
+	 *     @OA\Schema(
+	 *         type="boolean",
+	 *         default=false
+	 *     ),
+	 *     description="Filter attributes that have at least one associated group. Accepts true or false. Default is false."
+	 * ),
 	 *     @OA\Parameter(
 	 *         name="page",
 	 *         in="query",
@@ -73,20 +83,37 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$records = Attribute::query();
+		$hasGroup = filter_var($request->query('has_group', false), FILTER_VALIDATE_BOOLEAN);
+		$records = Attribute::with('attributeGroups:id,name');
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$records = $records->offset(($page - 1)*$length)->limit($length);
+		if ($hasGroup) {
+			$records = $records->whereHas('attributeGroups');
 		}
 
-		$records = $records->get();
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
+
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+			$totalRecords = $records->count();
+		}
+
+		/* Hide pivot field */
+		$records->each(function ($attribute) {
+			$attribute->attributeGroups->each->makeHidden(['pivot']);
+		});
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute List',
-			'data' => $records
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
@@ -489,7 +516,7 @@ class AttributeController extends BaseController
 				];
 				/* Save transaction log */
 				$log = new TransactionLog();
-				$log->module = "Product Specification";
+				$log->module = "Product Attribute";
 				$log->action = "Import";
 				$log->identifier = $batch->id;
 				$log->status = 'In-progress';
