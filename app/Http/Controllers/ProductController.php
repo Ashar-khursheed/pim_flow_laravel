@@ -88,6 +88,7 @@ class ProductController extends BaseController
 			'slug:id,key,reference_id'
 		])
 		->select(['id', 'name', 'sku', 'image', 'brand_id', 'store_id', 'status'])
+		->orderBy('id', 'desc') // Add this line for descending order
 		->paginate($perPage);
 
 		// Formatting response
@@ -96,7 +97,7 @@ class ProductController extends BaseController
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
-				'image' => filter_var($product->image, FILTER_VALIDATE_URL) ? $product->image : asset('storage/products/' . $product->image),
+				'image' => isset($product->images[0]) ? $product->images[0]->url : null, // Get the first image URL
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
@@ -521,7 +522,7 @@ class ProductController extends BaseController
 					'message' => 'Product detail',
 					'product' => $formattedProduct,
 					'admin_reviews' => $adminReviews,
-					'faq' => $faqs,
+					'faq' => $faqs ?? [],
 					 
 				]);
 	}
