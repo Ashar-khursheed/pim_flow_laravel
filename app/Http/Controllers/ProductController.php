@@ -766,7 +766,7 @@ class ProductController extends BaseController
 	 }
 
 
-	 $faqs = $request->input('faqs');
+	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
 		 // Check if faqs is a string and decode it properly
 		 if (is_string($faqs)) {
