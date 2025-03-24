@@ -10,7 +10,7 @@ return new class extends Migration {
         Schema::table('faqs', function (Blueprint $table) {
             if (!Schema::hasColumn('faqs', 'product_id')) { // Prevent duplicate column errors
                 $table->unsignedBigInteger('product_id')->nullable()->after('category_id');
-                $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
+                $table->foreign('product_id')->references('id')->on('ec_products')->onDelete('cascade');
             }
         });
     }
