@@ -16,7 +16,6 @@ return new class extends Migration
 			$table->string('name')->index();
 			$table->string('code')->index();
 			$table->string('type');
-			$table->boolean('is_required')->default(false);
 			$table->longText('validations')->nullable();
 			$table->timestamps();
 		});
