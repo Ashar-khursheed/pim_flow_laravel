@@ -87,7 +87,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'image', 'brand_id', 'store_id', 'status'])
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status'])
 		->orderBy('id', 'desc') // Add this line for descending order
 		->paginate($perPage);
 
@@ -97,7 +97,8 @@ class ProductController extends BaseController
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
-				'image' => isset($product->images[0]) ? $product->images[0]->url : null, // Get the first image URL
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
@@ -765,7 +766,7 @@ class ProductController extends BaseController
 	 }
 
 
-	 $faqs = $request->input('faqs');
+	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
 		 // Check if faqs is a string and decode it properly
 		 if (is_string($faqs)) {
