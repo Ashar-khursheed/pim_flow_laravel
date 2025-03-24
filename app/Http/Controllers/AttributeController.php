@@ -264,8 +264,6 @@ class AttributeController extends BaseController
 	 */
 	public function update(Request $request, $attributeId)
 	{
-		// dd($request->toArray());
-		dd(count($request->attribute_values));
 		$attribute = Attribute::find($attributeId);
 		if (!$attribute) {
 			return response()->json([
