@@ -3,6 +3,11 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
 use App\Models\Product;
 use App\Models\Tax;
 use App\Models\Currency;
@@ -11,9 +16,10 @@ use App\Models\Store;
 use App\Models\Review;
 use App\Models\Brand;
 use App\Models\Slug;
+use App\Models\TransactionLog;
 use App\Models\Faq;
-use Illuminate\Support\Facades\Storage;
 
+use App\Jobs\ImportProductJob;
 
 class ProductController extends BaseController
 {
@@ -350,7 +356,7 @@ class ProductController extends BaseController
 		 $adminReviews = Review::where('product_id', $productId)
 		 ->whereNull('customer_id')
 		 ->get();
- 
+
 
 		 // Fetch FAQs using the FAQ model
 			$faqs = FAQ::where('product_id', $productId)->get();
@@ -523,7 +529,7 @@ class ProductController extends BaseController
 					'product' => $formattedProduct,
 					'admin_reviews' => $adminReviews,
 					'faq' => $faqs ?? [],
-					 
+
 				]);
 	}
 
@@ -619,7 +625,7 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="order", type="integer", example=1),
 	*                 @OA\Property(property="box_quantity", type="integer", example=5),
 	*                 @OA\Property(property="delivery_days", type="integer", example=3),
-	*                 
+	*
 	*                  @OA\Property(
 	*                     property="review_customer_name",
 	*                     type="string",
@@ -670,11 +676,11 @@ class ProductController extends BaseController
 	*                         @OA\Property(property="status", type="integer", example=1)
 	*                     )
 	*                 )
-	* 					
+	*
 	*             )
 	*         )
 	*     ),
-	
+
  *     @OA\Response(
  *         response=201,
  *         description="Review created successfully",
@@ -756,7 +762,7 @@ class ProductController extends BaseController
 
 	 $product = Product::find($productId);
 
- 
+
 	 if (!$product) {
 		 return response()->json([
 			 'success' => false,
@@ -770,7 +776,7 @@ class ProductController extends BaseController
 		 // Check if faqs is a string and decode it properly
 		 if (is_string($faqs)) {
 			 $decoded = json_decode($faqs, true);
-			 
+
 			 // Handle invalid JSON
 			 if (json_last_error() !== JSON_ERROR_NONE) {
 				 return response()->json([
@@ -811,8 +817,8 @@ class ProductController extends BaseController
 		 // return response()->json(['success' => true, 'message' => 'FAQs updated successfully.']);
 
 
-	 
- 
+
+
 
 
 	 if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
@@ -821,7 +827,7 @@ class ProductController extends BaseController
 		 $review = Review::where('product_id', $product->id)
 			 ->where('customer_email', $request->input('review_customer_email'))
 			 ->first();
-	 
+
 		 if (!$review) {
 			 // ✅ No existing review, create a new one
 			 $review = new Review();
@@ -830,12 +836,12 @@ class ProductController extends BaseController
 			 $review->customer_email = $request->input('review_customer_email');
 			 $review->customer_name = $request->input('review_customer_name');
 		 }
-	 
+
 		 // ✅ Update fields (applies to both new & existing reviews)
 		 $review->comment = $request->input('review_comment');
 		 $review->status = $request->input('review_status', 'pending');
 		 $review->star = $request->input('review_star', null);
-	 
+
 		 // ✅ Handle review images upload
 		 if ($request->hasFile('review_images')) {
 			 $uploadedReviewImages = [];
@@ -845,15 +851,15 @@ class ProductController extends BaseController
 			 }
 			 $review->images = $uploadedReviewImages; // Store as an array
 		 }
-	 
+
 		 $review->save(); // ✅ Save either as new or updated review
 	 }
-	 
+
 
 	   // Get all input data except '_method'
 	   $input = $request->except('_method');
 		 // Remove 'faqs' from the input before validation
-	 
+
 
 	   // ✅ Remove review-related fields before validation
 	   $reviewFields = ['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'];
@@ -866,7 +872,7 @@ class ProductController extends BaseController
 	   foreach ($fieldsToUnset as $field) {
 		   unset($input[$field]);
 	   }
-	   
+
 
 	 $imagePath = 'production/products';
 	 $videoPath = 'production/videos';
@@ -881,26 +887,26 @@ class ProductController extends BaseController
 	 }
 	 $existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
 	 $existingImages = is_array($existingImages) ? $existingImages : []; // Ensure it's an array
-	 
+
 	 if ($request->hasFile('images')) {
 		 $uploadedImages = [];
 		 foreach ($request->file('images') as $image) {
 			 $path = $image->store($imagePath, 's3');
 			 $uploadedImages[] = Storage::disk('s3')->url($path);
 		 }
-	 
+
 		 // Merge old and new images
 		 $input['images'] = array_merge($existingImages, $uploadedImages);
 	 } else {
 		 // Keep existing images if no new images are uploaded
 		 $input['images'] = $existingImages;
 	 }
-	 
+
 	 // Convert to JSON with unescaped slashes before saving
 	 $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
-	 
-	 
-	 
+
+
+
 
 		 // Handle video upload
 	 $existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
@@ -1131,10 +1137,10 @@ class ProductController extends BaseController
 		 $product->$key = $value;
 	 }
 
-	 
+
 	 if ($request->has('review')) {
 		 $reviewInput = $request->input('review');
-	 
+
 		 // Ensure required fields exist
 		 if (empty($reviewInput['comment'])) {
 			 return response()->json([
@@ -1142,7 +1148,7 @@ class ProductController extends BaseController
 				 'message' => 'Review comment is required.',
 			 ]);
 		 }
-	 
+
 		 // Ensure product exists
 		 if (!$product) {
 			 return response()->json([
@@ -1150,10 +1156,10 @@ class ProductController extends BaseController
 				 'message' => 'Product not found.',
 			 ]);
 		 }
-	 
+
 		 // Ensure a valid customer_id is used
 		 $customerId =  1; // Default to 1 if not logged in
-	 
+
 		 // Create new review
 		 $review = new Review();
 		 $review->product_id = $product->id;
@@ -1163,20 +1169,20 @@ class ProductController extends BaseController
 		 $review->star = isset($reviewInput['star']) ? (int) $reviewInput['star'] : null;
 		 $review->comment = $reviewInput['comment'];
 		 $review->status = 'pending'; // Set a default status if needed
-	 
+
 		 if ($review->save()) {
 			 // Handle review images (if any)
 			 if ($request->hasFile('review_images')) {
 				 foreach ($request->file('review_images') as $image) {
 					 $path = $image->store('reviews', 'public');
-	 
+
 					 ReviewImage::create([
 						 'review_id' => $review->id,
 						 'image_path' => $path,
 					 ]);
 				 }
 			 }
-	 
+
 			 return response()->json([
 				 'success' => true,
 				 'message' => 'Review saved successfully.',
@@ -1186,14 +1192,14 @@ class ProductController extends BaseController
 			 return response()->json(['success' => false, 'message' => 'Failed to save review.']);
 		 }
 	 }
-	 
+
 	 /* Save the product */
 	 $product->save();
 
 	 // if($request->attributes){
 	 // 	$product->productAttributes([attribute_id=>$key, $attribute_value=>$value]);;;;
 	 // }
-	 
+
 	 /* Return success response */
 	 return response()->json([
 		 'success' => true,
@@ -1469,5 +1475,236 @@ class ProductController extends BaseController
 			'message' => 'Product category attribute groups',
 			'data' => $attributeGroups
 		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/products/import",
+	 *     summary="Import products from an Excel file",
+	 *     tags={"Products"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"upload_file"},
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function import(Request $request)
+	{
+		try {
+			/* Validate request data */
+			$request->validate([
+				'upload_file' => 'required|file|mimes:csv,txt|max:5120',
+			]);
+
+			$file = $request->file('upload_file');
+
+			$productFileFormatArray = [
+				'Id' => 'id',
+				'URL' => 'url',
+				'Name' => 'name',
+				'Content' => 'content',
+				'Description' => 'description',
+				'Warranty Information' => 'warrantyInformation',
+				'SKU' => 'sku',
+				'Brand' => 'brand',
+				'Vendor' => 'vendor',
+				'Categories' => 'category',
+				'Tags' => 'tags',
+				'Stock Status' => 'stockStatus',
+				'With Storehouse Management' => 'withStorehouseManagement',
+				'Quantity' => 'quantity',
+				'Cost Per Item' => 'costPerItem',
+				'Unit of Measurement' => 'unitOfMeasurement',
+				'Price' => 'price',
+				'Sale Price' => 'salePrice',
+				'Start Date Sale Price' => 'startDateSalePrice',
+				'End Date Sale Price' => 'endDateSalePrice',
+				'Minimum Order Quantity' => 'minimumOrderQuantity',
+				'Box Quantity' => 'boxQuantity',
+				'Delivery Days' => 'deliveryDays',
+				'Variant Requires Shipping' => 'variantRequiresShipping',
+				'Images' => 'images',
+				'Upload Video' => 'uploadVideo',
+				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
+				'Refund Policy' => 'refundPolicy',
+				'Status' => 'status',
+				'Google Shopping Category' => 'googleShoppingCategory',
+				'Google Shopping Mpn' => 'googleShoppingMpn',
+				'Is Featured' => 'isFeatured',
+				'Weight Option' => 'weightOption',
+				'Weight' => 'weight',
+				'Dimension Option' => 'dimensionOption',
+				'Length' => 'length',
+				'Width' => 'width',
+				'Height' => 'height',
+				'Depth' => 'depth',
+				'Shipping Weight Option' => 'shippingWeightOption',
+				'Shipping Weight' => 'shippingWeight',
+				'Shipping Dimension Option' => 'shippingDimensionOption',
+				'Shipping Width' => 'shippingWidth',
+				'Shipping Depth' => 'shippingDepth',
+				'Shipping Height' => 'shippingHeight',
+				'Shipping Length' => 'shippingLength',
+				'Frequently Bought Together' => 'frequentlyBoughtTogether',
+				'Compare Products' => 'compareProducts',
+				'Variant 1 Title' => 'variant1Title',
+				'Variant 1 Value' => 'variant1Value',
+				'Variant 1 Products' => 'variant1Products',
+				'Variant 2 Title' => 'variant2Title',
+				'Variant 2 Value' => 'variant2Value',
+				'Variant 2 Products' => 'variant2Products',
+				'Variant 3 Title' => 'variant3Title',
+				'Variant 3 Value' => 'variant3Value',
+				'Variant 3 Products' => 'variant3Products',
+				'Variant Color Title' => 'variantColorTitle',
+				'Variant Color Value' => 'variantColorValue',
+				'Variant Color Products' => 'variantColorProducts',
+				'Buying Quantity1' => 'buyingQuantity1',
+				'Discount1' => 'discount1',
+				'Start Date1' => 'startDate1',
+				'End Date1' => 'endDate1',
+				'Buying Quantity2' => 'buyingQuantity2',
+				'Discount2' => 'discount2',
+				'Start Date2' => 'startDate2',
+				'End Date2' => 'endDate2',
+				'Buying Quantity3' => 'buyingQuantity3',
+				'Discount3' => 'discount3',
+				'Start Date3' => 'startDate3',
+				'End Date3' => 'endDate3',
+				'Name (AR)' => 'nameAr',
+				'Description (AR)' => 'descriptionAr',
+				'Content (AR)' => 'contentAr',
+				'Warranty Information (AR)' => 'warrantyInformationAr',
+			];
+
+			$requiredRowCount = count($productFileFormatArray);
+
+			$data = [];
+			/* Open the CSV file and read its content */
+			$rowIndex = 1;
+			if (($handle = fopen($file, "r")) !== false) {
+				while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
+					/* Fix unquoted fields and escape special characters */
+					$row = array_map(function ($value) {
+						/* Add quotes around multiline fields */
+						if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
+							$value = '"' . str_replace('"', '""', $value) . '"';
+						}
+
+						/* Check if the value is UTF-8 encoded */
+						if (!mb_check_encoding($value, 'UTF-8')) {
+							/* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
+							$value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
+						}
+
+						/* Remove invalid characters and trim spaces */
+						$value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
+						return trim($value);
+					}, $row);
+
+					/* Skip blank rows */
+					if (array_filter($row)) {
+						if (count($row) != $requiredRowCount) {
+							$message = "The data in row $rowIndex is not compatible for import.";
+
+							# To delete imported excel file
+							$command = "rm -rf ".$fileNameWithPath;
+							shell_exec($command);
+
+							session()->put('error', $message);
+							return back();
+						}
+						$data[] = $row;
+					}
+					$rowIndex++;
+				}
+				fclose($handle);
+			}
+
+			/* Remove the header row */
+			$header = array_shift($data);
+
+			$requiredHeaderArray = array_keys($productFileFormatArray);
+
+			if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
+				$columns = implode(', ', array_values($missingColumns));
+				$missingCount = count($missingColumns);
+				return response()->json([
+					'success' => true,
+					'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
+				]);
+			}
+
+			/* Get the total record count */
+			$totalRecords = count($data);
+			if ($totalRecords == 0) {
+				return response()->json([
+					'success' => true,
+					'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
+				]);
+			}
+
+			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+			$chunkSize = 100;
+			$chunks = array_chunk($data, $chunkSize);
+
+			/* Start import process */
+			$batch = Bus::batch([])
+			->before(function (Batch $batch) use ($totalRecords) {
+				$descArray = [
+					"Total Count" => $totalRecords,
+					"Success Count" => 0,
+					"Failed Count" => 0,
+					"Errors" => []
+				];
+				/* Save transaction log */
+				$log = new TransactionLog();
+				$log->module = "Product";
+				$log->action = "Import";
+				$log->identifier = $batch->id;
+				$log->status = 'In-progress';
+				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+				$log->created_by = auth()->id() ?? null;
+				$log->created_at = now();
+				$log->save();
+			})
+			->finally(function (Batch $batch) {
+				$log = TransactionLog::where('identifier', $batch->id)->first();
+				TransactionLog::where('id', $log->id)->update([
+					'status' => 'Completed',
+				]);
+			})
+			->name("Product Import")
+			->dispatch();
+
+			/* Add jobs to the batch for processing chunks */
+			foreach ($chunks as $chunk) {
+				$data = [
+					'productFileFormatArray' => $productFileFormatArray,
+					'header' => $header,
+					'chunk' => $chunk,
+					'userId' => auth()->id()
+				];
+				$batch->add(new ImportProductJob($data));
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+			]);
+		} catch(\Exception $exception) {
+			return response()->json([
+				'success' => false,
+				'message' => $exception->getMessage()
+			]);
+		}
 	}
 }

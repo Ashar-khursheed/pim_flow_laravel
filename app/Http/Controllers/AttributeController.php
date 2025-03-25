@@ -193,7 +193,7 @@ class AttributeController extends BaseController
 	 */
 	public function show($attributeId)
 	{
-		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value'])->find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroups:id,name'])->find($attributeId);
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
@@ -202,6 +202,8 @@ class AttributeController extends BaseController
 		}
 
 		$attribute->validations = json_decode($attribute->validations);
+
+		$attribute->attributeGroups->each->makeHidden(['pivot']);
 
 		return response()->json([
 			'success' => true,
@@ -497,7 +499,6 @@ class AttributeController extends BaseController
 		return $response;
 	}
 
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/import",
@@ -513,11 +514,7 @@ class AttributeController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success",
-	 *         @OA\MediaType(
-	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	 *         )
-	 * 	   ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
