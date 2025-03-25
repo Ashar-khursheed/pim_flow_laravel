@@ -499,7 +499,6 @@ class AttributeController extends BaseController
 		return $response;
 	}
 
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/import",
@@ -515,11 +514,7 @@ class AttributeController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success",
-	 *         @OA\MediaType(
-	 *             mediaType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-	 *         )
-	 * 	   ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
