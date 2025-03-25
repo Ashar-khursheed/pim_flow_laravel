@@ -307,7 +307,7 @@ class ProductController extends BaseController
 	public function show($productId, Request $request)
 	{
 		$attributeGroups = [
-			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status'],
+			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
 			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
 			'Marketing' => ['name', 'content', 'description'],
@@ -335,7 +335,7 @@ class ProductController extends BaseController
 
 		$attrType = $request->attr_type ?? 'All';
 		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
-		$with = $relations[$attrType] ?? [];
+		$with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
 
@@ -461,17 +461,16 @@ class ProductController extends BaseController
 				]];
 				break;
 				case 'categories':
-				$formattedProduct['categories'] = $product->categories->map(function ($category) use ($product) {
-					return [
-						'id' => $category->id,
-						'name' => $category->name,
-						'parent_id' => $category->parent_id,
-						'pivot' => [
-							'product_id' => $product->id,
-							'category_id' => $category->id
-						]
-					];
-				});
+					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
+						return [
+							'id' => $category->id,
+							'name' => $category->name,
+							'parent_id' => $category->parent_id
+						];
+					}) : [];
+					break;
+				
+					
 				break;
 				case 'content':
 					// Extract <li> items from the content and remove HTML tags

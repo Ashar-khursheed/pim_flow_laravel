@@ -319,7 +319,7 @@ class ProductExportController extends Controller
                      // Format special fields
                      switch ($field) {
                          case 'categories':
-                             $lastCategory = $product->categories ? $product->categories->last()->name ?? '' : '';
+                             $lastCategory = $product->latestCategory() ? $product->latestCategory()->name ?? '' : '';
                              $row[] = $lastCategory;
                              break;
      

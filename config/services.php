@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'claude' => [
+        'api_url' => env('CLAUDE_API_URL', 'https://api.anthropic.com/v1/messages'),
+        'api_key' => env('CLAUDE_API_KEY'),
+        'model' => env('CLAUDE_MODEL', 'claude-3.5-sonnet'),
+        'version' => env('CLAUDE_VERSION', '2023-06-01'),
+    ],
+
 ];

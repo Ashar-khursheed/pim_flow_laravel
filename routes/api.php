@@ -25,7 +25,7 @@ use App\Http\Controllers\FlashSaleController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
-
+use App\Http\Controllers\ClaudeAIController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -104,6 +104,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('newsletters', NewsletterController::class);
 
+	
+Route::post('seo-details', [SeoDetailController::class, 'store']);
+Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
+
+
+
+Route::post('/generate-reviews-faqs', [ClaudeAIController::class, 'generateReviewsAndFAQs']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
