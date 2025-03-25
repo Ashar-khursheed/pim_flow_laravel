@@ -375,10 +375,7 @@
                     "200": {
                         "description": "Success",
                         "content": {
-
                             "application/json": {}
-
-
                         }
                     }
                 },
@@ -3844,7 +3841,6 @@
                 ]
             }
         },
-
         "/api/products/import": {
             "post": {
                 "tags": [
