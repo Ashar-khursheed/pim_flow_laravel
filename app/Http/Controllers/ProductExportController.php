@@ -316,10 +316,10 @@ class ProductExportController extends Controller
              foreach ($products as $product) {
                  $row = [];
                  foreach ($fields as $field) {
-                     // Format special fields
+                     // Format special sfields
                      switch ($field) {
                          case 'categories':
-                             $lastCategory = $product->categories ? $product->categories->last()->name ?? '' : '';
+                             $lastCategory = $product->latestCategory() ? $product->latestCategory()->name ?? '' : '';
                              $row[] = $lastCategory;
                              break;
      
