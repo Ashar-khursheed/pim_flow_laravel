@@ -375,7 +375,7 @@
                     "200": {
                         "description": "Success",
                         "content": {
-                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {}
+                            "application/json": {}
                         }
                     }
                 },
@@ -3603,6 +3603,48 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/products/import": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Import products from an Excel file",
+                "operationId": "9385548716bbfe802e074592297d7e4a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "CSV file (.csv) max 5MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success",
