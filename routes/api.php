@@ -23,6 +23,7 @@ use App\Http\Controllers\SliderController;
 use App\Http\Controllers\DiscountController;
 use App\Http\Controllers\FlashSaleController;
 use App\Http\Controllers\NewsletterController;
+use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
 
 
@@ -33,6 +34,9 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
+
+	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
+	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
@@ -64,6 +68,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 
+	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
 	Route::apiResource('brands', BrandController::class);

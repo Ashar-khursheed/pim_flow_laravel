@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 use Botble\Base\Supports\Breadcrumb;
 use Illuminate\Support\Facades\Bus;
@@ -192,7 +193,7 @@ class AttributeController extends BaseController
 	 */
 	public function show($attributeId)
 	{
-		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value'])->find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroups:id,name'])->find($attributeId);
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
@@ -201,6 +202,8 @@ class AttributeController extends BaseController
 		}
 
 		$attribute->validations = json_decode($attribute->validations);
+
+		$attribute->attributeGroups->each->makeHidden(['pivot']);
 
 		return response()->json([
 			'success' => true,
@@ -232,13 +235,13 @@ class AttributeController extends BaseController
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
 	 *             @OA\Property(property="type", type="string", example="dropdown"),
+	 *             @OA\Property(property="attribute_group_id", type="integer", example="1"),
 	 *             @OA\Property(
 	 *                 property="attribute_values",
 	 *                 type="array",
 	 *                 description="Array of attribute values",
 	 *                 @OA\Items(type="string", example="value1")
 	 *             ),
-	 *             @OA\Property(property="is_required", type="boolean", example=true),
 	 *             @OA\Property(
 	 *                 property="validations",
 	 *                 type="object",
@@ -254,8 +257,6 @@ class AttributeController extends BaseController
 	 */
 	public function update(Request $request, $attributeId)
 	{
-		// dd($request->toArray());
-		dd(count($request->attribute_values));
 		$attribute = Attribute::find($attributeId);
 		if (!$attribute) {
 			return response()->json([
@@ -268,49 +269,65 @@ class AttributeController extends BaseController
 		$request->validate([
 			'name' => "required|unique:attributes,name,".$attributeId,
 			'code' => "required|unique:attributes,code,".$attributeId,
-			'type' => "required"
+			'type' => "required",
+			'attribute_group_id' => 'required|exists:attribute_groups,id'
 		]);
 
 		$input = $request->all();
 
 		if ($input['validations']) {
 			$attribute->validations = json_encode($input['validations']);
-			unset($input['validations']); /* Remove processed field */
 		}
 
-		if (array_key_exists('attribute_values', $input)) {
-			$providedValues = $input['attribute_values'];
 
-			$existingValues = $attribute->attributeValues->pluck('value')->toArray();
+		DB::beginTransaction();
+		try {
+			if (array_key_exists('attribute_values', $input)) {
+				$providedValues = $input['attribute_values'];
 
-			$valuesToDelete = array_diff($existingValues, $providedValues);
+				$existingValues = $attribute->attributeValues->pluck('attribute_value')->toArray();
 
-			$valuesToAdd = array_diff($providedValues, $existingValues);
+				$valuesToDelete = array_diff($existingValues, $providedValues);
 
-			if (!empty($valuesToDelete)) {
-				$attribute->attributeValues()->whereIn('value', $valuesToDelete)->delete();
+				$valuesToAdd = array_diff($providedValues, $existingValues);
+
+				if (!empty($valuesToDelete)) {
+					$attribute->attributeValues()->whereIn('attribute_value', $valuesToDelete)->delete();
+				}
+
+				foreach ($valuesToAdd as $newValue) {
+					$attribute->attributeValues()->create(['attribute_value' => $newValue]);
+				}
+				unset($input['attribute_values']);
+			}
+			$attribute->attributeGroups()->sync($input['attribute_group_id']);
+			unset($input['attribute_group_id']);
+
+			/* Assign remaining valid fields to the attribute */
+			foreach ($input as $key => $value) {
+				$attribute->$key = $value;
 			}
 
-			foreach ($valuesToAdd as $newValue) {
-				$attribute->attributeValues()->create(['value' => $newValue]);
-			}
-			unset($input['attribute_values']);
+			/* Save the attribute */
+			$attribute->save();
+
+			DB::commit();
+
+			/* Return success response */
+			return response()->json([
+				'success' => true,
+				'message' => 'Attribute updated successfully.',
+				'data' => $attribute
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update attribute.',
+				'error' => $e->getMessage()
+			], 500);
 		}
-
-		/* Assign remaining valid fields to the attribute */
-		foreach ($input as $key => $value) {
-			$attribute->$key = $value;
-		}
-
-		/* Save the attribute */
-		$attribute->save();
-
-		/* Return success response */
-		return response()->json([
-			'success' => true,
-			'message' => 'Attribute updated successfully.',
-			'data' => $attribute
-		]);
 	}
 
 	/**

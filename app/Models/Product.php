@@ -242,5 +242,15 @@ class Product extends Model
     {
         return $this->belongsTo(Tax::class, 'tax_id');
     }
-	
+
+		public function reviews()
+	{
+		return $this->hasMany(Review::class, 'product_id');
+	}
+
+	public function faqs()
+	{
+		return $this->hasMany(Faq::class, 'product_id');
+	}
+		
 }

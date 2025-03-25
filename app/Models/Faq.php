@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Model;
  *     @OA\Property(property="question", type="string", example="What is Laravel?"),
  *     @OA\Property(property="answer", type="string", example="Laravel is a PHP framework."),
  *     @OA\Property(property="faq_category_id", type="integer", example=2),
+ *     @OA\Property(property="faq_product_id", type="integer", example=2),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
@@ -24,10 +25,16 @@ class Faq extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['question', 'answer', 'category_id', 'status'];
+    protected $fillable = ['question', 'answer', 'category_id', 'status', 'product_id'];
 
     public function category()
     {
         return $this->belongsTo(FaqCategory::class, 'category_id');
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 }
+
