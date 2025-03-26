@@ -3657,6 +3657,20 @@
                                             },
                                             "type": "object"
                                         }
+                                    },
+                                    "product_attributes": {
+                                        "description": "Dynamic attributes with attribute_id as key",
+                                        "type": "object",
+                                        "example": {
+                                            "1": "1111",
+                                            "4": "tanuj",
+                                            "5": "raaj",
+                                            "11": "ahmad"
+                                        },
+                                        "additionalProperties": {
+                                            "description": "Attribute value corresponding to the attribute_id",
+                                            "type": "string"
+                                        }
                                     }
                                 },
                                 "type": "object"
