@@ -18,6 +18,7 @@ use App\Models\Brand;
 use App\Models\Slug;
 use App\Models\TransactionLog;
 use App\Models\Faq;
+use App\Models\Attribute;
 
 use App\Jobs\ImportProductJob;
 
@@ -475,8 +476,8 @@ class ProductController extends BaseController
 						];
 					}) : [];
 					break;
-				
-					
+
+
 				break;
 				case 'content':
 					// Extract <li> items from the content and remove HTML tags
@@ -675,8 +676,22 @@ class ProductController extends BaseController
 	*                         @OA\Property(property="category_id", type="integer", nullable=true, example=2),
 	*                         @OA\Property(property="status", type="integer", example=1)
 	*                     )
-	*                 )
-	*
+	*                 ),
+	* 				  @OA\Property(
+	* 				      property="product_attributes",
+	* 				      type="object",
+	* 				      description="Dynamic attributes with attribute_id as key",
+	* 				      @OA\AdditionalProperties(
+	* 				          type="string",
+	* 				          description="Attribute value corresponding to the attribute_id"
+	* 				      ),
+	* 				      example={
+	* 				          "1": "1111",
+	* 				          "4": "tanuj",
+	* 				          "5": "raaj",
+	* 				          "11": "ahmad"
+	* 				      }
+	* 				  )
 	*             )
 	*         )
 	*     ),
@@ -770,6 +785,46 @@ class ProductController extends BaseController
 		 ]);
 	 }
 
+	if ($request->product_attributes) {
+		$productAttributes = json_decode($request->product_attributes, true);
+
+		if (is_array($productAttributes) && count($productAttributes) > 0) {
+			$productAttributes = array_filter($productAttributes, function ($value) {
+				return !is_null($value) && $value !== '';
+			});
+
+			$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+
+			$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+
+			if (!empty($attributesToDelete)) {
+				$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+			}
+
+			foreach ($productAttributes as $attributeId => $attributeValue) {
+				$existingAttribute = Attribute::find($attributeId);
+
+				if (!$existingAttribute) {
+					return response()->json([
+						'success' => false,
+						'message' => "Attribute ID: $attributeId does not exist."
+					]);
+				}
+
+				$product->productAttributes()->updateOrCreate(
+					['attribute_id' => $attributeId],
+					['attribute_value' => $attributeValue]
+				);
+
+				if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
+					$existingAttribute->attributeValues()->create([
+						'attribute_id' => $attributeId,
+						'attribute_value' => $attributeValue
+					]);
+				}
+			}
+		}
+	}
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
