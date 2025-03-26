@@ -87,7 +87,7 @@ class TransactionLogController extends BaseController
 			$totalRecords = $records->count();
 		}
 
-		$records = $records->get(['module', 'action', 'identifier', 'status', 'created_at', 'created_by']);
+		$records = $records->get(['id', 'module', 'action', 'identifier', 'status', 'created_at', 'created_by']);
 
 
 
