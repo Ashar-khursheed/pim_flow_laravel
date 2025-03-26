@@ -690,7 +690,8 @@ class ProductController extends BaseController
 	* 				          "4": "tanuj",
 	* 				          "5": "raaj",
 	* 				          "11": "ahmad"
-	* 				      }
+	* 				      },
+	* 				      nullable=true
 	* 				  )
 	*             )
 	*         )
@@ -825,6 +826,7 @@ class ProductController extends BaseController
 			}
 		}
 	}
+
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
@@ -1035,6 +1037,7 @@ class ProductController extends BaseController
 		 "compare_products", "google_shopping_category", "google_shopping_mpn",
 		 "order", "box_quantity", "delivery_days"
 	 ];
+	unset($input['product_attributes']);
 
 	 /* Check for invalid fields */
 	 $invalidFields = array_diff(array_keys($input), $validArray);
@@ -1251,6 +1254,8 @@ class ProductController extends BaseController
 	 /* Save the product */
 	 $product->save();
 
+	 $product = Product::find($product->id);
+
 	 // if($request->attributes){
 	 // 	$product->productAttributes([attribute_id=>$key, $attribute_value=>$value]);;;;
 	 // }
@@ -1259,7 +1264,7 @@ class ProductController extends BaseController
 	 return response()->json([
 		 'success' => true,
 		 'message' => 'Product updated successfully.',
-		 'product' => $product->toArray(),
+		 'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
 		 'review' => $review ?? null,
 		 'faq' => $faqs ?? null,
 	 ]);

@@ -3667,6 +3667,7 @@
                                             "5": "raaj",
                                             "11": "ahmad"
                                         },
+                                        "nullable": true,
                                         "additionalProperties": {
                                             "description": "Attribute value corresponding to the attribute_id",
                                             "type": "string"
