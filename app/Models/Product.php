@@ -200,15 +200,15 @@ class Product extends Model
 	}
 
 	/* Get the latest category associated with the product */
-	public function latestCategory()
+	public function latestChildCategory()
 	{
-		return $this->categories()->orderByDesc('ec_product_category_product.created_at')->orderByDesc('ec_product_category_product.category_id')->first();
+		return $this->categories()->whereDoesntHave('children')->orderByDesc('ec_product_category_product.created_at')->orderByDesc('ec_product_category_product.category_id')->first();
 	}
 
 	/* Get unique attributes associated with the product's latest category */
 	public function productCategoryAttributes()
 	{
-		$category = $this->latestCategory();
+		$category = $this->latestChildCategory();
 
 		if (!$category) {
 			return collect();
@@ -252,5 +252,5 @@ class Product extends Model
 	{
 		return $this->hasMany(Faq::class, 'product_id');
 	}
-		
+
 }
