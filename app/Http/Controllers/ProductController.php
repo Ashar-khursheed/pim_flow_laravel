@@ -1254,6 +1254,8 @@ class ProductController extends BaseController
 	 /* Save the product */
 	 $product->save();
 
+	 $product = Product::find($product->id);
+
 	 // if($request->attributes){
 	 // 	$product->productAttributes([attribute_id=>$key, $attribute_value=>$value]);;;;
 	 // }
@@ -1262,7 +1264,7 @@ class ProductController extends BaseController
 	 return response()->json([
 		 'success' => true,
 		 'message' => 'Product updated successfully.',
-		 'product' => $product->toArray(),
+		 'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
 		 'review' => $review ?? null,
 		 'faq' => $faqs ?? null,
 	 ]);
