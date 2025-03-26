@@ -1577,6 +1577,90 @@
                 ]
             }
         },
+        "/api/generate-reviews-faqs": {
+            "post": {
+                "tags": [
+                    "Reviews & FAQs"
+                ],
+                "summary": "Generate reviews and FAQs based on product description",
+                "operationId": "75e67f51bd38c5acc94630f692341c60",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_description"
+                                ],
+                                "properties": {
+                                    "product_description": {
+                                        "type": "string",
+                                        "example": "A high-quality smartwatch with heart rate monitoring and OLED display."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully generated reviews and FAQs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "reviews": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "customer_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "customer_email": {
+                                                        "type": "string"
+                                                    },
+                                                    "comment": {
+                                                        "type": "string"
+                                                    },
+                                                    "stars": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "maximum": 5,
+                                                        "minimum": 4.5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "faqs": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "question": {
+                                                        "type": "string"
+                                                    },
+                                                    "answer": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/discounts": {
             "get": {
                 "tags": [
@@ -4591,6 +4675,124 @@
                 ]
             }
         },
+        "/api/seo-details": {
+            "post": {
+                "tags": [
+                    "SEO Details"
+                ],
+                "summary": "Create SEO Details for Product",
+                "operationId": "9a9cfc35d737498eb00bf2d992fc360e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "primary_keyword",
+                                    "primary_keyword_search_volume",
+                                    "url",
+                                    "meta_title"
+                                ],
+                                "properties": {
+                                    "primary_keyword": {
+                                        "type": "string",
+                                        "example": "Product A"
+                                    },
+                                    "primary_keyword_search_volume": {
+                                        "type": "integer",
+                                        "example": 500
+                                    },
+                                    "secondary_keywords": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "example": "https://example.com/product-a"
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "Meta Title of Product A"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "Description of Product A"
+                                    },
+                                    "og_title": {
+                                        "type": "string",
+                                        "example": "OG Title of Product A"
+                                    },
+                                    "og_description": {
+                                        "type": "string",
+                                        "example": "OG Description of Product A"
+                                    },
+                                    "og_image": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.jpg"
+                                    },
+                                    "canonical_tag": {
+                                        "type": "string",
+                                        "example": "https://example.com/product-a-canonical"
+                                    },
+                                    "internal_links": {
+                                        "type": "string",
+                                        "example": "https://example.com/internal-link-1"
+                                    },
+                                    "indexing": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "SEO details successfully created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation error"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [
@@ -6116,6 +6318,10 @@
             "description": "Category Pages"
         },
         {
+            "name": "Reviews & FAQs",
+            "description": "Reviews & FAQs"
+        },
+        {
             "name": "FAQ Categories",
             "description": "FAQ Categories"
         },
@@ -6130,6 +6336,10 @@
         {
             "name": "Reviews",
             "description": "Reviews"
+        },
+        {
+            "name": "SEO Details",
+            "description": "SEO Details"
         },
         {
             "name": "Stores",
