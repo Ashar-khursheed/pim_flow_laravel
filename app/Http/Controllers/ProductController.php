@@ -690,7 +690,8 @@ class ProductController extends BaseController
 	* 				          "4": "tanuj",
 	* 				          "5": "raaj",
 	* 				          "11": "ahmad"
-	* 				      }
+	* 				      },
+	* 				      nullable=true
 	* 				  )
 	*             )
 	*         )
@@ -825,6 +826,7 @@ class ProductController extends BaseController
 			}
 		}
 	}
+
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
@@ -1035,6 +1037,7 @@ class ProductController extends BaseController
 		 "compare_products", "google_shopping_category", "google_shopping_mpn",
 		 "order", "box_quantity", "delivery_days"
 	 ];
+	unset($input['product_attributes']);
 
 	 /* Check for invalid fields */
 	 $invalidFields = array_diff(array_keys($input), $validArray);
