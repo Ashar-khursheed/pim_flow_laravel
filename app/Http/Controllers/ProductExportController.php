@@ -304,7 +304,7 @@ class ProductExportController extends Controller
 
 		/* CSV response create karna */
 		$response = new StreamedResponse(function () use ($products, $fields, $headerMap) {
-			$handle = fopen('php:/*output', 'w'); */
+			$handle = fopen('php://output', 'w');
 
 			/* Write headers with proper capitalization */
 			$headers = [];
@@ -319,7 +319,7 @@ class ProductExportController extends Controller
 					/* Format special sfields */
 					switch ($field) {
 						case 'categories':
-						$lastCategory = $product->latestCategory() ? $product->latestCategory()->name ?? '' : '';
+						$lastCategory = $product->latestChildCategory() ? $product->latestChildCategory()->name ?? '' : '';
 						$row[] = $lastCategory;
 						break;
 
@@ -447,7 +447,7 @@ class ProductExportController extends Controller
 						break;
 
 						case 'url':
-						$row[] = $product->slug ? 'https:/*thehorecastore.co/products/' . $product->slug->key : ''; */
+						$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
 						break;
 
 						case 'seo_title':

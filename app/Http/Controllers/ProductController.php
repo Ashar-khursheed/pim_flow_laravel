@@ -1499,7 +1499,7 @@ class ProductController extends BaseController
 			], 404);
 		}
 
-		$category = $product->latestCategory();
+		$category = $product->latestChildCategory();
 		if (!$category) {
 			return response()->json([
 				'success' => false,
