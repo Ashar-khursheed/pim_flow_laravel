@@ -24,12 +24,12 @@ return new class extends Migration
 			$table->timestamps();
 		});
 
-        Schema::create('attribute_group_categories', function (Blueprint $table) {
-            $table->id();
-            $table->integer('category_id');
-            $table->integer('relational_id')->index();
-            $table->string('relational_type')->index();
-            $table->timestamps();
+		Schema::create('attribute_group_categories', function (Blueprint $table) {
+			$table->id();
+			$table->integer('category_id');
+			$table->integer('relational_id')->index();
+			$table->string('relational_type')->index();
+			$table->timestamps();
 		});
 	}
 
