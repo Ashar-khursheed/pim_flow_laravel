@@ -61,7 +61,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 
-	Route::resource('transaction-logs', TransactionLogController::class)->only(['index']);
+	Route::resource('transaction-logs', TransactionLogController::class);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 	Route::get('/products/export', [ProductExportController::class, 'export']);
@@ -105,7 +105,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('newsletters', NewsletterController::class);
 
-	
+
 Route::post('seo-details', [SeoDetailController::class, 'store']);
 Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 

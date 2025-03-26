@@ -64,7 +64,8 @@ class TransactionLogController extends BaseController
 
 	public function index(Request $request)
 	{
-		$records = TransactionLog::query();
+		// dd(auth()->id());
+		$records = TransactionLog::with(['createdBy:id,first_name,last_name']);
 
 		if ($request->filled('module') && in_array($request->module, ['Product', 'Product Attribute'])) {
 			$records->where('module', $request->module);
@@ -81,34 +82,21 @@ class TransactionLogController extends BaseController
 			$totalRecords = $records->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+			$records = $records->offset(($page - 1) * $length)->limit($length);
 		} else {
-			$records = $records->get();
+			$totalRecords = $records->count();
 		}
 
-		/* Decode JSON in 'description' field */
-		$records->transform(function ($record) {
-			if ($record->description && json_validate($record->description)) {
-				$decoded = json_decode($record->description, true);
+		$records = $records->get(['module', 'action', 'identifier', 'status', 'created_at', 'created_by']);
 
-				/* Handle 'Error' field */
-				array_walk_recursive($decoded, function (&$value, $key) {
-					if ($key === 'Error') {
-						$value = explode(' | ', $value);
-					}
-				});
 
-				$record->description = $decoded;
-			}
-
-			return $record;
-		});
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Transaction Log List',
 			'data' => $records,
 			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
@@ -131,9 +119,52 @@ class TransactionLogController extends BaseController
 	/**
 	 * Display the specified resource.
 	 */
-	public function show(Website $website)
+	/**
+	 * @OA\Get(
+	 *     path="/api/transaction-logs/{transaction_log_id}",
+	 *     summary="Get transaction log details",
+	 *     description="Fetches transaction log details based on the given transaction log ID.",
+	 *     tags={"Transaction Logs"},
+	 *     @OA\Parameter(
+	 *         name="transaction_log_id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="ID of the transaction log",
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($id)
 	{
-		//
+		$record = TransactionLog::with(['createdBy:id,first_name,last_name'])->find($id);
+
+		/* Check if record exists */
+		if (!$record) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Transaction log not found.',
+			], 404);
+		}
+
+		/* Decode JSON in 'description' field */
+		if ($record->description && json_validate($record->description)) {
+			$decoded = json_decode($record->description, true);
+			/* Handle 'Error' field */
+			array_walk_recursive($decoded, function (&$value, $key) {
+				if ($key === 'Error') {
+					$value = explode(' | ', $value);
+				}
+			});
+			$record->description = $decoded;
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Transaction log detail',
+			'data' => $record
+		]);
 	}
 
 	/**
