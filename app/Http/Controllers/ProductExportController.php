@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 class ProductExportController extends Controller
 {
 	/**
-	 * @OA\Get(
+	 * @OA\Post(
 	 *     path="/api/products/export",
 	 *     summary="Export products as CSV",
 	 *     tags={"Products"},

@@ -4095,12 +4095,12 @@
             }
         },
         "/api/products/export": {
-            "get": {
+            "post": {
                 "tags": [
                     "Products"
                 ],
                 "summary": "Export products as CSV",
-                "operationId": "bc5082eceaad72b7ba75d1aa9a276d29",
+                "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
                 "parameters": [
                     {
                         "name": "category_id",
