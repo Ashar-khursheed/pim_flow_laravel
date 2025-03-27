@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
+use Illuminate\Http\UploadedFile;
 
 use App\Models\Product;
 use App\Models\Tax;
@@ -786,8 +787,12 @@ class ProductController extends BaseController
 		 ]);
 	 }
 
-	if ($request->product_attributes) {
-		$productAttributes = json_decode($request->product_attributes, true);
+	if ($request->has('product_attributes')) {
+		$productAttributes = $request->product_attributes;
+
+		if (is_string($productAttributes)) {
+			$productAttributes = json_decode($productAttributes, true);
+		}
 
 		if (is_array($productAttributes) && count($productAttributes) > 0) {
 			$productAttributes = array_filter($productAttributes, function ($value) {
@@ -803,30 +808,55 @@ class ProductController extends BaseController
 			}
 
 			foreach ($productAttributes as $attributeId => $attributeValue) {
-				$existingAttribute = Attribute::find($attributeId);
-
-				if (!$existingAttribute) {
+				$attributeInfo = Attribute::find($attributeId);
+				if (!$attributeInfo) {
 					return response()->json([
 						'success' => false,
 						'message' => "Attribute ID: $attributeId does not exist."
 					]);
 				}
 
-				$product->productAttributes()->updateOrCreate(
-					['attribute_id' => $attributeId],
-					['attribute_value' => $attributeValue]
-				);
+				if (in_array($attributeInfo->type, ['text', 'number', 'select', 'price', 'measurement', 'toggle', 'date'])) {
+					$product->productAttributes()->updateOrCreate(
+						['attribute_id' => $attributeId],
+						['attribute_value' => $attributeValue]
+					);
 
-				if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
-					$existingAttribute->attributeValues()->create([
-						'attribute_id' => $attributeId,
-						'attribute_value' => $attributeValue
-					]);
+					if ($attributeInfo->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
+						$attributeInfo->attributeValues()->create([
+							'attribute_id' => $attributeId,
+							'attribute_value' => $attributeValue
+						]);
+					}
+				} else if (in_array($attributeInfo->type, ['multiselect'])) {
+					$product->productAttributes()->updateOrCreate(
+						['attribute_id' => $attributeId],
+						['attribute_value' => $attributeValue]
+					);
+					$attributeVals = explode(',', $attributeValue);
+					foreach ($attributeVals as $value) {
+						if ($attributeInfo->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+							$attributeInfo->attributeValues()->create([
+								'attribute_id' => $attributeId,
+								'attribute_value' => $value
+							]);
+						}
+					}
+				} else if (in_array($attributeInfo->type, ['file', 'image', 'video'])) {
+					if ($attributeValue instanceof UploadedFile) {
+						$attributePath = env('STORAGE_ENV', 'default-folder') . "/attributes";
+						$filePath = $attributeValue->store($attributePath, 's3');
+						$attributeValue = Storage::disk('s3')->url($filePath);
+
+						$product->productAttributes()->updateOrCreate(
+							['attribute_id' => $attributeId],
+							['attribute_value' => $attributeValue]
+						);
+					}
 				}
 			}
 		}
 	}
-
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
