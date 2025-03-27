@@ -111,7 +111,9 @@ Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 
 
 
-Route::post('/generate-reviews-faqs', [ClaudeAIController::class, 'generateReviewsAndFAQs']);
+Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
+Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
+Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

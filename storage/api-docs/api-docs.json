@@ -1577,13 +1577,13 @@
                 ]
             }
         },
-        "/api/generate-reviews-faqs": {
+        "/api/generate-reviews": {
             "post": {
                 "tags": [
-                    "Reviews & FAQs"
+                    "Reviews"
                 ],
-                "summary": "Generate reviews and FAQs based on product description",
-                "operationId": "75e67f51bd38c5acc94630f692341c60",
+                "summary": "Generate customer reviews based on product description",
+                "operationId": "8b582498521c6a6b87bbd0575a643b67",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1595,7 +1595,7 @@
                                 "properties": {
                                     "product_description": {
                                         "type": "string",
-                                        "example": "A high-quality smartwatch with heart rate monitoring and OLED display."
+                                        "example": "A smartwatch with heart rate monitoring and OLED display."
                                     }
                                 },
                                 "type": "object"
@@ -1605,7 +1605,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successfully generated reviews and FAQs",
+                        "description": "Successfully generated reviews",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1624,15 +1624,61 @@
                                                         "type": "string"
                                                     },
                                                     "stars": {
-                                                        "type": "number",
-                                                        "format": "float",
+                                                        "type": "integer",
                                                         "maximum": 5,
-                                                        "minimum": 4.5
+                                                        "minimum": 4
                                                     }
                                                 },
                                                 "type": "object"
                                             }
-                                        },
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/generate-faqs": {
+            "post": {
+                "tags": [
+                    "FAQs"
+                ],
+                "summary": "Generate FAQs based on product description",
+                "operationId": "a9f61c4f2e40869e8f4d35ef3fb2c998",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_description"
+                                ],
+                                "properties": {
+                                    "product_description": {
+                                        "type": "string",
+                                        "example": "A smartwatch with heart rate monitoring and OLED display."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully generated FAQs",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
                                         "faqs": {
                                             "type": "array",
                                             "items": {
@@ -1641,6 +1687,67 @@
                                                         "type": "string"
                                                     },
                                                     "answer": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/generate-benefits-features": {
+            "post": {
+                "tags": [
+                    "Benefits & Features"
+                ],
+                "summary": "Generate benefits and features based on product description",
+                "operationId": "682a01269133b0021b5a255c85fa99e0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_description"
+                                ],
+                                "properties": {
+                                    "product_description": {
+                                        "type": "string",
+                                        "example": "A smartwatch with heart rate monitoring and OLED display."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully generated benefits and features",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "benefits_features": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "heading": {
+                                                        "type": "string"
+                                                    },
+                                                    "description": {
                                                         "type": "string"
                                                     }
                                                 },
@@ -6373,24 +6480,24 @@
             "description": "Category Pages"
         },
         {
-            "name": "Reviews & FAQs",
-            "description": "Reviews & FAQs"
-        },
-        {
-            "name": "FAQ Categories",
-            "description": "FAQ Categories"
+            "name": "Reviews",
+            "description": "Reviews"
         },
         {
             "name": "FAQs",
             "description": "FAQs"
         },
         {
-            "name": "Flash Sales",
-            "description": "Flash Sales"
+            "name": "Benefits & Features",
+            "description": "Benefits & Features"
         },
         {
-            "name": "Reviews",
-            "description": "Reviews"
+            "name": "FAQ Categories",
+            "description": "FAQ Categories"
+        },
+        {
+            "name": "Flash Sales",
+            "description": "Flash Sales"
         },
         {
             "name": "SEO Details",
