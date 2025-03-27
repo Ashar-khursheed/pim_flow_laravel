@@ -421,9 +421,16 @@ class ProductController extends BaseController
 					]
 				];
 				break;
-				case 'stock_status':
-				$formattedProduct[$attribute] = [['status' => $value]];
-				break;
+				 case 'stock_status':
+					$formattedProduct['stock_status'] = [
+						'selected' => $value,
+						'values' => [
+							'in_stock' => 'In Stock',
+							'out_of_stock' => 'Out of Stock',
+							'pre_order' => 'Pre Order'
+						]
+					];
+					break;
 				case 'tax_id':
 				$tax = Tax::find($value);
 				if ($tax) {
@@ -458,14 +465,25 @@ class ProductController extends BaseController
 				]];
 				break;
 				case 'weight_unit_id':
-				$formattedProduct['weight_unit'] = [[
-					'symbol' => optional($product->weightUnit)->symbol
-				]];
-				break;
-				case 'length_unit_id':
-				$formattedProduct['length_unit'] = [[
-					'symbol' => optional($product->lengthUnit)->symbol
-				]];
+					$formattedProduct['weight_unit'] = [
+						'selected' => optional($product->weightUnit)->symbol,
+						'values' => [
+							'kg' => 'Kilograms',
+							'lbs' => 'Pounds',
+							'grams' => 'Grams'
+						]
+					];
+					break;
+				   case 'length_unit_id':
+					$formattedProduct['length_unit'] = [
+						'selected' => optional($product->lengthUnit)->symbol,
+						'values' => [
+							'mm' => 'Millimeters',
+							'cm' => 'Centimeters',
+							'inch' => 'Inches'
+						]
+					];
+					break;
 				break;
 				case 'categories':
 					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
@@ -497,15 +515,17 @@ class ProductController extends BaseController
 						}
 						break;
 
-						case 'compare_type':
-						$decoded = json_decode($value, true) ?? [];
-						$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-						break;
+					case 'compare_type':
+					$decoded = json_decode($value, true);
+					$decoded = is_array($decoded) ? $decoded : []; // Ensure it's an array
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
 
-						case 'compare_products':
-						$decoded = json_decode($value, true) ?? [];
-						$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-						break;
+				case 'compare_products':
+					$decoded = json_decode($value, true);
+					$decoded = is_array($decoded) ? $decoded : []; // Ensure it's an array
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
 
 						case 'images':
 						case 'video_path':
