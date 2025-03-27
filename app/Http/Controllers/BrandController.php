@@ -58,7 +58,7 @@ class BrandController extends BaseController
 			$brands = $brands->offset(($page - 1)*$length)->limit($length);
 		}
 
-		$brands = $brands->get(['id', 'name']);
+		$brands = $brands->pluck('name', 'id');
 
 		return response()->json([
 			'success' => true,
