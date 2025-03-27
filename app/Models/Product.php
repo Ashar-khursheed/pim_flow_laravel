@@ -110,6 +110,8 @@ class Product extends Model
 		'variant_3_value' => 'nullable|string|max:255',
 		'variant_3_products' => 'nullable|string',
 		'google_shopping_category',
+		'benefits_features' => 'array',
+
 	];
 
 	public function categories()

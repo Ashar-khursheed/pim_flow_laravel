@@ -319,7 +319,7 @@ class ProductController extends BaseController
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
 			'Pricing & Sales' => ['price', 'sale_price', 'sale_type','unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
 			'Marketing' => ['name', 'content', 'description'],
-			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents'],
+			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents' , 'benefits_features'],
 			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
 			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
@@ -422,16 +422,26 @@ class ProductController extends BaseController
 					]
 				];
 				break;
-				 case 'stock_status':
+				case 'benefits_features':
+					$formattedProduct['benefits_features'] = json_decode($value, true);
+					break;
+				
+				case 'stock_status':
+					$stockStatusMappings = [
+						'in_stock' => 'In Stock',
+						'out_of_stock' => 'Out of Stock',
+						'pre_order' => 'Pre Order'
+					];
+				
+					// Map selected value to frontend readable text
+					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+				
 					$formattedProduct['stock_status'] = [
-						'selected' => $value,
-						'values' => [
-							'in_stock' => 'In Stock',
-							'out_of_stock' => 'Out of Stock',
-							'pre_order' => 'Pre Order'
-						]
+						'selected' => $selectedStockStatus, // This will now show 'In Stock', 'Out of Stock', etc.
+						'values' => $stockStatusMappings // Values remain the same
 					];
 					break;
+				
 				case 'tax_id':
 				$tax = Tax::find($value);
 				if ($tax) {
@@ -479,9 +489,9 @@ class ProductController extends BaseController
 					$formattedProduct['length_unit'] = [
 						'selected' => optional($product->lengthUnit)->symbol,
 						'values' => [
-							'mm' => 'Millimeters',
-							'cm' => 'Centimeters',
-							'inch' => 'Inches'
+							'mm' => 'mm',
+							'cm' => 'cm',
+							'inch' => 'inch'
 						]
 					];
 					break;
@@ -618,6 +628,15 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="name", type="string", example="Sample Product"),
 	*                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
 	*                 @OA\Property(property="description", type="string", example="Short description."),
+	*                    @OA\Property(
+	*                 property="benefits_features",
+	*                 type="array",
+	*                 @OA\Items(
+	*                  type="object",
+	*                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
+	*                  @OA\Property(property="feature", type="string", example="Get your order delivered within 24 hours.")
+	*            			  )
+	* 					),
 	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
 	*                 @OA\Property(property="image", type="string", format="binary"),
 	*                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
@@ -1066,7 +1085,7 @@ class ProductController extends BaseController
 		 "variant_color_title", "variant_color_value", "store_id", "brand_id",
 		 "views", "units_sold", "frequently_bought_together", "compare_type",
 		 "compare_products", "google_shopping_category", "google_shopping_mpn",
-		 "order", "box_quantity", "delivery_days", "unit_of_measurement_id"
+		 "order", "box_quantity", "delivery_days", "unit_of_measurement_id","benefits_features"
 	 ];
 	unset($input['product_attributes']);
 
@@ -1124,6 +1143,34 @@ class ProductController extends BaseController
 		$product->unit_of_measurement_id = $input['unit_of_measurement_id']; // Assign the valid ID
 	}
 
+						// Decode existing benefits_features if available
+			$existingBenefits = json_decode($product->benefits_features, true);
+
+			// Ensure existingBenefits is an array
+			if (!is_array($existingBenefits)) {
+				$existingBenefits = [];
+			}
+
+			// Decode incoming request JSON
+			$newBenefits = json_decode($request->input('benefits_features'), true);
+
+			// Ensure newBenefits is an array
+			if (!is_array($newBenefits)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid benefits_features format.'
+				], 400);
+			}
+
+			// Merge existing benefits with new ones
+			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
+
+			// Save back as JSON
+			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+
+				
+	
+	
 
 
 

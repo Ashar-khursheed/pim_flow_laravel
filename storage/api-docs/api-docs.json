@@ -3526,6 +3526,22 @@
                                         "type": "string",
                                         "example": "Short description."
                                     },
+                                    "benefits_features": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "benifit": {
+                                                    "type": "string",
+                                                    "example": "Fast shipping"
+                                                },
+                                                "feature": {
+                                                    "type": "string",
+                                                    "example": "Get your order delivered within 24 hours."
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
                                     "images[]": {
                                         "type": "array",
                                         "items": {
@@ -3704,45 +3720,71 @@
                                         "type": "integer",
                                         "example": 3
                                     },
-                                    "review_customer_name": {
-                                        "description": "Name of the customer leaving the review",
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "review_customer_email": {
-                                        "description": "Email of the customer leaving the review",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "john.doe@example.com"
-                                    },
-                                    "review_star": {
-                                        "description": "Star rating given by the customer",
-                                        "type": "integer",
-                                        "maximum": 5,
-                                        "minimum": 1,
-                                        "example": 5
-                                    },
-                                    "review_comment": {
-                                        "description": "Review comment provided by the customer",
-                                        "type": "string",
-                                        "example": "Great product, highly recommended!"
-                                    },
-                                    "review_status": {
-                                        "description": "Status of the review",
-                                        "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "published",
-                                            "rejected"
-                                        ],
-                                        "example": "pending"
-                                    },
-                                    "review_images[]": {
-                                        "description": "Review images to upload",
+                                    "reviews": {
+                                        "description": "List of reviews to be submitted",
                                         "type": "array",
                                         "items": {
-                                            "type": "string",
-                                            "format": "binary"
+                                            "required": [
+                                                "comment"
+                                            ],
+                                            "properties": {
+                                                "customer_id": {
+                                                    "description": "The ID of the customer leaving the review. Defaults to 1 if not specified.",
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "customer_name": {
+                                                    "description": "The name of the customer. Defaults to 'Guest' if not specified.",
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "customer_email": {
+                                                    "description": "The email of the customer (optional).",
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "john@example.com"
+                                                },
+                                                "star": {
+                                                    "description": "Star rating of the review (optional).",
+                                                    "type": "integer",
+                                                    "maximum": 5,
+                                                    "minimum": 1,
+                                                    "example": 5
+                                                },
+                                                "comment": {
+                                                    "description": "The review comment. This field is required.",
+                                                    "type": "string",
+                                                    "example": "Great product!"
+                                                },
+                                                "status": {
+                                                    "description": "Status of the review. Defaults to 'pending' if not specified.",
+                                                    "type": "string",
+                                                    "example": "pending"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "review_images": {
+                                        "description": "Review images indexed by review position",
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "index": {
+                                                    "description": "Index of the review this image belongs to",
+                                                    "type": "integer",
+                                                    "example": 0
+                                                },
+                                                "images": {
+                                                    "description": "List of images for the review",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "format": "binary"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
                                         }
                                     },
                                     "faqs": {
@@ -3806,179 +3848,69 @@
                                             "type": "string",
                                             "example": "Review created successfully."
                                         },
-                                        "review": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "customer_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "customer_name": {
-                                                    "type": "string",
-                                                    "example": "John Doe"
-                                                },
-                                                "customer_email": {
-                                                    "type": "string",
-                                                    "example": "john.doe@example.com"
-                                                },
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "star": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "comment": {
-                                                    "type": "string",
-                                                    "example": "Great product, highly recommended!"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "pending"
-                                                },
-                                                "images": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "faqs": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "properties": {
-                                                            "question": {
-                                                                "type": "string"
-                                                            },
-                                                            "answer": {
-                                                                "type": "string"
-                                                            },
-                                                            "category_id": {
-                                                                "type": "integer",
-                                                                "nullable": true
-                                                            },
-                                                            "status": {
-                                                                "type": "integer"
-                                                            }
-                                                        },
-                                                        "type": "object"
-                                                    }
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "200": {
-                        "description": "Review updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Review updated successfully."
-                                        },
-                                        "review": {
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "customer_id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "customer_name": {
-                                                    "type": "string",
-                                                    "example": "John Doe"
-                                                },
-                                                "customer_email": {
-                                                    "type": "string",
-                                                    "example": "john.doe@example.com"
-                                                },
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "star": {
-                                                    "type": "integer",
-                                                    "example": 5
-                                                },
-                                                "comment": {
-                                                    "type": "string",
-                                                    "example": "Great product, highly recommended!"
-                                                },
-                                                "status": {
-                                                    "type": "string",
-                                                    "example": "published"
-                                                },
-                                                "images": {
-                                                    "type": "array",
-                                                    "items": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "created_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                },
-                                                "updated_at": {
-                                                    "type": "string",
-                                                    "format": "date-time"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
+                                        "reviews": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
-                                            },
-                                            "example": [
-                                                "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
-                                                "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
-                                                "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-                                                "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
-                                                "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-                                                "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
-                                                "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
-                                            ]
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "customer_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "customer_email": {
+                                                        "type": "string",
+                                                        "example": "john.doe@example.com"
+                                                    },
+                                                    "comment": {
+                                                        "type": "string",
+                                                        "example": "Great product!"
+                                                    },
+                                                    "star": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "pending"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/review-image.jpg"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "faqs": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "question": {
+                                                        "type": "string"
+                                                    },
+                                                    "answer": {
+                                                        "type": "string"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "type": "integer"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -3986,12 +3918,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/products/product-input": {
@@ -6418,6 +6345,110 @@
                     }
                 },
                 "type": "object"
+            }
+        },
+        "responses": {
+            "200": {
+                "description": "Review updated successfully",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": true
+                                },
+                                "message": {
+                                    "type": "string",
+                                    "example": "Review updated successfully."
+                                },
+                                "review": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "customer_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "customer_name": {
+                                            "type": "string",
+                                            "example": "John Doe"
+                                        },
+                                        "customer_email": {
+                                            "type": "string",
+                                            "example": "john.doe@example.com"
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "star": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "comment": {
+                                            "type": "string",
+                                            "example": "Great product, highly recommended!"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "published"
+                                        },
+                                        "images": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "400": {
+                "description": "Validation Error",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "properties": {
+                                "success": {
+                                    "type": "boolean",
+                                    "example": false
+                                },
+                                "message": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "example": [
+                                        "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
+                                        "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
+                                        "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+                                        "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
+                                        "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+                                        "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
+                                        "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
+                                    ]
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                }
             }
         },
         "securitySchemes": {
