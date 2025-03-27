@@ -430,7 +430,7 @@ class ProductController extends BaseController
 					$stockStatusMappings = [
 						'in_stock' => 'In Stock',
 						'out_of_stock' => 'Out of Stock',
-						'pre_order' => 'Pre Order'
+						'on_backorder' => 'Pre Order'
 					];
 				
 					// Map selected value to frontend readable text
@@ -634,7 +634,7 @@ class ProductController extends BaseController
 	*                 @OA\Items(
 	*                  type="object",
 	*                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
-	*                  @OA\Property(property="feature", type="string", example="Get your order delivered within 24 hours.")
+	*                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
 	*            			  )
 	* 					),
 	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
@@ -1178,7 +1178,7 @@ class ProductController extends BaseController
 	 $usStockStatusArray = [
 		 1 => "in_stock",
 		 2 => "out_of_stock",
-		 3 => "on_backorder"
+		 3 => "Pre Order"
 	 ];
 	 if (isset($input['stock_status'])) {
 		 if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
