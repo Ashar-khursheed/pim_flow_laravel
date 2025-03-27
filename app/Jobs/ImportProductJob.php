@@ -674,7 +674,7 @@ class ImportProductJob implements ShouldQueue
 			}
 
 			// Save original image
-			$originalPath = env('STORAGE_ENV', 'tanuj_local')."/products/{$fileBaseName}.{$fileExtension}";
+			$originalPath = env('STORAGE_ENV')."/products/{$fileBaseName}.{$fileExtension}";
 			ob_start();
 			imagewebp($image);
 			$originalData = ob_get_clean();
@@ -688,7 +688,7 @@ class ImportProductJob implements ShouldQueue
 					continue;
 				}
 
-				$resizedPath = env('STORAGE_ENV', 'tanuj_local')."/products/{$fileBaseName}-{$width}x{$height}.{$fileExtension}";
+				$resizedPath = env('STORAGE_ENV')."/products/{$fileBaseName}-{$width}x{$height}.{$fileExtension}";
 				ob_start();
 				imagewebp($resizedImage);
 				$resizedData = ob_get_clean();

@@ -88,9 +88,10 @@ class Category extends Model
 		$groupAttributes = $this->attributeGroups->flatMap->groupAttributes;
 
 		/* Fetch direct attributes */
-		$directAttributes = $this->categoryAttributes;
+		// $directAttributes = $this->categoryAttributes;
 
 		/* Merge and return unique attributes */
-		return $groupAttributes->merge($directAttributes)->unique('id')->values();
+		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
+		return $groupAttributes->unique('id')->values();
 	}
 }
