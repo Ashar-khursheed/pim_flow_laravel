@@ -3377,6 +3377,11 @@
                                         "format": "float",
                                         "example": 149.99
                                     },
+                                    "unit_of_measurement_id": {
+                                        "description": "ID of the unit of measurement from the UnitOfMeasurement table",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "sale_type": {
                                         "type": "string",
                                         "example": "percentage"

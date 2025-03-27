@@ -19,6 +19,7 @@ use App\Models\Slug;
 use App\Models\TransactionLog;
 use App\Models\Faq;
 use App\Models\Attribute;
+use App\Models\UnitOfMeasurement;
 
 use App\Jobs\ImportProductJob;
 
@@ -316,7 +317,7 @@ class ProductController extends BaseController
 		$attributeGroups = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
-			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
+			'Pricing & Sales' => ['price', 'sale_price', 'sale_type','unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
 			'Marketing' => ['name', 'content', 'description'],
 			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents'],
 			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
@@ -333,7 +334,7 @@ class ProductController extends BaseController
 
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title'],
+			'Pricing & Sales' => ['currency:id,title' ,'unitOfMeasurement:id,name'],
 			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
 			'Store & Vendor Information' => ['store:id,name', 'brand:id,name', 'creator:id,name'],
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
@@ -537,6 +538,14 @@ class ProductController extends BaseController
 						$formattedProduct[$attribute] = [['value' => $value]];
 						break;
 
+						case 'unit_of_measurement_id':
+						$formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
+							'id' => $product->unitOfMeasurement->id,
+							'name' => $product->unitOfMeasurement->name
+						] : null;
+						break;
+
+
 
 						default:
 						$formattedProduct[$attribute] = $value;
@@ -599,6 +608,7 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
 	*                 @OA\Property(property="price", type="number", format="float", example=199.99),
 	*                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
+	*                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
 	*                 @OA\Property(property="sale_type", type="string", example="percentage"),
 	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
 	*                 @OA\Property(property="tax_id", type="integer", example=3),
@@ -795,6 +805,7 @@ class ProductController extends BaseController
  {
 	 // Log the incoming request for debugging
 	 \Log::info('Product update request:', $request->all());
+	 $unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
 
 	 $product = Product::find($productId);
 
@@ -1055,7 +1066,7 @@ class ProductController extends BaseController
 		 "variant_color_title", "variant_color_value", "store_id", "brand_id",
 		 "views", "units_sold", "frequently_bought_together", "compare_type",
 		 "compare_products", "google_shopping_category", "google_shopping_mpn",
-		 "order", "box_quantity", "delivery_days"
+		 "order", "box_quantity", "delivery_days", "unit_of_measurement_id"
 	 ];
 	unset($input['product_attributes']);
 
@@ -1098,6 +1109,20 @@ class ProductController extends BaseController
 
 		 $product->status = $input['status']; // Assign status
 	 }
+
+	 if (isset($input['unit_of_measurement_id'])) {
+		// Fetch all valid unit IDs from the database
+		$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
+	
+		if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
+			]);
+		}
+	
+		$product->unit_of_measurement_id = $input['unit_of_measurement_id']; // Assign the valid ID
+	}
 
 
 
@@ -1285,6 +1310,7 @@ class ProductController extends BaseController
 		 'success' => true,
 		 'message' => 'Product updated successfully.',
 		 'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
+		 'unitOfMeasurements' => $unitOfMeasurements ,
 		 'review' => $review ?? null,
 		 'faq' => $faqs ?? null,
 	 ]);
