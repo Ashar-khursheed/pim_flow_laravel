@@ -425,23 +425,23 @@ class ProductController extends BaseController
 				case 'benefits_features':
 					$formattedProduct['benefits_features'] = json_decode($value, true);
 					break;
-				
+
 				case 'stock_status':
 					$stockStatusMappings = [
 						'in_stock' => 'In Stock',
 						'out_of_stock' => 'Out of Stock',
 						'on_backorder' => 'Pre Order'
 					];
-				
+
 					// Map selected value to frontend readable text
 					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
-				
+
 					$formattedProduct['stock_status'] = [
 						'selected' => $selectedStockStatus, // This will now show 'In Stock', 'Out of Stock', etc.
 						'values' => $stockStatusMappings // Values remain the same
 					];
 					break;
-				
+
 				case 'tax_id':
 				$tax = Tax::find($value);
 				if ($tax) {
@@ -469,7 +469,7 @@ class ProductController extends BaseController
 					'name' => $product->store->name
 				]] : null;
 				break;
-				
+
 				case 'shipping_length_id':
 					$formattedProduct['shipping_length'] = [
 						'selected' => optional($product->shippingLengthUnit)->symbol, // Selected unit symbol
@@ -480,8 +480,8 @@ class ProductController extends BaseController
 						]
 					];
 					break;
-					
-				
+
+
 				case 'weight_unit_id':
 					$formattedProduct['weight_unit'] = [
 						'selected' => optional($product->weightUnit)->symbol,
@@ -1149,14 +1149,14 @@ class ProductController extends BaseController
 	 if (isset($input['unit_of_measurement_id'])) {
 		// Fetch all valid unit IDs from the database
 		$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
-	
+
 		if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
 			]);
 		}
-	
+
 		$product->unit_of_measurement_id = $input['unit_of_measurement_id']; // Assign the valid ID
 	}
 
@@ -1185,9 +1185,9 @@ class ProductController extends BaseController
 			// Save back as JSON
 			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 
-				
-	
-	
+
+
+
 
 
 
@@ -1786,8 +1786,8 @@ class ProductController extends BaseController
 							$message = "The data in row $rowIndex is not compatible for import.";
 
 							# To delete imported excel file
-							$command = "rm -rf ".$fileNameWithPath;
-							shell_exec($command);
+							// $command = "rm -rf ".$fileNameWithPath;
+							// shell_exec($command);
 
 							session()->put('error', $message);
 							return back();
