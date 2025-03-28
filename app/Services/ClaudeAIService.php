@@ -38,30 +38,57 @@ class ClaudeAIService
     //     return $this->sendRequest($prompt);
     // }
 
-    public function generateReviews($productDescription)
-{
-    $prompt = "Generate a JSON response with 5 customer reviews for the following product.
-    STRICT REQUIREMENTS:
-    - 2 reviews in English, 2 in Arabic, and 1 in Russian.
-    - Use realistic names that match the language and region.
-    - Valid-looking email formats.
-    - Detailed, positive comments.
-    - Star ratings between 4.5 and 5.0.
-    - Ensure correct language usage for each review.
+//     public function generateReviews($productDescription)
+// {
+//     $prompt = "Generate a JSON response with 5 customer reviews for the following product.
+//     STRICT REQUIREMENTS:
+//     - 2 reviews in English, 2 in Arabic, and 1 in Russian.
+//     - Use realistic names that match the language and region.
+//     - Valid-looking email formats.
+//     - Detailed, positive comments.
+//     - Star ratings between 4.5 and 5.0.
+//     - Ensure correct language usage for each review.
     
-    Product Description: $productDescription
+//     Product Description: $productDescription
 
-    Expected JSON Format:
-    {
-      \"reviews\": [
-        { \"customer_name\": \"John Doe\", \"customer_email\": \"johndoe@example.com\", \"comment\": \"Great product!\", \"stars\": 5, \"language\": \"English\" },
-        { \"customer_name\": \"Ahmed Al-Farsi\", \"customer_email\": \"ahmed.farsi@example.com\", \"comment\": \"منتج رائع!\", \"stars\": 4.8, \"language\": \"Arabic\" },
-        { \"customer_name\": \"Ivan Petrov\", \"customer_email\": \"ivan.petrov@example.com\", \"comment\": \"Отличный товар!\", \"stars\": 4.9, \"language\": \"Russian\" }
-      ]
-    }";
+//     Expected JSON Format:
+//     {
+//       \"reviews\": [
+//         { \"customer_name\": \"John Doe\", \"customer_email\": \"johndoe@example.com\", \"comment\": \"Great product!\", \"stars\": 5, \"language\": \"English\" },
+//         { \"customer_name\": \"Ahmed Al-Farsi\", \"customer_email\": \"ahmed.farsi@example.com\", \"comment\": \"منتج رائع!\", \"stars\": 4.8, \"language\": \"Arabic\" },
+//         { \"customer_name\": \"Ivan Petrov\", \"customer_email\": \"ivan.petrov@example.com\", \"comment\": \"Отличный товар!\", \"stars\": 4.9, \"language\": \"Russian\" }
+//       ]
+//     }";
 
-    return $this->sendRequest($prompt);
-}
+//     return $this->sendRequest($prompt);
+// }
+  public function generateReviews($productDescription)
+  {
+      $prompt = "Generate a JSON response with 3 to 5 customer reviews for the following product.
+      STRICT REQUIREMENTS:
+      - Reviews should be in a mix of English, Arabic, and Russian.
+      - Use realistic names based on the region and language.
+      - Valid-looking email formats.
+      - Short and natural-sounding comments (not too generic or robotic).
+      - Star ratings must be **only** 3, 4, or 5 (no decimals).
+      - Ensure correct language usage for each review.
+      - The number of reviews should be random between 3 and 5.
+
+      Product Description: $productDescription
+
+      Expected JSON Format:
+      {
+        \"reviews\": [
+          { \"customer_name\": \"Emily Carter\", \"customer_email\": \"emily.carter@example.com\", \"comment\": \"Absolutely love it!\", \"stars\": 5, \"language\": \"English\" },
+          { \"customer_name\": \"يوسف الحمادي\", \"customer_email\": \"y.hamadi@example.com\", \"comment\": \"جودة ممتازة وسعر مناسب!\", \"stars\": 4, \"language\": \"Arabic\" },
+          { \"customer_name\": \"Анна Смирнова\", \"customer_email\": \"anna.smirnova@example.com\", \"comment\": \"Прекрасное качество, рекомендую!\", \"stars\": 3, \"language\": \"Russian\" }
+        ]
+      }";
+
+      return $this->sendRequest($prompt);
+  }
+
+
 
 
     public function generateFAQs($productDescription)
