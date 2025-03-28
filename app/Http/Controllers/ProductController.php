@@ -469,12 +469,18 @@ class ProductController extends BaseController
 					'name' => $product->store->name
 				]] : null;
 				break;
+				
 				case 'shipping_length_id':
-					$formattedProduct['shipping_length'] = [[
-						'value' => $product->shipping_length_id, // Fetch the saved value
-						'unit'  => optional($product->shippingLengthUnit)->symbol // Fetch the unit
-					]];
+					$formattedProduct['shipping_length'] = [
+						'selected' => optional($product->shippingLengthUnit)->symbol, // Selected unit symbol
+						'values' => [
+							'cm' => 'cm',
+							'in' => 'in',
+							'mm' => 'mm'
+						]
+					];
 					break;
+					
 				
 				case 'weight_unit_id':
 					$formattedProduct['weight_unit'] = [
