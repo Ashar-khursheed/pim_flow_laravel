@@ -41,12 +41,17 @@ class ClaudeAIController extends Controller
      *     )
      * )
      */
+    // public function generateReviews(Request $request)
+    // {
+    //     $productDescription = $request->input('product_description');
+    //     return $this->handleAIResponse($this->claudeService->generateReviews($productDescription));
+    // }
     public function generateReviews(Request $request)
     {
         $productDescription = $request->input('product_description');
         return $this->handleAIResponse($this->claudeService->generateReviews($productDescription));
     }
-
+    
     /**
      * @OA\Post(
      *     path="/api/generate-faqs",
@@ -106,23 +111,46 @@ class ClaudeAIController extends Controller
     public function generateBenefitsFeatures(Request $request)
     {
         $productDescription = $request->input('product_description');
-        return $this->handleAIResponse($this->claudeService->generateBenefitsAndFeatures($productDescription));
+    
+        if (empty($productDescription)) {
+            return response()->json(['status' => 'error', 'message' => 'Product description is required'], 400);
+        }
+    
+        try {
+            $aiResponse = $this->claudeService->generateBenefitsAndFeatures($productDescription);
+    
+            return $this->handleAIResponse($aiResponse);
+        } catch (\Exception $e) {
+            Log::error('AI Service Error', ['error' => $e->getMessage()]);
+    
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while generating benefits and features.',
+            ], 500);
+        }
     }
-
+    
     private function handleAIResponse($aiResponse)
     {
         if (isset($aiResponse['error'])) {
             return response()->json(['status' => 'error', 'message' => $aiResponse['error']], 500);
         }
-
+    
         $responseText = $aiResponse['data']['content'][0]['text'] ?? '';
-
+    
+        if (empty($responseText)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'AI response is empty or malformed.'
+            ], 500);
+        }
+    
         try {
             $parsedResponse = json_decode($responseText, true, 512, JSON_THROW_ON_ERROR);
             return response()->json(['status' => 'success'] + $parsedResponse);
         } catch (\Exception $e) {
             Log::error('JSON Parsing Error', ['error' => $e->getMessage(), 'response_text' => $responseText]);
-
+    
             return response()->json([
                 'status' => 'error',
                 'message' => 'Failed to parse AI response',
@@ -130,4 +158,5 @@ class ClaudeAIController extends Controller
             ], 500);
         }
     }
+    
 }

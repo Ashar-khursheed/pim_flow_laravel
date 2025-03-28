@@ -18,25 +18,51 @@ class ClaudeAIService
         $this->version = config('services.claude.version');
     }
 
+    // public function generateReviews($productDescription)
+    // {
+    //     $prompt = "Generate a JSON response with 5 customer reviews for the following product. 
+    //     STRICT REQUIREMENTS:
+    //     - Realistic customer names
+    //     - Valid-looking email formats
+    //     - Detailed, positive comments
+    //     - Star ratings between 4.5 and 5.0
+    //     Product Description: $productDescription
+
+    //     Expected JSON Format:
+    //     {
+    //       \"reviews\": [
+    //         { \"customer_name\": \"John Doe\", \"customer_email\": \"johndoe@example.com\", \"comment\": \"Detailed review\", \"stars\": 5 }
+    //       ]
+    //     }";
+
+    //     return $this->sendRequest($prompt);
+    // }
+
     public function generateReviews($productDescription)
-    {
-        $prompt = "Generate a JSON response with 5 customer reviews for the following product. 
-STRICT REQUIREMENTS:
-- Realistic customer names
-- Valid-looking email formats
-- Detailed, positive comments
-- Star ratings between 4.5 and 5.0
-Product Description: $productDescription
-
-Expected JSON Format:
 {
-  \"reviews\": [
-    { \"customer_name\": \"John Doe\", \"customer_email\": \"johndoe@example.com\", \"comment\": \"Detailed review\", \"stars\": 5 }
-  ]
-}";
+    $prompt = "Generate a JSON response with 5 customer reviews for the following product.
+    STRICT REQUIREMENTS:
+    - 2 reviews in English, 2 in Arabic, and 1 in Russian.
+    - Use realistic names that match the language and region.
+    - Valid-looking email formats.
+    - Detailed, positive comments.
+    - Star ratings between 4.5 and 5.0.
+    - Ensure correct language usage for each review.
+    
+    Product Description: $productDescription
 
-        return $this->sendRequest($prompt);
-    }
+    Expected JSON Format:
+    {
+      \"reviews\": [
+        { \"customer_name\": \"John Doe\", \"customer_email\": \"johndoe@example.com\", \"comment\": \"Great product!\", \"stars\": 5, \"language\": \"English\" },
+        { \"customer_name\": \"Ahmed Al-Farsi\", \"customer_email\": \"ahmed.farsi@example.com\", \"comment\": \"منتج رائع!\", \"stars\": 4.8, \"language\": \"Arabic\" },
+        { \"customer_name\": \"Ivan Petrov\", \"customer_email\": \"ivan.petrov@example.com\", \"comment\": \"Отличный товар!\", \"stars\": 4.9, \"language\": \"Russian\" }
+      ]
+    }";
+
+    return $this->sendRequest($prompt);
+}
+
 
     public function generateFAQs($productDescription)
     {
@@ -55,23 +81,40 @@ Expected JSON Format:
 
     public function generateBenefitsAndFeatures($productDescription)
     {
-        $prompt = "Based only on the following product description, generate exactly 10 benefits and 10 features.
-Each benefit should be a concise heading (max 3 words), and each feature should be a short paragraph (max 30 words).
-Strictly follow this format:
-
-Example Format:
-{
-  \"benefits_features\": [
-    { \"benefit\": \"Fast Performance\", \"feature\": \"This product ensures high-speed performance, reducing wait times and improving efficiency for seamless usage.\" },
-    { \"benefit\": \"Long Battery\", \"feature\": \"The extended battery life allows continuous use for hours without needing frequent recharges.\" }
-  ]
-}
-
-Product Description: $productDescription";
-
+        // Ensure proper JSON encoding of product description
+        $productDescription = json_encode($productDescription, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+    
+        $prompt = "Based only on the following product description, generate exactly 10 benefits and 10 features. Prioritize benefits and features that highlight the product's strongest ranking factors, best CPR, and most valuable keywords. Each benefit should be a concise heading (max 3 words), and each feature should be a short paragraph (max 30 words), ensuring the most competitive and high-impact elements appear first.:
+        {
+          \"benefits_features\": [
+            {
+              \"benefit\": \"Concise Benefit Title\",
+              \"feature\": \"Detailed feature description (max 30 words)\"
+            }
+          ]
+        }
+    
+        Product Description: $productDescription
+    
+        CRITICAL INSTRUCTIONS:
+        1. Extract benefits and features DIRECTLY from the provided product description
+        2. ALWAYS respond in the EXACT JSON format above
+        3. Benefits: Max 3 words, capture key product advantages
+        4. Features: Max 30 words, explain specific product capabilities
+        5. Prioritize most unique and competitive aspects
+        6. DO NOT add ANY additional text before or after JSON
+        7. STRICTLY follow the specified output structure
+    
+        PROCESS:
+        - Carefully read entire product description
+        - Identify most compelling product attributes
+        - Create concise, impactful benefits and features
+        - Ensure 100% JSON compliance";
+    
         return $this->sendRequest($prompt);
     }
-
+    
+    
     private function sendRequest($prompt)
     {
         try {
