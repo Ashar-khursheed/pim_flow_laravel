@@ -253,4 +253,89 @@ class BrandController extends BaseController
             'message' => 'Brand deleted successfully'
         ]);
     }
+
+
+    /**
+ * @OA\Get(
+ *    path="/api/getbrandsList",
+ *     summary="Fetch all brands with pagination, search, filter, and sorting",
+ *     tags={"Brands"},
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search by brand name",
+ *         @OA\Schema(type="string", example="Nike")
+ *     ),
+ *     @OA\Parameter(
+ *         name="status",
+ *         in="query",
+ *         description="Filter by brand status",
+ *         @OA\Schema(type="string", example="active")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Sort by id, name, or created_at",
+ *         @OA\Schema(type="string", enum={"id", "name", "created_at"}, example="created_at")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_order",
+ *         in="query",
+ *         description="Sort order: asc or desc",
+ *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Number of brands per page",
+ *         @OA\Schema(type="integer", example=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(response=200, description="Success", 
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="brands", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(response=400, description="Invalid parameters"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function getBrandsList(Request $request)
+{
+    $query = Brand::query();
+
+    // Search by name
+    if ($request->has('search')) {
+        $query->where('name', 'LIKE', '%' . $request->search . '%');
+    }
+
+    // Filter by status
+    if ($request->has('status')) {
+        $query->where('status', $request->status);
+    }
+
+    // Sorting (default: latest created_at)
+    $sortBy = $request->input('sort_by', 'created_at'); // Default: sort by latest created_at
+    $sortOrder = $request->input('sort_order', 'desc'); // Default: descending order
+
+    if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
+        $query->orderBy($sortBy, $sortOrder);
+    }
+
+    // Paginate results (default 10 per page)
+    $brands = $query->paginate($request->input('per_page', 10));
+
+    return response()->json([
+        'success' => true,
+        'brands' => $brands
+    ]);
+}
+
 }

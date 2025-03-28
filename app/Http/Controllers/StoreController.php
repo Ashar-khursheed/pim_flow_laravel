@@ -216,4 +216,87 @@ class StoreController extends BaseController
             'message' => 'Store Deleted'
         ]);
     }
+
+
+    /**
+ * @OA\Get(
+ *     path="/api/getStoresList",
+ *     summary="Fetch all stores with pagination, search, filter, and sorting",
+ *     tags={"Stores"},
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search by store name",
+ *         @OA\Schema(type="string", example="Walmart")
+ *     ),
+ *     @OA\Parameter(
+ *         name="status",
+ *         in="query",
+ *         description="Filter by store status",
+ *         @OA\Schema(type="string", example="open")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Sort by id, name, or created_at",
+ *         @OA\Schema(type="string", enum={"id", "name", "created_at"}, example="created_at")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_order",
+ *         in="query",
+ *         description="Sort order: asc or desc",
+ *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Number of stores per page",
+ *         @OA\Schema(type="integer", example=10)
+ *     ),
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(response=200, description="Success", 
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="stores", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(response=400, description="Invalid parameters"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function getStoresList(Request $request): JsonResponse
+{
+    $query = Store::query();
+
+    // Search by store name
+    if ($request->has('search')) {
+        $query->where('name', 'LIKE', '%' . $request->search . '%');
+    }
+
+    // Filter by status
+    if ($request->has('status')) {
+        $query->where('status', $request->status);
+    }
+
+    // Sorting
+    $sortBy = $request->get('sort_by', 'created_at'); // Default: created_at
+    $sortOrder = $request->get('sort_order', 'desc'); // Default: desc (latest first)
+    $query->orderBy($sortBy, $sortOrder);
+
+    // Pagination
+    $perPage = $request->get('per_page', 10);
+    $stores = $query->paginate($perPage);
+
+    return response()->json([
+        'success' => true,
+        'stores' => $stores
+    ]);
+}
+
 }

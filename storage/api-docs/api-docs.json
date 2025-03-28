@@ -911,6 +911,109 @@
                 ]
             }
         },
+        "/api/getbrandsList": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Fetch all brands with pagination, search, filter, and sorting",
+                "operationId": "bc839199335a536f9e4156d649167395",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by brand name",
+                        "schema": {
+                            "type": "string",
+                            "example": "Nike"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by brand status",
+                        "schema": {
+                            "type": "string",
+                            "example": "active"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by id, name, or created_at",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at"
+                            ],
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order: asc or desc",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of brands per page",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "brands": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-attributes": {
             "get": {
                 "tags": [
@@ -5384,6 +5487,109 @@
                 "responses": {
                     "200": {
                         "description": "Store Deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/getStoresList": {
+            "get": {
+                "tags": [
+                    "Stores"
+                ],
+                "summary": "Fetch all stores with pagination, search, filter, and sorting",
+                "operationId": "93bc2b4cf598fda7c5bb80468660077e",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by store name",
+                        "schema": {
+                            "type": "string",
+                            "example": "Walmart"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by store status",
+                        "schema": {
+                            "type": "string",
+                            "example": "open"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by id, name, or created_at",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at"
+                            ],
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order: asc or desc",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of stores per page",
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "stores": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters"
                     }
                 },
                 "security": [
