@@ -211,19 +211,21 @@ class Product extends Model
 	public function productCategoryAttributes()
 	{
 		$category = $this->latestChildCategory();
-
 		if (!$category) {
 			return collect();
 		}
 
 		/* Fetch attributes from groups */
-		$groupAttributes = $category->attributeGroups->flatMap->groupAttributes;
+		// $groupAttributes = $category->attributeGroups->flatMap->groupAttributes;
 
-		/* Fetch direct attributes */
-		$directAttributes = $category->categoryAttributes;
+		// /* Fetch direct attributes */
+		// $directAttributes = $category->categoryAttributes;
 
-		/* Merge and return unique attributes */
-		return $groupAttributes->merge($directAttributes)->unique('id')->values();
+		// /* Merge and return unique attributes */
+		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
+		$groupAttributes = $category->attributeGroups->flatMap->groupAttributes ?? [];
+
+		return $groupAttributes->unique('id')->values();
 	}
 
 	// public function seo()

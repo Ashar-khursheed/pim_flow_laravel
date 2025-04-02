@@ -9,9 +9,12 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 
 use App\Models\TransactionLog;
 use App\Models\Product;
@@ -49,30 +52,25 @@ class ImportProductAttributeJob implements ShouldQueue
 			if (count($this->header) === count($row)) {
 				$rowData = array_combine($this->header, $row);
 			} else {
-				$rowError[] = 'Column mismatch: The data in this row is not compatible for import.';
+				$rowError[] = 'Column mismatch: Row has incorrect data structure.';
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;
 			}
 
-			/* Validate Product ID */
-			if (empty($rowData['ID'])) {
-				$rowError[] = "The ID field is missing.";
-				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
-				$failed++;
-				continue;
-			}
-
-			$product = Product::find($rowData['ID']);
-			if (!$product) {
-				$rowError[] = 'Product not found for the given ID.';
+			/* Validate Product */
+			if (empty($rowData['ID']) || !$product = Product::find($rowData['ID'])) {
+				$rowError[] = 'Invalid Product ID or product not found.';
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;
 			}
 
 			/* Validate Required Specifications */
-			$productCategoryAttributes = $product->productCategoryAttributes();
+			$productCategoryAttributes = $product->productCategoryAttributes()
+			->reject(fn($attribute) => $attribute['type'] === 'multiselect')
+			->values();
+
 			$productCategoryAttributeNames = $productCategoryAttributes->pluck('name')->toArray();
 			$missingSpecifications = array_diff($productCategoryAttributeNames, $this->header);
 
@@ -90,44 +88,108 @@ class ImportProductAttributeJob implements ShouldQueue
 				$attributeData = [];
 				$attributeIds = [];
 
-				foreach ($productCategoryAttributes as $categoryAttribute) {
+				foreach ($productCategoryAttributes as $index => $categoryAttribute) {
 					$attributeValue = trim($rowData[$categoryAttribute->name] ?? '');
 
 					if (!empty($attributeValue)) {
-						/* Ensure attribute value exists */
-						$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
-							'attribute_value' => $attributeValue
-						]);
+						if (in_array($categoryAttribute->type, ['text', 'number', 'select', 'price', 'measurement', 'toggle', 'date'])) {
+							/* Ensure attribute value exists */
+							if ($categoryAttribute->type != 'toggle') {
+								$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
+									'attribute_value' => $attributeValue
+								]);
+							}
 
-						/* Collect attribute data */
-						$attributeData[] = [
-							'product_id' => $product->id,
-							'attribute_id' => $categoryAttribute->id,
-							'attribute_value' => $attribute->attribute_value
-						];
+							/* Collect attribute data */
+							$attributeData[] = [
+								'product_id' => $product->id,
+								'attribute_id' => $categoryAttribute->id,
+								'attribute_value' => $attributeValue
+							];
 
-						$attributeIds[] = $categoryAttribute->id;
+							$attributeIds[] = $categoryAttribute->id;
+						} else if (in_array($categoryAttribute->type, ['image', 'video', 'file'])) {
+							if (Str::startsWith($attributeValue, ['http://', 'https://'])) {
+								/* If the file is already on the HorecaStore S3, use it directly */
+								if (Str::startsWith($attributeValue, 'https://horecastore-s3-storage.s3.us-west-1.amazonaws.com')) {
+									$uploadedUrl = $attributeValue;
+								} else {
+									$uploadedUrl = null;
+									$fileName = "{$categoryAttribute->type}_{$product->id}_{$categoryAttribute->id}";
+
+									/* Extract file extension */
+									$fileExtension = strtolower(pathinfo(parse_url($attributeValue, PHP_URL_PATH), PATHINFO_EXTENSION));
+
+									switch ($categoryAttribute->type) {
+										case 'image':
+										$uploadedUrl = $this->uploadImageFromURL($attributeValue, $fileName);
+										break;
+
+										case 'video':
+										$uploadedUrl = $this->uploadVideoFromURL($attributeValue, $fileName);
+										break;
+
+										case 'file':
+										/* Only allow PDFs for file uploads */
+										if ($fileExtension !== 'pdf') {
+											$rowError[] = "Only PDF files are allowed for {$categoryAttribute->name}. Given file: '{$attributeValue}'";
+											continue 2;
+										}
+
+										$uploadedUrl = $this->uploadFileFromURL($attributeValue, $fileName);
+										break;
+									}
+								}
+
+								/* Validate upload success */
+								if ($uploadedUrl) {
+									$attributeData[] = [
+										'product_id' => $product->id,
+										'attribute_id' => $categoryAttribute->id,
+										'attribute_value' => $uploadedUrl
+									];
+
+									$attributeIds[] = $categoryAttribute->id;
+								} else {
+									$rowError[] = "Failed to upload {$categoryAttribute->type}: '{$attributeValue}' in {$categoryAttribute->name} field.";
+									continue;
+								}
+							} else {
+								$rowError[] = "Invalid URL '{$attributeValue}' in {$categoryAttribute->name} ({$categoryAttribute->type} field).";
+								continue;
+							}
+						}
 					}
 				}
 
-				/* Delete old attributes that are not in the provided list */
-				$product->productAttributes()->whereNotIn('attribute_id', $attributeIds)->delete();
+				/* Log errors only once at the end */
+				if (!empty($rowError)) {
+					$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+					$failed++;
+					DB::rollBack();
+				} else {
+					/* Delete old attributes that are not in the provided list */
+					$product->productAttributes()->whereNotIn('attribute_id', $attributeIds)->delete();
 
-				/* Insert or update new attributes */
-				foreach ($attributeData as $data) {
-					$product->productAttributes()->updateOrCreate(
-						['product_id' => $data['product_id'], 'attribute_id' => $data['attribute_id']],
-						['attribute_value' => $data['attribute_value']]
-					);
+					/* Insert or update new attributes */
+					foreach ($attributeData as $data) {
+						$product->productAttributes()->updateOrCreate(
+							['product_id' => $data['product_id'], 'attribute_id' => $data['attribute_id']],
+							['attribute_value' => $data['attribute_value']]
+						);
+					}
+
+					DB::commit();
+					$success++;
 				}
-				DB::commit();
-				$success++;
 			} catch (Throwable $e) {
 				DB::rollBack();
 
-				$rowError[] = 'Error processing row: ' . $e->getMessage();
-				$rowError[] = 'File: ' . $e->getFile();
-				$rowError[] = 'Line: ' . $e->getLine();
+				$rowError = [
+					'Error processing row: ' . $e->getMessage(),
+					'File: ' . $e->getFile(),
+					'Line: ' . $e->getLine()
+				];
 
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
@@ -147,6 +209,126 @@ class ImportProductAttributeJob implements ShouldQueue
 			"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
 			"Error" => implode(' | ', $rowError),
 		];
+	}
+
+	private function uploadImageFromURL(?string $url, ?string $fileBaseName): ?string
+	{
+		$s3Disk = Storage::disk('s3');
+
+		/* Validate URL */
+		if (!filter_var($url, FILTER_VALIDATE_URL)) {
+			Log::error('Invalid URL provided: ' . $url);
+			return null;
+		}
+
+		/* Fetch image content */
+		$imageContents = file_get_contents($url);
+		if ($imageContents === false || empty($imageContents)) {
+			Log::error('Failed to download image from URL or content is empty: ' . $url);
+			return null;
+		}
+
+		// /* Sanitize file name */
+		// $fileNameWithQuery = basename(parse_url($url, PHP_URL_PATH));
+		// $fileName = preg_replace('/\?.*/', '', $fileNameWithQuery);
+		// $fileBaseName = pathinfo($fileName, PATHINFO_FILENAME);
+		$fileExtension = 'webp'; /* Convert all to WebP */
+
+		// if (empty($fileBaseName)) {
+		// 	Log::error('Invalid file name extracted from URL: ' . $url);
+		// 	return null;
+		// }
+
+		$imageUrl = '';
+
+		try {
+			/* Create image resource from content */
+			$image = imagecreatefromstring($imageContents);
+			if (!$image) {
+				Log::error('Failed to create image from URL: ' . $url);
+				return null;
+			}
+
+			/* Ensure image is in Truecolor format */
+			if (imageistruecolor($image) === false) {
+				imagepalettetotruecolor($image);
+			}
+
+			/* Save original image */
+			$originalPath = env('STORAGE_ENV')."/attributes/{$fileBaseName}.{$fileExtension}";
+			ob_start();
+			imagewebp($image);
+			$originalData = ob_get_clean();
+			$s3Disk->put($originalPath, $originalData);
+			$imageUrl = $s3Disk->url($originalPath);
+			imagedestroy($image);
+			Log::info('Uploaded Images: ' . $imageUrl);
+			return $imageUrl;
+		} catch (\Exception $e) {
+			Log::error('S3 Upload Error: ' . $e->getMessage());
+			return null;
+		}
+	}
+
+	private function uploadVideoFromURL($fileUrl, $fileBaseName)
+	{
+		try {
+			$s3Disk = Storage::disk('s3');
+			/* Get video content from the given URL */
+			$response = Http::get($fileUrl);
+
+			if ($response->failed()) {
+				return null;
+			}
+
+			$originalData = $response->body();
+			$fileExtension = pathinfo(parse_url($fileUrl, PHP_URL_PATH), PATHINFO_EXTENSION) ?: 'mp4';
+
+			$originalPath = env('STORAGE_ENV')."/attributes/{$fileBaseName}.{$fileExtension}";
+
+			/* Store the video on AWS S3 */
+			$s3Disk->put($originalPath, $originalData);
+			$imageUrl = $s3Disk->url($originalPath);
+			Log::info('Uploaded Video: ' . $fileUrl);
+			return $imageUrl;
+		} catch (\Exception $e) {
+			\Log::error('Video upload to S3 failed: ' . $e->getMessage());
+			return null;
+		}
+	}
+
+	private function uploadFileFromURL($fileUrl, $fileBaseName)
+	{
+		/* Validate the file URL */
+		if (!filter_var($fileUrl, FILTER_VALIDATE_URL)) {
+			return null;
+		}
+
+		/* Get the file extension */
+		$pathInfo = pathinfo(parse_url($fileUrl, PHP_URL_PATH));
+		$extension = strtolower($pathInfo['extension'] ?? '');
+
+		/* Validate that the file is a PDF */
+		if ($extension !== 'pdf') {
+			return null;
+		}
+
+		/* Download the file from the URL */
+		$response = Http::get($fileUrl);
+		if (!$response->successful()) {
+			return null;
+		}
+
+		/* Generate a unique filename */
+		$fileName = env('STORAGE_ENV')."/attributes/{$fileBaseName}.pdf";
+
+		/* Upload to S3 */
+		Storage::disk('s3')->put($fileName, $response->body());
+
+		/* Generate the S3 file URL */
+		$s3Url = Storage::disk('s3')->url($fileName);
+
+		return $s3Url;
 	}
 
 	/**
