@@ -417,11 +417,14 @@ class AttributeController extends BaseController
 		->flatMap->categoryAllAttributes()
 		->unique('id')
 		->sortBy('id')
+		->reject(fn($attribute) => $attribute->type === 'multiselect') // Exclude multiselect
 		->mapWithKeys(fn($attribute) => [
 			$attribute->id => [
 				'name' => $attribute->name,
 				'type' => $attribute->type,
-				'attribute_value' => $attribute->attributeValues->pluck('attribute_value')->toArray(),
+				'attribute_value' => $attribute->type === 'toggle'
+				? ['Yes', 'No']
+				: $attribute->attributeValues->pluck('attribute_value')->toArray(),
 			]
 		])
 		->toArray();
@@ -474,7 +477,7 @@ class AttributeController extends BaseController
 				$existingVal = $existingAttributes[$attributeId] ?? '';
 				$cell = $col++ . $row;
 
-				if (!empty($attributeDetail['attribute_value']) && $attributeDetail['type'] == 'select') {
+				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
 					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
 				} else {
 					$sheet->setCellValue($cell, $existingVal);
@@ -581,7 +584,7 @@ class AttributeController extends BaseController
 			->dispatch();
 
 			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-			$chunkSize = 10;
+			$chunkSize = 50;
 			$chunks = array_chunk($data, $chunkSize);
 
 			foreach ($chunks as $chunk) {
