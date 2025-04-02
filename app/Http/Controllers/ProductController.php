@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\Storage;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-use Illuminate\Http\UploadedFile;
 
 use App\Models\Product;
 use App\Models\Tax;
@@ -20,6 +19,7 @@ use App\Models\Slug;
 use App\Models\TransactionLog;
 use App\Models\Faq;
 use App\Models\Attribute;
+use App\Models\UnitOfMeasurement;
 
 use App\Jobs\ImportProductJob;
 
@@ -317,9 +317,9 @@ class ProductController extends BaseController
 		$attributeGroups = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
-			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
+			'Pricing & Sales' => ['price', 'sale_price', 'sale_type','unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
 			'Marketing' => ['name', 'content', 'description'],
-			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents'],
+			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents' , 'benefits_features'],
 			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
 			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
@@ -334,7 +334,7 @@ class ProductController extends BaseController
 
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title'],
+			'Pricing & Sales' => ['currency:id,title' ,'unitOfMeasurement:id,name'],
 			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
 			'Store & Vendor Information' => ['store:id,name', 'brand:id,name', 'creator:id,name'],
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
@@ -422,9 +422,26 @@ class ProductController extends BaseController
 					]
 				];
 				break;
+				case 'benefits_features':
+					$formattedProduct['benefits_features'] = json_decode($value, true);
+					break;
+
 				case 'stock_status':
-				$formattedProduct[$attribute] = [['status' => $value]];
-				break;
+					$stockStatusMappings = [
+						'in_stock' => 'In Stock',
+						'out_of_stock' => 'Out of Stock',
+						'on_backorder' => 'Pre Order'
+					];
+
+					// Map selected value to frontend readable text
+					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+
+					$formattedProduct['stock_status'] = [
+						'selected' => $selectedStockStatus, // This will now show 'In Stock', 'Out of Stock', etc.
+						'values' => $stockStatusMappings // Values remain the same
+					];
+					break;
+
 				case 'tax_id':
 				$tax = Tax::find($value);
 				if ($tax) {
@@ -452,21 +469,49 @@ class ProductController extends BaseController
 					'name' => $product->store->name
 				]] : null;
 				break;
+
 				case 'shipping_length_id':
-				$formattedProduct['shipping_length'] = [[
-					'value' => $value,
-					'unit' => optional($product->shippingLengthUnit)->symbol
-				]];
-				break;
+					$formattedProduct['shipping_length'] = [
+						'selected' => optional($product->shippingLengthUnit)->symbol, // Selected unit symbol
+						'values' => [
+							'cm' => 'cm',
+							'in' => 'in',
+							'mm' => 'mm'
+						]
+					];
+					break;
+
+
 				case 'weight_unit_id':
-				$formattedProduct['weight_unit'] = [[
-					'symbol' => optional($product->weightUnit)->symbol
-				]];
-				break;
-				case 'length_unit_id':
-				$formattedProduct['length_unit'] = [[
-					'symbol' => optional($product->lengthUnit)->symbol
-				]];
+					$formattedProduct['weight_unit'] = [
+						'selected' => optional($product->weightUnit)->symbol,
+						'values' => [
+							'kg' => 'Kilograms',
+							'lbs' => 'Pounds',
+							'grams' => 'Grams'
+						]
+					];
+					break;
+				case 'weight_unit_id':
+					$formattedProduct['weight_unit'] = [
+						'selected' => optional($product->weightUnit)->symbol,
+						'values' => [
+							'kg' => 'Kilograms',
+							'lbs' => 'Pounds',
+							'grams' => 'Grams'
+						]
+					];
+					break;
+				   case 'length_unit_id':
+					$formattedProduct['length_unit'] = [
+						'selected' => optional($product->lengthUnit)->symbol,
+						'values' => [
+							'mm' => 'mm',
+							'cm' => 'cm',
+							'inch' => 'inch'
+						]
+					];
+					break;
 				break;
 				case 'categories':
 					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
@@ -498,15 +543,17 @@ class ProductController extends BaseController
 						}
 						break;
 
-						case 'compare_type':
-						$decoded = json_decode($value, true) ?? [];
-						$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-						break;
+					case 'compare_type':
+					$decoded = json_decode($value, true);
+					$decoded = is_array($decoded) ? $decoded : []; // Ensure it's an array
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
 
-						case 'compare_products':
-						$decoded = json_decode($value, true) ?? [];
-						$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-						break;
+				case 'compare_products':
+					$decoded = json_decode($value, true);
+					$decoded = is_array($decoded) ? $decoded : []; // Ensure it's an array
+					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+					break;
 
 						case 'images':
 						case 'video_path':
@@ -517,6 +564,14 @@ class ProductController extends BaseController
 						case 'status':
 						$formattedProduct[$attribute] = [['value' => $value]];
 						break;
+
+						case 'unit_of_measurement_id':
+						$formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
+							'id' => $product->unitOfMeasurement->id,
+							'name' => $product->unitOfMeasurement->name
+						] : null;
+						break;
+
 
 
 						default:
@@ -580,6 +635,7 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
 	*                 @OA\Property(property="price", type="number", format="float", example=199.99),
 	*                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
+	*                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
 	*                 @OA\Property(property="sale_type", type="string", example="percentage"),
 	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
 	*                 @OA\Property(property="tax_id", type="integer", example=3),
@@ -589,6 +645,15 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="name", type="string", example="Sample Product"),
 	*                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
 	*                 @OA\Property(property="description", type="string", example="Short description."),
+	*                    @OA\Property(
+	*                 property="benefits_features",
+	*                 type="array",
+	*                 @OA\Items(
+	*                  type="object",
+	*                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
+	*                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
+	*            			  )
+	* 					),
 	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
 	*                 @OA\Property(property="image", type="string", format="binary"),
 	*                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
@@ -776,6 +841,7 @@ class ProductController extends BaseController
  {
 	 // Log the incoming request for debugging
 	 \Log::info('Product update request:', $request->all());
+	 $unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
 
 	 $product = Product::find($productId);
 
@@ -787,12 +853,8 @@ class ProductController extends BaseController
 		 ]);
 	 }
 
-	if ($request->has('product_attributes')) {
-		$productAttributes = $request->product_attributes;
-
-		if (is_string($productAttributes)) {
-			$productAttributes = json_decode($productAttributes, true);
-		}
+	if ($request->product_attributes) {
+		$productAttributes = json_decode($request->product_attributes, true);
 
 		if (is_array($productAttributes) && count($productAttributes) > 0) {
 			$productAttributes = array_filter($productAttributes, function ($value) {
@@ -808,55 +870,30 @@ class ProductController extends BaseController
 			}
 
 			foreach ($productAttributes as $attributeId => $attributeValue) {
-				$attributeInfo = Attribute::find($attributeId);
-				if (!$attributeInfo) {
+				$existingAttribute = Attribute::find($attributeId);
+
+				if (!$existingAttribute) {
 					return response()->json([
 						'success' => false,
 						'message' => "Attribute ID: $attributeId does not exist."
 					]);
 				}
 
-				if (in_array($attributeInfo->type, ['text', 'number', 'select', 'price', 'measurement', 'toggle', 'date'])) {
-					$product->productAttributes()->updateOrCreate(
-						['attribute_id' => $attributeId],
-						['attribute_value' => $attributeValue]
-					);
+				$product->productAttributes()->updateOrCreate(
+					['attribute_id' => $attributeId],
+					['attribute_value' => $attributeValue]
+				);
 
-					if ($attributeInfo->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
-						$attributeInfo->attributeValues()->create([
-							'attribute_id' => $attributeId,
-							'attribute_value' => $attributeValue
-						]);
-					}
-				} else if (in_array($attributeInfo->type, ['multiselect'])) {
-					$product->productAttributes()->updateOrCreate(
-						['attribute_id' => $attributeId],
-						['attribute_value' => $attributeValue]
-					);
-					$attributeVals = explode(',', $attributeValue);
-					foreach ($attributeVals as $value) {
-						if ($attributeInfo->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-							$attributeInfo->attributeValues()->create([
-								'attribute_id' => $attributeId,
-								'attribute_value' => $value
-							]);
-						}
-					}
-				} else if (in_array($attributeInfo->type, ['file', 'image', 'video'])) {
-					if ($attributeValue instanceof UploadedFile) {
-						$attributePath = env('STORAGE_ENV', 'default-folder') . "/attributes";
-						$filePath = $attributeValue->store($attributePath, 's3');
-						$attributeValue = Storage::disk('s3')->url($filePath);
-
-						$product->productAttributes()->updateOrCreate(
-							['attribute_id' => $attributeId],
-							['attribute_value' => $attributeValue]
-						);
-					}
+				if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
+					$existingAttribute->attributeValues()->create([
+						'attribute_id' => $attributeId,
+						'attribute_value' => $attributeValue
+					]);
 				}
 			}
 		}
 	}
+
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
@@ -1065,7 +1102,7 @@ class ProductController extends BaseController
 		 "variant_color_title", "variant_color_value", "store_id", "brand_id",
 		 "views", "units_sold", "frequently_bought_together", "compare_type",
 		 "compare_products", "google_shopping_category", "google_shopping_mpn",
-		 "order", "box_quantity", "delivery_days"
+		 "order", "box_quantity", "delivery_days", "unit_of_measurement_id","benefits_features"
 	 ];
 	unset($input['product_attributes']);
 
@@ -1109,6 +1146,48 @@ class ProductController extends BaseController
 		 $product->status = $input['status']; // Assign status
 	 }
 
+	 if (isset($input['unit_of_measurement_id'])) {
+		// Fetch all valid unit IDs from the database
+		$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
+
+		if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
+			]);
+		}
+
+		$product->unit_of_measurement_id = $input['unit_of_measurement_id']; // Assign the valid ID
+	}
+
+						// Decode existing benefits_features if available
+			$existingBenefits = json_decode($product->benefits_features, true);
+
+			// Ensure existingBenefits is an array
+			if (!is_array($existingBenefits)) {
+				$existingBenefits = [];
+			}
+
+			// Decode incoming request JSON
+			$newBenefits = json_decode($request->input('benefits_features'), true);
+
+			// Ensure newBenefits is an array
+			if (!is_array($newBenefits)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid benefits_features format.'
+				], 400);
+			}
+
+			// Merge existing benefits with new ones
+			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
+
+			// Save back as JSON
+			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+
+
+
+
 
 
 
@@ -1116,7 +1195,7 @@ class ProductController extends BaseController
 	 $usStockStatusArray = [
 		 1 => "in_stock",
 		 2 => "out_of_stock",
-		 3 => "on_backorder"
+		 3 => "Pre Order"
 	 ];
 	 if (isset($input['stock_status'])) {
 		 if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
@@ -1295,6 +1374,7 @@ class ProductController extends BaseController
 		 'success' => true,
 		 'message' => 'Product updated successfully.',
 		 'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
+		 'unitOfMeasurements' => $unitOfMeasurements ,
 		 'review' => $review ?? null,
 		 'faq' => $faqs ?? null,
 	 ]);
@@ -1706,8 +1786,8 @@ class ProductController extends BaseController
 							$message = "The data in row $rowIndex is not compatible for import.";
 
 							# To delete imported excel file
-							$command = "rm -rf ".$fileNameWithPath;
-							shell_exec($command);
+							// $command = "rm -rf ".$fileNameWithPath;
+							// shell_exec($command);
 
 							session()->put('error', $message);
 							return back();

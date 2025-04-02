@@ -64,14 +64,18 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('transaction-logs', TransactionLogController::class);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
-	Route::get('/products/export', [ProductExportController::class, 'export']);
+	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
 
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
+	
+	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::apiResource('brands', BrandController::class);
+
+	Route::get('getStoresList', [StoreController::class, 'getStoresList']);
 	Route::apiResource('stores', StoreController::class);
 
 
@@ -111,7 +115,9 @@ Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 
 
 
-Route::post('/generate-reviews-faqs', [ClaudeAIController::class, 'generateReviewsAndFAQs']);
+Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
+Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
+Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

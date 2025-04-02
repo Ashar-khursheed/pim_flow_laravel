@@ -110,6 +110,8 @@ class Product extends Model
 		'variant_3_value' => 'nullable|string|max:255',
 		'variant_3_products' => 'nullable|string',
 		'google_shopping_category',
+		'benefits_features' => 'array',
+
 	];
 
 	public function categories()
@@ -254,5 +256,11 @@ class Product extends Model
 	{
 		return $this->hasMany(Faq::class, 'product_id');
 	}
+
+	public function unitOfMeasurement()
+	{
+		return $this->belongsTo(UnitOfMeasurement::class, 'unit_of_measurement_id');
+	}
+
 
 }

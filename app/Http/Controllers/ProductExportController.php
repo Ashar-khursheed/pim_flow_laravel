@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Log;
 class ProductExportController extends Controller
 {
 	/**
-	 * @OA\Get(
+	 * @OA\Post(
 	 *     path="/api/products/export",
 	 *     summary="Export products as CSV",
 	 *     tags={"Products"},
@@ -144,7 +144,7 @@ class ProductExportController extends Controller
 			'sku',
 			'brand',
 			'vendor',
-			'product_types',
+			// 'product_types',
 			'categories',
 			'tags',
 			'stock_status',
@@ -162,8 +162,8 @@ class ProductExportController extends Controller
 			'variant_requires_shipping',
 			'images',
 			'upload_video',
-			'seo_title',
-			'seo_description',
+			// 'seo_title',
+			// 'seo_description',
 			'barcode',
 			'refund_policy',
 			'status',
@@ -227,7 +227,7 @@ class ProductExportController extends Controller
 			'sku' => 'SKU',
 			'brand' => 'Brand',
 			'vendor' => 'Vendor',
-			'product_types' => 'Product Types',
+			// 'product_types' => 'Product Types',
 			'categories' => 'Categories',
 			'tags' => 'Tags',
 			'stock_status' => 'Stock Status',
@@ -245,8 +245,8 @@ class ProductExportController extends Controller
 			'variant_requires_shipping' => 'Variant Requires Shipping',
 			'images' => 'Images',
 			'upload_video' => 'Upload Video',
-			'seo_title' => 'Seo Title',
-			'seo_description' => 'Seo Description',
+			// 'seo_title' => 'Seo Title',
+			// 'seo_description' => 'Seo Description',
 			'barcode' => 'Barcode (ISBN, UPC, GTIN, etc.)',
 			'refund_policy' => 'Refund Policy',
 			'status' => 'Status',
@@ -450,13 +450,13 @@ class ProductExportController extends Controller
 						$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
 						break;
 
-						case 'seo_title':
-						$row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_title'] ?? '') : '';
-						break;
+						// case 'seo_title':
+						// $row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_title'] ?? '') : '';
+						// break;
 
-						case 'seo_description':
-						$row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_description'] ?? '') : '';
-						break;
+						// case 'seo_description':
+						// $row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_description'] ?? '') : '';
+						// break;
 
 						case 'buying_quantity1':
 						case 'discount1':
