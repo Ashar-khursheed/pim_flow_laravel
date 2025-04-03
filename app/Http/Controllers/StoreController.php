@@ -5,7 +5,7 @@ use Illuminate\Http\JsonResponse;
 
 use Illuminate\Http\Request;
 use App\Models\Store;
-
+use App\Models\Category;
 class StoreController extends BaseController
 {
 	/**
@@ -272,7 +272,15 @@ class StoreController extends BaseController
  */
 public function getStoresList(Request $request): JsonResponse
 {
-    $query = Store::query();
+    $query = Store::select('id', 'name', 'email', 'phone', 'address', 'country', 'state', 'city', 'logo', 'cover_image', 'description', 'content', 'status', 'created_at', 'updated_at', 'zip_code', 'company')
+        ->withCount('products') // Count the number of products associated with the store
+        ->with([
+            'products' => function ($query) {
+                // Load product categories with IDs
+                $query->select('id', 'store_id')
+                      ->with('categories:id'); // Load only category IDs
+            }
+        ]);
 
     // Search by store name
     if ($request->has('search')) {
@@ -293,10 +301,44 @@ public function getStoresList(Request $request): JsonResponse
     $perPage = $request->get('per_page', 10);
     $stores = $query->paginate($perPage);
 
+    // Transform data (after loading all necessary relations)
+    $stores->getCollection()->transform(function ($store) {
+        // Collect category IDs from the products
+        $categoryIds = $store->products->flatMap(function ($product) {
+            return $product->categories->pluck('id'); // Collect the category IDs
+        })->unique()->values(); // Ensure unique category IDs
+
+        // Now, map category IDs to their names
+        $categoryNames = Category::whereIn('id', $categoryIds)->pluck('name', 'id')->toArray();
+        $mappedCategoryNames = array_values(array_intersect_key($categoryNames, array_flip($categoryIds->toArray())));
+
+        return [
+            'id' => $store->id,
+            'name' => $store->name,
+            'email' => $store->email,
+            'phone' => $store->phone,
+            'address' => $store->address,
+            'country' => $store->country,
+            'state' => $store->state,
+            'city' => $store->city,
+            'store_logo' => $store->logo, // Assuming this is the field for store logo
+            'cover_image' => $store->cover_image,
+            'description' => $store->description,
+            'content' => $store->content,
+            'status' => $store->status,
+            'products_count' => $store->products_count, // Number of products for the store
+            'category_names' => $mappedCategoryNames, // Category names mapped from category IDs
+            'created_at' => $store->created_at,
+            'updated_at' => $store->updated_at,
+        ];
+    });
+
     return response()->json([
         'success' => true,
         'stores' => $stores
     ]);
 }
+
+
 
 }
