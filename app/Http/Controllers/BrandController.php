@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Store;
 
 class BrandController extends BaseController
 {
@@ -313,7 +315,7 @@ class BrandController extends BaseController
             ->withCount('products') // Only count products, don't load full relation
             ->with([
                 'products' => function ($query) {
-                    $query->select('id', 'brand_id', 'store_id')->with('categories:id'); 
+                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
                 }
             ]);
     
@@ -340,12 +342,23 @@ class BrandController extends BaseController
     
         // Transform data (after loading all necessary relations)
         $brands->getCollection()->transform(function ($brand) {
-            // Collect category IDs and store IDs by iterating over products
+            // Collect category IDs by iterating over products
             $categoryIds = $brand->products->flatMap(function ($product) {
                 return $product->categories->pluck('id');
             })->unique()->values();
     
-            $storeIds = $brand->products->pluck('store_id')->unique()->values();
+            // Fetch category names using find method for each category ID
+            $categoryNames = $categoryIds->map(function ($categoryId) {
+                $category = Category::find($categoryId); // Using find instead of whereIn
+                return $category ? $category->name : null; // Return category name or null if not found
+            })->filter()->values();
+    
+            // Collect store IDs and map them to store names
+            $storeIds = $brand->products->pluck('store_id')->unique();
+            $storeNames = $storeIds->map(function ($storeId) {
+                $store = Store::find($storeId);
+                return $store ? $store->name : null;
+            })->filter()->values();
     
             return [
                 'id' => $brand->id,
@@ -356,8 +369,8 @@ class BrandController extends BaseController
                 'description' => $brand->description,
                 'status' => $brand->status,
                 'products_count' => $brand->products_count,
-                'category_ids' => $categoryIds,
-                'store_ids' => $storeIds,
+                'category_name' => $categoryNames, // Use the fetched category names
+                'store_name' => $storeNames,
                 'created_at' => $brand->created_at,
                 'updated_at' => $brand->updated_at,
             ];
@@ -368,6 +381,7 @@ class BrandController extends BaseController
             'brands' => $brands
         ]);
     }
+    
     
     
     
