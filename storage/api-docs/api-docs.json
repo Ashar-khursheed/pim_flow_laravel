@@ -762,8 +762,9 @@
                                         "example": "https://nike.com"
                                     },
                                     "logo": {
+                                        "description": "Logo can either be a file (binary) or a URL (string)",
                                         "type": "string",
-                                        "format": "binary"
+                                        "example": "https://nike.com/logo.png"
                                     },
                                     "status": {
                                         "type": "string",
