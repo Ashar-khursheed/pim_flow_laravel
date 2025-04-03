@@ -91,30 +91,66 @@ class BrandController extends BaseController
      *     security={{"bearerAuth":{}}}
      * )
      */
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:191',
+    //         'description' => 'nullable|string',
+    //         'website' => 'nullable|url|max:191',
+    //         'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //         'status' => 'required|string|in:published,draft',
+    //         'order' => 'required|integer|min:0',
+    //         'is_featured' => 'required|boolean',
+    //     ]);
+
+    //     if ($request->hasFile('logo')) {
+    //         $validated['logo'] = $request->file('logo')->store('brands', 'public');
+    //     }
+
+    //     $brand = Brand::create($validated);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand created successfully',
+    //         'brand' => $brand
+    //     ], 201);
+    // }
+
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'name' => 'required|string|max:191',
-            'description' => 'nullable|string',
-            'website' => 'nullable|url|max:191',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|string|in:published,draft',
-            'order' => 'required|integer|min:0',
-            'is_featured' => 'required|boolean',
-        ]);
+{
+    $validated = $request->validate([
+        'name' => 'required|string|max:191',
+        'description' => 'nullable|string',
+        'website' => 'nullable|url|max:191',
+        'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'status' => 'required|string|in:published,draft',
+        'order' => 'required|integer|min:0',
+        'is_featured' => 'required|boolean',
+    ]);
 
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')->store('brands', 'public');
-        }
+    // Handle logo upload to S3 inside a dynamic folder based on STORAGE_ENV
+    if ($request->hasFile('logo')) {
+        // Construct the folder path using env('STORAGE_ENV') and "brands" as subfolder
+        $folderPath = env('STORAGE_ENV') . "/brands"; // Example: 'production/brands'
+        
+        // Store logo in S3 inside the 'brands' subfolder within the folder defined by STORAGE_ENV
+        $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
 
-        $brand = Brand::create($validated);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand created successfully',
-            'brand' => $brand
-        ], 201);
+        // Optionally, get the full URL to the stored file
+        $logoUrl = Storage::disk('s3')->url($logoPath); 
+        $validated['logo'] = $logoUrl;
     }
+
+    // Create the brand record in the database
+    $brand = Brand::create($validated);
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Brand created successfully',
+        'brand' => $brand
+    ], 201);
+}
+
 
     /**
      * @OA\Get(
@@ -360,10 +396,13 @@ class BrandController extends BaseController
                 return $store ? $store->name : null;
             })->filter()->values();
     
+            // Use asset() or url() to get the full URL for the logo
+            $logoUrl = $brand->logo ? asset('storage/' . $brand->logo) : null;
+    
             return [
                 'id' => $brand->id,
                 'name' => $brand->name,
-                'logo' => $brand->logo,
+                'logo' => $logoUrl, // Full URL for the logo
                 'slug' => $brand->website,
                 'is_featured' => $brand->is_featured,
                 'description' => $brand->description,
@@ -381,6 +420,7 @@ class BrandController extends BaseController
             'brands' => $brands
         ]);
     }
+    
     
     
     
