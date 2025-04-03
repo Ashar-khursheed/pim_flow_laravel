@@ -226,11 +226,9 @@ class AttributeGroupController extends BaseController
 			'message' => 'Attribute group detail',
 			'data' => [
 				'attributeGroup' => $record->load(['categories:id,name,parent_id']),
-				'groupAttributes' => [
-					'attribute_data' => $groupAttributes,
-					'total_pages' => $totalPages,
-					'total_records' => $totalRecords,
-				]
+				'groupAttributes' => $groupAttributes,
+				'total_pages' => $totalPages,
+				'total_records' => $totalRecords,
 			]
 		]);
 	}
