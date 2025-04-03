@@ -49,18 +49,25 @@ class AttributeGroupController extends BaseController
 	{
 		$records = AttributeGroup::with(['categories:id,name,parent_id', 'groupAttributes:id,code,name']);
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$records = $records->offset(($page - 1)*$length)->limit($length);
-		}
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
 
-		$records = $records->get();
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+			$totalRecords = $records->count();
+		}
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute Group List',
-			'data' => $records
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
