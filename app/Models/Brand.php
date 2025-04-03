@@ -29,4 +29,9 @@ class Brand extends Model
     protected $fillable = [
         'name', 'description', 'website', 'logo', 'status', 'order', 'is_featured'
     ];
+
+    public function products()
+    {
+        return $this->hasMany(Product::class, 'brand_id'); // Ensure 'brand_id' is the foreign key in products table
+    }
 }
