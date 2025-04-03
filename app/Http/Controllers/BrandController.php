@@ -69,28 +69,34 @@ class BrandController extends BaseController
 		]);
 	}
    
-	/**
-     * @OA\Post(
-     *     path="/api/brands",
-     *     summary="Create a new brand",
-     *     tags={"Brands"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name", "status", "order", "is_featured"},
-     *             @OA\Property(property="name", type="string", example="Nike"),
-     *             @OA\Property(property="description", type="string", example="A global sports brand"),
-     *             @OA\Property(property="website", type="string", example="https://nike.com"),
-     *             @OA\Property(property="logo", type="string", format="binary"),
-     *             @OA\Property(property="status", type="string", example="published"),
-     *             @OA\Property(property="order", type="integer", example=1),
-     *             @OA\Property(property="is_featured", type="boolean", example=true)
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Brand created successfully"),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
+/**
+ * @OA\Post(
+ *     path="/api/brands",
+ *     summary="Create a new brand",
+ *     tags={"Brands"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"name", "status", "order", "is_featured"},
+ *             @OA\Property(property="name", type="string", example="Nike"),
+ *             @OA\Property(property="description", type="string", example="A global sports brand"),
+ *             @OA\Property(property="website", type="string", example="https://nike.com"),
+ *             @OA\Property(
+ *                 property="logo", 
+ *                 type="string", 
+ *                 description="Logo can either be a file (binary) or a URL (string)",
+ *                 example="https://nike.com/logo.png"
+ *             ),
+ *             @OA\Property(property="status", type="string", example="published"),
+ *             @OA\Property(property="order", type="integer", example=1),
+ *             @OA\Property(property="is_featured", type="boolean", example=true)
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="Brand created successfully"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
     // public function store(Request $request)
     // {
     //     $validated = $request->validate([
@@ -116,40 +122,59 @@ class BrandController extends BaseController
     //     ], 201);
     // }
 
-    public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string|max:191',
-        'description' => 'nullable|string',
-        'website' => 'nullable|url|max:191',
-        'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-        'status' => 'required|string|in:published,draft',
-        'order' => 'required|integer|min:0',
-        'is_featured' => 'required|boolean',
-    ]);
-
-    // Handle logo upload to S3 inside a dynamic folder based on STORAGE_ENV
-    if ($request->hasFile('logo')) {
-        // Construct the folder path using env('STORAGE_ENV') and "brands" as subfolder
-        $folderPath = env('STORAGE_ENV') . "/brands"; // Example: 'production/brands'
-        
-        // Store logo in S3 inside the 'brands' subfolder within the folder defined by STORAGE_ENV
-        $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
-
-        // Optionally, get the full URL to the stored file
-        $logoUrl = Storage::disk('s3')->url($logoPath); 
-        $validated['logo'] = $logoUrl;
+    public function store(Request $request) 
+    {
+        // Validate incoming data
+        $validated = $request->validate([
+            'name' => 'required|string|max:191',
+            'description' => 'nullable|string',
+            'website' => 'nullable|url|max:191',
+            'status' => 'required|string|in:published,draft',
+            'order' => 'required|integer|min:0',
+            'is_featured' => 'required|boolean',
+        ]);
+    
+        // Handle logo (can either be a URL or file)
+        if ($request->has('logo')) {
+            $logo = $request->input('logo');
+            
+            // Check if the logo is a valid URL
+            if (filter_var($logo, FILTER_VALIDATE_URL)) {
+                // If it's a URL, just store the URL
+                $validated['logo'] = $logo;
+            } elseif ($request->hasFile('logo')) {
+                // If it's a file upload, validate and store the file
+                $request->validate([
+                    'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                ]);
+    
+                // Construct the folder path using env('STORAGE_ENV') and "brands" as subfolder
+                $folderPath = env('STORAGE_ENV') . "/brands"; // Example: 'production/brands'
+                
+                // Store the logo in S3 inside the 'brands' subfolder within the folder defined by STORAGE_ENV
+                $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+    
+                // Optionally, get the full URL to the stored file
+                $logoUrl = Storage::disk('s3')->url($logoPath);
+    
+                // Add the logo URL to the validated data
+                $validated['logo'] = $logoUrl;
+            }
+        }
+    
+        // Create the brand record in the database
+        $brand = Brand::create($validated);
+    
+        // Return a response including the brand data with the logo URL
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand created successfully',
+            'brand' => $brand->fresh() // Get the fresh brand data, including logo
+        ], 200); // Success response with brand details, including logo
     }
+    
 
-    // Create the brand record in the database
-    $brand = Brand::create($validated);
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Brand created successfully',
-        'brand' => $brand
-    ], 201);
-}
+    
 
 
     /**
