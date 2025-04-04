@@ -1,0 +1,17 @@
+{
+	"lbl_add": "Add",
+	"lbl_edit": "Edit",
+	"lbl_dlt": "Delete",
+
+	"msg_create": "Record created successfully.",
+	"msg_update": "The record has been updated successfully.",
+	"msg_dlt": "The record has been deleted successfully.",
+	"msg_rec_list": "List of all records",
+	"msg_rec_dtl": "Record detail",
+
+	"err_exist": "Record does not exist",
+	"err_create": "Record could not be saved.",
+	"err_update": "The record could not be updated.",
+	"err_dlt": "The record could not be deleted.",
+	"err_attr_association": "Attribute is associated with an attribute group and cannot be deleted."
+}

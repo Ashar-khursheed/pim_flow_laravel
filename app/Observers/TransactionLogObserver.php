@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Observers;
+
+use Illuminate\Support\Arr;
+use App\Models\TransactionLog;
+
+class TransactionLogObserver
+{
+	public function created($model)
+	{
+		// dd(__('lbl_add'));
+		$this->createLog($model, __('lbl_add'));
+	}
+
+	public function updating($model)
+	{
+		dd(request()->all(), $model->attributeValues->toArray(), $model->attributeGroups()->pluck('name')->toArray());
+	}
+
+	public function updated($model)
+	{
+		// dd(__('lbl_edit'));
+		$this->createLog($model, __('lbl_edit'));
+	}
+
+	public function deleted($model)
+	{
+		$this->createLog($model, __('lbl_dlt'));
+	}
+
+	private function createLog($model, $action)
+	{
+		$module = class_basename($model);
+		$identifier = $model->id;
+		$changeObj = null;
+		$description = null;
+		if ($action == __('lbl_edit')) {
+			$changedField = Arr::except($model->getChanges(), ['updated_at']);
+			if (count($changedField)) {
+				$oldArray = [];
+				$newArray = [];
+				$oldData = $model->getOriginal();
+				foreach ($changedField as $key => $value) {
+					$oldArray[$key] = $oldData[$key];
+					$newArray[$key] = $value;
+				}
+				$changes = [
+					"old_value" => $oldArray,
+					"new_value" => $newArray,
+				];
+				$changeObj = json_encode($changes);
+			}
+		}
+		if ($action == __('lbl_dlt')) {
+			$changes = [
+				"value" => Arr::except($model->getOriginal(), ['password', 'updated_at'])
+			];
+			$changeObj = json_encode($changes);
+		}
+		$log = new TransactionLog();
+		$log->module = $module;
+		$log->action = $action;
+		$log->identifier = $identifier;
+		$log->change_obj = $changeObj;
+		$log->description = $description;
+		$log->created_by = auth()->id() ?? null;
+		$log->created_at = now();
+		$log->save();
+	}
+}

@@ -118,7 +118,7 @@ class AttributeController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Attribute List',
+			'message' => __("msg_rec_list"),
 			'data' => $records,
 			'total_pages' => $totalPages ?? 1,
 			'total_records' => $totalRecords,
@@ -166,7 +166,7 @@ class AttributeController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Attribute created successfully',
+			'message' => __("msg_create"),
 			'data' => $attribute
 		]);
 	}
@@ -197,7 +197,7 @@ class AttributeController extends BaseController
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Attribute does not exist.'
+				'message' => __("err_exist")
 			]);
 		}
 
@@ -207,7 +207,7 @@ class AttributeController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Attribute detail',
+			'message' => __("msg_rec_dtl"),
 			'data' => $attribute
 		]);
 	}
@@ -261,7 +261,7 @@ class AttributeController extends BaseController
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Attribute does not exist.'
+				'message' => __("err_exist")
 			]);
 		}
 
@@ -316,7 +316,7 @@ class AttributeController extends BaseController
 			/* Return success response */
 			return response()->json([
 				'success' => true,
-				'message' => 'Attribute updated successfully.',
+				'message' => __("msg_update"),
 				'data' => $attribute
 			]);
 		} catch (\Exception $e) {
@@ -324,7 +324,7 @@ class AttributeController extends BaseController
 
 			return response()->json([
 				'success' => false,
-				'message' => 'Failed to update attribute.',
+				'message' => __("err_update"),
 				'error' => $e->getMessage()
 			], 500);
 		}
@@ -358,7 +358,7 @@ class AttributeController extends BaseController
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Record does not exist with given ID.'
+				'message' => __("err_exist")
 			], 404);
 		}
 
@@ -366,7 +366,7 @@ class AttributeController extends BaseController
 		if ($attribute->attributeGroups()->exists()) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Attribute is associated with an attribute group and cannot be deleted.'
+				'message' => __("err_attr_association")
 			], 400);
 		}
 
@@ -375,7 +375,7 @@ class AttributeController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Attribute deleted successfully'
+			'message' => __("msg_dlt")
 		], 200);
 	}
 
