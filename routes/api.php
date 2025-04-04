@@ -58,8 +58,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);
-
-
+	Route::post('category/getAttributesByCategory', [CategoryAttributeController::class, 'getAttributesByCategory']);
+	
 	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);

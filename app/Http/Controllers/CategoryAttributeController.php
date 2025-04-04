@@ -377,4 +377,70 @@ class CategoryAttributeController extends BaseController
 			], 500);
 		}
 	}
+
+
+
+/**
+ * @OA\Post(
+ *     path="/api/category/getAttributesByCategory",
+ *     summary="Get all attributes assigned to a specific category",
+ *     tags={"Category Attribute Group"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             @OA\Property(property="category_id", type="integer", description="The ID of the category to fetch attributes for")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="A list of attributes assigned to the specified category",
+ *         @OA\MediaType(mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="id", type="integer"),
+ *                     @OA\Property(property="name", type="string"),
+ *                     @OA\Property(property="type", type="string"),
+ *                     @OA\Property(property="is_required", type="boolean")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Category not found",
+ *         @OA\MediaType(mediaType="application/json",
+ *             @OA\Schema(
+ *                 type="object",
+ *                 @OA\Property(property="message", type="string", example="Category not found")
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+ public function getAttributesByCategory(Request $request)
+ {
+	 // Step 1: Validate that category_id is provided in the request
+	 $validated = $request->validate([
+		 'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
+	 ]);
+
+	 // Step 2: Find the category by ID
+	 $category = Category::findOrFail($validated['category_id']);
+
+	 // Step 3: Get the attribute groups related to the category
+	 $attributeGroups = $category->attributeGroups(); // Access related attribute groups
+
+	 // Step 4: Get all the attributes from those groups
+	 $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
+								   ->get() // Get the groups
+								   ->pluck('groupAttributes') // Extract the groupAttributes collection
+								   ->flatten(); // Flatten into a single collection of attributes
+
+	 // Step 5: Return the attributes in the response
+	 return response()->json($attributes);
+ }
 }
