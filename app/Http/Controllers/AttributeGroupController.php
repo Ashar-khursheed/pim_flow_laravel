@@ -49,18 +49,25 @@ class AttributeGroupController extends BaseController
 	{
 		$records = AttributeGroup::with(['categories:id,name,parent_id', 'groupAttributes:id,code,name']);
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$records = $records->offset(($page - 1)*$length)->limit($length);
-		}
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
 
-		$records = $records->get();
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+			$totalRecords = $records->count();
+		}
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute Group List',
-			'data' => $records
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
@@ -147,13 +154,35 @@ class AttributeGroupController extends BaseController
 	 *         description="ID of the attribute group",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination. Starts from 1.",
+	 *         required=true,
+	 *         example=1,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="length",
+	 *         in="query",
+	 *         description="Number of records per page.",
+	 *         required=true,
+	 *         example=20,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function show($id)
+	public function show($id, Request $request)
 	{
-		$record = AttributeGroup::find($id);
+		$record = AttributeGroup::with('categories:id,name,parent_id')->find($id);
 
 		if (!$record) {
 			return response()->json([
@@ -162,10 +191,55 @@ class AttributeGroupController extends BaseController
 			]);
 		}
 
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+
+			$groupAttributesQuery = $record->groupAttributes();
+
+			$totalRecords = $groupAttributesQuery->count();
+			$totalPages = ceil($totalRecords / $length);
+
+			$groupAttributes = $groupAttributesQuery
+			->select(
+				'attributes.id',
+				'attributes.code',
+				'attributes.name',
+				'attribute_group_attributes.attribute_group_id',
+				'attribute_group_attributes.attribute_id'
+			)
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
+		} else {
+			$groupAttributes = $record->groupAttributes()
+			->select(
+				'attributes.id',
+				'attributes.code',
+				'attributes.name',
+				'attribute_group_attributes.attribute_group_id',
+				'attribute_group_attributes.attribute_id'
+			)
+			->get();
+			$totalRecords = $groupAttributes->count();
+			$totalPages = 1;
+		}
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'data' => $record->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
+			'data' => [
+				[
+					'id' => $record->id,
+					'name' => $record->name,
+					'created_at' => $record->created_at,
+					'updated_at' => $record->updated_at,
+					'categories' => $record->categories,
+					'groupAttributes' => $groupAttributes,
+					'total_pages' => $totalPages,
+					'total_records' => $totalRecords
+				]
+			]
 		]);
 	}
 

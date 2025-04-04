@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Brand;
+use App\Models\Category;
+use App\Models\Store;
 
 class BrandController extends BaseController
 {
@@ -66,53 +68,114 @@ class BrandController extends BaseController
 			'brands' => $brands
 		]);
 	}
+   
+/**
+ * @OA\Post(
+ *     path="/api/brands",
+ *     summary="Create a new brand",
+ *     tags={"Brands"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"name", "status", "order", "is_featured"},
+ *             @OA\Property(property="name", type="string", example="Nike"),
+ *             @OA\Property(property="description", type="string", example="A global sports brand"),
+ *             @OA\Property(property="website", type="string", example="https://nike.com"),
+ *             @OA\Property(
+ *                 property="logo", 
+ *                 type="string", 
+ *                 description="Logo can either be a file (binary) or a URL (string)",
+ *                 example="https://nike.com/logo.png"
+ *             ),
+ *             @OA\Property(property="status", type="string", example="published"),
+ *             @OA\Property(property="order", type="integer", example=1),
+ *             @OA\Property(property="is_featured", type="boolean", example=true)
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="Brand created successfully"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
 
-	/**
-     * @OA\Post(
-     *     path="/api/brands",
-     *     summary="Create a new brand",
-     *     tags={"Brands"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name", "status", "order", "is_featured"},
-     *             @OA\Property(property="name", type="string", example="Nike"),
-     *             @OA\Property(property="description", type="string", example="A global sports brand"),
-     *             @OA\Property(property="website", type="string", example="https://nike.com"),
-     *             @OA\Property(property="logo", type="string", format="binary"),
-     *             @OA\Property(property="status", type="string", example="published"),
-     *             @OA\Property(property="order", type="integer", example=1),
-     *             @OA\Property(property="is_featured", type="boolean", example=true)
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Brand created successfully"),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function store(Request $request)
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'name' => 'required|string|max:191',
+    //         'description' => 'nullable|string',
+    //         'website' => 'nullable|url|max:191',
+    //         'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+    //         'status' => 'required|string|in:published,draft',
+    //         'order' => 'required|integer|min:0',
+    //         'is_featured' => 'required|boolean',
+    //     ]);
+
+    //     if ($request->hasFile('logo')) {
+    //         $validated['logo'] = $request->file('logo')->store('brands', 'public');
+    //     }
+
+    //     $brand = Brand::create($validated);
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand created successfully',
+    //         'brand' => $brand
+    //     ], 201);
+    // }
+
+    public function store(Request $request) 
     {
+        // Validate incoming data
         $validated = $request->validate([
             'name' => 'required|string|max:191',
             'description' => 'nullable|string',
             'website' => 'nullable|url|max:191',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'required|string|in:published,draft',
             'order' => 'required|integer|min:0',
             'is_featured' => 'required|boolean',
         ]);
-
-        if ($request->hasFile('logo')) {
-            $validated['logo'] = $request->file('logo')->store('brands', 'public');
+    
+        // Handle logo (can either be a URL or file)
+        if ($request->has('logo')) {
+            $logo = $request->input('logo');
+            
+            // Check if the logo is a valid URL
+            if (filter_var($logo, FILTER_VALIDATE_URL)) {
+                // If it's a URL, just store the URL
+                $validated['logo'] = $logo;
+            } elseif ($request->hasFile('logo')) {
+                // If it's a file upload, validate and store the file
+                $request->validate([
+                    'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                ]);
+    
+                // Construct the folder path using env('STORAGE_ENV') and "brands" as subfolder
+                $folderPath = env('STORAGE_ENV') . "/brands"; // Example: 'production/brands'
+                
+                // Store the logo in S3 inside the 'brands' subfolder within the folder defined by STORAGE_ENV
+                $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+    
+                // Optionally, get the full URL to the stored file
+                $logoUrl = Storage::disk('s3')->url($logoPath);
+    
+                // Add the logo URL to the validated data
+                $validated['logo'] = $logoUrl;
+            }
         }
-
+    
+        // Create the brand record in the database
         $brand = Brand::create($validated);
-
+    
+        // Return a response including the brand data with the logo URL
         return response()->json([
             'success' => true,
             'message' => 'Brand created successfully',
-            'brand' => $brand
-        ], 201);
+            'brand' => $brand->fresh() // Get the fresh brand data, including logo
+        ], 200); // Success response with brand details, including logo
     }
+    
+
+    
+
 
     /**
      * @OA\Get(
@@ -255,87 +318,136 @@ class BrandController extends BaseController
     }
 
 
-    /**
- * @OA\Get(
- *    path="/api/getbrandsList",
- *     summary="Fetch all brands with pagination, search, filter, and sorting",
- *     tags={"Brands"},
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Search by brand name",
- *         @OA\Schema(type="string", example="Nike")
- *     ),
- *     @OA\Parameter(
- *         name="status",
- *         in="query",
- *         description="Filter by brand status",
- *         @OA\Schema(type="string", example="active")
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Sort by id, name, or created_at",
- *         @OA\Schema(type="string", enum={"id", "name", "created_at"}, example="created_at")
- *     ),
- *     @OA\Parameter(
- *         name="sort_order",
- *         in="query",
- *         description="Sort order: asc or desc",
- *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
- *     ),
- *     @OA\Parameter(
- *         name="per_page",
- *         in="query",
- *         description="Number of brands per page",
- *         @OA\Schema(type="integer", example=10)
- *     ),
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number",
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\Response(response=200, description="Success", 
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="brands", type="object")
- *         )
- *     ),
- *     @OA\Response(response=400, description="Invalid parameters"),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function getBrandsList(Request $request)
-{
-    $query = Brand::query();
-
-    // Search by name
-    if ($request->has('search')) {
-        $query->where('name', 'LIKE', '%' . $request->search . '%');
+        /**
+     * @OA\Get(
+     *    path="/api/getbrandsList",
+     *     summary="Fetch all brands with pagination, search, filter, and sorting",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search by brand name",
+     *         @OA\Schema(type="string", example="Nike")
+     *     ),
+     *     @OA\Parameter(
+     *         name="status",
+     *         in="query",
+     *         description="Filter by brand status",
+     *         @OA\Schema(type="string", example="active")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Sort by id, name, or created_at",
+     *         @OA\Schema(type="string", enum={"id", "name", "created_at"}, example="created_at")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_order",
+     *         in="query",
+     *         description="Sort order: asc or desc",
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         description="Number of brands per page",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Success", 
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="brands", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(response=400, description="Invalid parameters"),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function getBrandsList(Request $request)
+    {
+        $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+            ->withCount('products') // Only count products, don't load full relation
+            ->with([
+                'products' => function ($query) {
+                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
+                }
+            ]);
+    
+        // Search by name
+        if ($request->filled('search')) {
+            $query->where('name', 'LIKE', '%' . $request->search . '%');
+        }
+    
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        // Sorting (default: latest created_at)
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+    
+        if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+    
+        // Paginate results (default 10 per page)
+        $brands = $query->paginate($request->input('per_page', 10));
+    
+        // Transform data (after loading all necessary relations)
+        $brands->getCollection()->transform(function ($brand) {
+            // Collect category IDs by iterating over products
+            $categoryIds = $brand->products->flatMap(function ($product) {
+                return $product->categories->pluck('id');
+            })->unique()->values();
+    
+            // Fetch category names using find method for each category ID
+            $categoryNames = $categoryIds->map(function ($categoryId) {
+                $category = Category::find($categoryId); // Using find instead of whereIn
+                return $category ? $category->name : null; // Return category name or null if not found
+            })->filter()->values();
+    
+            // Collect store IDs and map them to store names
+            $storeIds = $brand->products->pluck('store_id')->unique();
+            $storeNames = $storeIds->map(function ($storeId) {
+                $store = Store::find($storeId);
+                return $store ? $store->name : null;
+            })->filter()->values();
+    
+            // Use asset() or url() to get the full URL for the logo
+            $logoUrl = $brand->logo ? asset('storage/' . $brand->logo) : null;
+    
+            return [
+                'id' => $brand->id,
+                'name' => $brand->name,
+                'logo' => $logoUrl, // Full URL for the logo
+                'slug' => $brand->website,
+                'is_featured' => $brand->is_featured,
+                'description' => $brand->description,
+                'status' => $brand->status,
+                'products_count' => $brand->products_count,
+                'category_name' => $categoryNames, // Use the fetched category names
+                'store_name' => $storeNames,
+                'created_at' => $brand->created_at,
+                'updated_at' => $brand->updated_at,
+            ];
+        });
+    
+        return response()->json([
+            'success' => true,
+            'brands' => $brands
+        ]);
     }
-
-    // Filter by status
-    if ($request->has('status')) {
-        $query->where('status', $request->status);
-    }
-
-    // Sorting (default: latest created_at)
-    $sortBy = $request->input('sort_by', 'created_at'); // Default: sort by latest created_at
-    $sortOrder = $request->input('sort_order', 'desc'); // Default: descending order
-
-    if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
-        $query->orderBy($sortBy, $sortOrder);
-    }
-
-    // Paginate results (default 10 per page)
-    $brands = $query->paginate($request->input('per_page', 10));
-
-    return response()->json([
-        'success' => true,
-        'brands' => $brands
-    ]);
-}
-
+    
+    
+    
+    
+    
 }
