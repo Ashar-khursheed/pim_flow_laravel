@@ -160,6 +160,18 @@ class TransactionLogController extends BaseController
 			$record->description = $decoded;
 		}
 
+		/* Decode JSON in 'change_obj' field */
+		if ($record->change_obj && json_validate($record->change_obj)) {
+			$decoded = json_decode($record->change_obj, true);
+			/* Handle 'Error' field */
+			// array_walk_recursive($decoded, function (&$value, $key) {
+			// 	if ($key === 'Error') {
+			// 		$value = explode(' | ', $value);
+			// 	}
+			// });
+			$record->change_obj = $decoded;
+		}
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Transaction log detail',

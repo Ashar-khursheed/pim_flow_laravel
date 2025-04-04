@@ -182,7 +182,7 @@ class AttributeGroupController extends BaseController
 	 */
 	public function show($id, Request $request)
 	{
-		$record = AttributeGroup::find($id);
+		$record = AttributeGroup::with('categories:id,name,parent_id')->find($id);
 
 		if (!$record) {
 			return response()->json([
@@ -201,22 +201,26 @@ class AttributeGroupController extends BaseController
 			$totalPages = ceil($totalRecords / $length);
 
 			$groupAttributes = $groupAttributesQuery
-				->select(
-					'attributes.id',
-					'attributes.code',
-					'attributes.name'
-				)
-				->skip(($page - 1) * $length)
-				->take($length)
-				->get();
+			->select(
+				'attributes.id',
+				'attributes.code',
+				'attributes.name',
+				'attribute_group_attributes.attribute_group_id',
+				'attribute_group_attributes.attribute_id'
+			)
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 		} else {
 			$groupAttributes = $record->groupAttributes()
-				->select(
-					'attributes.id',
-					'attributes.code',
-					'attributes.name'
-				)
-				->get();
+			->select(
+				'attributes.id',
+				'attributes.code',
+				'attributes.name',
+				'attribute_group_attributes.attribute_group_id',
+				'attribute_group_attributes.attribute_id'
+			)
+			->get();
 			$totalRecords = $groupAttributes->count();
 			$totalPages = 1;
 		}
@@ -225,11 +229,15 @@ class AttributeGroupController extends BaseController
 			'success' => true,
 			'message' => 'Attribute group detail',
 			'data' => [
-				'attributeGroup' => $record->load(['categories:id,name,parent_id']),
-				'groupAttributes' => [
-					'attribute_data' => $groupAttributes,
+				[
+					'id' => $record->id,
+					'name' => $record->name,
+					'created_at' => $record->created_at,
+					'updated_at' => $record->updated_at,
+					'categories' => $record->categories,
+					'groupAttributes' => $groupAttributes,
 					'total_pages' => $totalPages,
-					'total_records' => $totalRecords,
+					'total_records' => $totalRecords
 				]
 			]
 		]);
