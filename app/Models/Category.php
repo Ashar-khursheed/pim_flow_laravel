@@ -94,4 +94,9 @@ class Category extends Model
 		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
 		return $groupAttributes->unique('id')->values();
 	}
+
+	public function subCategories()
+    {
+        return $this->hasMany(SubCategory::class);
+    }
 }

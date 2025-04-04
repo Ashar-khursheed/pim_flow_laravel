@@ -26,6 +26,10 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
+use App\Http\Controllers\SubCategoryController;
+
+
+
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -118,6 +122,13 @@ Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
 Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
 Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
+
+
+Route::get('subcategories', [SubCategoryController::class, 'index']);
+Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
+Route::post('subcategories', [SubCategoryController::class, 'store']);
+Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
+Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

@@ -5622,6 +5622,339 @@
                 ]
             }
         },
+        "/api/subcategories": {
+            "get": {
+                "tags": [
+                    "Subcategories"
+                ],
+                "summary": "Get all subcategories",
+                "operationId": "329bf50ac12550f84d6a70f7523dbffa",
+                "responses": {
+                    "200": {
+                        "description": "List of Subcategories",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SubCategory"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subcategories"
+                ],
+                "summary": "Create a new subcategory",
+                "operationId": "596036cf3873c08f709d154b975e687b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "New Subcategory"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "products_ids[]": {
+                                        "description": "Send as products_ids[] for each value",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "attributes_ids[]": {
+                                        "description": "Send as attributes_ids[] for each value",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2
+                                        ]
+                                    },
+                                    "web_banners[0][image]": {
+                                        "description": "Web banner image file",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "web_banners[0][alt_text]": {
+                                        "type": "string",
+                                        "example": "Main web banner alt text",
+                                        "nullable": true
+                                    },
+                                    "web_banners[1][image]": {
+                                        "description": "Second web banner image",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "web_banners[1][alt_text]": {
+                                        "type": "string",
+                                        "example": "Secondary web banner alt",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[0][image]": {
+                                        "description": "Mobile banner image file",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[0][alt_text]": {
+                                        "type": "string",
+                                        "example": "Main mobile banner alt",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[1][image]": {
+                                        "description": "Second mobile banner image",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[1][alt_text]": {
+                                        "type": "string",
+                                        "example": "Secondary mobile banner alt",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Subcategory Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubCategory"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/subcategories/{id}": {
+            "get": {
+                "tags": [
+                    "Subcategories"
+                ],
+                "summary": "Get a specific subcategory by ID",
+                "operationId": "0d0a401a16be23e3fc1631dfe2ea968f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subcategory details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubCategory"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Subcategories"
+                ],
+                "summary": "Update an existing subcategory",
+                "operationId": "674254d660fdf75da7b9829c181018c7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the subcategory to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Updated Subcategory"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "products_ids[]": {
+                                        "description": "Send as products_ids[] for each value",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "attributes_ids[]": {
+                                        "description": "Send as attributes_ids[] for each value",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2
+                                        ]
+                                    },
+                                    "web_banners[0][image]": {
+                                        "description": "Web banner image file",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "web_banners[0][alt_text]": {
+                                        "type": "string",
+                                        "example": "Main web banner alt text",
+                                        "nullable": true
+                                    },
+                                    "web_banners[1][image]": {
+                                        "description": "Second web banner image",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "web_banners[1][alt_text]": {
+                                        "type": "string",
+                                        "example": "Secondary web banner alt",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[0][image]": {
+                                        "description": "Mobile banner image file",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[0][alt_text]": {
+                                        "type": "string",
+                                        "example": "Main mobile banner alt",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[1][image]": {
+                                        "description": "Second mobile banner image",
+                                        "type": "string",
+                                        "format": "binary",
+                                        "nullable": true
+                                    },
+                                    "mobile_banners[1][alt_text]": {
+                                        "type": "string",
+                                        "example": "Secondary mobile banner alt",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Subcategory Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SubCategory"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Subcategories"
+                ],
+                "summary": "Delete a subcategory",
+                "operationId": "2b0128b464e15b8da69d359cf2900f0f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subcategory Deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/transaction-logs": {
             "get": {
                 "tags": [
@@ -6663,6 +6996,92 @@
                     }
                 },
                 "type": "object"
+            },
+            "SubCategory": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Electronics Accessories"
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "category": {
+                        "properties": {
+                            "id": {
+                                "type": "integer",
+                                "example": 1
+                            },
+                            "name": {
+                                "type": "string",
+                                "example": "Electronics"
+                            }
+                        },
+                        "type": "object"
+                    },
+                    "products": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "integer",
+                                    "example": 1
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "example": "Smartphone"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "web_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "image_name": {
+                                    "type": "string",
+                                    "example": "web_banner_1.jpg"
+                                },
+                                "alt_text": {
+                                    "type": "string",
+                                    "example": "Web Banner 1"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "mobile_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "image_name": {
+                                    "type": "string",
+                                    "example": "mobile_banner_1.jpg"
+                                },
+                                "alt_text": {
+                                    "type": "string",
+                                    "example": "Mobile Banner 1"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
             }
         },
         "securitySchemes": {
@@ -6751,6 +7170,10 @@
         {
             "name": "Stores",
             "description": "Stores"
+        },
+        {
+            "name": "Subcategories",
+            "description": "Subcategories"
         },
         {
             "name": "Transaction Logs",
