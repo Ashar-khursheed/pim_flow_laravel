@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\AttributeGroup;
 use App\Models\Category;
+use Illuminate\Support\Facades\Validator;
 
 class CategoryAttributeController extends BaseController
 {
