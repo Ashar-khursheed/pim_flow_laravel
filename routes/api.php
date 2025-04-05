@@ -27,6 +27,8 @@ use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\SeoManagementController;
+
 
 
 
@@ -58,7 +60,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);
-	Route::post('category/getAttributesByCategory', [CategoryAttributeController::class, 'getAttributesByCategory']);
+	Route::get('category/getAttributesByCategory', [CategoryAttributeController::class, 'getAttributesByCategory']);
 	
 	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
@@ -129,6 +131,9 @@ Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
 Route::post('subcategories', [SubCategoryController::class, 'store']);
 Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
 Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
+
+Route::apiResource('seo-management', SeoManagementController::class);
+
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

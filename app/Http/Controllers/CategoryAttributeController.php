@@ -381,7 +381,7 @@ class CategoryAttributeController extends BaseController
 
 
 /**
- * @OA\Post(
+ * @OA\Get(
  *     path="/api/category/getAttributesByCategory",
  *     summary="Get all attributes assigned to a specific category",
  *     tags={"Category Attribute Group"},
