@@ -8,7 +8,7 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::table('ec_products', function (Blueprint $table) {
-            $table->json('benefits_features')->nullable();
+            $table->longText('benefits_features')->nullable()->after('content');
         });
     }
 
