@@ -1877,4 +1877,68 @@ class ProductController extends BaseController
 			]);
 		}
 	}
+
+
+	/**
+ * @OA\Get(
+ *     path="/api/products/category/{category_id}",
+ *     summary="Get list of products by category",
+ *     description="Retrieves a list of products from a specific category.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="category_id",
+ *         in="path",
+ *         description="ID of the category to filter products by",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="Sample Product"),
+ *                     @OA\Property(property="sku", type="string", example="PROD-123"),
+ *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function getProductsByCategory($category_id)
+{
+    // Fetch all products related to the given category ID
+    $products = Product::whereHas('categories', function ($query) use ($category_id) {
+        $query->where('category_id', $category_id);
+    })
+    ->select(['id', 'name', 'sku', 'images'])
+    ->orderBy('id', 'desc') // Order by product ID in descending order
+    ->get();
+
+    // Formatting the response to include only id, name, sku, and image
+    $formattedProducts = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+        ];
+    });
+
+    // Return the list of products without pagination
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully for category ' . $category_id,
+        'data' => $formattedProducts
+    ]);
+}
+
 }
