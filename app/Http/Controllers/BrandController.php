@@ -76,28 +76,88 @@ class BrandController extends BaseController
  *     tags={"Brands"},
  *     @OA\RequestBody(
  *         required=true,
- *         @OA\JsonContent(
- *             required={"name", "status", "order", "is_featured"},
- *             @OA\Property(property="name", type="string", example="Nike"),
- *             @OA\Property(property="description", type="string", example="A global sports brand"),
- *             @OA\Property(property="website", type="string", example="https://nike.com"),
- *             @OA\Property(
- *                 property="logo", 
- *                 type="string", 
- *                 description="Logo can either be a file (binary) or a URL (string)",
- *                 example="https://nike.com/logo.png"
- *             ),
- *             @OA\Property(property="status", type="string", example="published"),
- *             @OA\Property(property="order", type="integer", example=1),
- *             @OA\Property(property="is_featured", type="boolean", example=true)
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"name", "status", "order", "is_featured"},
+ *                 @OA\Property(property="name", type="string", example="Nike"),
+ *                 @OA\Property(property="description", type="string", example="A global sports brand"),
+ *                 @OA\Property(property="website", type="string", example="https://nike.com"),
+ *                 @OA\Property(
+ *                     property="logo", 
+ *                     type="string", 
+ *                     format="binary",
+ *                     description="Logo file upload"
+ *                 ),
+ *                 @OA\Property(property="status", type="string", enum={"published", "draft"}, example="published"),
+ *                 @OA\Property(property="order", type="integer", example=1),
+ *                 @OA\Property(property="is_featured", type="integer", enum={0, 1}, example=1, description="Use 1 for true, 0 for false")
+ *             )
  *         )
  *     ),
  *     @OA\Response(response=201, description="Brand created successfully"),
+ *     @OA\Response(response=422, description="Validation error"),
  *     security={{"bearerAuth":{}}}
  * )
  */
 
-    // public function store(Request $request)
+ public function store(Request $request) 
+ {
+     try {
+         // Update validation rules for is_featured to accept 0 or 1
+         $validated = $request->validate([
+             'name' => 'required|string|max:191',
+             'description' => 'nullable|string',
+             'website' => 'nullable|url|max:191',
+             'status' => 'required|string|in:published,draft',
+             'order' => 'required|integer|min:0',
+             'is_featured' => 'required|boolean',  // Boolean validation will convert "0", "1", 0, 1, true, false
+             'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+         ]);
+ 
+         // Initialize brand data from validated data
+         $brandData = [
+             'name' => $validated['name'],
+             'description' => $validated['description'] ?? null,
+             'website' => $validated['website'] ?? null,
+             'status' => $validated['status'],
+             'order' => $validated['order'],
+             'is_featured' => (bool)$validated['is_featured'],  // Convert to proper boolean
+         ];
+         
+         // Handle logo as file upload only
+         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
+             // Import Storage facade
+             $storage = app('Illuminate\Support\Facades\Storage');
+             
+             // Process file upload
+             $folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+             $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+             $brandData['logo'] = $storage::disk('s3')->url($logoPath);
+         }
+ 
+         // Create the brand record in the database
+         $brand = Brand::create($brandData);
+ 
+         // Return a response including the brand data with the logo URL
+         return response()->json([
+             'success' => true,
+             'message' => 'Brand created successfully',
+             'brand' => $brand->fresh() // Get the fresh brand data, including logo
+         ], 201); // Using 201 Created status code as this is a resource creation
+     } catch (\Exception $e) {
+         // Log the error
+         \Log::error('Brand creation error: ' . $e->getMessage());
+         
+         // Return a proper JSON error response
+         return response()->json([
+             'success' => false,
+             'message' => 'Failed to create brand',
+             'error' => $e->getMessage()
+         ], 422);
+     }
+ }
+ // public function store(Request $request)
     // {
     //     $validated = $request->validate([
     //         'name' => 'required|string|max:191',
@@ -121,59 +181,6 @@ class BrandController extends BaseController
     //         'brand' => $brand
     //     ], 201);
     // }
-
-    public function store(Request $request) 
-    {
-        // Validate incoming data
-        $validated = $request->validate([
-            'name' => 'required|string|max:191',
-            'description' => 'nullable|string',
-            'website' => 'nullable|url|max:191',
-            'status' => 'required|string|in:published,draft',
-            'order' => 'required|integer|min:0',
-            'is_featured' => 'required|boolean',
-        ]);
-    
-        // Handle logo (can either be a URL or file)
-        if ($request->has('logo')) {
-            $logo = $request->input('logo');
-            
-            // Check if the logo is a valid URL
-            if (filter_var($logo, FILTER_VALIDATE_URL)) {
-                // If it's a URL, just store the URL
-                $validated['logo'] = $logo;
-            } elseif ($request->hasFile('logo')) {
-                // If it's a file upload, validate and store the file
-                $request->validate([
-                    'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-                ]);
-    
-                // Construct the folder path using env('STORAGE_ENV') and "brands" as subfolder
-                $folderPath = env('STORAGE_ENV') . "/brands"; // Example: 'production/brands'
-                
-                // Store the logo in S3 inside the 'brands' subfolder within the folder defined by STORAGE_ENV
-                $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
-    
-                // Optionally, get the full URL to the stored file
-                $logoUrl = Storage::disk('s3')->url($logoPath);
-    
-                // Add the logo URL to the validated data
-                $validated['logo'] = $logoUrl;
-            }
-        }
-    
-        // Create the brand record in the database
-        $brand = Brand::create($validated);
-    
-        // Return a response including the brand data with the logo URL
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand created successfully',
-            'brand' => $brand->fresh() // Get the fresh brand data, including logo
-        ], 200); // Success response with brand details, including logo
-    }
-    
-
     
 
 
@@ -211,37 +218,56 @@ class BrandController extends BaseController
         ]);
     }
 
-    /**
-     * @OA\Put(
-     *     path="/api/brands/{id}",
-     *     summary="Update an existing brand",
-     *     tags={"Brands"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="Brand ID",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="name", type="string", example="Nike Updated"),
-     *             @OA\Property(property="description", type="string", example="Updated description"),
-     *             @OA\Property(property="website", type="string", example="https://nike.com"),
-     *             @OA\Property(property="logo", type="string", format="binary"),
-     *             @OA\Property(property="status", type="string", example="published"),
-     *             @OA\Property(property="order", type="integer", example=2),
-     *             @OA\Property(property="is_featured", type="boolean", example=false)
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Brand updated successfully"),
-     *     @OA\Response(response=404, description="Brand not found"),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function update(Request $request, $id)
-    {
+  /**
+ * @OA\Post(
+ *     path="/api/brands/{id}",
+ *     summary="Update an existing brand",
+ *     tags={"Brands"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="Brand ID",
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="_method",
+ *         in="query",
+ *         required=true,
+ *         description="HTTP method override",
+ *         @OA\Schema(type="string", enum={"PUT"}, example="PUT")
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 @OA\Property(property="_method", type="string", enum={"PUT"}, example="PUT"),
+ *                 @OA\Property(property="name", type="string", example="Nike Updated"),
+ *                 @OA\Property(property="description", type="string", example="Updated description"),
+ *                 @OA\Property(property="website", type="string", example="https://nike.com"),
+ *                 @OA\Property(
+ *                     property="logo", 
+ *                     type="string", 
+ *                     format="binary",
+ *                     description="Logo file upload"
+ *                 ),
+ *                 @OA\Property(property="status", type="string", enum={"published", "draft"}, example="published"),
+ *                 @OA\Property(property="order", type="integer", example=2),
+ *                 @OA\Property(property="is_featured", type="integer", enum={0, 1}, example=0, description="Use 1 for true, 0 for false")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=200, description="Brand updated successfully"),
+ *     @OA\Response(response=404, description="Brand not found"),
+ *     @OA\Response(response=422, description="Validation error"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function update(Request $request, $id)
+{
+    try {
+        // Find the brand
         $brand = Brand::find($id);
 
         if (!$brand) {
@@ -251,31 +277,76 @@ class BrandController extends BaseController
             ], 404);
         }
 
+        // Validate incoming data
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:191',
             'description' => 'nullable|string',
             'website' => 'nullable|url|max:191',
-            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'status' => 'sometimes|required|string|in:published,draft',
             'order' => 'sometimes|required|integer|min:0',
             'is_featured' => 'sometimes|required|boolean',
+            'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
-        if ($request->hasFile('logo')) {
-            if ($brand->logo) {
-                Storage::disk('public')->delete($brand->logo);
+        // Prepare data for update
+        $updateData = [];
+        
+        // Add text fields to update data
+        foreach(['name', 'description', 'website', 'status', 'order'] as $field) {
+            if (isset($validated[$field])) {
+                $updateData[$field] = $validated[$field];
             }
-            $validated['logo'] = $request->file('logo')->store('brands', 'public');
+        }
+        
+        // Handle is_featured specifically to ensure correct boolean conversion
+        if (isset($validated['is_featured'])) {
+            $updateData['is_featured'] = (bool)$validated['is_featured'];
+        }
+        
+        // Handle logo as file upload
+        if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
+            // Import Storage facade
+            $storage = app('Illuminate\Support\Facades\Storage');
+            
+            // If there's an existing logo stored in S3, attempt to delete it
+            if ($brand->logo && strpos($brand->logo, env('AWS_URL')) !== false) {
+                // Extract the path from the full URL
+                $existingPath = str_replace(env('AWS_URL').'/', '', $brand->logo);
+                try {
+                    $storage::disk('s3')->delete($existingPath);
+                } catch (\Exception $e) {
+                    // Log error but continue with the update
+                    \Log::warning("Failed to delete old logo: {$e->getMessage()}");
+                }
+            }
+            
+            // Process file upload
+            $folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+            $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+            $updateData['logo'] = $storage::disk('s3')->url($logoPath);
         }
 
-        $brand->update($validated);
+        // Update the brand
+        $brand->update($updateData);
 
+        // Return a response with the updated brand
         return response()->json([
             'success' => true,
             'message' => 'Brand updated successfully',
-            'brand' => $brand
-        ]);
+            'brand' => $brand->fresh() // Get the fresh brand data
+        ], 200);
+    } catch (\Exception $e) {
+        // Log the error
+        \Log::error('Brand update error: ' . $e->getMessage());
+        
+        // Return a proper JSON error response
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update brand',
+            'error' => $e->getMessage()
+        ], 422);
     }
+}
 
     /**
      * @OA\Delete(
