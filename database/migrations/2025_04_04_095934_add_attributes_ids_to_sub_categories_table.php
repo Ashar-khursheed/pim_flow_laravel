@@ -10,7 +10,7 @@ class AddAttributesIdsToSubCategoriesTable extends Migration
     {
         // Adding the attributes_ids field to the sub_categories table
         Schema::table('sub_categories', function (Blueprint $table) {
-            $table->json('attributes_ids')->nullable(); // Store attribute IDs as JSON
+            $table->longText('attributes_ids')->nullable(); // Store attribute IDs as JSON
         });
     }
 

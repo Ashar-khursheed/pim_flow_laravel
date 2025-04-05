@@ -13,9 +13,9 @@ class CreateSubCategoriesTable extends Migration
             $table->id();
             $table->string('name');
             $table->unsignedBigInteger('category_id'); // Belongs to one category
-            $table->json('products_ids')->nullable(); // Store product IDs as JSON
-            $table->json('web_banners')->nullable(); // Store web banners as JSON
-            $table->json('mobile_banners')->nullable(); // Store mobile banners as JSON
+            $table->longText('products_ids')->nullable(); // Store product IDs as JSON
+            $table->longText('web_banners')->nullable(); // Store web banners as JSON
+            $table->longText('mobile_banners')->nullable(); // Store mobile banners as JSON
             $table->timestamps();
         });
     }
