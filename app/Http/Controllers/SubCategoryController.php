@@ -8,24 +8,32 @@ use Illuminate\Support\Facades\Storage; // ✅ RIGHT
 use Illuminate\Validation\ValidationException;
 class SubCategoryController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/subcategories",
-     *     summary="Get all subcategories",
-     *     tags={"Subcategories"},
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of Subcategories",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SubCategory"))
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function index()
-    {
-        $subcategories = SubCategory::with(['category'])->get();
-        return response()->json($subcategories);
-    }
+ /**
+ * @OA\Get(
+ *     path="/api/subcategories",
+ *     summary="Get all subcategories",
+ *     tags={"Subcategories"},
+ *     @OA\Response(
+ *         response=200,
+ *         description="List of Subcategories",
+ *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/SubCategory"))
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function index()
+{
+    // Paginate subcategories with 10 per page
+    $subcategories = SubCategory::with(['category'])->paginate(10);
+
+    // Return paginated results along with total pages and total records
+    return response()->json([
+        'data' => $subcategories->items(), // Get the actual data for the current page
+        'total_pages' => $subcategories->lastPage(), // Total number of pages
+        'total_records' => $subcategories->total(), // Total number of records
+    ]);
+}
+
 
     /**
      * @OA\Get(
