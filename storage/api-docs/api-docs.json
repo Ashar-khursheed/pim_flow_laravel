@@ -1344,12 +1344,12 @@
             }
         },
         "/api/category/getAttributesByCategory": {
-            "post": {
+            "get": {
                 "tags": [
                     "Category Attribute Group"
                 ],
                 "summary": "Get all attributes assigned to a specific category",
-                "operationId": "ed2c2089b1bbee4cb5be449dcb856662",
+                "operationId": "8832c0cde493af3ec4430aa33606b971",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5261,8 +5261,13 @@
                                         "example": "https://example.com/internal1,https://example.com/internal2"
                                     },
                                     "indexing": {
-                                        "type": "boolean",
-                                        "example": true
+                                        "description": "Use 1 for true, 0 for false",
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
                                     },
                                     "og_title": {
                                         "type": "string",
@@ -5306,7 +5311,8 @@
                                     },
                                     "og_image_file": {
                                         "description": "OG Image File",
-                                        "type": "file"
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "secondary_keywords": {
                                         "type": "array",
@@ -5333,6 +5339,9 @@
                 "responses": {
                     "201": {
                         "description": "SEO Record Created"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
