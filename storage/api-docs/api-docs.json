@@ -740,7 +740,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name",
@@ -762,12 +762,16 @@
                                         "example": "https://nike.com"
                                     },
                                     "logo": {
-                                        "description": "Logo can either be a file (binary) or a URL (string)",
+                                        "description": "Logo file upload",
                                         "type": "string",
-                                        "example": "https://nike.com/logo.png"
+                                        "format": "binary"
                                     },
                                     "status": {
                                         "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft"
+                                        ],
                                         "example": "published"
                                     },
                                     "order": {
@@ -775,8 +779,13 @@
                                         "example": 1
                                     },
                                     "is_featured": {
-                                        "type": "boolean",
-                                        "example": true
+                                        "description": "Use 1 for true, 0 for false",
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -787,6 +796,9 @@
                 "responses": {
                     "201": {
                         "description": "Brand created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -829,12 +841,12 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Brands"
                 ],
                 "summary": "Update an existing brand",
-                "operationId": "1fac61ef4f1f3db38169272ad0e5ed09",
+                "operationId": "566d8634b027100088c00d6d38c6c281",
                 "parameters": [
                     {
                         "name": "id",
@@ -845,14 +857,34 @@
                             "type": "integer",
                             "example": 1
                         }
+                    },
+                    {
+                        "name": "_method",
+                        "in": "query",
+                        "description": "HTTP method override",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "PUT"
+                            ],
+                            "example": "PUT"
+                        }
                     }
                 ],
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "enum": [
+                                            "PUT"
+                                        ],
+                                        "example": "PUT"
+                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "Nike Updated"
@@ -866,11 +898,16 @@
                                         "example": "https://nike.com"
                                     },
                                     "logo": {
+                                        "description": "Logo file upload",
                                         "type": "string",
                                         "format": "binary"
                                     },
                                     "status": {
                                         "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft"
+                                        ],
                                         "example": "published"
                                     },
                                     "order": {
@@ -878,8 +915,13 @@
                                         "example": 2
                                     },
                                     "is_featured": {
-                                        "type": "boolean",
-                                        "example": false
+                                        "description": "Use 1 for true, 0 for false",
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 0
                                     }
                                 },
                                 "type": "object"
@@ -893,6 +935,9 @@
                     },
                     "404": {
                         "description": "Brand not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -5137,6 +5182,334 @@
                 }
             }
         },
+        "/api/seo-management": {
+            "get": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "List all SEO records",
+                "operationId": "850e77a15e8ff70277ffd0364f5c9890",
+                "responses": {
+                    "200": {
+                        "description": "List of SEO records"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Create a new SEO record",
+                "operationId": "22ede0718d47af34e864069f857a8579",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "relational_id",
+                                    "relational_type",
+                                    "url",
+                                    "primary_keyword",
+                                    "monthly_search_volume",
+                                    "title_tag",
+                                    "meta_title",
+                                    "meta_description",
+                                    "indexing",
+                                    "created_by"
+                                ],
+                                "properties": {
+                                    "relational_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "relational_type": {
+                                        "type": "string",
+                                        "example": "Product"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "example": "https://example.com/page"
+                                    },
+                                    "primary_keyword": {
+                                        "type": "string",
+                                        "example": "best product"
+                                    },
+                                    "monthly_search_volume": {
+                                        "type": "integer",
+                                        "example": 1000
+                                    },
+                                    "title_tag": {
+                                        "type": "string",
+                                        "example": "Awesome Product Title Tag"
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "Meta Title Example"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "This is a meta description."
+                                    },
+                                    "internal_links": {
+                                        "type": "string",
+                                        "example": "https://example.com/internal1,https://example.com/internal2"
+                                    },
+                                    "indexing": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "og_title": {
+                                        "type": "string",
+                                        "example": "Open Graph Title"
+                                    },
+                                    "og_description": {
+                                        "type": "string",
+                                        "example": "Open Graph Description"
+                                    },
+                                    "og_image_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.jpg"
+                                    },
+                                    "og_image_name": {
+                                        "type": "string",
+                                        "example": "image.jpg"
+                                    },
+                                    "og_image_alt_text": {
+                                        "type": "string",
+                                        "example": "Image alt text"
+                                    },
+                                    "tags": {
+                                        "type": "string",
+                                        "example": "tag1, tag2, tag3"
+                                    },
+                                    "schema_rating": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "schema_reviews_count": {
+                                        "type": "integer",
+                                        "example": 42
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "updated_by": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "og_image_file": {
+                                        "description": "OG Image File",
+                                        "type": "file"
+                                    },
+                                    "secondary_keywords": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "secondary_keyword": {
+                                                    "type": "string",
+                                                    "example": "related keyword"
+                                                },
+                                                "monthly_search_volume": {
+                                                    "type": "integer",
+                                                    "example": 500
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "SEO Record Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/seo-management/{id}": {
+            "get": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Get a specific SEO record",
+                "operationId": "12ba1b2f826ac3c372d3003c4f4f057f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Single SEO Record"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Update an existing SEO record",
+                "operationId": "58961f1b16803df093a67a96090d7175",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "relational_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "relational_type": {
+                                        "type": "string",
+                                        "example": "Product"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "example": "https://example.com/page"
+                                    },
+                                    "primary_keyword": {
+                                        "type": "string",
+                                        "example": "best product"
+                                    },
+                                    "monthly_search_volume": {
+                                        "type": "integer",
+                                        "example": 1000
+                                    },
+                                    "title_tag": {
+                                        "type": "string",
+                                        "example": "Updated Title Tag"
+                                    },
+                                    "meta_title": {
+                                        "type": "string",
+                                        "example": "Updated Meta Title"
+                                    },
+                                    "meta_description": {
+                                        "type": "string",
+                                        "example": "Updated description"
+                                    },
+                                    "indexing": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "schema_rating": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "schema_reviews_count": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "tags": {
+                                        "type": "string",
+                                        "example": "new, updated, seo"
+                                    },
+                                    "secondary_keywords": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "secondary_keyword": {
+                                                    "type": "string",
+                                                    "example": "secondary key"
+                                                },
+                                                "monthly_search_volume": {
+                                                    "type": "integer",
+                                                    "example": 300
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "SEO Record Updated"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Delete an SEO record",
+                "operationId": "5afecd4d43bf160f48df52416713f7c9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "SEO Record Deleted"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [
@@ -7241,6 +7614,10 @@
         {
             "name": "SEO Details",
             "description": "SEO Details"
+        },
+        {
+            "name": "SEO Management",
+            "description": "SEO Management"
         },
         {
             "name": "Stores",
