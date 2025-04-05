@@ -424,33 +424,40 @@ class CategoryAttributeController extends BaseController
  */
 
  public function getAttributesByCategory($category_id)
-{
-    // Step 1: Validate that category_id is a valid integer and exists in the database
-    $validated = Validator::make(['category_id' => $category_id], [
-        'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
-    ]);
-
-    // If validation fails, return error response
-    if ($validated->fails()) {
-        return response()->json([
-            'message' => 'Invalid category ID or category not found'
-        ], 404);
-    }
-
-    // Step 2: Find the category by ID
-    $category = Category::findOrFail($category_id);
-
-    // Step 3: Get the attribute groups related to the category
-    $attributeGroups = $category->attributeGroups(); // Access related attribute groups
-
-    // Step 4: Get all the attributes from those groups
-    $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
-                                  ->get() // Get the groups
-                                  ->pluck('groupAttributes') // Extract the groupAttributes collection
-                                  ->flatten(); // Flatten into a single collection of attributes
-
-    // Step 5: Return the attributes in the response
-    return response()->json($attributes);
-}
+ {
+	 // Step 1: Validate that category_id is a valid integer and exists in the database
+	 $validated = Validator::make(['category_id' => $category_id], [
+		 'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
+	 ]);
+ 
+	 // If validation fails, return error response
+	 if ($validated->fails()) {
+		 return response()->json([
+			 'message' => 'Invalid category ID or category not found'
+		 ], 404);
+	 }
+ 
+	 // Step 2: Find the category by ID
+	 $category = Category::findOrFail($category_id);
+ 
+	 // Step 3: Get the attribute groups related to the category
+	 $attributeGroups = $category->attributeGroups(); // Access related attribute groups
+ 
+	 // Step 4: Get all the attributes from those groups, plucking only the 'id' and 'name' fields
+	 $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
+								   ->get() // Get the groups
+								   ->pluck('groupAttributes') // Extract the groupAttributes collection
+								   ->flatten() // Flatten into a single collection of attributes
+								   ->map(function ($attribute) {
+									   return [
+										   'id' => $attribute->id,
+										   'name' => $attribute->name,
+									   ];
+								   }); // Map to include only id and name
+ 
+	 // Step 5: Return the attributes in the response
+	 return response()->json($attributes);
+ }
+ 
 
 }
