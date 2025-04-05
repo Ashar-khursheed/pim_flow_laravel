@@ -8,14 +8,15 @@ class CreateSubCategoriesTable extends Migration
 {
     public function up()
     {
-        // Create subcategories table
+
         Schema::create('sub_categories', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->unsignedBigInteger('category_id'); // Belongs to one category
-            $table->longText('products_ids')->nullable(); // Store product IDs as JSON
-            $table->longText('web_banners')->nullable(); // Store web banners as JSON
-            $table->longText('mobile_banners')->nullable(); // Store mobile banners as JSON
+            $table->unsignedBigInteger('category_id');
+            $table->longText('products_ids')->nullable();
+            $table->longText('web_banners')->nullable();
+            $table->longText('mobile_banners')->nullable();
+            $table->longText('attributes_ids')->nullable();
             $table->timestamps();
         });
     }
