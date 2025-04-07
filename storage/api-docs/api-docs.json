@@ -3739,6 +3739,38 @@
                                         "format": "float",
                                         "example": 50
                                     },
+                                    "cost_per_item_currency": {
+                                        "description": "Currency of the cost per item",
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "cost_type": {
+                                        "description": "Defines how additional cost is calculated",
+                                        "type": "string",
+                                        "enum": [
+                                            "percentage",
+                                            "value"
+                                        ],
+                                        "example": "percentage"
+                                    },
+                                    "additional_cost_percentage": {
+                                        "description": "Percentage to add to the base cost_per_item",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10
+                                    },
+                                    "additional_cost_value": {
+                                        "description": "Fixed value to add to cost_per_item",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "total_cost_per_item": {
+                                        "description": "Automatically calculated total cost per item",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 55
+                                    },
                                     "tax_id": {
                                         "type": "integer",
                                         "example": 3
