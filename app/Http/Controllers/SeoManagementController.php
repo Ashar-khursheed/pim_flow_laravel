@@ -642,6 +642,7 @@ class SeoManagementController extends Controller
 	// 		]);
 	// 	}
 	// }
+    
     public function import(Request $request)
     {
         try {
@@ -676,6 +677,9 @@ class SeoManagementController extends Controller
     
             $requiredRowCount = count($seoFileFormatArray);
     
+            // Dynamically add missing columns to the database schema
+            $this->addMissingColumns($seoFileFormatArray);
+    
             $data = [];
             /* Open the CSV file and read its content */
             $rowIndex = 1;
@@ -690,7 +694,6 @@ class SeoManagementController extends Controller
     
                         /* Check if the value is UTF-8 encoded */
                         if (!mb_check_encoding($value, 'UTF-8')) {
-                            /* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
                             $value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
                         }
     
@@ -792,7 +795,20 @@ class SeoManagementController extends Controller
         }
     }
     
-
+    /* Method to add missing columns to the schema */
+    private function addMissingColumns($seoFileFormatArray)
+    {
+        $table = 'your_table_name'; // Set your actual table name here
+    
+        foreach ($seoFileFormatArray as $columnName => $dbColumn) {
+            if (!Schema::hasColumn($table, $dbColumn)) {
+                Schema::table($table, function (Blueprint $table) use ($dbColumn) {
+                    $table->string($dbColumn)->nullable();  // Adjust the column type and options as necessary
+                });
+            }
+        }
+    }
+    
 
 
 	/**
