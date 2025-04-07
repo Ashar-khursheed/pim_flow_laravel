@@ -112,14 +112,14 @@ class SeoManagementController extends Controller
 				'Title Tag' => 'title_tag',
 				'Meta Title' => 'meta_title',
 				'Meta Description' => 'meta_description',
-				'Internal Links' => 'internal_links',
+				'Internal Links(Separated By |)' => 'internal_links',
 				'Indexing' => 'indexing',
 				'Og Title' => 'og_title',
 				'Og Description' => 'og_description',
 				'Og Image URL' => 'og_image_url',
 				'Og Image Alt Text' => 'og_image_alt_text',
 				'Og Image Name' => 'og_image_name',
-				'Tags' => 'tags',
+				'Tags(Separated By |)' => 'tags',
 			];
 
 			$requiredRowCount = count($seoFileFormatArray);

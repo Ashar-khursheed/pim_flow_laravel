@@ -29,7 +29,7 @@ return new class extends Migration
 			$table->string('og_image_alt_text')->nullable();
 			$table->string('og_image_name')->nullable();
 			$table->longText('tags')->nullable();
-			$table->longText('schema');
+			$table->longText('schema')->nullable();
 			$table->integer('schema_rating')->nullable();
 			$table->integer('schema_reviews_count')->nullable();
 			$table->integer('created_by');

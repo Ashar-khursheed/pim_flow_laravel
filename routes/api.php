@@ -26,6 +26,7 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
+use App\Http\Controllers\SeoManagementController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -71,7 +72,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
-	
+
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::apiResource('brands', BrandController::class);
 
@@ -109,6 +110,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('newsletters', NewsletterController::class);
 
+	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
+	Route::resource('seo-management', SeoManagementController::class);
 
 Route::post('seo-details', [SeoDetailController::class, 'store']);
 Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);

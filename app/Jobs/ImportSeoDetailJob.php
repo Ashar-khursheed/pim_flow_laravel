@@ -11,6 +11,8 @@ use Illuminate\Bus\Batchable;
 
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 use App\Models\TransactionLog;
 use App\Models\Product;
@@ -85,6 +87,29 @@ class ImportSeoDetailJob implements ShouldQueue
 				continue;
 			}
 
+			$fieldsWithLimits = [
+				'title_tag' => ['limit' => 70, 'label' => 'Title Tag'],
+				'meta_title' => ['limit' => 60, 'label' => 'Meta Title'],
+				'meta_description' => ['limit' => 160, 'label' => 'Meta Description'],
+				'og_title' => ['limit' => 60, 'label' => 'OG Title'],
+				'og_description' => ['limit' => 200, 'label' => 'OG Description'],
+			];
+
+			foreach ($fieldsWithLimits as $field => $config) {
+				if (!empty($$field) && strlen($$field) > $config['limit']) {
+					$rowError[] = "Maximum {$config['limit']} characters allowed in {$config['label']}.";
+				}
+			}
+
+			if (!empty($rowError)) {
+				$errorArray[] = [
+					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
+					"Error" => implode(' | ', $rowError),
+				];
+				$failed++;
+				continue;
+			}
+
 			if (!in_array($relational_type, ['Product', 'Category', 'Brand', 'Blog'])) {
 				$rowError[] = "Invalid Relational Type. Must be one of 'Product', 'Category', 'Brand', 'Blog'.";
 				$errorArray[] = [
@@ -106,7 +131,7 @@ class ImportSeoDetailJob implements ShouldQueue
 				if ($relational_id) {
 					$exist = $model::findOrFail($relational_id);
 				} elseif ($relational_name) {
-					$exist = $model::where('relational_name', $relational_name)->firstOrFail();
+					$exist = $model::where('name', $relational_name)->firstOrFail();
 				}
 				$relational_id = $exist->id;
 			} catch (ModelNotFoundException $e) {
@@ -119,6 +144,34 @@ class ImportSeoDetailJob implements ShouldQueue
 				continue;
 			}
 
+			/* Validate OG Image Fields - all or none */
+			$ogFields = [
+				'Og Image URL' => $og_image_url ?? null,
+				'Og Image Alt Text' => $og_image_alt_text ?? null,
+				'Og Image Name' => $og_image_name ?? null,
+			];
+
+			$ogFilledCount = count(array_filter($ogFields));
+
+			if ($ogFilledCount > 0 && $ogFilledCount < 3) {
+				foreach ($ogFields as $label => $value) {
+					if (empty($value)) {
+						$rowError[] = "{$label} is required when any OG Image field is provided.";
+					}
+				}
+				$errorArray[] = [
+					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
+					"Error" => implode(' | ', $rowError),
+				];
+				$failed++;
+				continue;
+			}
+
+			/* Only proceed if all OG fields are present */
+			if ($ogFilledCount === 3) {
+				$uploadedUrl = $this->uploadImageFromURL($og_image_url, $og_image_name);
+			}
+
 			$primaryKey = $relational_id . '|' . $relational_type;
 
 			$groupedPrimary[$primaryKey]['primary'] = [
@@ -126,18 +179,21 @@ class ImportSeoDetailJob implements ShouldQueue
 				'relational_type' => $relational_type,
 				'url' => $url,
 				'primary_keyword' => $primary_keyword,
-				'primary_monthly_search_volume' => $primary_monthly_search_volume,
+				'monthly_search_volume' => $primary_monthly_search_volume,
 				'title_tag' => $title_tag,
 				'meta_title' => $meta_title,
 				'meta_description' => $meta_description,
-				'internal_links' => $internal_links ?? null,
-				'indexing' => $indexing ?? null,
-				'og_title' => $og_title ?? null,
-				'og_description' => $og_description ?? null,
-				'og_image_url' => $og_image_url ?? null,
-				'og_image_alt_text' => $og_image_alt_text ?? null,
-				'og_image_name' => $og_image_name ?? null,
-				'tags' => $tags ?? null,
+				'internal_links' => !empty($internal_links) ? $internal_links : null,
+				'indexing' => !empty($indexing) ? $indexing : 0,
+				'og_title' => !empty($og_title) ? $og_title : null,
+				'og_description' => !empty($og_description) ? $og_description : null,
+				'og_image_url' => !empty($uploadedUrl) ? $uploadedUrl : null,
+				'og_image_alt_text' => !empty($og_image_alt_text) ? $og_image_alt_text : null,
+				'og_image_name' => !empty($og_image_name) ? $og_image_name : null,
+				'tags' => !empty($tags) ? $tags : null,
+				'created_at' => now(),
+				'updated_at' => now(),
+				'created_by' => $this->userId
 			];
 
 			$groupedPrimary[$primaryKey]['secondary'][] = [
@@ -184,75 +240,35 @@ class ImportSeoDetailJob implements ShouldQueue
 			DB::commit();
 		} catch (\Throwable $e) {
 			DB::rollBack();
+			logger()->error('Exception occurred in file: ' . $e->getFile() . ' on line: ' . $e->getLine(), [
+				'message' => $e->getMessage(),
+				'trace' => $e->getTraceAsString(),
+			]);
 		}
 	}
 
-	protected function getImageURLs(array $images): array
-	{
-		/* Ensure images are properly formatted and split if needed */
-		$images = array_values(array_filter(
-			array_map('trim', preg_split('/\s*,\s*/', implode(',', $images)))
-		));
-
-		Log::info('Image URLs before processing: ' . json_encode($images));
-
-		foreach ($images as $key => $image) {
-			if (Str::startsWith($image, 'https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/')) {
-				$images[$key] = $image;
-			} else {
-				if (Str::startsWith($image, ['http://', 'https://'])) {
-					$uploadedImage = $this->uploadImageFromURL($image);
-					$images[$key] = $uploadedImage;
-				} else {
-					Log::warning("Invalid image URL at index $key: " . $image);
-					unset($images[$key]);
-				}
-			}
-		}
-
-		Log::info('Final Processed Images: ' . json_encode(array_values($images)));
-		return array_values($images);
-	}
-
-	protected function uploadImageFromURL(?string $url): ?string
+	private function uploadImageFromURL(?string $url, ?string $fileBaseName): ?string
 	{
 		$s3Disk = Storage::disk('s3');
 
-		// Validate URL
+		/* Validate URL */
 		if (!filter_var($url, FILTER_VALIDATE_URL)) {
 			Log::error('Invalid URL provided: ' . $url);
 			return null;
 		}
 
-		// Fetch image content
+		/* Fetch image content */
 		$imageContents = file_get_contents($url);
 		if ($imageContents === false || empty($imageContents)) {
 			Log::error('Failed to download image from URL or content is empty: ' . $url);
 			return null;
 		}
 
-		// Sanitize file name
-		$fileNameWithQuery = basename(parse_url($url, PHP_URL_PATH));
-		$fileName = preg_replace('/\?.*/', '', $fileNameWithQuery);
-		$fileBaseName = pathinfo($fileName, PATHINFO_FILENAME);
-		$fileExtension = 'webp'; // Convert all to WebP
-
-		if (empty($fileBaseName)) {
-			Log::error('Invalid file name extracted from URL: ' . $url);
-			return null;
-		}
-
-		// Define sizes
-		$sizes = [
-			'thumb' => [150, 150],
-			'medium' => [300, 300],
-			'large' => [790, 510]
-		];
-
+		$fileExtension = 'webp';
 		$imageUrl = '';
 
 		try {
-			// Create image resource from content
+			/* Create image resource from content */
 			$image = imagecreatefromstring($imageContents);
 			if (!$image) {
 				Log::error('Failed to create image from URL: ' . $url);
@@ -264,29 +280,13 @@ class ImportSeoDetailJob implements ShouldQueue
 				imagepalettetotruecolor($image);
 			}
 
-			// Save original image
-			$originalPath = env('STORAGE_ENV')."/products/{$fileBaseName}.{$fileExtension}";
+			/* Save original image */
+			$originalPath = env('STORAGE_ENV')."/seo-detail/{$fileBaseName}.{$fileExtension}";
 			ob_start();
 			imagewebp($image);
 			$originalData = ob_get_clean();
 			$s3Disk->put($originalPath, $originalData);
 			$imageUrl = $s3Disk->url($originalPath);
-
-			// Resize and save images
-			foreach ($sizes as $sizeName => [$width, $height]) {
-				$resizedImage = $this->resizeImageGD($image, $width, $height);
-				if (!$resizedImage) {
-					continue;
-				}
-
-				$resizedPath = env('STORAGE_ENV')."/products/{$fileBaseName}-{$width}x{$height}.{$fileExtension}";
-				ob_start();
-				imagewebp($resizedImage);
-				$resizedData = ob_get_clean();
-				$s3Disk->put($resizedPath, $resizedData);
-				// $imageUrls[$sizeName] = $s3Disk->url($resizedPath);
-			}
-
 			imagedestroy($image);
 			Log::info('Uploaded Images: ' . $imageUrl);
 			return $imageUrl;
@@ -294,24 +294,6 @@ class ImportSeoDetailJob implements ShouldQueue
 			Log::error('S3 Upload Error: ' . $e->getMessage());
 			return null;
 		}
-	}
-
-	protected function resizeImageGD($image, $newWidth, $newHeight)
-	{
-		$width = imagesx($image);
-		$height = imagesy($image);
-
-		// Create new image canvas with exact width & height
-		$resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-		imagealphablending($resizedImage, false);
-		imagesavealpha($resizedImage, true);
-		$transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
-		imagefill($resizedImage, 0, 0, $transparent);
-
-		// Force resize without aspect ratio (stretching)
-		imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $width, $height);
-
-		return $resizedImage;
 	}
 
 	/**
