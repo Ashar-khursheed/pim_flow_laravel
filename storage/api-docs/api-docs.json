@@ -5104,6 +5104,73 @@
                 ]
             }
         },
+        "/api/seo-management/export": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Export SEO data to CSV",
+                "operationId": "d065aa090a0c960d8b0178d02ac6e986",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "relational_type",
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "relational_type": {
+                                        "description": "Type of relational entity",
+                                        "type": "string",
+                                        "enum": [
+                                            "Product",
+                                            "Category",
+                                            "Brand",
+                                            "Blog"
+                                        ],
+                                        "example": "Product"
+                                    },
+                                    "relational_id": {
+                                        "description": "ID of the related entity (optional)",
+                                        "type": "integer",
+                                        "example": 5,
+                                        "nullable": true
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range (must be >= 1)",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and at most 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [

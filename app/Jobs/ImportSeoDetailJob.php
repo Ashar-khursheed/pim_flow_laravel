@@ -126,6 +126,7 @@ class ImportSeoDetailJob implements ShouldQueue
 				'Brand' => Brand::class,
 				'Blog' => Blog::class,
 			};
+			$relational_type = $model;
 
 			try {
 				if ($relational_id) {

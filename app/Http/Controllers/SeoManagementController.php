@@ -240,4 +240,134 @@ class SeoManagementController extends Controller
 			]);
 		}
 	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/seo-management/export",
+	 *     summary="Export SEO data to CSV",
+	 *     tags={"SEO Management"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"relational_type", "range_from", "range_to"},
+	 *             @OA\Property(property="relational_type", type="string", enum={"Product", "Category", "Brand", "Blog"}, example="Product", description="Type of relational entity"),
+	 *             @OA\Property(property="relational_id", type="integer", nullable=true, example=5, description="ID of the related entity (optional)"),
+	 *             @OA\Property(property="range_from", type="integer", minimum=1, example=1, description="Starting range (must be >= 1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and at most 2000 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Success",
+	 *         @OA\MediaType(mediaType="application/json")
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function export(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'relational_type' => 'required|in:Product,Category,Brand,Blog',
+			'relational_id' => 'nullable|integer|exists:ec_product_categories,id',
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+		]);
+
+		if ($request->relational_type == 'Category') {
+			$parentCategory = Category::findOrFail($request->parent_category_id);
+
+			/* Get leaf categories */
+			$leafCategories = Category::getLeafCategories($parentCategory);
+		}
+
+		/* Fetch unique attributes */
+		$uniqueAttributes = $leafCategories
+		->flatMap->categoryAllAttributes()
+		->unique('id')
+		->sortBy('id')
+		->reject(fn($attribute) => $attribute->type === 'multiselect') // Exclude multiselect
+		->mapWithKeys(fn($attribute) => [
+			$attribute->id => [
+				'name' => $attribute->name,
+				'type' => $attribute->type,
+				'attribute_value' => $attribute->type === 'toggle'
+				? ['Yes', 'No']
+				: $attribute->attributeValues->pluck('attribute_value')->toArray(),
+			]
+		])
+		->toArray();
+
+		if (empty($uniqueAttributes)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No attributes exist in the associated leaf categories.'
+			]);
+		}
+
+		/* Prepare headers */
+		$attributeNames = array_column($uniqueAttributes, 'name');
+		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
+
+		/* Initialize spreadsheet */
+		$spreadsheet = $this->excel->newSpreadsheet();
+		$spreadsheet->setActiveSheetIndex(0);
+		$sheet = $spreadsheet->getActiveSheet();
+
+		/* Set headers */
+		$this->excel->setHeader($sheet, $header);
+
+		/* Fetch products within range */
+		$products = Product::whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get(['id', 'sku', 'name']);
+
+		if ($products->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No products exist in the associated leaf categories.'
+			]);
+		}
+
+		/* Populate data */
+		$row = 2;
+		foreach ($products as $product) {
+			$existingAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+			$col = 'A';
+
+			/* Set product details */
+			$sheet->setCellValue($col++ . $row, $product->id);
+			$sheet->setCellValue($col++ . $row, $product->sku);
+			$sheet->setCellValue($col++ . $row, $product->name);
+
+			foreach ($uniqueAttributes as $attributeId => $attributeDetail) {
+				$existingVal = $existingAttributes[$attributeId] ?? '';
+				$cell = $col++ . $row;
+
+				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
+					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
+				} else {
+					$sheet->setCellValue($cell, $existingVal);
+				}
+			}
+			$row++;
+		}
+
+		/* Generate response */
+		$response = new StreamedResponse(function () use ($spreadsheet) {
+			$writer = new Xlsx($spreadsheet);
+			$writer->save('php://output');
+		});
+
+		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategory->name}_products_{$request->range_from}-{$request->range_to}.xlsx")));
+
+		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
+		));
+
+		return $response;
+	}
 }
