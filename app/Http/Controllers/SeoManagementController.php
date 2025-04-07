@@ -794,6 +794,9 @@ class SeoManagementController extends Controller
                     'og_image_alt_text' => $row[16], // Og Image Alt Text
                     'og_image_name' => $row[17], // Og Image Name
                     'tags' => $row[18], // Tags
+                    'created_by' => auth()->user()->id, // Assuming you're using the authenticated user ID
+                    'updated_at' => now(),
+                    'created_at' => now(),
                 ]);
 
                 // Generate schema for each SEO entry
