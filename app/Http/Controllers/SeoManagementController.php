@@ -188,20 +188,20 @@ class SeoManagementController extends Controller
 	}
 
 		/**
-	 * @OA\Get(
-	 *     path="/api/seo-management/{id}",
-	 *     summary="Get a specific SEO record",
-	 *     tags={"SEO Management"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=200, description="Single SEO Record"),
-	 *     @OA\Response(response=404, description="Not found"),
-	 *     security={{"bearerAuth":{}}}
-	 * )
+         * @OA\Get(
+         *     path="/api/seo-management/{id}",
+         *     summary="Get a specific SEO record",
+         *     tags={"SEO Management"},
+         *     @OA\Parameter(
+         *         name="id",
+         *         in="path",
+         *         required=true,
+         *         @OA\Schema(type="integer")
+         *     ),
+         *     @OA\Response(response=200, description="Single SEO Record"),
+         *     @OA\Response(response=404, description="Not found"),
+         *     security={{"bearerAuth":{}}}
+         * )
 	 */
 
 		public function show($id)
@@ -642,190 +642,157 @@ class SeoManagementController extends Controller
 	// 		]);
 	// 	}
 	// }
-
-    public function import(Request $request) 
-{
-    try {
-        /* Validate request data */
-        $request->validate([
-            'upload_file' => 'required|file|mimes:csv,txt|max:5120',
-        ]);
-
-        $file = $request->file('upload_file');
-
-        $seoFileFormatArray = [
-            'Relational Name' => 'relational_name',
-            'Relational ID' => 'relational_id',
-            'Relational Type' => 'relational_type',
-            'URL' => 'url',
-            'Primary Keyword' => 'primary_keyword',
-            'Primary Monthly Search Volume' => 'primary_monthly_search_volume',
-            'Secondary Keyword' => 'secondary_keyword',
-            'Secondary Monthly Search Volume' => 'secondary_monthly_search_volume',
-            'Title Tag' => 'title_tag',
-            'Meta Title' => 'meta_title',
-            'Meta Description' => 'meta_description',
-            'Internal Links(Separated By |)' => 'internal_links',
-            'Indexing' => 'indexing',
-            'Og Title' => 'og_title',
-            'Og Description' => 'og_description',
-            'Og Image URL' => 'og_image_url',
-            'Og Image Alt Text' => 'og_image_alt_text',
-            'Og Image Name' => 'og_image_name',
-            'Tags(Separated By |)' => 'tags',
-        ];
-
-        $requiredRowCount = count($seoFileFormatArray);
-
-        $data = [];
-        /* Open the CSV file and read its content */
-        $rowIndex = 1;
-        if (($handle = fopen($file, "r")) !== false) {
-            while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-                /* Fix unquoted fields and escape special characters */
-                $row = array_map(function ($value) {
-                    /* Add quotes around multiline fields */
-                    if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
-                        $value = '"' . str_replace('"', '""', $value) . '"';
-                    }
-
-                    /* Check if the value is UTF-8 encoded */
-                    if (!mb_check_encoding($value, 'UTF-8')) {
-                        /* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
-                        $value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
-                    }
-
-                    /* Remove invalid characters and trim spaces */
-                    $value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
-                    return trim($value);
-                }, $row);
-
-                /* Skip blank rows */
-                if (array_filter($row)) {
-                    if (count($row) != $requiredRowCount) {
-                        $message = "The data in row $rowIndex is not compatible for import.";
-
-                        session()->put('error', $message);
-                        return back();
-                    }
-                    $data[] = $row;
-                }
-                $rowIndex++;
-            }
-            fclose($handle);
-        }
-
-        /* Remove the header row */
-        $header = array_shift($data);
-
-        $requiredHeaderArray = array_keys($seoFileFormatArray);
-
-        if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
-            $columns = implode(', ', array_values($missingColumns));
-            $missingCount = count($missingColumns);
-            return response()->json([
-                'success' => true,
-                'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
+    public function import(Request $request)
+    {
+        try {
+            /* Validate request data */
+            $request->validate([
+                'upload_file' => 'required|file|mimes:csv,txt|max:5120',
             ]);
-        }
-
-        /* Get the total record count */
-        $totalRecords = count($data);
-        if ($totalRecords == 0) {
-            return response()->json([
-                'success' => true,
-                'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
-            ]);
-        }
-
-        /* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-        $chunkSize = 100;
-        $chunks = array_chunk($data, $chunkSize);
-
-        /* Start import process */
-        $batch = Bus::batch([])->before(function (Batch $batch) use ($totalRecords) {
-            $descArray = [
-                "Total Count" => $totalRecords,
-                "Success Count" => 0,
-                "Failed Count" => 0,
-                "Errors" => []
+    
+            $file = $request->file('upload_file');
+    
+            $seoFileFormatArray = [
+                'Relational Name' => 'relational_name',
+                'Relational ID' => 'relational_id',
+                'Relational Type' => 'relational_type',
+                'URL' => 'url',
+                'Primary Keyword' => 'primary_keyword',
+                'Primary Monthly Search Volume' => 'primary_monthly_search_volume',
+                'Secondary Keyword' => 'secondary_keyword',
+                'Secondary Monthly Search Volume' => 'secondary_monthly_search_volume',
+                'Title Tag' => 'title_tag',
+                'Meta Title' => 'meta_title',
+                'Meta Description' => 'meta_description',
+                'Internal Links(Separated By |)' => 'internal_links',
+                'Indexing' => 'indexing',
+                'Og Title' => 'og_title',
+                'Og Description' => 'og_description',
+                'Og Image URL' => 'og_image_url',
+                'Og Image Alt Text' => 'og_image_alt_text',
+                'Og Image Name' => 'og_image_name',
+                'Tags(Separated By |)' => 'tags',
             ];
-            /* Save transaction log */
-            $log = new TransactionLog();
-            $log->module = "SEO Management";
-            $log->action = "Import";
-            $log->identifier = $batch->id;
-            $log->status = 'In-progress';
-            $log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-            $log->created_by = auth()->id() ?? null;
-            $log->created_at = now();
-            $log->save();
-        })
-        ->finally(function (Batch $batch) {
-            $log = TransactionLog::where('identifier', $batch->id)->first();
-            TransactionLog::where('id', $log->id)->update([
-                'status' => 'Completed',
-            ]);
-        })
-        ->name("SEO Management Import")
-        ->dispatch();
-
-        /* Add jobs to the batch for processing chunks */
-        foreach ($chunks as $chunk) {
-            foreach ($chunk as $row) {
-                // Create or get the SeoManagement record for each row
-                $seo = SeoManagement::create([
-                    'relational_name' => $row[0], // Relational Name
-                    'relational_id' => $row[1], // Relational ID
-                    'relational_type' => $row[2], // Relational Type
-                    'url' => $row[3], // URL
-                    'primary_keyword' => $row[4], // Primary Keyword
-                    'monthly_search_volume' => $row[5], // Primary Monthly Search Volume
-                    'secondary_keyword' => $row[6], // Secondary Keyword
-                    'monthly_search_volume' => $row[7], // Secondary Monthly Search Volume
-                    'title_tag' => $row[8], // Title Tag
-                    'meta_title' => $row[9], // Meta Title
-                    'meta_description' => $row[10], // Meta Description
-                    'internal_links' => $row[11], // Internal Links
-                    'indexing' => $row[12], // Indexing
-                    'og_title' => $row[13], // Og Title
-                    'og_description' => $row[14], // Og Description
-                    'og_image_url' => $row[15], // Og Image URL
-                    'og_image_alt_text' => $row[16], // Og Image Alt Text
-                    'og_image_name' => $row[17], // Og Image Name
-                    'tags' => $row[18], // Tags
-                    'created_by' => auth()->user()->id, // Assuming you're using the authenticated user ID
-                    'updated_at' => now(),
-                    'created_at' => now(),
+    
+            $requiredRowCount = count($seoFileFormatArray);
+    
+            $data = [];
+            /* Open the CSV file and read its content */
+            $rowIndex = 1;
+            if (($handle = fopen($file, "r")) !== false) {
+                while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
+                    /* Fix unquoted fields and escape special characters */
+                    $row = array_map(function ($value) {
+                        /* Add quotes around multiline fields */
+                        if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
+                            $value = '"' . str_replace('"', '""', $value) . '"';
+                        }
+    
+                        /* Check if the value is UTF-8 encoded */
+                        if (!mb_check_encoding($value, 'UTF-8')) {
+                            /* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
+                            $value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
+                        }
+    
+                        /* Remove invalid characters and trim spaces */
+                        $value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
+                        return trim($value);
+                    }, $row);
+    
+                    /* Skip blank rows */
+                    if (array_filter($row)) {
+                        if (count($row) != $requiredRowCount) {
+                            $message = "The data in row $rowIndex is not compatible for import.";
+    
+                            session()->put('error', $message);
+                            return back();
+                        }
+                        $data[] = $row;
+                    }
+                    $rowIndex++;
+                }
+                fclose($handle);
+            }
+    
+            /* Remove the header row */
+            $header = array_shift($data);
+    
+            $requiredHeaderArray = array_keys($seoFileFormatArray);
+    
+            if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
+                $columns = implode(', ', array_values($missingColumns));
+                $missingCount = count($missingColumns);
+                return response()->json([
+                    'success' => true,
+                    'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
                 ]);
-
-                // Generate schema for each SEO entry
-                $schema = $this->generateSchema($seo);
-
-                // Save the generated schema to the SeoManagement record
-                $seo->schema = json_encode($schema);
-                $seo->save();
-
-                // Add the SEO entry to the job batch
+            }
+    
+            /* Get the total record count */
+            $totalRecords = count($data);
+            if ($totalRecords == 0) {
+                return response()->json([
+                    'success' => true,
+                    'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
+                ]);
+            }
+    
+            /* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+            $chunkSize = 100;
+            $chunks = array_chunk($data, $chunkSize);
+    
+            /* Start import process */
+            $batch = Bus::batch([])->before(function (Batch $batch) use ($totalRecords) {
+                $descArray = [
+                    "Total Count" => $totalRecords,
+                    "Success Count" => 0,
+                    "Failed Count" => 0,
+                    "Errors" => []
+                ];
+                /* Save transaction log */
+                $log = new TransactionLog();
+                $log->module = "SEO Management";
+                $log->action = "Import";
+                $log->identifier = $batch->id;
+                $log->status = 'In-progress';
+                $log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+                $log->created_by = auth()->id() ?? null;
+                $log->created_at = now();
+                $log->save();
+            })
+            ->finally(function (Batch $batch) {
+                $log = TransactionLog::where('identifier', $batch->id)->first();
+                TransactionLog::where('id', $log->id)->update([
+                    'status' => 'Completed',
+                ]);
+            })
+            ->name("SEO Management Import")
+            ->dispatch();
+    
+            /* Add jobs to the batch for processing chunks */
+            foreach ($chunks as $chunk) {
                 $data = [
-                    'seo' => $seo, // Pass the SEO record to the job
+                    'seoFileFormatArray' => $seoFileFormatArray,
+                    'header' => $header,
+                    'chunk' => $chunk,
                     'userId' => auth()->id()
                 ];
                 $batch->add(new ImportSeoDetailJob($data));
             }
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+            ]);
+        } catch (\Exception $exception) {
+            return response()->json([
+                'success' => false,
+                'message' => $exception->getMessage()
+            ]);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => 'The import process has been scheduled successfully. Please track it under import log.'
-        ]);
-    } catch(\Exception $exception) {
-        return response()->json([
-            'success' => false,
-            'message' => $exception->getMessage()
-        ]);
     }
-}
+    
+
 
 
 	/**
