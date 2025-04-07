@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Store;
+use Illuminate\Support\Facades\Storage;
 
 class BrandController extends BaseController
 {
@@ -112,7 +113,7 @@ class BrandController extends BaseController
              'status' => 'required|string|in:published,draft',
              'order' => 'required|integer|min:0',
              'is_featured' => 'required|boolean',  // Boolean validation will convert "0", "1", 0, 1, true, false
-             'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+             'logo' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
          ]);
  
          // Initialize brand data from validated data
