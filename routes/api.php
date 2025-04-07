@@ -111,6 +111,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('newsletters', NewsletterController::class);
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
+	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::resource('seo-management', SeoManagementController::class);
 
 Route::post('seo-details', [SeoDetailController::class, 'store']);

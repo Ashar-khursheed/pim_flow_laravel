@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
@@ -200,7 +201,7 @@ class SeoManagementController extends Controller
 				];
 				/* Save transaction log */
 				$log = new TransactionLog();
-				$log->module = "Product";
+				$log->module = "SEO Management";
 				$log->action = "Import";
 				$log->identifier = $batch->id;
 				$log->status = 'In-progress';
@@ -215,7 +216,7 @@ class SeoManagementController extends Controller
 					'status' => 'Completed',
 				]);
 			})
-			->name("Product Import")
+			->name("SEO Management Import")
 			->dispatch();
 
 			/* Add jobs to the batch for processing chunks */
@@ -269,104 +270,116 @@ class SeoManagementController extends Controller
 		/* Validate request data */
 		$request->validate([
 			'relational_type' => 'required|in:Product,Category,Brand,Blog',
-			'relational_id' => 'nullable|integer|exists:ec_product_categories,id',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		if ($request->relational_type == 'Category') {
-			$parentCategory = Category::findOrFail($request->parent_category_id);
+		/* Determine the full class name based on relational_type */
+		$modelClass = 'App\\Models\\' . $request->relational_type;
 
-			/* Get leaf categories */
-			$leafCategories = Category::getLeafCategories($parentCategory);
-		}
-
-		/* Fetch unique attributes */
-		$uniqueAttributes = $leafCategories
-		->flatMap->categoryAllAttributes()
-		->unique('id')
-		->sortBy('id')
-		->reject(fn($attribute) => $attribute->type === 'multiselect') // Exclude multiselect
-		->mapWithKeys(fn($attribute) => [
-			$attribute->id => [
-				'name' => $attribute->name,
-				'type' => $attribute->type,
-				'attribute_value' => $attribute->type === 'toggle'
-				? ['Yes', 'No']
-				: $attribute->attributeValues->pluck('attribute_value')->toArray(),
-			]
-		])
-		->toArray();
-
-		if (empty($uniqueAttributes)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No attributes exist in the associated leaf categories.'
-			]);
-		}
-
-		/* Prepare headers */
-		$attributeNames = array_column($uniqueAttributes, 'name');
-		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
-
-		/* Initialize spreadsheet */
-		$spreadsheet = $this->excel->newSpreadsheet();
-		$spreadsheet->setActiveSheetIndex(0);
-		$sheet = $spreadsheet->getActiveSheet();
-
-		/* Set headers */
-		$this->excel->setHeader($sheet, $header);
-
-		/* Fetch products within range */
-		$products = Product::whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
+		/* Fetch records with related secondary keywords */
+		$records = SeoManagement::with('secondaryKeywordDetails')
+		->where('relational_type', $modelClass)
 		->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
-		->get(['id', 'sku', 'name']);
+		->get();
 
-		if ($products->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No products exist in the associated leaf categories.'
-			]);
-		}
+		/* Define CSV headers */
+		$csvHeaders = [
+			'Relational Name',
+			'Relational ID',
+			'Relational Type',
+			'URL',
+			'Primary Keyword',
+			'Primary Monthly Search Volume',
+			'Secondary Keyword',
+			'Secondary Monthly Search Volume',
+			'Title Tag',
+			'Meta Title',
+			'Meta Description',
+			'Internal Links(Separated By |)',
+			'Indexing',
+			'Og Title',
+			'Og Description',
+			'Og Image URL',
+			'Og Image Alt Text',
+			'Og Image Name',
+			'Tags(Separated By |)',
+		];
 
-		/* Populate data */
-		$row = 2;
-		foreach ($products as $product) {
-			$existingAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
-			$col = 'A';
+		/* Create a StreamedResponse for efficient memory usage */
+		$response = new StreamedResponse(function () use ($records, $csvHeaders, $modelClass) {
+			$handle = fopen('php://output', 'w');
+			fputcsv($handle, $csvHeaders);
 
-			/* Set product details */
-			$sheet->setCellValue($col++ . $row, $product->id);
-			$sheet->setCellValue($col++ . $row, $product->sku);
-			$sheet->setCellValue($col++ . $row, $product->name);
+			foreach ($records as $record) {
+				/* Fetch the relational name based on relational_type and relational_id */
+				$relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
 
-			foreach ($uniqueAttributes as $attributeId => $attributeDetail) {
-				$existingVal = $existingAttributes[$attributeId] ?? '';
-				$cell = $col++ . $row;
-
-				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
-					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
+				/* Process secondary keywords */
+				if ($record->secondaryKeywordDetails->isNotEmpty()) {
+					foreach ($record->secondaryKeywordDetails as $secondaryKeyword) {
+						fputcsv($handle, [
+							$relationalName,
+							$record->relational_id,
+							$record->relational_type,
+							$record->url,
+							$record->primary_keyword,
+							$record->monthly_search_volume,
+							$secondaryKeyword->keyword,
+							$secondaryKeyword->monthly_search_volume,
+							$record->title_tag,
+							$record->meta_title,
+							$record->meta_description,
+							$record->internal_links,
+							$record->indexing,
+							$record->og_title,
+							$record->og_description,
+							$record->og_image_url,
+							$record->og_image_alt_text,
+							$record->og_image_name,
+							$record->tags,
+						]);
+					}
 				} else {
-					$sheet->setCellValue($cell, $existingVal);
+					/* If no secondary keywords, write a single line with primary data */
+					fputcsv($handle, [
+						$relationalName,
+						$record->relational_id,
+						$record->relational_type,
+						$record->url,
+						$record->primary_keyword,
+						$record->monthly_search_volume,
+						'',
+						'',
+						$record->title_tag,
+						$record->meta_title,
+						$record->meta_description,
+						$record->internal_links,
+						$record->indexing,
+						$record->og_title,
+						$record->og_description,
+						$record->og_image_url,
+						$record->og_image_alt_text,
+						$record->og_image_name,
+						$record->tags,
+					]);
 				}
 			}
-			$row++;
-		}
 
-		/* Generate response */
-		$response = new StreamedResponse(function () use ($spreadsheet) {
-			$writer = new Xlsx($spreadsheet);
-			$writer->save('php://output');
+			fclose($handle);
 		});
 
-		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategory->name}_products_{$request->range_from}-{$request->range_to}.xlsx")));
-
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
-			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
-		));
+		$fileName = sprintf(
+			'%s_%d-%d_%s.csv',
+			$request->relational_type,
+			$request->range_from,
+			$request->range_to,
+			now()->format('Y-m-d')
+		);
+		$response->headers->set('Content-Type', 'text/csv');
+		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
 
 		return $response;
 	}

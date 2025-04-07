@@ -146,19 +146,16 @@ class ImportSeoDetailJob implements ShouldQueue
 			}
 
 			/* Validate OG Image Fields - all or none */
+			$primaryKey = $relational_id . '|' . $relational_type;
 			$ogFields = [
 				'Og Image URL' => $og_image_url ?? null,
 				'Og Image Alt Text' => $og_image_alt_text ?? null,
 				'Og Image Name' => $og_image_name ?? null,
 			];
-
 			$ogFilledCount = count(array_filter($ogFields));
-
 			if ($ogFilledCount > 0 && $ogFilledCount < 3) {
 				foreach ($ogFields as $label => $value) {
-					if (empty($value)) {
-						$rowError[] = "{$label} is required when any OG Image field is provided.";
-					}
+					if (empty($value)) $rowError[] = "{$label} is required when any OG Image field is provided.";
 				}
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
@@ -167,13 +164,21 @@ class ImportSeoDetailJob implements ShouldQueue
 				$failed++;
 				continue;
 			}
-
-			/* Only proceed if all OG fields are present */
-			if ($ogFilledCount === 3) {
-				$uploadedUrl = $this->uploadImageFromURL($og_image_url, $og_image_name);
+			$uploadedUrl = ($ogFilledCount === 3) ? $this->uploadImageFromURL($og_image_url, $og_image_name) : null;
+			$ogFieldsProvided = !empty($og_image_url) && !empty($og_image_alt_text) && !empty($og_image_name);
+			if ($ogFieldsProvided) {
+				$ogFieldsStorage[$primaryKey] = [
+					'og_image_url' => $uploadedUrl,
+					'og_image_alt_text' => $og_image_alt_text,
+					'og_image_name' => $og_image_name,
+				];
 			}
 
-			$primaryKey = $relational_id . '|' . $relational_type;
+			if (isset($ogFieldsStorage[$primaryKey])) {
+				$og_image_url = $ogFieldsStorage[$primaryKey]['og_image_url'];
+				$og_image_alt_text = $ogFieldsStorage[$primaryKey]['og_image_alt_text'];
+				$og_image_name = $ogFieldsStorage[$primaryKey]['og_image_name'];
+			}
 
 			$groupedPrimary[$primaryKey]['primary'] = [
 				'relational_id' => $relational_id,
@@ -184,14 +189,14 @@ class ImportSeoDetailJob implements ShouldQueue
 				'title_tag' => $title_tag,
 				'meta_title' => $meta_title,
 				'meta_description' => $meta_description,
-				'internal_links' => !empty($internal_links) ? $internal_links : null,
-				'indexing' => !empty($indexing) ? $indexing : 0,
-				'og_title' => !empty($og_title) ? $og_title : null,
-				'og_description' => !empty($og_description) ? $og_description : null,
-				'og_image_url' => !empty($uploadedUrl) ? $uploadedUrl : null,
-				'og_image_alt_text' => !empty($og_image_alt_text) ? $og_image_alt_text : null,
-				'og_image_name' => !empty($og_image_name) ? $og_image_name : null,
-				'tags' => !empty($tags) ? $tags : null,
+				'internal_links' => $internal_links ?? null,
+				'indexing' => $indexing ?? 0,
+				'og_title' => $og_title ?? null,
+				'og_description' => $og_description ?? null,
+				'og_image_url' => $og_image_url ?? null,
+				'og_image_alt_text' => $og_image_alt_text ?? null,
+				'og_image_name' => $og_image_name ?? null,
+				'tags' => $tags ?? null,
 				'created_at' => now(),
 				'updated_at' => now(),
 				'created_by' => $this->userId
@@ -303,6 +308,6 @@ class ImportSeoDetailJob implements ShouldQueue
 	public function failed(Throwable $exception): void
 	{
 		$error = $exception->getMessage().$exception->getTraceAsString();
-		logger(__("Product Import Error").': '.$error);
+		logger(__("SEO Import Error").': '.$error);
 	}
 }

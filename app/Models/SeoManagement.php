@@ -12,4 +12,9 @@ class SeoManagement extends Model
 	{
 		return $this->morphTo();
 	}
+
+	public function secondaryKeywordDetails()
+	{
+		return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id');
+	}
 }
