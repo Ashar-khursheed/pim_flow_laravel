@@ -58,7 +58,7 @@ class FaqController extends Controller
     public function index(Request $request)
     {
         $query = Faq::with('category');
-
+    
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -66,21 +66,34 @@ class FaqController extends Controller
                   ->orWhere('answer', 'LIKE', "%$search%");
             });
         }
-
+    
         if ($request->has('category_id')) {
             $query->where('category_id', $request->input('category_id'));
         }
-
+    
         if ($request->has('status')) {
             $query->where('status', $request->input('status'));
         }
-
+    
         $limit = $request->input('limit', 10);
         $faqs = $query->paginate($limit);
-
-        return response()->json($faqs);
+    
+        // Custom pagination response format
+        $pagination = [
+            'total' => $faqs->total(),
+            'per_page' => $faqs->perPage(),
+            'current_page' => $faqs->currentPage(),
+            'last_page' => $faqs->lastPage(),
+            'next_page_url' => $faqs->nextPageUrl(),
+            'prev_page_url' => $faqs->previousPageUrl(),
+        ];
+    
+        return response()->json([
+            'data' => $faqs->items(),
+            'pagination' => $pagination,
+        ]);
     }
-
+    
     /**
      * @OA\Post(
      *     path="/api/faqs",
