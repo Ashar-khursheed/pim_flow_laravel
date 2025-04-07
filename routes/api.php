@@ -27,6 +27,7 @@ use App\Http\Controllers\SeoSchemaController;
 use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
+use App\Http\Controllers\SubCategoryController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -55,7 +56,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
 	Route::resource('attribute-groups', AttributeGroupController::class);
-
+	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
 	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
@@ -68,7 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
-
+	Route::get('products/category/{category_id}', [ProductController::class, 'getProductsByCategory']);
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
@@ -112,17 +113,24 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
+	Route::post('seo-management/{id}', [SeoManagementController::class, 'update']);
 	Route::resource('seo-management', SeoManagementController::class);
 
-Route::post('seo-details', [SeoDetailController::class, 'store']);
-Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
+	Route::post('seo-details', [SeoDetailController::class, 'store']);
+	Route::put('seo-details/{id}', [SeoDetailController::class, 'update']);
 
 
 
-Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
-Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
-Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
+	Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
+	Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
+	Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
+
+
+	Route::get('subcategories', [SubCategoryController::class, 'index']);
+	Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
+	Route::post('subcategories', [SubCategoryController::class, 'store']);
+	Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
+	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
-

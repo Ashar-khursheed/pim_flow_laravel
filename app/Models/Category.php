@@ -99,4 +99,9 @@ class Category extends Model
 	{
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
+
+	public function subCategories()
+	{
+		return $this->hasMany(SubCategory::class);
+	}
 }

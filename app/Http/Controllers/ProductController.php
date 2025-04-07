@@ -317,7 +317,7 @@ class ProductController extends BaseController
 		$attributeGroups = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
-			'Pricing & Sales' => ['price', 'sale_price', 'sale_type','unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by'],
+			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
 			'Marketing' => ['name', 'content', 'description'],
 			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents' , 'benefits_features'],
 			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
@@ -375,6 +375,24 @@ class ProductController extends BaseController
 			$product->documents = json_decode($product->documents, true) ?? [];
 		}
 
+		 // Normalize the documents field
+		 if (!empty($product->documents) && is_array($product->documents)) {
+			$product->documents = array_map(function($item) {
+				// Check if the item is an array with 'title' and 'path', or just a string
+				if (is_array($item) && isset($item['path'])) {
+					return [
+						'title' => $item['title'],
+						'path' => $item['path']
+					];
+				} elseif (is_string($item)) {
+					return [
+						'title' => basename($item),
+						'path' => $item
+					];
+				}
+				return null;
+			}, $product->documents);
+		}
 		$formattedProduct = [];
 
 		foreach ($attributes as $attribute) {
@@ -532,16 +550,59 @@ class ProductController extends BaseController
 				break;
 
 				case 'frequently_bought_together':
-						// Ensure $value is a valid JSON string
-				$decoded = json_decode($value, true);
-
-				if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
-							$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
-						} else {
-							// Convert each item correctly based on its type
-							$formattedProduct[$attribute] = array_map(fn($item) => ['value' => is_array($item) ? ($item['value'] ?? null) : $item], $decoded);
+					// Ensure $value is a valid JSON string
+					$decoded = json_decode($value, true);
+				
+					if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+						$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
+					} else {
+						// Get all product IDs from the frequently bought together items
+						$productIds = array_map(function($item) {
+							// Check if the item is an array and contains 'value' or it's a comma-separated string
+							return is_array($item) ? ($item['value'] ?? null) : $item;
+						}, $decoded);
+						
+						// Flatten any possible comma-separated IDs and filter out null values
+						$productIds = array_merge(...array_map(function($id) {
+							return explode(',', $id);  // Split comma-separated values
+						}, $productIds));
+						
+						$productIds = array_filter($productIds, function($id) {
+							return is_numeric($id); // Make sure we're working with numeric IDs
+						});
+						
+						// If we have product IDs, fetch their SKUs from the Product model
+						$productSkus = [];
+						if (!empty($productIds)) {
+							// Query the Product model to get SKUs for these product IDs
+							$products = \App\Models\Product::whereIn('id', $productIds)
+														  ->select('id', 'sku')
+														  ->get()
+														  ->keyBy('id');
+														  
+							// Create a mapping of product ID to SKU
+							foreach ($products as $product) {
+								$productSkus[$product->id] = $product->sku;
+							}
 						}
-						break;
+				
+						// Now map the original items, but concatenate SKUs as a comma-separated string
+						$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
+							$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
+							// Split the IDs, fetch the SKUs, and return them as a comma-separated string
+							$ids = explode(',', $productIds);
+							$skus = array_map(function($id) use ($productSkus) {
+								return $productSkus[$id] ?? null;
+							}, $ids);
+				
+							return [
+								'value' => implode(',', array_filter($skus)) // Join the SKUs back as a comma-separated string
+							];
+						}, $decoded);
+					}
+					break;
+				
+				
 
 					case 'compare_type':
 					$decoded = json_decode($value, true);
@@ -638,6 +699,17 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
 	*                 @OA\Property(property="sale_type", type="string", example="percentage"),
 	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
+	*                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
+	*                 @OA\Property(
+	*                     property="cost_type",
+	*                     type="string",
+	*                     enum={"percentage", "value"},
+	*                     example="percentage",
+	*                     description="Defines how additional cost is calculated"
+	*                 ),
+	*                 @OA\Property(property="additional_cost_percentage", type="number", format="float", example=10.0, description="Percentage to add to the base cost_per_item"),
+	*                 @OA\Property(property="additional_cost_value", type="number", format="float", example=5.0, description="Fixed value to add to cost_per_item"),
+	*                 @OA\Property(property="total_cost_per_item", type="number", format="float", example=55.0, description="Automatically calculated total cost per item"),
 	*                 @OA\Property(property="tax_id", type="integer", example=3),
 	*                 @OA\Property(property="currency_id", type="integer", example=1),
 	*                 @OA\Property(property="minimum_order_quantity", type="integer", example=1),
@@ -985,6 +1057,35 @@ class ProductController extends BaseController
 		 // Remove 'faqs' from the input before validation
 
 
+					// Process the new fields if they exist in the request
+			if ($request->has('cost_per_item')) {
+				$input['cost_per_item'] = $request->input('cost_per_item');
+			}
+
+			if ($request->has('cost_per_item_currency')) {
+				$input['cost_per_item_currency'] = $request->input('cost_per_item_currency');
+			}
+
+			if ($request->has('cost_type')) {
+				$input['cost_type'] = $request->input('cost_type');
+			}
+
+			if ($request->has('additional_cost_percentage')) {
+				$input['additional_cost_percentage'] = $request->input('additional_cost_percentage');
+			}
+
+			if ($request->has('additional_cost_value')) {
+				$input['additional_cost_value'] = $request->input('additional_cost_value');
+			}
+
+			// Calculate the total cost if it's not already provided
+			if ($request->has('cost_per_item') && ($request->has('additional_cost_percentage') || $request->has('additional_cost_value'))) {
+				if ($input['cost_type'] === 'percentage' && $request->has('additional_cost_percentage')) {
+					$input['total_cost_per_item'] = $input['cost_per_item'] + ($input['cost_per_item'] * $input['additional_cost_percentage'] / 100);
+				} elseif ($input['cost_type'] === 'value' && $request->has('additional_cost_value')) {
+					$input['total_cost_per_item'] = $input['cost_per_item'] + $input['additional_cost_value'];
+				}
+			}
 	   // ✅ Remove review-related fields before validation
 	   $reviewFields = ['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'];
 	   foreach ($reviewFields as $field) {
@@ -1055,27 +1156,60 @@ class ProductController extends BaseController
 
 
 	 // Handle document upload
+	//  $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
+	//  $existingDocs = is_array($existingDocs) ? $existingDocs : [];
+
+	//  if ($request->hasFile('documents')) {
+	// 	 $uploadedDocs = [];
+	// 	 foreach ($request->file('documents') as $doc) {
+	// 		 $path = $doc->store($documentPath, 's3');
+	// 		 $uploadedDocs[] = Storage::disk('s3')->url($path);
+	// 	 }
+
+	// 	 // Merge with existing documents
+	// 	 $input['documents'] = array_merge($existingDocs, $uploadedDocs);
+	//  } else {
+	// 	 // Retain existing documents if no new files are uploaded
+	// 	 $input['documents'] = $existingDocs;
+	//  }
+
+	//  // Convert to JSON with unescaped slashes
+	//  $input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
+
+	 // Handle document upload
 	 $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
 	 $existingDocs = is_array($existingDocs) ? $existingDocs : [];
-
+	 
 	 if ($request->hasFile('documents')) {
 		 $uploadedDocs = [];
 		 foreach ($request->file('documents') as $doc) {
 			 $path = $doc->store($documentPath, 's3');
-			 $uploadedDocs[] = Storage::disk('s3')->url($path);
+			 
+			 // Check if the title is provided, if not, use the document's name
+			 $title = $request->input('title', $doc->getClientOriginalName()); // default to original name if title is empty
+			 
+			 // If title is still empty, use the document name as title
+			 if (empty($title)) {
+				 $title = basename($doc->getClientOriginalName());  // Use document name if title is empty
+			 }
+			 
+			 // Create an array with title and path for each uploaded document
+			 $uploadedDocs[] = [
+				 'title' => $title,
+				 'path' => Storage::disk('s3')->url($path)
+			 ];
 		 }
-
+	 
 		 // Merge with existing documents
 		 $input['documents'] = array_merge($existingDocs, $uploadedDocs);
 	 } else {
 		 // Retain existing documents if no new files are uploaded
 		 $input['documents'] = $existingDocs;
 	 }
-
+	 
 	 // Convert to JSON with unescaped slashes
 	 $input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
-
-
+	 
 
 
 	 $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -1086,24 +1220,47 @@ class ProductController extends BaseController
 
 
 	 /* List of valid fields allowed for updating */
-	 $validArray = [
-		 "sku", "status" , "barcode", "warranty_information", "refund", "quantity",
-		 "allow_checkout_when_out_of_stock", "with_storehouse_management",
-		 "stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
-		 "variant_inventory_policy", "variant_fulfillment_service", "price",
-		 "sale_price", "sale_type", "cost_per_item", "tax_id", "currency_id",
-		 "minimum_order_quantity", "maximum_order_quantity", "name", "content",
-		 "description", "images", "image", "video_url", "video_path", "videos", "documents",
-		 "length", "length_unit_id", "width", "height", "depth", "weight",
-		 "weight_unit_id", "shipping_weight_option", "shipping_weight",
-		 "shipping_dimension_option", "shipping_width", "shipping_depth",
-		 "shipping_height", "shipping_length", "shipping_length_id", "is_variation",
-		 "variant_grams", "variant_requires_shipping", "variant_barcode",
-		 "variant_color_title", "variant_color_value", "store_id", "brand_id",
-		 "views", "units_sold", "frequently_bought_together", "compare_type",
-		 "compare_products", "google_shopping_category", "google_shopping_mpn",
-		 "order", "box_quantity", "delivery_days", "unit_of_measurement_id","benefits_features"
-	 ];
+	//  $validArray = [
+	// 	//  "sku", "status" , "barcode", "warranty_information", "refund", "quantity",
+	// 	//  "allow_checkout_when_out_of_stock", "with_storehouse_management",
+	// 	//  "stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
+	// 	//  "variant_inventory_policy", "variant_fulfillment_service", "price",
+	// 	//  "sale_price", "sale_type", "cost_per_item", "tax_id", "currency_id",
+	// 	//  "minimum_order_quantity", "maximum_order_quantity", "name", "content",
+	// 	//  "description", "images", "image", "video_url", "video_path", "videos", "documents",
+	// 	//  "length", "length_unit_id", "width", "height", "depth", "weight",
+	// 	//  "weight_unit_id", "shipping_weight_option", "shipping_weight",
+	// 	//  "shipping_dimension_option", "shipping_width", "shipping_depth",
+	// 	//  "shipping_height", "shipping_length", "shipping_length_id", "is_variation",
+	// 	//  "variant_grams", "variant_requires_shipping", "variant_barcode",
+	// 	//  "variant_color_title", "variant_color_value", "store_id", "brand_id",
+	// 	//  "views", "units_sold", "frequently_bought_together", "compare_type",
+	// 	//  "compare_products", "google_shopping_category", "google_shopping_mpn",
+	// 	//  "order", "box_quantity", "delivery_days", "unit_of_measurement_id","benefits_features"
+
+
+	//  ];
+
+	$validArray = [
+		"sku", "status", "barcode", "warranty_information", "refund", "quantity",
+		"allow_checkout_when_out_of_stock", "with_storehouse_management",
+		"stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
+		"variant_inventory_policy", "variant_fulfillment_service", "price",
+		"sale_price", "sale_type", "cost_per_item", "cost_per_item_currency",
+		"cost_type", "additional_cost_percentage", "additional_cost_value",
+		"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity", 
+		"maximum_order_quantity", "name", "content", "description", "images", 
+		"image", "video_url", "video_path", "videos", "documents", "length", 
+		"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id", 
+		"shipping_weight_option", "shipping_weight", "shipping_dimension_option", 
+		"shipping_width", "shipping_depth", "shipping_height", "shipping_length", 
+		"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping", 
+		"variant_barcode", "variant_color_title", "variant_color_value", "store_id", 
+		"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type", 
+		"compare_products", "google_shopping_category", "google_shopping_mpn", "order", 
+		"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
+	];
+	
 	unset($input['product_attributes']);
 
 	 /* Check for invalid fields */
@@ -1877,4 +2034,68 @@ class ProductController extends BaseController
 			]);
 		}
 	}
+
+
+	/**
+ * @OA\Get(
+ *     path="/api/products/category/{category_id}",
+ *     summary="Get list of products by category",
+ *     description="Retrieves a list of products from a specific category.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="category_id",
+ *         in="path",
+ *         description="ID of the category to filter products by",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="Sample Product"),
+ *                     @OA\Property(property="sku", type="string", example="PROD-123"),
+ *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function getProductsByCategory($category_id)
+{
+    // Fetch all products related to the given category ID
+    $products = Product::whereHas('categories', function ($query) use ($category_id) {
+        $query->where('category_id', $category_id);
+    })
+    ->select(['id', 'name', 'sku', 'images'])
+    ->orderBy('id', 'desc') // Order by product ID in descending order
+    ->get();
+
+    // Formatting the response to include only id, name, sku, and image
+    $formattedProducts = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+        ];
+    });
+
+    // Return the list of products without pagination
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully for category ' . $category_id,
+        'data' => $formattedProducts
+    ]);
+}
+
 }

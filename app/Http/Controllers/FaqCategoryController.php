@@ -11,6 +11,7 @@ class FaqCategoryController extends Controller
      * @OA\Get(
      *     path="/api/faq-categories",
      *     summary="Get all FAQ categories",
+     *     security={{"bearerAuth":{}}},
      *     tags={"FAQ Categories"},
      *     @OA\Response(
      *         response=200,
