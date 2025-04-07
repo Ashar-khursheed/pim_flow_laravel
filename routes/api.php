@@ -131,7 +131,7 @@ Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
 Route::post('subcategories', [SubCategoryController::class, 'store']);
 Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
 Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
-Route::post('/api/seo-management/{id}', [SeoManagementController::class, 'update']);
+Route::post('seo-management/{id}', [SeoManagementController::class, 'update']);
 
 Route::apiResource('seo-management', SeoManagementController::class);
 

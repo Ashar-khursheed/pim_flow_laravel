@@ -5487,27 +5487,41 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "SEO Management"
                 ],
                 "summary": "Update an existing SEO record",
-                "operationId": "58961f1b16803df093a67a96090d7175",
+                "operationId": "9b1ad71a28d2dc3a5c0ba87649d40ab0",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "The ID of the SEO record to update",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "relational_id",
+                                    "relational_type",
+                                    "url",
+                                    "primary_keyword",
+                                    "monthly_search_volume",
+                                    "title_tag",
+                                    "meta_title",
+                                    "meta_description",
+                                    "indexing",
+                                    "created_by"
+                                ],
                                 "properties": {
                                     "relational_id": {
                                         "type": "integer",
@@ -5531,31 +5545,73 @@
                                     },
                                     "title_tag": {
                                         "type": "string",
-                                        "example": "Updated Title Tag"
+                                        "example": "Awesome Product Title Tag"
                                     },
                                     "meta_title": {
                                         "type": "string",
-                                        "example": "Updated Meta Title"
+                                        "example": "Meta Title Example"
                                     },
                                     "meta_description": {
                                         "type": "string",
-                                        "example": "Updated description"
+                                        "example": "This is a meta description."
+                                    },
+                                    "internal_links": {
+                                        "type": "string",
+                                        "example": "https://example.com/internal1,https://example.com/internal2"
                                     },
                                     "indexing": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "schema_rating": {
+                                        "description": "Use 1 for true, 0 for false",
                                         "type": "integer",
-                                        "example": 4
+                                        "enum": [
+                                            0,
+                                            1
+                                        ],
+                                        "example": 1
                                     },
-                                    "schema_reviews_count": {
-                                        "type": "integer",
-                                        "example": 10
+                                    "og_title": {
+                                        "type": "string",
+                                        "example": "Open Graph Title"
+                                    },
+                                    "og_description": {
+                                        "type": "string",
+                                        "example": "Open Graph Description"
+                                    },
+                                    "og_image_url": {
+                                        "type": "string",
+                                        "example": "https://example.com/image.jpg"
+                                    },
+                                    "og_image_name": {
+                                        "type": "string",
+                                        "example": "image.jpg"
+                                    },
+                                    "og_image_alt_text": {
+                                        "type": "string",
+                                        "example": "Image alt text"
                                     },
                                     "tags": {
                                         "type": "string",
-                                        "example": "new, updated, seo"
+                                        "example": "tag1, tag2, tag3"
+                                    },
+                                    "schema_rating": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "schema_reviews_count": {
+                                        "type": "integer",
+                                        "example": 42
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "updated_by": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "og_image_file": {
+                                        "description": "OG Image File",
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "secondary_keywords": {
                                         "type": "array",
@@ -5563,11 +5619,11 @@
                                             "properties": {
                                                 "secondary_keyword": {
                                                     "type": "string",
-                                                    "example": "secondary key"
+                                                    "example": "related keyword"
                                                 },
                                                 "monthly_search_volume": {
                                                     "type": "integer",
-                                                    "example": 300
+                                                    "example": 500
                                                 }
                                             },
                                             "type": "object"
@@ -5583,8 +5639,8 @@
                     "200": {
                         "description": "SEO Record Updated"
                     },
-                    "404": {
-                        "description": "Not found"
+                    "422": {
+                        "description": "Validation error"
                     }
                 },
                 "security": [
