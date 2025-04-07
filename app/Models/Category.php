@@ -95,8 +95,13 @@ class Category extends Model
 		return $groupAttributes->unique('id')->values();
 	}
 
+	public function categorySeoDetails()
+	{
+		return $this->morphOne(SeoManagement::class, 'relational');
+	}
+
 	public function subCategories()
-    {
-        return $this->hasMany(SubCategory::class);
-    }
+	{
+		return $this->hasMany(SubCategory::class);
+	}
 }
