@@ -780,9 +780,9 @@ class SeoManagementController extends Controller
                     'relational_type' => $row[2], // Relational Type
                     'url' => $row[3], // URL
                     'primary_keyword' => $row[4], // Primary Keyword
-                    'primary_monthly_search_volume' => $row[5], // Primary Monthly Search Volume
+                    'monthly_search_volume' => $row[5], // Primary Monthly Search Volume
                     'secondary_keyword' => $row[6], // Secondary Keyword
-                    'secondary_monthly_search_volume' => $row[7], // Secondary Monthly Search Volume
+                    'monthly_search_volume' => $row[7], // Secondary Monthly Search Volume
                     'title_tag' => $row[8], // Title Tag
                     'meta_title' => $row[9], // Meta Title
                     'meta_description' => $row[10], // Meta Description
