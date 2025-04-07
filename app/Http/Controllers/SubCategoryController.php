@@ -235,9 +235,11 @@ public function index()
      ]);
  
      return response()->json([
-         'message' => 'Subcategory created successfully',
-         'subcategory' => $subcategory->fresh(['category'])->toArray()
-     ], 201);
+        'success' => true,
+        'message' => 'Subcategory created successfully',
+        'subcategory' => $subcategory->fresh(['category'])->toArray()
+    ], 201);
+    
  }
  
 /**
@@ -443,6 +445,7 @@ public function index()
      ]);
  
      return response()->json([
+        'success' => true,
          'message' => 'Subcategory updated successfully',
          'subcategory' => $subcategory->fresh(['category'])->toArray()
      ], 200);
