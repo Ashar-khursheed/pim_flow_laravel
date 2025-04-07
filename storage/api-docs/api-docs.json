@@ -5062,6 +5062,48 @@
                 }
             }
         },
+        "/api/seo-management/import": {
+            "post": {
+                "tags": [
+                    "SEO Management"
+                ],
+                "summary": "Import seo details from an Excel file",
+                "operationId": "15b0b0e432e498b0fcb0acfc870f44e1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "CSV file (.csv) max 5MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/sliders": {
             "get": {
                 "tags": [
@@ -6747,6 +6789,10 @@
         {
             "name": "SEO Details",
             "description": "SEO Details"
+        },
+        {
+            "name": "SEO Management",
+            "description": "SEO Management"
         },
         {
             "name": "Stores",
