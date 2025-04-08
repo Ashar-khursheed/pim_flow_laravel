@@ -602,6 +602,7 @@ class ProductController extends BaseController
 				// 	}
 				// 	break;
 				
+			
 				case 'frequently_bought_together':
 					// Ensure $value is a valid JSON string
 					$decoded = json_decode($value, true);
@@ -614,16 +615,17 @@ class ProductController extends BaseController
 							// Check if the item is an array and contains 'value' or it's a comma-separated string
 							return is_array($item) ? ($item['value'] ?? null) : $item;
 						}, $decoded);
-						
-						// Flatten any possible comma-separated IDs and filter out null values
+				
+						// Flatten any possible comma-separated IDs into an array of individual IDs
 						$productIds = array_merge(...array_map(function($id) {
 							return explode(',', $id);  // Split comma-separated values
 						}, $productIds));
-						
+				
+						// Filter out null or empty values
 						$productIds = array_filter($productIds, function($id) {
-							return is_numeric($id); // Make sure we're working with numeric IDs
+							return !empty($id); // Ensure we only have non-empty IDs
 						});
-						
+				
 						// If we have product IDs, fetch their SKUs from the Product model
 						$productSkus = [];
 						if (!empty($productIds)) {
@@ -648,10 +650,15 @@ class ProductController extends BaseController
 								return $productSkus[$id] ?? null;
 							}, $ids);
 					
-							return array_combine($ids, $skus); // Map IDs to SKUs as key-value pairs
-						}, $decoded);
+							// Return an associative array with 'id' => ID and 'sku' => SKU for each product
+							return array_map(function($id, $sku) {
+								return ['id' => $id, 'sku' => $sku]; // Pair each ID with its SKU
+							}, $ids, $skus);
+						}, $decoded); // Process all items in the frequently bought together list
 					}
 					break;
+				
+				
 				
 
 					case 'compare_type':
