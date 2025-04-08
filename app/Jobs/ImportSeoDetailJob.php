@@ -180,6 +180,10 @@ class ImportSeoDetailJob implements ShouldQueue
 				$og_image_name = $ogFieldsStorage[$primaryKey]['og_image_name'];
 			}
 
+			// Set default values for schema-related fields
+			$schema_rating = $schema_rating ?? 5;
+			$schema_reviews_count = $schema_reviews_count ?? 0;
+
 			$groupedPrimary[$primaryKey]['primary'] = [
 				'relational_id' => $relational_id,
 				'relational_type' => $relational_type,
@@ -200,8 +204,8 @@ class ImportSeoDetailJob implements ShouldQueue
 				'created_at' => now(),
 				'updated_at' => now(),
 				'created_by' => $this->userId,
-				'schema_rating' => $schema_rating ?? 5,
-				'schema_reviews_count' => $schema_reviews_count ?? 0
+				'schema_rating' => $schema_rating,
+				'schema_reviews_count' => $schema_reviews_count
 			];
 
 			$groupedPrimary[$primaryKey]['secondary'][] = [
@@ -217,6 +221,8 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
+				
+				// Create/update the SEO record first
 				$seo = SeoManagement::updateOrCreate(
 					[
 						'relational_id' => $primaryData['relational_id'],
@@ -225,14 +231,13 @@ class ImportSeoDetailJob implements ShouldQueue
 					$primaryData
 				);
 				
-				// Generate schema after SEO record is created/updated
+				// Generate schema
 				$schema = $this->generateSchema($seo);
 				
-				// Save the generated schema
-				$seo->update([
-					'schema' => json_encode($schema)
-				]);
+				// Add schema to the SEO record in a separate update to ensure it's always generated
+				$seo->update(['schema' => json_encode($schema)]);
 
+				// Process secondary keywords
 				foreach ($group['secondary'] as $secondary) {
 					SeoSecondaryKeyword::updateOrCreate(
 						[
@@ -322,7 +327,7 @@ class ImportSeoDetailJob implements ShouldQueue
 	{
 		// Check if the type is 'Product' and relational_id is available
 		if ($seo->relational_type === 'App\Models\Product' && $seo->relational_id) {
-			// Fetch product data from 'ec_products' table
+			// Fetch product data from products table
 			$product = Product::find($seo->relational_id);
 
 			if ($product) {
