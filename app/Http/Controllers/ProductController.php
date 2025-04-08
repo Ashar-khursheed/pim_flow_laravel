@@ -549,10 +549,63 @@ class ProductController extends BaseController
 				$formattedProduct[$attribute] = $matches[1] ?? [];
 				break;
 
+				// case 'frequently_bought_together':
+				// 	// Ensure $value is a valid JSON string
+				// 	$decoded = json_decode($value, true);
+				
+				// 	if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+				// 		$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
+				// 	} else {
+				// 		// Get all product IDs from the frequently bought together items
+				// 		$productIds = array_map(function($item) {
+				// 			// Check if the item is an array and contains 'value' or it's a comma-separated string
+				// 			return is_array($item) ? ($item['value'] ?? null) : $item;
+				// 		}, $decoded);
+						
+				// 		// Flatten any possible comma-separated IDs and filter out null values
+				// 		$productIds = array_merge(...array_map(function($id) {
+				// 			return explode(',', $id);  // Split comma-separated values
+				// 		}, $productIds));
+						
+				// 		$productIds = array_filter($productIds, function($id) {
+				// 			return is_numeric($id); // Make sure we're working with numeric IDs
+				// 		});
+						
+				// 		// If we have product IDs, fetch their SKUs from the Product model
+				// 		$productSkus = [];
+				// 		if (!empty($productIds)) {
+				// 			// Query the Product model to get SKUs for these product IDs
+				// 			$products = \App\Models\Product::whereIn('id', $productIds)
+				// 										  ->select('id', 'sku')
+				// 										  ->get()
+				// 										  ->keyBy('id');
+														  
+				// 			// Create a mapping of product ID to SKU
+				// 			foreach ($products as $product) {
+				// 				$productSkus[$product->id] = $product->sku;
+				// 			}
+				// 		}
+				
+				// 		// Now map the original items, but concatenate SKUs as a comma-separated string
+				// 		$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
+				// 			$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
+				// 			// Split the IDs, fetch the SKUs, and return them as a comma-separated string
+				// 			$ids = explode(',', $productIds);
+				// 			$skus = array_map(function($id) use ($productSkus) {
+				// 				return $productSkus[$id] ?? null;
+				// 			}, $ids);
+				
+				// 			return [
+				// 				'value' => implode(',', array_filter($skus)) // Join the SKUs back as a comma-separated string
+				// 			];
+				// 		}, $decoded);
+				// 	}
+				// 	break;
+				
 				case 'frequently_bought_together':
 					// Ensure $value is a valid JSON string
 					$decoded = json_decode($value, true);
-				
+					
 					if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
 						$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
 					} else {
@@ -585,23 +638,20 @@ class ProductController extends BaseController
 								$productSkus[$product->id] = $product->sku;
 							}
 						}
-				
-						// Now map the original items, but concatenate SKUs as a comma-separated string
+					
+						// Now map the original items, but include SKUs as key-value pairs (ID => SKU)
 						$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
 							$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
-							// Split the IDs, fetch the SKUs, and return them as a comma-separated string
+							// Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU)
 							$ids = explode(',', $productIds);
 							$skus = array_map(function($id) use ($productSkus) {
 								return $productSkus[$id] ?? null;
 							}, $ids);
-				
-							return [
-								'value' => implode(',', array_filter($skus)) // Join the SKUs back as a comma-separated string
-							];
+					
+							return array_combine($ids, $skus); // Map IDs to SKUs as key-value pairs
 						}, $decoded);
 					}
 					break;
-				
 				
 
 					case 'compare_type':
