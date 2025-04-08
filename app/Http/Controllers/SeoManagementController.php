@@ -7,10 +7,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
-
+use App\Models\Product;
 use App\Models\SeoManagement;
 use App\Models\TransactionLog;
-
+use App\Models\SeoSecondaryKeyword;
 use App\Jobs\ImportSeoDetailJob;
 
 class SeoManagementController extends Controller
@@ -26,7 +26,7 @@ class SeoManagementController extends Controller
 	 */
 	public function index()
 	{
-		return SeoManagement::with('secondaryKeywords')->get();
+		return SeoManagement::with('secondaryKeywordDetails')->get();
 	}
 
 	/**
@@ -172,7 +172,7 @@ class SeoManagementController extends Controller
 		 return response()->json([
 		 	'success' => true,
 		 	'message' => 'SEO record created successfully',
-		 	'data' => $seo->load('secondaryKeywords')
+		 	'data' => $seo->load('secondaryKeywordDetails')
 		 ], 201);
 		} catch (\Exception $e) {
 		 // Log the error
@@ -206,7 +206,7 @@ class SeoManagementController extends Controller
 
 		public function show($id)
 		{
-			return SeoManagement::with('secondaryKeywords')->findOrFail($id);
+			return SeoManagement::with('secondaryKeywordDetails')->findOrFail($id);
 		}
 
 	/**
@@ -362,7 +362,7 @@ class SeoManagementController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'SEO record updated successfully',
-				'data' => $seo->load('secondaryKeywords')
+				'data' => $seo->load('secondaryKeywordDetails')
 			], 200);
 
 		} catch (\Exception $e) {
@@ -398,7 +398,7 @@ class SeoManagementController extends Controller
 	public function destroy($id)
 	{
 		$seo = SeoManagement::findOrFail($id);
-		$seo->secondaryKeywords()->delete();
+		$seo->secondaryKeywordDetails()->delete();
 		$seo->delete();
 
 		return response()->json(['message' => 'Deleted successfully']);
