@@ -650,13 +650,17 @@ class ProductController extends BaseController
 								return $productSkus[$id] ?? null;
 							}, $ids);
 					
-							// Return an associative array with 'id' => ID and 'sku' => SKU for each product
+							// Return a flat array with 'id' => ID and 'sku' => SKU
 							return array_map(function($id, $sku) {
 								return ['id' => $id, 'sku' => $sku]; // Pair each ID with its SKU
 							}, $ids, $skus);
-						}, $decoded); // Process all items in the frequently bought together list
+						}, $decoded);
+				
+						// Flatten the nested arrays (if any) and merge them into one array
+						$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
 					}
 					break;
+				
 				
 				
 				
