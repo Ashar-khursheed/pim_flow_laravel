@@ -442,6 +442,7 @@ public function update(Request $request, $id)
      *     security={{"bearerAuth":{}}}
      * )
      */
+
     public function getBrandsList(Request $request)
     {
         $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
@@ -493,8 +494,21 @@ public function update(Request $request, $id)
                 return $store ? $store->name : null;
             })->filter()->values();
     
-            // Use asset() or url() to get the full URL for the logo
-            $logoUrl = $brand->logo ? asset('storage/' . $brand->logo) : null;
+            // Get the full URL for the logo, whether it's stored in local storage or S3
+            $logoUrl = null;
+            if ($brand->logo) {
+                // Check if the logo URL is already a full URL (starts with http)
+                if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
+                    $logoUrl = $brand->logo; // If it's a full URL, use it directly
+                } else {
+                    // Check if logo is stored locally or in S3
+                    if (Storage::disk('s3')->exists($brand->logo)) {
+                        $logoUrl = Storage::disk('s3')->url($brand->logo); // Full URL from S3
+                    } else {
+                        $logoUrl = asset('storage/' . $brand->logo); // Full URL from local storage
+                    }
+                }
+            }
     
             return [
                 'id' => $brand->id,
