@@ -187,13 +187,13 @@ class SeoManagementController extends Controller
 		}
 	}
 
-		/**
+	/**
  * @OA\Get(
- *     path="/api/seo-management/{id}",
- *     summary="Get a specific SEO record",
+ *     path="/api/seo-management/{relation_id}",
+ *     summary="Get a specific SEO record by product relation ID",
  *     tags={"SEO Management"},
  *     @OA\Parameter(
- *         name="id",
+ *         name="relation_id",
  *         in="path",
  *         required=true,
  *         @OA\Schema(type="integer")
@@ -203,22 +203,61 @@ class SeoManagementController extends Controller
  *     security={{"bearerAuth":{}}}
  * )
  */
-public function show($id)
+public function show($relation_id)
 {
-    $seoRecord = SeoManagement::with('secondaryKeywordDetails')->find($id);
+    $seoRecord = SeoManagement::with('secondaryKeywordDetails')
+        ->where('relational_id', $relation_id)
+        ->first();
 
     if (!$seoRecord) {
         return response()->json([
             'success' => false,
-            'message' => 'SEO record not found for the given product.'
+            'message' => 'SEO record not found for the given relation ID.'
         ], 404);
     }
 
+    $schema = [
+        "@context" => "https://schema.org",
+        "@type" => "Product",
+        "url" => "my-product",
+        "name" => "meta title",
+        "description" => "This is a description",
+        "keywords" => "Danish|Rishi",
+        "image" => [
+            "@type" => "ImageObject",
+            "url" => "",
+            "name" => "",
+            "description" => ""
+        ],
+        "aggregateRating" => [
+            "@type" => "AggregateRating",
+            "ratingValue" => 5,
+            "reviewCount" => 0
+        ],
+        "offers" => [
+            "@type" => "Offer",
+            "priceCurrency" => "USD",
+            "price" => 0,
+            "url" => "my-product"
+        ],
+        "sku" => "Fridge 346",
+        "brand" => [
+            "@type" => "Brand",
+            "name" => "Default Brand"
+        ],
+        "availability" => "https://schema.org/InStock"
+    ];
+
+    // Convert the schema array to a JSON string (clean format)
+    $cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+
     return response()->json([
         'success' => true,
-        'data' => $seoRecord
+        'data' => $seoRecord,
+        'schema' => $cleanedSchema
     ], 200);
 }
+
 
 	/**
 	 * @OA\Post(

@@ -5527,16 +5527,16 @@
                 ]
             }
         },
-        "/api/seo-management/{id}": {
+        "/api/seo-management/{relation_id}": {
             "get": {
                 "tags": [
                     "SEO Management"
                 ],
-                "summary": "Get a specific SEO record",
-                "operationId": "12ba1b2f826ac3c372d3003c4f4f057f",
+                "summary": "Get a specific SEO record by product relation ID",
+                "operationId": "87ce54189f6ab3f28895f43d172dff60",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "relation_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -5557,7 +5557,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/seo-management/{id}": {
             "post": {
                 "tags": [
                     "SEO Management"
