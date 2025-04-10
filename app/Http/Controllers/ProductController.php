@@ -1485,6 +1485,22 @@ class ProductController extends BaseController
 		 }
 	 }
 
+	 if (isset($input['google_shopping_category'])) {
+		$product->google_shopping_category = $input['google_shopping_category'];
+		unset($input['google_shopping_category']);
+	}
+	
+	if (isset($input['google_shopping_mpn'])) {
+		$product->google_shopping_mpn = $input['google_shopping_mpn'];
+		unset($input['google_shopping_mpn']);
+	}
+	
+	if (isset($input['box_quantity'])) {
+		// If box_quantity should be an integer
+		$product->box_quantity = (int)$input['box_quantity'];
+		unset($input['box_quantity']);
+	}
+
 	 /* Store ID validation */
 	 if (isset($input['store_id'])) {
 		 $storeArray = Store::pluck("id")->toArray();
