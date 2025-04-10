@@ -188,26 +188,37 @@ class SeoManagementController extends Controller
 	}
 
 		/**
-         * @OA\Get(
-         *     path="/api/seo-management/{id}",
-         *     summary="Get a specific SEO record",
-         *     tags={"SEO Management"},
-         *     @OA\Parameter(
-         *         name="id",
-         *         in="path",
-         *         required=true,
-         *         @OA\Schema(type="integer")
-         *     ),
-         *     @OA\Response(response=200, description="Single SEO Record"),
-         *     @OA\Response(response=404, description="Not found"),
-         *     security={{"bearerAuth":{}}}
-         * )
-	 */
+ * @OA\Get(
+ *     path="/api/seo-management/{id}",
+ *     summary="Get a specific SEO record",
+ *     tags={"SEO Management"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(response=200, description="Single SEO Record"),
+ *     @OA\Response(response=404, description="Not found"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function show($id)
+{
+    $seoRecord = SeoManagement::with('secondaryKeywordDetails')->find($id);
 
-		public function show($id)
-		{
-			return SeoManagement::with('secondaryKeywordDetails')->findOrFail($id);
-		}
+    if (!$seoRecord) {
+        return response()->json([
+            'success' => false,
+            'message' => 'SEO record not found for the given product.'
+        ], 404);
+    }
+
+    return response()->json([
+        'success' => true,
+        'data' => $seoRecord
+    ], 200);
+}
 
 	/**
 	 * @OA\Post(
