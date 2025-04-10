@@ -1798,7 +1798,20 @@ class ProductController extends BaseController
 	 */
 	public function destroy(Product $product)
 	{
-		//
+		try {
+			$product->delete();
+	
+			return response()->json([
+				'success' => true,
+				'message' => 'Product deleted successfully.',
+			], 200);
+		} catch (\Exception $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to delete product.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
 	}
 	/**
 	 * @OA\Get(
