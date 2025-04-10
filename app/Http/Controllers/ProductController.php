@@ -1796,6 +1796,41 @@ class ProductController extends BaseController
 	/**
 	 * Remove the specified resource from storage.
 	 */
+
+	 /**
+ * @OA\Delete(
+ *     path="/api/products/{product}",
+ *     summary="Delete a product",
+ *     description="Deletes a specific product by its ID.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="product",
+ *         in="path",
+ *         description="ID of the product to delete",
+ *         required=true,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Product deleted successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Product deleted successfully.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Failed to delete product",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Failed to delete product."),
+ *             @OA\Property(property="error", type="string", example="Error details...")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
 	public function destroy(Product $product)
 	{
 		try {
