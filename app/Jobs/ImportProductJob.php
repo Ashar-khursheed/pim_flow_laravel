@@ -89,7 +89,27 @@ class ImportProductJob implements ShouldQueue
 
 			/* Required data validation */
 			if (empty($url) || empty($name) || empty($sku) || empty($brand) || empty($vendor) || empty($category) || empty($status)) {
-				$rowError[] = 'One or more required fields are missing.';
+				if (empty($url)) {
+					$rowError[] = 'URL is missing';
+				}
+				if (empty($name)) {
+					$rowError[] = 'Name is missing';
+				}
+				if (empty($sku)) {
+					$rowError[] = 'SKU is missing';
+				}
+				if (empty($brand)) {
+					$rowError[] = 'Brand is missing';
+				}
+				if (empty($vendor)) {
+					$rowError[] = 'Vendor is missing';
+				}
+				if (empty($category)) {
+					$rowError[] = 'Category is missing';
+				}
+				if (empty($status)) {
+					$rowError[] = 'Status is missing';
+				}
 				$errorArray[] = [
 					"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
