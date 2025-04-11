@@ -29,10 +29,10 @@ return new class extends Migration
 	public function down()
 	{
 		Schema::table('ec_products', function (Blueprint $table) {
-			$table->string('name')->change();
+			$table->string('name', 191)->change();
 		});
 		Schema::table('slugs', function (Blueprint $table) {
-			$table->string('key')->change();
+			$table->string('key', 191)->change();
 		});
 	}
 };
