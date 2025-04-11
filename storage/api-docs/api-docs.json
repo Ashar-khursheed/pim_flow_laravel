@@ -4537,84 +4537,61 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Export products as CSV",
+                "summary": "Export products to CSV",
                 "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
                 "parameters": [
                     {
-                        "name": "category_id",
+                        "name": "type",
                         "in": "query",
-                        "description": "Filter products by category ID",
-                        "required": false,
+                        "description": "Type of the relational entity",
+                        "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "brand_id",
-                        "in": "query",
-                        "description": "Filter products by brand ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "store_id",
-                        "in": "query",
-                        "description": "Filter products by Store ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "limit",
-                        "in": "query",
-                        "description": "Limit the number of products (default 100)",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "fields",
-                        "in": "query",
-                        "description": "Comma-separated list of fields to include in export",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": [
+                                "Brand",
+                                "Category",
+                                "Store"
+                            ]
                         }
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "CSV file download",
-                        "headers": {
-                            "Content-Disposition": {
-                                "schema": {
-                                    "type": "string"
-                                }
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "relational_id",
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "relational_id": {
+                                        "description": "Relational ID",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
-                    },
-                    "404": {
-                        "description": "No products found",
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "No products found for the given criteria."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },

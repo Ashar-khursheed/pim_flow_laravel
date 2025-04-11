@@ -14,7 +14,10 @@ return new class extends Migration
 	public function up()
 	{
 		Schema::table('ec_products', function (Blueprint $table) {
-			$table->text('name')->change();
+			$table->string('name', 500)->change();
+		});
+		Schema::table('slugs', function (Blueprint $table) {
+			$table->string('key', 500)->change();
 		});
 	}
 
@@ -27,6 +30,9 @@ return new class extends Migration
 	{
 		Schema::table('ec_products', function (Blueprint $table) {
 			$table->string('name')->change();
+		});
+		Schema::table('slugs', function (Blueprint $table) {
+			$table->string('key')->change();
 		});
 	}
 };
