@@ -5559,25 +5559,13 @@
                 ]
             }
         },
-        "/api/seo-management/{id}": {
+        "/api/seo-management/update": {
             "post": {
                 "tags": [
                     "SEO Management"
                 ],
-                "summary": "Update an existing SEO record",
-                "operationId": "9b1ad71a28d2dc3a5c0ba87649d40ab0",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "The ID of the SEO record to update",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 1
-                        }
-                    }
-                ],
+                "summary": "Update an existing SEO record by relational_id and relational_type",
+                "operationId": "e7bb8199042cf2427d480be8c4024e02",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -5633,7 +5621,6 @@
                                         "example": "https://example.com/internal1,https://example.com/internal2"
                                     },
                                     "indexing": {
-                                        "description": "Use 1 for true, 0 for false",
                                         "type": "integer",
                                         "enum": [
                                             0,
@@ -5682,7 +5669,6 @@
                                         "example": 2
                                     },
                                     "og_image_file": {
-                                        "description": "OG Image File",
                                         "type": "string",
                                         "format": "binary"
                                     },
@@ -5721,7 +5707,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/seo-management/{id}": {
             "delete": {
                 "tags": [
                     "SEO Management"

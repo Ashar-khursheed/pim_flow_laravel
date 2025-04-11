@@ -259,174 +259,273 @@ public function show($relation_id)
 }
 
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/seo-management/{id}",
-	 *     summary="Update an existing SEO record",
-	 *     tags={"SEO Management"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer", example=1),
-	 *         description="The ID of the SEO record to update"
-	 *     ),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
-	 *                 @OA\Property(property="relational_id", type="integer", example=1),
-	 *                 @OA\Property(property="relational_type", type="string", example="Product"),
-	 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
-	 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
-	 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
-	 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
-	 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
-	 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
-	 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
-	 *                 @OA\Property(property="indexing", type="integer", enum={0, 1}, example=1, description="Use 1 for true, 0 for false"),
-	 *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
-	 *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
-	 *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
-	 *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
-	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
-	 *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
-	 *                 @OA\Property(property="schema_rating", type="integer", example=5),
-	 *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
-	 *                 @OA\Property(property="created_by", type="integer", example=1),
-	 *                 @OA\Property(property="updated_by", type="integer", example=2),
-	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
-	 *                 @OA\Property(
-	 *                    property="secondary_keywords",
-	 *                    type="array",
-	 *                    @OA\Items(
-	 *                        type="object",
-	 *                            @OA\Property(property="secondary_keyword", type="string", example="related keyword"),
-	 *                            @OA\Property(property="monthly_search_volume", type="integer", example=500)
-	 *                     )
-	 *                   )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="SEO Record Updated"),
-	 *     @OA\Response(response=422, description="Validation error"),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+/**
+ * @OA\Post(
+ *     path="/api/seo-management/update",
+ *     summary="Update an existing SEO record by relational_id and relational_type",
+ *     tags={"SEO Management"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={
+ *                     "relational_id", "relational_type", "url", "primary_keyword",
+ *                     "monthly_search_volume", "title_tag", "meta_title", "meta_description",
+ *                     "indexing", "created_by"
+ *                 },
+ *                 @OA\Property(property="relational_id", type="integer", example=1),
+ *                 @OA\Property(property="relational_type", type="string", example="Product"),
+ *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
+ *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
+ *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
+ *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
+ *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
+ *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
+ *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
+ *                 @OA\Property(property="indexing", type="integer", enum={0, 1}, example=1),
+ *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
+ *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
+ *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
+ *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
+ *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
+ *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
+ *                 @OA\Property(property="schema_rating", type="integer", example=5),
+ *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
+ *                 @OA\Property(property="created_by", type="integer", example=1),
+ *                 @OA\Property(property="updated_by", type="integer", example=2),
+ *                 @OA\Property(property="og_image_file", type="string", format="binary"),
+ *                 @OA\Property(
+ *                     property="secondary_keywords",
+ *                     type="array",
+ *                     @OA\Items(
+ *                         type="object",
+ *                         @OA\Property(property="secondary_keyword", type="string", example="related keyword"),
+ *                         @OA\Property(property="monthly_search_volume", type="integer", example=500)
+ *                     )
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=200, description="SEO Record Updated"),
+ *     @OA\Response(response=422, description="Validation error"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
 
-	public function update(Request $request, $id)
-	{
-		try {
-		 // Validate the incoming data
-			$validated = $request->validate([
-				'relational_id' => 'required|integer',
-				'relational_type' => 'required|string',
-				'url' => 'required|string',
-				'primary_keyword' => 'required|string',
-				'monthly_search_volume' => 'required|integer',
-				'title_tag' => 'required|string',
-				'meta_title' => 'required|string',
-				'meta_description' => 'required|string',
-				'internal_links' => 'nullable|string',
-				'indexing' => 'required|boolean',
-				'og_title' => 'nullable|string',
-				'og_description' => 'nullable|string',
-				'og_image_url' => 'nullable|string',
-				'og_image_alt_text' => 'nullable|string',
-				'og_image_name' => 'nullable|string',
-				'tags' => 'nullable|string',
-				'schema_rating' => 'nullable|integer',
-				'schema_reviews_count' => 'nullable|integer',
-				'created_by' => 'required|integer',
-				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
-				'secondary_keywords' => 'nullable|string',
-			]);
 
-		 // Find the existing SEO record by ID
-			$seo = SeoManagement::findOrFail($id);
+	// public function update(Request $request, $id)
+	// {
+	// 	try {
+	// 	 // Validate the incoming data
+	// 		$validated = $request->validate([
+	// 			'relational_id' => 'required|integer',
+	// 			'relational_type' => 'required|string',
+	// 			'url' => 'required|string',
+	// 			'primary_keyword' => 'required|string',
+	// 			'monthly_search_volume' => 'required|integer',
+	// 			'title_tag' => 'required|string',
+	// 			'meta_title' => 'required|string',
+	// 			'meta_description' => 'required|string',
+	// 			'internal_links' => 'nullable|string',
+	// 			'indexing' => 'required|boolean',
+	// 			'og_title' => 'nullable|string',
+	// 			'og_description' => 'nullable|string',
+	// 			'og_image_url' => 'nullable|string',
+	// 			'og_image_alt_text' => 'nullable|string',
+	// 			'og_image_name' => 'nullable|string',
+	// 			'tags' => 'nullable|string',
+	// 			'schema_rating' => 'nullable|integer',
+	// 			'schema_reviews_count' => 'nullable|integer',
+	// 			'created_by' => 'required|integer',
+	// 			'updated_by' => 'nullable|integer',
+	// 			'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+	// 			'secondary_keywords' => 'nullable|string',
+	// 		]);
 
-		 // Prepare the data for updating the SEO management record
-			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+	// 	 // Find the existing SEO record by ID
+	// 		$seo = SeoManagement::findOrFail($id);
 
-		 // Convert indexing boolean
-			$seoData['indexing'] = (bool)$validated['indexing'];
+	// 	 // Prepare the data for updating the SEO management record
+	// 		$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
-		 // Handle OG image file upload if provided
-			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
-				$storage = app('Illuminate\Support\Facades\Storage');
+	// 	 // Convert indexing boolean
+	// 		$seoData['indexing'] = (bool)$validated['indexing'];
 
-			 // Define folder path for upload
-				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
+	// 	 // Handle OG image file upload if provided
+	// 		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+	// 			$storage = app('Illuminate\Support\Facades\Storage');
 
-			 // Store the file
-				$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
+	// 		 // Define folder path for upload
+	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
 
-			 // Generate URL for the stored file
-				$imageUrl = $storage::disk('s3')->url($imagePath);
+	// 		 // Store the file
+	// 			$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
 
-			 // Update the og_image_url in the data if provided
-				$seoData['og_image_url'] = $imageUrl;
+	// 		 // Generate URL for the stored file
+	// 			$imageUrl = $storage::disk('s3')->url($imagePath);
 
-			 // Update the og_image_name if not provided
-				if (empty($seoData['og_image_name'])) {
-					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
-				}
-			}
+	// 		 // Update the og_image_url in the data if provided
+	// 			$seoData['og_image_url'] = $imageUrl;
 
-		 // Update the SEO record if there is any change
-			foreach ($seoData as $key => $value) {
-				if (!empty($value)) {
-					$seo->$key = $value;
-				}
-			}
+	// 		 // Update the og_image_name if not provided
+	// 			if (empty($seoData['og_image_name'])) {
+	// 				$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+	// 			}
+	// 		}
 
-		 // Generate schema and add it to the data (as an array)
-			$schemaArray = $this->generateSchema($seo);
-			$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	// 	 // Update the SEO record if there is any change
+	// 		foreach ($seoData as $key => $value) {
+	// 			if (!empty($value)) {
+	// 				$seo->$key = $value;
+	// 			}
+	// 		}
 
-		 // Save the updated SEO record
-			$seo->save();
+	// 	 // Generate schema and add it to the data (as an array)
+	// 		$schemaArray = $this->generateSchema($seo);
+	// 		$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-		 // Process secondary keywords if provided
-			if (!empty($validated['secondary_keywords'])) {
-			 // Decode the JSON string to array
-				$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+	// 	 // Save the updated SEO record
+	// 		$seo->save();
 
-				if (is_array($secondaryKeywords)) {
-					foreach ($secondaryKeywords as $keyword) {
-						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
-							SeoSecondaryKeyword::create([
-								'primary_keyword_id' => $seo->id,
-								'secondary_keyword' => $keyword['secondary_keyword'],
-								'monthly_search_volume' => $keyword['monthly_search_volume'],
-							]);
-						}
-					}
-				}
-			}
+	// 	 // Process secondary keywords if provided
+	// 		if (!empty($validated['secondary_keywords'])) {
+	// 		 // Decode the JSON string to array
+	// 			$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
 
-		 // Return response with updated SEO record
-			return response()->json([
-				'success' => true,
-				'message' => 'SEO record updated successfully',
-				'data' => $seo->load('secondaryKeywordDetails')
-			], 200);
+	// 			if (is_array($secondaryKeywords)) {
+	// 				foreach ($secondaryKeywords as $keyword) {
+	// 					if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
+	// 						SeoSecondaryKeyword::create([
+	// 							'primary_keyword_id' => $seo->id,
+	// 							'secondary_keyword' => $keyword['secondary_keyword'],
+	// 							'monthly_search_volume' => $keyword['monthly_search_volume'],
+	// 						]);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
 
-		} catch (\Exception $e) {
-		 // Log the error
-			\Log::error('SEO Management update error: ' . $e->getMessage());
+	// 	 // Return response with updated SEO record
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'SEO record updated successfully',
+	// 			'data' => $seo->load('secondaryKeywordDetails')
+	// 		], 200);
 
-		 // Return a proper JSON error response
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to update SEO record',
-				'error' => $e->getMessage()
-			], 422);
-		}
-	}
+	// 	} catch (\Exception $e) {
+	// 	 // Log the error
+	// 		\Log::error('SEO Management update error: ' . $e->getMessage());
+
+	// 	 // Return a proper JSON error response
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Failed to update SEO record',
+	// 			'error' => $e->getMessage()
+	// 		], 422);
+	// 	}
+	// }
+
+	public function update(Request $request)
+{
+    try {
+        // Validate the incoming data
+        $validated = $request->validate([
+            'relational_id' => 'required|integer',
+            'relational_type' => 'required|string',
+            'url' => 'required|string',
+            'primary_keyword' => 'required|string',
+            'monthly_search_volume' => 'required|integer',
+            'title_tag' => 'required|string',
+            'meta_title' => 'required|string',
+            'meta_description' => 'required|string',
+            'internal_links' => 'nullable|string',
+            'indexing' => 'required|boolean',
+            'og_title' => 'nullable|string',
+            'og_description' => 'nullable|string',
+            'og_image_url' => 'nullable|string',
+            'og_image_alt_text' => 'nullable|string',
+            'og_image_name' => 'nullable|string',
+            'tags' => 'nullable|string',
+            'schema_rating' => 'nullable|integer',
+            'schema_reviews_count' => 'nullable|integer',
+            'created_by' => 'required|integer',
+            'updated_by' => 'nullable|integer',
+            'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'secondary_keywords' => 'nullable|string',
+        ]);
+
+        // 🔍 Find the existing SEO record by relational_id and relational_type
+        $seo = SeoManagement::where('relational_id', $validated['relational_id'])
+            ->where('relational_type', $validated['relational_type'])
+            ->firstOrFail();
+
+        // Prepare the data for updating
+        $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+
+        // Convert indexing boolean
+        $seoData['indexing'] = (bool)$validated['indexing'];
+
+        // Handle OG image file upload if provided
+        if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+            $storage = app('Illuminate\Support\Facades\Storage');
+            $folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
+            $imagePath = $request->file('og_image_file')->store($folderPath, 's3');
+            $imageUrl = $storage::disk('s3')->url($imagePath);
+            $seoData['og_image_url'] = $imageUrl;
+
+            if (empty($seoData['og_image_name'])) {
+                $seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+            }
+        }
+
+        // Update the SEO record
+        foreach ($seoData as $key => $value) {
+            if (!is_null($value)) {
+                $seo->$key = $value;
+            }
+        }
+
+        // Generate and update schema
+        $schemaArray = $this->generateSchema($seo);
+        $seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        $seo->save();
+
+        // Handle secondary keywords
+        if (!empty($validated['secondary_keywords'])) {
+            $secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+
+            if (is_array($secondaryKeywords)) {
+                foreach ($secondaryKeywords as $keyword) {
+                    if (isset($keyword['secondary_keyword'], $keyword['monthly_search_volume'])) {
+                        SeoSecondaryKeyword::create([
+                            'primary_keyword_id' => $seo->id,
+                            'secondary_keyword' => $keyword['secondary_keyword'],
+                            'monthly_search_volume' => $keyword['monthly_search_volume'],
+                        ]);
+                    }
+                }
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'SEO record updated successfully',
+            'data' => $seo->load('secondaryKeywordDetails')
+        ], 200);
+
+    } catch (\Exception $e) {
+        \Log::error('SEO Management update error: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update SEO record',
+            'error' => $e->getMessage()
+        ], 422);
+    }
+}
+
 
 	/**
 	 * @OA\Delete(
