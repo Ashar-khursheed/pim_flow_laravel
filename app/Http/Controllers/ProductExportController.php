@@ -14,207 +14,40 @@ class ProductExportController extends Controller
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/export",
-	 *     summary="Export products as CSV",
+	 *     summary="Export products to CSV",
 	 *     tags={"Products"},
-	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
-	 *         name="category_id",
+	 *         name="type",
 	 *         in="query",
-	 *         description="Filter products by category ID",
-	 *         required=false,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="brand_id",
-	 *         in="query",
-	 *         description="Filter products by brand ID",
-	 *         required=false,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *      @OA\Parameter(
-	 *         name="store_id",
-	 *         in="query",
-	 *         description="Filter products by Store ID",
-	 *         required=false,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="limit",
-	 *         in="query",
-	 *         description="Limit the number of products (default 100)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="fields",
-	 *         in="query",
-	 *         description="Comma-separated list of fields to include in export",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="CSV file download",
-	 *         @OA\Header(header="Content-Disposition", @OA\Schema(type="string"))
-	 *     ),
-	 *     @OA\Response(
-	 *         response=404,
-	 *         description="No products found",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="No products found for the given criteria.")
+	 *         description="Type of the relational entity",
+	 *         required=true,
+	 *         @OA\Schema(
+	 *             type="string",
+	 *             enum={"Brand", "Category", "Store"}
 	 *         )
-	 *     )
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
+	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function export(Request $request)
 	{
-		/* Start with detailed logging */
-		Log::info('Export endpoint accessed', [
-			'route' => request()->path(),
-			'method' => request()->method(),
-			'all_request_data' => $request->all(),
-			'user' => auth()->check() ? auth()->id() : 'unauthenticated',
+		/* Validate request data */
+		$request->validate([
+			'type' => 'required|string|in:Brand,Category,Store',
+			'relational_id' => 'required|integer',
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
-
-		/* Parse input parameters */
-		$categoryId = $request->input('category_id');
-		$brandId = $request->input('brand_id');
-		$storeId = $request->input('store_id');
-
-		$limit = $request->input('limit', 100); /* Default limit 100 */
-
-		/* Parse fields from comma-separated string to array if provided */
-		$fieldsParam = $request->input('fields');
-		$selectedFields = $fieldsParam ? explode(',', $fieldsParam) : [];
-
-		/* Query builder */
-		$query = Product::query();
-
-		/* Eager load relationships */
-		$query->with(['categories', 'brand', 'store', 'tags', 'seoMetaData']);
-
-		if ($categoryId) {
-			Log::info('Filtering by category ID: ' . $categoryId);
-			$query->whereHas('categories', function ($q) use ($categoryId) {
-				$q->where('category_id', $categoryId);
-			});
-		}
-
-		if ($brandId) {
-			Log::info('Filtering by brand ID: ' . $brandId);
-			$query->where('brand_id', $brandId);
-		}
-
-		if ($storeId) {
-			Log::info('Filtering by Vendor ID: ' . $storeId);
-			$query->where('store_id', $storeId);
-		}
-
-		/* Get products */
-		$products = $query->limit($limit)->get();
-
-		/* Debugging log */
-		Log::info('Product Export Debug', [
-			'SQL Query' => $query->toSql(),
-			'Bindings' => $query->getBindings(),
-			'Product Count' => $products->count(),
-			'Category ID Filter' => $categoryId,
-			'Limit Applied' => $limit,
-			'Selected Fields' => $selectedFields
-		]);
-
-		/* Return message if products empty */
-		if ($products->isEmpty()) {
-			return response()->json([
-				"success" => false,
-				"message" => "No products found for the given criteria.",
-			]);
-		}
-
-		/* Define fields in the exact sequence requested with correct capitalization */
-		$allFields = [
-			'id',
-			'url',
-			'name',
-			'content',
-			'description',
-			'warranty_information',
-			'sku',
-			'brand',
-			'vendor',
-			// 'product_types',
-			'categories',
-			'tags',
-			'stock_status',
-			'with_storehouse_management',
-			'quantity',
-			'cost_per_item',
-			'unit_of_measurement',
-			'price',
-			'sale_price',
-			'start_date_sale_price',
-			'end_date_sale_price',
-			'minimum_order_quantity',
-			'box_quantity',
-			'delivery_days',
-			'variant_requires_shipping',
-			'images',
-			'upload_video',
-			// 'seo_title',
-			// 'seo_description',
-			'barcode',
-			'refund_policy',
-			'status',
-			'google_shopping_category',
-			'google_shopping_mpn',
-			'is_featured',
-			'weight_option',
-			'weight',
-			'dimension_option',
-			'length',
-			'width',
-			'height',
-			'depth',
-			'shipping_weight_option',
-			'shipping_weight',
-			'shipping_dimension_option',
-			'shipping_width',
-			'shipping_depth',
-			'shipping_height',
-			'shipping_length',
-			'frequently_bought_together',
-			'compare_products',
-			'variant_1_title',
-			'variant_1_value',
-			'variant_1_products',
-			'variant_2_title',
-			'variant_2_value',
-			'variant_2_products',
-			'variant_3_title',
-			'variant_3_value',
-			'variant_3_products',
-			'variant_color_title',
-			'variant_color_value',
-			'variant_color_products',
-			'buying_quantity1',
-			'discount1',
-			'start_date1',
-			'end_date1',
-			'buying_quantity2',
-			'discount2',
-			'start_date2',
-			'end_date2',
-			'buying_quantity3',
-			'discount3',
-			'start_date3',
-			'end_date3',
-			'name_ar',
-			'description_ar',
-			'content_ar',
-			'warranty_information_ar'
-		];
 
 		/* Define pretty headers that match exactly what you requested */
 		$headerMap = [
@@ -227,7 +60,6 @@ class ProductExportController extends Controller
 			'sku' => 'SKU',
 			'brand' => 'Brand',
 			'vendor' => 'Vendor',
-			// 'product_types' => 'Product Types',
 			'categories' => 'Categories',
 			'tags' => 'Tags',
 			'stock_status' => 'Stock Status',
@@ -245,8 +77,6 @@ class ProductExportController extends Controller
 			'variant_requires_shipping' => 'Variant Requires Shipping',
 			'images' => 'Images',
 			'upload_video' => 'Upload Video',
-			// 'seo_title' => 'Seo Title',
-			// 'seo_description' => 'Seo Description',
 			'barcode' => 'Barcode (ISBN, UPC, GTIN, etc.)',
 			'refund_policy' => 'Refund Policy',
 			'status' => 'Status',
@@ -299,23 +129,48 @@ class ProductExportController extends Controller
 			'warranty_information_ar' => 'Warranty Information (AR)'
 		];
 
+		$allFields = array_keys($headerMap);
+
+		$query = Product::with(['categories', 'brand', 'store', 'tags', 'seoMetaData']);
+
+		if ($request->type == "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type == "Store") {
+			$query->where('store_id', $request->relational_id);
+		} elseif ($request->type == "Category") {
+			$query->whereHas('categories', function ($q) use ($request) {
+				$q->where('category_id', $request->relational_id);
+			});
+		}
+
+		$products = $query->offset($request->range_from - 1)->limit($request->range_to - $request->range_from + 1)->orderBy('id', 'asc')->get();
+
+		/* Return message if products empty */
+		if ($products->isEmpty()) {
+			return response()->json([
+				"success" => false,
+				"message" => "No products found for the given criteria.",
+			]);
+		}
+		// dd($products->first()->store);
+
 		/* Use selected fields if provided, otherwise use all fields */
-		$fields = !empty($selectedFields) ? array_intersect($allFields, $selectedFields) : $allFields;
+		// $fields = !empty($selectedFields) ? array_intersect($allFields, $selectedFields) : $allFields;
 
 		/* CSV response create karna */
-		$response = new StreamedResponse(function () use ($products, $fields, $headerMap) {
+		$response = new StreamedResponse(function () use ($products, $allFields, $headerMap) {
 			$handle = fopen('php://output', 'w');
 
 			/* Write headers with proper capitalization */
 			$headers = [];
-			foreach ($fields as $field) {
+			foreach ($allFields as $field) {
 				$headers[] = $headerMap[$field] ?? $field;
 			}
 			fputcsv($handle, $headers);
 
 			foreach ($products as $product) {
 				$row = [];
-				foreach ($fields as $field) {
+				foreach ($allFields as $field) {
 					/* Format special sfields */
 					switch ($field) {
 						case 'categories':
@@ -385,7 +240,7 @@ class ProductExportController extends Controller
 						break;
 
 						case 'vendor':
-						$row[] = $product->store->name ?? ''; /* Get store (vendor) name from the relationship */
+						$row[] = $product->store->name ?? '';
 						break;
 
 						case 'images':
@@ -450,13 +305,6 @@ class ProductExportController extends Controller
 						$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
 						break;
 
-						// case 'seo_title':
-						// $row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_title'] ?? '') : '';
-						// break;
-
-						// case 'seo_description':
-						// $row[] = $product->seoMetaData ? ($product->seoMetaData->value['seo_description'] ?? '') : '';
-						// break;
 
 						case 'buying_quantity1':
 						case 'discount1':
