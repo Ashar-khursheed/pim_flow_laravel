@@ -29,7 +29,6 @@ use App\Models\DiscountProduct;
 use App\Models\TransactionLog;
 use App\Models\UnitOfMeasurement;
 
-//
 class ImportProductJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
