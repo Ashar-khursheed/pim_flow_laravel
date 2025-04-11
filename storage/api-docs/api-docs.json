@@ -5414,13 +5414,9 @@
                                         "example": "https://example.com/internal1,https://example.com/internal2"
                                     },
                                     "indexing": {
-                                        "description": "Use 1 for true, 0 for false",
-                                        "type": "integer",
-                                        "enum": [
-                                            0,
-                                            1
-                                        ],
-                                        "example": 1
+                                        "description": "Whether the page should be indexed (accepts boolean or integer 0/1)",
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "og_title": {
                                         "type": "string",
@@ -5468,20 +5464,8 @@
                                         "format": "binary"
                                     },
                                     "secondary_keywords": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "secondary_keyword": {
-                                                    "type": "string",
-                                                    "example": "related keyword"
-                                                },
-                                                "monthly_search_volume": {
-                                                    "type": "integer",
-                                                    "example": 500
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
+                                        "description": "JSON string containing array of secondary keywords with search volumes",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -5610,13 +5594,9 @@
                                         "example": "https://example.com/internal1,https://example.com/internal2"
                                     },
                                     "indexing": {
-                                        "description": "Use 1 for true, 0 for false",
-                                        "type": "integer",
-                                        "enum": [
-                                            0,
-                                            1
-                                        ],
-                                        "example": 1
+                                        "description": "Whether the page should be indexed (accepts boolean or integer 0/1)",
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "og_title": {
                                         "type": "string",
@@ -5664,20 +5644,8 @@
                                         "format": "binary"
                                     },
                                     "secondary_keywords": {
-                                        "type": "array",
-                                        "items": {
-                                            "properties": {
-                                                "secondary_keyword": {
-                                                    "type": "string",
-                                                    "example": "related keyword"
-                                                },
-                                                "monthly_search_volume": {
-                                                    "type": "integer",
-                                                    "example": 500
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
+                                        "description": "JSON string containing array of secondary keywords with search volumes",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"

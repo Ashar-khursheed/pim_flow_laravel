@@ -29,55 +29,47 @@ class SeoManagementController extends Controller
 		return SeoManagement::with('secondaryKeywordDetails')->get();
 	}
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/seo-management",
-	 *     summary="Create a new SEO record",
-	 *     tags={"SEO Management"},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
-	 *                 @OA\Property(property="relational_id", type="integer", example=1),
-	 *                 @OA\Property(property="relational_type", type="string", example="Product"),
-	 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
-	 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
-	 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
-	 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
-	 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
-	 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
-	 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
-	 *                 @OA\Property(property="indexing", type="integer", enum={0, 1}, example=1, description="Use 1 for true, 0 for false"),
-	 *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
-	 *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
-	 *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
-	 *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
-	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
-	 *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
-	 *                 @OA\Property(property="schema_rating", type="integer", example=5),
-	 *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
-	 *                 @OA\Property(property="created_by", type="integer", example=1),
-	 *                 @OA\Property(property="updated_by", type="integer", example=2),
-	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
-	 *                 @OA\Property(
-	 *                   property="secondary_keywords",
-	 *                   type="array",
-	 *                   @OA\Items(
-	 *                       type="object",
-	 *                           @OA\Property(property="secondary_keyword", type="string", example="related keyword"),
-	 *                           @OA\Property(property="monthly_search_volume", type="integer", example=500)
-	 *                    )
-	 *                  )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=201, description="SEO Record Created"),
-	 *     @OA\Response(response=422, description="Validation error"),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+/**
+ * @OA\Post(
+ *     path="/api/seo-management",
+ *     summary="Create a new SEO record",
+ *     tags={"SEO Management"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
+ *                 @OA\Property(property="relational_id", type="integer", example=1),
+ *                 @OA\Property(property="relational_type", type="string", example="Product"),
+ *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
+ *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
+ *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
+ *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
+ *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
+ *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
+ *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
+ *                 @OA\Property(property="indexing", type="boolean", example=true, description="Whether the page should be indexed (accepts boolean or integer 0/1)"),
+ *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
+ *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
+ *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
+ *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
+ *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
+ *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
+ *                 @OA\Property(property="schema_rating", type="integer", example=5),
+ *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
+ *                 @OA\Property(property="created_by", type="integer", example=1),
+ *                 @OA\Property(property="updated_by", type="integer", example=2),
+ *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
+ *                 @OA\Property(property="secondary_keywords", type="string",  description="JSON string containing array of secondary keywords with search volumes")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="SEO Record Created"),
+ *     @OA\Response(response=422, description="Validation error"),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
 
 	public function store(Request $request)
 	{
@@ -93,7 +85,7 @@ class SeoManagementController extends Controller
 				'meta_title' => 'required|string',
 				'meta_description' => 'required|string',
 				'internal_links' => 'nullable|string',
-			 'indexing' => 'required|boolean',  // Laravel will convert 'true', 'false', 0, 1, etc.
+				'indexing' => 'required|in:0,1,true,false',
 			 'og_title' => 'nullable|string',
 			 'og_description' => 'nullable|string',
 			 'og_image_url' => 'nullable|string',
@@ -105,14 +97,14 @@ class SeoManagementController extends Controller
 			 'created_by' => 'required|integer',
 			 'updated_by' => 'nullable|integer',
 			 'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
-			 'secondary_keywords' => 'nullable|string',  // Changed to string since we'll decode it
+				'secondary_keywords' => 'nullable|json',  // Accepts a JSON string that will be decoded
 			]);
 
 		 // Prepare the data for creating the SEO management record
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-			$seoData['indexing'] = (bool)$validated['indexing'];
+		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
@@ -260,60 +252,59 @@ public function show($relation_id)
 
 
 	/**
-	 * @OA\Post(
-	 *     path="/api/seo-management/{id}",
-	 *     summary="Update an existing SEO record",
-	 *     tags={"SEO Management"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         required=true,
-	 *         @OA\Schema(type="integer", example=1),
-	 *         description="The ID of the SEO record to update"
-	 *     ),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
-	 *                 @OA\Property(property="relational_id", type="integer", example=1),
-	 *                 @OA\Property(property="relational_type", type="string", example="Product"),
-	 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
-	 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
-	 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
-	 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
-	 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
-	 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
-	 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
-	 *                 @OA\Property(property="indexing", type="integer", enum={0, 1}, example=1, description="Use 1 for true, 0 for false"),
-	 *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
-	 *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
-	 *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
-	 *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
-	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
-	 *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
-	 *                 @OA\Property(property="schema_rating", type="integer", example=5),
-	 *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
-	 *                 @OA\Property(property="created_by", type="integer", example=1),
-	 *                 @OA\Property(property="updated_by", type="integer", example=2),
-	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
-	 *                 @OA\Property(
-	 *                    property="secondary_keywords",
-	 *                    type="array",
-	 *                    @OA\Items(
-	 *                        type="object",
-	 *                            @OA\Property(property="secondary_keyword", type="string", example="related keyword"),
-	 *                            @OA\Property(property="monthly_search_volume", type="integer", example=500)
-	 *                     )
-	 *                   )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="SEO Record Updated"),
-	 *     @OA\Response(response=422, description="Validation error"),
-	 *     security={{"bearerAuth":{}}}
-	 * )
+		 * @OA\Post(
+		 *     path="/api/seo-management/{id}",
+		 *     summary="Update an existing SEO record",
+		 *     tags={"SEO Management"},
+		 *     @OA\Parameter(
+		 *         name="id",
+		 *         in="path",
+		 *         required=true,
+		 *         @OA\Schema(type="integer", example=1),
+		 *         description="The ID of the SEO record to update"
+		 *     ),
+		 *     @OA\RequestBody(
+		 *         required=true,
+		 *         @OA\MediaType(
+		 *             mediaType="multipart/form-data",
+		 *             @OA\Schema(
+		 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
+		 *                 @OA\Property(property="relational_id", type="integer", example=1),
+		 *                 @OA\Property(property="relational_type", type="string", example="Product"),
+		 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
+		 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
+		 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
+		 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
+		 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
+		 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
+		 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
+		*                     @OA\Property(
+		*                    property="indexing", 
+		*                      type="boolean", 
+		*                     example=true, 
+		*                        description="Whether the page should be indexed (accepts boolean or integer 0/1)"
+		* 						),	 
+		*                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
+		*                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
+		*                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
+		*                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
+		*                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
+		*                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
+		*                 @OA\Property(property="schema_rating", type="integer", example=5),
+		*                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
+		*                 @OA\Property(property="created_by", type="integer", example=1),
+		*                 @OA\Property(property="updated_by", type="integer", example=2),
+		*                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
+		*                 @OA\Property(property="secondary_keywords", 
+		*                          type="string", 
+		*                            description="JSON string containing array of secondary keywords with search volumes" ),
+		*             )
+		*         )
+		*     ),
+		*     @OA\Response(response=200, description="SEO Record Updated"),
+		*     @OA\Response(response=422, description="Validation error"),
+		*     security={{"bearerAuth":{}}}
+		* )
 	 */
 
 	public function update(Request $request, $id)
@@ -330,7 +321,7 @@ public function show($relation_id)
 				'meta_title' => 'required|string',
 				'meta_description' => 'required|string',
 				'internal_links' => 'nullable|string',
-				'indexing' => 'required|boolean',
+				'indexing' => 'required|in:0,1,true,false',
 				'og_title' => 'nullable|string',
 				'og_description' => 'nullable|string',
 				'og_image_url' => 'nullable|string',
@@ -352,7 +343,7 @@ public function show($relation_id)
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-			$seoData['indexing'] = (bool)$validated['indexing'];
+		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
@@ -391,10 +382,16 @@ public function show($relation_id)
 			$seo->save();
 
 		 // Process secondary keywords if provided
+			// In the update function, replace the secondary keywords section with:
 			if (!empty($validated['secondary_keywords'])) {
-			 // Decode the JSON string to array
-				$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
-
+				// First delete existing secondary keywords
+				SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
+				
+				// Parse the secondary keywords - handle both string and array inputs
+				$secondaryKeywords = is_string($validated['secondary_keywords']) 
+					? json_decode($validated['secondary_keywords'], true)
+					: $validated['secondary_keywords'];
+				
 				if (is_array($secondaryKeywords)) {
 					foreach ($secondaryKeywords as $keyword) {
 						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
