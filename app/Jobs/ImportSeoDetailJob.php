@@ -78,7 +78,7 @@ class ImportSeoDetailJob implements ShouldQueue
 
 			// Required data validation
 			if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($url) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume) || empty($title_tag) || empty($meta_title) || empty($meta_description)) {
-				$rowError[] = 'One or more required fields are missing.';
+				$rowError[] = 'Required fields are missing.';
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
@@ -221,7 +221,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
-				
+
 				// Create/update the SEO record first
 				$seo = SeoManagement::updateOrCreate(
 					[
@@ -230,10 +230,10 @@ class ImportSeoDetailJob implements ShouldQueue
 					],
 					$primaryData
 				);
-				
+
 				// Generate schema
 				$schema = $this->generateSchema($seo);
-				
+
 				// Add schema to the SEO record in a separate update to ensure it's always generated
 				$seo->update(['schema' => json_encode($schema)]);
 
@@ -316,10 +316,10 @@ class ImportSeoDetailJob implements ShouldQueue
 			return null;
 		}
 	}
-	
+
 	/**
 	 * Generate schema based on SEO record type
-	 * 
+	 *
 	 * @param SeoManagement $seo
 	 * @return array
 	 */
