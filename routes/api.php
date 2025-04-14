@@ -66,6 +66,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('transaction-logs', TransactionLogController::class);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
+
+	Route::get('/products/{id}/media/download', [BrandController::class, 'downloadMediaZip']);
+	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
 	Route::get('products/product-input', [ProductController::class, 'getProductInputs']);
@@ -75,6 +78,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('products', ProductController::class);
 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
+	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
 	Route::apiResource('brands', BrandController::class);
 
 	Route::get('getStoresList', [StoreController::class, 'getStoresList']);
