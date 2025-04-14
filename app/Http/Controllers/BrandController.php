@@ -661,7 +661,7 @@ public function update(Request $request, $id)
         $mediaUrls = [];
 
         // Decode JSON fields if valid
-        foreach (['images', 'videos', 'documents'] as $field) {
+        foreach (['images', 'video_path', 'documents'] as $field) {
             if (!empty($product->$field) && json_validate($product->$field)) {
                 $mediaUrls[$field] = json_decode($product->$field, true);
             } else {
