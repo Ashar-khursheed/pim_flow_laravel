@@ -592,6 +592,7 @@ class AttributeController extends BaseController
 					'header' => $header,
 					'chunk' => $chunk
 				];
+				$batch->options['queue'] = 'JOB2';
 				$batch->add(new ImportProductAttributeJob($data));
 			}
 			return response()->json([
