@@ -2009,6 +2009,57 @@
                 ]
             }
         },
+        "/api/generate-benefits-features-automation": {
+            "post": {
+                "tags": [
+                    "Benefits & Features"
+                ],
+                "summary": "Generate Features and Benefits",
+                "operationId": "generateFeaturesAndBenefits",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "description"
+                                ],
+                                "properties": {
+                                    "description": {
+                                        "type": "string",
+                                        "example": "This is a sample product description."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Features and benefits generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Features and Benefits Generated for Products"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/discounts": {
             "get": {
                 "tags": [
@@ -5466,6 +5517,35 @@
                                     "secondary_keywords": {
                                         "description": "JSON string containing array of secondary keywords with search volumes",
                                         "type": "string"
+                                    },
+                                    "paragraph_1": {
+                                        "type": "string",
+                                        "example": "This is the first paragraph."
+                                    },
+                                    "paragraph_2": {
+                                        "type": "string",
+                                        "example": "Second paragraph content."
+                                    },
+                                    "paragraph_3": {
+                                        "type": "string",
+                                        "example": "Another paragraph here."
+                                    },
+                                    "paragraph_4": {
+                                        "type": "string",
+                                        "example": "Final paragraph text."
+                                    },
+                                    "popular_tags": {
+                                        "description": "List of popular tags",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "tag1"
+                                        },
+                                        "example": [
+                                            "tag1",
+                                            "tag2",
+                                            "tag3"
+                                        ]
                                     }
                                 },
                                 "type": "object"
@@ -5646,6 +5726,35 @@
                                     "secondary_keywords": {
                                         "description": "JSON string containing array of secondary keywords with search volumes",
                                         "type": "string"
+                                    },
+                                    "paragraph_1": {
+                                        "type": "string",
+                                        "example": "This is the first paragraph."
+                                    },
+                                    "paragraph_2": {
+                                        "type": "string",
+                                        "example": "Second paragraph content."
+                                    },
+                                    "paragraph_3": {
+                                        "type": "string",
+                                        "example": "Another paragraph here."
+                                    },
+                                    "paragraph_4": {
+                                        "type": "string",
+                                        "example": "Final paragraph text."
+                                    },
+                                    "popular_tags": {
+                                        "description": "List of popular tags",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "tag1"
+                                        },
+                                        "example": [
+                                            "tag1",
+                                            "tag2",
+                                            "tag3"
+                                        ]
                                     }
                                 },
                                 "type": "object"
