@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use ZipArchive;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class BrandController extends BaseController
 {
@@ -618,7 +619,6 @@ public function update(Request $request, $id)
     // Return structured response
     return response()->json([
         'success' => true,
-        'data' => $brands->items(),
         'pagination' => [
             'total' => $brands->total(),
             'per_page' => $brands->perPage(),
@@ -627,7 +627,7 @@ public function update(Request $request, $id)
             'next_page_url' => $brands->nextPageUrl(),
             'prev_page_url' => $brands->previousPageUrl(),
         ],
-    
+        'data' => $brands->items(),
     ]);
 }
 
