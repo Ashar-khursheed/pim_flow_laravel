@@ -304,11 +304,11 @@ public function show($relation_id)
 		 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
 		 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
 		*                     @OA\Property(
-		*                    property="indexing", 
-		*                      type="boolean", 
-		*                     example=true, 
+		*                    property="indexing",
+		*                      type="boolean",
+		*                     example=true,
 		*                        description="Whether the page should be indexed (accepts boolean or integer 0/1)"
-		* 						),	 
+		* 						),
 		*                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
 		*                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
 		*                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
@@ -320,8 +320,8 @@ public function show($relation_id)
 		*                 @OA\Property(property="created_by", type="integer", example=1),
 		*                 @OA\Property(property="updated_by", type="integer", example=2),
 		*                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
-		*                 @OA\Property(property="secondary_keywords", 
-		*                          type="string", 
+		*                 @OA\Property(property="secondary_keywords",
+		*                          type="string",
 		*                            description="JSON string containing array of secondary keywords with search volumes" ),
 		* 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
 		*					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
@@ -433,12 +433,12 @@ public function show($relation_id)
 			if (!empty($validated['secondary_keywords'])) {
 				// First delete existing secondary keywords
 				SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
-				
+
 				// Parse the secondary keywords - handle both string and array inputs
-				$secondaryKeywords = is_string($validated['secondary_keywords']) 
+				$secondaryKeywords = is_string($validated['secondary_keywords'])
 					? json_decode($validated['secondary_keywords'], true)
 					: $validated['secondary_keywords'];
-				
+
 				if (is_array($secondaryKeywords)) {
 					foreach ($secondaryKeywords as $keyword) {
 						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
@@ -722,6 +722,8 @@ public function show($relation_id)
 					'chunk' => $chunk,
 					'userId' => auth()->id()
 				];
+
+				$batch->options['queue'] = 'JOB3';
 				$batch->add(new ImportSeoDetailJob($data));
 			}
 
@@ -736,7 +738,7 @@ public function show($relation_id)
 			]);
 		}
 	}
-    
+
 
 
 
