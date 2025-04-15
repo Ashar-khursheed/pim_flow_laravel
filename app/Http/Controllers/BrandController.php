@@ -562,7 +562,7 @@ public function update(Request $request, $id)
                 'message' => 'Brand not found'
             ], 404);
         }
-        $uniqueSkus = $brand->products->get('sku', 'id');
+        $uniqueSkus = $brand->products()->select('id', 'sku')->get();
 
         return response()->json([
             'success' => true,
