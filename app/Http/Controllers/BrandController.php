@@ -669,6 +669,20 @@ public function update(Request $request, $id)
             }
         }
 
+        $hasAllTitles = true;
+        foreach ($mediaUrls['documents'] as $item) {
+            if (!is_array($item) || !array_key_exists('title', $item)) {
+                $hasAllTitles = false;
+                break;
+            }
+        }
+        if(!$hasAllTitles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create ZIP file. Inavalid documents'
+            ], 404);
+        }
+
         // Create a temporary directory for the ZIP file
         $tempDir = storage_path('app/temp_media');
         if (!file_exists($tempDir)) {
@@ -686,12 +700,14 @@ public function update(Request $request, $id)
                         try {
                             $url = $doc['path'];
                             $title = $doc['title'];
-                            $response = Http::get($url);
-                            if ($response->successful()) {
-                                $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-                                $filename = basename(parse_url($url, PHP_URL_PATH));
-                                $zipPath = $type . '/' . $title . '/' . $filename;
-                                $zip->addFromString($zipPath, $response->body());
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = basename(parse_url($url, PHP_URL_PATH));
+                                    $zipPath = $type . '/' . $title . '/' . $filename;
+                                    $zip->addFromString($zipPath, $response->body());
+                                }
                             }
                         } catch (\Exception $e) {
                             return response()->json([
@@ -703,11 +719,13 @@ public function update(Request $request, $id)
                 } else {
                     foreach ($items as $index => $url) {
                         try {
-                            $response = Http::get($url);
-                            if ($response->successful()) {
-                                $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-                                $filename = $type . '/' . $type . '_' . ($index + 1) . '.' . $extension;
-                                $zip->addFromString($filename, $response->body());
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = $type . '/' . $type . '_' . ($index + 1) . '.' . $extension;
+                                    $zip->addFromString($filename, $response->body());
+                                }
                             }
                         } catch (\Exception $e) {
                             return response()->json([
