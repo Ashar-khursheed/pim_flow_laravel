@@ -87,7 +87,7 @@ class ProductController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$perPage = 50;
+		$perPage = $request->input('per_page', 50);
 
 		$products = Product::with([
 			'brand:id,name',
