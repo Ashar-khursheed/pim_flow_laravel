@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Store;
+use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
+use ZipArchive;
+use Illuminate\Support\Str;
 
 class BrandController extends BaseController
 {
@@ -69,7 +72,7 @@ class BrandController extends BaseController
 			'brands' => $brands
 		]);
 	}
-   
+
 /**
  * @OA\Post(
  *     path="/api/brands",
@@ -85,8 +88,8 @@ class BrandController extends BaseController
  *                 @OA\Property(property="description", type="string", example="A global sports brand"),
  *                 @OA\Property(property="website", type="string", example="https://nike.com"),
  *                 @OA\Property(
- *                     property="logo", 
- *                     type="string", 
+ *                     property="logo",
+ *                     type="string",
  *                     format="binary",
  *                     description="Logo file upload"
  *                 ),
@@ -102,7 +105,7 @@ class BrandController extends BaseController
  * )
  */
 
- public function store(Request $request) 
+ public function store(Request $request)
  {
      try {
          // Update validation rules for is_featured to accept 0 or 1
@@ -115,7 +118,7 @@ class BrandController extends BaseController
              'is_featured' => 'required|boolean',  // Boolean validation will convert "0", "1", 0, 1, true, false
              'logo' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
          ]);
- 
+
          // Initialize brand data from validated data
          $brandData = [
              'name' => $validated['name'],
@@ -125,21 +128,21 @@ class BrandController extends BaseController
              'order' => $validated['order'],
              'is_featured' => (bool)$validated['is_featured'],  // Convert to proper boolean
          ];
-         
+
          // Handle logo as file upload only
          if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
              // Import Storage facade
              $storage = app('Illuminate\Support\Facades\Storage');
-             
+
              // Process file upload
              $folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
              $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
              $brandData['logo'] = $storage::disk('s3')->url($logoPath);
          }
- 
+
          // Create the brand record in the database
          $brand = Brand::create($brandData);
- 
+
          // Return a response including the brand data with the logo URL
          return response()->json([
              'success' => true,
@@ -149,7 +152,7 @@ class BrandController extends BaseController
      } catch (\Exception $e) {
          // Log the error
          \Log::error('Brand creation error: ' . $e->getMessage());
-         
+
          // Return a proper JSON error response
          return response()->json([
              'success' => false,
@@ -182,7 +185,7 @@ class BrandController extends BaseController
     //         'brand' => $brand
     //     ], 201);
     // }
-    
+
 
 
     /**
@@ -248,8 +251,8 @@ class BrandController extends BaseController
  *                 @OA\Property(property="description", type="string", example="Updated description"),
  *                 @OA\Property(property="website", type="string", example="https://nike.com"),
  *                 @OA\Property(
- *                     property="logo", 
- *                     type="string", 
+ *                     property="logo",
+ *                     type="string",
  *                     format="binary",
  *                     description="Logo file upload"
  *                 ),
@@ -291,24 +294,24 @@ public function update(Request $request, $id)
 
         // Prepare data for update
         $updateData = [];
-        
+
         // Add text fields to update data
         foreach(['name', 'description', 'website', 'status', 'order'] as $field) {
             if (isset($validated[$field])) {
                 $updateData[$field] = $validated[$field];
             }
         }
-        
+
         // Handle is_featured specifically to ensure correct boolean conversion
         if (isset($validated['is_featured'])) {
             $updateData['is_featured'] = (bool)$validated['is_featured'];
         }
-        
+
         // Handle logo as file upload
         if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
             // Import Storage facade
             $storage = app('Illuminate\Support\Facades\Storage');
-            
+
             // If there's an existing logo stored in S3, attempt to delete it
             if ($brand->logo && strpos($brand->logo, env('AWS_URL')) !== false) {
                 // Extract the path from the full URL
@@ -320,7 +323,7 @@ public function update(Request $request, $id)
                     \Log::warning("Failed to delete old logo: {$e->getMessage()}");
                 }
             }
-            
+
             // Process file upload
             $folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
             $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
@@ -339,7 +342,7 @@ public function update(Request $request, $id)
     } catch (\Exception $e) {
         // Log the error
         \Log::error('Brand update error: ' . $e->getMessage());
-        
+
         // Return a proper JSON error response
         return response()->json([
             'success' => false,
@@ -431,7 +434,7 @@ public function update(Request $request, $id)
      *         description="Page number",
      *         @OA\Schema(type="integer", example=1)
      *     ),
-     *     @OA\Response(response=200, description="Success", 
+     *     @OA\Response(response=200, description="Success",
      *         @OA\JsonContent(
      *             type="object",
      *             @OA\Property(property="success", type="boolean", example=true),
@@ -443,192 +446,304 @@ public function update(Request $request, $id)
      * )
      */
 
-    // public function getBrandsList(Request $request)
-    // {
-    //     $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
-    //         ->withCount('products') // Only count products, don't load full relation
-    //         ->with([
-    //             'products' => function ($query) {
-    //                 $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
-    //             }
-    //         ]);
-    
-    //     // Search by name
-    //     if ($request->filled('search')) {
-    //         $query->where('name', 'LIKE', '%' . $request->search . '%');
-    //     }
-    
-    //     // Filter by status
-    //     if ($request->filled('status')) {
-    //         $query->where('status', $request->status);
-    //     }
-    
-    //     // Sorting (default: latest created_at)
-    //     $sortBy = $request->input('sort_by', 'created_at');
-    //     $sortOrder = $request->input('sort_order', 'desc');
-    
-    //     if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
-    //         $query->orderBy($sortBy, $sortOrder);
-    //     }
-    
-    //     // Paginate results (default 10 per page)
-    //     $brands = $query->paginate($request->input('per_page', 10));
-    
-    //     // Transform data (after loading all necessary relations)
-    //     $brands->getCollection()->transform(function ($brand) {
-    //         // Collect category IDs by iterating over products
-    //         $categoryIds = $brand->products->flatMap(function ($product) {
-    //             return $product->categories->pluck('id');
-    //         })->unique()->values();
-    
-    //         // Fetch category names using find method for each category ID
-    //         $categoryNames = $categoryIds->map(function ($categoryId) {
-    //             $category = Category::find($categoryId); // Using find instead of whereIn
-    //             return $category ? $category->name : null; // Return category name or null if not found
-    //         })->filter()->values();
-    
-    //         // Collect store IDs and map them to store names
-    //         $storeIds = $brand->products->pluck('store_id')->unique();
-    //         $storeNames = $storeIds->map(function ($storeId) {
-    //             $store = Store::find($storeId);
-    //             return $store ? $store->name : null;
-    //         })->filter()->values();
-    
-    //         // Get the full URL for the logo, whether it's stored in local storage or S3
-    //         $logoUrl = null;
-    //         if ($brand->logo) {
-    //             // Check if the logo URL is already a full URL (starts with http)
-    //             if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
-    //                 $logoUrl = $brand->logo; // If it's a full URL, use it directly
-    //             } else {
-    //                 // Check if logo is stored locally or in S3
-    //                 if (Storage::disk('s3')->exists($brand->logo)) {
-    //                     $logoUrl = Storage::disk('s3')->url($brand->logo); // Full URL from S3
-    //                 } else {
-    //                     $logoUrl = asset('storage/' . $brand->logo); // Full URL from local storage
-    //                 }
-    //             }
-    //         }
-    
-    //         return [
-    //             'id' => $brand->id,
-    //             'name' => $brand->name,
-    //             'logo' => $logoUrl, // Full URL for the logo
-    //             'slug' => $brand->website,
-    //             'is_featured' => $brand->is_featured,
-    //             'description' => $brand->description,
-    //             'status' => $brand->status,
-    //             'products_count' => $brand->products_count,
-    //             'category_name' => $categoryNames, // Use the fetched category names
-    //             'store_name' => $storeNames,
-    //             'created_at' => $brand->created_at,
-    //             'updated_at' => $brand->updated_at,
-    //                  ];
-    //             });
-            
-    //             return response()->json([
-    //                 'success' => true,
-    //                 'brands' => $brands
-    //             ]);
-    // }
-    
     public function getBrandsList(Request $request)
-{
-    $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
-        ->withCount('products')
-        ->with([
-            'products' => function ($query) {
-                $query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
-            }
-        ]);
-
-    // Search by name
-    if ($request->filled('search')) {
-        $query->where('name', 'LIKE', '%' . $request->search . '%');
-    }
-
-    // Filter by status
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-
-    // Sorting
-    $sortBy = $request->input('sort_by', 'created_at');
-    $sortOrder = $request->input('sort_order', 'desc');
-
-    if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
-        $query->orderBy($sortBy, $sortOrder);
-    }
-
-    // Pagination
-    $brands = $query->paginate($request->input('per_page', 10));
-
-    // Transform data
-    $transformed = $brands->getCollection()->transform(function ($brand) {
-        $categoryIds = $brand->products->flatMap(function ($product) {
-            return $product->categories->pluck('id');
-        })->unique()->values();
-
-        $categoryNames = $categoryIds->map(function ($categoryId) {
-            $category = Category::find($categoryId);
-            return $category ? $category->name : null;
-        })->filter()->values();
-
-        $storeIds = $brand->products->pluck('store_id')->unique();
-        $storeNames = $storeIds->map(function ($storeId) {
-            $store = Store::find($storeId);
-            return $store ? $store->name : null;
-        })->filter()->values();
-
-        $logoUrl = null;
-        if ($brand->logo) {
-            if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
-                $logoUrl = $brand->logo;
-            } else {
-                if (Storage::disk('s3')->exists($brand->logo)) {
-                    $logoUrl = Storage::disk('s3')->url($brand->logo);
-                } else {
-                    $logoUrl = asset('storage/' . $brand->logo);
+    {
+        $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+            ->withCount('products') // Only count products, don't load full relation
+            ->with([
+                'products' => function ($query) {
+                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
                 }
+            ]);
+
+        // Search by name
+        if ($request->filled('search')) {
+            $query->where('name', 'LIKE', '%' . $request->search . '%');
+        }
+
+        // Filter by status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // Sorting (default: latest created_at)
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+
+        if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+
+        // Paginate results (default 10 per page)
+        $brands = $query->paginate($request->input('per_page', 10));
+
+        // Transform data (after loading all necessary relations)
+        $brands->getCollection()->transform(function ($brand) {
+            // Collect category IDs by iterating over products
+            $categoryIds = $brand->products->flatMap(function ($product) {
+                return $product->categories->pluck('id');
+            })->unique()->values();
+
+            // Fetch category names using find method for each category ID
+            $categoryNames = $categoryIds->map(function ($categoryId) {
+                $category = Category::find($categoryId); // Using find instead of whereIn
+                return $category ? $category->name : null; // Return category name or null if not found
+            })->filter()->values();
+
+            // Collect store IDs and map them to store names
+            $storeIds = $brand->products->pluck('store_id')->unique();
+            $storeNames = $storeIds->map(function ($storeId) {
+                $store = Store::find($storeId);
+                return $store ? $store->name : null;
+            })->filter()->values();
+
+            // Get the full URL for the logo, whether it's stored in local storage or S3
+            $logoUrl = null;
+            if ($brand->logo) {
+                // Check if the logo URL is already a full URL (starts with http)
+                if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
+                    $logoUrl = $brand->logo; // If it's a full URL, use it directly
+                } else {
+                    // Check if logo is stored locally or in S3
+                    if (Storage::disk('s3')->exists($brand->logo)) {
+                        $logoUrl = Storage::disk('s3')->url($brand->logo); // Full URL from S3
+                    } else {
+                        $logoUrl = asset('storage/' . $brand->logo); // Full URL from local storage
+                    }
+                }
+            }
+
+            return [
+                'id' => $brand->id,
+                'name' => $brand->name,
+                'logo' => $logoUrl, // Full URL for the logo
+                'slug' => $brand->website,
+                'is_featured' => $brand->is_featured,
+                'description' => $brand->description,
+                'status' => $brand->status,
+                'products_count' => $brand->products_count,
+                'category_name' => $categoryNames, // Use the fetched category names
+                'store_name' => $storeNames,
+                'created_at' => $brand->created_at,
+                'updated_at' => $brand->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'brands' => $brands
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/brands/{id}/sku",
+     *     summary="Get Brandwise SKU list",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Brand ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function getBrandSku($id)
+    {
+        $brand = Brand::find($id);
+
+        if (!$brand) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Brand not found'
+            ], 404);
+        }
+        $uniqueSkus = $brand->products()->select('id', 'sku')->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $uniqueSkus
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/products/{id}/media",
+     *     summary="Get product media attributes",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function getProductMedia($id)
+    {
+        $product = Product::select('images', 'video_path', 'documents')->find($id);
+
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        // Decode JSON fields if valid
+        foreach (['images', 'video_path', 'documents'] as $field) {
+            if (isset($product->$field) && json_validate($product->$field)) {
+                $product->$field = json_decode($product->$field);
+            } else {
+                $product->$field = [];
             }
         }
 
-        return [
-            'id' => $brand->id,
-            'name' => $brand->name,
-            'logo' => $logoUrl,
-            'slug' => $brand->website,
-            'is_featured' => $brand->is_featured,
-            'description' => $brand->description,
-            'status' => $brand->status,
-            'products_count' => $brand->products_count,
-            'category_name' => $categoryNames,
-            'store_name' => $storeNames,
-            'created_at' => $brand->created_at,
-            'updated_at' => $brand->updated_at,
-        ];
-    });
+        return response()->json([
+            'success' => true,
+            'data' => $product
+        ]);
+    }
 
-    // Set transformed data back to paginator
-    $brands->setCollection($transformed);
+    /**
+     * @OA\Get(
+     *     path="/api/products/{id}/media/download",
+     *     summary="Download product media as ZIP",
+     *     description="Downloads all media files (images, videos, documents) associated with the specified product as a ZIP archive.",
+     *     operationId="downloadProductMediaZip",
+     *     tags={"Brands"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="ID of the product",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="ZIP file containing product media",
+     *         @OA\MediaType(
+     *             mediaType="application/zip",
+     *             @OA\Schema(type="string", format="binary")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Product not found")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
 
-    // Return structured response
-    return response()->json([
-        'success' => true,
-        'data' => $brands->items(),
-        'pagination' => [
-            'total' => $brands->total(),
-            'per_page' => $brands->perPage(),
-            'current_page' => $brands->currentPage(),
-            'last_page' => $brands->lastPage(),
-            'next_page_url' => $brands->nextPageUrl(),
-            'prev_page_url' => $brands->previousPageUrl(),
-        ],
-     
-    ]);
-}
+    public function downloadMediaZip($id)
+    {
+        $product = Product::find($id);
 
-    
-    
-    
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        // Initialize arrays for media URLs
+        $mediaUrls = [];
+
+        // Decode JSON fields if valid
+        foreach (['images', 'video_path', 'documents'] as $field) {
+            if (!empty($product->$field) && json_validate($product->$field)) {
+                $mediaUrls[$field] = json_decode($product->$field, true);
+            } else {
+                $mediaUrls[$field] = [];
+            }
+        }
+
+        $hasAllTitles = true;
+        foreach ($mediaUrls['documents'] as $item) {
+            if (!is_array($item) || !array_key_exists('title', $item)) {
+                $hasAllTitles = false;
+                break;
+            }
+        }
+        if(!$hasAllTitles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create ZIP file. Inavalid documents'
+            ], 404);
+        }
+
+        // Create a temporary directory for the ZIP file
+        $tempDir = storage_path('app/temp_media');
+        if (!file_exists($tempDir)) {
+            mkdir($tempDir, 0755, true);
+        }
+
+        $zipFileName = 'product_' . $id . '_media_' . Str::random(8) . '.zip';
+        $zipFilePath = $tempDir . '/' . $zipFileName;
+
+        $zip = new ZipArchive;
+        if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+            foreach ($mediaUrls as $type => $items) {
+                if ($type === 'documents') {
+                    foreach ($items as $doc) {
+                        try {
+                            $url = $doc['path'];
+                            $title = $doc['title'];
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = basename(parse_url($url, PHP_URL_PATH));
+                                    $zipPath = $type . '/' . $title . '/' . $filename;
+                                    $zip->addFromString($zipPath, $response->body());
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
+                        }
+                    }
+                } else {
+                    foreach ($items as $index => $url) {
+                        try {
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = $type . '/' . $type . '_' . ($index + 1) . '.' . $extension;
+                                    $zip->addFromString($filename, $response->body());
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
+                        }
+                    }
+                }
+            }
+            $zip->close();
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create ZIP file'
+            ], 500);
+        }
+
+        // Return the ZIP file as a download response
+        return response()->download($zipFilePath)->deleteFileAfterSend(true);
+    }
 }
