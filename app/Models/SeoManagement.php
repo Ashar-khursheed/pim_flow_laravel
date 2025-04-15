@@ -28,12 +28,21 @@ class SeoManagement extends Model
 		'schema_reviews_count',
 		'created_by',
 		'updated_by',
+		'paragraph_1',
+		'paragraph_2',
+		'paragraph_3',
+		'paragraph_4',
+		'popular_tags',
 	];
 
 	public function relational()
 	{
 		return $this->morphTo();
 	}
+	
+	protected $casts = [
+		'popular_tags' => 'array', // Ensures it's handled as array in Laravel
+	];
 
 	public function secondaryKeywordDetails()
 	{

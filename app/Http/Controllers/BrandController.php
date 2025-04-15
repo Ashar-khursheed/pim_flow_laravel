@@ -6,10 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Store;
-use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Http;
-use ZipArchive;
 use Illuminate\Support\Str;
 
 class BrandController extends BaseController
@@ -744,7 +741,6 @@ public function update(Request $request, $id)
             ], 500);
         }
 
-// dd('done');
         // Return the ZIP file as a download response
         return response()->download($zipFilePath)->deleteFileAfterSend(true);
     }

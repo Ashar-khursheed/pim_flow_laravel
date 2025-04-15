@@ -128,7 +128,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/generate-reviews', [ClaudeAIController::class, 'generateReviews']);
 	Route::post('/generate-faqs', [ClaudeAIController::class, 'generateFAQs']);
 	Route::post('/generate-benefits-features', [ClaudeAIController::class, 'generateBenefitsFeatures']);
-
+	Route::post('/generate-benefits-features-automation', [ClaudeAIController::class, 'generateFeaturesAndBenefits']);
 
 	Route::get('subcategories', [SubCategoryController::class, 'index']);
 	Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
