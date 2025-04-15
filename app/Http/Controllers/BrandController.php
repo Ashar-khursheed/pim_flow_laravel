@@ -535,102 +535,93 @@ public function update(Request $request, $id)
     //         'brands' => $brands
     //     ]);
     // }
-
     public function getBrandsList(Request $request)
-{
-    $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
-        ->withCount('products')
-        ->with([
-            'products' => function ($query) {
-                $query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
-            }
-        ]);
-
-    // Search by name
-    if ($request->filled('search')) {
-        $query->where('name', 'LIKE', '%' . $request->search . '%');
-    }
-
-    // Filter by status
-    if ($request->filled('status')) {
-        $query->where('status', $request->status);
-    }
-
-    // Sorting
-    $sortBy = $request->input('sort_by', 'created_at');
-    $sortOrder = $request->input('sort_order', 'desc');
-
-    if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
-        $query->orderBy($sortBy, $sortOrder);
-    }
-
-    // Pagination
-    $brands = $query->paginate($request->input('per_page', 10));
-
-    // Transform data
-    $transformed = $brands->getCollection()->transform(function ($brand) {
-        $categoryIds = $brand->products->flatMap(function ($product) {
-            return $product->categories->pluck('id');
-        })->unique()->values();
-
-        $categoryNames = $categoryIds->map(function ($categoryId) {
-            $category = Category::find($categoryId);
-            return $category ? $category->name : null;
-        })->filter()->values();
-
-        $storeIds = $brand->products->pluck('store_id')->unique();
-        $storeNames = $storeIds->map(function ($storeId) {
-            $store = Store::find($storeId);
-            return $store ? $store->name : null;
-        })->filter()->values();
-
-        $logoUrl = null;
-        if ($brand->logo) {
-            if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
-                $logoUrl = $brand->logo;
-            } else {
-                if (Storage::disk('s3')->exists($brand->logo)) {
-                    $logoUrl = Storage::disk('s3')->url($brand->logo);
-                } else {
-                    $logoUrl = asset('storage/' . $brand->logo);
+    {
+        $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+            ->withCount('products')
+            ->with([
+                'products' => function ($query) {
+                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
                 }
-            }
+            ]);
+    
+        if ($request->filled('search')) {
+            $query->where('name', 'LIKE', '%' . $request->search . '%');
         }
-
-        return [
-            'id' => $brand->id,
-            'name' => $brand->name,
-            'logo' => $logoUrl,
-            'slug' => $brand->website,
-            'is_featured' => $brand->is_featured,
-            'description' => $brand->description,
-            'status' => $brand->status,
-            'products_count' => $brand->products_count,
-            'category_name' => $categoryNames,
-            'store_name' => $storeNames,
-            'created_at' => $brand->created_at,
-            'updated_at' => $brand->updated_at,
-        ];
-    });
-
-    // Set transformed data back to paginator
-    $brands->setCollection($transformed);
-
-    // Return structured response
-    return response()->json([
-        'success' => true,
-        'pagination' => [
-            'total' => $brands->total(),
-            'per_page' => $brands->perPage(),
-            'current_page' => $brands->currentPage(),
-            'last_page' => $brands->lastPage(),
-            'next_page_url' => $brands->nextPageUrl(),
-            'prev_page_url' => $brands->previousPageUrl(),
-        ],
-        'data' => $brands->items(),
-    ]);
-}
-
+    
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+    
+        $sortBy = $request->input('sort_by', 'created_at');
+        $sortOrder = $request->input('sort_order', 'desc');
+    
+        if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
+            $query->orderBy($sortBy, $sortOrder);
+        }
+    
+        $brands = $query->paginate($request->input('per_page', 10));
+    
+        // Cache all categories and stores in a single query to avoid N+1
+        $categories = Category::pluck('name', 'id');
+        $stores = Store::pluck('name', 'id');
+    
+        $transformed = $brands->getCollection()->transform(function ($brand) use ($categories, $stores) {
+            $categoryIds = $brand->products->flatMap(function ($product) {
+                return $product->categories->pluck('id');
+            })->unique();
+    
+            $categoryNames = $categoryIds->map(function ($id) use ($categories) {
+                return $categories[$id] ?? null;
+            })->filter()->values();
+    
+            $storeIds = $brand->products->pluck('store_id')->unique();
+    
+            $storeNames = $storeIds->map(function ($id) use ($stores) {
+                return $stores[$id] ?? null;
+            })->filter()->values();
+    
+            // Simplify logo generation
+            $logoUrl = null;
+            if ($brand->logo) {
+                $logoUrl = filter_var($brand->logo, FILTER_VALIDATE_URL)
+                    ? $brand->logo
+                    : asset('storage/' . $brand->logo); // skip S3 exists check
+            }
+    
+            return [
+                'id' => $brand->id,
+                'name' => $brand->name,
+                'logo' => $logoUrl,
+                'slug' => $brand->website,
+                'is_featured' => $brand->is_featured,
+                'description' => $brand->description,
+                'status' => $brand->status,
+                'products_count' => $brand->products_count,
+                'category_name' => $categoryNames,
+                'store_name' => $storeNames,
+                'created_at' => $brand->created_at,
+                'updated_at' => $brand->updated_at,
+            ];
+        });
+    
+        $brands->setCollection($transformed);
+    
+        return response()->json([
+            'success' => true,
+            'pagination' => [
+                'total' => $brands->total(),
+                'per_page' => $brands->perPage(),
+                'current_page' => $brands->currentPage(),
+                'last_page' => $brands->lastPage(),
+                'next_page_url' => $brands->nextPageUrl(),
+                'prev_page_url' => $brands->previousPageUrl(),
+            ],
+            'data' => $brands->items(),
+        ]);
+    }
+    
+    
 
     /**
      * @OA\Get(
