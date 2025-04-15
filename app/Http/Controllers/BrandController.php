@@ -694,7 +694,10 @@ public function update(Request $request, $id)
                                 $zip->addFromString($zipPath, $response->body());
                             }
                         } catch (\Exception $e) {
-                            // Log the error or handle it as needed
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
                         }
                     }
                 } else {
@@ -707,7 +710,10 @@ public function update(Request $request, $id)
                                 $zip->addFromString($filename, $response->body());
                             }
                         } catch (\Exception $e) {
-                            // Log the error or handle it as needed
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
                         }
                     }
                 }
