@@ -71,7 +71,7 @@ class SeoManagementController extends Controller
  *						type="array",
  *						@OA\Items(type="string", example="tag1"),
  *						example={"tag1", "tag2", "tag3"},
- *						description="List of popular tags"
+ *						description="List of popular tags (stored as JSON array)"
  *					),
  *             )
  *         )
@@ -113,7 +113,7 @@ class SeoManagementController extends Controller
 			'paragraph_2' => 'nullable|string',
 			'paragraph_3' => 'nullable|string',
 			'paragraph_4' => 'nullable|string',
-			'popular_tags' => 'nullable|string', // Expecting array like ["tag1", "tag2"]	
+			'popular_tags' => 'nullable', // Can accept string or array input
 			]);
 
 		 // Prepare the data for creating the SEO management record
@@ -122,15 +122,16 @@ class SeoManagementController extends Controller
 		 // Convert indexing boolean
 		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 
-		 		// ✅ Convert popular_tags array to JSON if present
-				 if (!empty($validated['popular_tags'])) {
-					// Convert the string to an array (if it's not already)
-					$tagsArray = array_map('trim', explode(',', $validated['popular_tags']));
-					
-					// Save it as a simple string (comma-separated)
-					$seoData['popular_tags'] = implode(', ', $tagsArray);
-				}
-
+					// In your store method
+		if (!empty($validated['popular_tags'])) {
+			// If it's a string, convert to array
+			if (is_string($validated['popular_tags'])) {
+				$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+			} else {
+				$seoData['popular_tags'] = $validated['popular_tags'];
+			}
+			// No need to json_encode here - Laravel will handle it via the cast
+		}
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');

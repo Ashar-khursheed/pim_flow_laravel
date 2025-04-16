@@ -3513,7 +3513,7 @@
                     "Products"
                 ],
                 "summary": "Get paginated list of products",
-                "description": "Retrieves a paginated list of products with brand, store, categories, and slug details.",
+                "description": "Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
                 "operationId": "1bfaa78d1c2c3848ab8165c5dadcad3e",
                 "parameters": [
                     {
@@ -3534,6 +3534,16 @@
                         "schema": {
                             "type": "integer",
                             "example": 50
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for filtering products by name, SKU, brand, store, or category",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "samsung"
                         }
                     }
                 ],
@@ -5612,7 +5622,7 @@
                                         "example": "Final paragraph text."
                                     },
                                     "popular_tags": {
-                                        "description": "List of popular tags",
+                                        "description": "List of popular tags (stored as JSON array)",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
