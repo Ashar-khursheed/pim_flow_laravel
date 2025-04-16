@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\DB;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -40,7 +41,7 @@ class RoleController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index()
+	public function index(Request $request)
 	{
 		$records = Role::with('permissions:id,name');
 
@@ -57,6 +58,9 @@ class RoleController extends Controller
 			$totalRecords = $records->count();
 		}
 
+		$records->each(function ($role) {
+			$role->permissions->each->makeHidden(['pivot']);
+		});
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_list"),
@@ -104,8 +108,10 @@ class RoleController extends Controller
 		$role->updated_at = now();
 		$role->save();
 
-		$role->syncPermissions($request->permissions)
-		$role = Role::with('permissions:id,name')->find($roleId);
+		$role->syncPermissions($request->permissions);
+		$role = Role::with('permissions:id,name')->find($role->id);
+
+		$role->permissions->each->makeHidden(['pivot']);
 
 		return response()->json([
 			'success' => true,
@@ -140,6 +146,7 @@ class RoleController extends Controller
 				'message' => __("err_exist")
 			]);
 		}
+		$role->permissions->each->makeHidden(['pivot']);
 
 		return response()->json([
 			'success' => true,
@@ -199,9 +206,11 @@ class RoleController extends Controller
 		DB::beginTransaction();
 		try {
 			/* Save the role */
-			$role->syncPermissions($input['permissions'])->update(['name' => $input['name']])
+			$role->syncPermissions($input['permissions'])->update(['name' => $input['name']]);
 
 			$role = Role::with('permissions:id,name')->find($roleId);
+
+			$role->permissions->each->makeHidden(['pivot']);
 
 			DB::commit();
 

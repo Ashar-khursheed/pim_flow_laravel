@@ -5017,22 +5017,39 @@
         "/api/roles": {
             "get": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Get list of roles",
                 "operationId": "77e3636d8592997ce9d6d27b50857a69",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of roles",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Role"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -5044,10 +5061,10 @@
             },
             "post": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Create a new role",
-                "description": "Create a new role with given details",
+                "description": "Creates a new role.",
                 "operationId": "4a563842fbfcad237f63da43065fca3d",
                 "requestBody": {
                     "required": true,
@@ -5055,25 +5072,21 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "slug",
-                                    "name"
+                                    "name",
+                                    "permissions"
                                 ],
                                 "properties": {
-                                    "slug": {
-                                        "type": "string",
-                                        "example": "admin"
-                                    },
                                     "name": {
                                         "type": "string",
-                                        "example": "Administrator"
+                                        "example": "Admin"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Full access to all functionalities"
-                                    },
-                                    "is_default": {
-                                        "type": "boolean",
-                                        "example": false
+                                    "permissions": {
+                                        "description": "Array of permissions",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "create record"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -5083,13 +5096,44 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Role created successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/roles/{role_id}": {
+            "get": {
+                "tags": [
+                    "Roles and Permissions"
+                ],
+                "summary": "Get role details",
+                "description": "Fetches role details based on the given role ID.",
+                "operationId": "6e550a8305421d12dc28ce088debd3fc",
+                "parameters": [
+                    {
+                        "name": "role_id",
+                        "in": "path",
+                        "description": "ID of the role",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -5101,57 +5145,22 @@
             }
         },
         "/api/roles/{id}": {
-            "get": {
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Get role details",
-                "description": "Retrieve details of a specific role by ID",
-                "operationId": "7fb0667a295b7678a30353aa11739683",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Role ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
             "put": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
-                "summary": "Update a role",
-                "description": "Update an existing role by ID",
+                "summary": "Update an existing role",
+                "description": "Updates an role's details",
                 "operationId": "786d6990093a8eb3a56931f19a827e43",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Role ID",
+                        "description": "ID of the role to update",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -5160,21 +5169,22 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "name",
+                                    "permissions"
+                                ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "example": "Super Admin"
+                                        "example": "Admin"
                                     },
                                     "permissions": {
+                                        "description": "Array of permissions",
                                         "type": "array",
                                         "items": {
-                                            "type": "string"
-                                        },
-                                        "example": [
-                                            "manage_users",
-                                            "edit_posts",
-                                            "delete_posts"
-                                        ]
+                                            "type": "string",
+                                            "example": "create record"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -5184,13 +5194,9 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Role updated successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -5202,149 +5208,28 @@
             },
             "delete": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Delete a role",
-                "description": "Remove an existing role by ID",
-                "operationId": "8285c46981c60ad600aa4077307aec04",
+                "description": "Deletes a role.",
+                "operationId": "deleteRole",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Role ID",
+                        "description": "ID of the role to delete",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role deleted successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Role deleted successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/roles/names": {
-            "get": {
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Get list of roles with only ID and Name",
-                "operationId": "6b91dd5a93782467c95df3f389b0bfd9",
-                "responses": {
-                    "200": {
-                        "description": "List of roles with only ID and Name",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Admin"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/roles/{id}/permissions": {
-            "get": {
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Get role permissions",
-                "description": "Retrieve a structured list of permissions for a specific role.",
-                "operationId": "46acead909e43ce50b76559bd9ba3165",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Role ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role permissions fetched successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "permissions": {
-                                            "type": "object",
-                                            "example": {
-                                                "ads": {
-                                                    "create": true,
-                                                    "edit": false,
-                                                    "delete": true,
-                                                    "update": true
-                                                },
-                                                "posts": {
-                                                    "create": true,
-                                                    "edit": true,
-                                                    "delete": false,
-                                                    "update": true
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Role not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Role not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -7791,58 +7676,6 @@
                 },
                 "type": "object"
             },
-            "Role": {
-                "title": "Role",
-                "description": "Role model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "admin"
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Administrator"
-                    },
-                    "permissions": {
-                        "type": "object",
-                        "example": {
-                            "create": true,
-                            "delete": false
-                        }
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Admin role with all permissions"
-                    },
-                    "is_default": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "created_by": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "updated_by": {
-                        "type": "integer",
-                        "example": 2
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-08-01T12:00:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-08-02T12:00:00Z"
-                    }
-                },
-                "type": "object"
-            },
             "SimpleSlider": {
                 "title": "Simple Slider",
                 "required": [
@@ -8069,10 +7902,6 @@
             "description": "API Endpoints for managing newsletters"
         },
         {
-            "name": "Roles",
-            "description": "API Endpoints for managing roles"
-        },
-        {
             "name": "Sliders",
             "description": "API for managing sliders"
         },
@@ -8103,6 +7932,10 @@
         {
             "name": "Flash Sales",
             "description": "Flash Sales"
+        },
+        {
+            "name": "Roles and Permissions",
+            "description": "Roles and Permissions"
         },
         {
             "name": "SEO Details",
