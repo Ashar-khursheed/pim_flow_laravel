@@ -44,8 +44,14 @@ class CategoryPageController extends Controller
     public function index()
     {
         $pages = CategoryPage::all();
-        return response()->json($pages);
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'Pages retrieved successfully.',
+            'categories' => $pages
+        ]);
     }
+    
 
     /**
      * @OA\Get(
