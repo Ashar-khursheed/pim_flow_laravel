@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Models;
+// namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+// use Illuminate\Database\Eloquent\Factories\HasFactory;
+// use Illuminate\Database\Eloquent\Model;
 
 /**
  * @OA\Schema(
@@ -22,19 +22,28 @@ use Illuminate\Database\Eloquent\Model;
  *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-08-02T12:00:00Z")
  * )
  */
-class Role extends Model
+// class Role extends Model
+// {
+//     use HasFactory;
+
+//     protected $table = 'roles';
+//     protected $fillable = ['slug', 'name', 'permissions', 'description', 'is_default', 'created_by', 'updated_by'];
+
+//     protected $casts = [
+//         'permissions' => 'array',
+//     ];
+
+//     public function users()
+//     {
+//         return $this->belongsToMany(User::class, 'role_users');
+//     }
+// }
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Spatie\Permission\Models\Role as Roles;
+
+class Role extends Roles
 {
-    use HasFactory;
-
-    protected $table = 'roles';
-    protected $fillable = ['slug', 'name', 'permissions', 'description', 'is_default', 'created_by', 'updated_by'];
-
-    protected $casts = [
-        'permissions' => 'array',
-    ];
-
-    public function users()
-    {
-        return $this->belongsToMany(User::class, 'role_users');
-    }
 }
