@@ -5,6 +5,20 @@ use App\Models\Category;
 use App\Models\CategoryPage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+/**
+ * @OA\Schema(
+ *     schema="CategoryPage",
+ *     type="object",
+ *     title="Category Page",
+ *     required={"id", "category_id", "title"},
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="category_id", type="integer", example=12),
+ *     @OA\Property(property="title", type="string", example="Electronics"),
+ *     @OA\Property(property="description", type="string", example="All about electronics..."),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
 
 
 class CategoryPageController extends Controller

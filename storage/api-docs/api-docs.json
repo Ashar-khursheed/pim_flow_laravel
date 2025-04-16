@@ -2034,123 +2034,35 @@
                 ]
             }
         },
-        "/api/category-pages/{category_id}": {
+        "/api/category-pages": {
             "get": {
                 "tags": [
                     "Category Pages"
                 ],
-                "summary": "Get category page data",
-                "description": "Fetch dynamic category page details by category ID.",
-                "operationId": "10002b62388ccd4602821dcdcb4fbc7d",
-                "parameters": [
-                    {
-                        "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Get all category pages",
+                "description": "Fetch a list of all category pages.",
+                "operationId": "199cc30ed9e2fc6ff0514edcf3096481",
                 "responses": {
                     "200": {
-                        "description": "Success"
-                    },
-                    "404": {
-                        "description": "Category page not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Category Pages"
-                ],
-                "summary": "Update category page details",
-                "operationId": "e9dd722f1501176cc0cf804c2943f77a",
-                "parameters": [
-                    {
-                        "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "title": {
-                                        "type": "string",
-                                        "example": "Updated Category"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Updated description"
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CategoryPage"
                                     }
-                                },
-                                "type": "object"
+                                }
                             }
                         }
                     }
                 },
-                "responses": {
-                    "200": {
-                        "description": "Category page updated"
-                    },
-                    "404": {
-                        "description": "Category page not found"
-                    }
-                },
                 "security": [
                     {
                         "bearerAuth": []
                     }
                 ]
             },
-            "delete": {
-                "tags": [
-                    "Category Pages"
-                ],
-                "summary": "Delete a category page",
-                "operationId": "b479dae43abf48d995c6663827bdb77b",
-                "parameters": [
-                    {
-                        "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Category page deleted"
-                    },
-                    "404": {
-                        "description": "Category page not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/category-pages": {
             "post": {
                 "tags": [
                     "Category Pages"
@@ -2258,6 +2170,122 @@
                     },
                     "400": {
                         "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/category-pages/{category_id}": {
+            "get": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Get category page data",
+                "description": "Fetch dynamic category page details by category ID.",
+                "operationId": "10002b62388ccd4602821dcdcb4fbc7d",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "404": {
+                        "description": "Category page not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Update category page details",
+                "operationId": "e9dd722f1501176cc0cf804c2943f77a",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Updated Category"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Updated description"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Category page updated"
+                    },
+                    "404": {
+                        "description": "Category page not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Delete a category page",
+                "operationId": "b479dae43abf48d995c6663827bdb77b",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category page deleted"
+                    },
+                    "404": {
+                        "description": "Category page not found"
                     }
                 },
                 "security": [
@@ -7702,6 +7730,41 @@
     },
     "components": {
         "schemas": {
+            "CategoryPage": {
+                "title": "Category Page",
+                "required": [
+                    "id",
+                    "category_id",
+                    "title"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Electronics"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "All about electronics..."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Review": {
                 "title": "Review",
                 "description": "Review Model",
