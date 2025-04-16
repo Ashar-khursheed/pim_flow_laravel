@@ -387,11 +387,13 @@ public function show($relation_id)
 		 // Convert indexing boolean
 		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 		 if (!empty($validated['popular_tags'])) {
-			// Convert the string to an array (if it's not already)
-			$tagsArray = array_map('trim', explode(',', $validated['popular_tags']));
-			
-			// Save it as a simple string (comma-separated)
-			$seoData['popular_tags'] = implode(', ', $tagsArray);
+			// If it's a string, convert to array
+			if (is_string($validated['popular_tags'])) {
+				$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+			} else {
+				$seoData['popular_tags'] = $validated['popular_tags'];
+			}
+			// No need to json_encode here - Laravel will handle it via the cast
 		}
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
