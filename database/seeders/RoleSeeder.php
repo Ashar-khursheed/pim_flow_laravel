@@ -50,15 +50,35 @@ class RoleSeeder extends Seeder
 			'export attribute',
 		]);
 
-		Role::where('name', 'Ecommerce Manager')->first()?->syncPermissions([]);
-		Role::where('name', 'Ecommerce Specialist')->first()?->syncPermissions([]);
-		Role::where('name', 'Content Writing Manager')->first()?->syncPermissions([]);
-		Role::where('name', 'Content Writer')->first()?->syncPermissions([]);
-		Role::where('name', 'SEO Manager')->first()?->syncPermissions([]);
-		Role::where('name', 'SEO Specialist')->first()?->syncPermissions([]);
-		Role::where('name', 'Marketing Manager')->first()?->syncPermissions([]);
-		Role::where('name', 'Graphic Designer Manager')->first()?->syncPermissions([]);
-		Role::where('name', 'Graphic Designer')->first()?->syncPermissions([]);
-		Role::where('name', 'Finance Department')->first()?->syncPermissions([]);
+		Role::where('name', 'Ecommerce Manager')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Ecommerce Specialist')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Content Writing Manager')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Content Writer')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'SEO Manager')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'SEO Specialist')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Marketing Manager')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Graphic Designer Manager')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Graphic Designer')->first()?->syncPermissions([
+
+		]);
+		Role::where('name', 'Finance Department')->first()?->syncPermissions([
+
+		]);
 	}
 }
