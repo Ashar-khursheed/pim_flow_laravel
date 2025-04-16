@@ -47,8 +47,6 @@ class ImportProductJob implements ShouldQueue
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
 		$this->productFileFormatArray = $data['productFileFormatArray'];
-
-		Log::info("Creating job: " . now());
 	}
 
 	public function handle()

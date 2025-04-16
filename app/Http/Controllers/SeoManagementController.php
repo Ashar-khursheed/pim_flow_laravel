@@ -61,7 +61,18 @@ class SeoManagementController extends Controller
  *                 @OA\Property(property="created_by", type="integer", example=1),
  *                 @OA\Property(property="updated_by", type="integer", example=2),
  *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
- *                 @OA\Property(property="secondary_keywords", type="string",  description="JSON string containing array of secondary keywords with search volumes")
+ *                 @OA\Property(property="secondary_keywords", type="string",  description="JSON string containing array of secondary keywords with search volumes"),
+ * 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
+ *					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
+ *					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
+ *					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
+ *					@OA\Property(
+ *						property="popular_tags",
+ *						type="array",
+ *						@OA\Items(type="string", example="tag1"),
+ *						example={"tag1", "tag2", "tag3"},
+ *						description="List of popular tags (stored as JSON array)"
+ *					),
  *             )
  *         )
  *     ),
@@ -97,7 +108,12 @@ class SeoManagementController extends Controller
 			 'created_by' => 'required|integer',
 			 'updated_by' => 'nullable|integer',
 			 'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
-				'secondary_keywords' => 'nullable|json',  // Accepts a JSON string that will be decoded
+			'secondary_keywords' => 'nullable|json',  // Accepts a JSON string that will be decoded
+			'paragraph_1' => 'nullable|string',
+			'paragraph_2' => 'nullable|string',
+			'paragraph_3' => 'nullable|string',
+			'paragraph_4' => 'nullable|string',
+			'popular_tags' => 'nullable', // Can accept string or array input
 			]);
 
 		 // Prepare the data for creating the SEO management record
@@ -106,6 +122,16 @@ class SeoManagementController extends Controller
 		 // Convert indexing boolean
 		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 
+					// In your store method
+		if (!empty($validated['popular_tags'])) {
+			// If it's a string, convert to array
+			if (is_string($validated['popular_tags'])) {
+				$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+			} else {
+				$seoData['popular_tags'] = $validated['popular_tags'];
+			}
+			// No need to json_encode here - Laravel will handle it via the cast
+		}
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
@@ -298,7 +324,18 @@ public function show($relation_id)
 		*                 @OA\Property(property="secondary_keywords",
 		*                          type="string",
 		*                            description="JSON string containing array of secondary keywords with search volumes" ),
-		*             )
+		* 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
+		*					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
+		*					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
+		*					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
+		*					@OA\Property(
+		*						property="popular_tags",
+		*						type="array",
+		*						@OA\Items(type="string", example="tag1"),
+		*						example={"tag1", "tag2", "tag3"},
+		*						description="List of popular tags"
+		*					),
+		*             ),
 		*         )
 		*     ),
 		*     @OA\Response(response=200, description="SEO Record Updated"),
@@ -334,6 +371,11 @@ public function show($relation_id)
 				'updated_by' => 'nullable|integer',
 				'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
 				'secondary_keywords' => 'nullable|string',
+				'paragraph_1' => 'nullable|string',
+				'paragraph_2' => 'nullable|string',
+				'paragraph_3' => 'nullable|string',
+				'paragraph_4' => 'nullable|string',
+				'popular_tags' => 'nullable|string', // Expecting array like ["tag1", "tag2"]	
 			]);
 
 		 // Find the existing SEO record by ID
@@ -344,7 +386,13 @@ public function show($relation_id)
 
 		 // Convert indexing boolean
 		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
-
+		 if (!empty($validated['popular_tags'])) {
+			// Convert the string to an array (if it's not already)
+			$tagsArray = array_map('trim', explode(',', $validated['popular_tags']));
+			
+			// Save it as a simple string (comma-separated)
+			$seoData['popular_tags'] = implode(', ', $tagsArray);
+		}
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');

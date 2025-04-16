@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Store;
@@ -11,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
 use ZipArchive;
 use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class BrandController extends BaseController
 {
@@ -447,94 +447,181 @@ public function update(Request $request, $id)
      * )
      */
 
+    // public function getBrandsList(Request $request)
+    // {
+    //     $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+    //         ->withCount('products') // Only count products, don't load full relation
+    //         ->with([
+    //             'products' => function ($query) {
+    //                 $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
+    //             }
+    //         ]);
+
+    //     // Search by name
+    //     if ($request->filled('search')) {
+    //         $query->where('name', 'LIKE', '%' . $request->search . '%');
+    //     }
+
+    //     // Filter by status
+    //     if ($request->filled('status')) {
+    //         $query->where('status', $request->status);
+    //     }
+
+    //     // Sorting (default: latest created_at)
+    //     $sortBy = $request->input('sort_by', 'created_at');
+    //     $sortOrder = $request->input('sort_order', 'desc');
+
+    //     if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
+    //         $query->orderBy($sortBy, $sortOrder);
+    //     }
+
+    //     // Paginate results (default 10 per page)
+    //     $brands = $query->paginate($request->input('per_page', 10));
+
+    //     // Transform data (after loading all necessary relations)
+    //     $brands->getCollection()->transform(function ($brand) {
+    //         // Collect category IDs by iterating over products
+    //         $categoryIds = $brand->products->flatMap(function ($product) {
+    //             return $product->categories->pluck('id');
+    //         })->unique()->values();
+
+    //         // Fetch category names using find method for each category ID
+    //         $categoryNames = $categoryIds->map(function ($categoryId) {
+    //             $category = Category::find($categoryId); // Using find instead of whereIn
+    //             return $category ? $category->name : null; // Return category name or null if not found
+    //         })->filter()->values();
+
+    //         // Collect store IDs and map them to store names
+    //         $storeIds = $brand->products->pluck('store_id')->unique();
+    //         $storeNames = $storeIds->map(function ($storeId) {
+    //             $store = Store::find($storeId);
+    //             return $store ? $store->name : null;
+    //         })->filter()->values();
+
+    //         // Get the full URL for the logo, whether it's stored in local storage or S3
+    //         $logoUrl = null;
+    //         if ($brand->logo) {
+    //             // Check if the logo URL is already a full URL (starts with http)
+    //             if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
+    //                 $logoUrl = $brand->logo; // If it's a full URL, use it directly
+    //             } else {
+    //                 // Check if logo is stored locally or in S3
+    //                 if (Storage::disk('s3')->exists($brand->logo)) {
+    //                     $logoUrl = Storage::disk('s3')->url($brand->logo); // Full URL from S3
+    //                 } else {
+    //                     $logoUrl = asset('storage/' . $brand->logo); // Full URL from local storage
+    //                 }
+    //             }
+    //         }
+
+    //         return [
+    //             'id' => $brand->id,
+    //             'name' => $brand->name,
+    //             'logo' => $logoUrl, // Full URL for the logo
+    //             'slug' => $brand->website,
+    //             'is_featured' => $brand->is_featured,
+    //             'description' => $brand->description,
+    //             'status' => $brand->status,
+    //             'products_count' => $brand->products_count,
+    //             'category_name' => $categoryNames, // Use the fetched category names
+    //             'store_name' => $storeNames,
+    //             'created_at' => $brand->created_at,
+    //             'updated_at' => $brand->updated_at,
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'brands' => $brands
+    //     ]);
+    // }
     public function getBrandsList(Request $request)
     {
         $query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
-            ->withCount('products') // Only count products, don't load full relation
+            ->withCount('products')
             ->with([
                 'products' => function ($query) {
-                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name'); // Make sure category name is included
+                    $query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
                 }
             ]);
-
-        // Search by name
+    
         if ($request->filled('search')) {
             $query->where('name', 'LIKE', '%' . $request->search . '%');
         }
-
-        // Filter by status
+    
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-
-        // Sorting (default: latest created_at)
+    
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
-
+    
         if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
-
-        // Paginate results (default 10 per page)
+    
         $brands = $query->paginate($request->input('per_page', 10));
-
-        // Transform data (after loading all necessary relations)
-        $brands->getCollection()->transform(function ($brand) {
-            // Collect category IDs by iterating over products
+    
+        // Cache all categories and stores in a single query to avoid N+1
+        $categories = Category::pluck('name', 'id');
+        $stores = Store::pluck('name', 'id');
+    
+        $transformed = $brands->getCollection()->transform(function ($brand) use ($categories, $stores) {
             $categoryIds = $brand->products->flatMap(function ($product) {
                 return $product->categories->pluck('id');
-            })->unique()->values();
-
-            // Fetch category names using find method for each category ID
-            $categoryNames = $categoryIds->map(function ($categoryId) {
-                $category = Category::find($categoryId); // Using find instead of whereIn
-                return $category ? $category->name : null; // Return category name or null if not found
+            })->unique();
+    
+            $categoryNames = $categoryIds->map(function ($id) use ($categories) {
+                return $categories[$id] ?? null;
             })->filter()->values();
-
-            // Collect store IDs and map them to store names
+    
             $storeIds = $brand->products->pluck('store_id')->unique();
-            $storeNames = $storeIds->map(function ($storeId) {
-                $store = Store::find($storeId);
-                return $store ? $store->name : null;
+    
+            $storeNames = $storeIds->map(function ($id) use ($stores) {
+                return $stores[$id] ?? null;
             })->filter()->values();
-
-            // Get the full URL for the logo, whether it's stored in local storage or S3
+    
+            // Simplify logo generation
             $logoUrl = null;
             if ($brand->logo) {
-                // Check if the logo URL is already a full URL (starts with http)
-                if (filter_var($brand->logo, FILTER_VALIDATE_URL)) {
-                    $logoUrl = $brand->logo; // If it's a full URL, use it directly
-                } else {
-                    // Check if logo is stored locally or in S3
-                    if (Storage::disk('s3')->exists($brand->logo)) {
-                        $logoUrl = Storage::disk('s3')->url($brand->logo); // Full URL from S3
-                    } else {
-                        $logoUrl = asset('storage/' . $brand->logo); // Full URL from local storage
-                    }
-                }
+                $logoUrl = filter_var($brand->logo, FILTER_VALIDATE_URL)
+                    ? $brand->logo
+                    : asset('storage/' . $brand->logo); // skip S3 exists check
             }
-
+    
             return [
                 'id' => $brand->id,
                 'name' => $brand->name,
-                'logo' => $logoUrl, // Full URL for the logo
+                'logo' => $logoUrl,
                 'slug' => $brand->website,
                 'is_featured' => $brand->is_featured,
                 'description' => $brand->description,
                 'status' => $brand->status,
                 'products_count' => $brand->products_count,
-                'category_name' => $categoryNames, // Use the fetched category names
+                'category_name' => $categoryNames,
                 'store_name' => $storeNames,
                 'created_at' => $brand->created_at,
                 'updated_at' => $brand->updated_at,
             ];
         });
-
+    
+        $brands->setCollection($transformed);
+    
         return response()->json([
             'success' => true,
-            'brands' => $brands
+            'pagination' => [
+                'total' => $brands->total(),
+                'per_page' => $brands->perPage(),
+                'current_page' => $brands->currentPage(),
+                'last_page' => $brands->lastPage(),
+                'next_page_url' => $brands->nextPageUrl(),
+                'prev_page_url' => $brands->previousPageUrl(),
+            ],
+            'data' => $brands->items(),
         ]);
     }
+    
+    
 
     /**
      * @OA\Get(
@@ -669,6 +756,20 @@ public function update(Request $request, $id)
             }
         }
 
+        $hasAllTitles = true;
+        foreach ($mediaUrls['documents'] as $item) {
+            if (!is_array($item) || !array_key_exists('title', $item)) {
+                $hasAllTitles = false;
+                break;
+            }
+        }
+        if(!$hasAllTitles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create ZIP file. Inavalid documents'
+            ], 404);
+        }
+
         // Create a temporary directory for the ZIP file
         $tempDir = storage_path('app/temp_media');
         if (!file_exists($tempDir)) {
@@ -686,28 +787,38 @@ public function update(Request $request, $id)
                         try {
                             $url = $doc['path'];
                             $title = $doc['title'];
-                            $response = Http::get($url);
-                            if ($response->successful()) {
-                                $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-                                $filename = basename(parse_url($url, PHP_URL_PATH));
-                                $zipPath = $type . '/' . $title . '/' . $filename;
-                                $zip->addFromString($zipPath, $response->body());
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = basename(parse_url($url, PHP_URL_PATH));
+                                    $zipPath = $type . '/' . $title . '/' . $filename;
+                                    $zip->addFromString($zipPath, $response->body());
+                                }
                             }
                         } catch (\Exception $e) {
-                            // Log the error or handle it as needed
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
                         }
                     }
                 } else {
                     foreach ($items as $index => $url) {
                         try {
-                            $response = Http::get($url);
-                            if ($response->successful()) {
-                                $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
-                                $filename = $type . '/' . $type . '_' . ($index + 1) . '.' . $extension;
-                                $zip->addFromString($filename, $response->body());
+                            if (Str::startsWith($url, env('AWS_URL'))) {
+                                $response = Http::get($url);
+                                if ($response->successful()) {
+                                    $extension = pathinfo(parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION);
+                                    $filename = $type . '/' . $type . '_' . ($index + 1) . '.' . $extension;
+                                    $zip->addFromString($filename, $response->body());
+                                }
                             }
                         } catch (\Exception $e) {
-                            // Log the error or handle it as needed
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Failed to create ZIP file. '.$e->getMessage()
+                            ], 500);
                         }
                     }
                 }
@@ -720,7 +831,6 @@ public function update(Request $request, $id)
             ], 500);
         }
 
-// dd('done');
         // Return the ZIP file as a download response
         return response()->download($zipFilePath)->deleteFileAfterSend(true);
     }

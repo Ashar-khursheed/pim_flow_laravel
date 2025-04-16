@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Product;
-use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Log;
@@ -139,11 +138,8 @@ class ProductExportController extends Controller
 		} elseif ($request->type == "Store") {
 			$query->where('store_id', $request->relational_id);
 		} elseif ($request->type == "Category") {
-			$category = Category::find($request->relational_id);
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
-			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
-				$q->whereIn('category_id', $leafCategoryIds);
+			$query->whereHas('categories', function ($q) use ($request) {
+				$q->where('category_id', $request->relational_id);
 			});
 		}
 

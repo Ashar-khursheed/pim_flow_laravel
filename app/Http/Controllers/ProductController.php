@@ -26,109 +26,178 @@ use App\Jobs\ImportProductJob;
 class ProductController extends BaseController
 {
 	/**
-	 * @OA\Get(
-	 *     path="/api/products",
-	 *     summary="Get paginated list of products",
-	 *     description="Retrieves a paginated list of products with brand, store, categories, and slug details.",
-	 *     tags={"Products"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="per_page",
-	 *         in="query",
-	 *         description="Number of products per page (default: 50)",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", example=50)
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Successful response",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(
-	 *                     @OA\Property(property="id", type="integer", example=1),
-	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
-	 *                     @OA\Property(property="sku", type="string", example="PROD-123"),
-	 *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg"),
-	 *                     @OA\Property(property="brand", type="string", example="Brand Name"),
-	 *                     @OA\Property(property="store", type="string", example="Store Name"),
-	 *                     @OA\Property(property="status", type="string", example="active"),
-	 *                     @OA\Property(
-	 *                         property="product_family",
-	 *                         type="array",
-	 *                         @OA\Items(type="string", example="Category Name")
-	 *                     ),
-	 *                     @OA\Property(property="taxonomy_path", type="string", example="category/product-name")
-	 *                 )
-	 *             ),
-	 *             @OA\Property(
-	 *                 property="pagination",
-	 *                 type="object",
-	 *                 @OA\Property(property="total", type="integer", example=100),
-	 *                 @OA\Property(property="per_page", type="integer", example=50),
-	 *                 @OA\Property(property="current_page", type="integer", example=1),
-	 *                 @OA\Property(property="last_page", type="integer", example=5),
-	 *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://example.com/api/products?page=2"),
-	 *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null)
-	 *             )
-	 *         )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+ * @OA\Get(
+ *     path="/api/products",
+ *     summary="Get paginated list of products",
+ *     description="Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number for pagination",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="per_page",
+ *         in="query",
+ *         description="Number of products per page (default: 50)",
+ *         required=false,
+ *         @OA\Schema(type="integer", example=50)
+ *     ),
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search term for filtering products by name, SKU, brand, store, or category",
+ *         required=false,
+ *         @OA\Schema(type="string", example="samsung")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="Sample Product"),
+ *                     @OA\Property(property="sku", type="string", example="PROD-123"),
+ *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg"),
+ *                     @OA\Property(property="brand", type="string", example="Brand Name"),
+ *                     @OA\Property(property="store", type="string", example="Store Name"),
+ *                     @OA\Property(property="status", type="string", example="active"),
+ *                     @OA\Property(
+ *                         property="product_family",
+ *                         type="array",
+ *                         @OA\Items(type="string", example="Category Name")
+ *                     ),
+ *                     @OA\Property(property="taxonomy_path", type="string", example="category/product-name")
+ *                 )
+ *             ),
+ *             @OA\Property(
+ *                 property="pagination",
+ *                 type="object",
+ *                 @OA\Property(property="total", type="integer", example=100),
+ *                 @OA\Property(property="per_page", type="integer", example=50),
+ *                 @OA\Property(property="current_page", type="integer", example=1),
+ *                 @OA\Property(property="last_page", type="integer", example=5),
+ *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://example.com/api/products?page=2"),
+ *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null)
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+	// public function index(Request $request)
+	// {
+	// 	$perPage = $request->input('per_page', 50);
+
+	// 	$products = Product::with([
+	// 		'brand:id,name',
+	// 		'store:id,name',
+	// 		'categories:id,name',
+	// 		'slug:id,key,reference_id'
+	// 	])
+	// 	->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status'])
+	// 	->orderBy('id', 'desc') // Add this line for descending order
+	// 	->paginate($perPage);
+
+	// 	// Formatting response
+	// 	$formattedProducts = $products->map(function ($product) {
+	// 		return [
+	// 			'id' => $product->id,
+	// 			'name' => $product->name,
+	// 			'sku' => $product->sku,
+	// 			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+
+	// 			'brand' => optional($product->brand)->name,
+	// 			'store' => optional($product->store)->name,
+	// 			'status' => $product->status,
+	// 			'product_family' => $product->categories->pluck('name')->toArray(),
+	// 			'taxonomy_path' => optional($product->slug)->key ?? '',
+	// 		];
+	// 	});
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Products retrieved successfully',
+	// 		'data' => $formattedProducts,
+	// 		'pagination' => [
+	// 			'total' => $products->total(),
+	// 			'per_page' => $products->perPage(),
+	// 			'current_page' => $products->currentPage(),
+	// 			'last_page' => $products->lastPage(),
+	// 			'next_page_url' => $products->nextPageUrl(),
+	// 			'prev_page_url' => $products->previousPageUrl(),
+	// 		],
+	// 	]);
+	// }
 	public function index(Request $request)
-	{
-		$perPage = 50;
+{
+    $perPage = $request->input('per_page', 50);
+    $search = $request->input('search');
 
-		$products = Product::with([
-			'brand:id,name',
-			'store:id,name',
-			'categories:id,name',
-			'slug:id,key,reference_id'
-		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status'])
-		->orderBy('id', 'desc') // Add this line for descending order
-		->paginate($perPage);
+    $query = Product::with([
+        'brand:id,name',
+        'store:id,name',
+        'categories:id,name',
+        'slug:id,key,reference_id'
+    ])
+    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
+    
+    // Apply search if provided
+    if ($search) {
+        $query->where(function($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhere('sku', 'like', "%{$search}%")
+              ->orWhereHas('brand', function($brandQuery) use ($search) {
+                  $brandQuery->where('name', 'like', "%{$search}%");
+              })
+              ->orWhereHas('store', function($storeQuery) use ($search) {
+                  $storeQuery->where('name', 'like', "%{$search}%");
+              })
+              ->orWhereHas('categories', function($categoryQuery) use ($search) {
+                  $categoryQuery->where('name', 'like', "%{$search}%");
+              });
+        });
+    }
+    
+    $products = $query->orderBy('id', 'desc')
+                     ->paginate($perPage);
 
-		// Formatting response
-		$formattedProducts = $products->map(function ($product) {
-			return [
-				'id' => $product->id,
-				'name' => $product->name,
-				'sku' => $product->sku,
-				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+    // Formatting response
+    $formattedProducts = $products->map(function ($product) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+            'brand' => optional($product->brand)->name,
+            'store' => optional($product->store)->name,
+            'status' => $product->status,
+            'product_family' => $product->categories->pluck('name')->toArray(),
+            'taxonomy_path' => optional($product->slug)->key ?? '',
+        ];
+    });
 
-				'brand' => optional($product->brand)->name,
-				'store' => optional($product->store)->name,
-				'status' => $product->status,
-				'product_family' => $product->categories->pluck('name')->toArray(),
-				'taxonomy_path' => optional($product->slug)->key ?? '',
-			];
-		});
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Products retrieved successfully',
-			'data' => $formattedProducts,
-			'pagination' => [
-				'total' => $products->total(),
-				'per_page' => $products->perPage(),
-				'current_page' => $products->currentPage(),
-				'last_page' => $products->lastPage(),
-				'next_page_url' => $products->nextPageUrl(),
-				'prev_page_url' => $products->previousPageUrl(),
-			],
-		]);
-	}
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully',
+        'data' => $formattedProducts,
+        'pagination' => [
+            'total' => $products->total(),
+            'per_page' => $products->perPage(),
+            'current_page' => $products->currentPage(),
+            'last_page' => $products->lastPage(),
+            'next_page_url' => $products->nextPageUrl(),
+            'prev_page_url' => $products->previousPageUrl(),
+        ],
+    ]);
+}
 
 	/**
 	 * Show the form for creating a new resource.
@@ -552,7 +621,7 @@ class ProductController extends BaseController
 				// case 'frequently_bought_together':
 				// 	// Ensure $value is a valid JSON string
 				// 	$decoded = json_decode($value, true);
-
+				
 				// 	if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
 				// 		$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
 				// 	} else {
@@ -561,16 +630,16 @@ class ProductController extends BaseController
 				// 			// Check if the item is an array and contains 'value' or it's a comma-separated string
 				// 			return is_array($item) ? ($item['value'] ?? null) : $item;
 				// 		}, $decoded);
-
+						
 				// 		// Flatten any possible comma-separated IDs and filter out null values
 				// 		$productIds = array_merge(...array_map(function($id) {
 				// 			return explode(',', $id);  // Split comma-separated values
 				// 		}, $productIds));
-
+						
 				// 		$productIds = array_filter($productIds, function($id) {
 				// 			return is_numeric($id); // Make sure we're working with numeric IDs
 				// 		});
-
+						
 				// 		// If we have product IDs, fetch their SKUs from the Product model
 				// 		$productSkus = [];
 				// 		if (!empty($productIds)) {
@@ -579,13 +648,13 @@ class ProductController extends BaseController
 				// 										  ->select('id', 'sku')
 				// 										  ->get()
 				// 										  ->keyBy('id');
-
+														  
 				// 			// Create a mapping of product ID to SKU
 				// 			foreach ($products as $product) {
 				// 				$productSkus[$product->id] = $product->sku;
 				// 			}
 				// 		}
-
+				
 				// 		// Now map the original items, but concatenate SKUs as a comma-separated string
 				// 		$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
 				// 			$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
@@ -594,19 +663,19 @@ class ProductController extends BaseController
 				// 			$skus = array_map(function($id) use ($productSkus) {
 				// 				return $productSkus[$id] ?? null;
 				// 			}, $ids);
-
+				
 				// 			return [
 				// 				'value' => implode(',', array_filter($skus)) // Join the SKUs back as a comma-separated string
 				// 			];
 				// 		}, $decoded);
 				// 	}
 				// 	break;
-
-
+				
+			
 				case 'frequently_bought_together':
 					// Ensure $value is a valid JSON string
 					$decoded = json_decode($value, true);
-
+					
 					if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
 						$formattedProduct[$attribute] = []; // Default to an empty array if decoding fails
 					} else {
@@ -615,17 +684,17 @@ class ProductController extends BaseController
 							// Check if the item is an array and contains 'value' or it's a comma-separated string
 							return is_array($item) ? ($item['value'] ?? null) : $item;
 						}, $decoded);
-
+				
 						// Flatten any possible comma-separated IDs into an array of individual IDs
 						$productIds = array_merge(...array_map(function($id) {
 							return explode(',', $id);  // Split comma-separated values
 						}, $productIds));
-
+				
 						// Filter out null or empty values
 						$productIds = array_filter($productIds, function($id) {
 							return !empty($id); // Ensure we only have non-empty IDs
 						});
-
+				
 						// If we have product IDs, fetch their SKUs from the Product model
 						$productSkus = [];
 						if (!empty($productIds)) {
@@ -634,13 +703,13 @@ class ProductController extends BaseController
 														  ->select('id', 'sku')
 														  ->get()
 														  ->keyBy('id');
-
+														  
 							// Create a mapping of product ID to SKU
 							foreach ($products as $product) {
 								$productSkus[$product->id] = $product->sku;
 							}
 						}
-
+					
 						// Now map the original items, but include SKUs as key-value pairs (ID => SKU)
 						$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
 							$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
@@ -649,21 +718,21 @@ class ProductController extends BaseController
 							$skus = array_map(function($id) use ($productSkus) {
 								return $productSkus[$id] ?? null;
 							}, $ids);
-
+					
 							// Return a flat array with 'id' => ID and 'sku' => SKU
 							return array_map(function($id, $sku) {
 								return ['id' => $id, 'sku' => $sku]; // Pair each ID with its SKU
 							}, $ids, $skus);
 						}, $decoded);
-
+				
 						// Flatten the nested arrays (if any) and merge them into one array
 						$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
 					}
 					break;
-
-
-
-
+				
+				
+				
+				
 
 					case 'compare_type':
 					$decoded = json_decode($value, true);
@@ -1240,37 +1309,37 @@ class ProductController extends BaseController
 	 // Handle document upload
 	 $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
 	 $existingDocs = is_array($existingDocs) ? $existingDocs : [];
-
+	 
 	 if ($request->hasFile('documents')) {
 		 $uploadedDocs = [];
 		 foreach ($request->file('documents') as $doc) {
 			 $path = $doc->store($documentPath, 's3');
-
+			 
 			 // Check if the title is provided, if not, use the document's name
 			 $title = $request->input('title', $doc->getClientOriginalName()); // default to original name if title is empty
-
+			 
 			 // If title is still empty, use the document name as title
 			 if (empty($title)) {
 				 $title = basename($doc->getClientOriginalName());  // Use document name if title is empty
 			 }
-
+			 
 			 // Create an array with title and path for each uploaded document
 			 $uploadedDocs[] = [
 				 'title' => $title,
 				 'path' => Storage::disk('s3')->url($path)
 			 ];
 		 }
-
+	 
 		 // Merge with existing documents
 		 $input['documents'] = array_merge($existingDocs, $uploadedDocs);
 	 } else {
 		 // Retain existing documents if no new files are uploaded
 		 $input['documents'] = $existingDocs;
 	 }
-
+	 
 	 // Convert to JSON with unescaped slashes
 	 $input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
-
+	 
 
 
 	 $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -1309,19 +1378,19 @@ class ProductController extends BaseController
 		"variant_inventory_policy", "variant_fulfillment_service", "price",
 		"sale_price", "sale_type", "cost_per_item", "cost_per_item_currency",
 		"cost_type", "additional_cost_percentage", "additional_cost_value",
-		"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity",
-		"maximum_order_quantity", "name", "content", "description", "images",
-		"image", "video_url", "video_path", "videos", "documents", "length",
-		"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id",
-		"shipping_weight_option", "shipping_weight", "shipping_dimension_option",
-		"shipping_width", "shipping_depth", "shipping_height", "shipping_length",
-		"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping",
-		"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
-		"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type",
-		"compare_products", "google_shopping_category", "google_shopping_mpn", "order",
+		"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity", 
+		"maximum_order_quantity", "name", "content", "description", "images", 
+		"image", "video_url", "video_path", "videos", "documents", "length", 
+		"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id", 
+		"shipping_weight_option", "shipping_weight", "shipping_dimension_option", 
+		"shipping_width", "shipping_depth", "shipping_height", "shipping_length", 
+		"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping", 
+		"variant_barcode", "variant_color_title", "variant_color_value", "store_id", 
+		"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type", 
+		"compare_products", "google_shopping_category", "google_shopping_mpn", "order", 
 		"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
 	];
-
+	
 	unset($input['product_attributes']);
 
 	 /* Check for invalid fields */
@@ -1489,12 +1558,12 @@ class ProductController extends BaseController
 		$product->google_shopping_category = $input['google_shopping_category'];
 		unset($input['google_shopping_category']);
 	}
-
+	
 	if (isset($input['google_shopping_mpn'])) {
 		$product->google_shopping_mpn = $input['google_shopping_mpn'];
 		unset($input['google_shopping_mpn']);
 	}
-
+	
 	if (isset($input['box_quantity'])) {
 		// If box_quantity should be an integer
 		$product->box_quantity = (int)$input['box_quantity'];
@@ -1851,7 +1920,7 @@ class ProductController extends BaseController
 	{
 		try {
 			$product->delete();
-
+	
 			return response()->json([
 				'success' => true,
 				'message' => 'Product deleted successfully.',
@@ -2145,7 +2214,6 @@ class ProductController extends BaseController
 					'chunk' => $chunk,
 					'userId' => auth()->id()
 				];
-				$batch->options['queue'] = 'JOB1';
 				$batch->add(new ImportProductJob($data));
 			}
 
