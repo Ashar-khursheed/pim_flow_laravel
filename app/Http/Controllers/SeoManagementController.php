@@ -369,7 +369,7 @@ public function show($relation_id)
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+				'og_image_file' => 'exclude_if:og_image_file,'.$request->og_image_file.'|file|image|mimes:jpeg,png,jpg,gif|max:2048',
 				'secondary_keywords' => 'nullable|string',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',
@@ -387,14 +387,21 @@ public function show($relation_id)
 		 // Convert indexing boolean
 		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
 		 if (!empty($validated['popular_tags'])) {
-			// If it's a string, convert to array
 			if (is_string($validated['popular_tags'])) {
-				$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+				// Try to decode if it's a JSON string
+				$decoded = json_decode($validated['popular_tags'], true);
+		
+				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+					$seoData['popular_tags'] = $decoded;
+				} else {
+					// Fallback: treat it as a plain comma-separated string
+					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+				}
 			} else {
 				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
-			// No need to json_encode here - Laravel will handle it via the cast
 		}
+		
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
