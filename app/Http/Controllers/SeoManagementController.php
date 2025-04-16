@@ -369,7 +369,7 @@ public function show($relation_id)
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+				'og_image_file' => 'sometimes|file|image|mimes:jpeg,png,jpg,gif|max:2048',
 				'secondary_keywords' => 'nullable|string',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',

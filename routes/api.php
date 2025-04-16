@@ -28,6 +28,7 @@ use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\BrandTemp2Controller;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -62,6 +63,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
+	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 	Route::resource('categories', CategoryController::class)->only(['index']);

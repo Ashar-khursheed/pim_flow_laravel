@@ -1,0 +1,62 @@
+<?php
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+/**
+ * @OA\Schema(
+ *     schema="BrandTemp2",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", format="int64"),
+ *     @OA\Property(property="brand_id", type="integer"),
+ *     @OA\Property(
+ *         property="website_banners_videos",
+ *         type="array",
+ *         @OA\Items(
+ *             type="object",
+ *             @OA\Property(property="file", type="string", format="uri"),
+ *             @OA\Property(property="type", type="string", enum={"image", "video"}),
+ *             @OA\Property(property="alt_text", type="string")
+ *         )
+ *     ),
+ *     @OA\Property(
+ *         property="website_banners_videos_mobile",
+ *         type="array",
+ *         @OA\Items(
+ *             type="object",
+ *             @OA\Property(property="file", type="string", format="uri"),
+ *             @OA\Property(property="type", type="string", enum={"image", "video"}),
+ *             @OA\Property(property="alt_text", type="string")
+ *         )
+ *     ),
+ *     @OA\Property(property="created_at", type="string", format="date-time"),
+ *     @OA\Property(property="updated_at", type="string", format="date-time")
+ * )
+ */
+class BrandTemp2 extends Model
+{
+    protected $table = 'brand_temp_2';
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'page_top_banners_desktop' => 'array',
+        'page_top_banners_mobile' => 'array',
+        'category_banners' => 'array',
+        'page_middle_banners_desktop' => 'array',
+        'page_middle_banners_mobile' => 'array',
+        'website_banners_videos' => 'array',
+        'website_banners_videos_mobile' => 'array',
+    ];
+
+    public function getCategoryIdAttribute($value)
+    {
+        return json_decode($value, true);
+    }
+
+    // Automatically encode category_id to JSON when setting
+    public function setCategoryIdAttribute($value)
+    {
+        $this->attributes['category_id'] = is_array($value) ? json_encode($value) : $value;
+    }
+}
