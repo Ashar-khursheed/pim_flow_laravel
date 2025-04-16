@@ -97,6 +97,13 @@ class CategoryController extends BaseController
 
 		$categoriesList = $categories->get(['id', 'name', 'parent_id', 'image', 'slug', 'is_featured']);
 
+				// Append full image URL
+		$categoriesList->transform(function ($category) {
+			$category->image = $category->image
+				? asset('storage/' . $category->image)
+				: null;
+			return $category;
+		});
 		return response()->json([
 			'success' => true,
 			'message' => 'Category List',
