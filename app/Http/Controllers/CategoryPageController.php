@@ -9,6 +9,30 @@ use Illuminate\Support\Facades\Log;
 
 class CategoryPageController extends Controller
 {
+
+    /**
+     * @OA\Get(
+     *     path="/api/category-pages",
+     *     tags={"Category Pages"},
+     *     summary="Get all category pages",
+     *     security={{"bearerAuth":{}}},
+     *     description="Fetch a list of all category pages.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(ref="#/components/schemas/CategoryPage")
+     *         )
+     *     )
+     * )
+     */
+    public function index()
+    {
+        $pages = CategoryPage::all();
+        return response()->json($pages);
+    }
+
     /**
      * @OA\Get(
      *     path="/api/category-pages/{category_id}",
