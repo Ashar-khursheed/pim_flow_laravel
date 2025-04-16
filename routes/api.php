@@ -87,7 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('stores', StoreController::class);
 
 
-
+    
 	Route::post('/category-pages', [CategoryPageController::class, 'store']);
 	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
 	Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
@@ -140,3 +140,4 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
+Route::get('/category-pages', [CategoryPageController::class, 'index']);
