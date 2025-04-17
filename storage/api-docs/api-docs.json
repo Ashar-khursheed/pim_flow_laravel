@@ -2161,6 +2161,36 @@
                                     "extra_description": {
                                         "type": "string",
                                         "example": "Best electronics category"
+                                    },
+                                    "top_picks_in_santos": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "1,2,3"
+                                    },
+                                    "top_deals_from_our_sellers": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "4,5,6"
+                                    },
+                                    "explore_top_picks": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "7,8,9"
+                                    },
+                                    "hot_new_releases": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "10,11,12"
+                                    },
+                                    "products_you_may_also_like": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "13,14,15"
+                                    },
+                                    "inspired_by_your_browsing_history": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "16,17,18"
                                     }
                                 },
                                 "type": "object"
@@ -2345,6 +2375,30 @@
                                     },
                                     "extra_description": {
                                         "type": "string"
+                                    },
+                                    "top_picks_in_santos": {
+                                        "type": "string",
+                                        "example": "1,2,3"
+                                    },
+                                    "top_deals_from_our_sellers": {
+                                        "type": "string",
+                                        "example": "4,5,6"
+                                    },
+                                    "explore_top_picks": {
+                                        "type": "string",
+                                        "example": "7,8,9"
+                                    },
+                                    "hot_new_releases": {
+                                        "type": "string",
+                                        "example": "10,11,12"
+                                    },
+                                    "products_you_may_also_like": {
+                                        "type": "string",
+                                        "example": "13,14,15"
+                                    },
+                                    "inspired_by_your_browsing_history": {
+                                        "type": "string",
+                                        "example": "16,17,18"
                                     }
                                 },
                                 "type": "object"

@@ -65,8 +65,12 @@ class BrandTemp2Controller extends Controller
         }
 
         $brand = BrandTemp2::create($data);
-        return response()->json($brand, 201);
-    }
+        return response()->json([
+            'sucess' => 'true',
+            'message' => 'Brand template created successfully.',
+            'data' => $brand
+        ], 201);   
+     }
 
     /**
      * @OA\Get(
@@ -127,7 +131,12 @@ class BrandTemp2Controller extends Controller
         $data['category_id'] = $request->category_id;
     }
         $brand->update($data);
-        return response()->json($brand);
+        // return response()->json($brand);
+        return response()->json([
+            'sucess' => 'true',
+            'message' => 'Brand updated successfully.',
+            'data' => $brand
+        ], 201);
     }
 
     /**
