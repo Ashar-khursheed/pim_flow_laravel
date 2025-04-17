@@ -868,4 +868,71 @@ public function store(Request $request)
 		}
 		return response()->download($zipFilePath)->deleteFileAfterSend(true);
 	}
+
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/brands/{id}/categories",
+	 *     summary="Get categories by brand ID",
+	 *     description="Fetches all unique categories that are associated with products of the given brand.",
+	 *     operationId="getBrandCategories",
+	 *     tags={"Brands"},
+	 * 	  security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="ID of the brand",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="List of categories for the specified brand",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="brand_id", type="integer", example=1),
+	 *             @OA\Property(
+	 *                 property="categories",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=3),
+	 *                     @OA\Property(property="name", type="string", example="Electronics"),
+	 *                     @OA\Property(property="slug", type="string", example="electronics"),
+	 *                     @OA\Property(property="description", type="string", example="Category for electronic items")
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Brand not found"
+	 *     )
+	 * )
+	 */
+
+	 public function getCategories($id)
+	 {
+		 $brand = Brand::with(['products.categories:id,name'])->findOrFail($id);
+	 
+		 // Flatten and get unique categories, only with id and name
+		 $categories = $brand->products
+			 ->flatMap(function ($product) {
+				 return $product->categories->map(function ($category) {
+					 return [
+						 'id' => $category->id,
+						 'name' => $category->name,
+					 ];
+				 });
+			 })
+			 ->unique('id')
+			 ->values();
+	 
+		 return response()->json([
+			 'sucess' => 'true',
+			 'brand_id' => $id,
+			 'categories' => $categories
+		 ]);
+	 }
+	 
 }

@@ -138,6 +138,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
 	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
+	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
+
+
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
