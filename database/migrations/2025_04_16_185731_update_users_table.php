@@ -11,6 +11,9 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
+		DB::statement('CREATE TABLE users1 LIKE users');
+		DB::statement('INSERT INTO users1 SELECT * FROM users');
+
 		Schema::table('users', function (Blueprint $table) {
 			$table->dropColumn(['avatar_id', 'super_user', 'manage_supers', 'permissions']);
 		});
@@ -34,15 +37,10 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::table('users', function (Blueprint $table) {
-			/* Re-add dropped columns (assuming original types) */
-			$table->unsignedBigInteger('avatar_id')->nullable();
-			$table->boolean('super_user')->default(0);
-			$table->boolean('manage_supers')->default(0);
-			$table->text('permissions')->nullable();
+		/* Drop the modified users table */
+		Schema::dropIfExists('users');
 
-			/* Remove newly added column */
-			$table->dropColumn('profile_img');
-		});
+		/* Rename the backup back to users */
+		Schema::rename('users1', 'users');
 	}
 };

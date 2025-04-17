@@ -11,6 +11,7 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
+		Schema::rename('roles', 'roles1');
 
 		Schema::create('permissions', function (Blueprint $table) {
 			$table->id();
@@ -66,5 +67,6 @@ return new class extends Migration
 		Schema::dropIfExists('model_has_permissions');
 		Schema::dropIfExists('roles');
 		Schema::dropIfExists('permissions');
+		Schema::rename('roles1', 'roles');
 	}
 };
