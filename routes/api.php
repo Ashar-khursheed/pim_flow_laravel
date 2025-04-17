@@ -43,11 +43,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
 
 
-	
+
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
-	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
 	Route::prefix('users')->group(function () {
 		Route::post('/', [UserController::class, 'store']);
@@ -72,7 +71,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
-	Route::resource('categories', CategoryController::class)->only(['index']);
+
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
@@ -145,6 +144,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
 	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
+
+	
+	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+	Route::resource('categories', CategoryController::class)->only(['index']);
+	Route::post('/categories/{id}', [CategoryController::class, 'update']);
+
+	Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
+	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
+	Route::post('/categories/reorder', [CategoryController::class ,'reorder']);
+    Route::apiResource('categories', CategoryController::class);
 
 
 });
