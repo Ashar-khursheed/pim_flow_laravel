@@ -97,11 +97,15 @@ class CategoryPageController extends Controller
  *                 @OA\Property(property="title", type="string", example="Electronics"),
  *                 @OA\Property(property="description", type="string", example="Best electronics category"),
  *                 @OA\Property(property="banner_image", type="string", format="binary"),
+ *                 @OA\Property(property="banner_image_alt", type="string", example="Banner image alt text"),
  *                 @OA\Property(property="banner_link", type="string", example="https://example.com"),
  *                 @OA\Property(property="inner_categories", type="string", example="3,4,5", description="Comma-separated IDs"),
  *                 @OA\Property(property="six_images[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="six_images_alt[]", type="array", @OA\Items(type="string", example="Alt text for six image")),
  *                 @OA\Property(property="four_banners[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="four_banners_alt[]", type="array", @OA\Items(type="string", example="Alt text for four banner")),
  *                 @OA\Property(property="twelve_images[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="twelve_images_alt[]", type="array", @OA\Items(type="string", example="Alt text for twelve image")),
  *                 @OA\Property(property="related_products", type="string", example="101,102,103", description="Comma-separated IDs"),
  *                 @OA\Property(property="top_picks_in_santos", type="string", example="101,102,103", description="Comma-separated IDs"),
  *                 @OA\Property(property="top_deals_from_our_sellers", type="string", example="101,102,103", description="Comma-separated IDs"),
@@ -132,11 +136,15 @@ public function store(Request $request)
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'banner_image_alt' => 'nullable|string|max:255',
             'banner_link' => 'nullable|string|url',
             'inner_categories' => 'nullable|string',
             'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'six_images_alt.*' => 'nullable|string|max:255',
             'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'four_banners_alt.*' => 'nullable|string|max:255',
             'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'twelve_images_alt.*' => 'nullable|string|max:255',
             'related_products' => 'nullable|string',
             'section_title' => 'nullable|string|max:255',
             'section_description' => 'nullable|string',
@@ -148,7 +156,6 @@ public function store(Request $request)
             'hot_new_releases' => 'nullable|string',
             'products_you_may_also_like' => 'nullable|string',
             'inspired_by_your_browsing_history' => 'nullable|string',
-
         ]);
         
         $disk = 's3'; // Use S3 disk for storage
@@ -169,48 +176,71 @@ public function store(Request $request)
             $filePath = Storage::disk($disk)->url(
                 $request->file('banner_image')->store("$folder/banner", $disk)
             );
-            
         }
 
+        // Process six images with their corresponding alt texts
         $sixImages = [];
+        $sixImagesAlt = [];
         if ($request->hasFile('six_images')) {
-            foreach ($request->file('six_images') as $file) {
-                $sixImages[] = Storage::disk($disk)->url($file->store("$folder/six", $disk));
+            foreach ($request->file('six_images') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/six", $disk));
+                $sixImages[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key]) 
+                    ? $request->six_images_alt[$key] 
+                    : null;
             }
         }
         
+        // Process four banners with their corresponding alt texts
         $fourBanners = [];
+        $fourBannersAlt = [];
         if ($request->hasFile('four_banners')) {
-            foreach ($request->file('four_banners') as $file) {
-                $fourBanners[] = Storage::disk($disk)->url($file->store("$folder/four", $disk));
+            foreach ($request->file('four_banners') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/four", $disk));
+                $fourBanners[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key]) 
+                    ? $request->four_banners_alt[$key] 
+                    : null;
             }
         }
         
+        // Process twelve images with their corresponding alt texts
         $twelveImages = [];
+        $twelveImagesAlt = [];
         if ($request->hasFile('twelve_images')) {
-            foreach ($request->file('twelve_images') as $file) {
-                $twelveImages[] = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
+            foreach ($request->file('twelve_images') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
+                $twelveImages[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key]) 
+                    ? $request->twelve_images_alt[$key] 
+                    : null;
             }
         }
         
-     
         $page = CategoryPage::updateOrCreate(
             ['category_id' => $request->category_id],
             [
                 'title' => $request->title,
                 'description' => $request->description,
                 'banner_image' => $filePath,
+                'banner_image_alt' => $request->banner_image_alt,
                 'banner_link' => $request->banner_link,
                 'inner_categories' => ($innerCategories),
                 'six_images' => ($sixImages),
+                'six_images_alt' => ($sixImagesAlt),
                 'four_banners' => ($fourBanners),
+                'four_banners_alt' => ($fourBannersAlt),
                 'twelve_images' => ($twelveImages),
+                'twelve_images_alt' => ($twelveImagesAlt),
                 'related_products' => ($relatedProducts),
                 'section_title' => $request->section_title,
                 'section_description' => $request->section_description,
                 'extra_heading' => $request->extra_heading,
                 'extra_description' => $request->extra_description,
-               'top_picks_in_santos' => !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : [],
+                'top_picks_in_santos' => !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : [],
                 'top_deals_from_our_sellers' => !empty($request->top_deals_from_our_sellers) ? explode(',', $request->top_deals_from_our_sellers) : [],
                 'explore_top_picks' => !empty($request->explore_top_picks) ? explode(',', $request->explore_top_picks) : [],
                 'hot_new_releases' => !empty($request->hot_new_releases) ? explode(',', $request->hot_new_releases) : [],
@@ -220,37 +250,41 @@ public function store(Request $request)
         );
 
         return response()->json([
-                'success' => true,
-                'message' => 'Category page updated successfully',
-                'data' => [
-                    'id' => $page->id,
-                    'category_id' => $page->category_id,
-                    'title' => $page->title,
-                    'description' => $page->description,
-                    'banner_image' => $page->banner_image,
-                    'banner_link' => $page->banner_link,
-                    'inner_categories' => $page->inner_categories,
-                    'six_images' => $page->six_images,
-                    'four_banners' => $page->four_banners,
-                    'twelve_images' => $page->twelve_images,
-                    'related_products' => $page->related_products,
-                    'section_title' => $page->section_title,
-                    'section_description' => $page->section_description,
+            'success' => true,
+            'message' => 'Category page updated successfully',
+            'data' => [
+                'id' => $page->id,
+                'category_id' => $page->category_id,
+                'title' => $page->title,
+                'description' => $page->description,
+                'banner_image' => $page->banner_image,
+                'banner_image_alt' => $page->banner_image_alt,
+                'banner_link' => $page->banner_link,
+                'inner_categories' => $page->inner_categories,
+                'six_images' => $page->six_images,
+                'six_images_alt' => $page->six_images_alt,
+                'four_banners' => $page->four_banners,
+                'four_banners_alt' => $page->four_banners_alt,
+                'twelve_images' => $page->twelve_images,
+                'twelve_images_alt' => $page->twelve_images_alt,
+                'related_products' => $page->related_products,
+                'section_title' => $page->section_title,
+                'section_description' => $page->section_description,
                 
-                    // Rename here
-                    'brand_heading' => $page->extra_heading,
-                    'brand_description' => $page->extra_description,
+                // Rename here
+                'brand_heading' => $page->extra_heading,
+                'brand_description' => $page->extra_description,
                 
-                    'top_picks_in_santos' => $page->top_picks_in_santos,
-                    'top_deals_from_our_sellers' => $page->top_deals_from_our_sellers,
-                    'explore_top_picks' => $page->explore_top_picks,
-                    'hot_new_releases' => $page->hot_new_releases,
-                    'products_you_may_also_like' => $page->products_you_may_also_like,
-                    'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
-                ]
-            ], 201);
+                'top_picks_in_santos' => $page->top_picks_in_santos,
+                'top_deals_from_our_sellers' => $page->top_deals_from_our_sellers,
+                'explore_top_picks' => $page->explore_top_picks,
+                'hot_new_releases' => $page->hot_new_releases,
+                'products_you_may_also_like' => $page->products_you_may_also_like,
+                'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
+            ]
+        ], 201);
            
-            } catch (\Exception $e) {
+    } catch (\Exception $e) {
         // Return detailed error in development
         if (env('APP_DEBUG', false)) {
             return response()->json([
@@ -289,11 +323,15 @@ public function store(Request $request)
  *                 @OA\Property(property="title", type="string", example="Updated Electronics"),
  *                 @OA\Property(property="description", type="string"),
  *                 @OA\Property(property="banner_image", type="string", format="binary"),
+ *                 @OA\Property(property="banner_image_alt", type="string", example="Banner image alt text"),
  *                 @OA\Property(property="banner_link", type="string", example="https://example.com"),
  *                 @OA\Property(property="inner_categories", type="string", example="3,4,5"),
  *                 @OA\Property(property="six_images[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="six_images_alt[]", type="array", @OA\Items(type="string", example="Alt text for six image")),
  *                 @OA\Property(property="four_banners[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="four_banners_alt[]", type="array", @OA\Items(type="string", example="Alt text for four banner")),
  *                 @OA\Property(property="twelve_images[]", type="array", @OA\Items(type="string", format="binary")),
+ *                 @OA\Property(property="twelve_images_alt[]", type="array", @OA\Items(type="string", example="Alt text for twelve image")),
  *                 @OA\Property(property="related_products", type="string", example="101,102"),
  *                 @OA\Property(property="top_picks_in_santos", type="string", example="101,102,103", description="Comma-separated IDs"),
  *                 @OA\Property(property="top_deals_from_our_sellers", type="string", example="101,102,103", description="Comma-separated IDs"),
@@ -324,11 +362,15 @@ public function update(Request $request, $id)
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'banner_image_alt' => 'nullable|string|max:255',
             'banner_link' => 'nullable|string|url',
             'inner_categories' => 'nullable|string',
             'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'six_images_alt.*' => 'nullable|string|max:255',
             'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'four_banners_alt.*' => 'nullable|string|max:255',
             'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'twelve_images_alt.*' => 'nullable|string|max:255',
             'related_products' => 'nullable|string',
             'section_title' => 'nullable|string|max:255',
             'section_description' => 'nullable|string',
@@ -363,27 +405,72 @@ public function update(Request $request, $id)
             );
         }
 
+        // Process six images with their corresponding alt texts
         $sixImages = $page->six_images ?? [];
+        $sixImagesAlt = $page->six_images_alt ?? [];
         if ($request->hasFile('six_images')) {
             $sixImages = [];
-            foreach ($request->file('six_images') as $file) {
-                $sixImages[] = Storage::disk($disk)->url($file->store("$folder/six", $disk));
+            $sixImagesAlt = [];
+            foreach ($request->file('six_images') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/six", $disk));
+                $sixImages[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key]) 
+                    ? $request->six_images_alt[$key] 
+                    : null;
+            }
+        } else if ($request->has('six_images_alt')) {
+            // Update alt texts without changing images
+            foreach ($request->six_images_alt as $key => $alt) {
+                if (isset($sixImagesAlt[$key])) {
+                    $sixImagesAlt[$key] = $alt;
+                }
             }
         }
 
+        // Process four banners with their corresponding alt texts
         $fourBanners = $page->four_banners ?? [];
+        $fourBannersAlt = $page->four_banners_alt ?? [];
         if ($request->hasFile('four_banners')) {
             $fourBanners = [];
-            foreach ($request->file('four_banners') as $file) {
-                $fourBanners[] = Storage::disk($disk)->url($file->store("$folder/four", $disk));
+            $fourBannersAlt = [];
+            foreach ($request->file('four_banners') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/four", $disk));
+                $fourBanners[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key]) 
+                    ? $request->four_banners_alt[$key] 
+                    : null;
+            }
+        } else if ($request->has('four_banners_alt')) {
+            // Update alt texts without changing images
+            foreach ($request->four_banners_alt as $key => $alt) {
+                if (isset($fourBannersAlt[$key])) {
+                    $fourBannersAlt[$key] = $alt;
+                }
             }
         }
 
+        // Process twelve images with their corresponding alt texts
         $twelveImages = $page->twelve_images ?? [];
+        $twelveImagesAlt = $page->twelve_images_alt ?? [];
         if ($request->hasFile('twelve_images')) {
             $twelveImages = [];
-            foreach ($request->file('twelve_images') as $file) {
-                $twelveImages[] = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
+            $twelveImagesAlt = [];
+            foreach ($request->file('twelve_images') as $key => $file) {
+                $imageUrl = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
+                $twelveImages[] = $imageUrl;
+                // Store the corresponding alt text if available
+                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key]) 
+                    ? $request->twelve_images_alt[$key] 
+                    : null;
+            }
+        } else if ($request->has('twelve_images_alt')) {
+            // Update alt texts without changing images
+            foreach ($request->twelve_images_alt as $key => $alt) {
+                if (isset($twelveImagesAlt[$key])) {
+                    $twelveImagesAlt[$key] = $alt;
+                }
             }
         }
 
@@ -395,11 +482,15 @@ public function update(Request $request, $id)
             'title' => $request->title,
             'description' => $request->description,
             'banner_image' => $filePath,
+            'banner_image_alt' => $request->banner_image_alt ?? $page->banner_image_alt,
             'banner_link' => $request->banner_link,
             'inner_categories' => $innerCategories,
             'six_images' => $sixImages,
+            'six_images_alt' => $sixImagesAlt,
             'four_banners' => $fourBanners,
+            'four_banners_alt' => $fourBannersAlt,
             'twelve_images' => $twelveImages,
+            'twelve_images_alt' => $twelveImagesAlt,
             'related_products' => $relatedProducts,
             'section_title' => $request->section_title,
             'section_description' => $request->section_description,
@@ -422,11 +513,15 @@ public function update(Request $request, $id)
                 'title' => $page->title,
                 'description' => $page->description,
                 'banner_image' => $page->banner_image,
+                'banner_image_alt' => $page->banner_image_alt,
                 'banner_link' => $page->banner_link,
                 'inner_categories' => $page->inner_categories,
                 'six_images' => $page->six_images,
+                'six_images_alt' => $page->six_images_alt,
                 'four_banners' => $page->four_banners,
+                'four_banners_alt' => $page->four_banners_alt,
                 'twelve_images' => $page->twelve_images,
+                'twelve_images_alt' => $page->twelve_images_alt,
                 'related_products' => $page->related_products,
                 'section_title' => $page->section_title,
                 'section_description' => $page->section_description,
@@ -440,7 +535,7 @@ public function update(Request $request, $id)
                 'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
             ]
         ], 200);
-            } catch (\Exception $e) {
+    } catch (\Exception $e) {
         if (env('APP_DEBUG')) {
             return response()->json([
                 'message' => 'Update error',

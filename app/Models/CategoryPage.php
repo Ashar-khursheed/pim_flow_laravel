@@ -14,7 +14,8 @@ class CategoryPage extends Model
         'inner_categories', 'section_title', 'section_description', 'six_images',
         'four_banners', 'extra_heading', 'extra_description', 'twelve_images',
         'related_products', 'top_picks_in_santos' , 'explore_top_picks' , 'hot_new_releases',
-        'products_you_may_also_like','inspired_by_your_browsing_history', 'top_deals_from_our_sellers'
+        'products_you_may_also_like','inspired_by_your_browsing_history', 'top_deals_from_our_sellers',
+        'six_images_alt', 'four_banners_alt' , 'twelve_images_alt' , 'banner_image_alt'
     ];
 
     protected $casts = [

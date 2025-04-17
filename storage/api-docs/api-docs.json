@@ -2183,6 +2183,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "banner_image_alt": {
+                                        "type": "string",
+                                        "example": "Banner image alt text"
+                                    },
                                     "banner_link": {
                                         "type": "string",
                                         "example": "https://example.com"
@@ -2199,6 +2203,13 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "six_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for six image"
+                                        }
+                                    },
                                     "four_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -2206,11 +2217,25 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "four_banners_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for four banner"
+                                        }
+                                    },
                                     "twelve_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for twelve image"
                                         }
                                     },
                                     "related_products": {
@@ -2403,6 +2428,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "banner_image_alt": {
+                                        "type": "string",
+                                        "example": "Banner image alt text"
+                                    },
                                     "banner_link": {
                                         "type": "string",
                                         "example": "https://example.com"
@@ -2418,6 +2447,13 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "six_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for six image"
+                                        }
+                                    },
                                     "four_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -2425,11 +2461,25 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "four_banners_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for four banner"
+                                        }
+                                    },
                                     "twelve_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for twelve image"
                                         }
                                     },
                                     "related_products": {
