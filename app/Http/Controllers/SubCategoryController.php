@@ -23,14 +23,22 @@ class SubCategoryController extends Controller
  */
 public function index()
 {
-    // Paginate subcategories with 10 per page
     $subcategories = SubCategory::with(['category'])->paginate(10);
 
-    // Return paginated results along with total pages and total records
+    // Transform each subcategory to update the nested category image
+    $data = $subcategories->map(function ($subcat) {
+        if ($subcat->category && $subcat->category->image) {
+            $subcat->category->image = asset('storage/' . $subcat->category->image);
+        } elseif ($subcat->category) {
+            $subcat->category->image = null;
+        }
+        return $subcat;
+    });
+
     return response()->json([
-        'data' => $subcategories->items(), // Get the actual data for the current page
-        'total_pages' => $subcategories->lastPage(), // Total number of pages
-        'total_records' => $subcategories->total(), // Total number of records
+        'data' => $data,
+        'total_pages' => $subcategories->lastPage(),
+        'total_records' => $subcategories->total(),
     ]);
 }
 

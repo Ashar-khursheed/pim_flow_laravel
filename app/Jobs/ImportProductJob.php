@@ -626,7 +626,7 @@ class ImportProductJob implements ShouldQueue
 		Log::info('Image URLs before processing: ' . json_encode($images));
 
 		foreach ($images as $key => $image) {
-			if (Str::startsWith($image, 'https://horecastore-s3-storage.s3.us-west-1.amazonaws.com/')) {
+			if (Str::startsWith($image, env('AWS_URL'))) {
 				$images[$key] = $image;
 			} else {
 				if (Str::startsWith($image, ['http://', 'https://'])) {

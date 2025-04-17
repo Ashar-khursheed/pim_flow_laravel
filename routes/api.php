@@ -28,6 +28,8 @@ use App\Http\Controllers\TransactionLogController;
 use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\BrandTemp2Controller;
+use App\Http\Controllers\GradingController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -38,6 +40,10 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 Route::middleware(['auth:api'])->group(function () {
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
+
+	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
+    Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
+    Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
@@ -56,12 +62,13 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
+	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::get('/products/{id}/media/download', [BrandController::class, 'downloadMediaZip']);
+	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
@@ -130,5 +137,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('subcategories/{id}', [SubCategoryController::class, 'update']);
 	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
+	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
+
+
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
+Route::get('/category-pages', [CategoryPageController::class, 'index']);

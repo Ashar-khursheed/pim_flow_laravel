@@ -1207,7 +1207,7 @@
                 ]
             }
         },
-        "/api/products/{id}/media/download": {
+        "/api/products/{id}/media/{type}/download": {
             "get": {
                 "tags": [
                     "Brands"
@@ -1224,6 +1224,22 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "description": "Type of media to download (image, video, document, all)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "video",
+                                "document",
+                                "all"
+                            ],
+                            "example": "all"
                         }
                     }
                 ],
@@ -1258,6 +1274,399 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brands/{id}/categories": {
+            "get": {
+                "tags": [
+                    "Brands"
+                ],
+                "summary": "Get categories by brand ID",
+                "description": "Fetches all unique categories that are associated with products of the given brand.",
+                "operationId": "getBrandCategories",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the brand",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of categories for the specified brand",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "brand_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electronics"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "electronics"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "Category for electronic items"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-2": {
+            "get": {
+                "tags": [
+                    "BrandTemp2"
+                ],
+                "summary": "Get all brand temp records",
+                "operationId": "b502dcbc1e3cbdec4ca48c6892b5781e",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BrandTemp2"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp2"
+                ],
+                "summary": "Create brand temp",
+                "operationId": "0af7146c828d3d7606b7a3117c273183",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "brand_id"
+                                ],
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp2"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-2/{id}": {
+            "get": {
+                "tags": [
+                    "BrandTemp2"
+                ],
+                "summary": "Get specific brand temp",
+                "operationId": "c3f44c786412c19cd26f1652455612c5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp2"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp2"
+                ],
+                "summary": "Update brand temp",
+                "operationId": "79d170a18fbe4ee32573f4c8802f82b2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp2"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "BrandTemp2"
+                ],
+                "summary": "Delete brand temp",
+                "operationId": "9e852a02d643054334a4370a32106e4b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -1770,6 +2179,175 @@
                 ]
             }
         },
+        "/api/category-pages": {
+            "get": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Get all category pages",
+                "description": "Fetch a list of all category pages.",
+                "operationId": "199cc30ed9e2fc6ff0514edcf3096481",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/CategoryPage"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Category Pages"
+                ],
+                "summary": "Create or update a category page",
+                "operationId": "ac3407b1639673ffccb449b660925066",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "title"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "banner_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "banner_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "inner_categories": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "3,4,5"
+                                    },
+                                    "six_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "four_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "related_products": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "top_picks_in_santos": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "top_deals_from_our_sellers": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "explore_top_picks": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "hot_new_releases": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "products_you_may_also_like": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "inspired_by_your_browsing_history": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "section_title": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "section_description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "brand_heading": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    },
+                                    "brand_description": {
+                                        "type": "string",
+                                        "example": "Best electronics category"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Category page created/updated successfully"
+                    },
+                    "404": {
+                        "description": "Category not found"
+                    },
+                    "400": {
+                        "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages/{category_id}": {
             "get": {
                 "tags": [
@@ -1792,57 +2370,6 @@
                 "responses": {
                     "200": {
                         "description": "Success"
-                    },
-                    "404": {
-                        "description": "Category page not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Category Pages"
-                ],
-                "summary": "Update category page details",
-                "operationId": "e9dd722f1501176cc0cf804c2943f77a",
-                "parameters": [
-                    {
-                        "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "title": {
-                                        "type": "string",
-                                        "example": "Updated Category"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Updated description"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Category page updated"
                     },
                     "404": {
                         "description": "Category page not found"
@@ -1886,13 +2413,24 @@
                 ]
             }
         },
-        "/api/category-pages": {
+        "/api/category-pages/{id}": {
             "post": {
                 "tags": [
                     "Category Pages"
                 ],
-                "summary": "Create or update a category page",
-                "operationId": "ac3407b1639673ffccb449b660925066",
+                "summary": "Update an existing category page",
+                "operationId": "cd45b8c20c7d9e1b9ca71b74c2237258",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the category page",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -1903,17 +2441,20 @@
                                     "title"
                                 ],
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "category_id": {
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "title": {
                                         "type": "string",
-                                        "example": "Electronics"
+                                        "example": "Updated Electronics"
                                     },
                                     "description": {
-                                        "type": "string",
-                                        "example": "Best electronics category"
+                                        "type": "string"
                                     },
                                     "banner_image": {
                                         "type": "string",
@@ -1924,15 +2465,8 @@
                                         "example": "https://example.com"
                                     },
                                     "inner_categories": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            3,
-                                            4,
-                                            5
-                                        ]
+                                        "type": "string",
+                                        "example": "3,4,5"
                                     },
                                     "six_images[]": {
                                         "type": "array",
@@ -1956,31 +2490,50 @@
                                         }
                                     },
                                     "related_products": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        },
-                                        "example": [
-                                            101,
-                                            102,
-                                            103
-                                        ]
+                                        "type": "string",
+                                        "example": "101,102"
+                                    },
+                                    "top_picks_in_santos": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "top_deals_from_our_sellers": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "explore_top_picks": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "hot_new_releases": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "products_you_may_also_like": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
+                                    },
+                                    "inspired_by_your_browsing_history": {
+                                        "description": "Comma-separated IDs",
+                                        "type": "string",
+                                        "example": "101,102,103"
                                     },
                                     "section_title": {
-                                        "type": "string",
-                                        "example": "Best electronics category"
+                                        "type": "string"
                                     },
                                     "section_description": {
-                                        "type": "string",
-                                        "example": "Best electronics category"
+                                        "type": "string"
                                     },
                                     "extra_heading": {
-                                        "type": "string",
-                                        "example": "Best electronics category"
+                                        "type": "string"
                                     },
                                     "extra_description": {
-                                        "type": "string",
-                                        "example": "Best electronics category"
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -1989,11 +2542,17 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Category page created"
+                    "200": {
+                        "description": "Category page updated successfully"
+                    },
+                    "404": {
+                        "description": "Category page not found"
                     },
                     "400": {
                         "description": "Validation error"
+                    },
+                    "500": {
+                        "description": "Server error"
                     }
                 },
                 "security": [
@@ -3223,6 +3782,288 @@
                     },
                     "404": {
                         "description": "Flash Sale not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/calculate-grade": {
+            "post": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "Calculate Grade based on attributes and save to database",
+                "description": "Accepts a list of attributes with obtained and total values, calculates the total score, percentage, and assigns a grade, and saves the data to the database.",
+                "operationId": "2af769f05b2f14b16d7d6c0ed9385be5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attributes",
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "attributes": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "obtained": {
+                                                    "type": "number",
+                                                    "example": 80
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful grade calculation and save",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_obtained": {
+                                            "type": "number",
+                                            "example": 400
+                                        },
+                                        "total_possible": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "percentage": {
+                                            "type": "number",
+                                            "example": 80
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The attributes field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/grading/view/{product_id}": {
+            "get": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "View grading rules for a specific product",
+                "description": "Fetches all grading rules for a specific product using the product_id.",
+                "operationId": "07dc7b19329b3b86d7e32c5b0596d419",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "The ID of the product to fetch grading rules for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1683
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns the grading rules for the specified product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "grading_rules": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "grade": {
+                                                        "type": "string",
+                                                        "example": "A"
+                                                    },
+                                                    "min_percentage": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "max_percentage": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No grading rules found for the product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No grading rules found for this product."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/grading/update/{product_id}": {
+            "put": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "Update Grading Rule for a Product",
+                "description": "Update the min_percentage and max_percentage for a product's grading rule.",
+                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "total_attributes",
+                                    "filled_attributes"
+                                ],
+                                "properties": {
+                                    "total_attributes": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "filled_attributes": {
+                                        "type": "integer",
+                                        "example": 8
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated grading rule for the product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "total_attributes": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "filled_attributes": {
+                                            "type": "integer",
+                                            "example": 8
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Grading rule updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -7288,6 +8129,41 @@
     },
     "components": {
         "schemas": {
+            "CategoryPage": {
+                "title": "Category Page",
+                "required": [
+                    "id",
+                    "category_id",
+                    "title"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "category_id": {
+                        "type": "integer",
+                        "example": 12
+                    },
+                    "title": {
+                        "type": "string",
+                        "example": "Electronics"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "All about electronics..."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Review": {
                 "title": "Review",
                 "description": "Review Model",
@@ -7381,6 +8257,70 @@
                     "is_featured": {
                         "type": "boolean",
                         "example": true
+                    }
+                },
+                "type": "object"
+            },
+            "BrandTemp2": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "brand_id": {
+                        "type": "integer"
+                    },
+                    "website_banners_videos": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "image",
+                                        "video"
+                                    ]
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "website_banners_videos_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "type": {
+                                    "type": "string",
+                                    "enum": [
+                                        "image",
+                                        "video"
+                                    ]
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 },
                 "type": "object"
@@ -7932,6 +8872,10 @@
             "description": "Brands"
         },
         {
+            "name": "BrandTemp2",
+            "description": "BrandTemp2"
+        },
+        {
             "name": "Category Pages",
             "description": "Category Pages"
         },
@@ -7954,6 +8898,10 @@
         {
             "name": "Flash Sales",
             "description": "Flash Sales"
+        },
+        {
+            "name": "Grading",
+            "description": "Grading"
         },
         {
             "name": "Roles and Permissions",

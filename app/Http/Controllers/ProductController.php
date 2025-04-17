@@ -2214,6 +2214,7 @@ class ProductController extends BaseController
 					'chunk' => $chunk,
 					'userId' => auth()->id()
 				];
+				$batch->options['queue'] = 'JOB1';
 				$batch->add(new ImportProductJob($data));
 			}
 

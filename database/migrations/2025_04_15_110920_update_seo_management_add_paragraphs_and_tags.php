@@ -12,7 +12,7 @@ return new class extends Migration {
             $table->text('paragraph_3')->nullable();
             $table->text('paragraph_4')->nullable();
 
-            $table->json('popular_tags')->nullable();
+            $table->longtext('popular_tags')->nullable();
         });
     }
 
