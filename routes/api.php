@@ -29,6 +29,7 @@ use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
+use App\Http\Controllers\GradingController;
 
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
@@ -37,7 +38,12 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:sanctum'])->group(function () {
+	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
+    Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
+    Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
 
+
+	
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 

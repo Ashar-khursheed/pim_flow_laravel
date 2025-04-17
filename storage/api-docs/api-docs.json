@@ -3734,6 +3734,288 @@
                 ]
             }
         },
+        "/api/calculate-grade": {
+            "post": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "Calculate Grade based on attributes and save to database",
+                "description": "Accepts a list of attributes with obtained and total values, calculates the total score, percentage, and assigns a grade, and saves the data to the database.",
+                "operationId": "2af769f05b2f14b16d7d6c0ed9385be5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attributes",
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "attributes": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "obtained": {
+                                                    "type": "number",
+                                                    "example": 80
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful grade calculation and save",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_obtained": {
+                                            "type": "number",
+                                            "example": 400
+                                        },
+                                        "total_possible": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "percentage": {
+                                            "type": "number",
+                                            "example": 80
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The attributes field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/grading/view/{product_id}": {
+            "get": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "View grading rules for a specific product",
+                "description": "Fetches all grading rules for a specific product using the product_id.",
+                "operationId": "07dc7b19329b3b86d7e32c5b0596d419",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "The ID of the product to fetch grading rules for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1683
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Returns the grading rules for the specified product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "grading_rules": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "grade": {
+                                                        "type": "string",
+                                                        "example": "A"
+                                                    },
+                                                    "min_percentage": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "max_percentage": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No grading rules found for the product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No grading rules found for this product."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/grading/update/{product_id}": {
+            "put": {
+                "tags": [
+                    "Grading"
+                ],
+                "summary": "Update Grading Rule for a Product",
+                "description": "Update the min_percentage and max_percentage for a product's grading rule.",
+                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "total_attributes",
+                                    "filled_attributes"
+                                ],
+                                "properties": {
+                                    "total_attributes": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "filled_attributes": {
+                                        "type": "integer",
+                                        "example": 8
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully updated grading rule for the product",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1683
+                                        },
+                                        "total_attributes": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "filled_attributes": {
+                                            "type": "integer",
+                                            "example": 8
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Grading rule updated successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/media": {
             "get": {
                 "summary": "Fetch all folders inside the 'production' directory from S3",
@@ -8765,6 +9047,10 @@
         {
             "name": "Flash Sales",
             "description": "Flash Sales"
+        },
+        {
+            "name": "Grading",
+            "description": "Grading"
         },
         {
             "name": "SEO Details",
