@@ -635,7 +635,7 @@
         "/api/login": {
             "post": {
                 "tags": [
-                    "JWT"
+                    "Auth"
                 ],
                 "summary": "User Login",
                 "operationId": "de45964bd236f87e5860ad7e58ec540f",
@@ -683,6 +683,63 @@
                         "description": "Unauthorized"
                     }
                 }
+            }
+        },
+        "/api/auth/has-permission": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Check if the authenticated user has a specific permission",
+                "description": "Returns true or false based on whether the user has the given permission.",
+                "operationId": "67984d21cffbbad376c369db36fb3d31",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "query",
+                        "description": "The name of the permission to check (e.g., 'brand.create')",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permission check result",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/permissions": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get all permission names for the authenticated user",
+                "description": "Returns a list of permission names granted to the currently authenticated user.",
+                "operationId": "6c73d5e63be03ddd18b8bd30c7d3eb8a",
+                "responses": {
+                    "200": {
+                        "description": "List of permissions",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/brands": {
@@ -7835,7 +7892,7 @@
     },
     "tags": [
         {
-            "name": "JWT",
+            "name": "Auth",
             "description": "To generate Json Web Token"
         },
         {

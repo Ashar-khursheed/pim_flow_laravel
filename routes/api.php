@@ -36,6 +36,8 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:api'])->group(function () {
+	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
+	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema

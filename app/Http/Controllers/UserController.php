@@ -1,7 +1,6 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\MediaFile;
@@ -13,7 +12,7 @@ use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\Log;
 
 
-class UserController extends Controller
+class UserController extends BaseController
 {
 	/**
 	 * @OA\Get(
