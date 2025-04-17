@@ -544,43 +544,43 @@ public function update(Request $request, $id)
                     $query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
                 }
             ]);
-    
+
         if ($request->filled('search')) {
             $query->where('name', 'LIKE', '%' . $request->search . '%');
         }
-    
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-    
+
         $sortBy = $request->input('sort_by', 'created_at');
         $sortOrder = $request->input('sort_order', 'desc');
-    
+
         if (in_array($sortBy, ['id', 'name', 'created_at']) && in_array($sortOrder, ['asc', 'desc'])) {
             $query->orderBy($sortBy, $sortOrder);
         }
-    
+
         $brands = $query->paginate($request->input('per_page', 10));
-    
+
         // Cache all categories and stores in a single query to avoid N+1
         $categories = Category::pluck('name', 'id');
         $stores = Store::pluck('name', 'id');
-    
+
         $transformed = $brands->getCollection()->transform(function ($brand) use ($categories, $stores) {
             $categoryIds = $brand->products->flatMap(function ($product) {
                 return $product->categories->pluck('id');
             })->unique();
-    
+
             $categoryNames = $categoryIds->map(function ($id) use ($categories) {
                 return $categories[$id] ?? null;
             })->filter()->values();
-    
+
             $storeIds = $brand->products->pluck('store_id')->unique();
-    
+
             $storeNames = $storeIds->map(function ($id) use ($stores) {
                 return $stores[$id] ?? null;
             })->filter()->values();
-    
+
             // Simplify logo generation
             $logoUrl = null;
             if ($brand->logo) {
@@ -588,7 +588,7 @@ public function update(Request $request, $id)
                     ? $brand->logo
                     : asset('storage/' . $brand->logo); // skip S3 exists check
             }
-    
+
             return [
                 'id' => $brand->id,
                 'name' => $brand->name,
@@ -604,9 +604,9 @@ public function update(Request $request, $id)
                 'updated_at' => $brand->updated_at,
             ];
         });
-    
+
         $brands->setCollection($transformed);
-    
+
         return response()->json([
             'success' => true,
             'pagination' => [
@@ -620,8 +620,8 @@ public function update(Request $request, $id)
             'data' => $brands->items(),
         ]);
     }
-    
-    
+
+
 
     /**
      * @OA\Get(
@@ -649,7 +649,7 @@ public function update(Request $request, $id)
                 'message' => 'Brand not found'
             ], 404);
         }
-        $uniqueSkus = $brand->products()->select('id', 'sku')->get();
+        $uniqueSkus = $brand->products()->select('id', 'sku', 'name')->get();
 
         return response()->json([
             'success' => true,
