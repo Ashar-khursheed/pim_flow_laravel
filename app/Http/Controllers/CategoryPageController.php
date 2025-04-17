@@ -103,10 +103,16 @@ class CategoryPageController extends Controller
  *                 @OA\Property(property="four_banners[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="twelve_images[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="related_products", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="top_picks_in_santos", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="top_deals_from_our_sellers", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="explore_top_picks", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="hot_new_releases", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="products_you_may_also_like", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="inspired_by_your_browsing_history", type="string", example="101,102,103", description="Comma-separated IDs"),
  *                 @OA\Property(property="section_title", type="string", example="Best electronics category"),
  *                 @OA\Property(property="section_description", type="string", example="Best electronics category"),
- *                 @OA\Property(property="extra_heading", type="string", example="Best electronics category"),
- *                 @OA\Property(property="extra_description", type="string", example="Best electronics category")
+ *                 @OA\Property(property="brand_heading", type="string", example="Best electronics category"),
+ *                 @OA\Property(property="brand_description", type="string", example="Best electronics category")
  *             )
  *         )
  *     ),
@@ -136,6 +142,13 @@ public function store(Request $request)
             'section_description' => 'nullable|string',
             'extra_heading' => 'nullable|string|max:255',
             'extra_description' => 'nullable|string',
+            'top_picks_in_santos' => 'nullable|string',
+            'top_deals_from_our_sellers' => 'nullable|string',
+            'explore_top_picks' => 'nullable|string',
+            'hot_new_releases' => 'nullable|string',
+            'products_you_may_also_like' => 'nullable|string',
+            'inspired_by_your_browsing_history' => 'nullable|string',
+
         ]);
         
         $disk = 's3'; // Use S3 disk for storage
@@ -196,12 +209,48 @@ public function store(Request $request)
                 'section_title' => $request->section_title,
                 'section_description' => $request->section_description,
                 'extra_heading' => $request->extra_heading,
-                'extra_description' => $request->extra_description
+                'extra_description' => $request->extra_description,
+               'top_picks_in_santos' => !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : [],
+                'top_deals_from_our_sellers' => !empty($request->top_deals_from_our_sellers) ? explode(',', $request->top_deals_from_our_sellers) : [],
+                'explore_top_picks' => !empty($request->explore_top_picks) ? explode(',', $request->explore_top_picks) : [],
+                'hot_new_releases' => !empty($request->hot_new_releases) ? explode(',', $request->hot_new_releases) : [],
+                'products_you_may_also_like' => !empty($request->products_you_may_also_like) ? explode(',', $request->products_you_may_also_like) : [],
+                'inspired_by_your_browsing_history' => !empty($request->inspired_by_your_browsing_history) ? explode(',', $request->inspired_by_your_browsing_history) : [],
             ]
         );
 
-        return response()->json($page, 201);
-    } catch (\Exception $e) {
+        return response()->json([
+                'success' => true,
+                'message' => 'Category page updated successfully',
+                'data' => [
+                    'id' => $page->id,
+                    'category_id' => $page->category_id,
+                    'title' => $page->title,
+                    'description' => $page->description,
+                    'banner_image' => $page->banner_image,
+                    'banner_link' => $page->banner_link,
+                    'inner_categories' => $page->inner_categories,
+                    'six_images' => $page->six_images,
+                    'four_banners' => $page->four_banners,
+                    'twelve_images' => $page->twelve_images,
+                    'related_products' => $page->related_products,
+                    'section_title' => $page->section_title,
+                    'section_description' => $page->section_description,
+                
+                    // Rename here
+                    'brand_heading' => $page->extra_heading,
+                    'brand_description' => $page->extra_description,
+                
+                    'top_picks_in_santos' => $page->top_picks_in_santos,
+                    'top_deals_from_our_sellers' => $page->top_deals_from_our_sellers,
+                    'explore_top_picks' => $page->explore_top_picks,
+                    'hot_new_releases' => $page->hot_new_releases,
+                    'products_you_may_also_like' => $page->products_you_may_also_like,
+                    'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
+                ]
+            ], 201);
+           
+            } catch (\Exception $e) {
         // Return detailed error in development
         if (env('APP_DEBUG', false)) {
             return response()->json([
@@ -246,6 +295,12 @@ public function store(Request $request)
  *                 @OA\Property(property="four_banners[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="twelve_images[]", type="array", @OA\Items(type="string", format="binary")),
  *                 @OA\Property(property="related_products", type="string", example="101,102"),
+ *                 @OA\Property(property="top_picks_in_santos", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="top_deals_from_our_sellers", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="explore_top_picks", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="hot_new_releases", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="products_you_may_also_like", type="string", example="101,102,103", description="Comma-separated IDs"),
+ *                 @OA\Property(property="inspired_by_your_browsing_history", type="string", example="101,102,103", description="Comma-separated IDs"),
  *                 @OA\Property(property="section_title", type="string"),
  *                 @OA\Property(property="section_description", type="string"),
  *                 @OA\Property(property="extra_heading", type="string"),
@@ -279,6 +334,12 @@ public function update(Request $request, $id)
             'section_description' => 'nullable|string',
             'extra_heading' => 'nullable|string|max:255',
             'extra_description' => 'nullable|string',
+            'top_picks_in_santos' => 'nullable|string',
+            'top_deals_from_our_sellers' => 'nullable|string',
+            'explore_top_picks' => 'nullable|string',
+            'hot_new_releases' => 'nullable|string',
+            'products_you_may_also_like' => 'nullable|string',
+            'inspired_by_your_browsing_history' => 'nullable|string',
         ]);
 
         $disk = 's3';
@@ -344,10 +405,42 @@ public function update(Request $request, $id)
             'section_description' => $request->section_description,
             'extra_heading' => $request->extra_heading,
             'extra_description' => $request->extra_description,
+            'top_picks_in_santos' => !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : [],
+            'top_deals_from_our_sellers' => !empty($request->top_deals_from_our_sellers) ? explode(',', $request->top_deals_from_our_sellers) : [],
+            'explore_top_picks' => !empty($request->explore_top_picks) ? explode(',', $request->explore_top_picks) : [],
+            'hot_new_releases' => !empty($request->hot_new_releases) ? explode(',', $request->hot_new_releases) : [],
+            'products_you_may_also_like' => !empty($request->products_you_may_also_like) ? explode(',', $request->products_you_may_also_like) : [],
+            'inspired_by_your_browsing_history' => !empty($request->inspired_by_your_browsing_history) ? explode(',', $request->inspired_by_your_browsing_history) : [],
         ]);
 
-        return response()->json($page, 200);
-    } catch (\Exception $e) {
+        return response()->json([
+            'success' => true,
+            'message' => 'Category page updated successfully',
+            'data' => [
+                'id' => $page->id,
+                'category_id' => $page->category_id,
+                'title' => $page->title,
+                'description' => $page->description,
+                'banner_image' => $page->banner_image,
+                'banner_link' => $page->banner_link,
+                'inner_categories' => $page->inner_categories,
+                'six_images' => $page->six_images,
+                'four_banners' => $page->four_banners,
+                'twelve_images' => $page->twelve_images,
+                'related_products' => $page->related_products,
+                'section_title' => $page->section_title,
+                'section_description' => $page->section_description,
+                'brand_heading' => $page->extra_heading,
+                'brand_description' => $page->extra_description,
+                'top_picks_in_santos' => $page->top_picks_in_santos,
+                'top_deals_from_our_sellers' => $page->top_deals_from_our_sellers,
+                'explore_top_picks' => $page->explore_top_picks,
+                'hot_new_releases' => $page->hot_new_releases,
+                'products_you_may_also_like' => $page->products_you_may_also_like,
+                'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
+            ]
+        ], 200);
+            } catch (\Exception $e) {
         if (env('APP_DEBUG')) {
             return response()->json([
                 'message' => 'Update error',
