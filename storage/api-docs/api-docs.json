@@ -1150,7 +1150,7 @@
                 ]
             }
         },
-        "/api/products/{id}/media/download": {
+        "/api/products/{id}/media/{type}/download": {
             "get": {
                 "tags": [
                     "Brands"
@@ -1167,6 +1167,22 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "path",
+                        "description": "Type of media to download (image, video, document, all)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "video",
+                                "document",
+                                "all"
+                            ],
+                            "example": "all"
                         }
                     }
                 ],

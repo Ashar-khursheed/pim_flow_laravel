@@ -69,7 +69,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
-	Route::get('/products/{id}/media/download', [BrandController::class, 'downloadMediaZip']);
+	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
 	Route::get('products/{id}/media', [BrandController::class, 'getProductMedia']);
 	Route::post('/products/export', [ProductExportController::class, 'export']);
 	Route::post('products/import', [ProductController::class, 'import']);
@@ -87,7 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('stores', StoreController::class);
 
 
-    
+
 	Route::post('/category-pages', [CategoryPageController::class, 'store']);
 	Route::put('/category-pages/{category}', [CategoryPageController::class, 'update']);
 	Route::delete('/category-pages/{category}', [CategoryPageController::class, 'destroy']);
