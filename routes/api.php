@@ -35,22 +35,14 @@ use App\Http\Controllers\SubCategoryController;
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
-	Route::prefix('users')->group(function () {
-		Route::post('/', [UserController::class, 'store']);
-		Route::get('/', [UserController::class, 'index']);
-		Route::get('/{id}', [UserController::class, 'show']);
-		Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
-		Route::delete('/{id}', [UserController::class, 'destroy']);
-		Route::put('/{id}', [UserController::class, 'update']);
-
-	});
+	Route::apiResource('users', UserController::class);
 
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);

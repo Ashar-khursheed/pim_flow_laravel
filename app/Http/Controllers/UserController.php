@@ -15,298 +15,305 @@ use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
-    /**
-     * @OA\Get(
-     *     path="/api/users",
-     *     summary="Get all users",
-     *     tags={"Users"},
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="List of users")
-     * )
-     */
-    public function index()
-    {
-        return response()->json(User::with('roles')->get());
-    }
+	/**
+	 * @OA\Get(
+	 *     path="/api/users",
+	 *     summary="Get list of users",
+	 *     tags={"Users"},
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination. Starts from 1.",
+	 *         required=true,
+	 *         example=1,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="length",
+	 *         in="query",
+	 *         description="Number of records per page.",
+	 *         required=true,
+	 *         example=20,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		dd(auth()->user()->getAllPermissions()->pluck('name')->toArray());
+		$records = User::with('roles:id,name');
 
- /**
- * @OA\Post(
- *     path="/api/users",
- *     summary="Create a new user",
- *     tags={"Users"},
- *     security={{"bearerAuth":{}}}, 
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"email","password","role_id"},
- *             @OA\Property(property="email", type="string", example="test@example.com"),
- *             @OA\Property(property="password", type="string", example="password"),
- *             @OA\Property(property="first_name", type="string", example="John"),
- *             @OA\Property(property="last_name", type="string", example="Doe"),
- *             @OA\Property(property="role_id", type="integer", example=1)
- *         )
- *     ),
- *     @OA\Response(
- *         response=201, 
- *         description="User created successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="id", type="integer", example=1),
- *             @OA\Property(property="email", type="string", example="test@example.com"),
- *             @OA\Property(property="first_name", type="string", example="John"),
- *             @OA\Property(property="last_name", type="string", example="Doe"),
- *             @OA\Property(property="roles", type="array", @OA\Items(type="string"))
- *         )
- *     ),
- *     @OA\Response(
- *         response=400, 
- *         description="Validation error",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Validation error"),
- *             @OA\Property(property="errors", type="object")
- *         )
- *     ),
- *     @OA\Response(
- *         response=409, 
- *         description="User already exists",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="User already exists")
- *         )
- *     )
- * )
- */
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
 
-public function store(UserRequest $request)
-{
-    // Check if user already exists
-    if (User::where('email', $request->email)->exists()) {
-        return response()->json(['message' => 'User already exists'], 409, ['Content-Type' => 'application/json']);
-    }
+			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+		} else {
+			$records = $records->get();
+			$totalRecords = $records->count();
+		}
 
-    // Create new user
-    $user = User::create([
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-        'first_name' => $request->first_name,
-        'last_name' => $request->last_name
-    ]);
+		$records->each(function ($user) {
+			$role = $user->roles->first();
+			if ($role) {
+				$user->role_id = $role->id;
+				$user->role_name = $role->name;
+			}
+			$user->makeHidden('roles');
+		});
 
-    // Attach role
-    $user->roles()->attach($request->role_id);
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_list"),
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
+		]);
+	}
 
-    return response()->json($user->load('roles'), 201, ['Content-Type' => 'application/json']);
-}
+	/**
+	 * @OA\Post(
+	 *     path="/api/users",
+	 *     summary="Create a new user",
+	 *     description="Creates a new user.",
+	 *     tags={"Users"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         description="User creation payload",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             required={"email", "username", "password", "role"},
+	 *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+	 *             @OA\Property(property="username", type="string", example="johndoe"),
+	 *             @OA\Property(property="password", type="string", format="password", example="securePass123"),
+	 *             @OA\Property(property="first_name", type="string", example="John"),
+	 *             @OA\Property(property="last_name", type="string", example="Doe"),
+	 *             @OA\Property(property="role", type="string", example="admin")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request)
+	{
+		$validatedData = $request->validate([
+			'username'    => 'required|string|max:255|unique:users,username',
+			'email'       => 'required|string|email|max:255|unique:users,email',
+			'password'    => 'required|string|min:8',
+			'first_name'  => 'required|string|max:255',
+			'last_name'   => 'required|string|max:255',
+			'role'        => 'required|string|exists:roles,name',
+		]);
 
+		$user = User::create([
+			'username'   => $validatedData['username'],
+			'email'      => $validatedData['email'],
+			'password'   => Hash::make($validatedData['password']),
+			'first_name' => $validatedData['first_name'] ?? null,
+			'last_name'  => $validatedData['last_name'] ?? null,
+		]);
 
+		$user->syncRoles([$validatedData['role']]);
 
-    /**
-     * @OA\Get(
-     *     path="/api/users/{id}",
-     *     summary="Get user details",
-     *     tags={"Users"},
-     *     @OA\Parameter(name="id", in="path", required=true, description="User ID", @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="User details"),
-     *     @OA\Response(response=404, description="User not found")
-     * )
-     */
-    public function show($id)
-    {
-        $user = User::with('roles')->find($id);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
-        return response()->json($user);
-    }
-    
-/**
- * @OA\Post(
- *     path="/api/users/{id}",
- *     summary="Update a user",
- *     tags={"Users"},
- *     security={{"bearerAuth":{}}},
- *     @OA\Parameter(
- *         name="id",
- *         in="path",
- *         required=true,
- *         description="User ID",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 required={"email", "first_name", "last_name"},
- *                 @OA\Property(property="_method", type="string", example="PUT"),
- *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
- *                 @OA\Property(property="first_name", type="string", example="John"),
- *                 @OA\Property(property="last_name", type="string", example="Doe"),
- *                 @OA\Property(property="avatar", type="string", format="binary"),
- *                 @OA\Property(property="old_password", type="string", example="oldpassword"),
- *                 @OA\Property(property="new_password", type="string", example="newpassword"),
- *                 @OA\Property(property="confirm_password", type="string", example="newpassword"),
- *                 @OA\Property(property="role_id", type="integer", example=10)
- *             )
- *         )
- *     ),
- *     @OA\Response(response=200, description="User updated successfully"),
- *     @OA\Response(response=400, description="Validation error"),
- *     @OA\Response(response=401, description="Unauthorized"),
- *     @OA\Response(response=404, description="User not found"),
- *     @OA\Response(response=405, description="Method Not Allowed"),
- *     @OA\Response(response=500, description="Internal server error")
- * )
- */
+		return response()->json([
+			'success' => true,
+			'message' => 'User created successfully.',
+			'data'    => $user->load('roles'),
+		], 201);
+	}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/users/{user_id}",
+	 *     summary="Get user details",
+	 *     description="Fetches user details based on the given user ID.",
+	 *     tags={"Users"},
+	 *     @OA\Parameter(
+	 *         name="user_id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="ID of the user",
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($userId)
+	{
+		$user = User::find($userId);
+		if (!$user) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
 
+		$role = $user->roles->first();
+		if ($role) {
+			$user->role_id = $role->id;
+			$user->role_name = $role->name;
+		}
 
-    public function update(Request $request, $id)
-{
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_dtl"),
+			'data' => $user
+		]);
+	}
 
-    if ($request->isMethod('post') && $request->input('_method') === 'PUT') {
-        $request->request->remove('_method'); // Remove _method from request
-    }
-    \Log::info('Update method started for user ID: ' . $id);
+	/**
+	 * @OA\Put(
+	 *     path="/api/users/{id}",
+	 *     summary="Update an existing user",
+	 *     description="Updates an user's details",
+	 *     tags={"Users"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="ID of the user to update",
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         description="User creation payload",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             required={"email", "username", "password", "role"},
+	 *             @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+	 *             @OA\Property(property="username", type="string", example="johndoe"),
+	 *             @OA\Property(property="password", type="string", format="password", example="securePass123"),
+	 *             @OA\Property(property="first_name", type="string", example="John"),
+	 *             @OA\Property(property="last_name", type="string", example="Doe"),
+	 *             @OA\Property(property="role", type="string", example="admin")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function update(Request $request, $userId)
+	{
+		$user = User::create([
+			'username'   => $validatedData['username'],
+			'email'      => $validatedData['email'],
+			'password'   => Hash::make($validatedData['password']),
+			'first_name' => $validatedData['first_name'] ?? null,
+			'last_name'  => $validatedData['last_name'] ?? null,
+		]);
 
-    // Debugging: Dump all request data
-    \Log::info('Raw Input:', [file_get_contents('php://input')]);
-    \Log::info('Request data: ', $request->all());
+		$user->syncRoles([$validatedData['role']]);
 
-    try {
-        // Manually extract inputs for debugging
-        $email = $request->input('email');
-        $first_name = $request->input('first_name');
-        $last_name = $request->input('last_name');
-
-        if (!$email || !$first_name || !$last_name) {
-            \Log::error('Missing required fields: ', compact('email', 'first_name', 'last_name'));
-            return response()->json(["message" => "Missing required fields"], 400);
-        }
-
-        $request->validate([
-            'email' => 'required|email|unique:users,email,' . $id,
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'avatar' => 'nullable|file|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'old_password' => 'nullable|string',
-            'new_password' => 'nullable|string|min:6|required_with:old_password',
-            'confirm_password' => 'nullable|string|same:new_password',
-            'role_id' => 'nullable|integer|exists:roles,id',
-        ]);
-
-        \Log::info('Validation passed');
-
-        $user = User::findOrFail($id);
-        \Log::info('User found: ' . $user->email);
-
-        // Update user details
-        $user->email = $email;
-        $user->first_name = $first_name;
-        $user->last_name = $last_name;
-
-        // Handle password update
-        if ($request->filled('old_password')) {
-            \Log::info('Password update requested');
-            if (!Hash::check($request->old_password, $user->password)) {
-                \Log::info('Old password incorrect');
-                return response()->json(["message" => "Old password is incorrect"], 400);
-            }
-            $user->password = Hash::make($request->new_password);
-            \Log::info('Password updated');
-        }
-
-        if ($request->hasFile('avatar')) {
-            \Log::info('✅ Avatar file detected. Processing upload...');
-            
-            try {
-                $avatarFile = $request->file('avatar');
-        
-                // Ensure file is valid before proceeding
-                if (!$avatarFile->isValid()) {
-                    throw new \Exception('Invalid file upload');
-                }
-        
-                // Store the file
-                $path = $avatarFile->store('avatars', 'public');
-                \Log::info('✅ Avatar stored at: ' . $path);
-        
-                // Save to media_files table
-                $mediaFile = new MediaFile();
-                $mediaFile->user_id = $user->id;
-                $mediaFile->name = $avatarFile->getClientOriginalName();
-                $mediaFile->mime_type = $avatarFile->getMimeType();
-                $mediaFile->size = $avatarFile->getSize();
-                $mediaFile->url = 'storage/' . $path;
-                $mediaFile->folder_id = 0;
-                $mediaFile->visibility = 'public';
-                $mediaFile->save();
-        
-                \Log::info('✅ Media file created with ID: ' . $mediaFile->id);
-        
-                // Update user's avatar_id
-                $user->avatar_id = $mediaFile->id;
-                $user->save();
-        
-                \Log::info('✅ User avatar_id updated to ' . $user->avatar_id);
-            } catch (\Exception $e) {
-                \Log::error('❌ Avatar upload failed: ' . $e->getMessage());
-            }
-        } else {
-            \Log::error('❌ Avatar file is missing in request');
-        }
-        
-        
+		return response()->json([
+			'success' => true,
+			'message' => 'User created successfully.',
+			'data'    => $user->load('roles'),
+		], 201);
 
 
-        // Handle role update
-        if ($request->filled('role_id')) {
-            \Log::info('Role update requested to: ' . $request->role_id);
-            try {
-                $user->roles()->sync([$request->role_id]);
-                \Log::info('Role updated');
-            } catch (\Exception $e) {
-                \Log::error('Role update failed: ' . $e->getMessage());
-            }
-        }
+		$user = User::find($userId);
+		if (!$user) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
 
-        $user->save();
-        \Log::info('User saved');
+		/* Validate request data */
+		$validatedData = $request->validate([
+			'username'    => 'required|string|max:255|unique:users,username,' . $userId,
+			'email'       => 'required|string|email|max:255|unique:users,email,' . $userId,
+			'password'    => 'nullable|string|min:8',
+			'first_name'  => 'required|string|max:255',
+			'last_name'   => 'required|string|max:255',
+			'role'        => 'required|string|exists:roles,name',
+		]);
 
-        // Load relationships for the response
-        $user->load(['avatar', 'roles']);
-        \Log::info('Relationships loaded');
+		DB::beginTransaction();
+		try {
+			$validatedData['password'] = $validatedData['password'] ? Hash::make($validatedData['password']) : $user->password;
+			/* Save the user */
+			$user->syncRoles($validatedData['roles'])->update([
+				'username' => $validatedData['name'],
+				'email' => $validatedData['name'],
+				'password' => $validatedData['password'],
+				'first_name' => $validatedData['name'],
+				'last_name' => $validatedData['name'],
+			]);
 
-        return response()->json([
-            "message" => "User updated successfully",
-            "user" => $user->toArray()
-        ], 200);
-    } catch (\Exception $e) {
-        \Log::error('Exception in update method: ' . $e->getMessage());
-        return response()->json([
-            'message' => 'An error occurred while updating the user',
-            'error' => $e->getMessage()
-        ], 500);
-    }
-}
+			$role = $user->roles->first();
+			if ($role) {
+				$user->role_id = $role->id;
+				$user->role_name = $role->name;
+			}
 
-    /**
-     * @OA\Delete(
-     *     path="/api/users/{id}",
-     *     summary="Delete a user",
-     *     security={{"bearerAuth":{}}},
-     *     tags={"Users"},
-     *     @OA\Parameter(name="id", in="path", required=true, description="User ID", @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="User deleted"),
-     *     @OA\Response(response=404, description="User not found")
-     * )
-     */
-    public function destroy($id)
-    {
-        $user = User::find($id);
-        if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
+			DB::commit();
 
-        $user->delete();
-        return response()->json(['message' => 'User deleted']);
-    }
+			/* Return success response */
+			return response()->json([
+				'success' => true,
+				'message' => __("msg_update"),
+				'data' => $user
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => __("err_update"),
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * @OA\Delete(
+	 *     path="/api/users/{id}",
+	 *     summary="Delete a user",
+	 *     description="Deletes a user.",
+	 *     operationId="deleteUser",
+	 *     tags={"Users"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="ID of the user to delete",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function destroy($id)
+	{
+		$user = User::find($id);
+
+		if (!$user) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			], 404);
+		}
+
+		/* Proceed with deletion */
+		$user->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_dlt")
+		], 200);
+	}
 }

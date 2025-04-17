@@ -164,7 +164,7 @@ class PermissionSeeder extends Seeder
 
 		$validPermissionIds = [];
 		foreach ($permissions as $permission) {
-			$record = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'sanctum']);
+			$record = Permission::firstOrCreate(['name' => $permission, 'guard_name' => 'api']);
 			array_push($validPermissionIds, $record->id);
 		}
 		Permission::whereNotIn('id', $validPermissionIds)->delete();

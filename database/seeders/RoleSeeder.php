@@ -30,7 +30,7 @@ class RoleSeeder extends Seeder
 
 		$validRoleIds = [];
 		foreach ($roles as $role) {
-			$record = Role::firstOrCreate(['name' => $role, 'guard_name' => 'sanctum']);
+			$record = Role::firstOrCreate(['name' => $role, 'guard_name' => 'api']);
 			array_push($validRoleIds, $record->id);
 		}
 		Role::whereNotIn('id', $validRoleIds)->delete();

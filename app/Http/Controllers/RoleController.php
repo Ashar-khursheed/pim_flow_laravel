@@ -43,6 +43,13 @@ class RoleController extends Controller
 	 */
 	public function index(Request $request)
 	{
+		if (!auth()->user()->can('list role')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+
 		$records = Role::with('permissions:id,name');
 
 		/* Pagination */
@@ -97,7 +104,7 @@ class RoleController extends Controller
 	{
 		/* Validate request data */
 		$request->validate([
-			'name' => "required|unique:roles,name,id",
+			'name' => "required|unique:roles,name",
 			'permissions' => 'required|array',
 			'permissions.*' => 'exists:permissions,name',
 		]);
@@ -197,7 +204,7 @@ class RoleController extends Controller
 
 		/* Validate request data */
 		$request->validate([
-			'name' => "required|unique:roles,name,{$roleId},id",
+			'name' => "required|unique:roles,name,{$roleId}",
 			'permissions' => 'required|array',
 			'permissions.*' => 'exists:permissions,name',
 		]);
