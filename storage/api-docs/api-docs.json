@@ -1351,6 +1351,12 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1358,11 +1364,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "category_id": {
@@ -1376,11 +1394,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "website_banners_videos[]": {
@@ -1390,11 +1420,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     }
                                 },
@@ -1495,6 +1537,12 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1502,11 +1550,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "category_id": {
@@ -1520,11 +1580,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "website_banners_videos[]": {
@@ -1534,11 +1606,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "_method": {
@@ -8412,6 +8496,81 @@
                     },
                     "brand_id": {
                         "type": "integer"
+                    },
+                    "page_top_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_top_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "category_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
                     },
                     "website_banners_videos": {
                         "type": "array",
