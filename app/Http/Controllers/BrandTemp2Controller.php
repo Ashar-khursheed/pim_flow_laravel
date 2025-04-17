@@ -20,7 +20,11 @@ class BrandTemp2Controller extends Controller
      */
     public function index()
     {
-        return response()->json(BrandTemp2::all());
+        return response()->json([
+            'success' => true,
+            'message' => __("msg_rec_list"),
+            'data' => BrandTemp2::all()
+        ]);
     }
 
     /**
