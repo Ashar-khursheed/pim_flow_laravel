@@ -21,9 +21,15 @@ class SubCategoryController extends Controller
  *     security={{"bearerAuth":{}}}
  * )
  */
-public function index()
+public function index(Request $request)
 {
-    $subcategories = SubCategory::with(['category']);
+    // Get per_page parameter from request, default to 10 if not provided
+    $perPage = $request->input('per_page', 10);
+    
+    // Validate to ensure it's a reasonable number
+    $perPage = min(max((int)$perPage, 1), 100);
+    
+    $subcategories = SubCategory::with(['category'])->paginate($perPage);
 
     // Transform each subcategory to update the nested category image
     $data = $subcategories->map(function ($subcat) {
@@ -37,12 +43,12 @@ public function index()
 
     return response()->json([
         'data' => $data,
+        'current_page' => $subcategories->currentPage(),
+        'per_page' => $perPage,
         'total_pages' => $subcategories->lastPage(),
         'total_records' => $subcategories->total(),
     ]);
 }
-
-
     /**
      * @OA\Get(
      *     path="/api/subcategories/{id}",
