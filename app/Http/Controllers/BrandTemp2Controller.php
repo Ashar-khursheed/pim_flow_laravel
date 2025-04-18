@@ -86,26 +86,24 @@ class BrandTemp2Controller extends Controller
     public function store(Request $request)
     {
         $data = $this->handleUploads($request);
-        
-        // Ensure category_id is properly formatted
+    
         if ($request->has('category_id')) {
             $data['category_id'] = $request->category_id;
         }
-
-        // Add brand name from the request
-        if ($request->has('brand_name')) {
-            $data['brand_name'] = $request->brand_name;
-        }
-
+    
         $brand = BrandTemp2::create($data);
-        
+    
+        // Add brand_name to the responses
+        $brand->load('brand');
+        $brand->brand_name = $brand->brand->name ?? null;
+    
         return response()->json([
             'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
         ], 201);   
     }
-
+    
 
     /**
      * @OA\Get(
