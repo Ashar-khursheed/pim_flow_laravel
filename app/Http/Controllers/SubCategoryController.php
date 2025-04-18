@@ -23,7 +23,7 @@ class SubCategoryController extends Controller
  */
 public function index()
 {
-    $subcategories = SubCategory::with(['category'])->paginate(10);
+    $subcategories = SubCategory::with(['category']);
 
     // Transform each subcategory to update the nested category image
     $data = $subcategories->map(function ($subcat) {
