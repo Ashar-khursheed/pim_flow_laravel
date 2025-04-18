@@ -66,6 +66,23 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
+    // public function store(Request $request)
+    // {
+    //     $data = $this->handleUploads($request);
+        
+    //     // Ensure category_id is properly formatted
+    //     if ($request->has('category_id')) {
+    //         $data['category_id'] = $request->category_id;
+    //     }
+
+    //     $brand = BrandTemp2::create($data);
+        
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand template created successfully.',
+    //         'data' => $brand
+    //     ], 201);   
+    // }
     public function store(Request $request)
     {
         $data = $this->handleUploads($request);
@@ -75,13 +92,20 @@ class BrandTemp2Controller extends Controller
             $data['category_id'] = $request->category_id;
         }
 
+        // Add brand name from the request
+        if ($request->has('brand_name')) {
+            $data['brand_name'] = $request->brand_name;
+        }
+
         $brand = BrandTemp2::create($data);
+        
         return response()->json([
             'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
         ], 201);   
     }
+
 
     /**
      * @OA\Get(
