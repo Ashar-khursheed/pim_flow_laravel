@@ -18,13 +18,23 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
+    // public function index()
+    // {
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __("msg_rec_list"),
+    //         'data' => BrandTemp2::all()
+    //     ]);
+    // }
+
     public function index()
     {
         $brands = BrandTemp2::with('brand')->get();
     
-        // Append brand_name to each item
+        // Add brand_name and hide the full brand relationship
         $brands->each(function ($item) {
             $item->brand_name = $item->brand->name ?? null;
+            unset($item->brand); // remove full brand object
         });
     
         return response()->json([
@@ -34,7 +44,6 @@ class BrandTemp2Controller extends Controller
         ]);
     }
     
-
     /**
      * @OA\Post(
      *     path="/api/brand-temp-2",
