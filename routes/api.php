@@ -31,6 +31,12 @@ use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\OrderReturnController;
+use App\Http\Controllers\OrderHistoryController;
+
+
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -159,6 +165,28 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/categories/reorder', [CategoryController::class ,'reorder']);
     Route::apiResource('categories', CategoryController::class);
 
+
+	 // Order routes
+	 Route::get('/orders', [OrderController::class, 'index']);
+	 Route::post('/orders', [OrderController::class, 'store']);
+	 Route::get('/orders/{order}', [OrderController::class, 'show']);
+	 Route::put('/orders/{order}', [OrderController::class, 'update']);
+	 Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+	 Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+	 Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+	 
+	 // Order history routes
+	 Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
+	 Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
+	 Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
+	 
+	 // Order return routes
+	 Route::get('/order-returns', [OrderReturnController::class, 'index']);
+	 Route::post('/order-returns', [OrderReturnController::class, 'store']);
+	 Route::get('/order-returns/{orderReturn}', [OrderReturnController::class, 'show']);
+	 Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
+	 Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
+	 Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
