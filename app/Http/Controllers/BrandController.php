@@ -57,6 +57,12 @@ class BrandController extends BaseController
 	 */
 	public function index(Request $request)
 	{
+		if (!auth()->user()->can('list brand')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$brands = Brand::query();
 
 		if($request->filled('page') && $request->filled('length')){
@@ -108,6 +114,12 @@ class BrandController extends BaseController
 
 public function store(Request $request)
 {
+	if (!auth()->user()->can('add brand')) {
+		return response()->json([
+			'success' => false,
+			'message' => "You don't have permission to access this module.",
+		]);
+	}
 	try {
 		 // Update validation rules for is_featured to accept 0 or 1
 		$validated = $request->validate([
@@ -208,6 +220,12 @@ public function store(Request $request)
 	 */
 	public function show($id)
 	{
+		if (!auth()->user()->can('view brand')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$brand = Brand::find($id);
 
 		if (!$brand) {
@@ -271,6 +289,12 @@ public function store(Request $request)
  */
   public function update(Request $request, $id)
   {
+	if (!auth()->user()->can('update brand')) {
+		return response()->json([
+			'success' => false,
+			'message' => "You don't have permission to access this module.",
+		]);
+	}
   	try {
 		// Find the brand
   		$brand = Brand::find($id);
@@ -372,6 +396,12 @@ public function store(Request $request)
 	 */
 	public function destroy($id)
 	{
+		if (!auth()->user()->can('delete brand')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$brand = Brand::find($id);
 
 		if (!$brand) {
@@ -537,6 +567,12 @@ public function store(Request $request)
 	// }
 		public function getBrandsList(Request $request)
 		{
+			if (!auth()->user()->can('list brand')) {
+				return response()->json([
+					'success' => false,
+					'message' => "You don't have permission to access this module.",
+				]);
+			}
 			$query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
 			->withCount('products')
 			->with([
@@ -914,7 +950,7 @@ public function store(Request $request)
 	 public function getCategories($id)
 	 {
 		 $brand = Brand::with(['products.categories:id,name'])->findOrFail($id);
-	 
+
 		 // Flatten and get unique categories, only with id and name
 		 $categories = $brand->products
 			 ->flatMap(function ($product) {
@@ -927,12 +963,12 @@ public function store(Request $request)
 			 })
 			 ->unique('id')
 			 ->values();
-	 
+
 		 return response()->json([
 			 'sucess' => 'true',
 			 'brand_id' => $id,
 			 'categories' => $categories
 		 ]);
 	 }
-	 
+
 }

@@ -47,7 +47,12 @@ class UserController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		dd(auth()->user()->getAllPermissions()->pluck('name')->toArray());
+		if (!auth()->user()->can('list user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$records = User::with('roles:id,name');
 
 		/* Pagination */
@@ -107,6 +112,12 @@ class UserController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		if (!auth()->user()->can('add user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$validatedData = $request->validate([
 			'username'    => 'required|string|max:255|unique:users,username',
 			'email'       => 'required|string|email|max:255|unique:users,email',
@@ -152,6 +163,12 @@ class UserController extends BaseController
 	 */
 	public function show($userId)
 	{
+		if (!auth()->user()->can('view user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$user = User::find($userId);
 		if (!$user) {
 			return response()->json([
@@ -206,6 +223,12 @@ class UserController extends BaseController
 	 */
 	public function update(Request $request, $userId)
 	{
+		if (!auth()->user()->can('update user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$user = User::create([
 			'username'   => $validatedData['username'],
 			'email'      => $validatedData['email'],
@@ -298,6 +321,12 @@ class UserController extends BaseController
 	 */
 	public function destroy($id)
 	{
+		if (!auth()->user()->can('delete user')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$user = User::find($id);
 
 		if (!$user) {

@@ -101,6 +101,12 @@ class RoleController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		if (!auth()->user()->can('add role')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		/* Validate request data */
 		$request->validate([
 			'name' => "required|unique:roles,name",
@@ -145,6 +151,12 @@ class RoleController extends BaseController
 	 */
 	public function show($roleId)
 	{
+		if (!auth()->user()->can('view role')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$role = Role::with('permissions:id,name')->find($roleId);
 		if (!$role) {
 			return response()->json([
@@ -193,6 +205,12 @@ class RoleController extends BaseController
 	 */
 	public function update(Request $request, $roleId)
 	{
+		if (!auth()->user()->can('update role')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$role = Role::find($roleId);
 		if (!$role) {
 			return response()->json([
@@ -257,6 +275,12 @@ class RoleController extends BaseController
 	 */
 	public function destroy($id)
 	{
+		if (!auth()->user()->can('delete role')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$role = Role::find($id);
 
 		if (!$role) {

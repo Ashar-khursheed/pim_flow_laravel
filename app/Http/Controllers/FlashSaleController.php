@@ -22,6 +22,12 @@ class FlashSaleController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('list flash sale')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json(FlashSale::all(), 200);
     }
 
@@ -49,6 +55,12 @@ class FlashSaleController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('add flash sale')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $request->validate([
             'name' => 'required|string|max:191',
             'end_date' => 'required|date|after:today',
@@ -86,6 +98,12 @@ class FlashSaleController extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->can('view flash sale')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $flashSale = FlashSale::find($id);
         if (!$flashSale) {
             return response()->json(['message' => 'Flash Sale not found'], 404);
@@ -127,6 +145,12 @@ class FlashSaleController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('update flash sale')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $flashSale = FlashSale::find($id);
         if (!$flashSale) {
             return response()->json(['message' => 'Flash Sale not found'], 404);
@@ -168,6 +192,12 @@ class FlashSaleController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete flash sale')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $flashSale = FlashSale::find($id);
         if (!$flashSale) {
             return response()->json(['message' => 'Flash Sale not found'], 404);

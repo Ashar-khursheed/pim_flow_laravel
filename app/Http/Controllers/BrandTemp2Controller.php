@@ -18,49 +18,31 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    // public function index()
-    // {
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __("msg_rec_list"),
-    //         'data' => BrandTemp2::all()
-    //     ]);
-    // }
-
-    // public function index()
-    // {
-    //     $brands = BrandTemp2::with('brand')->get();
-    
-    //     // Append brand_name to each item
-    //     $brands->each(function ($item) {
-    //         $item->brand_name = $item->brand->name ?? null;
-    //     });
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __("msg_rec_list"),
-    //         'data' => $brands
-    //     ]);
-    // }
     public function index()
     {
+        if (!auth()->user()->can('list brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         // Eager load brand, but only fetch 'id' and 'name' to keep it light
         $brands = BrandTemp2::with(['brand:id,name'])->get();
-    
+
         // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
             $item->brand_name = $item->brand->name ?? null;
             $item->makeHidden('brand');
         });
-    
+
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
             'data' => $brands
         ]);
     }
-    
-    
+
+
     /**
      * @OA\Post(
      *     path="/api/brand-temp-2",
@@ -102,23 +84,29 @@ class BrandTemp2Controller extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('add brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $data = $this->handleUploads($request);
-        
+
         // Ensure category_id is properly formatted
         if ($request->has('category_id')) {
             $data['category_id'] = $request->category_id;
         }
 
         $brand = BrandTemp2::create($data);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
-        ], 201);   
+        ], 201);
     }
-    
-    
+
+
 
     /**
      * @OA\Get(
@@ -133,6 +121,12 @@ class BrandTemp2Controller extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->can('view brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json(BrandTemp2::findOrFail($id));
     }
 
@@ -181,14 +175,14 @@ class BrandTemp2Controller extends Controller
     // {
     //     $brand = BrandTemp2::findOrFail($id);
     //     $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
-        
+
     //     // Ensure category_id is properly formatted if provided
     //     if ($request->has('category_id')) {
     //         $data['category_id'] = $request->category_id;
     //     }
-        
+
     //     $brand->update($data);
-        
+
     //     return response()->json([
     //         'success' => true,
     //         'message' => 'Brand updated successfully.',
@@ -198,6 +192,12 @@ class BrandTemp2Controller extends Controller
 
         public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('update brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $brand = BrandTemp2::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
 
@@ -232,6 +232,12 @@ class BrandTemp2Controller extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         BrandTemp2::findOrFail($id)->delete();
         return response()->json(['message' => 'Deleted']);
     }
@@ -275,25 +281,25 @@ class BrandTemp2Controller extends Controller
         // Process each image field
         foreach ($imageFields as $index => $field) {
             $altTextField = $altTextFields[$index]; // Get corresponding alt text field
-            
+
             if ($request->hasFile($field)) {
                 $files = [];
                 $altTexts = [];
-                
+
                 // Get the alt text values from request
                 $altTextValues = $request->input($altTextField, []);
-                
+
                 // Process and upload each file
                 foreach ($request->file($field) as $i => $file) {
                     $path = Storage::disk('s3')->put("{$baseFolder}/{$field}", $file);
                     $url = Storage::disk('s3')->url($path);
                     $files[] = $url;
-                    
+
                     // Get corresponding alt text or use empty string if not provided
                     $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
                     $altTexts[] = $altText;
                 }
-                
+
                 // Save both files and alt texts to data array
                 $data[$field] = $files;
                 $data[$altTextField] = $altTexts;

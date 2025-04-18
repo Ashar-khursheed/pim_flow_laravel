@@ -40,6 +40,8 @@ class PermissionSeeder extends Seeder
 			'update product',
 			'delete product',
 			'show product',
+			'import product',
+			'export product',
 
 			'list category',
 			'add category',
@@ -106,6 +108,8 @@ class PermissionSeeder extends Seeder
 			'update seo mgmt',
 			'delete seo mgmt',
 			'show seo mgmt',
+			'import seo mgmt',
+			'export seo mgmt',
 
 			'list vendor',
 			'add vendor',
@@ -120,9 +124,6 @@ class PermissionSeeder extends Seeder
 			'show media mgmt',
 
 			'list activity log',
-			'add activity log',
-			'update activity log',
-			'delete activity log',
 			'show activity log',
 
 			'list user',
@@ -160,6 +161,18 @@ class PermissionSeeder extends Seeder
 			'update permission',
 			'delete permission',
 			'show permission',
+
+			'list brand store mgmt',
+			'add brand store mgmt',
+			'update brand store mgmt',
+			'delete brand store mgmt',
+			'show brand store mgmt',
+
+			'list flash sale',
+			'add flash sale',
+			'update flash sale',
+			'delete flash sale',
+			'show flash sale',
 		];
 
 		$validPermissionIds = [];
