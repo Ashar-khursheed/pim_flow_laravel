@@ -24,7 +24,7 @@ class SubCategoryController extends Controller
 public function index(Request $request)
 {
     // Get per_page parameter from request, default to 10 if not provided
-    $perPage = $request->input('per_page', 10);
+    $perPage = $request->input('limit', 10);
     
     // Validate to ensure it's a reasonable number
     $perPage = min(max((int)$perPage, 1), 100);
@@ -44,7 +44,7 @@ public function index(Request $request)
     return response()->json([
         'data' => $data,
         'current_page' => $subcategories->currentPage(),
-        'per_page' => $perPage,
+        'limit' => $perPage,
         'total_pages' => $subcategories->lastPage(),
         'total_records' => $subcategories->total(),
     ]);
