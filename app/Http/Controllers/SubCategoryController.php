@@ -21,7 +21,7 @@ class SubCategoryController extends Controller
  *     security={{"bearerAuth":{}}}
  * )
  */
-public function index()
+public function index(Request $request)
 {
     if (!auth()->user()->can('list sub category page')) {
         return response()->json([
@@ -29,7 +29,13 @@ public function index()
             'message' => "You don't have permission to access this module.",
         ]);
     }
-    $subcategories = SubCategory::with(['category'])->paginate(10);
+    // Get limit parameter from request, default to 10 if not provided
+    $perPage = $request->input('limit', 10);
+
+    // Ensure it's at least 1
+    $perPage = max((int)$perPage, 1);
+
+    $subcategories = SubCategory::with(['category'])->paginate($perPage);
 
     // Transform each subcategory to update the nested category image
     $data = $subcategories->map(function ($subcat) {
@@ -43,12 +49,12 @@ public function index()
 
     return response()->json([
         'data' => $data,
+        'current_page' => $subcategories->currentPage(),
+        'limit' => $perPage,
         'total_pages' => $subcategories->lastPage(),
         'total_records' => $subcategories->total(),
     ]);
 }
-
-
     /**
      * @OA\Get(
      *     path="/api/subcategories/{id}",
