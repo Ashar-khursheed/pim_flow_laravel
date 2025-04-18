@@ -20,12 +20,20 @@ class BrandTemp2Controller extends Controller
      */
     public function index()
     {
+        $brands = BrandTemp2::with('brand')->get();
+    
+        // Append brand_name to each item
+        $brands->each(function ($item) {
+            $item->brand_name = $item->brand->name ?? null;
+        });
+    
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
-            'data' => BrandTemp2::all()
+            'data' => $brands
         ]);
     }
+    
 
     /**
      * @OA\Post(
@@ -66,43 +74,24 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    // public function store(Request $request)
-    // {
-    //     $data = $this->handleUploads($request);
-        
-    //     // Ensure category_id is properly formatted
-    //     if ($request->has('category_id')) {
-    //         $data['category_id'] = $request->category_id;
-    //     }
-
-    //     $brand = BrandTemp2::create($data);
-        
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => 'Brand template created successfully.',
-    //         'data' => $brand
-    //     ], 201);   
-    // }
     public function store(Request $request)
     {
         $data = $this->handleUploads($request);
-    
+        
+        // Ensure category_id is properly formatted
         if ($request->has('category_id')) {
             $data['category_id'] = $request->category_id;
         }
-    
+
         $brand = BrandTemp2::create($data);
-    
-        // Add brand_name to the responses
-        $brand->load('brand');
-        $brand->brand_name = $brand->brand->name ?? null;
-    
+        
         return response()->json([
             'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
         ], 201);   
     }
+    
     
 
     /**
