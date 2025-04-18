@@ -5,226 +5,948 @@ namespace App\Http\Controllers;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Log; // ✅ Add this line
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class CategoryController extends BaseController
 {
-	/**
-	 * Display a listing of the resource.
-	 */
-	/**
-	 * @OA\Get(
-	 *     path="/api/categories",
-	 *     summary="Get Category List",
-	 *     description="Fetches a list of categories. If 'type' is set to 'Parent', only parent categories (parent_id = 0) will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
-	 *     tags={"Categories"},
-	 *     @OA\Parameter(
-	 *         name="type",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Filter categories by type. Options: 'All' (default), 'Parent'",
-	 *         @OA\Schema(
-	 *             type="string",
-	 *             enum={"All", "Super Parent", "Leaf Child"},
-	 *             default="All"
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="parent_id",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Fetch all child categories of a given parent_id",
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             example=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
+    /**
+     * Display a listing of the resource.
+     * 
+     * @OA\Get(
+     *     path="/api/categories",
+     *     summary="Get Category List",
+     *     description="Fetches a list of categories. If 'type' is set to 'Parent', only parent categories (parent_id = 0) will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
+     *     tags={"Categories"},
+     *     @OA\Parameter(
+     *         name="type",
+     *         in="query",
+     *         required=false,
+     *         description="Filter categories by type. Options: 'All' (default), 'Parent'",
+     *         @OA\Schema(
+     *             type="string",
+     *             enum={"All", "Super Parent", "Leaf Child"},
+     *             default="All"
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="parent_id",
+     *         in="query",
+     *         required=false,
+     *         description="Fetch all child categories of a given parent_id",
+     *         @OA\Schema(
+     *             type="integer",
+     *             example=1
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination. Starts from 1.",
+     *         required=true,
+     *         example=1,
+     *         @OA\Schema(
+     *             type="integer",
+     *             minimum=1
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="length",
+     *         in="query",
+     *         description="Number of records per page.",
+     *         required=true,
+     *         example=20,
+     *         @OA\Schema(
+     *             type="integer",
+     *             minimum=1
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *          @OA\MediaType(
+     *              mediaType="application/json",
+     *          )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function index(Request $request)
+    {
+        $categories = Category::query();
 
+        // Filter by type
+        if ($request->type == 'Super Parent') {
+            $categories = $categories->where('parent_id', 0);
+        } elseif ($request->type == 'Leaf Child') {
+            $categories = $categories->whereDoesntHave('children');
+        } elseif ($request->has('parent_id') && is_numeric($request->parent_id)) {
+            $categories = $categories->where('parent_id', (int) $request->parent_id);
+        }
 
-	public function index(Request $request)
-	{
-		// dd(auth()->user());
-		$categories = Category::query();
+        // Check for status filter
+        if ($request->has('status') && in_array($request->status, ['published', 'draft', 'pending'])) {
+            $categories = $categories->where('status', $request->status);
+        }
 
+        // Apply ordering
+        $categories = $categories->orderBy('order', 'asc');
 
+        // Handle pagination
+        if($request->filled('page') && $request->filled('length')){
+            $page = $request->input('page');
+            $length = $request->input('length');
+            $categories = $categories->offset(($page - 1)*$length)->limit($length);
+        }
 
-		if ($request->type == 'Super Parent') {
-			$categories = $categories->where('parent_id', 0);
-		} elseif ($request->type == 'Leaf Child') {
-			$categories = $categories->whereDoesntHave('children');
-		} elseif ($request->has('parent_id') && is_numeric($request->parent_id)) {
-			$categories = $categories->where('parent_id', (int) $request->parent_id);
-		}
+        $categoriesList = $categories->get([
+            'id', 'name', 'parent_id', 'description', 'status', 
+            'order', 'image', 'is_featured', 'icon', 'icon_image', 'slug'
+        ]);
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$categories = $categories->offset(($page - 1)*$length)->limit($length);
-		}
+        // Append full image URL
+        $categoriesList->transform(function ($category) {
+            if ($category->image) {
+                $category->image = asset('storage/' . $category->image);
+            }
+            if ($category->icon_image) {
+                $category->icon_image = asset('storage/' . $category->icon_image);
+            }
+            return $category;
+        });
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Category List',
+            'categories' => $categoriesList
+        ]);
+    }
 
-		$categoriesList = $categories->get(['id', 'name', 'parent_id', 'image', 'slug', 'is_featured']);
+    /**
+     * @OA\Get(
+     *     path="/api/allcategories",
+     *     summary="Get All Categories",
+     *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+     *     tags={"Categories"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful operation",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="name", type="string", example="Electronics"),
+     *                 @OA\Property(property="slug", type="string", example="electronics"),
+     *                 @OA\Property(
+     *                     property="children_recursive",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=2),
+     *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
+     *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
+     *                         @OA\Property(
+     *                             property="children_recursive",
+     *                             type="array",
+     *                             @OA\Items(
+     *                                 type="object",
+     *                                 @OA\Property(property="id", type="integer", example=3),
+     *                                 @OA\Property(property="name", type="string", example="Smartphones"),
+     *                                 @OA\Property(property="slug", type="string", example="smartphones")
+     *                             )
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function allcategories(): JsonResponse
+    {
+        $categories = Cache::remember('all_categories', 3600, function () {
+            return Category::where('parent_id', 0)
+                ->with(['childrenRecursive'])
+                ->orderBy('order', 'asc')
+                ->get(['id', 'name', 'slug', 'order', 'parent_id']);
+        });
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'All Categories List',
+            'categories' => $categories
+        ]);
+    }
 
-				// Append full image URL
-		$categoriesList->transform(function ($category) {
-			$category->image = $category->image
-				? asset('storage/' . $category->image)
-				: null;
-			return $category;
-		});
-		return response()->json([
-			'success' => true,
-			'message' => 'Category List',
-			'categories' => $categoriesList
-		]);
-	}
-
-
-	/**
- * @OA\Get(
- *     path="/api/allcategories",
- *     summary="Get All Categories",
- *     description="Fetches a hierarchical list of categories. Each category includes its child categories recursively.",
+   /**
+ * Store a newly created category in storage.
+ *
+ * @OA\Post(
+ *     path="/api/categories",
+ *     summary="Create new category",
+ *     description="Creates a new category with the given details",
  *     tags={"Categories"},
- *     @OA\Response(
- *         response=200,
- *         description="Successful operation",
- *         @OA\JsonContent(
- *             type="array",
- *             @OA\Items(
- *                 type="object",
- *                 @OA\Property(property="id", type="integer", example=1),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"name"},
  *                 @OA\Property(property="name", type="string", example="Electronics"),
- *                 @OA\Property(property="slug", type="string", example="electronics"),
- *                 @OA\Property(
- *                     property="children_recursive",
- *                     type="array",
- *                     @OA\Items(
- *                         type="object",
- *                         @OA\Property(property="id", type="integer", example=2),
- *                         @OA\Property(property="name", type="string", example="Mobile Phones"),
- *                         @OA\Property(property="slug", type="string", example="mobile-phones"),
- *                         @OA\Property(
- *                             property="children_recursive",
- *                             type="array",
- *                             @OA\Items(
- *                                 type="object",
- *                                 @OA\Property(property="id", type="integer", example=3),
- *                                 @OA\Property(property="name", type="string", example="Smartphones"),
- *                                 @OA\Property(property="slug", type="string", example="smartphones")
- *                             )
- *                         )
- *                     )
- *                 )
+ *                 @OA\Property(property="parent_id", type="integer", example=0),
+ *                 @OA\Property(property="description", type="string", example="Electronic products category"),
+ *                 @OA\Property(property="status", type="string", example="published", enum={"published", "draft", "pending"}),
+ *                 @OA\Property(property="order", type="integer", example=0),
+ *                 @OA\Property(property="is_featured", type="integer"),
+ *                 @OA\Property(property="icon", type="string"),
+ *                 @OA\Property(property="icon_image", type="string", format="binary"),
+ *                 @OA\Property(property="slug", type="string", example="electronics")
  *             )
  *         )
  *     ),
  *     @OA\Response(
- *         response=401,
- *         description="Unauthorized",
+ *         response=201,
+ *         description="Category created successfully",
  *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Unauthenticated.")
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Category created successfully"),
+ *             @OA\Property(property="category", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation error"),
+ *             @OA\Property(property="errors", type="object")
  *         )
  *     ),
  *     security={{"bearerAuth":{}}}
  * )
  */
 
+    public function store(Request $request): JsonResponse
+    {
+		
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:191',
+			'parent_id' => [
+				'nullable',
+				'integer',
+				function ($attribute, $value, $fail) {
+					if ($value != 0 && !Category::where('id', $value)->exists()) {
+						$fail('The selected parent category is invalid.');
+					}
+				}
+			],
+            'description' => 'nullable|string',
+            'status' => 'required|string|in:published,draft,pending',
+            'order' => 'nullable|integer',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'is_featured' => 'nullable|boolean',
+            'website_ids' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:191',
+            'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+            'slug' => 'nullable|string|max:191|unique:ec_product_categories,slug'
+        ]);
 
- public function allcategories(): JsonResponse
- {
-	 $categories = Cache::remember('all_categories', 3600, function () {
-		 return Category::where('parent_id', 0)
-			 ->with(['children.children'])
-			 ->get(['id', 'name', 'slug']);
-	 });
- 
-	 return response()->json([
-		 'success' => true,
-		 'message' => 'All Categories List',
-		 'categories' => $categories
-	 ]);
- }
+		$disk = 's3'; // or use config
 
- 
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $data = $validator->validated();
+            
+            // Generate a slug if one isn't provided
+            if (empty($data['slug'])) {
+                $data['slug'] = Str::slug($data['name']);
+            }
+            
+		
+
+			if ($request->hasFile('image')) {
+				$path = $request->file('image')->store('categories', $disk);
+				$data['image'] = Storage::disk($disk)->url($path); // This returns full S3 URL
+			}
+
+			if ($request->hasFile('icon_image')) {
+				$path = $request->file('icon_image')->store('categories/icons', $disk);
+				$data['icon_image'] = Storage::disk($disk)->url($path); // No extra prefix
+			}
+            
+            // Set default order as the last position if not specified
+            if (!isset($data['order'])) {
+                $parentId = $data['parent_id'] ?? 0;
+                $lastOrder = Category::where('parent_id', $parentId)->max('order');
+                $data['order'] = $lastOrder ? $lastOrder + 1 : 1;
+            }
+            
+            // Create the category
+            $category = Category::create($data);
+            
+            // Clear cache
+            Cache::forget('all_categories');
+         
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Category created successfully',
+                'category' => $category
+            ], 201);
+            
+        } catch (\Exception $e) {
+            Log::error('Error creating category: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Display the specified category.
+     *
+     * @OA\Get(
+     *     path="/api/categories/{id}",
+     *     summary="Get category details",
+     *     description="Returns details of a specific category",
+     *     tags={"Categories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Category ID",
+     *         @OA\Schema(
+     *             type="integer"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="category", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Category not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Category not found")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function show($id): JsonResponse
+    {
+        try {
+            $category = Category::findOrFail($id);
+            
+            // Load children if any
+            $category->load('children');
+            
+            // Transform image paths to full URLs
+            if ($category->image) {
+                $category->image = asset('storage/' . $category->image);
+            }
+            
+            if ($category->icon_image) {
+                $category->icon_image = asset('storage/' . $category->icon_image);
+            }
+            
+            return response()->json([
+                'success' => true,
+                'category' => $category
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found'
+            ], 404);
+        }
+    }
+
+/**
+ * Update the specified category in storage.
+ *
+ * Note: Although this is an update operation, the HTTP method is POST due to multipart/form-data limitations.
+ *
+ * @OA\Post(
+ *     path="/api/categories/{id}",
+ *     summary="Update existing category (uses POST due to image upload)",
+ *     description="Updates an existing category with the given details. Uses POST instead of PUT because of file uploads.",
+ *     tags={"Categories"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="integer"),
+ *         description="Category ID"
+ *     ),
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\MediaType(
+ *             mediaType="multipart/form-data",
+ *             @OA\Schema(
+ *                 required={"name"},
+ *                 @OA\Property(property="name", type="string", example="Electronics"),
+ *                 @OA\Property(property="parent_id", type="integer", example=0),
+ *                 @OA\Property(property="description", type="string", example="Electronic products category"),
+ *                 @OA\Property(property="status", type="string", example="published", enum={"published", "draft", "pending"}),
+ *                 @OA\Property(property="order", type="integer", example=0),
+ *                 @OA\Property(property="is_featured", type="integer"),
+ *                 @OA\Property(property="icon", type="string"),
+ *                 @OA\Property(property="icon_image", type="string", format="binary"),
+ *                 @OA\Property(property="slug", type="string", example="electronics")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Category updated successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Category updated successfully"),
+ *             @OA\Property(property="category", type="object")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation error"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+
+ public function update(Request $request, $id): JsonResponse
+{
+    $category = Category::findOrFail($id);
+
+    $validator = Validator::make($request->all(), [
+        'name' => 'required|string|max:191',
+        'parent_id' => [
+            'nullable',
+            'integer',
+            function ($attribute, $value, $fail) use ($id) {
+                if ($value != 0 && !Category::where('id', $value)->where('id', '!=', $id)->exists()) {
+                    $fail('The selected parent category is invalid.');
+                }
+            }
+        ],
+        'description' => 'nullable|string',
+        'status' => 'required|string|in:published,draft,pending',
+        'order' => 'nullable|integer',
+        'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'is_featured' => 'nullable|boolean',
+        'website_ids' => 'nullable|string|max:255',
+        'icon' => 'nullable|string|max:191',
+        'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+        'slug' => 'nullable|string|max:191|unique:ec_product_categories,slug,' . $category->id,
+    ]);
+
+    $disk = 's3';
+
+    if ($validator->fails()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
+    }
+
+    try {
+        $data = $validator->validated();
+
+        if (empty($data['slug'])) {
+            $data['slug'] = Str::slug($data['name']);
+        }
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('categories', $disk);
+            $data['image'] = Storage::disk($disk)->url($path);
+        }
+
+        if ($request->hasFile('icon_image')) {
+            $path = $request->file('icon_image')->store('categories/icons', $disk);
+            $data['icon_image'] = Storage::disk($disk)->url($path);
+        }
+
+        if (!isset($data['order'])) {
+            $parentId = $data['parent_id'] ?? 0;
+            $lastOrder = Category::where('parent_id', $parentId)->where('id', '!=', $category->id)->max('order');
+            $data['order'] = $lastOrder ? $lastOrder + 1 : 1;
+        }
+
+        $category->update($data);
+
+        Cache::forget('all_categories');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Category updated successfully',
+            'category' => $category
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::error('Error updating category: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update category',
+            'error' => $e->getMessage()
+        ], 500);
+    }
+}
+
+
+
+    /**
+     * Remove the specified category from storage.
+     *
+     * @OA\Delete(
+     *     path="/api/categories/{id}",
+     *     summary="Delete category",
+     *     description="Deletes a category and optionally moves its children to its parent or deletes them",
+     *     tags={"Categories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Category ID",
+     *         @OA\Schema(
+     *             type="integer"
+     *         )
+     *     ),
+     *     @OA\Parameter(
+     *         name="delete_children",
+     *         in="query",
+     *         required=false,
+     *         description="Whether to delete all children (true) or move them to parent (false)",
+     *         @OA\Schema(
+     *             type="boolean",
+     *             default=false
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Category deleted successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Category deleted successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Category not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Category not found")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function destroy(Request $request, $id): JsonResponse
+    {
+        try {
+            $category = Category::findOrFail($id);
+            $deleteChildren = $request->boolean('delete_children', false);
+            
+            // Begin transaction
+            \DB::beginTransaction();
+            
+            // Handle child categories
+            if ($deleteChildren) {
+                // Delete all children recursively
+                $this->deleteChildrenRecursively($category);
+            } else {
+                // Move children to parent
+                $newParentId = $category->parent_id;
+                Category::where('parent_id', $id)->update(['parent_id' => $newParentId]);
+            }
+            
+            // Delete images
+            if ($category->image) {
+                Storage::disk('public')->delete($category->image);
+            }
+            
+            if ($category->icon_image) {
+                Storage::disk('public')->delete($category->icon_image);
+            }
+            
+            // Delete the category
+            $category->delete();
+            
+            // Commit transaction
+            \DB::commit();
+            
+            // Clear cache
+            Cache::forget('all_categories');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Category deleted successfully'
+            ]);
+            
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found'
+            ], 404);
+        } catch (\Exception $e) {
+            // Rollback transaction on error
+            \DB::rollBack();
+            
+            Log::error('Error deleting category: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete category',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Helper method to recursively delete children categories
+     */
+    private function deleteChildrenRecursively(Category $category)
+    {
+        foreach ($category->children as $child) {
+            $this->deleteChildrenRecursively($child);
+            
+            // Delete images
+            if ($child->image) {
+                Storage::disk('public')->delete($child->image);
+            }
+            
+            if ($child->icon_image) {
+                Storage::disk('public')->delete($child->icon_image);
+            }
+            
+            $child->delete();
+        }
+    }
+
+    /**
+     * Update the order of categories (for drag and drop functionality).
+     *
+     * @OA\Post(
+     *     path="/api/categories/reorder",
+     *     summary="Reorder categories",
+     *     description="Updates the order of categories for drag and drop functionality",
+     *     tags={"Categories"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"categories"},
+     *             @OA\Property(
+     *                 property="categories",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"id", "order", "parent_id"},
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="order", type="integer", example=2),
+     *                     @OA\Property(property="parent_id", type="integer", example=0)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories reordered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Categories reordered successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation error"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+   
+ public function reorder(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'categories' => 'required|array',
+            'categories.*.id' => 'required|integer|exists:ec_product_categories,id',
+            'categories.*.order' => 'required|integer|min:0',
+            'categories.*.parent_id' => 'required|integer'
+        ]);
+        
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        
+        try {
+            \DB::beginTransaction();
+            
+            foreach ($request->categories as $categoryData) {
+                $category = Category::findOrFail($categoryData['id']);
+                $category->update([
+                    'order' => $categoryData['order'],
+                    'parent_id' => $categoryData['parent_id']
+                ]);
+            }
+            
+            \DB::commit();
+            
+            // Clear cache
+            Cache::forget('all_categories');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Categories reordered successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            Log::error('Error reordering categories: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reorder categories',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
 	/**
-	 * Show the form for creating a new resource.
+     * Move a category up in order.
+     *
+     * @OA\Post(
+     *     path="/api/categories/{id}/move-up",
+     *     summary="Move category up",
+     *     description="Moves a category up in order within its parent",
+     *     tags={"Categories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Category ID",
+     *         @OA\Schema(
+     *             type="integer"
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Category moved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Category moved up successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Category not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Category not found")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+  public function moveUp($id): JsonResponse
+			{
+				try {
+					$category = Category::findOrFail($id);
+					$parentId = $category->parent_id;
+					
+					// Find the category directly above this one
+					$aboveCategory = Category::where('parent_id', $parentId)
+						->where('order', '<', $category->order)
+						->orderBy('order', 'desc')
+						->first();
+					
+					if ($aboveCategory) {
+						\DB::beginTransaction();
+						
+						// Swap orders
+						$tempOrder = $aboveCategory->order;
+						$aboveCategory->order = $category->order;
+						$category->order = $tempOrder;
+						
+						$aboveCategory->save();
+						$category->save();
+						
+						\DB::commit();
+						
+						// Clear cache
+						Cache::forget('all_categories');
+						
+						return response()->json([
+							'success' => true,
+							'message' => 'Category moved up successfully'
+						]);
+					}
+					
+					return response()->json([
+						'success' => false,
+						'message' => 'Category is already at the top'
+					]);
+					
+				} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Category not found'
+					], 404);
+				} catch (\Exception $e) {
+					// Rollback transaction if it was started
+					if (\DB::transactionLevel() > 0) {
+						\DB::rollBack();
+					}
+					
+					Log::error('Error moving category up: ' . $e->getMessage());
+					
+					return response()->json([
+						'success' => false,
+						'message' => 'Failed to move category up',
+						'error' => $e->getMessage()
+					], 500);
+				}
+	        }
+		
+	/**
+	 * Move a category down in the order.
+	 *
+	 * @OA\Post(
+	 *     path="/api/categories/{id}/move-down",
+	 *     summary="Move category down",
+	 *     description="Moves a category down one position in the ordering",
+	 *     tags={"Categories"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="Category ID",
+	 *         @OA\Schema(
+	 *             type="integer"
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Category moved down successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Category moved down successfully")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Category not found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Category not found")
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
 	 */
-	public function create()
+	public function moveDown($id): JsonResponse
 	{
-		//
+		try {
+			$category = Category::findOrFail($id);
+			$parentId = $category->parent_id;
+			
+			// Find the category directly below this one
+			$belowCategory = Category::where('parent_id', $parentId)
+				->where('order', '>', $category->order)
+				->orderBy('order', 'asc')
+				->first();
+			
+			if ($belowCategory) {
+				\DB::beginTransaction();
+				
+				// Swap orders
+				$tempOrder = $belowCategory->order;
+				$belowCategory->order = $category->order;
+				$category->order = $tempOrder;
+				
+				$belowCategory->save();
+				$category->save();
+				
+				\DB::commit();
+				
+				// Clear cache
+				Cache::forget('all_categories');
+				
+				return response()->json([
+					'success' => true,
+					'message' => 'Category moved down successfully'
+				]);
+			}
+			
+			return response()->json([
+				'success' => false,
+				'message' => 'Category is already at the bottom'
+			]);
+			
+		} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Category not found'
+			], 404);
+		} catch (\Exception $e) {
+			// Rollback transaction if it was started
+			if (\DB::transactionLevel() > 0) {
+				\DB::rollBack();
+			}
+			
+			Log::error('Error moving category down: ' . $e->getMessage());
+			
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to move category down',
+				'error' => $e->getMessage()
+			], 500);
+		}
 	}
 
-	/**
-	 * Store a newly created resource in storage.
-	 */
-	public function store(Request $request)
-	{
-		//
-	}
-
-	/**
-	 * Display the specified resource.
-	 */
-	public function show(Currency $currency)
-	{
-		//
-	}
-
-	/**
-	 * Show the form for editing the specified resource.
-	 */
-	public function edit(Currency $currency)
-	{
-		//
-	}
-
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, Currency $currency)
-	{
-		//
-	}
-
-	/**
-	 * Remove the specified resource from storage.
-	 */
-	public function destroy(Currency $currency)
-	{
-		//
-	}
 }

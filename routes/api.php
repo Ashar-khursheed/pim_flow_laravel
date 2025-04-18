@@ -30,7 +30,11 @@ use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
 use App\Http\Controllers\GradingController;
+use App\Http\Controllers\PaymentController;
 
+Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
+Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
+Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -48,7 +52,6 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
-	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 
 	Route::apiResource('users', UserController::class);
 
@@ -65,7 +68,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
-	Route::resource('categories', CategoryController::class)->only(['index']);
+
 	Route::resource('websites', WebsiteController::class)->only(['index']);
 
 	Route::get('/products/{id}/media/{type}/download', [BrandController::class, 'downloadMediaZip']);
@@ -138,6 +141,16 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
 
 	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
+
+
+	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
+	Route::resource('categories', CategoryController::class)->only(['index']);
+	Route::post('/categories/{id}', [CategoryController::class, 'update']);
+
+	Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
+	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
+	Route::post('/categories/reorder', [CategoryController::class ,'reorder']);
+    Route::apiResource('categories', CategoryController::class);
 
 
 });

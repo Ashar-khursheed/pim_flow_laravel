@@ -18,15 +18,49 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
+    // public function index()
+    // {
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __("msg_rec_list"),
+    //         'data' => BrandTemp2::all()
+    //     ]);
+    // }
+
+    // public function index()
+    // {
+    //     $brands = BrandTemp2::with('brand')->get();
+    
+    //     // Append brand_name to each item
+    //     $brands->each(function ($item) {
+    //         $item->brand_name = $item->brand->name ?? null;
+    //     });
+    
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __("msg_rec_list"),
+    //         'data' => $brands
+    //     ]);
+    // }
     public function index()
     {
+        // Eager load brand, but only fetch 'id' and 'name' to keep it light
+        $brands = BrandTemp2::with(['brand:id,name'])->get();
+    
+        // Add brand_name and hide the full brand object
+        $brands->each(function ($item) {
+            $item->brand_name = $item->brand->name ?? null;
+            $item->makeHidden('brand');
+        });
+    
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
-            'data' => BrandTemp2::all()
+            'data' => $brands
         ]);
     }
-
+    
+    
     /**
      * @OA\Post(
      *     path="/api/brand-temp-2",
@@ -40,17 +74,24 @@ class BrandTemp2Controller extends Controller
      *                 required={"brand_id"},
      *                 @OA\Property(property="brand_id", type="integer"),
      *                 @OA\Property(property="page_top_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_top_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
      *                  @OA\Property(
      *                           property="category_id",
      *                           type="string",
      *                           description="A JSON string containing category_id and product_ids"
      *                  ),
      *                 @OA\Property(property="page_middle_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_middle_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary"))
+     *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     ),
@@ -62,19 +103,22 @@ class BrandTemp2Controller extends Controller
     public function store(Request $request)
     {
         $data = $this->handleUploads($request);
-          // Ensure category_id is stored as a JSON string
+        
+        // Ensure category_id is properly formatted
         if ($request->has('category_id')) {
-            // Convert the category_id to a JSON string
             $data['category_id'] = $request->category_id;
         }
 
         $brand = BrandTemp2::create($data);
+        
         return response()->json([
-            'sucess' => 'true',
+            'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
         ], 201);   
-     }
+    }
+    
+    
 
     /**
      * @OA\Get(
@@ -105,17 +149,24 @@ class BrandTemp2Controller extends Controller
      *             @OA\Schema(
      *                 @OA\Property(property="brand_id", type="integer"),
      *                 @OA\Property(property="page_top_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_top_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(
      *                       property="category_id",
      *                       type="string",
      *                       description="A JSON string containing category_id and product_ids"
      *                   ),
      *                 @OA\Property(property="page_middle_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_middle_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
+     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="_method", type="string", example="PUT")
      *             )
      *         )
@@ -126,22 +177,47 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function update(Request $request, $id)
+    // public function update(Request $request, $id)
+    // {
+    //     $brand = BrandTemp2::findOrFail($id);
+    //     $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
+        
+    //     // Ensure category_id is properly formatted if provided
+    //     if ($request->has('category_id')) {
+    //         $data['category_id'] = $request->category_id;
+    //     }
+        
+    //     $brand->update($data);
+        
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand updated successfully.',
+    //         'data' => $brand
+    //     ], 201);
+    // }
+
+        public function update(Request $request, $id)
     {
         $brand = BrandTemp2::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
-           // Ensure category_id is stored as a JSON string if provided
-    if ($request->has('category_id')) {
-        $data['category_id'] = $request->category_id;
-    }
+
+        if ($request->has('category_id')) {
+            $data['category_id'] = $request->category_id;
+        }
+
         $brand->update($data);
-        // return response()->json($brand);
+
+        // Add brand_name to the response
+        $brand->load('brand');
+        $brand->brand_name = $brand->brand->name ?? null;
+
         return response()->json([
-            'sucess' => 'true',
+            'success' => true,
             'message' => 'Brand updated successfully.',
             'data' => $brand
         ], 201);
     }
+
 
     /**
      * @OA\Delete(
@@ -162,7 +238,7 @@ class BrandTemp2Controller extends Controller
 
     private function handleUploads(Request $request, $brandId = null)
     {
-        $fields = [
+        $imageFields = [
             'page_top_banners_desktop',
             'page_top_banners_mobile',
             'category_banners',
@@ -172,7 +248,19 @@ class BrandTemp2Controller extends Controller
             'website_banners_videos_mobile',
         ];
 
-        $data = $request->except($fields);
+        // Define alt text fields corresponding to image fields
+        $altTextFields = [
+            'page_top_banners_desktop_alt_text',
+            'page_top_banners_mobile_alt_text',
+            'category_banners_alt_text',
+            'page_middle_banners_desktop_alt_text',
+            'page_middle_banners_mobile_alt_text',
+            'website_banners_videos_alt_text',
+            'website_banners_videos_mobile_alt_text',
+        ];
+
+        // Get all data except the image and alt text fields
+        $data = $request->except(array_merge($imageFields, $altTextFields));
 
         $brandName = 'unknown';
         if ($brandId || $request->brand_id) {
@@ -184,15 +272,31 @@ class BrandTemp2Controller extends Controller
 
         $baseFolder = env('STORAGE_ENV', 'local') . "/Brand/{$brandName}";
 
-        foreach ($fields as $field) {
+        // Process each image field
+        foreach ($imageFields as $index => $field) {
+            $altTextField = $altTextFields[$index]; // Get corresponding alt text field
+            
             if ($request->hasFile($field)) {
                 $files = [];
-                foreach ($request->file($field) as $file) {
+                $altTexts = [];
+                
+                // Get the alt text values from request
+                $altTextValues = $request->input($altTextField, []);
+                
+                // Process and upload each file
+                foreach ($request->file($field) as $i => $file) {
                     $path = Storage::disk('s3')->put("{$baseFolder}/{$field}", $file);
                     $url = Storage::disk('s3')->url($path);
-                    $files[] = ['file' => $url];
+                    $files[] = $url;
+                    
+                    // Get corresponding alt text or use empty string if not provided
+                    $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
+                    $altTexts[] = $altText;
                 }
+                
+                // Save both files and alt texts to data array
                 $data[$field] = $files;
+                $data[$altTextField] = $altTexts;
             }
         }
 

@@ -1408,6 +1408,12 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1415,11 +1421,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "category_id": {
@@ -1433,11 +1451,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "website_banners_videos[]": {
@@ -1447,11 +1477,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     }
                                 },
@@ -1552,6 +1594,12 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1559,11 +1607,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "category_id": {
@@ -1577,11 +1637,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "website_banners_videos[]": {
@@ -1591,11 +1663,23 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
                                         }
                                     },
                                     "_method": {
@@ -2077,6 +2161,121 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Create new category",
+                "description": "Creates a new category with the given details",
+                "operationId": "71fcad552bb0eaba9fb191fd8d8dcab0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Electronic products category"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft",
+                                            "pending"
+                                        ],
+                                        "example": "published"
+                                    },
+                                    "order": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "is_featured": {
+                                        "type": "integer"
+                                    },
+                                    "icon": {
+                                        "type": "string"
+                                    },
+                                    "icon_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "electronics"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Category created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category created successfully"
+                                        },
+                                        "category": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation error"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/allcategories": {
@@ -2179,6 +2378,511 @@
                 ]
             }
         },
+        "/api/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Get category details",
+                "description": "Returns details of a specific category",
+                "operationId": "c68e76d323c008827a9e47398b1583de",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "category": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Update existing category (uses POST due to image upload)",
+                "description": "Updates an existing category with the given details. Uses POST instead of PUT because of file uploads.",
+                "operationId": "ca9fbca85918139a8465ca00b4e67b1e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Electronics"
+                                    },
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Electronic products category"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "published",
+                                            "draft",
+                                            "pending"
+                                        ],
+                                        "example": "published"
+                                    },
+                                    "order": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "is_featured": {
+                                        "type": "integer"
+                                    },
+                                    "icon": {
+                                        "type": "string"
+                                    },
+                                    "icon_image": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "electronics"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Category updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category updated successfully"
+                                        },
+                                        "category": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation error"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Delete category",
+                "description": "Deletes a category and optionally moves its children to its parent or deletes them",
+                "operationId": "4c12e22a7f8c617bd83bfa1fdc05428d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "delete_children",
+                        "in": "query",
+                        "description": "Whether to delete all children (true) or move them to parent (false)",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/reorder": {
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Reorder categories",
+                "description": "Updates the order of categories for drag and drop functionality",
+                "operationId": "6d6f00a49335289df918f785cb67d788",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "categories"
+                                ],
+                                "properties": {
+                                    "categories": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "id",
+                                                "order",
+                                                "parent_id"
+                                            ],
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "order": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "parent_id": {
+                                                    "type": "integer",
+                                                    "example": 0
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categories reordered successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Categories reordered successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation error"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/{id}/move-up": {
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Move category up",
+                "description": "Moves a category up in order within its parent",
+                "operationId": "ff29ae76360a0e2adcfff5c817a09586",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category moved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category moved up successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/categories/{id}/move-down": {
+            "post": {
+                "tags": [
+                    "Categories"
+                ],
+                "summary": "Move category down",
+                "description": "Moves a category down one position in the ordering",
+                "operationId": "8e60b06d1119116e54e3029bb6bf6d16",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category moved down successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category moved down successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages": {
             "get": {
                 "tags": [
@@ -2240,6 +2944,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "banner_image_alt": {
+                                        "type": "string",
+                                        "example": "Banner image alt text"
+                                    },
                                     "banner_link": {
                                         "type": "string",
                                         "example": "https://example.com"
@@ -2256,6 +2964,13 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "six_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for six image"
+                                        }
+                                    },
                                     "four_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -2263,11 +2978,25 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "four_banners_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for four banner"
+                                        }
+                                    },
                                     "twelve_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for twelve image"
                                         }
                                     },
                                     "related_products": {
@@ -2460,6 +3189,10 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "banner_image_alt": {
+                                        "type": "string",
+                                        "example": "Banner image alt text"
+                                    },
                                     "banner_link": {
                                         "type": "string",
                                         "example": "https://example.com"
@@ -2475,6 +3208,13 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "six_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for six image"
+                                        }
+                                    },
                                     "four_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -2482,11 +3222,25 @@
                                             "format": "binary"
                                         }
                                     },
+                                    "four_banners_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for four banner"
+                                        }
+                                    },
                                     "twelve_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
+                                        }
+                                    },
+                                    "twelve_images_alt[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "Alt text for twelve image"
                                         }
                                     },
                                     "related_products": {
@@ -4396,6 +5150,193 @@
                 "responses": {
                     "204": {
                         "description": "Successfully deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payment/ccavenue/initiate": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Initiate CCAvenue payment",
+                "description": "Encrypts payment data and returns encRequest and access_code for CCAvenue redirection.",
+                "operationId": "3bc79615e2f9ab53731a90c0179641f5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORD12345"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "INR"
+                                    },
+                                    "redirect_url": {
+                                        "type": "string",
+                                        "example": "https://your-site.com/callback"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string",
+                                        "example": "https://your-site.com/cancel"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Encrypted data for redirection",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction"
+                                        },
+                                        "encRequest": {
+                                            "type": "string",
+                                            "example": "encrypted-data"
+                                        },
+                                        "access_code": {
+                                            "type": "string",
+                                            "example": "XYZ123"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payment/ccavenue/callback": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "CCAvenue payment callback",
+                "description": "Decrypts response from CCAvenue and saves transaction.",
+                "operationId": "fa54b06cb7a8fb73fe4121f04f5b64e9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "encrypted-response-from-ccavenue"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction saved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction saved"
+                                        },
+                                        "order_status": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/transactions": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "List all transactions",
+                "description": "Returns a list of all CCAvenue transactions stored in the database.",
+                "operationId": "469985f6b30ee90a2e5b6ada4b6a90b0",
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "transactions": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "string",
+                                                        "example": "ORD123"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "example": 150.75
+                                                    },
+                                                    "order_status": {
+                                                        "type": "string",
+                                                        "example": "Success"
+                                                    },
+                                                    "payment_mode": {
+                                                        "type": "string",
+                                                        "example": "Net Banking"
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "INR"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -8270,6 +9211,81 @@
                     "brand_id": {
                         "type": "integer"
                     },
+                    "page_top_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_top_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "category_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
                     "website_banners_videos": {
                         "type": "array",
                         "items": {
@@ -8902,6 +9918,10 @@
         {
             "name": "Grading",
             "description": "Grading"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         },
         {
             "name": "Roles and Permissions",
