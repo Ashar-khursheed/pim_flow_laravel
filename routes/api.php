@@ -30,7 +30,11 @@ use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
 use App\Http\Controllers\GradingController;
+use App\Http\Controllers\PaymentController;
 
+Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
+Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
+Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');

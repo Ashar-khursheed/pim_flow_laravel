@@ -111,4 +111,9 @@ class BrandTemp2 extends Model
     {
         $this->attributes['category_id'] = is_array($value) ? json_encode($value) : $value;
     }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
 }

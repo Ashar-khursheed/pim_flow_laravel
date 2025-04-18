@@ -140,24 +140,47 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function update(Request $request, $id)
+    // public function update(Request $request, $id)
+    // {
+    //     $brand = BrandTemp2::findOrFail($id);
+    //     $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
+        
+    //     // Ensure category_id is properly formatted if provided
+    //     if ($request->has('category_id')) {
+    //         $data['category_id'] = $request->category_id;
+    //     }
+        
+    //     $brand->update($data);
+        
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand updated successfully.',
+    //         'data' => $brand
+    //     ], 201);
+    // }
+
+        public function update(Request $request, $id)
     {
         $brand = BrandTemp2::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
-        
-        // Ensure category_id is properly formatted if provided
+
         if ($request->has('category_id')) {
             $data['category_id'] = $request->category_id;
         }
-        
+
         $brand->update($data);
-        
+
+        // Add brand_name to the response
+        $brand->load('brand');
+        $brand->brand_name = $brand->brand->name ?? null;
+
         return response()->json([
             'success' => true,
             'message' => 'Brand updated successfully.',
             'data' => $brand
         ], 201);
     }
+
 
     /**
      * @OA\Delete(

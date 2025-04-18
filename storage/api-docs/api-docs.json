@@ -5102,6 +5102,193 @@
                 ]
             }
         },
+        "/api/payment/ccavenue/initiate": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Initiate CCAvenue payment",
+                "description": "Encrypts payment data and returns encRequest and access_code for CCAvenue redirection.",
+                "operationId": "3bc79615e2f9ab53731a90c0179641f5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORD12345"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "INR"
+                                    },
+                                    "redirect_url": {
+                                        "type": "string",
+                                        "example": "https://your-site.com/callback"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string",
+                                        "example": "https://your-site.com/cancel"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Encrypted data for redirection",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "url": {
+                                            "type": "string",
+                                            "example": "https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction"
+                                        },
+                                        "encRequest": {
+                                            "type": "string",
+                                            "example": "encrypted-data"
+                                        },
+                                        "access_code": {
+                                            "type": "string",
+                                            "example": "XYZ123"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/payment/ccavenue/callback": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "CCAvenue payment callback",
+                "description": "Decrypts response from CCAvenue and saves transaction.",
+                "operationId": "fa54b06cb7a8fb73fe4121f04f5b64e9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "encrypted-response-from-ccavenue"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction saved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Transaction saved"
+                                        },
+                                        "order_status": {
+                                            "type": "string",
+                                            "example": "Success"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/transactions": {
+            "get": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "List all transactions",
+                "description": "Returns a list of all CCAvenue transactions stored in the database.",
+                "operationId": "469985f6b30ee90a2e5b6ada4b6a90b0",
+                "responses": {
+                    "200": {
+                        "description": "List of transactions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "transactions": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "order_id": {
+                                                        "type": "string",
+                                                        "example": "ORD123"
+                                                    },
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "example": 150.75
+                                                    },
+                                                    "order_status": {
+                                                        "type": "string",
+                                                        "example": "Success"
+                                                    },
+                                                    "payment_mode": {
+                                                        "type": "string",
+                                                        "example": "Net Banking"
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "INR"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products": {
             "get": {
                 "tags": [
@@ -9880,6 +10067,10 @@
         {
             "name": "Grading",
             "description": "Grading"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         },
         {
             "name": "SEO Details",
