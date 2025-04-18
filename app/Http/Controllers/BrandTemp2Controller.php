@@ -27,14 +27,30 @@ class BrandTemp2Controller extends Controller
     //     ]);
     // }
 
+    // public function index()
+    // {
+    //     $brands = BrandTemp2::with('brand')->get();
+    
+    //     // Append brand_name to each item
+    //     $brands->each(function ($item) {
+    //         $item->brand_name = $item->brand->name ?? null;
+    //     });
+    
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => __("msg_rec_list"),
+    //         'data' => $brands
+    //     ]);
+    // }
     public function index()
     {
-        $brands = BrandTemp2::with('brand')->get();
+        // Eager load brand, but only fetch 'id' and 'name' to keep it light
+        $brands = BrandTemp2::with(['brand:id,name'])->get();
     
-        // Add brand_name and hide the full brand relationship
+        // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
             $item->brand_name = $item->brand->name ?? null;
-            unset($item->brand); // remove full brand object
+            $item->makeHidden('brand');
         });
     
         return response()->json([
@@ -43,6 +59,7 @@ class BrandTemp2Controller extends Controller
             'data' => $brands
         ]);
     }
+    
     
     /**
      * @OA\Post(
