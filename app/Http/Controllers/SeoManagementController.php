@@ -107,7 +107,7 @@ class SeoManagementController extends Controller
 			 'schema_reviews_count' => 'nullable|integer',
 			 'created_by' => 'required|integer',
 			 'updated_by' => 'nullable|integer',
-			 'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+			 'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif',
 			'secondary_keywords' => 'nullable|json',  // Accepts a JSON string that will be decoded
 			'paragraph_1' => 'nullable|string',
 			'paragraph_2' => 'nullable|string',
@@ -120,16 +120,22 @@ class SeoManagementController extends Controller
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-		 $seoData['indexing'] = ($validated['indexing'] == '1' || $validated['indexing'] == 'true') ? 1 : 0;
-					// In your store method
+		 $seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+		 // In your store method
 		if (!empty($validated['popular_tags'])) {
-			// If it's a string, convert to array
 			if (is_string($validated['popular_tags'])) {
-				$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+				// Try to decode if it's a JSON string
+				$decoded = json_decode($validated['popular_tags'], true);
+		
+				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+					$seoData['popular_tags'] = $decoded;
+				} else {
+					// Fallback: treat it as a plain comma-separated string
+					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+				}
 			} else {
 				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
-			// No need to json_encode here - Laravel will handle it via the cast
 		}
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
@@ -368,7 +374,7 @@ public function show($relation_id)
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'exclude_if:og_image_file,'.$request->og_image_file.'|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+				'og_image_file' => 'exclude_if:og_image_file,'.$request->og_image_file.'|file|image|mimes:jpeg,png,jpg,gif',
 				'secondary_keywords' => 'nullable|string',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',
@@ -384,8 +390,8 @@ public function show($relation_id)
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-		 $seoData['indexing'] = ($validated['indexing'] == '1' || $validated['indexing'] == 'true') ? 1 : 0;
-		 		 if (!empty($validated['popular_tags'])) {
+		 $seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+		 if (!empty($validated['popular_tags'])) {
 			if (is_string($validated['popular_tags'])) {
 				// Try to decode if it's a JSON string
 				$decoded = json_decode($validated['popular_tags'], true);

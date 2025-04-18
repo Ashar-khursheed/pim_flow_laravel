@@ -42,7 +42,6 @@ class SeoManagement extends Model
 	
 	protected $casts = [
 		'popular_tags' => 'array', // Ensures it's handled as array in Laravel
-		'indexing' => 'boolean',
 
 	];
 
