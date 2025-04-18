@@ -7079,124 +7079,6 @@
                 ]
             }
         },
-        "/api/seo-details": {
-            "post": {
-                "tags": [
-                    "SEO Details"
-                ],
-                "summary": "Create SEO Details for Product",
-                "operationId": "9a9cfc35d737498eb00bf2d992fc360e",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "primary_keyword",
-                                    "primary_keyword_search_volume",
-                                    "url",
-                                    "meta_title"
-                                ],
-                                "properties": {
-                                    "primary_keyword": {
-                                        "type": "string",
-                                        "example": "Product A"
-                                    },
-                                    "primary_keyword_search_volume": {
-                                        "type": "integer",
-                                        "example": 500
-                                    },
-                                    "secondary_keywords": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "url": {
-                                        "type": "string",
-                                        "example": "https://example.com/product-a"
-                                    },
-                                    "meta_title": {
-                                        "type": "string",
-                                        "example": "Meta Title of Product A"
-                                    },
-                                    "meta_description": {
-                                        "type": "string",
-                                        "example": "Description of Product A"
-                                    },
-                                    "og_title": {
-                                        "type": "string",
-                                        "example": "OG Title of Product A"
-                                    },
-                                    "og_description": {
-                                        "type": "string",
-                                        "example": "OG Description of Product A"
-                                    },
-                                    "og_image": {
-                                        "type": "string",
-                                        "example": "https://example.com/image.jpg"
-                                    },
-                                    "canonical_tag": {
-                                        "type": "string",
-                                        "example": "https://example.com/product-a-canonical"
-                                    },
-                                    "internal_links": {
-                                        "type": "string",
-                                        "example": "https://example.com/internal-link-1"
-                                    },
-                                    "indexing": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "SEO details successfully created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation error"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/seo-management": {
             "get": {
                 "tags": [
@@ -9926,10 +9808,6 @@
         {
             "name": "Roles and Permissions",
             "description": "Roles and Permissions"
-        },
-        {
-            "name": "SEO Details",
-            "description": "SEO Details"
         },
         {
             "name": "SEO Management",
