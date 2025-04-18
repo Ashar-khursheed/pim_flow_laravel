@@ -120,8 +120,7 @@ class SeoManagementController extends Controller
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
-
+		 $seoData['indexing'] = ($validated['indexing'] == '1' || $validated['indexing'] == 'true') ? 1 : 0;
 					// In your store method
 		if (!empty($validated['popular_tags'])) {
 			// If it's a string, convert to array
@@ -385,8 +384,8 @@ public function show($relation_id)
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
 		 // Convert indexing boolean
-		 $seoData['indexing'] = filter_var($validated['indexing'], FILTER_VALIDATE_BOOLEAN);
-		 if (!empty($validated['popular_tags'])) {
+		 $seoData['indexing'] = ($validated['indexing'] == '1' || $validated['indexing'] == 'true') ? 1 : 0;
+		 		 if (!empty($validated['popular_tags'])) {
 			if (is_string($validated['popular_tags'])) {
 				// Try to decode if it's a JSON string
 				$decoded = json_decode($validated['popular_tags'], true);
