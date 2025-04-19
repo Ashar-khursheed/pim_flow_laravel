@@ -2282,6 +2282,8 @@ public function getProductsByCategory($category_id)
             'name' => $product->name,
             'sku' => $product->sku,
             'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+			'category_id' => $category_id, // Added category_id
+
         ];
     });
 
