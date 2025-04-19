@@ -7804,7 +7804,7 @@
                 "tags": [
                     "Redirect Links"
                 ],
-                "summary": "Import redirect links from an Excel file",
+                "summary": "Import redirect links from a CSV file",
                 "operationId": "fbb87ae300413db2317aad15bca6a162",
                 "requestBody": {
                     "required": true,
@@ -7816,7 +7816,7 @@
                                 ],
                                 "properties": {
                                     "file": {
-                                        "description": "Excel file (.xlsx, .xls, or .csv)",
+                                        "description": "CSV file (.csv)",
                                         "type": "string",
                                         "format": "binary"
                                     }
