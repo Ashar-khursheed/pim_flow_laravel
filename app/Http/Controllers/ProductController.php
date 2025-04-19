@@ -2276,7 +2276,7 @@ public function getProductsByCategory($category_id)
     ->get();
 
     // Formatting the response to include only id, name, sku, and image
-    $formattedProducts = $products->map(function ($product) {
+    $formattedProducts = $products->map(function ($product)use ($category_id) {
         return [
             'id' => $product->id,
             'name' => $product->name,
