@@ -138,7 +138,7 @@ class SeoManagementController extends Controller
 			if (is_string($validated['popular_tags'])) {
 				// Try to decode if it's a JSON string
 				$decoded = json_decode($validated['popular_tags'], true);
-		
+
 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 					$seoData['popular_tags'] = $decoded;
 				} else {
@@ -240,7 +240,7 @@ class SeoManagementController extends Controller
  */
 public function show($relation_id)
 {
-        if (!auth()->user()->can('view seo mgmt')) {
+        if (!auth()->user()->can('show seo mgmt')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

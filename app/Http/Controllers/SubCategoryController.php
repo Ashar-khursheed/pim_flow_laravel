@@ -76,7 +76,7 @@ public function index(Request $request)
      */
     public function show($id)
     {
-        if (!auth()->user()->can('view sub category page')) {
+        if (!auth()->user()->can('show sub category page')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

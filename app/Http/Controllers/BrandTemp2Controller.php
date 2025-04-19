@@ -121,7 +121,7 @@ class BrandTemp2Controller extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->can('view brand store mgmt')) {
+        if (!auth()->user()->can('show brand store mgmt')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

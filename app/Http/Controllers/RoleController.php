@@ -151,7 +151,7 @@ class RoleController extends BaseController
 	 */
 	public function show($roleId)
 	{
-		if (!auth()->user()->can('view role')) {
+		if (!auth()->user()->can('show role')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

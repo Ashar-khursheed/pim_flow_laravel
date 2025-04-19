@@ -103,7 +103,7 @@ class NewsletterController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->can('view news letter')) {
+        if (!auth()->user()->can('show news letter')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

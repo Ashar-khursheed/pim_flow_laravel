@@ -194,7 +194,7 @@ class AttributeGroupController extends BaseController
 	 */
 	public function show($id, Request $request)
 	{
-		if (!auth()->user()->can('view attribute group')) {
+		if (!auth()->user()->can('show attribute group')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

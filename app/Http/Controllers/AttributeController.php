@@ -206,7 +206,7 @@ class AttributeController extends BaseController
 	 */
 	public function show($attributeId)
 	{
-		if (!auth()->user()->can('view attribute')) {
+		if (!auth()->user()->can('show attribute')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

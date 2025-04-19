@@ -169,7 +169,7 @@ class FaqController extends Controller
      */
     public function show(Faq $faq)
     {
-        if (!auth()->user()->can('view faq')) {
+        if (!auth()->user()->can('show faq')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

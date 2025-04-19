@@ -163,7 +163,7 @@ class UserController extends BaseController
 	 */
 	public function show($userId)
 	{
-		if (!auth()->user()->can('view user')) {
+		if (!auth()->user()->can('show user')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

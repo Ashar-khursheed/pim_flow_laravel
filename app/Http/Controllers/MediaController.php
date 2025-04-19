@@ -39,7 +39,7 @@ class MediaController extends Controller
      */
     public function show($folder)
     {
-        if (!auth()->user()->can('view media mgmt')) {
+        if (!auth()->user()->can('show media mgmt')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

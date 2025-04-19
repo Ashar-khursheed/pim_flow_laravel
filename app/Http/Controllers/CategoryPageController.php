@@ -81,7 +81,7 @@ class CategoryPageController extends Controller
      */
     public function show(Category $category)
     {
-        if (!auth()->user()->can('view category page')) {
+        if (!auth()->user()->can('show category page')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

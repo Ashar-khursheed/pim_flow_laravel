@@ -113,7 +113,7 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function show($id)
 	{
-		if (!auth()->user()->can('view product family attribute group')) {
+		if (!auth()->user()->can('show product family attribute group')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

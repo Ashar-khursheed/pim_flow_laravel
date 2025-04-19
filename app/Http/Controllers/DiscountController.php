@@ -152,7 +152,7 @@ public function index(Request $request)
      */
     public function show($id)
     {
-        if (!auth()->user()->can('view discount')) {
+        if (!auth()->user()->can('show discount')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

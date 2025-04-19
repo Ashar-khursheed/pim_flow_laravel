@@ -145,7 +145,7 @@ class TransactionLogController extends BaseController
 	 */
 	public function show($id)
 	{
-		if (!auth()->user()->can('view activity log')) {
+		if (!auth()->user()->can('show activity log')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

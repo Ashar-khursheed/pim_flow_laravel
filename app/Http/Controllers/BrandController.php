@@ -220,7 +220,7 @@ public function store(Request $request)
 	 */
 	public function show($id)
 	{
-		if (!auth()->user()->can('view brand')) {
+		if (!auth()->user()->can('show brand')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",

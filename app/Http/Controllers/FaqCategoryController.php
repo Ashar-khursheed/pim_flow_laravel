@@ -98,7 +98,7 @@ class FaqCategoryController extends Controller
      */
     public function show(FaqCategory $category)
     {
-        if (!auth()->user()->can('view faq category')) {
+        if (!auth()->user()->can('show faq category')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

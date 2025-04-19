@@ -395,7 +395,7 @@ class ProductController extends BaseController
 
 	public function show($productId, Request $request)
 	{
-        if (!auth()->user()->can('view product')) {
+        if (!auth()->user()->can('show product')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

@@ -140,7 +140,7 @@ class ReviewController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->can('view review')) {
+        if (!auth()->user()->can('show review')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",

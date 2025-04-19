@@ -380,7 +380,7 @@ class CategoryController extends BaseController
      */
     public function show($id): JsonResponse
     {
-        if (!auth()->user()->can('view category')) {
+        if (!auth()->user()->can('show category')) {
             return response()->json([
                 'success' => false,
                 'message' => "You don't have permission to access this module.",
