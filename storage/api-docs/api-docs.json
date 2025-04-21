@@ -6704,16 +6704,38 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "country_id"
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
                                         "example": "Samsung"
                                     },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "contact@samsung.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
                                     "country_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
                                     },
                                     "city_ids": {
                                         "type": "array",
@@ -6736,6 +6758,20 @@
                                             102
                                         ]
                                     },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "local"
+                                    },
                                     "dropshipping": {
                                         "type": "boolean",
                                         "example": true
@@ -6747,6 +6783,10 @@
                                     "credit_terms": {
                                         "type": "string",
                                         "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
                                     },
                                     "grade": {
                                         "type": "string",
@@ -6814,7 +6854,7 @@
                     "Pre Onboarding Vendors"
                 ],
                 "summary": "Update an existing pre onboarding vendor",
-                "description": "Updates an pre onboarding vendor's details, including name, code, type, required status, and validations.",
+                "description": "Updates an pre onboarding vendor's details.",
                 "operationId": "be9f42ce934ae385ce74cf2591642559",
                 "parameters": [
                     {
@@ -6835,16 +6875,52 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "country_id"
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
                                         "example": "Samsung"
                                     },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+123456789"
+                                    },
                                     "country_id": {
                                         "type": "integer",
                                         "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Manufacturer"
                                     },
                                     "city_ids": {
                                         "type": "array",
@@ -6862,7 +6938,10 @@
                                         "items": {
                                             "type": "integer"
                                         },
-                                        "example": []
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
                                     },
                                     "dropshipping": {
                                         "type": "boolean",
@@ -6875,6 +6954,10 @@
                                     "credit_terms": {
                                         "type": "string",
                                         "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
                                     },
                                     "grade": {
                                         "type": "string",

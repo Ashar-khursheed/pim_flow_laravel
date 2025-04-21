@@ -52,7 +52,7 @@ class LocationController extends BaseController
             $totalRecords = $records->count();
             $totalPages = ceil($totalRecords / $length);
 
-            $records = $records->offset(($page - 1) * $length)->limit($length)->get(['id', 'name']);
+            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
         } else {
             $records = $records->get(['id', 'name']);
             $totalRecords = $records->count();
@@ -116,7 +116,7 @@ class LocationController extends BaseController
             $totalRecords = $records->count();
             $totalPages = ceil($totalRecords / $length);
 
-            $records = $records->offset(($page - 1) * $length)->limit($length)->get(['id', 'zip_code']);
+            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
         } else {
             $records = $records->get(['id', 'name']);
             $totalRecords = $records->count();
@@ -180,7 +180,7 @@ class LocationController extends BaseController
             $totalRecords = $records->count();
             $totalPages = ceil($totalRecords / $length);
 
-            $records = $records->offset(($page - 1) * $length)->limit($length)->get(['id', 'name']);
+            $records = $records->offset(($page - 1) * $length)->limit($length)->get();
         } else {
             $records = $records->get(['id', 'name']);
             $totalRecords = $records->count();
