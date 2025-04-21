@@ -87,8 +87,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 	Route::get('/countries', [LocationController::class, 'getCountryList']);
-	Route::get('/zipcodes/{countryId}', [LocationController::class, 'getZipcodeList']);
 	Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
+	Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 
@@ -203,7 +203,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	 Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
 	 Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
 	 Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
-     
+
 
 	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
