@@ -34,10 +34,11 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderReturnController;
 use App\Http\Controllers\OrderHistoryController;
+use App\Http\Controllers\PreOnboardingVendorController;
+use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RedirectLinkController;
 use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
-
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -81,8 +82,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
-	
+
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
+
+	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
+	Route::get('/countries', [LocationController::class, 'getCountryList']);
+	Route::get('/zipcodes/{countryId}', [LocationController::class, 'getZipcodeList']);
+	Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 
@@ -160,7 +166,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::get('/brands/{id}/categories', [BrandController::class, 'getCategories']);
 
-	
+
 	Route::get('/allcategories', [CategoryController::class, 'allcategories']);
 	Route::resource('categories', CategoryController::class)->only(['index']);
 	Route::post('/categories/{id}', [CategoryController::class, 'update']);
@@ -179,12 +185,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	 Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
 	 Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 	 Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
-	 
+
 	 // Order history routes
 	 Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
 	 Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
 	 Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
-	 
+
 	 // Order return routes
 	 Route::get('/order-returns', [OrderReturnController::class, 'index']);
 	 Route::post('/order-returns', [OrderReturnController::class, 'store']);
