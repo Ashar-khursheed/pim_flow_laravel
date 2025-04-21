@@ -3754,6 +3754,146 @@
                 ]
             }
         },
+        "/api/product/upload-documents": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload product documents from zip file",
+                "description": "Upload a ZIP file containing product documents organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "operationId": "e32af95053fd7c3ec912e58d8a1dce47",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "zip_file": {
+                                        "description": "ZIP file containing product documents organized in folders by SKU",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Documents processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product documents processed successfully"
+                                        },
+                                        "processed_skus": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "status": {
+                                                        "description": "success, no_documents_found, or product_not_found",
+                                                        "type": "string",
+                                                        "example": "success"
+                                                    },
+                                                    "document_count": {
+                                                        "description": "Number of documents processed for this SKU",
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unable to open the zip file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "zip_file": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The zip file field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/faq-categories": {
             "get": {
                 "tags": [
@@ -7803,6 +7943,146 @@
                         "description": "Success",
                         "content": {
                             "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product/upload-images": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload product images from zip file",
+                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "zip_file": {
+                                        "description": "ZIP file containing product images organized in folders by SKU",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Images processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product images processed successfully"
+                                        },
+                                        "processed_skus": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "status": {
+                                                        "description": "success, no_images_found, or product_not_found",
+                                                        "type": "string",
+                                                        "example": "success"
+                                                    },
+                                                    "image_count": {
+                                                        "description": "Number of images processed for this SKU",
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unable to open the zip file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "zip_file": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The zip file field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },

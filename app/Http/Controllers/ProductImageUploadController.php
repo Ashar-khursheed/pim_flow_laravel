@@ -18,6 +18,81 @@ class ProductImageUploadController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
+
+     /**
+     * Upload product images from a zip file.
+     *
+     * @OA\Post(
+     *     path="/api/product/upload-images",
+     *     summary="Upload product images from zip file",
+     *     description="Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+     *     tags={"Products"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="zip_file",
+     *                     type="string",
+     *                     format="binary",
+     *                     description="ZIP file containing product images organized in folders by SKU"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Images processed successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Product images processed successfully"),
+     *             @OA\Property(
+     *                 property="processed_skus",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="sku", type="string", example="ABC123"),
+     *                     @OA\Property(property="status", type="string", example="success", description="success, no_images_found, or product_not_found"),
+     *                     @OA\Property(property="image_count", type="integer", example=5, description="Number of images processed for this SKU")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="Unable to open the zip file")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="zip_file",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="The zip file field is required.")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Error message")
+     *         )
+     *     )
+     * )
+     */
     public function uploadProductImages(Request $request)
     {
         // Validate the uploaded file
@@ -127,7 +202,7 @@ class ProductImageUploadController extends Controller
      */
     private function uploadProductImagesToS3($imagesDir, $sku)
     {
-        $s3Path = 'tanuj_local/products/';
+        $s3Path = 'tanuj_local/products/images';
         $imageUrls = [];
         
         // Get all image files in the SKU directory
@@ -160,9 +235,6 @@ class ProductImageUploadController extends Controller
             // Add the full URL to the image URLs array
             $imageUrls[] = $imageUrl;
         }
-        
-        // The first element should be "string" as per your example
-        array_unshift($imageUrls, 'string');
         
         return $imageUrls;
     }

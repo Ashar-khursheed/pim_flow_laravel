@@ -35,6 +35,9 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderReturnController;
 use App\Http\Controllers\OrderHistoryController;
 use App\Http\Controllers\RedirectLinkController;
+use App\Http\Controllers\ProductImageUploadController;
+use App\Http\Controllers\DocumentUploadController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -194,7 +197,10 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	 Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
 	 Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
 	 Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
+     
 
+	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
+	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
