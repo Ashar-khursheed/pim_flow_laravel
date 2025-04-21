@@ -36,6 +36,7 @@ use App\Http\Controllers\OrderReturnController;
 use App\Http\Controllers\OrderHistoryController;
 use App\Http\Controllers\PreOnboardingVendorController;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\RedirectLinkController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -77,6 +78,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
+	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
+
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
@@ -97,6 +100,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
+	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
@@ -191,6 +195,12 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	 Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
 	 Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
 	 Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
+
+
+	 Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
+	 Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
+	 Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
+
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

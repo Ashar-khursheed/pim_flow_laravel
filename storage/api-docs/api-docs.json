@@ -8220,6 +8220,103 @@
                 ]
             }
         },
+        "/api/products/filtered-category/{category_ids}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get filtered products by multiple categories",
+                "description": "Retrieves products from the specified categories based on the category_id JSON field in brand_temp_2 table.",
+                "operationId": "bea9da7b1f4022d3ea2d4d04728c2877",
+                "parameters": [
+                    {
+                        "name": "category_ids",
+                        "in": "path",
+                        "description": "IDs of the categories to filter products by (comma-separated)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "180,529"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Filtered products retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1683
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Commercial Electric Range"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ELEC-RANGE-001"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "http://example.com/storage/products/elec-range.jpg"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 529
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No products found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No products found for the given categories"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/export": {
             "post": {
                 "tags": [
@@ -8281,6 +8378,131 @@
                         "content": {
                             "application/json": {}
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/redirect-links": {
+            "get": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Get list of all redirect links",
+                "operationId": "4e70a2a72b92d77858c5b2f49c69d39a",
+                "responses": {
+                    "200": {
+                        "description": "List of redirect links",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "from": {
+                                                "type": "string",
+                                                "example": "/category1"
+                                            },
+                                            "to": {
+                                                "type": "string",
+                                                "example": "/category4324/22"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Create a redirect link",
+                "operationId": "148693ca03b1cc158836110aea02bf6c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "from",
+                                    "to"
+                                ],
+                                "properties": {
+                                    "from": {
+                                        "type": "string",
+                                        "example": "/category1"
+                                    },
+                                    "to": {
+                                        "type": "string",
+                                        "example": "/category4324/22"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Redirect created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/redirect-links/import": {
+            "post": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Import redirect links from a CSV file",
+                "operationId": "fbb87ae300413db2317aad15bca6a162",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "CSV file (.csv)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Redirects imported successfully"
+                    },
+                    "422": {
+                        "description": "Invalid file upload"
                     }
                 },
                 "security": [
@@ -12021,6 +12243,10 @@
         {
             "name": "Pre Onboarding Vendors",
             "description": "Pre Onboarding Vendors"
+        },
+        {
+            "name": "Redirect Links",
+            "description": "Redirect Links"
         },
         {
             "name": "SEO Details",
