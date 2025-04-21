@@ -4770,6 +4770,167 @@
                 ]
             }
         },
+        "/api/countries": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get country List",
+                "description": "Fetches a list of all countries.",
+                "operationId": "9f425d32238205bd00106e8ee7ce4aed",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/zipcodes/{country_id}": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get zipcode List",
+                "description": "Fetches a list of all zipcodes.",
+                "operationId": "05ba1e07a90ddd8a41b58eabc89863c9",
+                "parameters": [
+                    {
+                        "name": "country_id",
+                        "in": "path",
+                        "description": "ID of the country",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cities/{country_id}": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get city List",
+                "description": "Fetches a list of all cities.",
+                "operationId": "0f7131fc8afeb224e193390d8465f423",
+                "parameters": [
+                    {
+                        "name": "country_id",
+                        "in": "path",
+                        "description": "ID of the country",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/media": {
             "get": {
                 "summary": "Fetch all folders inside the 'production' directory from S3",
@@ -6473,6 +6634,419 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pre-onboarding-vendors": {
+            "get": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Get Pre Onboarding Vendor List",
+                "description": "Fetches a list of pre onboarding vendors.",
+                "operationId": "e13e47a73f061a1c6b4942b1038995fe",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Create a new pre onboarding vendor",
+                "description": "Creates a new pre onboarding vendor.",
+                "operationId": "d26b37b2a40edade19b036e0ee6959a0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Samsung"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "contact@samsung.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "direct"
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "shipping_days": {
+                                        "type": "string",
+                                        "example": "5-7 days"
+                                    },
+                                    "credit_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
+                                    },
+                                    "grade": {
+                                        "type": "string",
+                                        "example": "A"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pre-onboarding-vendors/{pre_onboarding_vendor_id}": {
+            "get": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Get pre onboarding vendor details",
+                "description": "Fetches pre onboarding vendor details based on the given pre onboarding vendor ID.",
+                "operationId": "89a0f42f8bc269a9dde944474d454f7e",
+                "parameters": [
+                    {
+                        "name": "pre_onboarding_vendor_id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pre-onboarding-vendors/{id}": {
+            "put": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Update an existing pre onboarding vendor",
+                "description": "Updates an pre onboarding vendor's details.",
+                "operationId": "be9f42ce934ae385ce74cf2591642559",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Samsung"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+123456789"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "direct"
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "shipping_days": {
+                                        "type": "string",
+                                        "example": "5-7 days"
+                                    },
+                                    "credit_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
+                                    },
+                                    "grade": {
+                                        "type": "string",
+                                        "example": "A"
+                                    },
+                                    "product_demand_level": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_name": {
+                                                    "type": "string",
+                                                    "example": "LED TV"
+                                                },
+                                                "primary_keyword": {
+                                                    "type": "string",
+                                                    "example": "smart tv"
+                                                },
+                                                "search_volume": {
+                                                    "type": "integer",
+                                                    "example": 50000
+                                                },
+                                                "supplier_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 300.5
+                                                },
+                                                "competitor_price_online": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 350
+                                                },
+                                                "competitor_price_offline": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 340
+                                                },
+                                                "margin_auto_calculate": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 49.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Delete a pre onboarding vendor",
+                "description": "Deletes a pre onboarding vendor.",
+                "operationId": "deletePreOnboardingVendor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -11647,6 +12221,10 @@
             "description": "Grading"
         },
         {
+            "name": "Locations",
+            "description": "Locations"
+        },
+        {
             "name": "Orders",
             "description": "Orders"
         },
@@ -11661,6 +12239,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "Pre Onboarding Vendors",
+            "description": "Pre Onboarding Vendors"
         },
         {
             "name": "Redirect Links",
