@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\Tax;
 use App\Models\Currency;
 use App\Models\Unit;
@@ -2288,6 +2289,98 @@ public function getProductsByCategory($category_id)
     });
 
     // Return the list of products without pagination
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully for category ' . $category_id,
+        'data' => $formattedProducts
+    ]);
+}
+
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/products/filtered-category/{category_id}",
+     *     summary="Get filtered products by category",
+     *     description="Retrieves products from the specified category where product IDs are also listed in the category's sub_categories JSON field.",
+     *     tags={"Products"},
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="path",
+     *         description="ID of the category to filter products by",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=529)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful response",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Filtered products retrieved successfully for category 529"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="id", type="integer", example=1683),
+     *                     @OA\Property(property="name", type="string", example="Commercial Electric Range"),
+     *                     @OA\Property(property="sku", type="string", example="ELEC-RANGE-001"),
+     *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/elec-range.jpg"),
+     *                     @OA\Property(property="category_id", type="integer", example=529)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Category not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Category not found")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+public function getFilteredProductsByCategory($category_id)
+{
+    // Example: Assuming this comes from your DB (you can modify to get it from DB)
+    $subCategoriesData = [
+        ["category_id" => 180, "product_ids" => [37717, 2027, 2026, 36632, 2018, 36923, 37762]],
+        // Add more category-product mappings here if needed
+    ];
+
+    // Find matching category
+    $categoryMatch = collect($subCategoriesData)->firstWhere('category_id', $category_id);
+
+    if (!$categoryMatch) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No products found for the given category.',
+            'data' => []
+        ]);
+    }
+
+    // Get product IDs for the matched category
+    $productIds = $categoryMatch['product_ids'] ?? [];
+
+    // Fetch only the products whose IDs match
+    $products = Product::whereIn('id', $productIds)
+        ->select(['id', 'name', 'sku', 'images'])
+        ->orderBy('id', 'desc')
+        ->get();
+
+    // Format product data
+    $formattedProducts = $products->map(function ($product) use ($category_id) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+            'category_id' => $category_id,
+        ];
+    });
+
     return response()->json([
         'success' => true,
         'message' => 'Products retrieved successfully for category ' . $category_id,
