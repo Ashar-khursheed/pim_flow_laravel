@@ -21,7 +21,7 @@ use App\Models\TransactionLog;
 use App\Models\Faq;
 use App\Models\Attribute;
 use App\Models\UnitOfMeasurement;
-
+use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 
 class ProductController extends BaseController
@@ -2298,11 +2298,11 @@ public function getProductsByCategory($category_id)
 
 
 
- /**
+/**
  * @OA\Get(
  *     path="/api/products/filtered-category/{category_ids}",
  *     summary="Get filtered products by multiple categories",
- *     description="Retrieves products from the specified categories where product IDs are listed in each category's sub_categories JSON field.",
+ *     description="Retrieves products from the specified categories based on the category_id JSON field in brand_temp_2 table.",
  *     tags={"Products"},
  *     @OA\Parameter(
  *         name="category_ids",
@@ -2332,10 +2332,10 @@ public function getProductsByCategory($category_id)
  *     ),
  *     @OA\Response(
  *         response=404,
- *         description="Categories not found",
+ *         description="No products found",
  *         @OA\JsonContent(
  *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="No categories found")
+ *             @OA\Property(property="message", type="string", example="No products found for the given categories")
  *         )
  *     ),
  *     security={{"bearerAuth":{}}}
@@ -2354,59 +2354,76 @@ public function getFilteredProductsByCategory($category_ids)
         ]);
     }
     
-    // Example: Assuming this comes from your DB (you can modify to get it from DB)
-    $subCategoriesData = [
-        ["category_id" => 180, "product_ids" => [37717, 2027, 2026, 36632, 2018, 36923, 37762]],
-        ["category_id" => 529, "product_ids" => [1683, 1684, 1685, 1686, 1687]],
-        // Add more category-product mappings here as needed
-    ];
+    // Get data from brand_temp_2 table
+    $brandData = DB::table('brand_temp_2')->get();
     
-    // Find matching categories
-    $allProductIds = [];
-    $foundCategories = [];
-    
-    foreach ($categoryIdArray as $categoryId) {
-        $categoryMatch = collect($subCategoriesData)->firstWhere('category_id', $categoryId);
-        if ($categoryMatch) {
-            $foundCategories[] = $categoryId;
-            $productIds = $categoryMatch['product_ids'] ?? [];
-            foreach ($productIds as $productId) {
-                // Store product ID with its category for reference
-                $allProductIds[$productId] = $categoryId;
-            }
-        }
-    }
-    
-    if (empty($foundCategories)) {
+    if ($brandData->isEmpty()) {
         return response()->json([
             'success' => false,
-            'message' => 'None of the provided category IDs were found.',
+            'message' => 'No data found in brand_temp_2.',
             'data' => []
         ]);
     }
     
-    // Fetch only the products whose IDs match
-    $products = Product::whereIn('id', array_keys($allProductIds))
+    // Initialize array to store product IDs
+    $allProductIds = [];
+    $productCategoryMap = [];
+    
+    // Loop through each record in brand_temp_2
+    foreach ($brandData as $record) {
+        // Decode the category_id JSON field
+        $categoryData = json_decode($record->category_id, true);
+        
+        if (!is_array($categoryData)) {
+            continue;
+        }
+        
+        // Look for matching categories in the JSON data
+        foreach ($categoryData as $category) {
+            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+                // If this category matches one of our requested categories
+                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+                    foreach ($category['product_ids'] as $productId) {
+                        $allProductIds[] = $productId;
+                        $productCategoryMap[$productId] = $category['category_id'];
+                    }
+                }
+            }
+        }
+    }
+    
+    // Remove duplicate product IDs
+    $allProductIds = array_unique($allProductIds);
+    
+    if (empty($allProductIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No products found for the given categories.',
+            'data' => []
+        ]);
+    }
+    
+    // Fetch products from the database
+    $products = Product::whereIn('id', $allProductIds)
         ->select(['id', 'name', 'sku', 'images'])
         ->orderBy('id', 'desc')
         ->get();
     
     // Format product data
-    $formattedProducts = $products->map(function ($product) use ($allProductIds) {
+    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
         return [
             'id' => $product->id,
             'name' => $product->name,
             'sku' => $product->sku,
             'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'category_id' => $allProductIds[$product->id], // Use the stored category ID for this product
+            'category_id' => $productCategoryMap[$product->id] ?? null,
         ];
     });
     
     return response()->json([
         'success' => true,
-        'message' => 'Products retrieved successfully for categories: ' . implode(', ', $foundCategories),
+        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
         'data' => $formattedProducts
     ]);
 }
-
 }

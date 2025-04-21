@@ -7652,7 +7652,7 @@
                     "Products"
                 ],
                 "summary": "Get filtered products by multiple categories",
-                "description": "Retrieves products from the specified categories where product IDs are listed in each category's sub_categories JSON field.",
+                "description": "Retrieves products from the specified categories based on the category_id JSON field in brand_temp_2 table.",
                 "operationId": "bea9da7b1f4022d3ea2d4d04728c2877",
                 "parameters": [
                     {
@@ -7716,7 +7716,7 @@
                         }
                     },
                     "404": {
-                        "description": "Categories not found",
+                        "description": "No products found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7727,7 +7727,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "No categories found"
+                                            "example": "No products found for the given categories"
                                         }
                                     },
                                     "type": "object"
