@@ -17,6 +17,11 @@ class PreOnboardingVendor extends Model
 		return $this->belongsTo(User::class, 'updated_by');
 	}
 
+	public function country()
+	{
+		return $this->belongsTo(Country::class);
+	}
+
 	// public function vendor()
 	// {
 	// 	return $this->hasOne(Vendor::class);
