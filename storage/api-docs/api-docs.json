@@ -7646,23 +7646,23 @@
                 ]
             }
         },
-        "/api/products/filtered-category/{category_id}": {
+        "/api/products/filtered-category/{category_ids}": {
             "get": {
                 "tags": [
                     "Products"
                 ],
-                "summary": "Get filtered products by category",
-                "description": "Retrieves products from the specified category where product IDs are also listed in the category's sub_categories JSON field.",
-                "operationId": "5803f94099def369763c5b4619ac25ab",
+                "summary": "Get filtered products by multiple categories",
+                "description": "Retrieves products from the specified categories where product IDs are listed in each category's sub_categories JSON field.",
+                "operationId": "bea9da7b1f4022d3ea2d4d04728c2877",
                 "parameters": [
                     {
-                        "name": "category_id",
+                        "name": "category_ids",
                         "in": "path",
-                        "description": "ID of the category to filter products by",
+                        "description": "IDs of the categories to filter products by (comma-separated)",
                         "required": true,
                         "schema": {
-                            "type": "integer",
-                            "example": 529
+                            "type": "string",
+                            "example": "180,529"
                         }
                     }
                 ],
@@ -7679,7 +7679,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Filtered products retrieved successfully for category 529"
+                                            "example": "Filtered products retrieved successfully"
                                         },
                                         "data": {
                                             "type": "array",
@@ -7716,7 +7716,7 @@
                         }
                     },
                     "404": {
-                        "description": "Category not found",
+                        "description": "Categories not found",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7727,7 +7727,7 @@
                                         },
                                         "message": {
                                             "type": "string",
-                                            "example": "Category not found"
+                                            "example": "No categories found"
                                         }
                                     },
                                     "type": "object"

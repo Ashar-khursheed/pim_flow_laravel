@@ -2298,92 +2298,113 @@ public function getProductsByCategory($category_id)
 
 
 
-    /**
-     * @OA\Get(
-     *     path="/api/products/filtered-category/{category_id}",
-     *     summary="Get filtered products by category",
-     *     description="Retrieves products from the specified category where product IDs are also listed in the category's sub_categories JSON field.",
-     *     tags={"Products"},
-     *     @OA\Parameter(
-     *         name="category_id",
-     *         in="path",
-     *         description="ID of the category to filter products by",
-     *         required=true,
-     *         @OA\Schema(type="integer", example=529)
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Filtered products retrieved successfully for category 529"),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="id", type="integer", example=1683),
-     *                     @OA\Property(property="name", type="string", example="Commercial Electric Range"),
-     *                     @OA\Property(property="sku", type="string", example="ELEC-RANGE-001"),
-     *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/elec-range.jpg"),
-     *                     @OA\Property(property="category_id", type="integer", example=529)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Category not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Category not found")
-     *         )
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-
-public function getFilteredProductsByCategory($category_id)
+ /**
+ * @OA\Get(
+ *     path="/api/products/filtered-category/{category_ids}",
+ *     summary="Get filtered products by multiple categories",
+ *     description="Retrieves products from the specified categories where product IDs are listed in each category's sub_categories JSON field.",
+ *     tags={"Products"},
+ *     @OA\Parameter(
+ *         name="category_ids",
+ *         in="path",
+ *         description="IDs of the categories to filter products by (comma-separated)",
+ *         required=true,
+ *         @OA\Schema(type="string", example="180,529")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Filtered products retrieved successfully"),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1683),
+ *                     @OA\Property(property="name", type="string", example="Commercial Electric Range"),
+ *                     @OA\Property(property="sku", type="string", example="ELEC-RANGE-001"),
+ *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/elec-range.jpg"),
+ *                     @OA\Property(property="category_id", type="integer", example=529)
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Categories not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="No categories found")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function getFilteredProductsByCategory($category_ids)
 {
-    // Example: Assuming this comes from your DB (you can modify to get it from DB)
-    $subCategoriesData = [
-        ["category_id" => 180, "product_ids" => [37717, 2027, 2026, 36632, 2018, 36923, 37762]],
-        // Add more category-product mappings here if needed
-    ];
-
-    // Find matching category
-    $categoryMatch = collect($subCategoriesData)->firstWhere('category_id', $category_id);
-
-    if (!$categoryMatch) {
+    // Convert comma-separated string to array of integers
+    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+    
+    if (empty($categoryIdArray)) {
         return response()->json([
             'success' => false,
-            'message' => 'No products found for the given category.',
+            'message' => 'No valid category IDs provided.',
             'data' => []
         ]);
     }
-
-    // Get product IDs for the matched category
-    $productIds = $categoryMatch['product_ids'] ?? [];
-
+    
+    // Example: Assuming this comes from your DB (you can modify to get it from DB)
+    $subCategoriesData = [
+        ["category_id" => 180, "product_ids" => [37717, 2027, 2026, 36632, 2018, 36923, 37762]],
+        ["category_id" => 529, "product_ids" => [1683, 1684, 1685, 1686, 1687]],
+        // Add more category-product mappings here as needed
+    ];
+    
+    // Find matching categories
+    $allProductIds = [];
+    $foundCategories = [];
+    
+    foreach ($categoryIdArray as $categoryId) {
+        $categoryMatch = collect($subCategoriesData)->firstWhere('category_id', $categoryId);
+        if ($categoryMatch) {
+            $foundCategories[] = $categoryId;
+            $productIds = $categoryMatch['product_ids'] ?? [];
+            foreach ($productIds as $productId) {
+                // Store product ID with its category for reference
+                $allProductIds[$productId] = $categoryId;
+            }
+        }
+    }
+    
+    if (empty($foundCategories)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'None of the provided category IDs were found.',
+            'data' => []
+        ]);
+    }
+    
     // Fetch only the products whose IDs match
-    $products = Product::whereIn('id', $productIds)
+    $products = Product::whereIn('id', array_keys($allProductIds))
         ->select(['id', 'name', 'sku', 'images'])
         ->orderBy('id', 'desc')
         ->get();
-
+    
     // Format product data
-    $formattedProducts = $products->map(function ($product) use ($category_id) {
+    $formattedProducts = $products->map(function ($product) use ($allProductIds) {
         return [
             'id' => $product->id,
             'name' => $product->name,
             'sku' => $product->sku,
             'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'category_id' => $category_id,
+            'category_id' => $allProductIds[$product->id], // Use the stored category ID for this product
         ];
     });
-
+    
     return response()->json([
         'success' => true,
-        'message' => 'Products retrieved successfully for category ' . $category_id,
+        'message' => 'Products retrieved successfully for categories: ' . implode(', ', $foundCategories),
         'data' => $formattedProducts
     ]);
 }
