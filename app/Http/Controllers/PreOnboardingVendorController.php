@@ -55,14 +55,14 @@ class PreOnboardingVendorController extends Controller
 			->limit($length)
 			->get([
 				'id', 'name', 'contact_person', 'email', 'phone_number',
-				'country_name', 'account_number', 'category_ids', 'type',
+				'country_id', 'account_number', 'category_ids', 'type',
 				'dropshipping', 'shipping_days', 'credit_limit',
 				'credit_terms', 'grade', 'product_demand_level'
 			]);
 		} else {
 			$records = $recordsQuery->get([
 				'id', 'name', 'contact_person', 'email', 'phone_number',
-				'country_name', 'account_number', 'category_ids', 'type',
+				'country_id', 'account_number', 'category_ids', 'type',
 				'dropshipping', 'shipping_days', 'credit_limit',
 				'credit_terms', 'grade', 'product_demand_level'
 			]);
