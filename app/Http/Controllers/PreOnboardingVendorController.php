@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\PreOnboardingVendor;
+use App\Models\Country;
+use App\Models\City;
+use App\Models\Zipcode;
 use App\Models\Category;
 use Illuminate\Http\Request;
 
@@ -42,7 +45,7 @@ class PreOnboardingVendorController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		$recordsQuery = PreOnboardingVendor::query();
+		$recordsQuery = PreOnboardingVendor::with(['country:id,name']);
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
@@ -77,12 +80,16 @@ class PreOnboardingVendorController extends Controller
 			$record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
 			unset($record->product_demand_level);
 
-			/* category_ids => array of category objects */
 			$categoryIds = array_filter(explode(',', $record->category_ids));
-			$categories = Category::whereIn('id', $categoryIds)->get(['id', 'name']);
-			$record->categories = $categories;
-
+			$categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
+			$record->categories = implode(' | ', $categories);
 			unset($record->category_ids);
+
+			$record->country_name = $record->country->name;
+			unset($record->country_id);
+			unset($record->country);
+
+			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
 
 			return $record;
 		});
@@ -229,9 +236,23 @@ class PreOnboardingVendorController extends Controller
 			]);
 		}
 
+		$record->country = Country::where('id', $record->country_id)->select('id', 'name')->first();
+		unset($record->country_id);
+
 		$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
+		$record->cities = City::whereIn('id', $record->city_ids)->select('id', 'name')->get();
+		unset($record->city_ids);
+
 		$record->zipcode_ids = $record->zipcode_ids ? explode(',', $record->zipcode_ids) : [];
-		$record->category_ids = $record->category_ids ? explode(',', $record->category_ids) : [];
+		$record->zipcodes = Zipcode::whereIn('id', $record->zipcode_ids)->select('id', 'zip_code')->get();
+		unset($record->zipcode_ids);
+
+		/* category_ids => array of category objects */
+		$categoryIds = array_filter(explode(',', $record->category_ids));
+		$categories = Category::whereIn('id', $categoryIds)->get(['id', 'name']);
+		$record->categories = $categories;
+		unset($record->category_ids);
+
 		$record->product_demand_level = $record->product_demand_level && json_validate($record->product_demand_level) ? json_decode($record->product_demand_level, true) : [];
 
 		return response()->json([
