@@ -302,12 +302,144 @@ class VendorController extends BaseController
 	}
 
 	/**
-	 * Update the specified resource in storage.
+	 * @OA\Put(
+	 *     path="/api/vendors/{id}",
+	 *     summary="Update an existing vendor",
+	 *     tags={"Vendors"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         description="Vendor ID",
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 @OA\Property(property="name", type="string", example="Updated Vendor"),
+	 *                 @OA\Property(property="country_id", type="integer", example=1),
+	 *                 @OA\Property(property="email", type="string", format="email", example="updated@example.com"),
+	 *                 @OA\Property(property="contact_person", type="string", example="Updated Person"),
+	 *                 @OA\Property(property="landline_number", type="string", example="000111222"),
+	 *                 @OA\Property(property="mobile_number", type="string", example="999888777"),
+	 *                 @OA\Property(property="description", type="string", example="Updated description."),
+	 *                 @OA\Property(property="dropshipping", type="boolean", example=true),
+	 *                 @OA\Property(property="website_link", type="string", example="https://newsite.com"),
+	 *                 @OA\Property(property="domain", type="string", enum={"Horeca", "Rapid Supplies"}, example="Rapid Supplies"),
+	 *                 @OA\Property(property="type", type="string", enum={"direct", "indirect"}, example="indirect"),
+	 *                 @OA\Property(property="credit_limit", type="string", example="10000"),
+	 *                 @OA\Property(property="net_terms", type="string", example="Net 60"),
+	 *                 @OA\Property(property="business_licence_number", type="string", example="UPDATEDLIC987"),
+
+	 *                 @OA\Property(
+	 *                     property="website_ids",
+	 *                     type="array",
+	 *                     @OA\Items(type="integer"),
+	 *                     example={2, 3}
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="city_ids",
+	 *                     type="array",
+	 *                     @OA\Items(type="integer"),
+	 *                     example={4, 5}
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="zipcode_ids",
+	 *                     type="array",
+	 *                     @OA\Items(type="integer"),
+	 *                     example={200, 201}
+	 *                 ),
+	 *                 @OA\Property(
+	 *                     property="warehouse_locations",
+	 *                     type="array",
+	 *                     @OA\Items(type="string"),
+	 *                     example={"Abu Dhabi", "Ajman"}
+	 *                 ),
+
+	 *                 @OA\Property(property="logo", type="file", format="binary"),
+	 *                 @OA\Property(property="tax_certificate", type="file", format="binary"),
+	 *                 @OA\Property(property="business_licence", type="file", format="binary")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Vendor updated successfully"),
+	 *     @OA\Response(response=404, description="Vendor not found")
+	 * )
 	 */
-	public function update(Request $request, Vendor $vendor)
+	public function update(Request $request, $id)
 	{
-		//
+		$vendor = Vendor::findOrFail($id);
+
+		$this->preprocessVendorRequest($request);
+
+		$validated = $request->validate([
+			'name' => 'required|string',
+			'country_id' => 'required|integer|exists:countries,id',
+			'email' => 'required|email|unique:vendors,email,' . $vendor->id,
+			'contact_person' => 'required|string',
+			'landline_number' => 'nullable|string',
+			'mobile_number' => 'nullable|string',
+			'description' => 'nullable|string',
+
+			'website_ids' => 'nullable|array',
+			'website_ids.*' => 'integer|exists:websites,id',
+
+			'city_ids' => 'nullable|array',
+			'city_ids.*' => 'integer|exists:cities,id',
+
+			'zipcode_ids' => 'nullable|array',
+			'zipcode_ids.*' => 'integer|exists:zipcodes,id',
+
+			'dropshipping' => 'boolean',
+			'website_link' => 'nullable|string',
+			'domain' => 'in:Horeca,Rapid Supplies',
+			'type' => 'in:direct,indirect',
+			'warehouse_locations' => 'nullable|array',
+			'warehouse_locations.*' => 'string',
+			'credit_limit' => 'nullable|string',
+			'net_terms' => 'nullable|string',
+			'business_licence_number' => 'nullable|string',
+
+			'logo' => 'nullable|file|mimes:webp,png',
+			'tax_certificate' => 'nullable|file|mimes:pdf',
+			'business_licence' => 'nullable|file|mimes:pdf',
+		]);
+
+		$data = $validated;
+
+		/* File uploads */
+		if ($request->hasFile('logo')) {
+			$data['logo_url'] = $this->uploadImageToWebpS3FromFile($request, 'logo', env('STORAGE_ENV') . '/vendors/logos');
+		}
+		if ($request->hasFile('tax_certificate')) {
+			$data['tax_certificate_url'] = $this->uploadPdfToS3FromFile($request, 'tax_certificate', env('STORAGE_ENV') . '/vendors/tax_certificates');
+		}
+		if ($request->hasFile('business_licence')) {
+			$data['business_licence_url'] = $this->uploadPdfToS3FromFile($request, 'business_licence', env('STORAGE_ENV') . '/vendors/business_licences');
+		}
+
+		unset($data['logo'], $data['tax_certificate'], $data['business_licence']);
+
+		/* Implode array fields */
+		$data['website_ids'] = isset($data['website_ids']) ? implode('|', $data['website_ids']) : null;
+		$data['city_ids'] = isset($data['city_ids']) ? implode('|', $data['city_ids']) : null;
+		$data['zipcode_ids'] = isset($data['zipcode_ids']) ? implode('|', $data['zipcode_ids']) : null;
+		$data['warehouse_locations'] = isset($data['warehouse_locations']) ? implode('|', $data['warehouse_locations']) : null;
+
+		$data['updated_by'] = auth()->id();
+
+		$vendor->update($data);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_update"),
+			'data'    => $vendor
+		]);
 	}
+
 
 	/**
 	 * Remove the specified resource from storage.

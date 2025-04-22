@@ -11560,6 +11560,168 @@
                 ]
             }
         },
+        "/api/vendors/{id}": {
+            "put": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Update an existing vendor",
+                "operationId": "2eb4442f79c248e61426c9eb6b7e5c31",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Vendor ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Updated Vendor"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "updated@example.com"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "Updated Person"
+                                    },
+                                    "landline_number": {
+                                        "type": "string",
+                                        "example": "000111222"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "999888777"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Updated description."
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "example": "https://newsite.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Horeca",
+                                            "Rapid Supplies"
+                                        ],
+                                        "example": "Rapid Supplies"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "direct",
+                                            "indirect"
+                                        ],
+                                        "example": "indirect"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "10000"
+                                    },
+                                    "net_terms": {
+                                        "type": "string",
+                                        "example": "Net 60"
+                                    },
+                                    "business_licence_number": {
+                                        "type": "string",
+                                        "example": "UPDATEDLIC987"
+                                    },
+                                    "website_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            4,
+                                            5
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            200,
+                                            201
+                                        ]
+                                    },
+                                    "warehouse_locations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Abu Dhabi",
+                                            "Ajman"
+                                        ]
+                                    },
+                                    "logo": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "tax_certificate": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "business_licence": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vendor updated successfully"
+                    },
+                    "404": {
+                        "description": "Vendor not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/websites": {
             "get": {
                 "tags": [
