@@ -12377,6 +12377,212 @@
                 ]
             }
         },
+        "/api/vendors": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get Vendor List",
+                "description": "Fetches a list of vendors.",
+                "operationId": "c40acb075c0143f113c61ea8bde7b609",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Create a new vendor",
+                "operationId": "c97823c52c611079ff6de099ea3052d4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "country_id",
+                                    "email",
+                                    "contact_person"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "ABC Supplier"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "vendor@example.com"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "landline_number": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Wholesale electronics supplier."
+                                    },
+                                    "website_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Horeca",
+                                            "Rapid Supplies"
+                                        ],
+                                        "example": "Horeca"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "direct",
+                                            "indirect"
+                                        ],
+                                        "example": "direct"
+                                    },
+                                    "warehouse_locations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Dubai",
+                                            "Sharjah"
+                                        ]
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "5000"
+                                    },
+                                    "net_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "business_licence_number": {
+                                        "type": "string",
+                                        "example": "LIC1234567"
+                                    },
+                                    "logo": {
+                                        "description": "Vendor logo (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "tax_certificate": {
+                                        "description": "Tax Certificate (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business Licence (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vendor created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/websites": {
             "get": {
                 "tags": [
@@ -13827,6 +14033,10 @@
         {
             "name": "Users",
             "description": "Users"
+        },
+        {
+            "name": "Vendors",
+            "description": "Vendors"
         },
         {
             "name": "Websites",
