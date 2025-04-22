@@ -11896,6 +11896,81 @@
                 ]
             }
         },
+        "/api/supplier-score": {
+            "post": {
+                "tags": [
+                    "Supplier Scores"
+                ],
+                "summary": "Calculate and store supplier score and grade based on existing data",
+                "operationId": "3d495d163e92ca5fcb691b84df672dae",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID from pre_onboarding_vendors table",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Score and grade successfully calculated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "score": {
+                                            "type": "integer",
+                                            "example": 48
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The id field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/transaction-logs": {
             "get": {
                 "tags": [
@@ -13740,6 +13815,10 @@
         {
             "name": "Subcategories",
             "description": "Subcategories"
+        },
+        {
+            "name": "Supplier Scores",
+            "description": "Supplier Scores"
         },
         {
             "name": "Transaction Logs",

@@ -41,6 +41,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RedirectLinkController;
 use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\SupplierScoreController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -211,6 +212,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+
+
+	 Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
