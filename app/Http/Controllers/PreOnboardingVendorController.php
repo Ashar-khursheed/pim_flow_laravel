@@ -64,10 +64,7 @@ class PreOnboardingVendorController extends Controller
 			]);
 		} else {
 			$records = $recordsQuery->get([
-				'id', 'name', 'contact_person', 'email', 'phone_number',
-				'country_id', 'account_number', 'category_ids', 'type',
-				'dropshipping', 'shipping_days', 'credit_limit',
-				'credit_terms', 'grade', 'product_demand_level'
+				'id', 'name'
 			]);
 			$totalRecords = $records->count();
 			$totalPages = 1;
