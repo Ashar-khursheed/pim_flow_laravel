@@ -20,8 +20,10 @@ class BrandTemp1Controller extends Controller
      */
     public function index()
     {
-        // Eager load brand, but only fetch 'id' and 'name' to keep it light
-        $brands = BrandTemp1::with(['brand:id,name'])->get();
+        // Eager load brand and order by latest ID
+        $brands = BrandTemp1::with(['brand:id,name'])
+                    ->orderBy('id', 'desc')
+                    ->get();
     
         // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
@@ -35,7 +37,6 @@ class BrandTemp1Controller extends Controller
             'data' => $brands
         ]);
     }
-    
     
     /**
      * @OA\Post(

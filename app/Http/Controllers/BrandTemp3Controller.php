@@ -21,7 +21,9 @@ class BrandTemp3Controller extends Controller
     public function index()
     {
         // Eager load brand, but only fetch 'id' and 'name' to keep it light
-        $brands = BrandTemp3::with(['brand:id,name'])->get();
+        $brands = BrandTemp3::with(['brand:id,name'])
+        ->orderBy('id', 'desc')
+        ->get();
     
         // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
