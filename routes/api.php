@@ -39,6 +39,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RedirectLinkController;
 use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\VendorController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -85,6 +86,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
+	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 	Route::get('/countries', [LocationController::class, 'getCountryList']);
 	Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
