@@ -12583,6 +12583,254 @@
                 ]
             }
         },
+        "/api/vendors/{vendor_id}": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get vendor details",
+                "description": "Fetches vendor details based on the given vendor ID.",
+                "operationId": "d94b41515bc03264a11f8191003e51cc",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/{id}": {
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Update an existing vendor",
+                "operationId": "4b727995aae0d279329316a166f7e08f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Vendor ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "_method",
+                                    "name",
+                                    "country_id",
+                                    "email",
+                                    "contact_person"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "ABC Supplier"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "vendor@example.com"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "landline_number": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Wholesale electronics supplier."
+                                    },
+                                    "website_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Horeca",
+                                            "Rapid Supplies"
+                                        ],
+                                        "example": "Horeca"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "direct",
+                                            "indirect"
+                                        ],
+                                        "example": "direct"
+                                    },
+                                    "warehouse_locations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Dubai",
+                                            "Sharjah"
+                                        ]
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "5000"
+                                    },
+                                    "net_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "business_licence_number": {
+                                        "type": "string",
+                                        "example": "LIC1234567"
+                                    },
+                                    "logo": {
+                                        "description": "Vendor logo (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "tax_certificate": {
+                                        "description": "Tax Certificate (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business Licence (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vendor updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "404": {
+                        "description": "Vendor not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Delete a vendor",
+                "description": "Deletes a vendor.",
+                "operationId": "deleteVendor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the vendor to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/websites": {
             "get": {
                 "tags": [
