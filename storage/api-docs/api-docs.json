@@ -1298,6 +1298,419 @@
                 ]
             }
         },
+        "/api/brand-temp-1": {
+            "get": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Get all brand temp records",
+                "operationId": "e17f9e6ade33a19421664152ea663c86",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BrandTemp1"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Create brand temp",
+                "operationId": "c31a350f6441afd05cd3b7b839db48e6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "brand_id"
+                                ],
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-1/{id}": {
+            "get": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Get specific brand temp",
+                "operationId": "3a791c09cd2211f106b131ef7e43fd1c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Update brand temp",
+                "operationId": "90927df2757114fadb55b5f6937ac25c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Delete brand temp",
+                "operationId": "669cb1f000409b3f3cfd88a5f956586b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/brand-temp-2": {
             "get": {
                 "tags": [
@@ -11811,6 +12224,116 @@
                 },
                 "type": "object"
             },
+            "BrandTemp1": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "brand_id": {
+                        "type": "integer"
+                    },
+                    "page_top_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_top_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "category_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "BrandTemp2": {
                 "properties": {
                     "id": {
@@ -12572,6 +13095,10 @@
         {
             "name": "Brands",
             "description": "Brands"
+        },
+        {
+            "name": "BrandTemp1",
+            "description": "BrandTemp1"
         },
         {
             "name": "BrandTemp2",

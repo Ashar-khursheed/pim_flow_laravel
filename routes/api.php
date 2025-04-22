@@ -29,6 +29,7 @@ use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
+use App\Http\Controllers\BrandTemp1Controller;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderController;
@@ -83,6 +84,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
 
+	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
