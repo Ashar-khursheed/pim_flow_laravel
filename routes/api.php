@@ -30,6 +30,7 @@ use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
 use App\Http\Controllers\BrandTemp1Controller;
+use App\Http\Controllers\BrandTemp3Controller;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderController;
@@ -86,6 +87,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
+	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 	Route::get('/countries', [LocationController::class, 'getCountryList']);

@@ -14,13 +14,13 @@ class AddFileNamesToBrandTemp2Table extends Migration
     public function up()
     {
         Schema::table('brand_temp_2', function (Blueprint $table) {
-            $table->json('page_top_banners_desktop_file_name')->nullable();
-            $table->json('page_top_banners_mobile_file_name')->nullable();
-            $table->json('category_banners_file_name')->nullable();
-            $table->json('page_middle_banners_desktop_file_name')->nullable();
-            $table->json('page_middle_banners_mobile_file_name')->nullable();
-            $table->json('website_banners_videos_file_name')->nullable();
-            $table->json('website_banners_videos_mobile_file_name')->nullable();
+            $table->text('page_top_banners_desktop_file_name')->nullable();
+            $table->text('page_top_banners_mobile_file_name')->nullable();
+            $table->text('category_banners_file_name')->nullable();
+            $table->text('page_middle_banners_desktop_file_name')->nullable();
+            $table->text('page_middle_banners_mobile_file_name')->nullable();
+            $table->text('website_banners_videos_file_name')->nullable();
+            $table->text('website_banners_videos_mobile_file_name')->nullable();
         });
     }
 
