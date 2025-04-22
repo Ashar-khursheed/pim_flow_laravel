@@ -18,30 +18,6 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    // public function index()
-    // {
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __("msg_rec_list"),
-    //         'data' => BrandTemp2::all()
-    //     ]);
-    // }
-
-    // public function index()
-    // {
-    //     $brands = BrandTemp2::with('brand')->get();
-    
-    //     // Append brand_name to each item
-    //     $brands->each(function ($item) {
-    //         $item->brand_name = $item->brand->name ?? null;
-    //     });
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => __("msg_rec_list"),
-    //         'data' => $brands
-    //     ]);
-    // }
     public function index()
     {
         // Eager load brand, but only fetch 'id' and 'name' to keep it light
@@ -75,23 +51,30 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="brand_id", type="integer"),
      *                 @OA\Property(property="page_top_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_top_banners_desktop_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_top_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
-     *                  @OA\Property(
+     *                 @OA\Property(property="category_banners_file_name[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(
      *                           property="category_id",
      *                           type="string",
      *                           description="A JSON string containing category_id and product_ids"
      *                  ),
      *                 @OA\Property(property="page_middle_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_middle_banners_desktop_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_middle_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="website_banners_videos_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string"))
+     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="website_banners_videos_mobile_file_name[]", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     ),
@@ -118,8 +101,6 @@ class BrandTemp2Controller extends Controller
         ], 201);   
     }
     
-    
-
     /**
      * @OA\Get(
      *     path="/api/brand-temp-2/{id}",
@@ -150,10 +131,13 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="brand_id", type="integer"),
      *                 @OA\Property(property="page_top_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_top_banners_desktop_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_top_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="category_banners_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(
      *                       property="category_id",
      *                       type="string",
@@ -161,12 +145,16 @@ class BrandTemp2Controller extends Controller
      *                   ),
      *                 @OA\Property(property="page_middle_banners_desktop[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_desktop_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_middle_banners_desktop_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="page_middle_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="website_banners_videos_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string")),
+     *                 @OA\Property(property="website_banners_videos_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="_method", type="string", example="PUT")
      *             )
      *         )
@@ -177,26 +165,7 @@ class BrandTemp2Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    // public function update(Request $request, $id)
-    // {
-    //     $brand = BrandTemp2::findOrFail($id);
-    //     $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
-        
-    //     // Ensure category_id is properly formatted if provided
-    //     if ($request->has('category_id')) {
-    //         $data['category_id'] = $request->category_id;
-    //     }
-        
-    //     $brand->update($data);
-        
-    //     return response()->json([
-    //         'success' => true,
-    //         'message' => 'Brand updated successfully.',
-    //         'data' => $brand
-    //     ], 201);
-    // }
-
-        public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $brand = BrandTemp2::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
@@ -218,7 +187,6 @@ class BrandTemp2Controller extends Controller
         ], 201);
     }
 
-
     /**
      * @OA\Delete(
      *     path="/api/brand-temp-2/{id}",
@@ -237,69 +205,107 @@ class BrandTemp2Controller extends Controller
     }
 
     private function handleUploads(Request $request, $brandId = null)
-    {
-        $imageFields = [
-            'page_top_banners_desktop',
-            'page_top_banners_mobile',
-            'category_banners',
-            'page_middle_banners_desktop',
-            'page_middle_banners_mobile',
-            'website_banners_videos',
-            'website_banners_videos_mobile',
-        ];
+{
+    $imageFields = [
+        'page_top_banners_desktop',
+        'page_top_banners_mobile',
+        'category_banners',
+        'page_middle_banners_desktop',
+        'page_middle_banners_mobile',
+        'website_banners_videos',
+        'website_banners_videos_mobile',
+    ];
 
-        // Define alt text fields corresponding to image fields
-        $altTextFields = [
-            'page_top_banners_desktop_alt_text',
-            'page_top_banners_mobile_alt_text',
-            'category_banners_alt_text',
-            'page_middle_banners_desktop_alt_text',
-            'page_middle_banners_mobile_alt_text',
-            'website_banners_videos_alt_text',
-            'website_banners_videos_mobile_alt_text',
-        ];
+    // Define alt text fields corresponding to image fields
+    $altTextFields = [
+        'page_top_banners_desktop_alt_text',
+        'page_top_banners_mobile_alt_text',
+        'category_banners_alt_text',
+        'page_middle_banners_desktop_alt_text',
+        'page_middle_banners_mobile_alt_text',
+        'website_banners_videos_alt_text',
+        'website_banners_videos_mobile_alt_text',
+    ];
+    
+    // Define file name fields
+    $fileNameFields = [
+        'page_top_banners_desktop_file_name',
+        'page_top_banners_mobile_file_name',
+        'category_banners_file_name',
+        'page_middle_banners_desktop_file_name',
+        'page_middle_banners_mobile_file_name',
+        'website_banners_videos_file_name',
+        'website_banners_videos_mobile_file_name',
+    ];
 
-        // Get all data except the image and alt text fields
-        $data = $request->except(array_merge($imageFields, $altTextFields));
+    // Get all data except the image, alt text, and file name fields
+    $data = $request->except(array_merge($imageFields, $altTextFields, $fileNameFields));
 
-        $brandName = 'unknown';
-        if ($brandId || $request->brand_id) {
-            $brandModel = Brand::find($brandId ?? $request->brand_id);
-            if ($brandModel) {
-                $brandName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $brandModel->name);
-            }
+    $brandName = 'unknown';
+    if ($brandId || $request->brand_id) {
+        $brandModel = Brand::find($brandId ?? $request->brand_id);
+        if ($brandModel) {
+            $brandName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $brandModel->name);
         }
+    }
 
-        $baseFolder = env('STORAGE_ENV', 'local') . "/Brand/{$brandName}";
+    $baseFolder = env('STORAGE_ENV', 'local') . "/Brand/{$brandName}";
 
-        // Process each image field
-        foreach ($imageFields as $index => $field) {
-            $altTextField = $altTextFields[$index]; // Get corresponding alt text field
+    // Process each image field
+    foreach ($imageFields as $index => $field) {
+        $altTextField = $altTextFields[$index]; // Get corresponding alt text field
+        $fileNameField = $fileNameFields[$index]; // Get corresponding file name field
+        
+        if ($request->hasFile($field)) {
+            $files = [];
+            $altTexts = [];
+            $fileNames = [];
             
-            if ($request->hasFile($field)) {
-                $files = [];
-                $altTexts = [];
+            // Get the alt text values from request
+            $altTextValues = $request->input($altTextField, []);
+            
+            // Get the file name values from request
+            $fileNameValues = $request->input($fileNameField, []);
+            
+            // Process and upload each file
+            foreach ($request->file($field) as $i => $file) {
+                // Use the provided file name if available, otherwise use original
+                $customFileName = isset($fileNameValues[$i]) && !empty($fileNameValues[$i]) 
+                    ? $fileNameValues[$i] 
+                    : $file->getClientOriginalName();
                 
-                // Get the alt text values from request
-                $altTextValues = $request->input($altTextField, []);
+                // Get file extension from original file
+                $extension = $file->getClientOriginalExtension();
                 
-                // Process and upload each file
-                foreach ($request->file($field) as $i => $file) {
-                    $path = Storage::disk('s3')->put("{$baseFolder}/{$field}", $file);
-                    $url = Storage::disk('s3')->url($path);
-                    $files[] = $url;
-                    
-                    // Get corresponding alt text or use empty string if not provided
-                    $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
-                    $altTexts[] = $altText;
+                // Make sure the custom filename has the correct extension
+                if (!str_ends_with(strtolower($customFileName), "." . strtolower($extension))) {
+                    $customFileName = $customFileName . '.' . $extension;
                 }
                 
-                // Save both files and alt texts to data array
-                $data[$field] = $files;
-                $data[$altTextField] = $altTexts;
+                // Use the custom file name for the S3 storage
+                $path = Storage::disk('s3')->putFileAs(
+                    "{$baseFolder}/{$field}", 
+                    $file, 
+                    $customFileName
+                );
+                
+                $url = Storage::disk('s3')->url($path);
+                
+                $files[] = $url;
+                $fileNames[] = $customFileName;
+                
+                // Get corresponding alt text or use empty string if not provided
+                $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
+                $altTexts[] = $altText;
             }
+            
+            // Save files, alt texts, and file names to data array
+            $data[$field] = $files;
+            $data[$altTextField] = $altTexts;
+            $data[$fileNameField] = $fileNames;
         }
-
-        return $data;
     }
+
+    return $data;
+}
 }

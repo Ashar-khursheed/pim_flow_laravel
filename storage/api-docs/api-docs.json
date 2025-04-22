@@ -1357,6 +1357,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1370,6 +1376,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -1378,6 +1390,12 @@
                                         }
                                     },
                                     "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1400,6 +1418,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1408,6 +1432,12 @@
                                         }
                                     },
                                     "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1426,6 +1456,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1434,6 +1470,12 @@
                                         }
                                     },
                                     "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1543,6 +1585,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1556,6 +1604,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -1564,6 +1618,12 @@
                                         }
                                     },
                                     "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1586,6 +1646,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1594,6 +1660,12 @@
                                         }
                                     },
                                     "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1612,6 +1684,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1620,6 +1698,12 @@
                                         }
                                     },
                                     "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -11746,6 +11830,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -11760,6 +11847,9 @@
                                     "format": "uri"
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
@@ -11776,6 +11866,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -11791,6 +11884,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -11805,6 +11901,9 @@
                                     "format": "uri"
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
@@ -11828,6 +11927,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -11849,6 +11951,9 @@
                                     ]
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
