@@ -5041,14 +5041,14 @@
                 ]
             }
         },
-        "/api/zipcodes/{country_id}": {
+        "/api/cities/{country_id}": {
             "get": {
                 "tags": [
                     "Locations"
                 ],
-                "summary": "Get zipcode List",
-                "description": "Fetches a list of all zipcodes.",
-                "operationId": "05ba1e07a90ddd8a41b58eabc89863c9",
+                "summary": "Get city List",
+                "description": "Fetches a list of all cities.",
+                "operationId": "0f7131fc8afeb224e193390d8465f423",
                 "parameters": [
                     {
                         "name": "country_id",
@@ -5098,19 +5098,19 @@
                 ]
             }
         },
-        "/api/cities/{country_id}": {
+        "/api/zipcodes/{city_id}": {
             "get": {
                 "tags": [
                     "Locations"
                 ],
-                "summary": "Get city List",
-                "description": "Fetches a list of all cities.",
-                "operationId": "0f7131fc8afeb224e193390d8465f423",
+                "summary": "Get zipcode List",
+                "description": "Fetches a list of all zipcodes.",
+                "operationId": "d2a2788c769aa074f0c199eea3fea6d7",
                 "parameters": [
                     {
-                        "name": "country_id",
+                        "name": "city_id",
                         "in": "path",
-                        "description": "ID of the country",
+                        "description": "ID of the city",
                         "required": true,
                         "schema": {
                             "type": "integer",
