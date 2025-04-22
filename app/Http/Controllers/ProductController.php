@@ -2341,6 +2341,112 @@ public function getProductsByCategory($category_id)
  *     security={{"bearerAuth":{}}}
  * )
  */
+public function getFilteredProductsByCategorybd1($category_ids)
+{
+    // Convert comma-separated string to array of integers
+    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+    
+    if (empty($categoryIdArray)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No valid category IDs provided.',
+            'data' => []
+        ]);
+    }
+    
+    // Get data from brand_temp_2 table
+    $brandData = DB::table('brand_temp_1')->get();
+    
+    if ($brandData->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No data found in brand_temp_1.',
+            'data' => []
+        ]);
+    }
+    
+    // Initialize array to store product IDs
+    $allProductIds = [];
+    $productCategoryMap = [];
+    $categoryResults = [];
+    
+    // Initialize category results for each requested category
+    foreach ($categoryIdArray as $categoryId) {
+        $categoryResults[$categoryId] = [];
+    }
+    
+    // Loop through each record in brand_temp_2
+    foreach ($brandData as $record) {
+        // Decode the category_id JSON field
+        $categoryData = json_decode($record->category_id, true);
+        
+        if (!is_array($categoryData)) {
+            continue;
+        }
+        
+        // Look for matching categories in the JSON data
+        foreach ($categoryData as $category) {
+            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+                $categoryId = $category['category_id'];
+                
+                // If this category matches one of our requested categories
+                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+                    foreach ($category['product_ids'] as $productId) {
+                        $allProductIds[] = $productId;
+                        $productCategoryMap[$productId] = $categoryId;
+                        $categoryResults[$categoryId][] = $productId;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Remove duplicate product IDs
+    $allProductIds = array_unique($allProductIds);
+    
+    // Even if some categories have no products, we still want to return products from categories that do have products
+    if (empty($allProductIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No products found for any of the given categories.',
+            'data' => []
+        ]);
+    }
+    
+    // Fetch products from the database
+    $products = Product::whereIn('id', $allProductIds)
+        ->select(['id', 'name', 'sku', 'images'])
+        ->orderBy('id', 'desc')
+        ->get();
+    
+    // Format product data
+    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+            'category_id' => $productCategoryMap[$product->id] ?? null,
+        ];
+    });
+    
+    // Summary of what was found for each category
+    $categorySummary = [];
+    foreach ($categoryIdArray as $categoryId) {
+        $categorySummary[] = [
+            'category_id' => $categoryId,
+            'product_count' => count($categoryResults[$categoryId])
+        ];
+    }
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+        'category_summary' => $categorySummary,
+        'data' => $formattedProducts
+    ]);
+}
+
 public function getFilteredProductsByCategory($category_ids)
 {
     // Convert comma-separated string to array of integers
@@ -2368,6 +2474,12 @@ public function getFilteredProductsByCategory($category_ids)
     // Initialize array to store product IDs
     $allProductIds = [];
     $productCategoryMap = [];
+    $categoryResults = [];
+    
+    // Initialize category results for each requested category
+    foreach ($categoryIdArray as $categoryId) {
+        $categoryResults[$categoryId] = [];
+    }
     
     // Loop through each record in brand_temp_2
     foreach ($brandData as $record) {
@@ -2381,11 +2493,14 @@ public function getFilteredProductsByCategory($category_ids)
         // Look for matching categories in the JSON data
         foreach ($categoryData as $category) {
             if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+                $categoryId = $category['category_id'];
+                
                 // If this category matches one of our requested categories
                 if (isset($category['product_ids']) && is_array($category['product_ids'])) {
                     foreach ($category['product_ids'] as $productId) {
                         $allProductIds[] = $productId;
-                        $productCategoryMap[$productId] = $category['category_id'];
+                        $productCategoryMap[$productId] = $categoryId;
+                        $categoryResults[$categoryId][] = $productId;
                     }
                 }
             }
@@ -2395,10 +2510,11 @@ public function getFilteredProductsByCategory($category_ids)
     // Remove duplicate product IDs
     $allProductIds = array_unique($allProductIds);
     
+    // Even if some categories have no products, we still want to return products from categories that do have products
     if (empty($allProductIds)) {
         return response()->json([
             'success' => false,
-            'message' => 'No products found for the given categories.',
+            'message' => 'No products found for any of the given categories.',
             'data' => []
         ]);
     }
@@ -2420,9 +2536,126 @@ public function getFilteredProductsByCategory($category_ids)
         ];
     });
     
+    // Summary of what was found for each category
+    $categorySummary = [];
+    foreach ($categoryIdArray as $categoryId) {
+        $categorySummary[] = [
+            'category_id' => $categoryId,
+            'product_count' => count($categoryResults[$categoryId])
+        ];
+    }
+    
     return response()->json([
         'success' => true,
         'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+        'category_summary' => $categorySummary,
+        'data' => $formattedProducts
+    ]);
+}
+
+
+public function getFilteredProductsByCategorybd3($category_ids)
+{
+    // Convert comma-separated string to array of integers
+    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+    
+    if (empty($categoryIdArray)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No valid category IDs provided.',
+            'data' => []
+        ]);
+    }
+    
+    // Get data from brand_temp_2 table
+    $brandData = DB::table('brand_temp_3')->get();
+    
+    if ($brandData->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No data found in brand_temp_3.',
+            'data' => []
+        ]);
+    }
+    
+    // Initialize array to store product IDs
+    $allProductIds = [];
+    $productCategoryMap = [];
+    $categoryResults = [];
+    
+    // Initialize category results for each requested category
+    foreach ($categoryIdArray as $categoryId) {
+        $categoryResults[$categoryId] = [];
+    }
+    
+    // Loop through each record in brand_temp_2
+    foreach ($brandData as $record) {
+        // Decode the category_id JSON field
+        $categoryData = json_decode($record->category_id, true);
+        
+        if (!is_array($categoryData)) {
+            continue;
+        }
+        
+        // Look for matching categories in the JSON data
+        foreach ($categoryData as $category) {
+            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+                $categoryId = $category['category_id'];
+                
+                // If this category matches one of our requested categories
+                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+                    foreach ($category['product_ids'] as $productId) {
+                        $allProductIds[] = $productId;
+                        $productCategoryMap[$productId] = $categoryId;
+                        $categoryResults[$categoryId][] = $productId;
+                    }
+                }
+            }
+        }
+    }
+    
+    // Remove duplicate product IDs
+    $allProductIds = array_unique($allProductIds);
+    
+    // Even if some categories have no products, we still want to return products from categories that do have products
+    if (empty($allProductIds)) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No products found for any of the given categories.',
+            'data' => []
+        ]);
+    }
+    
+    // Fetch products from the database
+    $products = Product::whereIn('id', $allProductIds)
+        ->select(['id', 'name', 'sku', 'images'])
+        ->orderBy('id', 'desc')
+        ->get();
+    
+    // Format product data
+    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+            'category_id' => $productCategoryMap[$product->id] ?? null,
+        ];
+    });
+    
+    // Summary of what was found for each category
+    $categorySummary = [];
+    foreach ($categoryIdArray as $categoryId) {
+        $categorySummary[] = [
+            'category_id' => $categoryId,
+            'product_count' => count($categoryResults[$categoryId])
+        ];
+    }
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+        'category_summary' => $categorySummary,
         'data' => $formattedProducts
     ]);
 }

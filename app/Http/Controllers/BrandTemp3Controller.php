@@ -2,26 +2,26 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BrandTemp2;
+use App\Models\BrandTemp3;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class BrandTemp2Controller extends Controller
+class BrandTemp3Controller extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/brand-temp-2",
+     *     path="/api/brand-temp-3",
      *     summary="Get all brand temp records",
-     *     tags={"BrandTemp2"},
-     *     @OA\Response(response=200, description="Success", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/BrandTemp2"))),
+     *     tags={"BrandTemp3"},
+     *     @OA\Response(response=200, description="Success", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/BrandTemp3"))),
      *     security={{"bearerAuth":{}}}
      * )
      */
     public function index()
     {
         // Eager load brand, but only fetch 'id' and 'name' to keep it light
-        $brands = BrandTemp2::with(['brand:id,name'])
+        $brands = BrandTemp3::with(['brand:id,name'])
         ->orderBy('id', 'desc')
         ->get();
     
@@ -41,9 +41,9 @@ class BrandTemp2Controller extends Controller
     
     /**
      * @OA\Post(
-     *     path="/api/brand-temp-2",
+     *     path="/api/brand-temp-3",
      *     summary="Create brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp3"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
@@ -57,9 +57,6 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="category_banners_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(
      *                           property="category_id",
      *                           type="string",
@@ -80,7 +77,7 @@ class BrandTemp2Controller extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Created", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=201, description="Created", @OA\JsonContent(ref="#/components/schemas/BrandTemp3")),
      *     @OA\Response(response=422, description="Validation error"),
      *     security={{"bearerAuth":{}}}
      * )
@@ -94,7 +91,7 @@ class BrandTemp2Controller extends Controller
             $data['category_id'] = $request->category_id;
         }
 
-        $brand = BrandTemp2::create($data);
+        $brand = BrandTemp3::create($data);
         
         return response()->json([
             'success' => true,
@@ -105,25 +102,25 @@ class BrandTemp2Controller extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-3/{id}",
      *     summary="Get specific brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp3"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Success", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=200, description="Success", @OA\JsonContent(ref="#/components/schemas/BrandTemp3")),
      *     @OA\Response(response=404, description="Not found"),
      *     security={{"bearerAuth":{}}}
      * )
      */
     public function show($id)
     {
-        return response()->json(BrandTemp2::findOrFail($id));
+        return response()->json(BrandTemp3::findOrFail($id));
     }
 
     /**
      * @OA\Post(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-3/{id}",
      *     summary="Update brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp3"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
@@ -137,9 +134,6 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="page_top_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_top_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_top_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="category_banners[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="category_banners_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="category_banners_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(
      *                       property="category_id",
      *                       type="string",
@@ -161,7 +155,7 @@ class BrandTemp2Controller extends Controller
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Updated", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=200, description="Updated", @OA\JsonContent(ref="#/components/schemas/BrandTemp3")),
      *     @OA\Response(response=404, description="Not found"),
      *     @OA\Response(response=422, description="Validation error"),
      *     security={{"bearerAuth":{}}}
@@ -169,7 +163,7 @@ class BrandTemp2Controller extends Controller
      */
     public function update(Request $request, $id)
     {
-        $brand = BrandTemp2::findOrFail($id);
+        $brand = BrandTemp3::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
 
         if ($request->has('category_id')) {
@@ -191,9 +185,9 @@ class BrandTemp2Controller extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-3/{id}",
      *     summary="Delete brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp3"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Deleted", @OA\JsonContent(@OA\Property(property="message", type="string", example="Deleted"))),
      *     @OA\Response(response=404, description="Not found"),
@@ -202,7 +196,7 @@ class BrandTemp2Controller extends Controller
      */
     public function destroy($id)
     {
-        BrandTemp2::findOrFail($id)->delete();
+        BrandTemp3::findOrFail($id)->delete();
         return response()->json(['message' => 'Deleted']);
     }
 

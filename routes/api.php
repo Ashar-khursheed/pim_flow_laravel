@@ -29,6 +29,8 @@ use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
+use App\Http\Controllers\BrandTemp1Controller;
+use App\Http\Controllers\BrandTemp3Controller;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderController;
@@ -39,6 +41,7 @@ use App\Http\Controllers\LocationController;
 use App\Http\Controllers\RedirectLinkController;
 use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\SupplierScoreController;
 use App\Http\Controllers\VendorController;
 
 
@@ -84,7 +87,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
 
+	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
+	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
@@ -106,6 +111,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
 	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
+	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
+	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
@@ -209,6 +216,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+
+
+	 Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

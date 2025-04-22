@@ -2,28 +2,28 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BrandTemp2;
+use App\Models\BrandTemp1;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class BrandTemp2Controller extends Controller
+class BrandTemp1Controller extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/brand-temp-2",
+     *     path="/api/brand-temp-1",
      *     summary="Get all brand temp records",
-     *     tags={"BrandTemp2"},
-     *     @OA\Response(response=200, description="Success", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/BrandTemp2"))),
+     *     tags={"BrandTemp1"},
+     *     @OA\Response(response=200, description="Success", @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/BrandTemp1"))),
      *     security={{"bearerAuth":{}}}
      * )
      */
     public function index()
     {
-        // Eager load brand, but only fetch 'id' and 'name' to keep it light
-        $brands = BrandTemp2::with(['brand:id,name'])
-        ->orderBy('id', 'desc')
-        ->get();
+        // Eager load brand and order by latest ID
+        $brands = BrandTemp1::with(['brand:id,name'])
+                    ->orderBy('id', 'desc')
+                    ->get();
     
         // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
@@ -38,12 +38,11 @@ class BrandTemp2Controller extends Controller
         ]);
     }
     
-    
     /**
      * @OA\Post(
-     *     path="/api/brand-temp-2",
+     *     path="/api/brand-temp-1",
      *     summary="Create brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp1"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
@@ -71,16 +70,10 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_mobile_file_name[]", type="array", @OA\Items(type="string"))
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Created", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=201, description="Created", @OA\JsonContent(ref="#/components/schemas/BrandTemp1")),
      *     @OA\Response(response=422, description="Validation error"),
      *     security={{"bearerAuth":{}}}
      * )
@@ -94,7 +87,7 @@ class BrandTemp2Controller extends Controller
             $data['category_id'] = $request->category_id;
         }
 
-        $brand = BrandTemp2::create($data);
+        $brand = BrandTemp1::create($data);
         
         return response()->json([
             'success' => true,
@@ -105,25 +98,25 @@ class BrandTemp2Controller extends Controller
     
     /**
      * @OA\Get(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-1/{id}",
      *     summary="Get specific brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp1"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=200, description="Success", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=200, description="Success", @OA\JsonContent(ref="#/components/schemas/BrandTemp1")),
      *     @OA\Response(response=404, description="Not found"),
      *     security={{"bearerAuth":{}}}
      * )
      */
     public function show($id)
     {
-        return response()->json(BrandTemp2::findOrFail($id));
+        return response()->json(BrandTemp1::findOrFail($id));
     }
 
     /**
      * @OA\Post(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-1/{id}",
      *     summary="Update brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp1"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
@@ -151,17 +144,11 @@ class BrandTemp2Controller extends Controller
      *                 @OA\Property(property="page_middle_banners_mobile[]", type="array", @OA\Items(type="string", format="binary")),
      *                 @OA\Property(property="page_middle_banners_mobile_alt_text[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="page_middle_banners_mobile_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_file_name[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_mobile[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="website_banners_videos_mobile_alt_text[]", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="website_banners_videos_mobile_file_name[]", type="array", @OA\Items(type="string")),
      *                 @OA\Property(property="_method", type="string", example="PUT")
      *             )
      *         )
      *     ),
-     *     @OA\Response(response=200, description="Updated", @OA\JsonContent(ref="#/components/schemas/BrandTemp2")),
+     *     @OA\Response(response=200, description="Updated", @OA\JsonContent(ref="#/components/schemas/BrandTemp1")),
      *     @OA\Response(response=404, description="Not found"),
      *     @OA\Response(response=422, description="Validation error"),
      *     security={{"bearerAuth":{}}}
@@ -169,7 +156,7 @@ class BrandTemp2Controller extends Controller
      */
     public function update(Request $request, $id)
     {
-        $brand = BrandTemp2::findOrFail($id);
+        $brand = BrandTemp1::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
 
         if ($request->has('category_id')) {
@@ -191,9 +178,9 @@ class BrandTemp2Controller extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/brand-temp-2/{id}",
+     *     path="/api/brand-temp-1/{id}",
      *     summary="Delete brand temp",
-     *     tags={"BrandTemp2"},
+     *     tags={"BrandTemp1"},
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Deleted", @OA\JsonContent(@OA\Property(property="message", type="string", example="Deleted"))),
      *     @OA\Response(response=404, description="Not found"),
@@ -202,7 +189,7 @@ class BrandTemp2Controller extends Controller
      */
     public function destroy($id)
     {
-        BrandTemp2::findOrFail($id)->delete();
+        BrandTemp1::findOrFail($id)->delete();
         return response()->json(['message' => 'Deleted']);
     }
 
@@ -214,8 +201,6 @@ class BrandTemp2Controller extends Controller
         'category_banners',
         'page_middle_banners_desktop',
         'page_middle_banners_mobile',
-        'website_banners_videos',
-        'website_banners_videos_mobile',
     ];
 
     // Define alt text fields corresponding to image fields
@@ -225,8 +210,6 @@ class BrandTemp2Controller extends Controller
         'category_banners_alt_text',
         'page_middle_banners_desktop_alt_text',
         'page_middle_banners_mobile_alt_text',
-        'website_banners_videos_alt_text',
-        'website_banners_videos_mobile_alt_text',
     ];
     
     // Define file name fields
@@ -236,8 +219,6 @@ class BrandTemp2Controller extends Controller
         'category_banners_file_name',
         'page_middle_banners_desktop_file_name',
         'page_middle_banners_mobile_file_name',
-        'website_banners_videos_file_name',
-        'website_banners_videos_mobile_file_name',
     ];
 
     // Get all data except the image, alt text, and file name fields

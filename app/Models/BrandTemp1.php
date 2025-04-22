@@ -5,7 +5,7 @@ use Illuminate\Database\Eloquent\Model;
 
 /**
  * @OA\Schema(
- *     schema="BrandTemp2",
+ *     schema="BrandTemp1",
  *     type="object",
  *     @OA\Property(property="id", type="integer", format="int64"),
  *     @OA\Property(property="brand_id", type="integer"),
@@ -60,35 +60,13 @@ use Illuminate\Database\Eloquent\Model;
  *             @OA\Property(property="file_name", type="string")
  *         )
  *     ),
- *     @OA\Property(
- *         property="website_banners_videos",
- *         type="array",
- *         @OA\Items(
- *             type="object",
- *             @OA\Property(property="file", type="string", format="uri"),
- *             @OA\Property(property="type", type="string", enum={"image", "video"}),
- *             @OA\Property(property="alt_text", type="string"),
- *             @OA\Property(property="file_name", type="string")
- *         )
- *     ),
- *     @OA\Property(
- *         property="website_banners_videos_mobile",
- *         type="array",
- *         @OA\Items(
- *             type="object",
- *             @OA\Property(property="file", type="string", format="uri"),
- *             @OA\Property(property="type", type="string", enum={"image", "video"}),
- *             @OA\Property(property="alt_text", type="string"),
- *             @OA\Property(property="file_name", type="string")
- *         )
- *     ),
  *     @OA\Property(property="created_at", type="string", format="date-time"),
  *     @OA\Property(property="updated_at", type="string", format="date-time")
  * )
  */
-class BrandTemp2 extends Model
+class BrandTemp1 extends Model
 {
-    protected $table = 'brand_temp_2';
+    protected $table = 'brand_temp_1';
 
     protected $guarded = [];
 
@@ -108,12 +86,6 @@ class BrandTemp2 extends Model
         'page_middle_banners_mobile' => 'array',
         'page_middle_banners_mobile_alt_text' => 'array',
         'page_middle_banners_mobile_file_name' => 'array',
-        'website_banners_videos' => 'array',
-        'website_banners_videos_alt_text' => 'array',
-        'website_banners_videos_file_name' => 'array',
-        'website_banners_videos_mobile' => 'array',
-        'website_banners_videos_mobile_alt_text' => 'array',
-        'website_banners_videos_mobile_file_name' => 'array',
     ];
 
     public function getCategoryIdAttribute($value)
