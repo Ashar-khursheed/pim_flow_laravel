@@ -423,14 +423,6 @@ class PreOnboardingVendorController extends Controller
 			], 404);
 		}
 
-		/* Check if attribute is attached to any attribute group */
-		// if ($record->vendor()->exists()) {
-		// 	return response()->json([
-		// 		'success' => false,
-		// 		'message' => __("err_pre_vendor_association")
-		// 	], 400);
-		// }
-
 		/* Proceed with deletion */
 		$record->delete();
 
