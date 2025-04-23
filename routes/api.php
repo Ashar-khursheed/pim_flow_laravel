@@ -29,13 +29,20 @@ use App\Http\Controllers\ClaudeAIController;
 use App\Http\Controllers\SeoManagementController;
 use App\Http\Controllers\SubCategoryController;
 use App\Http\Controllers\BrandTemp2Controller;
+use App\Http\Controllers\BrandTemp1Controller;
+use App\Http\Controllers\BrandTemp3Controller;
 use App\Http\Controllers\GradingController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\OrderReturnController;
 use App\Http\Controllers\OrderHistoryController;
-
-
+use App\Http\Controllers\PreOnboardingVendorController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\RedirectLinkController;
+use App\Http\Controllers\ProductImageUploadController;
+use App\Http\Controllers\DocumentUploadController;
+use App\Http\Controllers\SupplierScoreController;
+use App\Http\Controllers\VendorController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -71,7 +78,17 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
+	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
+
+	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
+	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
+
+	Route::apiResource('vendors', VendorController::class);
+	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
+	Route::get('/countries', [LocationController::class, 'getCountryList']);
+	Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
+	Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 
@@ -86,6 +103,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('products/product-category-attribute-groups', [ProductController::class, 'product']);
 	Route::get('products/{id}/product-category-attribute-groups', [ProductController::class, 'productCategoryAttributeGroups']);
 	Route::resource('products', ProductController::class);
+	Route::get('/products/filtered-category/{category_id}', [ProductController::class, 'getFilteredProductsByCategory']);
+	Route::get('/products/filtered-category-bd3/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd3']);
+	Route::get('/products/filtered-category-bd1/{category_id}', [ProductController::class, 'getFilteredProductsByCategorybd1']);
 
 	Route::get('getbrandsList', [BrandController::class, 'getBrandsList']);
 	Route::get('brands/{brandid}/sku', [BrandController::class, 'getBrandSku']);
@@ -167,12 +187,12 @@ Route::middleware(['auth:api'])->group(function () {
 	 Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
 	 Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
 	 Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
-	 
+
 	 // Order history routes
 	 Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
 	 Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
 	 Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
-	 
+
 	 // Order return routes
 	 Route::get('/order-returns', [OrderReturnController::class, 'index']);
 	 Route::post('/order-returns', [OrderReturnController::class, 'store']);
@@ -180,6 +200,18 @@ Route::middleware(['auth:api'])->group(function () {
 	 Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
 	 Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
 	 Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
+
+
+	 Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
+	 Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
+	 Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
+
+
+	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
+	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+
+
+	 Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);

@@ -1355,6 +1355,419 @@
                 ]
             }
         },
+        "/api/brand-temp-1": {
+            "get": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Get all brand temp records",
+                "operationId": "e17f9e6ade33a19421664152ea663c86",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BrandTemp1"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Create brand temp",
+                "operationId": "c31a350f6441afd05cd3b7b839db48e6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "brand_id"
+                                ],
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-1/{id}": {
+            "get": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Get specific brand temp",
+                "operationId": "3a791c09cd2211f106b131ef7e43fd1c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Update brand temp",
+                "operationId": "90927df2757114fadb55b5f6937ac25c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp1"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "BrandTemp1"
+                ],
+                "summary": "Delete brand temp",
+                "operationId": "669cb1f000409b3f3cfd88a5f956586b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/brand-temp-2": {
             "get": {
                 "tags": [
@@ -1414,6 +1827,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1427,6 +1846,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -1435,6 +1860,12 @@
                                         }
                                     },
                                     "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1457,6 +1888,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1465,6 +1902,12 @@
                                         }
                                     },
                                     "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1483,6 +1926,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1491,6 +1940,12 @@
                                         }
                                     },
                                     "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1600,6 +2055,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_top_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1613,6 +2074,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "category_banners[]": {
                                         "type": "array",
                                         "items": {
@@ -1621,6 +2088,12 @@
                                         }
                                     },
                                     "category_banners_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_banners_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1643,6 +2116,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "page_middle_banners_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1651,6 +2130,12 @@
                                         }
                                     },
                                     "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1669,6 +2154,12 @@
                                             "type": "string"
                                         }
                                     },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
                                     "website_banners_videos_mobile[]": {
                                         "type": "array",
                                         "items": {
@@ -1677,6 +2168,12 @@
                                         }
                                     },
                                     "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
@@ -1722,6 +2219,457 @@
                 ],
                 "summary": "Delete brand temp",
                 "operationId": "9e852a02d643054334a4370a32106e4b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-3": {
+            "get": {
+                "tags": [
+                    "BrandTemp3"
+                ],
+                "summary": "Get all brand temp records",
+                "operationId": "11774640738a0f131e331a9279bbd23a",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/BrandTemp3"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp3"
+                ],
+                "summary": "Create brand temp",
+                "operationId": "015e680e516ab43193c622ddc4d28f87",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "brand_id"
+                                ],
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp3"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brand-temp-3/{id}": {
+            "get": {
+                "tags": [
+                    "BrandTemp3"
+                ],
+                "summary": "Get specific brand temp",
+                "operationId": "6c7c205837a5236a5f1d4a0fdcf95733",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp3"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "BrandTemp3"
+                ],
+                "summary": "Update brand temp",
+                "operationId": "68b54f77d18e9b171ca274630bb54ac2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "brand_id": {
+                                        "type": "integer"
+                                    },
+                                    "page_top_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_top_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "description": "A JSON string containing category_id and product_ids",
+                                        "type": "string"
+                                    },
+                                    "page_middle_banners_desktop[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_desktop_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "page_middle_banners_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_alt_text[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "website_banners_videos_mobile_file_name[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/BrandTemp3"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "BrandTemp3"
+                ],
+                "summary": "Delete brand temp",
+                "operationId": "62553e3d76c7f868871edbd1f5906b1f",
                 "parameters": [
                     {
                         "name": "id",
@@ -3811,6 +4759,146 @@
                 ]
             }
         },
+        "/api/product/upload-documents": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload product documents from zip file",
+                "description": "Upload a ZIP file containing product documents organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "operationId": "e32af95053fd7c3ec912e58d8a1dce47",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "zip_file": {
+                                        "description": "ZIP file containing product documents organized in folders by SKU",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Documents processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product documents processed successfully"
+                                        },
+                                        "processed_skus": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "status": {
+                                                        "description": "success, no_documents_found, or product_not_found",
+                                                        "type": "string",
+                                                        "example": "success"
+                                                    },
+                                                    "document_count": {
+                                                        "description": "Number of documents processed for this SKU",
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unable to open the zip file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "zip_file": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The zip file field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/faq-categories": {
             "get": {
                 "tags": [
@@ -4817,6 +5905,167 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/countries": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get country List",
+                "description": "Fetches a list of all countries.",
+                "operationId": "9f425d32238205bd00106e8ee7ce4aed",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/cities/{country_id}": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get city List",
+                "description": "Fetches a list of all cities.",
+                "operationId": "0f7131fc8afeb224e193390d8465f423",
+                "parameters": [
+                    {
+                        "name": "country_id",
+                        "in": "path",
+                        "description": "ID of the country",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/zipcodes/{city_id}": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get zipcode List",
+                "description": "Fetches a list of all zipcodes.",
+                "operationId": "d2a2788c769aa074f0c199eea3fea6d7",
+                "parameters": [
+                    {
+                        "name": "city_id",
+                        "in": "path",
+                        "description": "ID of the city",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -6540,6 +7789,419 @@
                 ]
             }
         },
+        "/api/pre-onboarding-vendors": {
+            "get": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Get Pre Onboarding Vendor List",
+                "description": "Fetches a list of pre onboarding vendors.",
+                "operationId": "e13e47a73f061a1c6b4942b1038995fe",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Create a new pre onboarding vendor",
+                "description": "Creates a new pre onboarding vendor.",
+                "operationId": "d26b37b2a40edade19b036e0ee6959a0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Samsung"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "contact@samsung.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "direct"
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "shipping_days": {
+                                        "type": "string",
+                                        "example": "5-7 days"
+                                    },
+                                    "credit_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
+                                    },
+                                    "grade": {
+                                        "type": "string",
+                                        "example": "A"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pre-onboarding-vendors/{pre_onboarding_vendor_id}": {
+            "get": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Get pre onboarding vendor details",
+                "description": "Fetches pre onboarding vendor details based on the given pre onboarding vendor ID.",
+                "operationId": "89a0f42f8bc269a9dde944474d454f7e",
+                "parameters": [
+                    {
+                        "name": "pre_onboarding_vendor_id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/pre-onboarding-vendors/{id}": {
+            "put": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Update an existing pre onboarding vendor",
+                "description": "Updates an pre onboarding vendor's details.",
+                "operationId": "be9f42ce934ae385ce74cf2591642559",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "contact_person",
+                                    "email",
+                                    "phone_number",
+                                    "country_id",
+                                    "category_ids",
+                                    "type"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Samsung"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone_number": {
+                                        "type": "string",
+                                        "example": "+123456789"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "account_number": {
+                                        "type": "string",
+                                        "example": "ACC123456"
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "direct"
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "shipping_days": {
+                                        "type": "string",
+                                        "example": "5-7 days"
+                                    },
+                                    "credit_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "50000"
+                                    },
+                                    "grade": {
+                                        "type": "string",
+                                        "example": "A"
+                                    },
+                                    "product_demand_level": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "product_name": {
+                                                    "type": "string",
+                                                    "example": "LED TV"
+                                                },
+                                                "primary_keyword": {
+                                                    "type": "string",
+                                                    "example": "smart tv"
+                                                },
+                                                "search_volume": {
+                                                    "type": "integer",
+                                                    "example": 50000
+                                                },
+                                                "supplier_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 300.5
+                                                },
+                                                "competitor_price_online": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 350
+                                                },
+                                                "competitor_price_offline": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 340
+                                                },
+                                                "margin_auto_calculate": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 49.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Pre Onboarding Vendors"
+                ],
+                "summary": "Delete a pre onboarding vendor",
+                "description": "Deletes a pre onboarding vendor.",
+                "operationId": "deletePreOnboardingVendor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the pre onboarding vendor to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products": {
             "get": {
                 "tags": [
@@ -7703,6 +9365,103 @@
                 ]
             }
         },
+        "/api/products/filtered-category/{category_ids}": {
+            "get": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Get filtered products by multiple categories",
+                "description": "Retrieves products from the specified categories based on the category_id JSON field in brand_temp_2 table.",
+                "operationId": "97f4ada538c34adcc1e27237b2e367c3",
+                "parameters": [
+                    {
+                        "name": "category_ids",
+                        "in": "path",
+                        "description": "IDs of the categories to filter products by (comma-separated)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "180,529"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Filtered products retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1683
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Commercial Electric Range"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ELEC-RANGE-001"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "http://example.com/storage/products/elec-range.jpg"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 529
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No products found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No products found for the given categories"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products/export": {
             "post": {
                 "tags": [
@@ -7764,6 +9523,271 @@
                         "content": {
                             "application/json": {}
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product/upload-images": {
+            "post": {
+                "tags": [
+                    "Products"
+                ],
+                "summary": "Upload product images from zip file",
+                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "zip_file": {
+                                        "description": "ZIP file containing product images organized in folders by SKU",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Images processed successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product images processed successfully"
+                                        },
+                                        "processed_skus": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "ABC123"
+                                                    },
+                                                    "status": {
+                                                        "description": "success, no_images_found, or product_not_found",
+                                                        "type": "string",
+                                                        "example": "success"
+                                                    },
+                                                    "image_count": {
+                                                        "description": "Number of images processed for this SKU",
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unable to open the zip file"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "properties": {
+                                                "zip_file": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string",
+                                                        "example": "The zip file field is required."
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/redirect-links": {
+            "get": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Get list of all redirect links",
+                "operationId": "4e70a2a72b92d77858c5b2f49c69d39a",
+                "responses": {
+                    "200": {
+                        "description": "List of redirect links",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "from": {
+                                                "type": "string",
+                                                "example": "/category1"
+                                            },
+                                            "to": {
+                                                "type": "string",
+                                                "example": "/category4324/22"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Create a redirect link",
+                "operationId": "148693ca03b1cc158836110aea02bf6c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "from",
+                                    "to"
+                                ],
+                                "properties": {
+                                    "from": {
+                                        "type": "string",
+                                        "example": "/category1"
+                                    },
+                                    "to": {
+                                        "type": "string",
+                                        "example": "/category4324/22"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Redirect created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/redirect-links/import": {
+            "post": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Import redirect links from a CSV file",
+                "operationId": "fbb87ae300413db2317aad15bca6a162",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "CSV file (.csv)",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Redirects imported successfully"
+                    },
+                    "422": {
+                        "description": "Invalid file upload"
                     }
                 },
                 "security": [
@@ -9696,6 +11720,81 @@
                 ]
             }
         },
+        "/api/supplier-score": {
+            "post": {
+                "tags": [
+                    "Supplier Scores"
+                ],
+                "summary": "Calculate and store supplier score and grade based on existing data",
+                "operationId": "3d495d163e92ca5fcb691b84df672dae",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "id"
+                                ],
+                                "properties": {
+                                    "id": {
+                                        "description": "ID from pre_onboarding_vendors table",
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Score and grade successfully calculated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "score": {
+                                            "type": "integer",
+                                            "example": 48
+                                        },
+                                        "grade": {
+                                            "type": "string",
+                                            "example": "B"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The id field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/transaction-logs": {
             "get": {
                 "tags": [
@@ -10045,6 +12144,460 @@
                         "name": "id",
                         "in": "path",
                         "description": "ID of the user to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get Vendor List",
+                "description": "Fetches a list of vendors.",
+                "operationId": "c40acb075c0143f113c61ea8bde7b609",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Create a new vendor",
+                "operationId": "c97823c52c611079ff6de099ea3052d4",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "country_id",
+                                    "email",
+                                    "contact_person"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "ABC Supplier"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "vendor@example.com"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "landline_number": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Wholesale electronics supplier."
+                                    },
+                                    "website_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Horeca",
+                                            "Rapid Supplies"
+                                        ],
+                                        "example": "Horeca"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "direct",
+                                            "indirect"
+                                        ],
+                                        "example": "direct"
+                                    },
+                                    "warehouse_locations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Dubai",
+                                            "Sharjah"
+                                        ]
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "5000"
+                                    },
+                                    "net_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "business_licence_number": {
+                                        "type": "string",
+                                        "example": "LIC1234567"
+                                    },
+                                    "logo": {
+                                        "description": "Vendor logo (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "tax_certificate": {
+                                        "description": "Tax Certificate (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business Licence (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Vendor created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/{vendor_id}": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get vendor details",
+                "description": "Fetches vendor details based on the given vendor ID.",
+                "operationId": "d94b41515bc03264a11f8191003e51cc",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/{id}": {
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Update an existing vendor",
+                "operationId": "4b727995aae0d279329316a166f7e08f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Vendor ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "_method",
+                                    "name",
+                                    "country_id",
+                                    "email",
+                                    "contact_person"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "ABC Supplier"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "vendor@example.com"
+                                    },
+                                    "contact_person": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "landline_number": {
+                                        "type": "string",
+                                        "example": "0123456789"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Wholesale electronics supplier."
+                                    },
+                                    "website_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            10,
+                                            11
+                                        ]
+                                    },
+                                    "city_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            1,
+                                            2,
+                                            3
+                                        ]
+                                    },
+                                    "zipcode_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        },
+                                        "example": [
+                                            101,
+                                            102
+                                        ]
+                                    },
+                                    "dropshipping": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "website_link": {
+                                        "type": "string",
+                                        "example": "https://example.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Horeca",
+                                            "Rapid Supplies"
+                                        ],
+                                        "example": "Horeca"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "direct",
+                                            "indirect"
+                                        ],
+                                        "example": "direct"
+                                    },
+                                    "warehouse_locations": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "Dubai",
+                                            "Sharjah"
+                                        ]
+                                    },
+                                    "credit_limit": {
+                                        "type": "string",
+                                        "example": "5000"
+                                    },
+                                    "net_terms": {
+                                        "type": "string",
+                                        "example": "Net 30"
+                                    },
+                                    "business_licence_number": {
+                                        "type": "string",
+                                        "example": "LIC1234567"
+                                    },
+                                    "logo": {
+                                        "description": "Vendor logo (.webp, .png)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "tax_certificate": {
+                                        "description": "Tax Certificate (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "business_licence": {
+                                        "description": "Business Licence (.pdf)",
+                                        "type": "file",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Vendor updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    },
+                    "404": {
+                        "description": "Vendor not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Delete a vendor",
+                "description": "Deletes a vendor.",
+                "operationId": "deleteVendor",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the vendor to delete",
                         "required": true,
                         "schema": {
                             "type": "integer",
@@ -10440,6 +12993,116 @@
                 },
                 "type": "object"
             },
+            "BrandTemp1": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "brand_id": {
+                        "type": "integer"
+                    },
+                    "page_top_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_top_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "category_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "BrandTemp2": {
                 "properties": {
                     "id": {
@@ -10459,6 +13122,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -10473,6 +13139,9 @@
                                     "format": "uri"
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
@@ -10489,6 +13158,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -10504,6 +13176,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -10518,6 +13193,9 @@
                                     "format": "uri"
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
@@ -10541,6 +13219,9 @@
                                 },
                                 "alt_text": {
                                     "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
                                 }
                             },
                             "type": "object"
@@ -10562,6 +13243,119 @@
                                     ]
                                 },
                                 "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
+            "BrandTemp3": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "brand_id": {
+                        "type": "integer"
+                    },
+                    "page_top_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_top_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "category_banners": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_desktop": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    },
+                    "page_middle_banners_mobile": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "file": {
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "alt_text": {
+                                    "type": "string"
+                                },
+                                "file_name": {
                                     "type": "string"
                                 }
                             },
@@ -11126,8 +13920,16 @@
             "description": "Brands"
         },
         {
+            "name": "BrandTemp1",
+            "description": "BrandTemp1"
+        },
+        {
             "name": "BrandTemp2",
             "description": "BrandTemp2"
+        },
+        {
+            "name": "BrandTemp3",
+            "description": "BrandTemp3"
         },
         {
             "name": "Category Pages",
@@ -11158,6 +13960,10 @@
             "description": "Grading"
         },
         {
+            "name": "Locations",
+            "description": "Locations"
+        },
+        {
             "name": "Orders",
             "description": "Orders"
         },
@@ -11172,6 +13978,14 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "Pre Onboarding Vendors",
+            "description": "Pre Onboarding Vendors"
+        },
+        {
+            "name": "Redirect Links",
+            "description": "Redirect Links"
         },
         {
             "name": "Roles and Permissions",
@@ -11190,12 +14004,20 @@
             "description": "Subcategories"
         },
         {
+            "name": "Supplier Scores",
+            "description": "Supplier Scores"
+        },
+        {
             "name": "Transaction Logs",
             "description": "Transaction Logs"
         },
         {
             "name": "Users",
             "description": "Users"
+        },
+        {
+            "name": "Vendors",
+            "description": "Vendors"
         },
         {
             "name": "Websites",
