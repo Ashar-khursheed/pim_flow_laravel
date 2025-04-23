@@ -229,22 +229,6 @@ class UserController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$user = User::create([
-			'username'   => $validatedData['username'],
-			'email'      => $validatedData['email'],
-			'password'   => Hash::make($validatedData['password']),
-			'first_name' => $validatedData['first_name'] ?? null,
-			'last_name'  => $validatedData['last_name'] ?? null,
-		]);
-
-		$user->syncRoles([$validatedData['role']]);
-
-		return response()->json([
-			'success' => true,
-			'message' => 'User created successfully.',
-			'data'    => $user->load('roles'),
-		], 201);
-
 
 		$user = User::find($userId);
 		if (!$user) {
