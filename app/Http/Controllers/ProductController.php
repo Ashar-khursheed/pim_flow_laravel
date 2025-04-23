@@ -138,7 +138,13 @@ class ProductController extends BaseController
 	// 	]);
 	// }
 	public function index(Request $request)
-{
+	{
+        if (!auth()->user()->can('list product')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
     $perPage = $request->input('per_page', 50);
     $search = $request->input('search');
 
@@ -243,6 +249,12 @@ class ProductController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+        if (!auth()->user()->can('add product')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
 		/* Validate request data */
 		$request->validate([
 			'name' => "required|string",
@@ -384,6 +396,12 @@ class ProductController extends BaseController
 
 	public function show($productId, Request $request)
 	{
+        if (!auth()->user()->can('show product')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
 		$attributeGroups = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
@@ -782,16 +800,6 @@ class ProductController extends BaseController
 				]);
 	}
 
-
-
-	/**
-	 * Show the form for editing the specified resource.d
-	 */
-	public function edit(Product $product)
-	{
-		//
-	}
-
 	/**
  * @OA\Post(
  *     path="/api/products/{product}",
@@ -1042,6 +1050,12 @@ class ProductController extends BaseController
 
  public function update(Request $request, $productId)
  {
+    if (!auth()->user()->can('update product')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
 	 // Log the incoming request for debugging
 	 \Log::info('Product update request:', $request->all());
 	 $unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
@@ -1919,6 +1933,12 @@ class ProductController extends BaseController
 
 	public function destroy(Product $product)
 	{
+        if (!auth()->user()->can('delete product')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
 		try {
 			$product->delete();
 
@@ -2020,6 +2040,12 @@ class ProductController extends BaseController
 	 */
 	public function import(Request $request)
 	{
+        if (!auth()->user()->can('import product')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
 		try {
 			/* Validate request data */
 			$request->validate([

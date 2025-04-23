@@ -16,7 +16,7 @@ class CategoryController extends BaseController
 {
     /**
      * Display a listing of the resource.
-     * 
+     *
      * @OA\Get(
      *     path="/api/categories",
      *     summary="Get Category List",
@@ -77,6 +77,12 @@ class CategoryController extends BaseController
      */
     public function index(Request $request)
     {
+        if (!auth()->user()->can('list category')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $categories = Category::query();
 
         // Filter by type
@@ -104,7 +110,7 @@ class CategoryController extends BaseController
         }
 
         $categoriesList = $categories->get([
-            'id', 'name', 'parent_id', 'description', 'status', 
+            'id', 'name', 'parent_id', 'description', 'status',
             'order', 'image', 'is_featured', 'icon', 'icon_image', 'slug'
         ]);
 
@@ -118,7 +124,7 @@ class CategoryController extends BaseController
             }
             return $category;
         });
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Category List',
@@ -177,13 +183,19 @@ class CategoryController extends BaseController
      */
     public function allcategories(): JsonResponse
     {
+        if (!auth()->user()->can('list category')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $categories = Cache::remember('all_categories', 3600, function () {
             return Category::where('parent_id', 0)
                 ->with(['childrenRecursive'])
                 ->orderBy('order', 'asc')
                 ->get(['id', 'name', 'slug', 'order', 'parent_id']);
         });
-    
+
         return response()->json([
             'success' => true,
             'message' => 'All Categories List',
@@ -241,7 +253,12 @@ class CategoryController extends BaseController
 
     public function store(Request $request): JsonResponse
     {
-		
+        if (!auth()->user()->can('add category')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:191',
 			'parent_id' => [
@@ -276,13 +293,13 @@ class CategoryController extends BaseController
 
         try {
             $data = $validator->validated();
-            
+
             // Generate a slug if one isn't provided
             if (empty($data['slug'])) {
                 $data['slug'] = Str::slug($data['name']);
             }
-            
-		
+
+
 
 			if ($request->hasFile('image')) {
 				$path = $request->file('image')->store('categories', $disk);
@@ -293,30 +310,30 @@ class CategoryController extends BaseController
 				$path = $request->file('icon_image')->store('categories/icons', $disk);
 				$data['icon_image'] = Storage::disk($disk)->url($path); // No extra prefix
 			}
-            
+
             // Set default order as the last position if not specified
             if (!isset($data['order'])) {
                 $parentId = $data['parent_id'] ?? 0;
                 $lastOrder = Category::where('parent_id', $parentId)->max('order');
                 $data['order'] = $lastOrder ? $lastOrder + 1 : 1;
             }
-            
+
             // Create the category
             $category = Category::create($data);
-            
+
             // Clear cache
             Cache::forget('all_categories');
-         
-            
+
+
             return response()->json([
                 'success' => true,
                 'message' => 'Category created successfully',
                 'category' => $category
             ], 201);
-            
+
         } catch (\Exception $e) {
             Log::error('Error creating category: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to create category',
@@ -363,26 +380,32 @@ class CategoryController extends BaseController
      */
     public function show($id): JsonResponse
     {
+        if (!auth()->user()->can('show category')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         try {
             $category = Category::findOrFail($id);
-            
+
             // Load children if any
             $category->load('children');
-            
+
             // Transform image paths to full URLs
             if ($category->image) {
                 $category->image = asset('storage/' . $category->image);
             }
-            
+
             if ($category->icon_image) {
                 $category->icon_image = asset('storage/' . $category->icon_image);
             }
-            
+
             return response()->json([
                 'success' => true,
                 'category' => $category
             ]);
-            
+
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
@@ -450,6 +473,12 @@ class CategoryController extends BaseController
 
  public function update(Request $request, $id): JsonResponse
 {
+    if (!auth()->user()->can('update category')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
     $category = Category::findOrFail($id);
 
     $validator = Validator::make($request->all(), [
@@ -578,13 +607,19 @@ class CategoryController extends BaseController
      */
     public function destroy(Request $request, $id): JsonResponse
     {
+        if (!auth()->user()->can('delete category')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         try {
             $category = Category::findOrFail($id);
             $deleteChildren = $request->boolean('delete_children', false);
-            
+
             // Begin transaction
             \DB::beginTransaction();
-            
+
             // Handle child categories
             if ($deleteChildren) {
                 // Delete all children recursively
@@ -594,30 +629,30 @@ class CategoryController extends BaseController
                 $newParentId = $category->parent_id;
                 Category::where('parent_id', $id)->update(['parent_id' => $newParentId]);
             }
-            
+
             // Delete images
             if ($category->image) {
                 Storage::disk('public')->delete($category->image);
             }
-            
+
             if ($category->icon_image) {
                 Storage::disk('public')->delete($category->icon_image);
             }
-            
+
             // Delete the category
             $category->delete();
-            
+
             // Commit transaction
             \DB::commit();
-            
+
             // Clear cache
             Cache::forget('all_categories');
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Category deleted successfully'
             ]);
-            
+
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
@@ -626,9 +661,9 @@ class CategoryController extends BaseController
         } catch (\Exception $e) {
             // Rollback transaction on error
             \DB::rollBack();
-            
+
             Log::error('Error deleting category: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete category',
@@ -644,16 +679,16 @@ class CategoryController extends BaseController
     {
         foreach ($category->children as $child) {
             $this->deleteChildrenRecursively($child);
-            
+
             // Delete images
             if ($child->image) {
                 Storage::disk('public')->delete($child->image);
             }
-            
+
             if ($child->icon_image) {
                 Storage::disk('public')->delete($child->icon_image);
             }
-            
+
             $child->delete();
         }
     }
@@ -703,16 +738,22 @@ class CategoryController extends BaseController
      *     security={{"bearerAuth":{}}}
      * )
      */
-   
+
  public function reorder(Request $request): JsonResponse
     {
+    if (!auth()->user()->can('update category')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
         $validator = Validator::make($request->all(), [
             'categories' => 'required|array',
             'categories.*.id' => 'required|integer|exists:ec_product_categories,id',
             'categories.*.order' => 'required|integer|min:0',
             'categories.*.parent_id' => 'required|integer'
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
@@ -720,10 +761,10 @@ class CategoryController extends BaseController
                 'errors' => $validator->errors()
             ], 422);
         }
-        
+
         try {
             \DB::beginTransaction();
-            
+
             foreach ($request->categories as $categoryData) {
                 $category = Category::findOrFail($categoryData['id']);
                 $category->update([
@@ -731,22 +772,22 @@ class CategoryController extends BaseController
                     'parent_id' => $categoryData['parent_id']
                 ]);
             }
-            
+
             \DB::commit();
-            
+
             // Clear cache
             Cache::forget('all_categories');
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Categories reordered successfully'
             ]);
-            
+
         } catch (\Exception $e) {
             \DB::rollBack();
-            
+
             Log::error('Error reordering categories: ' . $e->getMessage());
-            
+
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to reorder categories',
@@ -794,44 +835,50 @@ class CategoryController extends BaseController
      */
 
   public function moveUp($id): JsonResponse
-			{
+	{
+    if (!auth()->user()->can('update category')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
 				try {
 					$category = Category::findOrFail($id);
 					$parentId = $category->parent_id;
-					
+
 					// Find the category directly above this one
 					$aboveCategory = Category::where('parent_id', $parentId)
 						->where('order', '<', $category->order)
 						->orderBy('order', 'desc')
 						->first();
-					
+
 					if ($aboveCategory) {
 						\DB::beginTransaction();
-						
+
 						// Swap orders
 						$tempOrder = $aboveCategory->order;
 						$aboveCategory->order = $category->order;
 						$category->order = $tempOrder;
-						
+
 						$aboveCategory->save();
 						$category->save();
-						
+
 						\DB::commit();
-						
+
 						// Clear cache
 						Cache::forget('all_categories');
-						
+
 						return response()->json([
 							'success' => true,
 							'message' => 'Category moved up successfully'
 						]);
 					}
-					
+
 					return response()->json([
 						'success' => false,
 						'message' => 'Category is already at the top'
 					]);
-					
+
 				} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
 					return response()->json([
 						'success' => false,
@@ -842,9 +889,9 @@ class CategoryController extends BaseController
 					if (\DB::transactionLevel() > 0) {
 						\DB::rollBack();
 					}
-					
+
 					Log::error('Error moving category up: ' . $e->getMessage());
-					
+
 					return response()->json([
 						'success' => false,
 						'message' => 'Failed to move category up',
@@ -852,7 +899,7 @@ class CategoryController extends BaseController
 					], 500);
 				}
 	        }
-		
+
 	/**
 	 * Move a category down in the order.
 	 *
@@ -891,43 +938,49 @@ class CategoryController extends BaseController
 	 */
 	public function moveDown($id): JsonResponse
 	{
+    if (!auth()->user()->can('update category')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
 		try {
 			$category = Category::findOrFail($id);
 			$parentId = $category->parent_id;
-			
+
 			// Find the category directly below this one
 			$belowCategory = Category::where('parent_id', $parentId)
 				->where('order', '>', $category->order)
 				->orderBy('order', 'asc')
 				->first();
-			
+
 			if ($belowCategory) {
 				\DB::beginTransaction();
-				
+
 				// Swap orders
 				$tempOrder = $belowCategory->order;
 				$belowCategory->order = $category->order;
 				$category->order = $tempOrder;
-				
+
 				$belowCategory->save();
 				$category->save();
-				
+
 				\DB::commit();
-				
+
 				// Clear cache
 				Cache::forget('all_categories');
-				
+
 				return response()->json([
 					'success' => true,
 					'message' => 'Category moved down successfully'
 				]);
 			}
-			
+
 			return response()->json([
 				'success' => false,
 				'message' => 'Category is already at the bottom'
 			]);
-			
+
 		} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
 			return response()->json([
 				'success' => false,
@@ -938,9 +991,9 @@ class CategoryController extends BaseController
 			if (\DB::transactionLevel() > 0) {
 				\DB::rollBack();
 			}
-			
+
 			Log::error('Error moving category down: ' . $e->getMessage());
-			
+
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to move category down',

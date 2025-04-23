@@ -57,8 +57,14 @@ class FaqController extends Controller
      */
     public function index(Request $request)
     {
+        if (!auth()->user()->can('list faq')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $query = Faq::with('category');
-    
+
         if ($request->has('search')) {
             $search = $request->input('search');
             $query->where(function ($q) use ($search) {
@@ -66,18 +72,18 @@ class FaqController extends Controller
                   ->orWhere('answer', 'LIKE', "%$search%");
             });
         }
-    
+
         if ($request->has('category_id')) {
             $query->where('category_id', $request->input('category_id'));
         }
-    
+
         if ($request->has('status')) {
             $query->where('status', $request->input('status'));
         }
-    
+
         $limit = $request->input('limit', 10);
         $faqs = $query->paginate($limit);
-    
+
         // Custom pagination response format
         $pagination = [
             'total' => $faqs->total(),
@@ -87,13 +93,13 @@ class FaqController extends Controller
             'next_page_url' => $faqs->nextPageUrl(),
             'prev_page_url' => $faqs->previousPageUrl(),
         ];
-    
+
         return response()->json([
             'data' => $faqs->items(),
             'pagination' => $pagination,
         ]);
     }
-    
+
     /**
      * @OA\Post(
      *     path="/api/faqs",
@@ -121,6 +127,12 @@ class FaqController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('add faq')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $request->validate([
             'question' => 'required|string',
             'answer' => 'required|string',
@@ -157,6 +169,12 @@ class FaqController extends Controller
      */
     public function show(Faq $faq)
     {
+        if (!auth()->user()->can('show faq')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json($faq->load('category'));
     }
 
@@ -193,6 +211,12 @@ class FaqController extends Controller
      */
     public function update(Request $request, Faq $faq)
     {
+        if (!auth()->user()->can('update faq')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $request->validate([
             'question' => 'sometimes|string',
             'answer' => 'sometimes|string',
@@ -229,6 +253,12 @@ class FaqController extends Controller
      */
     public function destroy(Faq $faq)
     {
+        if (!auth()->user()->can('delete faq')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $faq->delete();
         return response()->json(['message' => 'FAQ deleted successfully']);
     }

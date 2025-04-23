@@ -20,25 +20,32 @@ class BrandTemp2Controller extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('list brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         // Eager load brand, but only fetch 'id' and 'name' to keep it light
+        $brands = BrandTemp2::with(['brand:id,name'])->get();
         $brands = BrandTemp2::with(['brand:id,name'])
         ->orderBy('id', 'desc')
         ->get();
-    
+
         // Add brand_name and hide the full brand object
         $brands->each(function ($item) {
             $item->brand_name = $item->brand->name ?? null;
             $item->makeHidden('brand');
         });
-    
+
         return response()->json([
             'success' => true,
             'message' => __("msg_rec_list"),
             'data' => $brands
         ]);
     }
-    
-    
+
+
     /**
      * @OA\Post(
      *     path="/api/brand-temp-2",
@@ -87,22 +94,28 @@ class BrandTemp2Controller extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('add brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $data = $this->handleUploads($request);
-        
+
         // Ensure category_id is properly formatted
         if ($request->has('category_id')) {
             $data['category_id'] = $request->category_id;
         }
 
         $brand = BrandTemp2::create($data);
-        
+
         return response()->json([
             'success' => true,
             'message' => 'Brand template created successfully.',
             'data' => $brand
-        ], 201);   
+        ], 201);
     }
-    
+
     /**
      * @OA\Get(
      *     path="/api/brand-temp-2/{id}",
@@ -116,6 +129,12 @@ class BrandTemp2Controller extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->can('show brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json(BrandTemp2::findOrFail($id));
     }
 
@@ -169,6 +188,12 @@ class BrandTemp2Controller extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('update brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $brand = BrandTemp2::findOrFail($id);
         $data = $this->handleUploads($request, $brand->brand_id ?? $request->brand_id);
 
@@ -202,112 +227,118 @@ class BrandTemp2Controller extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete brand store mgmt')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         BrandTemp2::findOrFail($id)->delete();
         return response()->json(['message' => 'Deleted']);
     }
 
     private function handleUploads(Request $request, $brandId = null)
-{
-    $imageFields = [
-        'page_top_banners_desktop',
-        'page_top_banners_mobile',
-        'category_banners',
-        'page_middle_banners_desktop',
-        'page_middle_banners_mobile',
-        'website_banners_videos',
-        'website_banners_videos_mobile',
-    ];
+    {
+        $imageFields = [
+            'page_top_banners_desktop',
+            'page_top_banners_mobile',
+            'category_banners',
+            'page_middle_banners_desktop',
+            'page_middle_banners_mobile',
+            'website_banners_videos',
+            'website_banners_videos_mobile',
+        ];
 
-    // Define alt text fields corresponding to image fields
-    $altTextFields = [
-        'page_top_banners_desktop_alt_text',
-        'page_top_banners_mobile_alt_text',
-        'category_banners_alt_text',
-        'page_middle_banners_desktop_alt_text',
-        'page_middle_banners_mobile_alt_text',
-        'website_banners_videos_alt_text',
-        'website_banners_videos_mobile_alt_text',
-    ];
-    
-    // Define file name fields
-    $fileNameFields = [
-        'page_top_banners_desktop_file_name',
-        'page_top_banners_mobile_file_name',
-        'category_banners_file_name',
-        'page_middle_banners_desktop_file_name',
-        'page_middle_banners_mobile_file_name',
-        'website_banners_videos_file_name',
-        'website_banners_videos_mobile_file_name',
-    ];
+        // Define alt text fields corresponding to image fields
+        $altTextFields = [
+            'page_top_banners_desktop_alt_text',
+            'page_top_banners_mobile_alt_text',
+            'category_banners_alt_text',
+            'page_middle_banners_desktop_alt_text',
+            'page_middle_banners_mobile_alt_text',
+            'website_banners_videos_alt_text',
+            'website_banners_videos_mobile_alt_text',
+        ];
 
-    // Get all data except the image, alt text, and file name fields
-    $data = $request->except(array_merge($imageFields, $altTextFields, $fileNameFields));
+        // Define file name fields
+        $fileNameFields = [
+            'page_top_banners_desktop_file_name',
+            'page_top_banners_mobile_file_name',
+            'category_banners_file_name',
+            'page_middle_banners_desktop_file_name',
+            'page_middle_banners_mobile_file_name',
+            'website_banners_videos_file_name',
+            'website_banners_videos_mobile_file_name',
+        ];
 
-    $brandName = 'unknown';
-    if ($brandId || $request->brand_id) {
-        $brandModel = Brand::find($brandId ?? $request->brand_id);
-        if ($brandModel) {
-            $brandName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $brandModel->name);
-        }
-    }
+        // Get all data except the image, alt text, and file name fields
+        $data = $request->except(array_merge($imageFields, $altTextFields, $fileNameFields));
 
-    $baseFolder = env('STORAGE_ENV', 'local') . "/Brand/{$brandName}";
-
-    // Process each image field
-    foreach ($imageFields as $index => $field) {
-        $altTextField = $altTextFields[$index]; // Get corresponding alt text field
-        $fileNameField = $fileNameFields[$index]; // Get corresponding file name field
-        
-        if ($request->hasFile($field)) {
-            $files = [];
-            $altTexts = [];
-            $fileNames = [];
-            
-            // Get the alt text values from request
-            $altTextValues = $request->input($altTextField, []);
-            
-            // Get the file name values from request
-            $fileNameValues = $request->input($fileNameField, []);
-            
-            // Process and upload each file
-            foreach ($request->file($field) as $i => $file) {
-                // Use the provided file name if available, otherwise use original
-                $customFileName = isset($fileNameValues[$i]) && !empty($fileNameValues[$i]) 
-                    ? $fileNameValues[$i] 
-                    : $file->getClientOriginalName();
-                
-                // Get file extension from original file
-                $extension = $file->getClientOriginalExtension();
-                
-                // Make sure the custom filename has the correct extension
-                if (!str_ends_with(strtolower($customFileName), "." . strtolower($extension))) {
-                    $customFileName = $customFileName . '.' . $extension;
-                }
-                
-                // Use the custom file name for the S3 storage
-                $path = Storage::disk('s3')->putFileAs(
-                    "{$baseFolder}/{$field}", 
-                    $file, 
-                    $customFileName
-                );
-                
-                $url = Storage::disk('s3')->url($path);
-                
-                $files[] = $url;
-                $fileNames[] = $customFileName;
-                
-                // Get corresponding alt text or use empty string if not provided
-                $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
-                $altTexts[] = $altText;
+        $brandName = 'unknown';
+        if ($brandId || $request->brand_id) {
+            $brandModel = Brand::find($brandId ?? $request->brand_id);
+            if ($brandModel) {
+                $brandName = preg_replace('/[^A-Za-z0-9_\-]/', '_', $brandModel->name);
             }
-            
-            // Save files, alt texts, and file names to data array
-            $data[$field] = $files;
-            $data[$altTextField] = $altTexts;
-            $data[$fileNameField] = $fileNames;
         }
-    }
 
-    return $data;
-}
+        $baseFolder = env('STORAGE_ENV', 'local') . "/Brand/{$brandName}";
+
+        // Process each image field
+        foreach ($imageFields as $index => $field) {
+            $altTextField = $altTextFields[$index]; // Get corresponding alt text field
+            $fileNameField = $fileNameFields[$index]; // Get corresponding file name field
+
+            if ($request->hasFile($field)) {
+                $files = [];
+                $altTexts = [];
+                $fileNames = [];
+
+                // Get the alt text values from request
+                $altTextValues = $request->input($altTextField, []);
+
+                // Get the file name values from request
+                $fileNameValues = $request->input($fileNameField, []);
+
+                // Process and upload each file
+                foreach ($request->file($field) as $i => $file) {
+                    // Use the provided file name if available, otherwise use original
+                    $customFileName = isset($fileNameValues[$i]) && !empty($fileNameValues[$i])
+                        ? $fileNameValues[$i]
+                        : $file->getClientOriginalName();
+
+                    // Get file extension from original file
+                    $extension = $file->getClientOriginalExtension();
+
+                    // Make sure the custom filename has the correct extension
+                    if (!str_ends_with(strtolower($customFileName), "." . strtolower($extension))) {
+                        $customFileName = $customFileName . '.' . $extension;
+                    }
+
+                    // Use the custom file name for the S3 storage
+                    $path = Storage::disk('s3')->putFileAs(
+                        "{$baseFolder}/{$field}",
+                        $file,
+                        $customFileName
+                    );
+
+                    $url = Storage::disk('s3')->url($path);
+
+                    $files[] = $url;
+                    $fileNames[] = $customFileName;
+
+                    // Get corresponding alt text or use empty string if not provided
+                    $altText = isset($altTextValues[$i]) ? $altTextValues[$i] : '';
+                    $altTexts[] = $altText;
+                }
+
+                // Save files, alt texts, and file names to data array
+                $data[$field] = $files;
+                $data[$altTextField] = $altTexts;
+                $data[$fileNameField] = $fileNames;
+            }
+        }
+
+        return $data;
+    }
 }
