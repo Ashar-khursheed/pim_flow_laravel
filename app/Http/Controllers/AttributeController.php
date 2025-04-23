@@ -85,7 +85,6 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		dd('done');
 		$hasGroup = $request->query('has_group', $request->input('has_group'));
 
 		if ($hasGroup !== null) {
