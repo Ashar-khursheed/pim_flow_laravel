@@ -253,12 +253,12 @@ class UserController extends BaseController
 		try {
 			$validatedData['password'] = $validatedData['password'] ? Hash::make($validatedData['password']) : $user->password;
 			/* Save the user */
-			$user->syncRoles($validatedData['roles'])->update([
-				'username' => $validatedData['name'],
-				'email' => $validatedData['name'],
+			$user->syncRoles($validatedData['role'])->update([
+				'username' => $validatedData['username'],
+				'email' => $validatedData['email'],
 				'password' => $validatedData['password'],
-				'first_name' => $validatedData['name'],
-				'last_name' => $validatedData['name'],
+				'first_name' => $validatedData['first_name'],
+				'last_name' => $validatedData['last_name'],
 			]);
 
 			$role = $user->roles->first();
