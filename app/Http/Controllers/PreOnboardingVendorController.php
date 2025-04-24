@@ -56,6 +56,7 @@ class PreOnboardingVendorController extends Controller
 
 			$records = $recordsQuery->offset(($page - 1) * $length)
 			->limit($length)
+			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'contact_person', 'email', 'phone_number',
 				'country_id', 'account_number', 'category_ids', 'type',
@@ -63,7 +64,7 @@ class PreOnboardingVendorController extends Controller
 				'credit_terms', 'grade', 'product_demand_level'
 			]);
 		} else {
-			$records = $recordsQuery->get([
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
 				'id', 'name'
 			]);
 			$totalRecords = $records->count();

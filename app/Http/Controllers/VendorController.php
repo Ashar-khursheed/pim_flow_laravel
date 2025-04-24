@@ -60,12 +60,13 @@ class VendorController extends BaseController
 
 			$records = $recordsQuery->offset(($page - 1) * $length)
 			->limit($length)
+			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
 		} else {
-			$records = $recordsQuery->get([
-				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name'
 			]);
 			$totalRecords = $records->count();
 			$totalPages = 1;
