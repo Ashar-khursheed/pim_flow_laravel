@@ -12247,10 +12247,6 @@
                                         "type": "string",
                                         "example": "9876543210"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Wholesale electronics supplier."
-                                    },
                                     "website_ids": {
                                         "type": "array",
                                         "items": {
@@ -12458,10 +12454,6 @@
                                     "mobile_number": {
                                         "type": "string",
                                         "example": "9876543210"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Wholesale electronics supplier."
                                     },
                                     "website_ids": {
                                         "type": "array",
