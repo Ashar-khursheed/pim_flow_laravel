@@ -59,7 +59,7 @@ class PreOnboardingVendorController extends Controller
 			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'contact_person', 'email', 'phone_number',
-				'country_id', 'account_number', 'category_ids', 'type',
+				'country_id', 'category_ids', 'type',
 				'dropshipping', 'shipping_days', 'credit_limit',
 				'credit_terms', 'grade', 'product_demand_level'
 			]);
@@ -118,7 +118,6 @@ class PreOnboardingVendorController extends Controller
 	 *             @OA\Property(property="email", type="string", format="email", example="contact@samsung.com"),
 	 *             @OA\Property(property="phone_number", type="string", example="+1234567890"),
 	 *             @OA\Property(property="country_id", type="integer", example=1),
-	 *             @OA\Property(property="account_number", type="string", example="ACC123456"),
 
 	 *             @OA\Property(
 	 *                 property="city_ids",
@@ -160,7 +159,6 @@ class PreOnboardingVendorController extends Controller
 			'email' => 'required|email',
 			'phone_number' => 'required',
 			'country_id' => 'required|integer|exists:countries,id',
-			'account_number' => 'nullable|string|max:255',
 
 			'city_ids' => 'nullable|array',
 			'city_ids.*' => 'integer|exists:cities,id',
@@ -186,7 +184,6 @@ class PreOnboardingVendorController extends Controller
 			'email' => $validated['email'],
 			'phone_number' => $validated['phone_number'],
 			'country_id' => $validated['country_id'],
-			'account_number' => $validated['account_number'] ?? null,
 			'city_ids' => isset($validated['city_ids']) ? implode(',', $validated['city_ids']) : null,
 			'zipcode_ids' => isset($validated['zipcode_ids']) ? implode(',', $validated['zipcode_ids']) : null,
 			'category_ids' => isset($validated['category_ids']) ? implode(',', $validated['category_ids']) : null,
@@ -282,7 +279,6 @@ class PreOnboardingVendorController extends Controller
 	 *             @OA\Property(property="email", type="string", example="john@example.com"),
 	 *             @OA\Property(property="phone_number", type="string", example="+123456789"),
 	 *             @OA\Property(property="country_id", type="integer", example=1),
-	 *             @OA\Property(property="account_number", type="string", example="ACC123456"),
 	 *             @OA\Property(property="category_ids", type="array", @OA\Items(type="integer"), example={1,2,3}),
 	 *             @OA\Property(property="type", type="string", example="direct"),
 	 *             @OA\Property(
@@ -339,7 +335,6 @@ class PreOnboardingVendorController extends Controller
 			'email' => 'required|email',
 			'phone_number' => 'required',
 			'country_id' => 'required|integer|exists:countries,id',
-			'account_number' => 'nullable|string|max:255',
 
 			'city_ids' => 'nullable|array',
 			'city_ids.*' => 'integer|exists:cities,id',
@@ -365,7 +360,6 @@ class PreOnboardingVendorController extends Controller
 		$vendor->email = $validated['email'];
 		$vendor->phone_number = $validated['phone_number'];
 		$vendor->country_id = $validated['country_id'];
-		$vendor->account_number = $validated['account_number'] ?? null;
 		$vendor->category_ids = implode(',', $validated['category_ids']);
 		$vendor->type = $validated['type'];
 		$vendor->dropshipping = $validated['dropshipping'] ?? null;

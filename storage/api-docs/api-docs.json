@@ -7878,10 +7878,6 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "account_number": {
-                                        "type": "string",
-                                        "example": "ACC123456"
-                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -8047,10 +8043,6 @@
                                     "country_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "account_number": {
-                                        "type": "string",
-                                        "example": "ACC123456"
                                     },
                                     "category_ids": {
                                         "type": "array",
