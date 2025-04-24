@@ -18,11 +18,10 @@ return new class extends Migration
 			$table->string('email')->index();
 			$table->string('phone_number');
 			$table->integer('country_id')->index();
-			$table->string('account_number')->nullable();
 			$table->text('city_ids')->nullable();
 			$table->text('zipcode_ids')->nullable();
 			$table->text('category_ids')->nullable();
-			$table->enum('type', ['direct', 'indirect'])->default('indirect');
+			$table->enum('type', ['direct', 'indirect'])->nullable();
 			$table->boolean('dropshipping')->default(0);
 			$table->string('shipping_days')->nullable();
 			$table->string('credit_limit')->nullable();

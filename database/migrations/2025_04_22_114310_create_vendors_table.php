@@ -26,8 +26,8 @@ return new class extends Migration
 			$table->text('zipcode_ids')->nullable();
 			$table->boolean('dropshipping')->default(0);
 			$table->string('website_link')->nullable();
-			$table->enum('domain', ['Horeca', 'Rapid Supplies'])->default('Horeca');
-			$table->enum('type', ['direct', 'indirect'])->default('indirect');
+			$table->enum('domain', ['Horeca', 'Rapid Supplies'])->nullable();
+			$table->enum('type', ['direct', 'indirect'])->nullable();
 			$table->text('warehouse_locations')->nullable();
 			$table->string('credit_limit')->nullable();
 			$table->string('net_terms')->nullable();
