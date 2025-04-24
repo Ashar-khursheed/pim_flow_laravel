@@ -478,9 +478,9 @@ class VendorController extends BaseController
 			'net_terms' => 'nullable|string',
 			'business_licence_number' => 'nullable|string',
 
-			'logo' => 'nullable|file|mimes:webp,png',
-			'tax_certificate' => 'nullable|file|mimes:pdf',
-			'business_licence' => 'nullable|file|mimes:pdf',
+			// 'logo' => 'nullable|file|mimes:webp,png',
+			// 'tax_certificate' => 'nullable|file|mimes:pdf',
+			// 'business_licence' => 'nullable|file|mimes:pdf',
 		]);
 
 		$data = $validated;
