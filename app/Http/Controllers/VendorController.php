@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
 use App\Models\Vendor;
 use App\Models\Country;
 use App\Models\City;
 use App\Models\Zipcode;
 use App\Models\Website;
 use App\Models\PreOnboardingVendor;
+use App\Models\TransactionLog;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+use App\Jobs\ImportVendorJob;
 
 class VendorController extends BaseController
 {
@@ -60,12 +65,13 @@ class VendorController extends BaseController
 
 			$records = $recordsQuery->offset(($page - 1) * $length)
 			->limit($length)
+			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
 		} else {
-			$records = $recordsQuery->get([
-				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name'
 			]);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -112,7 +118,6 @@ class VendorController extends BaseController
 	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
 	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
-	 *                 @OA\Property(property="description", type="string", example="Wholesale electronics supplier."),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -168,7 +173,6 @@ class VendorController extends BaseController
 			'contact_person' => 'required|string',
 			'landline_number' => 'nullable|string',
 			'mobile_number' => 'nullable|string',
-			'description' => 'nullable|string',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -392,7 +396,6 @@ class VendorController extends BaseController
 	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
 	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
-	 *                 @OA\Property(property="description", type="string", example="Wholesale electronics supplier."),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -460,7 +463,6 @@ class VendorController extends BaseController
 			'contact_person' => 'required|string',
 			'landline_number' => 'nullable|string',
 			'mobile_number' => 'nullable|string',
-			'description' => 'nullable|string',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -554,5 +556,181 @@ class VendorController extends BaseController
 			'success' => true,
 			'message' => __("msg_dlt")
 		], 200);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/vendors/import",
+	 *     summary="Import vendors from an Excel file",
+	 *     tags={"Vendors"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"upload_file"},
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function import(Request $request)
+	{
+		try {
+			/* Validate request data */
+			$request->validate([
+				'upload_file' => 'required|file|mimes:csv,txt|max:5120',
+			]);
+
+			$file = $request->file('upload_file');
+
+			$vendorFileFormatArray = [
+				'Id' => 'id',
+				'Name' => 'name',
+				'Country' => 'country',
+				'Email' => 'email',
+				'Contact Person' => 'contact_person',
+				'Landline Number' => 'landline_number',
+				'Mobile Number' => 'mobile_number',
+				'Cities(Separated By |)' => 'cities',
+				'Dropshipping' => 'dropshipping',
+				'Website Link' => 'website_link',
+				'Domain' => 'domain',
+				'Type' => 'type',
+				'Credit Limit' => 'credit_limit',
+				'Net Terms' => 'net_terms',
+				'Logo URL' => 'logo_url',
+				'Tax Certificate URL' => 'tax_certificate_url',
+				'Business Licence Number' => 'business_licence_number',
+				'Business Licence URL' => 'business_licence_url'
+			];
+
+			$requiredRowCount = count($vendorFileFormatArray);
+			$requiredHeaderArray = array_keys($vendorFileFormatArray);
+
+			$data = [];
+			/* Open the CSV file and read its content */
+			if (($handle = fopen($file, "r")) !== false) {
+				/* Read the header */
+				if (($header = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
+					$header = array_map('trim', $header);
+
+					if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
+						$columns = implode(', ', array_values($missingColumns));
+						$missingCount = count($missingColumns);
+						fclose($handle);
+						return response()->json([
+							'success' => false,
+							'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
+						]);
+					}
+				}
+
+				/* Continue reading and processing rows */
+				$rowIndex = 2;
+				while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
+					/* Fix unquoted fields and escape special characters */
+					$row = array_map(function ($value) {
+						/* Add quotes around multiline fields */
+						if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
+							$value = '"' . str_replace('"', '""', $value) . '"';
+						}
+
+						/* Check if the value is UTF-8 encoded */
+						if (!mb_check_encoding($value, 'UTF-8')) {
+							/* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
+							$value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
+						}
+
+						/* Remove invalid characters and trim spaces */
+						$value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
+						return trim($value);
+					}, $row);
+
+					/* Skip blank rows */
+					if (array_filter($row)) {
+						if (count($row) != $requiredRowCount) {
+							$message = "The data in row $rowIndex is not compatible for import.";
+
+							return response()->json([
+								'success' => false,
+								'message' => $message
+							]);
+						}
+						$data[] = $row;
+					}
+					$rowIndex++;
+				}
+				fclose($handle);
+			}
+
+			/* Get the total record count */
+			$totalRecords = count($data);
+			if ($totalRecords == 0) {
+				return response()->json([
+					'success' => false,
+					'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
+				]);
+			}
+
+			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+			$chunkSize = 100;
+			$chunks = array_chunk($data, $chunkSize);
+
+			/* Start import process */
+			$batch = Bus::batch([])
+			->before(function (Batch $batch) use ($totalRecords) {
+				$descArray = [
+					"Total Count" => $totalRecords,
+					"Success Count" => 0,
+					"Failed Count" => 0,
+					"Errors" => []
+				];
+				/* Save transaction log */
+				$log = new TransactionLog();
+				$log->module = "Vendor";
+				$log->action = "Import";
+				$log->identifier = $batch->id;
+				$log->status = 'In-progress';
+				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+				$log->created_by = auth()->id() ?? null;
+				$log->created_at = now();
+				$log->save();
+			})
+			->finally(function (Batch $batch) {
+				$log = TransactionLog::where('identifier', $batch->id)->first();
+				TransactionLog::where('id', $log->id)->update([
+					'status' => 'Completed',
+				]);
+			})
+			->name("Vendor Import")
+			->dispatch();
+
+			/* Add jobs to the batch for processing chunks */
+			foreach ($chunks as $chunk) {
+				$data = [
+					'vendorFileFormatArray' => $vendorFileFormatArray,
+					'header' => $header,
+					'chunk' => $chunk,
+					'userId' => auth()->id()
+				];
+
+				$batch->options['queue'] = 'JOB4';
+				$batch->add(new ImportVendorJob($data));
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+			]);
+		} catch(\Exception $exception) {
+			return response()->json([
+				'success' => false,
+				'message' => $exception->getMessage()
+			]);
+		}
 	}
 }
