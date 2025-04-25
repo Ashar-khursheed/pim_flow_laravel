@@ -167,7 +167,7 @@ class VendorController extends BaseController
 	{
 		$this->preprocessVendorRequest($request);
 		$validated = $request->validate([
-			'name' => 'required|string',
+			'name' => 'required|string|unique:vendors,name',
 			'country_id' => 'required|integer|exists:countries,id',
 			'email' => 'required|email|unique:vendors,email',
 			'contact_person' => 'required|string',
@@ -457,7 +457,7 @@ class VendorController extends BaseController
 		$this->preprocessVendorRequest($request);
 
 		$validated = $request->validate([
-			'name' => 'required|string',
+			'name' => 'required|string|unique:vendors,name,' . $id,
 			'country_id' => 'required|integer|exists:countries,id',
 			'email' => 'required|email|unique:vendors,email,' . $id,
 			'contact_person' => 'required|string',
