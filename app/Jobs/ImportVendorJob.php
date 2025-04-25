@@ -43,6 +43,8 @@ class ImportVendorJob implements ShouldQueue
 	{
 		$countryIDNames = Country::pluck('name', 'id')->all();
 		$cityIDNames = City::pluck('name', 'id')->all();
+		$vendorNames = Vendor::pluck('name')->all();
+		$vendorEmails = Vendor::pluck('email')->all();
 
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
 		$descArray = json_decode($log->description, true) ?? ["Errors" => ''];
@@ -97,6 +99,20 @@ class ImportVendorJob implements ShouldQueue
 				];
 				$failed++;
 				continue;
+			}
+
+			if (!empty($name)) {
+				$name = trim($name);
+				if (in_array($name, $vendorNames)) {
+					$rowError[] = "Vendor name \"$name\" already exists.";
+				}
+			}
+
+			if (!empty($email)) {
+				$email = trim($email);
+				if (in_array($email, $vendorEmails)) {
+					$rowError[] = "Vendor email \"$email\" already exists.";
+				}
 			}
 
 			if (!empty($country)) {
@@ -233,6 +249,9 @@ class ImportVendorJob implements ShouldQueue
 				$vendor->created_at = now();
 				$vendor->updated_at = now();
 				$vendor->save();
+
+				$vendorNames[] = $vendor->name;
+				$vendorEmails[] = $vendor->email;
 
 				$success++;
 			} catch (\Exception $e) {
