@@ -43,6 +43,7 @@ use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
 use App\Http\Controllers\SupplierScoreController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\DashboardController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -212,6 +213,9 @@ Route::middleware(['auth:api'])->group(function () {
 
 
 	 Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
+
+	 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+
 
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
