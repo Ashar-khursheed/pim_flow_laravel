@@ -20,7 +20,6 @@ return new class extends Migration
 			$table->string('contact_person')->index();
 			$table->string('landline_number')->nullable();
 			$table->string('mobile_number')->nullable();
-			$table->longText('description')->nullable();
 			$table->text('website_ids')->nullable();
 			$table->text('city_ids')->nullable();
 			$table->text('zipcode_ids')->nullable();

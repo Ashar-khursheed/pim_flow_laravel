@@ -790,9 +790,6 @@ public function show($relation_id)
 		}
 	}
 
-
-
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/seo-management/export",
