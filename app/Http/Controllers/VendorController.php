@@ -118,7 +118,6 @@ class VendorController extends BaseController
 	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
 	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
-	 *                 @OA\Property(property="description", type="string", example="Wholesale electronics supplier."),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -174,7 +173,6 @@ class VendorController extends BaseController
 			'contact_person' => 'required|string',
 			'landline_number' => 'nullable|string',
 			'mobile_number' => 'nullable|string',
-			'description' => 'nullable|string',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -398,7 +396,6 @@ class VendorController extends BaseController
 	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
 	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
-	 *                 @OA\Property(property="description", type="string", example="Wholesale electronics supplier."),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -466,7 +463,6 @@ class VendorController extends BaseController
 			'contact_person' => 'required|string',
 			'landline_number' => 'nullable|string',
 			'mobile_number' => 'nullable|string',
-			'description' => 'nullable|string',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
