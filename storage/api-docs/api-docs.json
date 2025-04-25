@@ -7884,10 +7884,6 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "account_number": {
-                                        "type": "string",
-                                        "example": "ACC123456"
-                                    },
                                     "city_ids": {
                                         "type": "array",
                                         "items": {
@@ -8053,10 +8049,6 @@
                                     "country_id": {
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "account_number": {
-                                        "type": "string",
-                                        "example": "ACC123456"
                                     },
                                     "category_ids": {
                                         "type": "array",
@@ -12529,10 +12521,6 @@
                                         "type": "string",
                                         "example": "9876543210"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Wholesale electronics supplier."
-                                    },
                                     "website_ids": {
                                         "type": "array",
                                         "items": {
@@ -12741,10 +12729,6 @@
                                         "type": "string",
                                         "example": "9876543210"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Wholesale electronics supplier."
-                                    },
                                     "website_ids": {
                                         "type": "array",
                                         "items": {
@@ -12879,6 +12863,48 @@
                         }
                     }
                 ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/import": {
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Import vendors from an Excel file",
+                "operationId": "588a3a46a9a21058de6f0bf0ffc724d3",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "CSV file (.csv) max 5MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Success",
