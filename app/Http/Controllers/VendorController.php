@@ -592,6 +592,7 @@ class VendorController extends BaseController
 			$file = $request->file('upload_file');
 
 			$vendorFileFormatArray = [
+				'Id' => 'id',
 				'Name' => 'name',
 				'Country' => 'country',
 				'Email' => 'email',
@@ -612,11 +613,28 @@ class VendorController extends BaseController
 			];
 
 			$requiredRowCount = count($vendorFileFormatArray);
+			$requiredHeaderArray = array_keys($vendorFileFormatArray);
 
 			$data = [];
 			/* Open the CSV file and read its content */
-			$rowIndex = 1;
 			if (($handle = fopen($file, "r")) !== false) {
+				/* Read the header */
+				if (($header = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
+					$header = array_map('trim', $header);
+
+					if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
+						$columns = implode(', ', array_values($missingColumns));
+						$missingCount = count($missingColumns);
+						fclose($handle);
+						return response()->json([
+							'success' => false,
+							'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
+						]);
+					}
+				}
+
+				/* Continue reading and processing rows */
+				$rowIndex = 2;
 				while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
 					/* Fix unquoted fields and escape special characters */
 					$row = array_map(function ($value) {
@@ -641,8 +659,10 @@ class VendorController extends BaseController
 						if (count($row) != $requiredRowCount) {
 							$message = "The data in row $rowIndex is not compatible for import.";
 
-							session()->put('error', $message);
-							return back();
+							return response()->json([
+								'success' => false,
+								'message' => $message
+							]);
 						}
 						$data[] = $row;
 					}
@@ -651,25 +671,11 @@ class VendorController extends BaseController
 				fclose($handle);
 			}
 
-			/* Remove the header row */
-			$header = array_shift($data);
-
-			$requiredHeaderArray = array_keys($vendorFileFormatArray);
-
-			if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
-				$columns = implode(', ', array_values($missingColumns));
-				$missingCount = count($missingColumns);
-				return response()->json([
-					'success' => true,
-					'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
-				]);
-			}
-
 			/* Get the total record count */
 			$totalRecords = count($data);
 			if ($totalRecords == 0) {
 				return response()->json([
-					'success' => true,
+					'success' => false,
 					'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
 				]);
 			}

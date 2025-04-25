@@ -12,6 +12,8 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Http;
 
 use App\Models\TransactionLog;
 use App\Models\Country;
@@ -97,8 +99,6 @@ class ImportVendorJob implements ShouldQueue
 				continue;
 			}
 
-
-
 			if (!empty($country)) {
 				$country = trim($country);
 				$matchedID = array_search($country, $countryIDNames);
@@ -167,7 +167,7 @@ class ImportVendorJob implements ShouldQueue
 								$rowError[] = "Only PNG or WEBP files are allowed for {$fieldName}. Provided file: '{$fieldValue}'";
 								continue;
 							}
-							$uploadedUrl = $this->uploadImageFromURL($fieldValue, 'logo', env('STORAGE_ENV') . '/vendors/logos');
+							$uploadedUrl = $this->uploadImageFromURL($fieldValue, env('STORAGE_ENV') . '/vendors/logos');
 
 						} else if ($fieldName === 'Tax Certificate URL' || $fieldName === 'Business Licence URL') {
 							if ($fileExtension !== 'pdf') {
@@ -177,9 +177,9 @@ class ImportVendorJob implements ShouldQueue
 
 							$folder = ($fieldName === 'Tax Certificate URL') ? '/vendors/tax_certificates' : '/vendors/business_licences';
 
-							$type = ($fieldName === 'Tax Certificate URL') ? 'tax_certificate' : 'business_licence';
+							$pdfType = ($fieldName === 'Tax Certificate URL') ? 'tax_certificate' : 'business_licence';
 
-							$uploadedUrl = $this->uploadPdfFromURL($fieldValue, $type, env('STORAGE_ENV') . $folder);
+							$uploadedUrl = $this->uploadPdfFromURL($fieldValue, $pdfType, env('STORAGE_ENV') . $folder);
 						}
 
 						/* Assign back to the original variable */
@@ -211,6 +211,7 @@ class ImportVendorJob implements ShouldQueue
 				/*************/
 				DB::commit();
 
+				$vendor = new Vendor();
 				$vendor->name = $name;
 				$vendor->country_id = $country_id;
 				$vendor->email = $email;
@@ -277,6 +278,16 @@ class ImportVendorJob implements ShouldQueue
 			return null;
 		}
 
+		$fileNameWithQuery = basename(parse_url($url, PHP_URL_PATH));
+		$fileName = preg_replace('/\?.*/', '', $fileNameWithQuery);
+		$fileBaseName = pathinfo($fileName, PATHINFO_FILENAME);
+		$fileExtension = 'webp'; // Convert all to WebP
+
+		if (empty($fileBaseName)) {
+			Log::error('Invalid file name extracted from URL: ' . $url);
+			return null;
+		}
+
 		$fileExtension = 'webp';
 		$imageUrl = '';
 
@@ -301,7 +312,7 @@ class ImportVendorJob implements ShouldQueue
 			$s3Disk->put($originalPath, $originalData);
 			$imageUrl = $s3Disk->url($originalPath);
 			imagedestroy($image);
-			Log::info('Uploaded Images: ' . $imageUrl);
+
 			return $imageUrl;
 		} catch (\Exception $e) {
 			Log::error('S3 Upload Error: ' . $e->getMessage());
@@ -309,7 +320,7 @@ class ImportVendorJob implements ShouldQueue
 		}
 	}
 
-	private function uploadPdfFromURL($fileUrl, $type, $pathPrefix)
+	private function uploadPdfFromURL($fileUrl, $pdfType, $pathPrefix)
 	{
 		/* Validate the file URL */
 		if (!filter_var($fileUrl, FILTER_VALIDATE_URL)) {
@@ -332,7 +343,7 @@ class ImportVendorJob implements ShouldQueue
 		}
 
 		/* Generate a unique file name */
-		$fileName = "{$pathPrefix}/{$type}_" . time() . ".pdf";
+		$fileName = "{$pathPrefix}/{$pdfType}_" . time() . ".pdf";
 
 		/* Upload to S3 */
 		Storage::disk('s3')->put($fileName, $response->body());

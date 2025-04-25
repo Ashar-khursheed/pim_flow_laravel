@@ -84,6 +84,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
+	Route::post('/vendors/import', [VendorController::class, 'import']);
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 	Route::get('/countries', [LocationController::class, 'getCountryList']);
