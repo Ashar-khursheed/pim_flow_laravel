@@ -164,48 +164,48 @@ class ImportVendorJob implements ShouldQueue
 				$type = ($type == 1) ? 'direct' : 'indirect';
 			}
 
+			if (!$rowError) {
+				$fileFields = [
+					'Logo URL' => $logo_url,
+					'Tax Certificate URL' => $tax_certificate_url,
+					'Business Licence URL' => $business_licence_url
+				];
+				foreach ($fileFields as $fieldName => $fieldValue) {
+					if (!empty($fieldValue) && Str::startsWith($fieldValue, ['http://', 'https://'])) {
+						/* Skip if already on HorecaStore S3 */
+						if (!Str::startsWith($fieldValue, env('AWS_URL'))) {
+							$uploadedUrl = null;
+							$fileExtension = strtolower(pathinfo(parse_url($fieldValue, PHP_URL_PATH), PATHINFO_EXTENSION));
 
-			$fileFields = [
-				'Logo URL' => $logo_url,
-				'Tax Certificate URL' => $tax_certificate_url,
-				'Business Licence URL' => $business_licence_url
-			];
-
-			foreach ($fileFields as $fieldName => $fieldValue) {
-				if (!empty($fieldValue) && Str::startsWith($fieldValue, ['http://', 'https://'])) {
-					/* Skip if already on HorecaStore S3 */
-					if (!Str::startsWith($fieldValue, env('AWS_URL'))) {
-						$uploadedUrl = null;
-						$fileExtension = strtolower(pathinfo(parse_url($fieldValue, PHP_URL_PATH), PATHINFO_EXTENSION));
-
-						if ($fieldName === 'Logo URL') {
-							if (!in_array($fileExtension, ['png', 'webp'])) {
-								$rowError[] = "Only PNG or WEBP files are allowed for {$fieldName}. Provided file: '{$fieldValue}'";
-								continue;
-							}
-							$uploadedUrl = $this->uploadImageFromURL($fieldValue, env('STORAGE_ENV') . '/vendors/logos');
-
-						} else if ($fieldName === 'Tax Certificate URL' || $fieldName === 'Business Licence URL') {
-							if ($fileExtension !== 'pdf') {
-								$rowError[] = "Only PDF files are allowed for {$fieldName}. Provided file: '{$fieldValue}'";
-								continue;
-							}
-
-							$folder = ($fieldName === 'Tax Certificate URL') ? '/vendors/tax_certificates' : '/vendors/business_licences';
-
-							$pdfType = ($fieldName === 'Tax Certificate URL') ? 'tax_certificate' : 'business_licence';
-
-							$uploadedUrl = $this->uploadPdfFromURL($fieldValue, $pdfType, env('STORAGE_ENV') . $folder);
-						}
-
-						/* Assign back to the original variable */
-						if (!empty($uploadedUrl)) {
 							if ($fieldName === 'Logo URL') {
-								$logo_url = $uploadedUrl;
-							} else if ($fieldName === 'Tax Certificate URL') {
-								$tax_certificate_url = $uploadedUrl;
-							} else if ($fieldName === 'Business Licence URL') {
-								$business_licence_url = $uploadedUrl;
+								if (!in_array($fileExtension, ['png', 'webp'])) {
+									$rowError[] = "Only PNG or WEBP files are allowed for {$fieldName}. Provided file: '{$fieldValue}'";
+									continue;
+								}
+								$uploadedUrl = $this->uploadImageFromURL($fieldValue, env('STORAGE_ENV') . '/vendors/logos');
+
+							} else if ($fieldName === 'Tax Certificate URL' || $fieldName === 'Business Licence URL') {
+								if ($fileExtension !== 'pdf') {
+									$rowError[] = "Only PDF files are allowed for {$fieldName}. Provided file: '{$fieldValue}'";
+									continue;
+								}
+
+								$folder = ($fieldName === 'Tax Certificate URL') ? '/vendors/tax_certificates' : '/vendors/business_licences';
+
+								$pdfType = ($fieldName === 'Tax Certificate URL') ? 'tax_certificate' : 'business_licence';
+
+								$uploadedUrl = $this->uploadPdfFromURL($fieldValue, $pdfType, env('STORAGE_ENV') . $folder);
+							}
+
+							/* Assign back to the original variable */
+							if (!empty($uploadedUrl)) {
+								if ($fieldName === 'Logo URL') {
+									$logo_url = $uploadedUrl;
+								} else if ($fieldName === 'Tax Certificate URL') {
+									$tax_certificate_url = $uploadedUrl;
+								} else if ($fieldName === 'Business Licence URL') {
+									$business_licence_url = $uploadedUrl;
+								}
 							}
 						}
 					}
