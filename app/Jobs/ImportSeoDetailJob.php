@@ -77,7 +77,8 @@ class ImportSeoDetailJob implements ShouldQueue
 			}
 
 			// Required data validation
-			if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($url) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume) || empty($title_tag) || empty($meta_title) || empty($meta_description)) {
+			// if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($url) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume) || empty($title_tag) || empty($meta_title) || empty($meta_description)) {
+			if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume)) {
 				$rowError[] = 'Required fields are missing.';
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
@@ -136,7 +137,7 @@ class ImportSeoDetailJob implements ShouldQueue
 				}
 				$relational_id = $exist->id;
 			} catch (ModelNotFoundException $e) {
-				$rowError[] = "{$relational_type} does not exist for the given relational identifier.";
+				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier.";
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
@@ -186,6 +187,7 @@ class ImportSeoDetailJob implements ShouldQueue
 
 			$groupedPrimary[$primaryKey]['primary'] = [
 				'relational_id' => $relational_id,
+				'relational_name' => $relational_name,
 				'relational_type' => $relational_type,
 				'url' => $url,
 				'primary_keyword' => $primary_keyword,
@@ -194,15 +196,13 @@ class ImportSeoDetailJob implements ShouldQueue
 				'meta_title' => $meta_title,
 				'meta_description' => $meta_description,
 				'internal_links' => $internal_links ?? null,
-				'indexing' => $indexing ?? 0,
+				'indexing' => empty($indexing) ? 0 : $indexing,
 				'og_title' => $og_title ?? null,
 				'og_description' => $og_description ?? null,
 				'og_image_url' => $og_image_url ?? null,
 				'og_image_alt_text' => $og_image_alt_text ?? null,
 				'og_image_name' => $og_image_name ?? null,
 				'tags' => $tags ?? null,
-				'created_at' => now(),
-				'updated_at' => now(),
 				'created_by' => $this->userId,
 				'schema_rating' => $schema_rating,
 				'schema_reviews_count' => $schema_reviews_count
@@ -221,6 +221,17 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
+
+				$pythonScriptPath = base_path('app/Script/main.py');
+				$inputJson = json_encode($primaryData);
+				$command = "echo {$inputJson} | python \"{$pythonScriptPath}\"";
+				$outputJson = shell_exec($command);
+				$primaryData = json_decode($outputJson, true);
+				unset($primaryData['relational_name']);
+
+				$primaryData['created_at'] = now();
+				$primaryData['updated_at'] = now();
+
 
 				// Create/update the SEO record first
 				$seo = SeoManagement::updateOrCreate(
