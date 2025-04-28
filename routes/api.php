@@ -132,6 +132,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
+	Route::get('permissions', [RoleController::class, 'getAllPermissions']);
 	Route::apiResource('roles', RoleController::class);
 
 

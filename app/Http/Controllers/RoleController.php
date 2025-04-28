@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\Role;
+use App\Models\Permission;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -305,5 +306,67 @@ class RoleController extends BaseController
 			'success' => true,
 			'message' => __("msg_dlt")
 		], 200);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/permissions",
+	 *     summary="Get list of permissions",
+	 *     tags={"Roles and Permissions"},
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination. Starts from 1.",
+	 *         example=1,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="length",
+	 *         in="query",
+	 *         description="Number of records per page.",
+	 *         example=20,
+	 *         @OA\Schema(
+	 *             type="integer",
+	 *             minimum=1
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function getAllPermissions(Request $request)
+	{
+		if (!auth()->user()->can('list permission')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+
+		$records = Permission::query();
+
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
+
+			$records = $records->offset(($page - 1) * $length)->limit($length)->orderBy('id', 'asc')->get();
+		} else {
+			$records = $records->orderBy('id', 'asc')->get(['id', 'name']);
+			$totalRecords = $records->count();
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_list"),
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
+		]);
 	}
 }
