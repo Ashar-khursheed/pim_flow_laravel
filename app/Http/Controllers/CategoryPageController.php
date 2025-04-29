@@ -45,15 +45,21 @@ class CategoryPageController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('list category page')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $pages = CategoryPage::all();
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Pages retrieved successfully.',
             'categories' => $pages
         ]);
     }
-    
+
 
     /**
      * @OA\Get(
@@ -75,6 +81,12 @@ class CategoryPageController extends Controller
      */
     public function show(Category $category)
     {
+        if (!auth()->user()->can('show category page')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $page = CategoryPage::where('category_id', $category->id)->first();
         if (!$page) {
             return response()->json(['message' => 'Category page not found'], 404);
@@ -120,7 +132,7 @@ class CategoryPageController extends Controller
  *             )
  *         )
  *     ),
- *     security={{"bearerAuth":{}}}, 
+ *     security={{"bearerAuth":{}}},
  *     @OA\Response(response=201, description="Category page created/updated successfully"),
  *     @OA\Response(response=404, description="Category not found"),
  *     @OA\Response(response=400, description="Validation error"),
@@ -129,21 +141,27 @@ class CategoryPageController extends Controller
  */
 public function store(Request $request)
 {
+    if (!auth()->user()->can('add category page')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
     try {
         // Validate input
         $request->validate([
             'category_id' => 'required|exists:ec_product_categories,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,,svg|max:2048',
             'banner_image_alt' => 'nullable|string|max:255',
             'banner_link' => 'nullable|string|url',
             'inner_categories' => 'nullable|string',
-            'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'six_images_alt.*' => 'nullable|string|max:255',
-            'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'four_banners_alt.*' => 'nullable|string|max:255',
-            'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'twelve_images_alt.*' => 'nullable|string|max:255',
             'related_products' => 'nullable|string',
             'section_title' => 'nullable|string|max:255',
@@ -157,7 +175,7 @@ public function store(Request $request)
             'products_you_may_also_like' => 'nullable|string',
             'inspired_by_your_browsing_history' => 'nullable|string',
         ]);
-        
+
         $disk = 's3'; // Use S3 disk for storage
         $category = \DB::table('ec_product_categories')->where('id', $request->category_id)->first();
         if (!$category) {
@@ -186,12 +204,12 @@ public function store(Request $request)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/six", $disk));
                 $sixImages[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key]) 
-                    ? $request->six_images_alt[$key] 
+                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key])
+                    ? $request->six_images_alt[$key]
                     : null;
             }
         }
-        
+
         // Process four banners with their corresponding alt texts
         $fourBanners = [];
         $fourBannersAlt = [];
@@ -200,12 +218,12 @@ public function store(Request $request)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/four", $disk));
                 $fourBanners[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key]) 
-                    ? $request->four_banners_alt[$key] 
+                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key])
+                    ? $request->four_banners_alt[$key]
                     : null;
             }
         }
-        
+
         // Process twelve images with their corresponding alt texts
         $twelveImages = [];
         $twelveImagesAlt = [];
@@ -214,12 +232,12 @@ public function store(Request $request)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
                 $twelveImages[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key]) 
-                    ? $request->twelve_images_alt[$key] 
+                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key])
+                    ? $request->twelve_images_alt[$key]
                     : null;
             }
         }
-        
+
         $page = CategoryPage::updateOrCreate(
             ['category_id' => $request->category_id],
             [
@@ -270,11 +288,11 @@ public function store(Request $request)
                 'related_products' => $page->related_products,
                 'section_title' => $page->section_title,
                 'section_description' => $page->section_description,
-                
+
                 // Rename here
                 'brand_heading' => $page->extra_heading,
                 'brand_description' => $page->extra_description,
-                
+
                 'top_picks_in_santos' => $page->top_picks_in_santos,
                 'top_deals_from_our_sellers' => $page->top_deals_from_our_sellers,
                 'explore_top_picks' => $page->explore_top_picks,
@@ -283,7 +301,7 @@ public function store(Request $request)
                 'inspired_by_your_browsing_history' => $page->inspired_by_your_browsing_history,
             ]
         ], 201);
-           
+
     } catch (\Exception $e) {
         // Return detailed error in development
         if (env('APP_DEBUG', false)) {
@@ -293,7 +311,7 @@ public function store(Request $request)
                 'trace' => $e->getTraceAsString()
             ], 500);
         }
-        
+
         // Generic error in production
         return response()->json([
             'message' => 'An error occurred while creating the category page'
@@ -346,7 +364,7 @@ public function store(Request $request)
  *             )
  *         )
  *     ),
- *     security={{"bearerAuth":{}}}, 
+ *     security={{"bearerAuth":{}}},
  *     @OA\Response(response=200, description="Category page updated successfully"),
  *     @OA\Response(response=404, description="Category page not found"),
  *     @OA\Response(response=400, description="Validation error"),
@@ -355,21 +373,27 @@ public function store(Request $request)
  */
 public function update(Request $request, $id)
 {
+    if (!auth()->user()->can('update category page')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
     try {
         // Validate input
         $request->validate([
             'category_id' => 'required|exists:ec_product_categories,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'banner_image_alt' => 'nullable|string|max:255',
             'banner_link' => 'nullable|string|url',
             'inner_categories' => 'nullable|string',
-            'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'six_images_alt.*' => 'nullable|string|max:255',
-            'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'four_banners_alt.*' => 'nullable|string|max:255',
-            'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
             'twelve_images_alt.*' => 'nullable|string|max:255',
             'related_products' => 'nullable|string',
             'section_title' => 'nullable|string|max:255',
@@ -415,8 +439,8 @@ public function update(Request $request, $id)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/six", $disk));
                 $sixImages[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key]) 
-                    ? $request->six_images_alt[$key] 
+                $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key])
+                    ? $request->six_images_alt[$key]
                     : null;
             }
         } else if ($request->has('six_images_alt')) {
@@ -438,8 +462,8 @@ public function update(Request $request, $id)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/four", $disk));
                 $fourBanners[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key]) 
-                    ? $request->four_banners_alt[$key] 
+                $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key])
+                    ? $request->four_banners_alt[$key]
                     : null;
             }
         } else if ($request->has('four_banners_alt')) {
@@ -461,8 +485,8 @@ public function update(Request $request, $id)
                 $imageUrl = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
                 $twelveImages[] = $imageUrl;
                 // Store the corresponding alt text if available
-                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key]) 
-                    ? $request->twelve_images_alt[$key] 
+                $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key])
+                    ? $request->twelve_images_alt[$key]
                     : null;
             }
         } else if ($request->has('twelve_images_alt')) {
@@ -553,7 +577,7 @@ public function update(Request $request, $id)
      *     path="/api/category-pages/{category_id}",
      *     tags={"Category Pages"},
      *     summary="Delete a category page",
-     *     security={{"bearerAuth":{}}},        
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="category_id",
      *         in="path",
@@ -567,6 +591,12 @@ public function update(Request $request, $id)
      */
     public function destroy(Category $category)
     {
+        if (!auth()->user()->can('delete category page')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $page = CategoryPage::where('category_id', $category->id)->first();
         if (!$page) {
             return response()->json(['message' => 'Category page not found'], 404);
