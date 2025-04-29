@@ -30,7 +30,7 @@ class ProductController extends BaseController
  * @OA\Get(
  *     path="/api/products",
  *     summary="Get paginated list of products",
- *     description="Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
+ *     description="Retrieves a paginated list of products with brand, store, categories, and slug details. Supports separate search filters for product name, SKU, brand, store, and categories.",
  *     tags={"Products"},
  *     @OA\Parameter(
  *         name="page",
@@ -47,9 +47,44 @@ class ProductController extends BaseController
  *         @OA\Schema(type="integer", example=50)
  *     ),
  *     @OA\Parameter(
+ *         name="search_name",
+ *         in="query",
+ *         description="Search term for filtering products by name",
+ *         required=false,
+ *         @OA\Schema(type="string", example="Galaxy")
+ *     ),
+ *     @OA\Parameter(
+ *         name="search_sku",
+ *         in="query",
+ *         description="Search term for filtering products by SKU",
+ *         required=false,
+ *         @OA\Schema(type="string", example="SM-G")
+ *     ),
+ *     @OA\Parameter(
+ *         name="search_brand",
+ *         in="query",
+ *         description="Search term for filtering products by brand name",
+ *         required=false,
+ *         @OA\Schema(type="string", example="Samsung")
+ *     ),
+ *     @OA\Parameter(
+ *         name="search_store",
+ *         in="query",
+ *         description="Search term for filtering products by store name",
+ *         required=false,
+ *         @OA\Schema(type="string", example="Electronics")
+ *     ),
+ *     @OA\Parameter(
+ *         name="search_category",
+ *         in="query",
+ *         description="Search term for filtering products by category name",
+ *         required=false,
+ *         @OA\Schema(type="string", example="Smartphones")
+ *     ),
+ *     @OA\Parameter(
  *         name="search",
  *         in="query",
- *         description="Search term for filtering products by name, SKU, brand, store, or category",
+ *         description="Global search term for filtering products across all fields",
  *         required=false,
  *         @OA\Schema(type="string", example="samsung")
  *     ),
@@ -93,61 +128,19 @@ class ProductController extends BaseController
  *     security={{"bearerAuth":{}}}
  * )
  */
-	// public function index(Request $request)
-	// {
-	// 	$perPage = $request->input('per_page', 50);
 
-	// 	$products = Product::with([
-	// 		'brand:id,name',
-	// 		'store:id,name',
-	// 		'categories:id,name',
-	// 		'slug:id,key,reference_id'
-	// 	])
-	// 	->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status'])
-	// 	->orderBy('id', 'desc') // Add this line for descending order
-	// 	->paginate($perPage);
-
-	// 	// Formatting response
-	// 	$formattedProducts = $products->map(function ($product) {
-	// 		return [
-	// 			'id' => $product->id,
-	// 			'name' => $product->name,
-	// 			'sku' => $product->sku,
-	// 			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-
-	// 			'brand' => optional($product->brand)->name,
-	// 			'store' => optional($product->store)->name,
-	// 			'status' => $product->status,
-	// 			'product_family' => $product->categories->pluck('name')->toArray(),
-	// 			'taxonomy_path' => optional($product->slug)->key ?? '',
-	// 		];
-	// 	});
-
-	// 	return response()->json([
-	// 		'success' => true,
-	// 		'message' => 'Products retrieved successfully',
-	// 		'data' => $formattedProducts,
-	// 		'pagination' => [
-	// 			'total' => $products->total(),
-	// 			'per_page' => $products->perPage(),
-	// 			'current_page' => $products->currentPage(),
-	// 			'last_page' => $products->lastPage(),
-	// 			'next_page_url' => $products->nextPageUrl(),
-	// 			'prev_page_url' => $products->previousPageUrl(),
-	// 		],
-	// 	]);
-	// }
-	public function index(Request $request)
-	{
-        if (!auth()->user()->can('list product')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+public function index(Request $request)
+{
     $perPage = $request->input('per_page', 50);
-    $search = $request->input('search');
-
+    
+    // Get search parameters for each field
+    $searchName = $request->input('search_name');
+    $searchSku = $request->input('search_sku');
+    $searchBrand = $request->input('search_brand');
+    $searchStore = $request->input('search_store');
+    $searchCategory = $request->input('search_category');
+    $globalSearch = $request->input('search'); // Keep global search for backward compatibility
+    
     $query = Product::with([
         'brand:id,name',
         'store:id,name',
@@ -156,19 +149,46 @@ class ProductController extends BaseController
     ])
     ->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
 
-    // Apply search if provided
-    if ($search) {
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('sku', 'like', "%{$search}%")
-              ->orWhereHas('brand', function($brandQuery) use ($search) {
-                  $brandQuery->where('name', 'like', "%{$search}%");
+    // Apply specific field searches if provided
+    if ($searchName) {
+        $query->where('name', 'like', "%{$searchName}%");
+    }
+    
+    if ($searchSku) {
+        $query->where('sku', 'like', "%{$searchSku}%");
+    }
+    
+    if ($searchBrand) {
+        $query->whereHas('brand', function($brandQuery) use ($searchBrand) {
+            $brandQuery->where('name', 'like', "%{$searchBrand}%");
+        });
+    }
+    
+    if ($searchStore) {
+        $query->whereHas('store', function($storeQuery) use ($searchStore) {
+            $storeQuery->where('name', 'like', "%{$searchStore}%");
+        });
+    }
+    
+    if ($searchCategory) {
+        $query->whereHas('categories', function($categoryQuery) use ($searchCategory) {
+            $categoryQuery->where('name', 'like', "%{$searchCategory}%");
+        });
+    }
+    
+    // Apply global search if provided (for backward compatibility)
+    if ($globalSearch) {
+        $query->where(function($q) use ($globalSearch) {
+            $q->where('name', 'like', "%{$globalSearch}%")
+              ->orWhere('sku', 'like', "%{$globalSearch}%")
+              ->orWhereHas('brand', function($brandQuery) use ($globalSearch) {
+                  $brandQuery->where('name', 'like', "%{$globalSearch}%");
               })
-              ->orWhereHas('store', function($storeQuery) use ($search) {
-                  $storeQuery->where('name', 'like', "%{$search}%");
+              ->orWhereHas('store', function($storeQuery) use ($globalSearch) {
+                  $storeQuery->where('name', 'like', "%{$globalSearch}%");
               })
-              ->orWhereHas('categories', function($categoryQuery) use ($search) {
-                  $categoryQuery->where('name', 'like', "%{$search}%");
+              ->orWhereHas('categories', function($categoryQuery) use ($globalSearch) {
+                  $categoryQuery->where('name', 'like', "%{$globalSearch}%");
               });
         });
     }
