@@ -36,7 +36,7 @@ class ImportVendorJob implements ShouldQueue
 		$this->header = $data['header'];
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
-		$this->vendorFileFormatArray = $data['vendorFileFormatArray'];
+		$this->vendorFileFormatArray = $data['fileFormatArray'];
 	}
 
 	public function handle()
