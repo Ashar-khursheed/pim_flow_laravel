@@ -26,74 +26,75 @@ use Illuminate\Support\Facades\Storage;
 class CategoryPageController extends Controller
 {
 
-    /**
-     * @OA\Get(
-     *     path="/api/category-pages",
-     *     tags={"Category Pages"},
-     *     summary="Get all category pages",
-     *     security={{"bearerAuth":{}}},
-     *     description="Fetch a list of all category pages.",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(ref="#/components/schemas/CategoryPage")
-     *         )
-     *     )
-     * )
-     */
-    public function index()
-    {
-        if (!auth()->user()->can('list category page')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+   /**
+ * @OA\Get(
+ *     path="/api/category-pages",
+ *     tags={"Category Pages"},
+ *     summary="Get all category pages",
+ *     security={{"bearerAuth":{}}},
+ *     description="Fetch a list of all category pages.",
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response",
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(ref="#/components/schemas/CategoryPage")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     ),
+ *     @OA\Response(
+ *         response=403,
+ *         description="Forbidden"
+ *     )
+ * )
+ */
+public function index()
+{
+    // Check if user is authenticated
+    if (!auth()->check()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized access. Authentication required.',
+        ], 401);
+    }
+    
+    // Check permissions if authenticated
+    if (!auth()->user()->can('list category page')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ], 403);
+    }
+    
+    try {
         $pages = CategoryPage::all();
-
+        
         return response()->json([
             'success' => true,
             'message' => 'Pages retrieved successfully.',
             'categories' => $pages
         ]);
-    }
-
-
-    /**
-     * @OA\Get(
-     *     path="/api/category-pages/{category_id}",
-     *     tags={"Category Pages"},
-     *     summary="Get category page data",
-     *     security={{"bearerAuth":{}}},
-     *     description="Fetch dynamic category page details by category ID.",
-     *     @OA\Parameter(
-     *         name="category_id",
-     *         in="path",
-     *         required=true,
-     *         description="Category ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Success"),
-     *     @OA\Response(response=404, description="Category page not found")
-     * )
-     */
-    public function show(Category $category)
-    {
-        if (!auth()->user()->can('show category page')) {
+    } catch (\Exception $e) {
+        // Return detailed error in development
+        if (env('APP_DEBUG', false)) {
             return response()->json([
                 'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
+                'message' => 'An error occurred while retrieving category pages',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-        $page = CategoryPage::where('category_id', $category->id)->first();
-        if (!$page) {
-            return response()->json(['message' => 'Category page not found'], 404);
-        }
-        return response()->json($page);
+        
+        // Generic error in production
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while retrieving category pages'
+        ], 500);
     }
-
+}
  /**
  * @OA\Post(
  *     path="/api/category-pages",
