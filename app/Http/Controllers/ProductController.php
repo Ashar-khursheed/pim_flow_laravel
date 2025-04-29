@@ -2128,15 +2128,6 @@ class ProductController extends BaseController
 				'message' => $error
 			]);
 		}
-		0
-:
-"Error: Undefined array key \"vendorFileFormatArray\""
-1
-:
-"File: D:\\WAMP\\www\\pim_flow_laravel\\app\\Jobs\\ImportVendorJob.php"
-2
-:
-"Line: 39"
 	}
 
 
