@@ -8297,7 +8297,7 @@
                     "Products"
                 ],
                 "summary": "Get paginated list of products",
-                "description": "Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
+                "description": "Retrieves a paginated list of products with brand, store, categories, and slug details. Supports separate search filters for product name, SKU, brand, store, and categories.",
                 "operationId": "1bfaa78d1c2c3848ab8165c5dadcad3e",
                 "parameters": [
                     {
@@ -8321,9 +8321,59 @@
                         }
                     },
                     {
+                        "name": "search_name",
+                        "in": "query",
+                        "description": "Search term for filtering products by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Galaxy"
+                        }
+                    },
+                    {
+                        "name": "search_sku",
+                        "in": "query",
+                        "description": "Search term for filtering products by SKU",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "SM-G"
+                        }
+                    },
+                    {
+                        "name": "search_brand",
+                        "in": "query",
+                        "description": "Search term for filtering products by brand name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Samsung"
+                        }
+                    },
+                    {
+                        "name": "search_store",
+                        "in": "query",
+                        "description": "Search term for filtering products by store name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Electronics"
+                        }
+                    },
+                    {
+                        "name": "search_category",
+                        "in": "query",
+                        "description": "Search term for filtering products by category name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Smartphones"
+                        }
+                    },
+                    {
                         "name": "search",
                         "in": "query",
-                        "description": "Search term for filtering products by name, SKU, brand, store, or category",
+                        "description": "Global search term for filtering products across all fields",
                         "required": false,
                         "schema": {
                             "type": "string",
