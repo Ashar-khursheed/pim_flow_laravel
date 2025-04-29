@@ -7858,7 +7858,7 @@
                     "Pre Onboarding Vendors"
                 ],
                 "summary": "Get Pre Onboarding Vendor List",
-                "description": "Fetches a list of pre onboarding vendors.",
+                "description": "Fetches a list of pre onboarding vendors with unified search across all fields.",
                 "operationId": "e13e47a73f061a1c6b4942b1038995fe",
                 "parameters": [
                     {
@@ -7882,6 +7882,40 @@
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Global search term that searches across all text fields.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "vendor name"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "name"
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Direction to sort (asc or desc).",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
