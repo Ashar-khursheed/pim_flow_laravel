@@ -337,36 +337,104 @@ class RoleController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function getAllPermissions(Request $request)
+	// {
+	// 	if (!auth()->user()->can('list permission')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+
+	// 	$records = Permission::query();
+
+	// 	/* Pagination */
+	// 	if ($request->filled('page') && $request->filled('length')) {
+	// 		$page = (int) $request->input('page');
+	// 		$length = (int) $request->input('length');
+	// 		$totalRecords = $records->count();
+	// 		$totalPages = ceil($totalRecords / $length);
+
+	// 		$records = $records->offset(($page - 1) * $length)->limit($length)->orderBy('id', 'asc')->get();
+	// 	} else {
+	// 		$records = $records->orderBy('id', 'asc')->get(['id', 'name']);
+	// 		$totalRecords = $records->count();
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __("msg_rec_list"),
+	// 		'data' => $records,
+	// 		'total_pages' => $totalPages ?? 1,
+	// 		'total_records' => $totalRecords,
+	// 	]);
+	// }
 	public function getAllPermissions(Request $request)
-	{
-		if (!auth()->user()->can('list permission')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
+{
+    if (!auth()->user()->can('list permission')) {
+        return response()->json([
+            'success' => false,
+            'message' => "You don't have permission to access this module.",
+        ]);
+    }
 
-		$records = Permission::query();
+    $records = Permission::query();
 
-		/* Pagination */
-		if ($request->filled('page') && $request->filled('length')) {
-			$page = (int) $request->input('page');
-			$length = (int) $request->input('length');
-			$totalRecords = $records->count();
-			$totalPages = ceil($totalRecords / $length);
+    /* Pagination */
+    if ($request->filled('page') && $request->filled('length')) {
+        $page = (int) $request->input('page');
+        $length = (int) $request->input('length');
+        $totalRecords = $records->count();
+        $totalPages = ceil($totalRecords / $length);
 
-			$records = $records->offset(($page - 1) * $length)->limit($length)->orderBy('id', 'asc')->get();
-		} else {
-			$records = $records->orderBy('id', 'asc')->get(['id', 'name']);
-			$totalRecords = $records->count();
-		}
+        $permissions = $records->offset(($page - 1) * $length)
+                            ->limit($length)
+                            ->orderBy('id', 'asc')
+                            ->get();
+    } else {
+        $permissions = $records->orderBy('id', 'asc')->get();
+        $totalRecords = $permissions->count();
+    }
 
-		return response()->json([
-			'success' => true,
-			'message' => __("msg_rec_list"),
-			'data' => $records,
-			'total_pages' => $totalPages ?? 1,
-			'total_records' => $totalRecords,
-		]);
-	}
+    // Group permissions by parent category
+    $groupedPermissions = [];
+    
+    foreach ($permissions as $permission) {
+        // Parse the permission name to extract category
+        $nameParts = explode(' ', $permission->name);
+        
+        // Skip if there's less than 2 parts
+        if (count($nameParts) < 2) {
+            continue;
+        }
+        
+        $action = $nameParts[0]; // First part is the action (list, add, update, etc.)
+        $category = implode(' ', array_slice($nameParts, 1)); // Rest is the category
+        
+        // Initialize category if it doesn't exist
+        if (!isset($groupedPermissions[$category])) {
+            $groupedPermissions[$category] = [];
+        }
+        
+        // Add permission to its category
+        $groupedPermissions[$category][] = $permission;
+    }
+    
+    // Convert to required format
+    $formattedData = [];
+    foreach ($groupedPermissions as $category => $perms) {
+        $formattedData[] = [
+            'name' => $category,
+            'permissions' => $perms
+        ];
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => __("msg_rec_list"),
+        'data' => $formattedData,
+        'total_pages' => $totalPages ?? 1,
+        'total_records' => $totalRecords,
+    ]);
+}
 }
