@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\BrandTemp1;
+use App\Models\BrandTemp2;
+use App\Models\BrandTemp3;
 use App\Models\Brand;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -78,23 +80,58 @@ class BrandTemp1Controller extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function store(Request $request)
-    {
-        $data = $this->handleUploads($request);
+    // public function store(Request $request)
+    // {
+    //     $data = $this->handleUploads($request);
         
-        // Ensure category_id is properly formatted
-        if ($request->has('category_id')) {
-            $data['category_id'] = $request->category_id;
-        }
+    //     // Ensure category_id is properly formatted
+    //     if ($request->has('category_id')) {
+    //         $data['category_id'] = $request->category_id;
+    //     }
 
-        $brand = BrandTemp1::create($data);
+    //     $brand = BrandTemp1::create($data);
         
-        return response()->json([
-            'success' => true,
-            'message' => 'Brand template created successfully.',
-            'data' => $brand
-        ], 201);   
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand template created successfully.',
+    //         'data' => $brand
+    //     ], 201);   
+    // }
+
+    public function store(Request $request)
+{
+    $data = $this->handleUploads($request);
+    
+    // Ensure category_id is properly formatted
+    if ($request->has('category_id')) {
+        $data['category_id'] = $request->category_id;
     }
+    
+    // Check if brand_id exists in any of the brand tables
+    if (isset($data['brand_id'])) {
+        $brandId = $data['brand_id'];
+        
+        $existsInTemp1 = BrandTemp1::where('brand_id', $brandId)->exists();
+        $existsInTemp2 = BrandTemp2::where('brand_id', $brandId)->exists();
+        $existsInTemp3 = BrandTemp3::where('brand_id', $brandId)->exists();
+        
+        if ($existsInTemp1 || $existsInTemp2 || $existsInTemp3) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Brand ID already exists in one of the brand template tables.',
+            ], 422);
+        }
+    }
+    
+    // Create the brand if it doesn't exist
+    $brand = BrandTemp1::create($data);
+    
+    return response()->json([
+        'success' => true,
+        'message' => 'Brand template created successfully.',
+        'data' => $brand
+    ], 201);   
+}
     
     /**
      * @OA\Get(
