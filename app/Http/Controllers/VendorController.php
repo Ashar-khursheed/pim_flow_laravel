@@ -24,30 +24,18 @@ class VendorController extends BaseController
 	 * @OA\Get(
 	 *     path="/api/vendors",
 	 *     summary="Get Vendor List",
-	 *     description="Fetches a list of vendors.",
+	 *     description="Fetches a list of vendors. Supports search by each field.",
 	 *     tags={"Vendors"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="vendor@example.com", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John Doe", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="mobile_number", in="query", description="Search by mobile number", example="1234567890", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="landline_number", in="query", description="Search by landline number", example="0111234567", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="website_link", in="query", description="Search by website link", example="http://example.com", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="type", in="query", description="Search by type", example="manufacturer", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="business_licence_number", in="query", description="Search by business licence number", example="LIC1234", @OA\Schema(type="string")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -55,6 +43,18 @@ class VendorController extends BaseController
 	public function index(Request $request)
 	{
 		$recordsQuery = Vendor::with(['country:id,name', 'creator:id,first_name,last_name']);
+
+		/* Dynamic search filters */
+		$searchableColumns = [
+			'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
+			'website_link', 'type', 'business_licence_number'
+		];
+
+		foreach ($searchableColumns as $column) {
+			if ($request->filled($column)) {
+				$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+			}
+		}
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
@@ -77,16 +77,16 @@ class VendorController extends BaseController
 			$totalPages = 1;
 		}
 
-		/* Add product_demand_level_count and category objects */
+		/* Add country_name and created_by */
 		$records->transform(function ($record) {
 			$record->country_name = $record->country->name;
-			unset($record->country_id);
-			unset($record->country);
+			unset($record->country_id, $record->country);
 
 			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
 
 			$record->created_by = $record->creator->name;
 			unset($record->creator);
+
 			return $record;
 		});
 
@@ -98,6 +98,7 @@ class VendorController extends BaseController
 			'total_records' => $totalRecords,
 		]);
 	}
+
 
 	/**
 	 * @OA\Post(

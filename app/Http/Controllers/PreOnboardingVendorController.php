@@ -15,30 +15,19 @@ class PreOnboardingVendorController extends Controller
 	 * @OA\Get(
 	 *     path="/api/pre-onboarding-vendors",
 	 *     summary="Get Pre Onboarding Vendor List",
-	 *     description="Fetches a list of pre onboarding vendors.",
+	 *     description="Fetches a list of pre onboarding vendors. Supports search by each field.",
 	 *     tags={"Pre Onboarding Vendors"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="abc@example.com", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="phone_number", in="query", description="Search by phone number", example="9876543210", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="type", in="query", description="Search by type", example="manufacturer", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="shipping_days", in="query", description="Search by shipping days", example="3-5", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="credit_limit", in="query", description="Search by credit limit", example="50000", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="credit_terms", in="query", description="Search by credit terms", example="Net 30", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="grade", in="query", description="Search by grade", example="A", @OA\Schema(type="string")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -46,6 +35,18 @@ class PreOnboardingVendorController extends Controller
 	public function index(Request $request)
 	{
 		$recordsQuery = PreOnboardingVendor::with(['country:id,name']);
+
+		/* Apply search filters */
+		$searchableColumns = [
+			'name', 'contact_person', 'email', 'phone_number',
+			'type', 'shipping_days', 'credit_limit', 'credit_terms', 'grade'
+		];
+
+		foreach ($searchableColumns as $column) {
+			if ($request->filled($column)) {
+				$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+			}
+		}
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
@@ -71,27 +72,28 @@ class PreOnboardingVendorController extends Controller
 			$totalPages = 1;
 		}
 
-		/* Add product_demand_level_count and category objects */
+		/* Transform records */
 		$records->transform(function ($record) {
 			/* product_demand_level count */
 			$decoded = json_decode($record->product_demand_level, true);
 			$record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
 			unset($record->product_demand_level);
 
+			/* categories from category_ids */
 			$categoryIds = array_filter(explode(',', $record->category_ids));
 			$categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
 			$record->categories = implode(' | ', $categories);
 			unset($record->category_ids);
 
-			$record->country_name = $record->country->name;
-			unset($record->country_id);
-			unset($record->country);
+			/* country name */
+			$record->country_name = $record->country->name ?? null;
+			unset($record->country_id, $record->country);
 
+			/* dropshipping label */
 			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
 
 			return $record;
 		});
-
 
 		return response()->json([
 			'success' => true,
