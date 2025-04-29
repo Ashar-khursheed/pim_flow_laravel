@@ -46,7 +46,7 @@ class ImportProductJob implements ShouldQueue
 		$this->header = $data['header'];
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
-		$this->productFileFormatArray = $data['productFileFormatArray'];
+		$this->productFileFormatArray = $data['fileFormatArray'];
 	}
 
 	public function handle()
