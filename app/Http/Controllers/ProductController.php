@@ -23,6 +23,7 @@ use App\Models\Attribute;
 use App\Models\UnitOfMeasurement;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
+use App\Services\CsvImporterService;
 
 class ProductController extends BaseController
 {
@@ -138,67 +139,67 @@ class ProductController extends BaseController
 	// 	]);
 	// }
 	public function index(Request $request)
-{
-    $perPage = $request->input('per_page', 50);
-    $search = $request->input('search');
+	{
+		$perPage = $request->input('per_page', 50);
+		$search = $request->input('search');
 
-    $query = Product::with([
-        'brand:id,name',
-        'store:id,name',
-        'categories:id,name',
-        'slug:id,key,reference_id'
-    ])
-    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
+		$query = Product::with([
+			'brand:id,name',
+			'store:id,name',
+			'categories:id,name',
+			'slug:id,key,reference_id'
+		])
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
 
-    // Apply search if provided
-    if ($search) {
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-              ->orWhere('sku', 'like', "%{$search}%")
-              ->orWhereHas('brand', function($brandQuery) use ($search) {
-                  $brandQuery->where('name', 'like', "%{$search}%");
-              })
-              ->orWhereHas('store', function($storeQuery) use ($search) {
-                  $storeQuery->where('name', 'like', "%{$search}%");
-              })
-              ->orWhereHas('categories', function($categoryQuery) use ($search) {
-                  $categoryQuery->where('name', 'like', "%{$search}%");
-              });
-        });
-    }
+	// Apply search if provided
+		if ($search) {
+			$query->where(function($q) use ($search) {
+				$q->where('name', 'like', "%{$search}%")
+				->orWhere('sku', 'like', "%{$search}%")
+				->orWhereHas('brand', function($brandQuery) use ($search) {
+					$brandQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('store', function($storeQuery) use ($search) {
+					$storeQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('categories', function($categoryQuery) use ($search) {
+					$categoryQuery->where('name', 'like', "%{$search}%");
+				});
+			});
+		}
 
-    $products = $query->orderBy('id', 'desc')
-                     ->paginate($perPage);
+		$products = $query->orderBy('id', 'desc')
+		->paginate($perPage);
 
-    // Formatting response
-    $formattedProducts = $products->map(function ($product) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'brand' => optional($product->brand)->name,
-            'store' => optional($product->store)->name,
-            'status' => $product->status,
-            'product_family' => $product->categories->pluck('name')->toArray(),
-            'taxonomy_path' => optional($product->slug)->key ?? '',
-        ];
-    });
+	// Formatting response
+		$formattedProducts = $products->map(function ($product) {
+			return [
+				'id' => $product->id,
+				'name' => $product->name,
+				'sku' => $product->sku,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+				'brand' => optional($product->brand)->name,
+				'store' => optional($product->store)->name,
+				'status' => $product->status,
+				'product_family' => $product->categories->pluck('name')->toArray(),
+				'taxonomy_path' => optional($product->slug)->key ?? '',
+			];
+		});
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully',
-        'data' => $formattedProducts,
-        'pagination' => [
-            'total' => $products->total(),
-            'per_page' => $products->perPage(),
-            'current_page' => $products->currentPage(),
-            'last_page' => $products->lastPage(),
-            'next_page_url' => $products->nextPageUrl(),
-            'prev_page_url' => $products->previousPageUrl(),
-        ],
-    ]);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'Products retrieved successfully',
+			'data' => $formattedProducts,
+			'pagination' => [
+				'total' => $products->total(),
+				'per_page' => $products->perPage(),
+				'current_page' => $products->currentPage(),
+				'last_page' => $products->lastPage(),
+				'next_page_url' => $products->nextPageUrl(),
+				'prev_page_url' => $products->previousPageUrl(),
+			],
+		]);
+	}
 
 	/**
 	 * Show the form for creating a new resource.
@@ -425,13 +426,13 @@ class ProductController extends BaseController
 		}
 
 		 // Fetch reviews where customer_id is null
-		 $adminReviews = Review::where('product_id', $productId)
-		 ->whereNull('customer_id')
-		 ->get();
+		$adminReviews = Review::where('product_id', $productId)
+		->whereNull('customer_id')
+		->get();
 
 
 		 // Fetch FAQs using the FAQ model
-			$faqs = FAQ::where('product_id', $productId)->get();
+		$faqs = FAQ::where('product_id', $productId)->get();
 
 		if (!empty($product->images) && is_string($product->images)) {
 			$product->images = json_decode($product->images, true) ?? [];
@@ -446,7 +447,7 @@ class ProductController extends BaseController
 		}
 
 		 // Normalize the documents field
-		 if (!empty($product->documents) && is_array($product->documents)) {
+		if (!empty($product->documents) && is_array($product->documents)) {
 			$product->documents = array_map(function($item) {
 				// Check if the item is an array with 'title' and 'path', or just a string
 				if (is_array($item) && isset($item['path'])) {
@@ -511,54 +512,54 @@ class ProductController extends BaseController
 				];
 				break;
 				case 'benefits_features':
-					$formattedProduct['benefits_features'] = json_decode($value, true);
-					break;
+				$formattedProduct['benefits_features'] = json_decode($value, true);
+				break;
 
 				case 'stock_status':
-					$stockStatusMappings = [
-						'in_stock' => 'In Stock',
-						'out_of_stock' => 'Out of Stock',
-						'on_backorder' => 'Pre Order'
-					];
+				$stockStatusMappings = [
+					'in_stock' => 'In Stock',
+					'out_of_stock' => 'Out of Stock',
+					'on_backorder' => 'Pre Order'
+				];
 
 					// Map selected value to frontend readable text
-					$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
+				$selectedStockStatus = $stockStatusMappings[$value] ?? $value;
 
-					$formattedProduct['stock_status'] = [
+				$formattedProduct['stock_status'] = [
 						'selected' => $selectedStockStatus, // This will now show 'In Stock', 'Out of Stock', etc.
 						'values' => $stockStatusMappings // Values remain the same
 					];
 					break;
 
-				case 'tax_id':
-				$tax = Tax::find($value);
-				if ($tax) {
-					$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
-				} else {
-					$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
-				}
-				break;
+					case 'tax_id':
+					$tax = Tax::find($value);
+					if ($tax) {
+						$formattedProduct['tax'] = [['title' => $tax->title, 'rate' => $tax->percentage]];
+					} else {
+						$formattedProduct['tax'] = [['title' => null, 'rate' => null]];
+					}
+					break;
 
-				case 'currency_id':
-				$formattedProduct['currency'] = $product->currency ? [[
-					'id' => $product->currency->id,
-					'title' => $product->currency->title
-				]] : null;
-				break;
-				case 'brand_id':
-				$formattedProduct['brand'] = $product->brand ? [[
-					'id' => $product->brand->id,
-					'name' => $product->brand->name
-				]] : null;
-				break;
-				case 'store_id':
-				$formattedProduct['store'] = $product->store ? [[
-					'id' => $product->store->id,
-					'name' => $product->store->name
-				]] : null;
-				break;
+					case 'currency_id':
+					$formattedProduct['currency'] = $product->currency ? [[
+						'id' => $product->currency->id,
+						'title' => $product->currency->title
+					]] : null;
+					break;
+					case 'brand_id':
+					$formattedProduct['brand'] = $product->brand ? [[
+						'id' => $product->brand->id,
+						'name' => $product->brand->name
+					]] : null;
+					break;
+					case 'store_id':
+					$formattedProduct['store'] = $product->store ? [[
+						'id' => $product->store->id,
+						'name' => $product->store->name
+					]] : null;
+					break;
 
-				case 'shipping_length_id':
+					case 'shipping_length_id':
 					$formattedProduct['shipping_length'] = [
 						'selected' => optional($product->shippingLengthUnit)->symbol, // Selected unit symbol
 						'values' => [
@@ -570,7 +571,7 @@ class ProductController extends BaseController
 					break;
 
 
-				case 'weight_unit_id':
+					case 'weight_unit_id':
 					$formattedProduct['weight_unit'] = [
 						'selected' => optional($product->weightUnit)->symbol,
 						'values' => [
@@ -580,7 +581,7 @@ class ProductController extends BaseController
 						]
 					];
 					break;
-				case 'weight_unit_id':
+					case 'weight_unit_id':
 					$formattedProduct['weight_unit'] = [
 						'selected' => optional($product->weightUnit)->symbol,
 						'values' => [
@@ -590,7 +591,7 @@ class ProductController extends BaseController
 						]
 					];
 					break;
-				   case 'length_unit_id':
+					case 'length_unit_id':
 					$formattedProduct['length_unit'] = [
 						'selected' => optional($product->lengthUnit)->symbol,
 						'values' => [
@@ -600,8 +601,8 @@ class ProductController extends BaseController
 						]
 					];
 					break;
-				break;
-				case 'categories':
+					break;
+					case 'categories':
 					$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
 						return [
 							'id' => $category->id,
@@ -612,12 +613,12 @@ class ProductController extends BaseController
 					break;
 
 
-				break;
-				case 'content':
+					break;
+					case 'content':
 					// Extract <li> items from the content and remove HTML tags
-				preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
-				$formattedProduct[$attribute] = $matches[1] ?? [];
-				break;
+					preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
+					$formattedProduct[$attribute] = $matches[1] ?? [];
+					break;
 
 				// case 'frequently_bought_together':
 				// 	// Ensure $value is a valid JSON string
@@ -673,7 +674,7 @@ class ProductController extends BaseController
 				// 	break;
 
 
-				case 'frequently_bought_together':
+					case 'frequently_bought_together':
 					// Ensure $value is a valid JSON string
 					$decoded = json_decode($value, true);
 
@@ -701,9 +702,9 @@ class ProductController extends BaseController
 						if (!empty($productIds)) {
 							// Query the Product model to get SKUs for these product IDs
 							$products = \App\Models\Product::whereIn('id', $productIds)
-														  ->select('id', 'sku')
-														  ->get()
-														  ->keyBy('id');
+							->select('id', 'sku')
+							->get()
+							->keyBy('id');
 
 							// Create a mapping of product ID to SKU
 							foreach ($products as $product) {
@@ -741,46 +742,46 @@ class ProductController extends BaseController
 					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
 					break;
 
-				case 'compare_products':
+					case 'compare_products':
 					$decoded = json_decode($value, true);
 					$decoded = is_array($decoded) ? $decoded : []; // Ensure it's an array
 					$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
 					break;
 
-						case 'images':
-						case 'video_path':
-						case 'documents':
-						$formattedProduct[$attribute] = is_array($value) ? $value : [];
-						break;
+					case 'images':
+					case 'video_path':
+					case 'documents':
+					$formattedProduct[$attribute] = is_array($value) ? $value : [];
+					break;
 
-						case 'status':
-						$formattedProduct[$attribute] = [['value' => $value]];
-						break;
+					case 'status':
+					$formattedProduct[$attribute] = [['value' => $value]];
+					break;
 
-						case 'unit_of_measurement_id':
-						$formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
-							'id' => $product->unitOfMeasurement->id,
-							'name' => $product->unitOfMeasurement->name
-						] : null;
-						break;
+					case 'unit_of_measurement_id':
+					$formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
+						'id' => $product->unitOfMeasurement->id,
+						'name' => $product->unitOfMeasurement->name
+					] : null;
+					break;
 
 
 
-						default:
-						$formattedProduct[$attribute] = $value;
-						break;
-					}
+					default:
+					$formattedProduct[$attribute] = $value;
+					break;
 				}
+			}
 
-				return response()->json([
-					'success' => true,
-					'message' => 'Product detail',
-					'product' => $formattedProduct,
-					'admin_reviews' => $adminReviews,
-					'faq' => $faqs ?? [],
+			return response()->json([
+				'success' => true,
+				'message' => 'Product detail',
+				'product' => $formattedProduct,
+				'admin_reviews' => $adminReviews,
+				'faq' => $faqs ?? [],
 
-				]);
-	}
+			]);
+		}
 
 
 
@@ -1040,106 +1041,106 @@ class ProductController extends BaseController
  * )
  */
 
- public function update(Request $request, $productId)
- {
+	public function update(Request $request, $productId)
+	{
 	 // Log the incoming request for debugging
-	 \Log::info('Product update request:', $request->all());
-	 $unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
+		\Log::info('Product update request:', $request->all());
+		$unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
 
-	 $product = Product::find($productId);
+		$product = Product::find($productId);
 
 
-	 if (!$product) {
-		 return response()->json([
-			 'success' => false,
-			 'message' => 'Product does not exist.'
-		 ]);
-	 }
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
+		}
 
-	if ($request->product_attributes) {
-		$productAttributes = json_decode($request->product_attributes, true);
+		if ($request->product_attributes) {
+			$productAttributes = json_decode($request->product_attributes, true);
 
-		if (is_array($productAttributes) && count($productAttributes) > 0) {
-			$productAttributes = array_filter($productAttributes, function ($value) {
-				return !is_null($value) && $value !== '';
-			});
+			if (is_array($productAttributes) && count($productAttributes) > 0) {
+				$productAttributes = array_filter($productAttributes, function ($value) {
+					return !is_null($value) && $value !== '';
+				});
 
-			$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+				$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
 
-			$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+				$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
 
-			if (!empty($attributesToDelete)) {
-				$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
-			}
-
-			foreach ($productAttributes as $attributeId => $attributeValue) {
-				$existingAttribute = Attribute::find($attributeId);
-
-				if (!$existingAttribute) {
-					return response()->json([
-						'success' => false,
-						'message' => "Attribute ID: $attributeId does not exist."
-					]);
+				if (!empty($attributesToDelete)) {
+					$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
 				}
 
-				$product->productAttributes()->updateOrCreate(
-					['attribute_id' => $attributeId],
-					['attribute_value' => $attributeValue]
-				);
+				foreach ($productAttributes as $attributeId => $attributeValue) {
+					$existingAttribute = Attribute::find($attributeId);
 
-				if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
-					$existingAttribute->attributeValues()->create([
-						'attribute_id' => $attributeId,
-						'attribute_value' => $attributeValue
-					]);
+					if (!$existingAttribute) {
+						return response()->json([
+							'success' => false,
+							'message' => "Attribute ID: $attributeId does not exist."
+						]);
+					}
+
+					$product->productAttributes()->updateOrCreate(
+						['attribute_id' => $attributeId],
+						['attribute_value' => $attributeValue]
+					);
+
+					if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
+						$existingAttribute->attributeValues()->create([
+							'attribute_id' => $attributeId,
+							'attribute_value' => $attributeValue
+						]);
+					}
 				}
 			}
 		}
-	}
 
 
 	 $faqs = $request->input('faqs', []); // Default to an empty array if not provided
 
 		 // Check if faqs is a string and decode it properly
-		 if (is_string($faqs)) {
-			 $decoded = json_decode($faqs, true);
+	 if (is_string($faqs)) {
+	 	$decoded = json_decode($faqs, true);
 
 			 // Handle invalid JSON
-			 if (json_last_error() !== JSON_ERROR_NONE) {
-				 return response()->json([
-					 'success' => false,
-					 'message' => 'Invalid JSON format for faqs.'
-				 ], 400);
-			 }
+	 	if (json_last_error() !== JSON_ERROR_NONE) {
+	 		return response()->json([
+	 			'success' => false,
+	 			'message' => 'Invalid JSON format for faqs.'
+	 		], 400);
+	 	}
 
 			 // Ensure we extract faqs correctly
-			 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-		 }
+	 	$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+	 }
 
 		 // Validate that faqs is an array
-		 if (!is_array($faqs)) {
-			 return response()->json([
-				 'success' => false,
-				 'message' => 'The field faqs must be a valid JSON array.'
-			 ], 400);
-		 }
+	 if (!is_array($faqs)) {
+	 	return response()->json([
+	 		'success' => false,
+	 		'message' => 'The field faqs must be a valid JSON array.'
+	 	], 400);
+	 }
 
 		 // Process and store FAQs
-		 foreach ($faqs as $faqData) {
-			 if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				 Faq::updateOrCreate(
-					 [
-						 'product_id' => $product->id,
-						 'question' => $faqData['question'],
-					 ],
-					 [
-						 'answer' => $faqData['answer'],
-						 'category_id' => $faqData['category_id'] ?? null,
+	 foreach ($faqs as $faqData) {
+	 	if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+	 		Faq::updateOrCreate(
+	 			[
+	 				'product_id' => $product->id,
+	 				'question' => $faqData['question'],
+	 			],
+	 			[
+	 				'answer' => $faqData['answer'],
+	 				'category_id' => $faqData['category_id'] ?? null,
 						 'status' => $faqData['status'] == 1 ? 'published' : 'draft' // Map status
-						 ]
-				 );
-			 }
-		 }
+						]
+					);
+	 	}
+	 }
 
 		 // return response()->json(['success' => true, 'message' => 'FAQs updated successfully.']);
 
@@ -1151,111 +1152,111 @@ class ProductController extends BaseController
 	 if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
 		 // ✅ Check if a review already exists for this customer & product
-		 $review = Review::where('product_id', $product->id)
-			 ->where('customer_email', $request->input('review_customer_email'))
-			 ->first();
+	 	$review = Review::where('product_id', $product->id)
+	 	->where('customer_email', $request->input('review_customer_email'))
+	 	->first();
 
-		 if (!$review) {
+	 	if (!$review) {
 			 // ✅ No existing review, create a new one
-			 $review = new Review();
-			 $review->product_id = $product->id;
-			 $review->customer_id = $request->input('customer_id');
-			 $review->customer_email = $request->input('review_customer_email');
-			 $review->customer_name = $request->input('review_customer_name');
-		 }
+	 		$review = new Review();
+	 		$review->product_id = $product->id;
+	 		$review->customer_id = $request->input('customer_id');
+	 		$review->customer_email = $request->input('review_customer_email');
+	 		$review->customer_name = $request->input('review_customer_name');
+	 	}
 
 		 // ✅ Update fields (applies to both new & existing reviews)
-		 $review->comment = $request->input('review_comment');
-		 $review->status = $request->input('review_status', 'pending');
-		 $review->star = $request->input('review_star', null);
+	 	$review->comment = $request->input('review_comment');
+	 	$review->status = $request->input('review_status', 'pending');
+	 	$review->star = $request->input('review_star', null);
 
 		 // ✅ Handle review images upload
-		 if ($request->hasFile('review_images')) {
-			 $uploadedReviewImages = [];
-			 foreach ($request->file('review_images') as $image) {
-				 $path = $image->store('production/reviews', 's3');
-				 $uploadedReviewImages[] = Storage::disk('s3')->url($path);
-			 }
+	 	if ($request->hasFile('review_images')) {
+	 		$uploadedReviewImages = [];
+	 		foreach ($request->file('review_images') as $image) {
+	 			$path = $image->store('production/reviews', 's3');
+	 			$uploadedReviewImages[] = Storage::disk('s3')->url($path);
+	 		}
 			 $review->images = $uploadedReviewImages; // Store as an array
-		 }
+			}
 
 		 $review->save(); // ✅ Save either as new or updated review
-	 }
+		}
 
 
 	   // Get all input data except '_method'
-	   $input = $request->except('_method');
+		$input = $request->except('_method');
 		 // Remove 'faqs' from the input before validation
 
 
 					// Process the new fields if they exist in the request
-			if ($request->has('cost_per_item')) {
-				$input['cost_per_item'] = $request->input('cost_per_item');
-			}
+		if ($request->has('cost_per_item')) {
+			$input['cost_per_item'] = $request->input('cost_per_item');
+		}
 
-			if ($request->has('cost_per_item_currency')) {
-				$input['cost_per_item_currency'] = $request->input('cost_per_item_currency');
-			}
+		if ($request->has('cost_per_item_currency')) {
+			$input['cost_per_item_currency'] = $request->input('cost_per_item_currency');
+		}
 
-			if ($request->has('cost_type')) {
-				$input['cost_type'] = $request->input('cost_type');
-			}
+		if ($request->has('cost_type')) {
+			$input['cost_type'] = $request->input('cost_type');
+		}
 
-			if ($request->has('additional_cost_percentage')) {
-				$input['additional_cost_percentage'] = $request->input('additional_cost_percentage');
-			}
+		if ($request->has('additional_cost_percentage')) {
+			$input['additional_cost_percentage'] = $request->input('additional_cost_percentage');
+		}
 
-			if ($request->has('additional_cost_value')) {
-				$input['additional_cost_value'] = $request->input('additional_cost_value');
-			}
+		if ($request->has('additional_cost_value')) {
+			$input['additional_cost_value'] = $request->input('additional_cost_value');
+		}
 
 			// Calculate the total cost if it's not already provided
-			if ($request->has('cost_per_item') && ($request->has('additional_cost_percentage') || $request->has('additional_cost_value'))) {
-				if ($input['cost_type'] === 'percentage' && $request->has('additional_cost_percentage')) {
-					$input['total_cost_per_item'] = $input['cost_per_item'] + ($input['cost_per_item'] * $input['additional_cost_percentage'] / 100);
-				} elseif ($input['cost_type'] === 'value' && $request->has('additional_cost_value')) {
-					$input['total_cost_per_item'] = $input['cost_per_item'] + $input['additional_cost_value'];
-				}
+		if ($request->has('cost_per_item') && ($request->has('additional_cost_percentage') || $request->has('additional_cost_value'))) {
+			if ($input['cost_type'] === 'percentage' && $request->has('additional_cost_percentage')) {
+				$input['total_cost_per_item'] = $input['cost_per_item'] + ($input['cost_per_item'] * $input['additional_cost_percentage'] / 100);
+			} elseif ($input['cost_type'] === 'value' && $request->has('additional_cost_value')) {
+				$input['total_cost_per_item'] = $input['cost_per_item'] + $input['additional_cost_value'];
 			}
+		}
 	   // ✅ Remove review-related fields before validation
-	   $reviewFields = ['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'];
-	   foreach ($reviewFields as $field) {
-		   unset($input[$field]);
-	   }
+		$reviewFields = ['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'];
+		foreach ($reviewFields as $field) {
+			unset($input[$field]);
+		}
 
 	   $fieldsToUnset = ['faqs']; // Add other fields if needed
 
 	   foreach ($fieldsToUnset as $field) {
-		   unset($input[$field]);
+	   	unset($input[$field]);
 	   }
 
 
-	 $imagePath = 'production/products';
-	 $videoPath = 'production/videos';
-	 $documentPath = 'production/documents';
-	 $reviewImagePath = 'production/reviews';
+	   $imagePath = 'production/products';
+	   $videoPath = 'production/videos';
+	   $documentPath = 'production/documents';
+	   $reviewImagePath = 'production/reviews';
 
 
-	 /* ✅ Handle Single Image Upload */
-	 if ($request->hasFile('image')) {
-		 $path = $request->file('image')->store($imagePath, 's3');
+	   /* ✅ Handle Single Image Upload */
+	   if ($request->hasFile('image')) {
+	   	$path = $request->file('image')->store($imagePath, 's3');
 		 $input['image'] = Storage::disk('s3')->url($path); // ✅ Full S3 URL
-	 }
-	 $existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
+		}
+		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
 	 $existingImages = is_array($existingImages) ? $existingImages : []; // Ensure it's an array
 
 	 if ($request->hasFile('images')) {
-		 $uploadedImages = [];
-		 foreach ($request->file('images') as $image) {
-			 $path = $image->store($imagePath, 's3');
-			 $uploadedImages[] = Storage::disk('s3')->url($path);
-		 }
+	 	$uploadedImages = [];
+	 	foreach ($request->file('images') as $image) {
+	 		$path = $image->store($imagePath, 's3');
+	 		$uploadedImages[] = Storage::disk('s3')->url($path);
+	 	}
 
 		 // Merge old and new images
-		 $input['images'] = array_merge($existingImages, $uploadedImages);
+	 	$input['images'] = array_merge($existingImages, $uploadedImages);
 	 } else {
 		 // Keep existing images if no new images are uploaded
-		 $input['images'] = $existingImages;
+	 	$input['images'] = $existingImages;
 	 }
 
 	 // Convert to JSON with unescaped slashes before saving
@@ -1269,17 +1270,17 @@ class ProductController extends BaseController
 	 $existingVideos = is_array($existingVideos) ? $existingVideos : [];
 
 	 if ($request->hasFile('video_path')) {
-		 $uploadedVideos = [];
-		 foreach ($request->file('video_path') as $video) {
-			 $path = $video->store($videoPath, 's3');
-			 $uploadedVideos[] = Storage::disk('s3')->url($path);
-		 }
+	 	$uploadedVideos = [];
+	 	foreach ($request->file('video_path') as $video) {
+	 		$path = $video->store($videoPath, 's3');
+	 		$uploadedVideos[] = Storage::disk('s3')->url($path);
+	 	}
 
 		 // Merge with existing videos
-		 $input['video_path'] = array_merge($existingVideos, $uploadedVideos);
+	 	$input['video_path'] = array_merge($existingVideos, $uploadedVideos);
 	 } else {
 		 // Retain existing videos if no new files are uploaded
-		 $input['video_path'] = $existingVideos;
+	 	$input['video_path'] = $existingVideos;
 	 }
 
 	 // Convert to JSON with unescaped slashes
@@ -1312,9 +1313,9 @@ class ProductController extends BaseController
 	 $existingDocs = is_array($existingDocs) ? $existingDocs : [];
 
 	 if ($request->hasFile('documents')) {
-		 $uploadedDocs = [];
-		 foreach ($request->file('documents') as $doc) {
-			 $path = $doc->store($documentPath, 's3');
+	 	$uploadedDocs = [];
+	 	foreach ($request->file('documents') as $doc) {
+	 		$path = $doc->store($documentPath, 's3');
 
 			 // Check if the title is provided, if not, use the document's name
 			 $title = $request->input('title', $doc->getClientOriginalName()); // default to original name if title is empty
@@ -1322,35 +1323,35 @@ class ProductController extends BaseController
 			 // If title is still empty, use the document name as title
 			 if (empty($title)) {
 				 $title = basename($doc->getClientOriginalName());  // Use document name if title is empty
-			 }
+				}
 
 			 // Create an array with title and path for each uploaded document
-			 $uploadedDocs[] = [
-				 'title' => $title,
-				 'path' => Storage::disk('s3')->url($path)
-			 ];
-		 }
+				$uploadedDocs[] = [
+					'title' => $title,
+					'path' => Storage::disk('s3')->url($path)
+				];
+			}
 
 		 // Merge with existing documents
-		 $input['documents'] = array_merge($existingDocs, $uploadedDocs);
-	 } else {
+			$input['documents'] = array_merge($existingDocs, $uploadedDocs);
+		} else {
 		 // Retain existing documents if no new files are uploaded
-		 $input['documents'] = $existingDocs;
-	 }
+			$input['documents'] = $existingDocs;
+		}
 
 	 // Convert to JSON with unescaped slashes
-	 $input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
+		$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
 
 
 
-	 $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-	 $input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-	 $input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-	 $input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-	 $input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
+		$input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		$input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		$input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
 
 
-	 /* List of valid fields allowed for updating */
+		/* List of valid fields allowed for updating */
 	//  $validArray = [
 	// 	//  "sku", "status" , "barcode", "warranty_information", "refund", "quantity",
 	// 	//  "allow_checkout_when_out_of_stock", "with_storehouse_management",
@@ -1372,106 +1373,106 @@ class ProductController extends BaseController
 
 	//  ];
 
-	$validArray = [
-		"sku", "status", "barcode", "warranty_information", "refund", "quantity",
-		"allow_checkout_when_out_of_stock", "with_storehouse_management",
-		"stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
-		"variant_inventory_policy", "variant_fulfillment_service", "price",
-		"sale_price", "sale_type", "cost_per_item", "cost_per_item_currency",
-		"cost_type", "additional_cost_percentage", "additional_cost_value",
-		"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity",
-		"maximum_order_quantity", "name", "content", "description", "images",
-		"image", "video_url", "video_path", "videos", "documents", "length",
-		"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id",
-		"shipping_weight_option", "shipping_weight", "shipping_dimension_option",
-		"shipping_width", "shipping_depth", "shipping_height", "shipping_length",
-		"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping",
-		"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
-		"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type",
-		"compare_products", "google_shopping_category", "google_shopping_mpn", "order",
-		"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
-	];
+		$validArray = [
+			"sku", "status", "barcode", "warranty_information", "refund", "quantity",
+			"allow_checkout_when_out_of_stock", "with_storehouse_management",
+			"stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
+			"variant_inventory_policy", "variant_fulfillment_service", "price",
+			"sale_price", "sale_type", "cost_per_item", "cost_per_item_currency",
+			"cost_type", "additional_cost_percentage", "additional_cost_value",
+			"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity",
+			"maximum_order_quantity", "name", "content", "description", "images",
+			"image", "video_url", "video_path", "videos", "documents", "length",
+			"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id",
+			"shipping_weight_option", "shipping_weight", "shipping_dimension_option",
+			"shipping_width", "shipping_depth", "shipping_height", "shipping_length",
+			"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping",
+			"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
+			"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type",
+			"compare_products", "google_shopping_category", "google_shopping_mpn", "order",
+			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
+		];
 
-	unset($input['product_attributes']);
+		unset($input['product_attributes']);
 
-	 /* Check for invalid fields */
-	 $invalidFields = array_diff(array_keys($input), $validArray);
-	 if (!empty($invalidFields)) {
-		 return response()->json([
-			 'success' => false,
-			 'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
-		 ]);
-	 }
+		/* Check for invalid fields */
+		$invalidFields = array_diff(array_keys($input), $validArray);
+		if (!empty($invalidFields)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
+			]);
+		}
 
-	 /* Initialize an error array to store validation errors */
-	 $rowError = [];
+		/* Initialize an error array to store validation errors */
+		$rowError = [];
 
-	 /* Refund policy validation */
-	 $usRefundPolicyArray = [
-		 1 => "non-refundable",
-		 2 => "15 days",
-		 3 => "90 days"
-	 ];
-	 if (isset($input['refund'])) {
-		 if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
-			 $rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-		 } else {
-			 $product->refund = $usRefundPolicyArray[(int) $input['refund']];
-			 unset($input['refund']); /* Remove processed field */
-		 }
-	 }
+		/* Refund policy validation */
+		$usRefundPolicyArray = [
+			1 => "non-refundable",
+			2 => "15 days",
+			3 => "90 days"
+		];
+		if (isset($input['refund'])) {
+			if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
+				$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
+			} else {
+				$product->refund = $usRefundPolicyArray[(int) $input['refund']];
+				unset($input['refund']); /* Remove processed field */
+			}
+		}
 
-	 if (isset($input['status'])) {
+		if (isset($input['status'])) {
 		 $validStatuses = ['draft', 'published', 'pending']; // Define allowed statuses
 
 		 if (!in_array($input['status'], $validStatuses)) {
-			 return response()->json([
-				 'success' => false,
-				 'message' => 'Invalid status value. Allowed values: draft, published, archived.'
-			 ]);
+		 	return response()->json([
+		 		'success' => false,
+		 		'message' => 'Invalid status value. Allowed values: draft, published, archived.'
+		 	]);
 		 }
 
 		 $product->status = $input['status']; // Assign status
-	 }
-
-	 if (isset($input['unit_of_measurement_id'])) {
-		// Fetch all valid unit IDs from the database
-		$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
-
-		if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
-			]);
 		}
+
+		if (isset($input['unit_of_measurement_id'])) {
+		// Fetch all valid unit IDs from the database
+			$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
+
+			if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
+				]);
+			}
 
 		$product->unit_of_measurement_id = $input['unit_of_measurement_id']; // Assign the valid ID
 	}
 
 						// Decode existing benefits_features if available
-			$existingBenefits = json_decode($product->benefits_features, true);
+	$existingBenefits = json_decode($product->benefits_features, true);
 
 			// Ensure existingBenefits is an array
-			if (!is_array($existingBenefits)) {
-				$existingBenefits = [];
-			}
+	if (!is_array($existingBenefits)) {
+		$existingBenefits = [];
+	}
 
 			// Decode incoming request JSON
-			$newBenefits = json_decode($request->input('benefits_features'), true);
+	$newBenefits = json_decode($request->input('benefits_features'), true);
 
 			// Ensure newBenefits is an array
-			if (!is_array($newBenefits)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid benefits_features format.'
-				], 400);
-			}
+	if (!is_array($newBenefits)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'Invalid benefits_features format.'
+		], 400);
+	}
 
 			// Merge existing benefits with new ones
-			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
+	$mergedBenefits = array_merge($existingBenefits, $newBenefits);
 
 			// Save back as JSON
-			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+	$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 
 
 
@@ -1479,83 +1480,83 @@ class ProductController extends BaseController
 
 
 
-	 /* Stock status validation */
-	 $usStockStatusArray = [
-		 1 => "in_stock",
-		 2 => "out_of_stock",
-		 3 => "Pre Order"
-	 ];
-	 if (isset($input['stock_status'])) {
-		 if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
-			 $rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
-		 } else {
-			 $product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
-			 unset($input['stock_status']); /* Remove processed field */
-		 }
-	 }
+	/* Stock status validation */
+	$usStockStatusArray = [
+		1 => "in_stock",
+		2 => "out_of_stock",
+		3 => "Pre Order"
+	];
+	if (isset($input['stock_status'])) {
+		if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
+			$rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
+		} else {
+			$product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
+			unset($input['stock_status']); /* Remove processed field */
+		}
+	}
 
-	 /* Tax ID validation */
-	 if (isset($input['tax_id'])) {
-		 $taxArray = Tax::pluck("id")->toArray();
-		 if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
-			 $rowError[] = "Invalid tax value. Please select a valid tax ID.";
-		 } else {
-			 $product->tax_id = (int) $input['tax_id'];
-			 unset($input['tax_id']); /* Remove processed field */
-		 }
-	 }
+	/* Tax ID validation */
+	if (isset($input['tax_id'])) {
+		$taxArray = Tax::pluck("id")->toArray();
+		if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
+			$rowError[] = "Invalid tax value. Please select a valid tax ID.";
+		} else {
+			$product->tax_id = (int) $input['tax_id'];
+			unset($input['tax_id']); /* Remove processed field */
+		}
+	}
 
-	 /* Currency ID validation */
-	 if (isset($input['currency_id'])) {
-		 $currencyArray = Currency::pluck("id")->toArray();
-		 if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
-			 $rowError[] = "Invalid currency value. Please select a valid currency ID.";
-		 } else {
-			 $product->currency_id = (int) $input['currency_id'];
-			 unset($input['currency_id']); /* Remove processed field */
-		 }
-	 }
+	/* Currency ID validation */
+	if (isset($input['currency_id'])) {
+		$currencyArray = Currency::pluck("id")->toArray();
+		if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
+			$rowError[] = "Invalid currency value. Please select a valid currency ID.";
+		} else {
+			$product->currency_id = (int) $input['currency_id'];
+			unset($input['currency_id']); /* Remove processed field */
+		}
+	}
 
-	 /* Unit ID validation for length, weight, and shipping */
-	 $lengthUnitArray = [
-		 1 => "cm",
-		 3 => "inch",
-		 11 => "mm",
-	 ];
-	 $weightUnitArray = [
-		 5 => "kg",
-		 6 => "g",
-		 9 => "lbs",
-	 ];
+	/* Unit ID validation for length, weight, and shipping */
+	$lengthUnitArray = [
+		1 => "cm",
+		3 => "inch",
+		11 => "mm",
+	];
+	$weightUnitArray = [
+		5 => "kg",
+		6 => "g",
+		9 => "lbs",
+	];
 
-	 if (isset($input['length_unit_id'])) {
-		 if (!is_numeric($input['length_unit_id']) || !array_key_exists((int) $input['length_unit_id'], $lengthUnitArray)) {
-			 $rowError[] = "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
-		 } else {
-			 $product->length_unit_id = (int) $input['length_unit_id'];
-			 unset($input['length_unit_id']); /* Remove processed field */
-		 }
-	 }
+	if (isset($input['length_unit_id'])) {
+		if (!is_numeric($input['length_unit_id']) || !array_key_exists((int) $input['length_unit_id'], $lengthUnitArray)) {
+			$rowError[] = "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
+		} else {
+			$product->length_unit_id = (int) $input['length_unit_id'];
+			unset($input['length_unit_id']); /* Remove processed field */
+		}
+	}
 
-	 if (isset($input['weight_unit_id'])) {
-		 if (!is_numeric($input['weight_unit_id']) || !array_key_exists((int) $input['weight_unit_id'], $weightUnitArray)) {
-			 $rowError[] = "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).";
-		 } else {
-			 $product->weight_unit_id = (int) $input['weight_unit_id'];
-			 unset($input['weight_unit_id']); /* Remove processed field */
-		 }
-	 }
+	if (isset($input['weight_unit_id'])) {
+		if (!is_numeric($input['weight_unit_id']) || !array_key_exists((int) $input['weight_unit_id'], $weightUnitArray)) {
+			$rowError[] = "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).";
+		} else {
+			$product->weight_unit_id = (int) $input['weight_unit_id'];
+			unset($input['weight_unit_id']); /* Remove processed field */
+		}
+	}
 
-	 if (isset($input['shipping_length_id'])) {
-		 if (!is_numeric($input['shipping_length_id']) || !array_key_exists((int) $input['shipping_length_id'], $lengthUnitArray)) {
-			 $rowError[] = "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
-		 } else {
-			 $product->shipping_length_id = (int) $input['shipping_length_id'];
-			 unset($input['shipping_length_id']); /* Remove processed field */
-		 }
-	 }
+	if (isset($input['shipping_length_id'])) {
+		if (!is_numeric($input['shipping_length_id']) || !array_key_exists((int) $input['shipping_length_id'], $lengthUnitArray)) {
+			$rowError[] = "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
+		} else {
+			$product->shipping_length_id = (int) $input['shipping_length_id'];
+			unset($input['shipping_length_id']); /* Remove processed field */
+		}
+	}
 
-	 if (isset($input['google_shopping_category'])) {
+	if (isset($input['google_shopping_category'])) {
 		$product->google_shopping_category = $input['google_shopping_category'];
 		unset($input['google_shopping_category']);
 	}
@@ -1571,62 +1572,62 @@ class ProductController extends BaseController
 		unset($input['box_quantity']);
 	}
 
-	 /* Store ID validation */
-	 if (isset($input['store_id'])) {
-		 $storeArray = Store::pluck("id")->toArray();
-		 if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
-			 $storeList = implode(', ', $storeArray);
-			 $rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
-		 } else {
-			 $product->store_id = (int) $input['store_id'];
-			 unset($input['store_id']); /* Remove processed field */
-		 }
-	 }
+	/* Store ID validation */
+	if (isset($input['store_id'])) {
+		$storeArray = Store::pluck("id")->toArray();
+		if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
+			$storeList = implode(', ', $storeArray);
+			$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
+		} else {
+			$product->store_id = (int) $input['store_id'];
+			unset($input['store_id']); /* Remove processed field */
+		}
+	}
 
-	 /* Brand ID validation */
-	 if (isset($input['brand_id'])) {
-		 $brandArray = Brand::pluck("id")->toArray();
-		 if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
-			 $brandList = implode(', ', $brandArray);
-			 $rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
-		 } else {
-			 $product->brand_id = (int) $input['brand_id'];
-			 unset($input['brand_id']); /* Remove processed field */
-		 }
-	 }
+	/* Brand ID validation */
+	if (isset($input['brand_id'])) {
+		$brandArray = Brand::pluck("id")->toArray();
+		if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
+			$brandList = implode(', ', $brandArray);
+			$rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
+		} else {
+			$product->brand_id = (int) $input['brand_id'];
+			unset($input['brand_id']); /* Remove processed field */
+		}
+	}
 
-	 /* If any validation errors exist, return them */
-	 if (!empty($rowError)) {
-		 return response()->json([
-			 'success' => false,
-			 'message' => $rowError
-		 ]);
-	 }
+	/* If any validation errors exist, return them */
+	if (!empty($rowError)) {
+		return response()->json([
+			'success' => false,
+			'message' => $rowError
+		]);
+	}
 
-	 /* Assign remaining valid fields to the product */
-	 foreach ($input as $key => $value) {
-		 $product->$key = $value;
-	 }
+	/* Assign remaining valid fields to the product */
+	foreach ($input as $key => $value) {
+		$product->$key = $value;
+	}
 
 
-	 if ($request->has('review')) {
-		 $reviewInput = $request->input('review');
+	if ($request->has('review')) {
+		$reviewInput = $request->input('review');
 
 		 // Ensure required fields exist
-		 if (empty($reviewInput['comment'])) {
-			 return response()->json([
-				 'success' => false,
-				 'message' => 'Review comment is required.',
-			 ]);
-		 }
+		if (empty($reviewInput['comment'])) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Review comment is required.',
+			]);
+		}
 
 		 // Ensure product exists
-		 if (!$product) {
-			 return response()->json([
-				 'success' => false,
-				 'message' => 'Product not found.',
-			 ]);
-		 }
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product not found.',
+			]);
+		}
 
 		 // Ensure a valid customer_id is used
 		 $customerId =  1; // Default to 1 if not logged in
@@ -1643,46 +1644,46 @@ class ProductController extends BaseController
 
 		 if ($review->save()) {
 			 // Handle review images (if any)
-			 if ($request->hasFile('review_images')) {
-				 foreach ($request->file('review_images') as $image) {
-					 $path = $image->store('reviews', 'public');
+		 	if ($request->hasFile('review_images')) {
+		 		foreach ($request->file('review_images') as $image) {
+		 			$path = $image->store('reviews', 'public');
 
-					 ReviewImage::create([
-						 'review_id' => $review->id,
-						 'image_path' => $path,
-					 ]);
-				 }
-			 }
+		 			ReviewImage::create([
+		 				'review_id' => $review->id,
+		 				'image_path' => $path,
+		 			]);
+		 		}
+		 	}
 
-			 return response()->json([
-				 'success' => true,
-				 'message' => 'Review saved successfully.',
-			 ]);
+		 	return response()->json([
+		 		'success' => true,
+		 		'message' => 'Review saved successfully.',
+		 	]);
 		 } else {
-			 \Log::error('Failed to save review:', $review->toArray());
-			 return response()->json(['success' => false, 'message' => 'Failed to save review.']);
+		 	\Log::error('Failed to save review:', $review->toArray());
+		 	return response()->json(['success' => false, 'message' => 'Failed to save review.']);
 		 }
-	 }
+		}
 
-	 /* Save the product */
-	 $product->save();
+		/* Save the product */
+		$product->save();
 
-	 $product = Product::find($product->id);
+		$product = Product::find($product->id);
 
 	 // if($request->attributes){
 	 // 	$product->productAttributes([attribute_id=>$key, $attribute_value=>$value]);;;;
 	 // }
 
-	 /* Return success response */
-	 return response()->json([
-		 'success' => true,
-		 'message' => 'Product updated successfully.',
-		 'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
-		 'unitOfMeasurements' => $unitOfMeasurements ,
-		 'review' => $review ?? null,
-		 'faq' => $faqs ?? null,
-	 ]);
- }
+		/* Return success response */
+		return response()->json([
+			'success' => true,
+			'message' => 'Product updated successfully.',
+			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
+			'unitOfMeasurements' => $unitOfMeasurements ,
+			'review' => $review ?? null,
+			'faq' => $faqs ?? null,
+		]);
+	}
 
 	/**
 	 * @OA\Get(
@@ -1917,23 +1918,23 @@ class ProductController extends BaseController
  * )
  */
 
-	public function destroy(Product $product)
-	{
-		try {
-			$product->delete();
+	 public function destroy(Product $product)
+	 {
+	 	try {
+	 		$product->delete();
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Product deleted successfully.',
-			], 200);
-		} catch (\Exception $e) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to delete product.',
-				'error' => $e->getMessage(),
-			], 500);
-		}
-	}
+	 		return response()->json([
+	 			'success' => true,
+	 			'message' => 'Product deleted successfully.',
+	 		], 200);
+	 	} catch (\Exception $e) {
+	 		return response()->json([
+	 			'success' => false,
+	 			'message' => 'Failed to delete product.',
+	 			'error' => $e->getMessage(),
+	 		], 500);
+	 	}
+	 }
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/{productId}/product-category-attribute-groups",
@@ -2020,14 +2021,12 @@ class ProductController extends BaseController
 	 */
 	public function import(Request $request)
 	{
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:csv,txt|max:5120',
+		]);
+
 		try {
-			/* Validate request data */
-			$request->validate([
-				'upload_file' => 'required|file|mimes:csv,txt|max:5120',
-			]);
-
-			$file = $request->file('upload_file');
-
 			$productFileFormatArray = [
 				'Id' => 'id',
 				'URL' => 'url',
@@ -2107,129 +2106,37 @@ class ProductController extends BaseController
 				'Warranty Information (AR)' => 'warrantyInformationAr',
 			];
 
-			$requiredRowCount = count($productFileFormatArray);
-			$requiredHeaderArray = array_keys($productFileFormatArray);
-
-			$data = [];
-			/* Open the CSV file and read its content */
-			if (($handle = fopen($file, "r")) !== false) {
-				/* Read the header */
-				if (($header = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-					$header = array_map('trim', $header);
-
-					if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
-						$columns = implode(', ', array_values($missingColumns));
-						$missingCount = count($missingColumns);
-						fclose($handle);
-						return response()->json([
-							'success' => false,
-							'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
-						]);
-					}
-				}
-
-				/* Continue reading and processing rows */
-				$rowIndex = 2;
-				while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-					/* Fix unquoted fields and escape special characters */
-					$row = array_map(function ($value) {
-						/* Add quotes around multiline fields */
-						if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
-							$value = '"' . str_replace('"', '""', $value) . '"';
-						}
-
-						/* Check if the value is UTF-8 encoded */
-						if (!mb_check_encoding($value, 'UTF-8')) {
-							/* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
-							$value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
-						}
-
-						/* Remove invalid characters and trim spaces */
-						$value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
-						return trim($value);
-					}, $row);
-
-					/* Skip blank rows */
-					if (array_filter($row)) {
-						if (count($row) != $requiredRowCount) {
-							$message = "The data in row $rowIndex is not compatible for import.";
-
-							return response()->json([
-								'success' => false,
-								'message' => $message
-							]);
-						}
-						$data[] = $row;
-					}
-					$rowIndex++;
-				}
-				fclose($handle);
-			}
-
-			/* Get the total record count */
-			$totalRecords = count($data);
-			if ($totalRecords == 0) {
-				return response()->json([
-					'success' => false,
-					'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
-				]);
-			}
-
-			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-			$chunkSize = 100;
-			$chunks = array_chunk($data, $chunkSize);
-
-			/* Start import process */
-			$batch = Bus::batch([])
-			->before(function (Batch $batch) use ($totalRecords) {
-				$descArray = [
-					"Total Count" => $totalRecords,
-					"Success Count" => 0,
-					"Failed Count" => 0,
-					"Errors" => []
-				];
-				/* Save transaction log */
-				$log = new TransactionLog();
-				$log->module = "Product";
-				$log->action = "Import";
-				$log->identifier = $batch->id;
-				$log->status = 'In-progress';
-				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-				$log->created_by = auth()->id() ?? null;
-				$log->created_at = now();
-				$log->save();
-			})
-			->finally(function (Batch $batch) {
-				$log = TransactionLog::where('identifier', $batch->id)->first();
-				TransactionLog::where('id', $log->id)->update([
-					'status' => 'Completed',
-				]);
-			})
-			->name("Product Import")
-			->dispatch();
-
-			/* Add jobs to the batch for processing chunks */
-			foreach ($chunks as $chunk) {
-				$data = [
-					'productFileFormatArray' => $productFileFormatArray,
-					'header' => $header,
-					'chunk' => $chunk,
-					'userId' => auth()->id()
-				];
-				$batch->options['queue'] = 'JOB1';
-				$batch->add(new ImportProductJob($data));
-			}
+			$csvImporter->processImport(
+				$request->file('upload_file')->getRealPath(),
+				$productFileFormatArray,
+				'Product',
+				'JOB1',
+				'Product Import',
+				\App\Jobs\ImportProductJob::class
+			);
 
 			return response()->json([
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
 		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $e->getMessage();
+			$error[] = 'File: ' . $e->getFile();
+			$error[] = 'Line: ' . $e->getLine();
 			return response()->json([
 				'success' => false,
-				'message' => $exception->getMessage()
+				'message' => $error
 			]);
 		}
+		0
+:
+"Error: Undefined array key \"vendorFileFormatArray\""
+1
+:
+"File: D:\\WAMP\\www\\pim_flow_laravel\\app\\Jobs\\ImportVendorJob.php"
+2
+:
+"Line: 39"
 	}
 
 
@@ -2267,34 +2174,34 @@ class ProductController extends BaseController
  *     security={{"bearerAuth":{}}}
  * )
  */
-public function getProductsByCategory($category_id)
-{
-    // Fetch all products related to the given category ID
-    $products = Product::whereHas('categories', function ($query) use ($category_id) {
-        $query->where('category_id', $category_id);
-    })
-    ->select(['id', 'name', 'sku', 'images'])
-    ->orderBy('id', 'desc') // Order by product ID in descending order
-    ->get();
+	public function getProductsByCategory($category_id)
+	{
+	// Fetch all products related to the given category ID
+		$products = Product::whereHas('categories', function ($query) use ($category_id) {
+			$query->where('category_id', $category_id);
+		})
+		->select(['id', 'name', 'sku', 'images'])
+	->orderBy('id', 'desc') // Order by product ID in descending order
+	->get();
 
-    // Formatting the response to include only id, name, sku, and image
-    $formattedProducts = $products->map(function ($product)use ($category_id) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+	// Formatting the response to include only id, name, sku, and image
+	$formattedProducts = $products->map(function ($product)use ($category_id) {
+		return [
+			'id' => $product->id,
+			'name' => $product->name,
+			'sku' => $product->sku,
+			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 			'category_id' => $category_id, // Added category_id
 
-        ];
-    });
+		];
+	});
 
-    // Return the list of products without pagination
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully for category ' . $category_id,
-        'data' => $formattedProducts
-    ]);
+	// Return the list of products without pagination
+	return response()->json([
+		'success' => true,
+		'message' => 'Products retrieved successfully for category ' . $category_id,
+		'data' => $formattedProducts
+	]);
 }
 
 
@@ -2344,320 +2251,320 @@ public function getProductsByCategory($category_id)
  */
 public function getFilteredProductsByCategorybd1($category_ids)
 {
-    // Convert comma-separated string to array of integers
-    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+	// Convert comma-separated string to array of integers
+	$categoryIdArray = array_map('intval', explode(',', $category_ids));
 
-    if (empty($categoryIdArray)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No valid category IDs provided.',
-            'data' => []
-        ]);
-    }
+	if (empty($categoryIdArray)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No valid category IDs provided.',
+			'data' => []
+		]);
+	}
 
-    // Get data from brand_temp_2 table
-    $brandData = DB::table('brand_temp_1')->get();
+	// Get data from brand_temp_2 table
+	$brandData = DB::table('brand_temp_1')->get();
 
-    if ($brandData->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No data found in brand_temp_1.',
-            'data' => []
-        ]);
-    }
+	if ($brandData->isEmpty()) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No data found in brand_temp_1.',
+			'data' => []
+		]);
+	}
 
-    // Initialize array to store product IDs
-    $allProductIds = [];
-    $productCategoryMap = [];
-    $categoryResults = [];
+	// Initialize array to store product IDs
+	$allProductIds = [];
+	$productCategoryMap = [];
+	$categoryResults = [];
 
-    // Initialize category results for each requested category
-    foreach ($categoryIdArray as $categoryId) {
-        $categoryResults[$categoryId] = [];
-    }
+	// Initialize category results for each requested category
+	foreach ($categoryIdArray as $categoryId) {
+		$categoryResults[$categoryId] = [];
+	}
 
-    // Loop through each record in brand_temp_2
-    foreach ($brandData as $record) {
-        // Decode the category_id JSON field
-        $categoryData = json_decode($record->category_id, true);
+	// Loop through each record in brand_temp_2
+	foreach ($brandData as $record) {
+		// Decode the category_id JSON field
+		$categoryData = json_decode($record->category_id, true);
 
-        if (!is_array($categoryData)) {
-            continue;
-        }
+		if (!is_array($categoryData)) {
+			continue;
+		}
 
-        // Look for matching categories in the JSON data
-        foreach ($categoryData as $category) {
-            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
-                $categoryId = $category['category_id'];
+		// Look for matching categories in the JSON data
+		foreach ($categoryData as $category) {
+			if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+				$categoryId = $category['category_id'];
 
-                // If this category matches one of our requested categories
-                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
-                    foreach ($category['product_ids'] as $productId) {
-                        $allProductIds[] = $productId;
-                        $productCategoryMap[$productId] = $categoryId;
-                        $categoryResults[$categoryId][] = $productId;
-                    }
-                }
-            }
-        }
-    }
+				// If this category matches one of our requested categories
+				if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+					foreach ($category['product_ids'] as $productId) {
+						$allProductIds[] = $productId;
+						$productCategoryMap[$productId] = $categoryId;
+						$categoryResults[$categoryId][] = $productId;
+					}
+				}
+			}
+		}
+	}
 
-    // Remove duplicate product IDs
-    $allProductIds = array_unique($allProductIds);
+	// Remove duplicate product IDs
+	$allProductIds = array_unique($allProductIds);
 
-    // Even if some categories have no products, we still want to return products from categories that do have products
-    if (empty($allProductIds)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No products found for any of the given categories.',
-            'data' => []
-        ]);
-    }
+	// Even if some categories have no products, we still want to return products from categories that do have products
+	if (empty($allProductIds)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No products found for any of the given categories.',
+			'data' => []
+		]);
+	}
 
-    // Fetch products from the database
-    $products = Product::whereIn('id', $allProductIds)
-        ->select(['id', 'name', 'sku', 'images'])
-        ->orderBy('id', 'desc')
-        ->get();
+	// Fetch products from the database
+	$products = Product::whereIn('id', $allProductIds)
+	->select(['id', 'name', 'sku', 'images'])
+	->orderBy('id', 'desc')
+	->get();
 
-    // Format product data
-    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'category_id' => $productCategoryMap[$product->id] ?? null,
-        ];
-    });
+	// Format product data
+	$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
+		return [
+			'id' => $product->id,
+			'name' => $product->name,
+			'sku' => $product->sku,
+			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+			'category_id' => $productCategoryMap[$product->id] ?? null,
+		];
+	});
 
-    // Summary of what was found for each category
-    $categorySummary = [];
-    foreach ($categoryIdArray as $categoryId) {
-        $categorySummary[] = [
-            'category_id' => $categoryId,
-            'product_count' => count($categoryResults[$categoryId])
-        ];
-    }
+	// Summary of what was found for each category
+	$categorySummary = [];
+	foreach ($categoryIdArray as $categoryId) {
+		$categorySummary[] = [
+			'category_id' => $categoryId,
+			'product_count' => count($categoryResults[$categoryId])
+		];
+	}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
-        'category_summary' => $categorySummary,
-        'data' => $formattedProducts
-    ]);
+	return response()->json([
+		'success' => true,
+		'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+		'category_summary' => $categorySummary,
+		'data' => $formattedProducts
+	]);
 }
 
 public function getFilteredProductsByCategory($category_ids)
 {
-    // Convert comma-separated string to array of integers
-    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+	// Convert comma-separated string to array of integers
+	$categoryIdArray = array_map('intval', explode(',', $category_ids));
 
-    if (empty($categoryIdArray)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No valid category IDs provided.',
-            'data' => []
-        ]);
-    }
+	if (empty($categoryIdArray)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No valid category IDs provided.',
+			'data' => []
+		]);
+	}
 
-    // Get data from brand_temp_2 table
-    $brandData = DB::table('brand_temp_2')->get();
+	// Get data from brand_temp_2 table
+	$brandData = DB::table('brand_temp_2')->get();
 
-    if ($brandData->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No data found in brand_temp_2.',
-            'data' => []
-        ]);
-    }
+	if ($brandData->isEmpty()) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No data found in brand_temp_2.',
+			'data' => []
+		]);
+	}
 
-    // Initialize array to store product IDs
-    $allProductIds = [];
-    $productCategoryMap = [];
-    $categoryResults = [];
+	// Initialize array to store product IDs
+	$allProductIds = [];
+	$productCategoryMap = [];
+	$categoryResults = [];
 
-    // Initialize category results for each requested category
-    foreach ($categoryIdArray as $categoryId) {
-        $categoryResults[$categoryId] = [];
-    }
+	// Initialize category results for each requested category
+	foreach ($categoryIdArray as $categoryId) {
+		$categoryResults[$categoryId] = [];
+	}
 
-    // Loop through each record in brand_temp_2
-    foreach ($brandData as $record) {
-        // Decode the category_id JSON field
-        $categoryData = json_decode($record->category_id, true);
+	// Loop through each record in brand_temp_2
+	foreach ($brandData as $record) {
+		// Decode the category_id JSON field
+		$categoryData = json_decode($record->category_id, true);
 
-        if (!is_array($categoryData)) {
-            continue;
-        }
+		if (!is_array($categoryData)) {
+			continue;
+		}
 
-        // Look for matching categories in the JSON data
-        foreach ($categoryData as $category) {
-            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
-                $categoryId = $category['category_id'];
+		// Look for matching categories in the JSON data
+		foreach ($categoryData as $category) {
+			if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+				$categoryId = $category['category_id'];
 
-                // If this category matches one of our requested categories
-                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
-                    foreach ($category['product_ids'] as $productId) {
-                        $allProductIds[] = $productId;
-                        $productCategoryMap[$productId] = $categoryId;
-                        $categoryResults[$categoryId][] = $productId;
-                    }
-                }
-            }
-        }
-    }
+				// If this category matches one of our requested categories
+				if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+					foreach ($category['product_ids'] as $productId) {
+						$allProductIds[] = $productId;
+						$productCategoryMap[$productId] = $categoryId;
+						$categoryResults[$categoryId][] = $productId;
+					}
+				}
+			}
+		}
+	}
 
-    // Remove duplicate product IDs
-    $allProductIds = array_unique($allProductIds);
+	// Remove duplicate product IDs
+	$allProductIds = array_unique($allProductIds);
 
-    // Even if some categories have no products, we still want to return products from categories that do have products
-    if (empty($allProductIds)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No products found for any of the given categories.',
-            'data' => []
-        ]);
-    }
+	// Even if some categories have no products, we still want to return products from categories that do have products
+	if (empty($allProductIds)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No products found for any of the given categories.',
+			'data' => []
+		]);
+	}
 
-    // Fetch products from the database
-    $products = Product::whereIn('id', $allProductIds)
-        ->select(['id', 'name', 'sku', 'images'])
-        ->orderBy('id', 'desc')
-        ->get();
+	// Fetch products from the database
+	$products = Product::whereIn('id', $allProductIds)
+	->select(['id', 'name', 'sku', 'images'])
+	->orderBy('id', 'desc')
+	->get();
 
-    // Format product data
-    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'category_id' => $productCategoryMap[$product->id] ?? null,
-        ];
-    });
+	// Format product data
+	$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
+		return [
+			'id' => $product->id,
+			'name' => $product->name,
+			'sku' => $product->sku,
+			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+			'category_id' => $productCategoryMap[$product->id] ?? null,
+		];
+	});
 
-    // Summary of what was found for each category
-    $categorySummary = [];
-    foreach ($categoryIdArray as $categoryId) {
-        $categorySummary[] = [
-            'category_id' => $categoryId,
-            'product_count' => count($categoryResults[$categoryId])
-        ];
-    }
+	// Summary of what was found for each category
+	$categorySummary = [];
+	foreach ($categoryIdArray as $categoryId) {
+		$categorySummary[] = [
+			'category_id' => $categoryId,
+			'product_count' => count($categoryResults[$categoryId])
+		];
+	}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
-        'category_summary' => $categorySummary,
-        'data' => $formattedProducts
-    ]);
+	return response()->json([
+		'success' => true,
+		'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+		'category_summary' => $categorySummary,
+		'data' => $formattedProducts
+	]);
 }
 
 
 public function getFilteredProductsByCategorybd3($category_ids)
 {
-    // Convert comma-separated string to array of integers
-    $categoryIdArray = array_map('intval', explode(',', $category_ids));
+	// Convert comma-separated string to array of integers
+	$categoryIdArray = array_map('intval', explode(',', $category_ids));
 
-    if (empty($categoryIdArray)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No valid category IDs provided.',
-            'data' => []
-        ]);
-    }
+	if (empty($categoryIdArray)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No valid category IDs provided.',
+			'data' => []
+		]);
+	}
 
-    // Get data from brand_temp_2 table
-    $brandData = DB::table('brand_temp_3')->get();
+	// Get data from brand_temp_2 table
+	$brandData = DB::table('brand_temp_3')->get();
 
-    if ($brandData->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No data found in brand_temp_3.',
-            'data' => []
-        ]);
-    }
+	if ($brandData->isEmpty()) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No data found in brand_temp_3.',
+			'data' => []
+		]);
+	}
 
-    // Initialize array to store product IDs
-    $allProductIds = [];
-    $productCategoryMap = [];
-    $categoryResults = [];
+	// Initialize array to store product IDs
+	$allProductIds = [];
+	$productCategoryMap = [];
+	$categoryResults = [];
 
-    // Initialize category results for each requested category
-    foreach ($categoryIdArray as $categoryId) {
-        $categoryResults[$categoryId] = [];
-    }
+	// Initialize category results for each requested category
+	foreach ($categoryIdArray as $categoryId) {
+		$categoryResults[$categoryId] = [];
+	}
 
-    // Loop through each record in brand_temp_2
-    foreach ($brandData as $record) {
-        // Decode the category_id JSON field
-        $categoryData = json_decode($record->category_id, true);
+	// Loop through each record in brand_temp_2
+	foreach ($brandData as $record) {
+		// Decode the category_id JSON field
+		$categoryData = json_decode($record->category_id, true);
 
-        if (!is_array($categoryData)) {
-            continue;
-        }
+		if (!is_array($categoryData)) {
+			continue;
+		}
 
-        // Look for matching categories in the JSON data
-        foreach ($categoryData as $category) {
-            if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
-                $categoryId = $category['category_id'];
+		// Look for matching categories in the JSON data
+		foreach ($categoryData as $category) {
+			if (isset($category['category_id']) && in_array($category['category_id'], $categoryIdArray)) {
+				$categoryId = $category['category_id'];
 
-                // If this category matches one of our requested categories
-                if (isset($category['product_ids']) && is_array($category['product_ids'])) {
-                    foreach ($category['product_ids'] as $productId) {
-                        $allProductIds[] = $productId;
-                        $productCategoryMap[$productId] = $categoryId;
-                        $categoryResults[$categoryId][] = $productId;
-                    }
-                }
-            }
-        }
-    }
+				// If this category matches one of our requested categories
+				if (isset($category['product_ids']) && is_array($category['product_ids'])) {
+					foreach ($category['product_ids'] as $productId) {
+						$allProductIds[] = $productId;
+						$productCategoryMap[$productId] = $categoryId;
+						$categoryResults[$categoryId][] = $productId;
+					}
+				}
+			}
+		}
+	}
 
-    // Remove duplicate product IDs
-    $allProductIds = array_unique($allProductIds);
+	// Remove duplicate product IDs
+	$allProductIds = array_unique($allProductIds);
 
-    // Even if some categories have no products, we still want to return products from categories that do have products
-    if (empty($allProductIds)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'No products found for any of the given categories.',
-            'data' => []
-        ]);
-    }
+	// Even if some categories have no products, we still want to return products from categories that do have products
+	if (empty($allProductIds)) {
+		return response()->json([
+			'success' => false,
+			'message' => 'No products found for any of the given categories.',
+			'data' => []
+		]);
+	}
 
-    // Fetch products from the database
-    $products = Product::whereIn('id', $allProductIds)
-        ->select(['id', 'name', 'sku', 'images'])
-        ->orderBy('id', 'desc')
-        ->get();
+	// Fetch products from the database
+	$products = Product::whereIn('id', $allProductIds)
+	->select(['id', 'name', 'sku', 'images'])
+	->orderBy('id', 'desc')
+	->get();
 
-    // Format product data
-    $formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'category_id' => $productCategoryMap[$product->id] ?? null,
-        ];
-    });
+	// Format product data
+	$formattedProducts = $products->map(function ($product) use ($productCategoryMap) {
+		return [
+			'id' => $product->id,
+			'name' => $product->name,
+			'sku' => $product->sku,
+			'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+			'category_id' => $productCategoryMap[$product->id] ?? null,
+		];
+	});
 
-    // Summary of what was found for each category
-    $categorySummary = [];
-    foreach ($categoryIdArray as $categoryId) {
-        $categorySummary[] = [
-            'category_id' => $categoryId,
-            'product_count' => count($categoryResults[$categoryId])
-        ];
-    }
+	// Summary of what was found for each category
+	$categorySummary = [];
+	foreach ($categoryIdArray as $categoryId) {
+		$categorySummary[] = [
+			'category_id' => $categoryId,
+			'product_count' => count($categoryResults[$categoryId])
+		];
+	}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully for categories: ' . $category_ids,
-        'category_summary' => $categorySummary,
-        'data' => $formattedProducts
-    ]);
+	return response()->json([
+		'success' => true,
+		'message' => 'Products retrieved successfully for categories: ' . $category_ids,
+		'category_summary' => $categorySummary,
+		'data' => $formattedProducts
+	]);
 }
 }
