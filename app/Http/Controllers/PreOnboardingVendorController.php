@@ -12,193 +12,97 @@ use Illuminate\Http\Request;
 class PreOnboardingVendorController extends Controller
 {
 	/**
- * @OA\Get(
- *     path="/api/pre-onboarding-vendors",
- *     summary="Get Pre Onboarding Vendor List",
- *     description="Fetches a list of pre onboarding vendors with unified search across all fields.",
- *     tags={"Pre Onboarding Vendors"},
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number for pagination. Starts from 1.",
- *         required=true,
- *         example=1,
- *         @OA\Schema(
- *             type="integer",
- *             minimum=1
- *         )
- *     ),
- *     @OA\Parameter(
- *         name="length",
- *         in="query",
- *         description="Number of records per page.",
- *         required=true,
- *         example=20,
- *         @OA\Schema(
- *             type="integer",
- *             minimum=1
- *         )
- *     ),
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Global search term that searches across all text fields.",
- *         required=false,
- *         example="vendor name",
- *         @OA\Schema(type="string")
- *     ),
+	 * @OA\Get(
+	 *     path="/api/pre-onboarding-vendors",
+	 *     summary="Get Pre Onboarding Vendor List",
+	 *     description="Fetches a list of pre onboarding vendors. Supports search by each field.",
+	 *     tags={"Pre Onboarding Vendors"},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="abc@example.com", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="phone_number", in="query", description="Search by phone number", example="9876543210", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="type", in="query", description="Search by type", example="manufacturer", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="shipping_days", in="query", description="Search by shipping days", example="3-5", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="credit_limit", in="query", description="Search by credit limit", example="50000", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="credit_terms", in="query", description="Search by credit terms", example="Net 30", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="grade", in="query", description="Search by grade", example="A", @OA\Schema(type="string")),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$recordsQuery = PreOnboardingVendor::with(['country:id,name']);
 
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Field to sort by.",
- *         required=false,
- *         example="name",
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="sort_direction",
- *         in="query",
- *         description="Direction to sort (asc or desc).",
- *         required=false,
- *         example="asc",
- *         @OA\Schema(type="string", enum={"asc", "desc"})
- *     ),
- *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function index(Request $request)
-{
-    $recordsQuery = PreOnboardingVendor::with(['country:id,name']);
+		/* Apply search filters */
+		$searchableColumns = [
+			'name', 'contact_person', 'email', 'phone_number',
+			'type', 'shipping_days', 'credit_limit', 'credit_terms', 'grade'
+		];
 
-    // Apply search if provided
-    if ($request->filled('search')) {
-        $searchTerm = $request->input('search');
-        $this->applyGlobalSearch($recordsQuery, $searchTerm);
-    }
-    
-    // Apply sorting
-    $sortBy = $request->input('sort_by', 'id');
-    $sortDirection = $request->input('sort_direction', 'desc');
-    $allowedSortFields = ['id', 'name', 'contact_person', 'email', 'phone_number', 
-                         'country_id', 'type', 'dropshipping', 'shipping_days', 
-                         'credit_limit', 'credit_terms', 'grade'];
-    
-    if (in_array($sortBy, $allowedSortFields)) {
-        $recordsQuery->orderBy($sortBy, $sortDirection);
-    } else {
-        $recordsQuery->orderBy('id', 'desc');
-    }
+		foreach ($searchableColumns as $column) {
+			if ($request->filled($column)) {
+				$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+			}
+		}
 
-    /* Pagination */
-    if ($request->filled('page') && $request->filled('length')) {
-        $page = (int) $request->input('page');
-        $length = (int) $request->input('length');
-        $totalRecords = $recordsQuery->count();
-        $totalPages = ceil($totalRecords / $length);
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $recordsQuery->count();
+			$totalPages = ceil($totalRecords / $length);
 
-        $records = $recordsQuery->offset(($page - 1) * $length)
-        ->limit($length)
-        ->get([
-            'id', 'name', 'contact_person', 'email', 'phone_number',
-            'country_id', 'category_ids', 'type',
-            'dropshipping', 'shipping_days', 'credit_limit',
-            'credit_terms', 'grade', 'product_demand_level'
-        ]);
-    } else {
-        $records = $recordsQuery->orderBy('name', 'asc')->get([
-            'id', 'name'
-        ]);
-        $totalRecords = $records->count();
-        $totalPages = 1;
-    }
+			$records = $recordsQuery->offset(($page - 1) * $length)
+			->limit($length)
+			->orderBy('id', 'desc')
+			->get([
+				'id', 'name', 'contact_person', 'email', 'phone_number',
+				'country_id', 'category_ids', 'type',
+				'dropshipping', 'shipping_days', 'credit_limit',
+				'credit_terms', 'grade', 'product_demand_level'
+			]);
+		} else {
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name'
+			]);
+			$totalRecords = $records->count();
+			$totalPages = 1;
+		}
 
-    /* Add product_demand_level_count and category objects */
-    $records->transform(function ($record) {
-        /* product_demand_level count */
-        $decoded = json_decode($record->product_demand_level, true);
-        $record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
-        unset($record->product_demand_level);
+		/* Transform records */
+		$records->transform(function ($record) {
+			/* product_demand_level count */
+			$decoded = json_decode($record->product_demand_level, true);
+			$record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
+			unset($record->product_demand_level);
 
-        $categoryIds = array_filter(explode(',', $record->category_ids));
-        $categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
-        $record->categories = implode(' | ', $categories);
-        unset($record->category_ids);
+			/* categories from category_ids */
+			$categoryIds = array_filter(explode(',', $record->category_ids));
+			$categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
+			$record->categories = implode(' | ', $categories);
+			unset($record->category_ids);
 
-        $record->country_name = $record->country->name;
-        unset($record->country_id);
-        unset($record->country);
+			/* country name */
+			$record->country_name = $record->country->name ?? null;
+			unset($record->country_id, $record->country);
 
-        $record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
+			/* dropshipping label */
+			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
 
-        return $record;
-    });
+			return $record;
+		});
 
-    return response()->json([
-        'success' => true,
-        'message' => __("msg_rec_list"),
-        'data' => $records,
-        'total_pages' => $totalPages,
-        'total_records' => $totalRecords,
-    ]);
-}
-
-/**
- * Apply global search across all relevant fields
- *
- * @param \Illuminate\Database\Eloquent\Builder $query
- * @param string $searchTerm
- * @return void
- */
-private function applyGlobalSearch($query, $searchTerm)
-{
-    // Search across all text fields
-    $query->where(function($q) use ($searchTerm) {
-        // Text fields
-        $q->where('name', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('contact_person', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('email', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('phone_number', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('type', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('credit_terms', 'LIKE', "%{$searchTerm}%")
-          ->orWhere('grade', 'LIKE', "%{$searchTerm}%");
-        
-        // Try to match numeric fields if the search term is numeric
-        if (is_numeric($searchTerm)) {
-            $numericValue = (float) $searchTerm;
-            $q->orWhere('shipping_days', $numericValue)
-              ->orWhere('credit_limit', $numericValue);
-              
-            // Also search for boolean dropshipping if 0 or 1
-            if ($numericValue === 0.0 || $numericValue === 1.0) {
-                $q->orWhere('dropshipping', (int) $numericValue);
-            }
-        }
-        
-        // Search for country ID if numeric
-        if (is_numeric($searchTerm)) {
-            $q->orWhere('country_id', (int) $searchTerm);
-        }
-        
-        // Search within category IDs
-        $q->orWhere(function($categoryQ) use ($searchTerm) {
-            // If search term is numeric, look for exact category ID match
-            if (is_numeric($searchTerm)) {
-                $categoryId = $searchTerm;
-                $categoryQ->where('category_ids', $categoryId)
-                         ->orWhere('category_ids', 'LIKE', $categoryId . ',%')
-                         ->orWhere('category_ids', 'LIKE', '%,' . $categoryId)
-                         ->orWhere('category_ids', 'LIKE', '%,' . $categoryId . ',%');
-            }
-        });
-        
-        // Also join with countries table to search country name
-        $q->orWhereHas('country', function($countryQuery) use ($searchTerm) {
-            $countryQuery->where('name', 'LIKE', "%{$searchTerm}%");
-        });
-    });
-}
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_list"),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
+	}
 
 	/**
 	 * @OA\Post(
