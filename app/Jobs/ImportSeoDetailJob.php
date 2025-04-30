@@ -9,7 +9,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -129,15 +128,19 @@ class ImportSeoDetailJob implements ShouldQueue
 			};
 			$relational_type = $model;
 
-			try {
-				if ($relational_id) {
-					$exist = $model::findOrFail($relational_id);
-				} elseif ($relational_name) {
-					$exist = $model::where('name', $relational_name)->firstOrFail();
-				}
+			if (!empty($relational_id)) {
+				$exist = $model::find($relational_id);
+			} elseif (!empty($relational_name)) {
+				$exist = $model::where('name', $relational_name)->first();
+			} else {
+				$exist = null;
+			}
+
+			if ($exist) {
 				$relational_id = $exist->id;
-			} catch (ModelNotFoundException $e) {
-				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier.";
+			} else {
+				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier." .
+					" [Provided relational_id: " . ($relational_id ?? 'NULL') . ", relational_name: '" . ($relational_name ?? 'NULL') . "']";
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
