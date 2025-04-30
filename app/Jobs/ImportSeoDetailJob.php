@@ -228,7 +228,7 @@ class ImportSeoDetailJob implements ShouldQueue
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
-					$pythonCmd = base_path('venv/bin/python');
+					$pythonCmd = '/var/www/html/pim_flow_laravel/venv/bin/python3';
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
 					$pythonCmd = base_path('venv/bin/python');
