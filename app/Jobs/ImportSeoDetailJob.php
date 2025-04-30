@@ -222,9 +222,24 @@ class ImportSeoDetailJob implements ShouldQueue
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
 
-				$pythonScriptPath = base_path('app/Script/main.py');
+				if (env('APP_WEBSITE') == 'UAE') {
+					$pythonScriptPath = base_path('app/Script/main_uae.py');
+					$pythonCmd = 'python3';
+				} elseif (env('APP_WEBSITE') == 'US') {
+					$pythonScriptPath = base_path('app/Script/main_us.py');
+					$pythonCmd = 'python3';
+				} else {
+					$pythonScriptPath = base_path('app/Script/main_us.py');
+					if (env('STORAGE_ENV') == 'tanuj_system') {
+						$pythonCmd = 'python';
+					} else {
+						$pythonCmd = 'python3';
+					}
+				}
+
 				$inputJson = json_encode($primaryData);
-				$command = "echo {$inputJson} | python \"{$pythonScriptPath}\"";
+
+				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
 				$outputJson = shell_exec($command);
 				$primaryData = json_decode($outputJson, true);
 				unset($primaryData['relational_name']);
