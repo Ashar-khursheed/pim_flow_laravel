@@ -224,7 +224,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
-				logger()->info('Previous primary data:', $primaryData);
+				logger()->info("\nPrevious primary data:", $primaryData);
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
@@ -237,26 +237,20 @@ class ImportSeoDetailJob implements ShouldQueue
 					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : 'python3';
 				}
 
-				$inputJson = json_encode($primaryData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+				$inputJson = json_encode($primaryData);
 
-				$command = "echo " . escapeshellarg($inputJson) . " | {$pythonCmd} \"{$pythonScriptPath}\"";
-				logger()->info('Executing command:', ['command' => $command]);
+				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";;
+				logger()->info("\n\nExecuting command:", ['command' => $command]);
 
 				$outputJson = shell_exec($command);
 
-				logger()->info('Python output:', ['output' => $outputJson]);
+				logger()->info("\n\nPython output:", ['output' => $outputJson]);
 
 				$primaryData = json_decode($outputJson, true);
 
-				if (!is_array($primaryData)) {
-					logger()->error('Python script returned invalid JSON.', ['output' => $outputJson]);
-					continue;
-				}
-
-				logger()->info('After processing primary data:', $primaryData);
+				logger()->info("\n\nAfter processing primary data:", $primaryData);
 
 				unset($primaryData['relational_name']);
-
 
 				$primaryData['created_at'] = now();
 				$primaryData['updated_at'] = now();
