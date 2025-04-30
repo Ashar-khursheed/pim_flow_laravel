@@ -4237,13 +4237,13 @@
                     "Category Pages"
                 ],
                 "summary": "Delete a category page",
-                "description": "Delete a specific category page by its ID.",
+                "description": "Delete a category page by ID.",
                 "operationId": "09d47c5e2d7a034ca021db3a931ac2cc",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID of the category page to delete",
+                        "description": "Category page ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -4256,9 +4256,6 @@
                     },
                     "404": {
                         "description": "Category page not found"
-                    },
-                    "403": {
-                        "description": "Unauthorized action"
                     }
                 },
                 "security": [
