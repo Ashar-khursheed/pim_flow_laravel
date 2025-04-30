@@ -228,13 +228,13 @@ class ImportSeoDetailJob implements ShouldQueue
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
-					$pythonCmd = 'python3';
+					$pythonCmd = base_path('venv/bin/python');
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					$pythonCmd = 'python3';
+					$pythonCmd = base_path('venv/bin/python');
 				} else {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : 'python3';
+					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
 				}
 
 				$inputJson = json_encode($primaryData);
