@@ -140,7 +140,7 @@ class ImportSeoDetailJob implements ShouldQueue
 				$relational_id = $exist->id;
 			} else {
 				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier." .
-					" [Provided relational_id: " . ($relational_id ?? 'NULL') . ", relational_name: '" . ($relational_name ?? 'NULL') . "']";
+				" [Provided relational_id: " . ($relational_id ?? 'NULL') . ", relational_name: '" . ($relational_name ?? 'NULL') . "']";
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
@@ -224,6 +224,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
+				logger()->info('Previous primary data:', $primaryData);
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
@@ -233,19 +234,29 @@ class ImportSeoDetailJob implements ShouldQueue
 					$pythonCmd = 'python3';
 				} else {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					if (env('STORAGE_ENV') == 'tanuj_system') {
-						$pythonCmd = 'python';
-					} else {
-						$pythonCmd = 'python3';
-					}
+					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : 'python3';
 				}
 
-				$inputJson = json_encode($primaryData);
+				$inputJson = json_encode($primaryData, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
+				$command = "echo " . escapeshellarg($inputJson) . " | {$pythonCmd} \"{$pythonScriptPath}\"";
+				logger()->info('Executing command:', ['command' => $command]);
+
 				$outputJson = shell_exec($command);
+
+				logger()->info('Python output:', ['output' => $outputJson]);
+
 				$primaryData = json_decode($outputJson, true);
+
+				if (!is_array($primaryData)) {
+					logger()->error('Python script returned invalid JSON.', ['output' => $outputJson]);
+					continue;
+				}
+
+				logger()->info('After processing primary data:', $primaryData);
+
 				unset($primaryData['relational_name']);
+
 
 				$primaryData['created_at'] = now();
 				$primaryData['updated_at'] = now();
