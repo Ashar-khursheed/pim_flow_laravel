@@ -150,6 +150,29 @@ class RoleController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function show($roleId)
+	// {
+	// 	if (!auth()->user()->can('show role')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+	// 	$role = Role::with('permissions:id,name')->find($roleId);
+	// 	if (!$role) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => __("err_exist")
+	// 		]);
+	// 	}
+	// 	$role->permissions->each->makeHidden(['pivot']);
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __("msg_rec_dtl"),
+	// 		'data' => $role
+	// 	]);
+	// }
 	public function show($roleId)
 	{
 		if (!auth()->user()->can('show role')) {
@@ -158,22 +181,70 @@ class RoleController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$role = Role::with('permissions:id,name')->find($roleId);
+		
+		$role = Role::find($roleId);
 		if (!$role) {
 			return response()->json([
 				'success' => false,
 				'message' => __("err_exist")
 			]);
 		}
-		$role->permissions->each->makeHidden(['pivot']);
-
+		
+		// Get all permissions associated with this role
+		$rolePermissions = $role->permissions()->get(['id', 'name']);
+		
+		// Get all available permissions
+		$allPermissions = Permission::orderBy('id', 'asc')->get(['id', 'name']);
+		
+		// Group permissions by module
+		$groupedPermissions = [];
+		
+		foreach ($allPermissions as $permission) {
+			$nameParts = explode(' ', $permission->name);
+			
+			// Skip if there's less than 2 parts
+			if (count($nameParts) < 2) {
+				continue;
+			}
+			
+			$action = $nameParts[0]; // First part is the action (list, add, update, etc.)
+			$module = implode(' ', array_slice($nameParts, 1)); // Rest is the module name
+			
+			// Initialize module if it doesn't exist
+			if (!isset($groupedPermissions[$module])) {
+				$groupedPermissions[$module] = [];
+			}
+			
+			// Add permission to its module with check if role has this permission
+			$groupedPermissions[$module][] = [
+				'id' => $permission->id,
+				'name' => $permission->name,
+				'assigned' => $rolePermissions->contains('id', $permission->id)
+			];
+		}
+		
+		// Convert to required format
+		$formattedModules = [];
+		foreach ($groupedPermissions as $module => $permissions) {
+			$formattedModules[] = [
+				'name' => $module,
+				'permissions' => $permissions
+			];
+		}
+		
+		// Build the response data
+		$responseData = [
+			'id' => $role->id,
+			'name' => $role->name,
+			'modules' => $formattedModules
+		];
+		
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_dtl"),
-			'data' => $role
+			'data' => $responseData
 		]);
 	}
-
 	/**
 	 * @OA\Put(
 	 *     path="/api/roles/{id}",
