@@ -250,6 +250,13 @@ class ImportSeoDetailJob implements ShouldQueue
 				$primaryData['created_at'] = now();
 				$primaryData['updated_at'] = now();
 
+				// Add this check before the updateOrCreate
+				if (!isset($primaryData['relational_id'])) {
+					$primaryData['relational_id'] = $group['primary']['relational_id'];
+				}
+				if (!isset($primaryData['relational_type'])) {
+					$primaryData['relational_type'] = $group['primary']['relational_type'];
+				}
 
 				// Create/update the SEO record first
 				$seo = SeoManagement::updateOrCreate(
