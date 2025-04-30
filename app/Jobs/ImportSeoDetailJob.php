@@ -224,11 +224,11 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
-				logger()->info("\nPrevious primary data:", $primaryData);
+				// logger()->info("\nPrevious primary data:", $primaryData);
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
-					$pythonCmd = '/var/www/html/pim_flow_laravel/venv/bin/python3';
+					$pythonCmd = "python3";
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
 					$pythonCmd = base_path('venv/bin/python');
@@ -239,14 +239,15 @@ class ImportSeoDetailJob implements ShouldQueue
 
 				$inputJson = json_encode($primaryData);
 
-				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";;
-				logger()->info("\n\nExecuting command:", ['command' => $command]);
+				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
 
-				$outputJson = shell_exec($command);
+				// $command = escapeshellcmd("echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"");
+				$outputJson = shell_exec($command . " 2>&1");
 
-				logger()->info("\n\nPython output:", ['output' => $outputJson]);
+				// logger()->info("\n\nPython output:", ['output' => $outputJson]);
 
 				$primaryData = json_decode($outputJson, true);
+				// dd($primaryData);
 
 				logger()->info("\n\nAfter processing primary data:", $primaryData);
 
