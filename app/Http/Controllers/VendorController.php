@@ -19,6 +19,8 @@ use App\Models\TransactionLog;
 use App\Jobs\ImportVendorJob;
 use App\Services\CsvImporterService;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 class VendorController extends BaseController
 {
 	/**
@@ -29,6 +31,8 @@ class VendorController extends BaseController
 	 *     tags={"Vendors"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by vendor id", example="1", @OA\Schema(type="integer")),
 	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="vendor@example.com", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John Doe", @OA\Schema(type="string")),
@@ -37,6 +41,8 @@ class VendorController extends BaseController
 	 *     @OA\Parameter(name="website_link", in="query", description="Search by website link", example="http://example.com", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="type", in="query", description="Search by type", example="manufacturer", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="business_licence_number", in="query", description="Search by business licence number", example="LIC1234", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "email", "contact_person", "mobile_number", "landline_number", "website_link", "type", "business_licence_number", "credit_limit", "net_terms", "created_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -47,15 +53,35 @@ class VendorController extends BaseController
 
 		/* Dynamic search filters */
 		$searchableColumns = [
-			'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
+			'id', 'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
 			'website_link', 'type', 'business_licence_number'
 		];
 
-		foreach ($searchableColumns as $column) {
-			if ($request->filled($column)) {
-				$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+		if ($request->filled('global')) {
+			$globalSearch = $request->input('global');
+			$recordsQuery->where(function ($query) use ($searchableColumns, $globalSearch) {
+				foreach ($searchableColumns as $column) {
+					$query->orWhere($column, 'LIKE', '%' . $globalSearch . '%');
+				}
+			});
+		} else {
+			/* Apply individual column filters */
+			foreach ($searchableColumns as $column) {
+				if ($request->filled($column)) {
+					$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+				}
 			}
 		}
+
+		/* Sorting */
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'credit_limit', 'net_terms']);
+		$sortBy = $request->input('sort_by', 'id');
+		$sortDir = $request->input('sort_dir', 'desc');
+
+		if (!in_array($sortBy, $sortableColumns)) {
+			$sortBy = 'id';
+		}
+		$sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
@@ -64,9 +90,9 @@ class VendorController extends BaseController
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $recordsQuery->offset(($page - 1) * $length)
+			$records = $recordsQuery->orderBy($sortBy, $sortDir)
+			->offset(($page - 1) * $length)
 			->limit($length)
-			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
@@ -563,7 +589,7 @@ class VendorController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/vendors/import",
-	 *     summary="Import vendors from an Excel file",
+	 *     summary="Import vendors from a csv file",
 	 *     tags={"Vendors"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -579,166 +605,6 @@ class VendorController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
-
-
-
-	// public function import(Request $request)
-	// {
-	// 	try {
-	// 		/* Validate request data */
-	// 		$request->validate([
-	// 			'upload_file' => 'required|file|mimes:csv,txt|max:5120',
-	// 		]);
-
-	// 		$file = $request->file('upload_file');
-
-	// 		$vendorFileFormatArray = [
-	// 			'Id' => 'id',
-	// 			'Name' => 'name',
-	// 			'Country' => 'country',
-	// 			'Email' => 'email',
-	// 			'Contact Person' => 'contact_person',
-	// 			'Landline Number' => 'landline_number',
-	// 			'Mobile Number' => 'mobile_number',
-	// 			'Cities(Separated By |)' => 'cities',
-	// 			'Dropshipping' => 'dropshipping',
-	// 			'Website Link' => 'website_link',
-	// 			'Domain' => 'domain',
-	// 			'Type' => 'type',
-	// 			'Credit Limit' => 'credit_limit',
-	// 			'Net Terms' => 'net_terms',
-	// 			'Logo URL' => 'logo_url',
-	// 			'Tax Certificate URL' => 'tax_certificate_url',
-	// 			'Business Licence Number' => 'business_licence_number',
-	// 			'Business Licence URL' => 'business_licence_url'
-	// 		];
-
-	// 		$requiredRowCount = count($vendorFileFormatArray);
-	// 		$requiredHeaderArray = array_keys($vendorFileFormatArray);
-
-	// 		$data = [];
-	// 		/* Open the CSV file and read its content */
-	// 		if (($handle = fopen($file, "r")) !== false) {
-	// 			/* Read the header */
-	// 			if (($header = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-	// 				$header = array_map('trim', $header);
-
-	// 				if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
-	// 					$columns = implode(', ', array_values($missingColumns));
-	// 					$missingCount = count($missingColumns);
-	// 					fclose($handle);
-	// 					return response()->json([
-	// 						'success' => false,
-	// 						'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
-	// 					]);
-	// 				}
-	// 			}
-
-	// 			/* Continue reading and processing rows */
-	// 			$rowIndex = 2;
-	// 			while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-	// 				/* Fix unquoted fields and escape special characters */
-	// 				$row = array_map(function ($value) {
-	// 					/* Add quotes around multiline fields */
-	// 					if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
-	// 						$value = '"' . str_replace('"', '""', $value) . '"';
-	// 					}
-
-	// 					/* Check if the value is UTF-8 encoded */
-	// 					if (!mb_check_encoding($value, 'UTF-8')) {
-	// 						/* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
-	// 						$value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
-	// 					}
-
-	// 					/* Remove invalid characters and trim spaces */
-	// 					$value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
-	// 					return trim($value);
-	// 				}, $row);
-
-	// 				/* Skip blank rows */
-	// 				if (array_filter($row)) {
-	// 					if (count($row) != $requiredRowCount) {
-	// 						$message = "The data in row $rowIndex is not compatible for import.";
-
-	// 						return response()->json([
-	// 							'success' => false,
-	// 							'message' => $message
-	// 						]);
-	// 					}
-	// 					$data[] = $row;
-	// 				}
-	// 				$rowIndex++;
-	// 			}
-	// 			fclose($handle);
-	// 		}
-
-	// 		/* Get the total record count */
-	// 		$totalRecords = count($data);
-	// 		if ($totalRecords == 0) {
-	// 			return response()->json([
-	// 				'success' => false,
-	// 				'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
-	// 			]);
-	// 		}
-
-	// 		/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-	// 		$chunkSize = 100;
-	// 		$chunks = array_chunk($data, $chunkSize);
-
-	// 		/* Start import process */
-	// 		$batch = Bus::batch([])
-	// 		->before(function (Batch $batch) use ($totalRecords) {
-	// 			$descArray = [
-	// 				"Total Count" => $totalRecords,
-	// 				"Success Count" => 0,
-	// 				"Failed Count" => 0,
-	// 				"Errors" => []
-	// 			];
-	// 			/* Save transaction log */
-	// 			$log = new TransactionLog();
-	// 			$log->module = "Vendor";
-	// 			$log->action = "Import";
-	// 			$log->identifier = $batch->id;
-	// 			$log->status = 'In-progress';
-	// 			$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-	// 			$log->created_by = auth()->id() ?? null;
-	// 			$log->created_at = now();
-	// 			$log->save();
-	// 		})
-	// 		->finally(function (Batch $batch) {
-	// 			$log = TransactionLog::where('identifier', $batch->id)->first();
-	// 			TransactionLog::where('id', $log->id)->update([
-	// 				'status' => 'Completed',
-	// 			]);
-	// 		})
-	// 		->name("Vendor Import")
-	// 		->dispatch();
-
-	// 		/* Add jobs to the batch for processing chunks */
-	// 		foreach ($chunks as $chunk) {
-	// 			$data = [
-	// 				'vendorFileFormatArray' => $vendorFileFormatArray,
-	// 				'header' => $header,
-	// 				'chunk' => $chunk,
-	// 				'userId' => auth()->id()
-	// 			];
-
-	// 			$batch->options['queue'] = 'JOB4';
-	// 			$batch->add(new ImportVendorJob($data));
-	// 		}
-
-	// 		return response()->json([
-	// 			'success' => true,
-	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
-	// 		]);
-	// 	} catch(\Exception $exception) {
-	// 		return response()->json([
-	// 			'success' => false,
-	// 			'message' => $exception->getMessage()
-	// 		]);
-	// 	}
-	// }
 
 	public function import(Request $request, CsvImporterService $csvImporter)
 	{
@@ -759,7 +625,7 @@ class VendorController extends BaseController
 				'Domain' => 'domain',
 				'Type' => 'type',
 				'Credit Limit' => 'credit_limit',
-				'Net Terms' => 'net_terms',
+				'Net Terms(In Days)' => 'net_terms',
 				'Logo URL' => 'logo_url',
 				'Tax Certificate URL' => 'tax_certificate_url',
 				'Business Licence Number' => 'business_licence_number',
@@ -790,4 +656,118 @@ class VendorController extends BaseController
 		}
 	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/vendors/export",
+	 *     summary="Export vendors to CSV",
+	 *     tags={"Vendors"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"range_from", "range_to"},
+	 *             @OA\Property(property="range_from", type="integer", minimum=1, example=1, description="Starting range (must be >= 1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and at most 2000 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Success",
+	 *         @OA\MediaType(mediaType="application/json")
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function export(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+		]);
+
+		/* Fetch records with related secondary keywords */
+		$records = Vendor::offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get();
+
+		if ($records->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No records exist.'
+			]);
+		}
+
+		/* Define CSV headers */
+		$csvHeaders = [
+			'Id',
+			'Name',
+			'Country',
+			'Email',
+			'Contact Person',
+			'Landline Number',
+			'Mobile Number',
+			'Cities(Separated By |)',
+			'Dropshipping',
+			'Website Link',
+			'Domain',
+			'Type',
+			'Credit Limit',
+			'Net Terms(In Days)',
+			'Logo URL',
+			'Tax Certificate URL',
+			'Business Licence Number',
+			'Business Licence URL',
+		];
+
+		/* Create a StreamedResponse for efficient memory usage */
+		$response = new StreamedResponse(function () use ($records, $csvHeaders) {
+			$handle = fopen('php://output', 'w');
+			fputcsv($handle, $csvHeaders);
+
+			foreach ($records as $record) {
+				/* Process city names from comma-separated IDs */
+				$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
+				$cities = City::whereIn('id', $record->city_ids)->pluck('name')->toArray();
+				$cityNames = implode('|', $cities);
+
+				fputcsv($handle, [
+					$record->id,
+					$record->name,
+					$record->country->name ?? '',
+					$record->email,
+					$record->contact_person,
+					$record->landline_number,
+					$record->mobile_number,
+					$cityNames,
+					$record->dropshipping,
+					$record->website_link,
+					$record->domain ? ($record->domain === 'Horeca' ? 1 : 2) : null,
+					$record->type ? ($record->type === 'direct' ? 1 : 2) : null,
+					$record->credit_limit,
+					$record->net_terms,
+					$record->logo_url,
+					$record->tax_certificate_url,
+					$record->business_licence_number,
+					$record->business_licence_url,
+					$record->og_image_alt_text,
+					$record->og_image_name,
+					$record->tags,
+				]);
+			}
+
+			fclose($handle);
+		});
+		$fileName = sprintf(
+			'%s_%d-%d_%s.csv',
+			'vendors',
+			$request->range_from,
+			$request->range_to,
+			now()->format('Y-m-d')
+		);
+		$response->headers->set('Content-Type', 'text/csv');
+		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+
+		return $response;
+	}
 }

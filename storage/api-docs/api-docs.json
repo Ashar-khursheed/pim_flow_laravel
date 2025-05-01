@@ -7883,6 +7883,24 @@
                         "example": 20
                     },
                     {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ABC"
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by vendor id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
+                    },
+                    {
                         "name": "name",
                         "in": "query",
                         "description": "Search by vendor name",
@@ -7962,6 +7980,40 @@
                             "type": "string"
                         },
                         "example": "A"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "contact_person",
+                                "phone_number",
+                                "type",
+                                "shipping_days",
+                                "credit_limit",
+                                "credit_terms",
+                                "grade",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -12425,6 +12477,24 @@
                         "example": 20
                     },
                     {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ABC"
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by vendor id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
+                    },
+                    {
                         "name": "name",
                         "in": "query",
                         "description": "Search by vendor name",
@@ -12495,6 +12565,41 @@
                             "type": "string"
                         },
                         "example": "LIC1234"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "contact_person",
+                                "mobile_number",
+                                "landline_number",
+                                "website_link",
+                                "type",
+                                "business_licence_number",
+                                "credit_limit",
+                                "net_terms",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -12916,7 +13021,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Import vendors from an Excel file",
+                "summary": "Import vendors from a csv file",
                 "operationId": "588a3a46a9a21058de6f0bf0ffc724d3",
                 "requestBody": {
                     "required": true,
@@ -12940,6 +13045,161 @@
                 },
                 "responses": {
                     "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/export": {
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Export vendors to CSV",
+                "operationId": "372f96c86b2fdc93ba94d7af9692493d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >= 1)",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and at most 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/{vendor_id}/documents": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get Vendor Documents",
+                "description": "Returns a list of documents uploaded by a vendor, optionally filtered by type (image, file, video).",
+                "operationId": "f9c297a29787721f27457dc7661e9d01",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter by document type: image, file, or video",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "file",
+                                "video"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Upload Vendor Document",
+                "description": "Uploads a document for the specified vendor.",
+                "operationId": "46ec2afc002c8106b3f3cca5822cf7a2",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "document"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Business License"
+                                    },
+                                    "document": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
                         "description": "Success",
                         "content": {
                             "application/json": {}

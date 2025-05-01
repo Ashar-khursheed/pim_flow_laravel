@@ -9,7 +9,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -129,15 +128,19 @@ class ImportSeoDetailJob implements ShouldQueue
 			};
 			$relational_type = $model;
 
-			try {
-				if ($relational_id) {
-					$exist = $model::findOrFail($relational_id);
-				} elseif ($relational_name) {
-					$exist = $model::where('name', $relational_name)->firstOrFail();
-				}
+			if (!empty($relational_id)) {
+				$exist = $model::find($relational_id);
+			} elseif (!empty($relational_name)) {
+				$exist = $model::where('name', $relational_name)->first();
+			} else {
+				$exist = null;
+			}
+
+			if ($exist) {
 				$relational_id = $exist->id;
-			} catch (ModelNotFoundException $e) {
-				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier.";
+			} else {
+				$rowError[] = class_basename($relational_type) . " does not exist for the given relational identifier." .
+				" [Provided relational_id: " . ($relational_id ?? 'NULL') . ", relational_name: '" . ($relational_name ?? 'NULL') . "']";
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
@@ -221,32 +224,45 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
+				// logger()->info("\nPrevious primary data:", $primaryData);
 
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
-					$pythonCmd = 'python3';
+					$pythonCmd = base_path('venv/bin/python');
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					$pythonCmd = 'python3';
+					$pythonCmd = base_path('venv/bin/python');
 				} else {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					if (env('STORAGE_ENV') == 'tanuj_system') {
-						$pythonCmd = 'python';
-					} else {
-						$pythonCmd = 'python3';
-					}
+					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
 				}
 
 				$inputJson = json_encode($primaryData);
 
 				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
-				$outputJson = shell_exec($command);
+
+				// $command = escapeshellcmd("echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"");
+				$outputJson = shell_exec($command . " 2>&1");
+
+				// logger()->info("\n\nPython output:", ['output' => $outputJson]);
+
 				$primaryData = json_decode($outputJson, true);
+				// dd($primaryData);
+
+				logger()->info("\n\nAfter processing primary data:", $primaryData);
+
 				unset($primaryData['relational_name']);
 
 				$primaryData['created_at'] = now();
 				$primaryData['updated_at'] = now();
 
+				// Add this check before the updateOrCreate
+				if (!isset($primaryData['relational_id'])) {
+					$primaryData['relational_id'] = $group['primary']['relational_id'];
+				}
+				if (!isset($primaryData['relational_type'])) {
+					$primaryData['relational_type'] = $group['primary']['relational_type'];
+				}
 
 				// Create/update the SEO record first
 				$seo = SeoManagement::updateOrCreate(

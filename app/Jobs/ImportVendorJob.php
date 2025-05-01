@@ -43,8 +43,8 @@ class ImportVendorJob implements ShouldQueue
 	{
 		$countryIDNames = Country::pluck('name', 'id')->all();
 		$cityIDNames = City::pluck('name', 'id')->all();
-		$vendorNames = Vendor::pluck('name')->all();
-		$vendorEmails = Vendor::pluck('email')->all();
+		$vendorNames = Vendor::pluck('name', 'id')->all();
+		$vendorEmails = Vendor::pluck('email', 'id')->all();
 
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
 		$descArray = json_decode($log->description, true) ?? ["Errors" => ''];
@@ -101,17 +101,66 @@ class ImportVendorJob implements ShouldQueue
 				continue;
 			}
 
-			if (!empty($name)) {
-				$name = trim($name);
-				if (in_array($name, $vendorNames)) {
-					$rowError[] = "Vendor name \"$name\" already exists.";
+			if (!empty($id)) {
+				$vendor = Vendor::find($id);
+				if (!$vendor) {
+					$rowError[] = 'Vendor does not exist with the given ID.';
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
 				}
-			}
 
-			if (!empty($email)) {
-				$email = trim($email);
-				if (in_array($email, $vendorEmails)) {
-					$rowError[] = "Vendor email \"$email\" already exists.";
+				/* Check if name is changed and is already taken by another vendor */
+				if (!empty($vendor->name) && $vendor->name !== $name && in_array($name, $vendorNames)) {
+					$existingId = array_search($name, $vendorNames);
+					$rowError[] = "Vendor name already exists with ID: $existingId.";
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
+				}
+
+				/* Check if email is changed and is already taken by another vendor */
+				if (!empty($vendor->email) && $vendor->email !== $email && in_array($email, $vendorEmails)) {
+					$existingId = array_search($email, $vendorEmails);
+					$rowError[] = "Vendor email already exists with ID: $existingId.";
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
+				}
+			} else {
+				$vendor = new Vendor();
+
+				/* Check if Name already exists in the database */
+				if (!empty($name) && in_array($name, $vendorNames)) {
+					$existingId = array_search($name, $vendorNames);
+					$rowError[] = "Vendor name already exists with ID: $existingId.";
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
+				}
+
+				/* Check if Email already exists in the database */
+				if (!empty($email) && in_array($email, $vendorEmails)) {
+					$existingId = array_search($email, $vendorEmails);
+					$rowError[] = "Vendor email already exists with ID: $existingId.";
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
 				}
 			}
 
@@ -122,7 +171,7 @@ class ImportVendorJob implements ShouldQueue
 				if ($matchedID !== false) {
 					$country_id = $matchedID;
 				} else {
-					$rowError[] = "City \"$country\" does not exist.";
+					$rowError[] = "Country \"$country\" does not exist.";
 				}
 			}
 
@@ -173,8 +222,8 @@ class ImportVendorJob implements ShouldQueue
 				foreach ($fileFields as $fieldName => $fieldValue) {
 					if (!empty($fieldValue) && Str::startsWith($fieldValue, ['http://', 'https://'])) {
 						/* Skip if already on HorecaStore S3 */
+						$uploadedUrl = $fieldValue;
 						if (!Str::startsWith($fieldValue, env('AWS_URL'))) {
-							$uploadedUrl = null;
 							$fileExtension = strtolower(pathinfo(parse_url($fieldValue, PHP_URL_PATH), PATHINFO_EXTENSION));
 
 							if ($fieldName === 'Logo URL') {
@@ -196,17 +245,14 @@ class ImportVendorJob implements ShouldQueue
 
 								$uploadedUrl = $this->uploadPdfFromURL($fieldValue, $pdfType, env('STORAGE_ENV') . $folder);
 							}
+						}
 
-							/* Assign back to the original variable */
-							if (!empty($uploadedUrl)) {
-								if ($fieldName === 'Logo URL') {
-									$logo_url = $uploadedUrl;
-								} else if ($fieldName === 'Tax Certificate URL') {
-									$tax_certificate_url = $uploadedUrl;
-								} else if ($fieldName === 'Business Licence URL') {
-									$business_licence_url = $uploadedUrl;
-								}
-							}
+						if ($fieldName === 'Logo URL') {
+							$logo_url = $uploadedUrl;
+						} else if ($fieldName === 'Tax Certificate URL') {
+							$tax_certificate_url = $uploadedUrl;
+						} else if ($fieldName === 'Business Licence URL') {
+							$business_licence_url = $uploadedUrl;
 						}
 					}
 				}
@@ -227,7 +273,6 @@ class ImportVendorJob implements ShouldQueue
 				/*************/
 				DB::commit();
 
-				$vendor = new Vendor();
 				$vendor->name = $name;
 				$vendor->country_id = $country_id;
 				$vendor->email = $email;
@@ -250,8 +295,8 @@ class ImportVendorJob implements ShouldQueue
 				$vendor->updated_at = now();
 				$vendor->save();
 
-				$vendorNames[] = $vendor->name;
-				$vendorEmails[] = $vendor->email;
+				$vendorNames[$vendor->id] = $name;
+				$vendorEmails[$vendor->id] = $email;
 
 				$success++;
 			} catch (\Exception $e) {
