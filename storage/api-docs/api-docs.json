@@ -7883,6 +7883,24 @@
                         "example": 20
                     },
                     {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ABC"
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by vendor id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
+                    },
+                    {
                         "name": "name",
                         "in": "query",
                         "description": "Search by vendor name",
@@ -7962,6 +7980,40 @@
                             "type": "string"
                         },
                         "example": "A"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "contact_person",
+                                "phone_number",
+                                "type",
+                                "shipping_days",
+                                "credit_limit",
+                                "credit_terms",
+                                "grade",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -12425,6 +12477,24 @@
                         "example": 20
                     },
                     {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "ABC"
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by vendor id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
+                    },
+                    {
                         "name": "name",
                         "in": "query",
                         "description": "Search by vendor name",
@@ -12495,6 +12565,41 @@
                             "type": "string"
                         },
                         "example": "LIC1234"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "contact_person",
+                                "mobile_number",
+                                "landline_number",
+                                "website_link",
+                                "type",
+                                "business_licence_number",
+                                "credit_limit",
+                                "net_terms",
+                                "created_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
