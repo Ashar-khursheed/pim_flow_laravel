@@ -67,7 +67,7 @@ class TransactionLogController extends BaseController
 		// dd(auth()->id());
 		$records = TransactionLog::with(['createdBy:id,first_name,last_name'])->orderBy('id', 'desc');
 
-		if ($request->filled('module') && in_array($request->module, ['Product', 'Product Attribute'])) {
+		if ($request->filled('module') ) {
 			$records->where('module', $request->module);
 		}
 
