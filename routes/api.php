@@ -43,6 +43,7 @@ use App\Http\Controllers\ProductImageUploadController;
 use App\Http\Controllers\DocumentUploadController;
 use App\Http\Controllers\SupplierScoreController;
 use App\Http\Controllers\VendorController;
+use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
 
 
@@ -92,6 +93,8 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
+	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
+	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
 	Route::post('/vendors/import', [VendorController::class, 'import']);
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
