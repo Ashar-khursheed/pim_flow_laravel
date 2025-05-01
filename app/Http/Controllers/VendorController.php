@@ -29,6 +29,7 @@ class VendorController extends BaseController
 	 *     tags={"Vendors"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", example="ABC", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="vendor@example.com", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John Doe", @OA\Schema(type="string")),
@@ -37,6 +38,8 @@ class VendorController extends BaseController
 	 *     @OA\Parameter(name="website_link", in="query", description="Search by website link", example="http://example.com", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="type", in="query", description="Search by type", example="manufacturer", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="business_licence_number", in="query", description="Search by business licence number", example="LIC1234", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "email", "contact_person", "mobile_number", "landline_number", "website_link", "type", "business_licence_number", "credit_limit", "net_terms", "created_at"})),
+ 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -51,11 +54,31 @@ class VendorController extends BaseController
 			'website_link', 'type', 'business_licence_number'
 		];
 
-		foreach ($searchableColumns as $column) {
-			if ($request->filled($column)) {
-				$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+		if ($request->filled('global')) {
+			$globalSearch = $request->input('global');
+			$recordsQuery->where(function ($query) use ($searchableColumns, $globalSearch) {
+				foreach ($searchableColumns as $column) {
+					$query->orWhere($column, 'LIKE', '%' . $globalSearch . '%');
+				}
+			});
+		} else {
+			/* Apply individual column filters */
+			foreach ($searchableColumns as $column) {
+				if ($request->filled($column)) {
+					$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
+				}
 			}
 		}
+
+		/* Sorting */
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'id', 'credit_limit', 'net_terms']);
+		$sortBy = $request->input('sort_by', 'id');
+		$sortDir = $request->input('sort_dir', 'desc');
+
+		if (!in_array($sortBy, $sortableColumns)) {
+			$sortBy = 'id';
+		}
+		$sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
@@ -64,9 +87,9 @@ class VendorController extends BaseController
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $recordsQuery->offset(($page - 1) * $length)
+			$records = $recordsQuery->orderBy($sortBy, $sortDir)
+			->offset(($page - 1) * $length)
 			->limit($length)
-			->orderBy('id', 'desc')
 			->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
