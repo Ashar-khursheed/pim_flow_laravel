@@ -96,6 +96,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
 	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
 	Route::post('/vendors/import', [VendorController::class, 'import']);
+	Route::post('/vendors/export', [VendorController::class, 'export']);
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
 	Route::get('/countries', [LocationController::class, 'getCountryList']);
