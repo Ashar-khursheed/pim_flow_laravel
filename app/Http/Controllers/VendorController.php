@@ -30,6 +30,7 @@ class VendorController extends BaseController
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", example="ABC", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by vendor id", example="1", @OA\Schema(type="integer")),
 	 *     @OA\Parameter(name="name", in="query", description="Search by vendor name", example="ABC", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="email", in="query", description="Search by email", example="vendor@example.com", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="contact_person", in="query", description="Search by contact person", example="John Doe", @OA\Schema(type="string")),
@@ -50,7 +51,7 @@ class VendorController extends BaseController
 
 		/* Dynamic search filters */
 		$searchableColumns = [
-			'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
+			'id', 'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
 			'website_link', 'type', 'business_licence_number'
 		];
 
@@ -71,7 +72,7 @@ class VendorController extends BaseController
 		}
 
 		/* Sorting */
-		$sortableColumns = array_merge($searchableColumns, ['created_at', 'id', 'credit_limit', 'net_terms']);
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'credit_limit', 'net_terms']);
 		$sortBy = $request->input('sort_by', 'id');
 		$sortDir = $request->input('sort_dir', 'desc');
 
