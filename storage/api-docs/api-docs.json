@@ -13058,6 +13058,112 @@
                 ]
             }
         },
+        "/api/vendors/{vendor_id}/documents": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Get Vendor Documents",
+                "description": "Returns a list of documents uploaded by a vendor, optionally filtered by type (image, file, video).",
+                "operationId": "f9c297a29787721f27457dc7661e9d01",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Filter by document type: image, file, or video",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "file",
+                                "video"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Upload Vendor Document",
+                "description": "Uploads a document for the specified vendor.",
+                "operationId": "46ec2afc002c8106b3f3cca5822cf7a2",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "ID of the vendor",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "document"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Business License"
+                                    },
+                                    "document": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/websites": {
             "get": {
                 "tags": [
