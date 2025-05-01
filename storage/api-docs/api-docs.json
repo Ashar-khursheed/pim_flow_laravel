@@ -13021,7 +13021,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Import vendors from an Excel file",
+                "summary": "Import vendors from a csv file",
                 "operationId": "588a3a46a9a21058de6f0bf0ffc724d3",
                 "requestBody": {
                     "required": true,
@@ -13036,6 +13036,55 @@
                                         "description": "CSV file (.csv) max 5MB",
                                         "type": "string",
                                         "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/vendors/export": {
+            "post": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Export vendors to CSV",
+                "operationId": "372f96c86b2fdc93ba94d7af9692493d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >= 1)",
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and at most 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
                                     }
                                 },
                                 "type": "object"
