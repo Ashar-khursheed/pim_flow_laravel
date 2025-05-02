@@ -236,13 +236,26 @@ class ImportSeoDetailJob implements ShouldQueue
 					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : 'python3';
 				}
 
-				$inputJson = json_encode($primaryData);
+				// $inputJson = json_encode($primaryData);
 
-				$command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
+				$tempInputPath = storage_path('app/temp_input.json');
+file_put_contents($tempInputPath, json_encode($primaryData));
+
+$command = "{$pythonCmd} \"{$pythonScriptPath}\" < \"{$tempInputPath}\"";
+
+$outputJson = shell_exec($command . " 2>&1");
+dd($outputJson);
+
+// Optional cleanup
+unlink($tempInputPath);
+
+dd($outputJson);
+
+				// $command = "echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"";
 
 				// $command = escapeshellcmd("echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"");
-				$outputJson = shell_exec($command . " 2>&1");
-dd($outputJson);
+				// $outputJson = shell_exec($command . " 2>&1");
+// dd($outputJson);
 				$primaryData = json_decode($outputJson, true);
 				// dd($primaryData);
 
