@@ -13333,6 +13333,79 @@
                 ]
             }
         },
+        "/api/vendors/{vendor_id}/documents/download": {
+            "get": {
+                "tags": [
+                    "Vendors"
+                ],
+                "summary": "Download Vendor Documents as ZIP",
+                "description": "Downloads all vendor documents as a ZIP file, optionally filtered by type (image, file, video).",
+                "operationId": "a98783ee6c4dfeb1a8b0eca5f441eb5c",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Document type: image, file, or video",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "image",
+                                "file",
+                                "video"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ZIP file containing product media",
+                        "content": {
+                            "application/zip": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/websites": {
             "get": {
                 "tags": [
