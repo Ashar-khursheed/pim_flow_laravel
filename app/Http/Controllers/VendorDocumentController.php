@@ -7,6 +7,8 @@ use App\Models\Vendor;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use ZipArchive;
+use Illuminate\Support\Str;
 
 class VendorDocumentController extends Controller
 {
@@ -158,6 +160,13 @@ class VendorDocumentController extends Controller
 		->orderByDesc('created_at')
 		->get();
 
+		if ($documents->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No documents found.',
+			]);
+		}
+
 		$documents->transform(function ($record) {
 			$record->created_by = $record->creator->name;
 			unset($record->creator);
@@ -169,6 +178,99 @@ class VendorDocumentController extends Controller
 			'success' => true,
 			'data'    => $documents
 		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/vendors/{vendor_id}/documents/download",
+	 *     summary="Download Vendor Documents as ZIP",
+	 *     description="Downloads all vendor documents as a ZIP file, optionally filtered by type (image, file, video).",
+	 *     tags={"Vendors"},
+	 *     @OA\Parameter(name="vendor_id", in="path", required=true, description="Vendor ID", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="type", in="query", required=false, description="Document type: image, file, or video", @OA\Schema(type="string", enum={"image", "file", "video"})),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="ZIP file containing product media",
+	 *         @OA\MediaType(
+	 *             mediaType="application/zip",
+	 *             @OA\Schema(type="string", format="binary")
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="Product not found",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="string", example="Product not found")
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function downloadMediaZip(Request $request, $vendor_id)
+	{
+		$request->validate([
+			'type' => 'nullable|in:image,file,video',
+		]);
+
+		if (!Vendor::where('id', $vendor_id)->exists()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Vendor not found',
+			], 404);
+		}
+
+		$query = VendorDocument::where('vendor_id', $vendor_id);
+		if ($request->has('type')) {
+			$query->where('type', $request->input('type'));
+		}
+		$documents = $query->get();
+
+		if ($documents->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No documents found.',
+			], 404);
+		}
+
+		$tempDir = storage_path('app/vendor_docs_temp');
+		if (!file_exists($tempDir)) {
+			mkdir($tempDir, 0755, true);
+		}
+
+		$zipFileName = 'vendor_' . $vendor_id . '_documents_' . Str::random(8) . '.zip';
+		$zipFilePath = $tempDir . '/' . $zipFileName;
+
+		$zip = new ZipArchive;
+		if ($zip->open($zipFilePath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
+			foreach ($documents as $doc) {
+				try {
+					$url = $doc->url;
+					$filename = basename(parse_url($url, PHP_URL_PATH));
+					$typeDir = $doc->type;
+
+					if (Str::startsWith($url, env('AWS_URL'))) {
+						$filePath = str_replace(env('AWS_URL') . '/', '', $url);
+
+						if (Storage::disk('s3')->exists($filePath)) {
+							$stream = Storage::disk('s3')->readStream($filePath);
+							$zip->addFromString("{$typeDir}/{$filename}", stream_get_contents($stream));
+							fclose($stream);
+						}
+					}
+				} catch (\Exception $e) {
+					Log::error("ZIP error: " . $e->getMessage());
+				}
+			}
+			$zip->close();
+		} else {
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to create ZIP file.',
+			], 500);
+		}
+
+		return response()->download($zipFilePath)->deleteFileAfterSend(true);
 	}
 
 	/**

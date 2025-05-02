@@ -86,8 +86,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
-	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
+	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
 	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
+	Route::post('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'store']);
 	Route::post('/vendors/import', [VendorController::class, 'import']);
 	Route::post('/vendors/export', [VendorController::class, 'export']);
 	Route::apiResource('vendors', VendorController::class);
