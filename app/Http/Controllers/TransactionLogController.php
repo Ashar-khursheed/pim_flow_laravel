@@ -74,11 +74,11 @@ class TransactionLogController extends BaseController
 		// dd(auth()->id());
 		$records = TransactionLog::with(['createdBy:id,first_name,last_name'])->orderBy('id', 'desc');
 
-		if ($request->filled('module') ) {
+		if ($request->filled('module')) {
 			$records->where('module', $request->module);
 		}
 
-		if ($request->filled('action') && in_array($request->action, ['Import'])) {
+		if ($request->filled('action')) {
 			$records->where('action', $request->action);
 		}
 
