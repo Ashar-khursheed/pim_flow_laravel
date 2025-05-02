@@ -53,12 +53,58 @@ class SupplierScoreController extends Controller
         }
 
         // --- Location Score ---
-        $locationMap = [
-            'Houston' => 10,
-            'Texas' => 8,
-            'Neighboring States' => 6,
-        ];
-        $locationScore = $locationMap[$supplier->location] ?? 4;
+        // Check if location contains multiple cities/regions
+        $locationParts = explode(',', $supplier->location);
+        $locationScore = 4; // Default score for other locations
+        $hasHouston = false;
+        $hasTexas = false;
+        $hasOther = false;
+        $totalLocations = 0;
+        
+        // First, identify what types of locations are present
+        foreach ($locationParts as $loc) {
+            $loc = trim($loc);
+            if (!empty($loc)) {
+                $totalLocations++;
+                
+                // Check for Houston specifically
+                if (stripos($loc, 'Houston') !== false) {
+                    $hasHouston = true;
+                    continue;
+                }
+                
+                // Check for Texas
+                if (stripos($loc, 'Texas') !== false || $loc == 'TX') {
+                    $hasTexas = true;
+                    continue;
+                }
+                
+                // Any other location
+                $hasOther = true;
+            }
+        }
+        
+        // Calculate location score based on mix of locations
+        if ($hasHouston) {
+            if ($totalLocations > 1) {
+                // Houston mixed with other locations - half score
+                $locationScore = 5;
+            } else {
+                // Only Houston
+                $locationScore = 10;
+            }
+        } else if ($hasTexas) {
+            if ($totalLocations > 1) {
+                // Texas mixed with other locations - half score
+                $locationScore = 4;
+            } else {
+                // Only Texas
+                $locationScore = 8;
+            }
+        } else if ($hasOther) {
+            // Any other location(s)
+            $locationScore = 6;
+        }
 
         // --- Drop Shipping ---
         $dropShippingScore = $supplier->drop_shipping === 'Yes' ? 10 : 6;
