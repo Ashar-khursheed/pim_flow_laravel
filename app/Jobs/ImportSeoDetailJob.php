@@ -242,7 +242,7 @@ class ImportSeoDetailJob implements ShouldQueue
 
 				// $command = escapeshellcmd("echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"");
 				$outputJson = shell_exec($command . " 2>&1");
-
+dd($outputJson);
 				$primaryData = json_decode($outputJson, true);
 				// dd($primaryData);
 
