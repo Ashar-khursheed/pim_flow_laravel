@@ -224,17 +224,15 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
-				// logger()->info("\nPrevious primary data:", $primaryData);
-
 				if (env('APP_WEBSITE') == 'UAE') {
 					$pythonScriptPath = base_path('app/Script/main_uae.py');
-					$pythonCmd = base_path('venv/bin/python');
+					$pythonCmd = python3;
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					$pythonCmd = base_path('venv/bin/python');
+					$pythonCmd = python3;
 				} else {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
-					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
+					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : 'python3';
 				}
 
 				$inputJson = json_encode($primaryData);
@@ -243,8 +241,6 @@ class ImportSeoDetailJob implements ShouldQueue
 
 				// $command = escapeshellcmd("echo {$inputJson} | {$pythonCmd} \"{$pythonScriptPath}\"");
 				$outputJson = shell_exec($command . " 2>&1");
-
-				// logger()->info("\n\nPython output:", ['output' => $outputJson]);
 
 				$primaryData = json_decode($outputJson, true);
 				// dd($primaryData);
