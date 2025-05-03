@@ -62,12 +62,6 @@ class WebsiteController extends Controller
 	 */
 	public function index(Request $request)
 	{
-		if (!auth()->user()->can('list website')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$websites = Website::query();
 
 		if($request->filled('page') && $request->filled('length')){

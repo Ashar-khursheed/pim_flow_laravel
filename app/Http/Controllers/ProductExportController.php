@@ -49,12 +49,6 @@ class ProductExportController extends Controller
 	 */
 	public function export(Request $request)
 	{
-        if (!auth()->user()->can('export product')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		/* Validate request data */
 		$request->validate([
 			'type' => 'required|string|in:Brand,Category,Store',

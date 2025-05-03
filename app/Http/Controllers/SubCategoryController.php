@@ -23,18 +23,12 @@ class SubCategoryController extends Controller
  */
 public function index(Request $request)
 {
-    if (!auth()->user()->can('list sub category page')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
     // Get limit parameter from request, default to 10 if not provided
     $perPage = $request->input('limit', 10);
-
+    
     // Ensure it's at least 1
     $perPage = max((int)$perPage, 1);
-
+    
     $subcategories = SubCategory::with(['category'])->paginate($perPage);
 
     // Transform each subcategory to update the nested category image
@@ -76,13 +70,6 @@ public function index(Request $request)
      */
     public function show($id)
     {
-        if (!auth()->user()->can('show sub category page')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
-
         $subcategory = SubCategory::with(['category'])->findOrFail($id);
         return response()->json($subcategory);
     }
@@ -99,18 +86,18 @@ public function index(Request $request)
  *                 required={"name", "category_id"},
  *                 @OA\Property(property="name", type="string", example="New Subcategory"),
  *                 @OA\Property(property="category_id", type="integer", example=1),
- *
+ *                 
  *                 @OA\Property(
- *                     property="products_ids[]",
- *                     type="array",
- *                     @OA\Items(type="integer"),
+ *                     property="products_ids[]", 
+ *                     type="array", 
+ *                     @OA\Items(type="integer"), 
  *                     description="Send as products_ids[] for each value",
  *                     example={1, 2, 3}
  *                 ),
  *                 @OA\Property(
- *                     property="attributes_ids[]",
- *                     type="array",
- *                     @OA\Items(type="integer"),
+ *                     property="attributes_ids[]", 
+ *                     type="array", 
+ *                     @OA\Items(type="integer"), 
  *                     description="Send as attributes_ids[] for each value",
  *                     example={1, 2}
  *                 ),
@@ -181,16 +168,9 @@ public function index(Request $request)
  */
 
 
-
+ 
  public function store(Request $request)
  {
-    if (!auth()->user()->can('add sub category page')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
-
      // Validate request
      $validated = $request->validate([
          'name' => 'required|string|max:255',
@@ -206,7 +186,7 @@ public function index(Request $request)
          'mobile_banners.*.image' => 'required|image',
          'mobile_banners.*.alt_text' => 'nullable|string',
      ]);
-
+ 
      // ❌ If a subcategory with the same category_id already exists
      $existing = SubCategory::where('category_id', $validated['category_id'])->first();
      if ($existing) {
@@ -214,27 +194,27 @@ public function index(Request $request)
              'message' => 'A subcategory page with this category ID already exists.',
          ], 422);
      }
-
+ 
      // ✅ Create the subcategory
      $subcategory = SubCategory::create([
          'name' => $validated['name'],
          'category_id' => $validated['category_id'],
      ]);
-
+ 
      // Associate product IDs
      if ($request->has('products_ids')) {
          $subcategory->update([
              'products_ids' => $request->input('products_ids')
          ]);
      }
-
+ 
      // Associate attribute IDs
      if ($request->has('attributes_ids')) {
          $subcategory->update([
              'attributes_ids' => $request->input('attributes_ids')
          ]);
      }
-
+ 
      // Upload banners to S3
      $webBannersData = [];
      if ($request->has('web_banners')) {
@@ -248,7 +228,7 @@ public function index(Request $request)
              }
          }
      }
-
+ 
      $mobileBannersData = [];
      if ($request->has('mobile_banners')) {
          foreach ($request->mobile_banners as $banner) {
@@ -261,21 +241,21 @@ public function index(Request $request)
              }
          }
      }
-
+ 
      // Save banners
      $subcategory->update([
          'web_banners' => $webBannersData,
          'mobile_banners' => $mobileBannersData,
      ]);
-
+ 
      return response()->json([
         'success' => true,
         'message' => 'Subcategory created successfully',
         'subcategory' => $subcategory->fresh(['category'])->toArray()
     ], 201);
-
+    
  }
-
+ 
 /**
  * @OA\Post(
  *     path="/api/subcategories/{id}",
@@ -296,18 +276,18 @@ public function index(Request $request)
  *                 required={"name", "category_id"},
  *                 @OA\Property(property="name", type="string", example="Updated Subcategory"),
  *                 @OA\Property(property="category_id", type="integer", example=1),
- *
+ *                 
  *                 @OA\Property(
- *                     property="products_ids[]",
- *                     type="array",
- *                     @OA\Items(type="integer"),
+ *                     property="products_ids[]", 
+ *                     type="array", 
+ *                     @OA\Items(type="integer"), 
  *                     description="Send as products_ids[] for each value",
  *                     example={1, 2, 3}
  *                 ),
  *                 @OA\Property(
- *                     property="attributes_ids[]",
- *                     type="array",
- *                     @OA\Items(type="integer"),
+ *                     property="attributes_ids[]", 
+ *                     type="array", 
+ *                     @OA\Items(type="integer"), 
  *                     description="Send as attributes_ids[] for each value",
  *                     example={1, 2}
  *                 ),
@@ -379,13 +359,6 @@ public function index(Request $request)
 
  public function update(Request $request, $id)
  {
-    if (!auth()->user()->can('update sub category page')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
-
      // Validate request
      $validated = $request->validate([
          'name' => 'required|string|max:255',
@@ -401,10 +374,10 @@ public function index(Request $request)
          'mobile_banners.*.image' => 'nullable|image', // Make it nullable for optional upload
          'mobile_banners.*.alt_text' => 'nullable|string',
      ]);
-
+ 
      // Find the subcategory by ID
      $subcategory = SubCategory::findOrFail($id);
-
+ 
      // ✅ Only check for duplicate category_id if it has changed
      if ($validated['category_id'] != $subcategory->category_id) {
          $existing = SubCategory::where('category_id', $validated['category_id'])
@@ -416,27 +389,27 @@ public function index(Request $request)
              ], 422);
          }
      }
-
+ 
      // ✅ Update the subcategory details
      $subcategory->update([
          'name' => $validated['name'],
          'category_id' => $validated['category_id'],
      ]);
-
+ 
      // Update product IDs if present
      if ($request->has('products_ids')) {
          $subcategory->update([
              'products_ids' => $request->input('products_ids')
          ]);
      }
-
+ 
      // Update attribute IDs if present
      if ($request->has('attributes_ids')) {
          $subcategory->update([
              'attributes_ids' => $request->input('attributes_ids')
          ]);
      }
-
+ 
      // Upload new web banners if provided
      $webBannersData = $subcategory->web_banners ?? []; // Preserve existing web banners if none are uploaded
      if ($request->has('web_banners')) {
@@ -457,7 +430,7 @@ public function index(Request $request)
              }
          }
      }
-
+ 
      // Upload new mobile banners if provided
      $mobileBannersData = $subcategory->mobile_banners ?? []; // Preserve existing mobile banners if none are uploaded
      if ($request->has('mobile_banners')) {
@@ -478,21 +451,21 @@ public function index(Request $request)
              }
          }
      }
-
+ 
      // Save the updated banner data (only save if there's any update)
      $subcategory->update([
          'web_banners' => !empty($webBannersData) ? $webBannersData : $subcategory->web_banners,
          'mobile_banners' => !empty($mobileBannersData) ? $mobileBannersData : $subcategory->mobile_banners,
      ]);
-
+ 
      return response()->json([
         'success' => true,
          'message' => 'Subcategory updated successfully',
          'subcategory' => $subcategory->fresh(['category'])->toArray()
      ], 200);
  }
-
-
+ 
+    
 
     /**
      * @OA\Delete(
@@ -514,13 +487,6 @@ public function index(Request $request)
      */
     public function destroy($id)
     {
-    if (!auth()->user()->can('delete sub category page')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
-
         $subcategory = SubCategory::findOrFail($id);
         $subcategory->delete();
 

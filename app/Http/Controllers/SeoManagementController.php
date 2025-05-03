@@ -26,12 +26,6 @@ class SeoManagementController extends Controller
 	 */
 	public function index()
 	{
-        if (!auth()->user()->can('list seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		return SeoManagement::with('secondaryKeywordDetails')->get();
 	}
 
@@ -90,12 +84,6 @@ class SeoManagementController extends Controller
 
 	public function store(Request $request)
 	{
-        if (!auth()->user()->can('add seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		try {
 		 // Update the validation rules
 			$validated = $request->validate([
@@ -138,7 +126,7 @@ class SeoManagementController extends Controller
 			if (is_string($validated['popular_tags'])) {
 				// Try to decode if it's a JSON string
 				$decoded = json_decode($validated['popular_tags'], true);
-
+		
 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 					$seoData['popular_tags'] = $decoded;
 				} else {
@@ -240,12 +228,6 @@ class SeoManagementController extends Controller
  */
 public function show($relation_id)
 {
-        if (!auth()->user()->can('show seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
     $seoRecord = SeoManagement::with('secondaryKeywordDetails')
         ->where('relational_id', $relation_id)
         ->first();
@@ -369,12 +351,6 @@ public function show($relation_id)
 
 	public function update(Request $request, $id)
 	{
-        if (!auth()->user()->can('update seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		try {
 		 // Validate the incoming data
 			$validated = $request->validate([
@@ -404,7 +380,7 @@ public function show($relation_id)
 				'paragraph_2' => 'nullable|string',
 				'paragraph_3' => 'nullable|string',
 				'paragraph_4' => 'nullable|string',
-				'popular_tags' => 'nullable|string', // Expecting array like ["tag1", "tag2"]
+				'popular_tags' => 'nullable|string', // Expecting array like ["tag1", "tag2"]	
 			]);
 
 		 // Find the existing SEO record by ID
@@ -419,7 +395,7 @@ public function show($relation_id)
 			if (is_string($validated['popular_tags'])) {
 				// Try to decode if it's a JSON string
 				$decoded = json_decode($validated['popular_tags'], true);
-
+		
 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 					$seoData['popular_tags'] = $decoded;
 				} else {
@@ -430,7 +406,7 @@ public function show($relation_id)
 				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
 		}
-
+		
 		 // Handle OG image file upload if provided
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
@@ -530,12 +506,6 @@ public function show($relation_id)
 
 	public function destroy($id)
 	{
-        if (!auth()->user()->can('delete seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		$seo = SeoManagement::findOrFail($id);
 		$seo->secondaryKeywordDetails()->delete();
 		$seo->delete();
@@ -633,12 +603,6 @@ public function show($relation_id)
 	 */
 	public function import(Request $request)
 	{
-        if (!auth()->user()->can('import seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		try {
 			/* Validate request data */
 			$request->validate([
@@ -790,6 +754,9 @@ public function show($relation_id)
 		}
 	}
 
+
+
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/seo-management/export",
@@ -815,12 +782,6 @@ public function show($relation_id)
 	 */
 	public function export(Request $request)
 	{
-        if (!auth()->user()->can('export seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
 		/* Validate request data */
 		$request->validate([
 			'relational_type' => 'required|in:Product,Category,Brand,Blog',

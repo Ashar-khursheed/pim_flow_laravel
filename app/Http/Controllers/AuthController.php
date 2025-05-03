@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
@@ -13,7 +14,7 @@ class AuthController extends BaseController
      * @OA\Post(
      *     path="/api/login",
      *     summary="User Login",
-     *     tags={"Auth"},
+     *     tags={"JWT"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -55,70 +56,6 @@ class AuthController extends BaseController
             'message' => 'Login successful',
             'user' => $user,
             'token' => $token
-        ]);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/auth/has-permission",
-     *     summary="Check if the authenticated user has a specific permission",
-     *     description="Returns true or false based on whether the user has the given permission.",
-     *     tags={"Auth"},
-     *     @OA\Parameter(
-     *         name="permission",
-     *         in="query",
-     *         description="The name of the permission to check (e.g., 'brand.create')",
-     *         required=true,
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(response=200, description="Permission check result", @OA\MediaType(mediaType="application/json")),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function hasPermission(Request $request)
-    {
-        $permission = $request->query('permission');
-
-        if (!$permission) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Permission parameter is required.',
-            ], 400);
-        }
-
-        $user = Auth::user();
-
-        $hasPermission = $user->can($permission);
-
-        return response()->json([
-            'success' => true,
-            'has_permission' => $hasPermission,
-            'message' => $hasPermission
-                ? "User has the '{$permission}' permission."
-                : "User does not have the '{$permission}' permission.",
-        ]);
-    }
-
-    /**
-     * @OA\Get(
-     *     path="/api/auth/permissions",
-     *     summary="Get all permission names for the authenticated user",
-     *     description="Returns a list of permission names granted to the currently authenticated user.",
-     *     tags={"Auth"},
-     *     @OA\Response(response=200, description="List of permissions", @OA\MediaType(mediaType="application/json")),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function getAllPermissions(Request $request)
-    {
-        $user = Auth::user();
-
-        $permissions = $user->getAllPermissions()->pluck('name');
-
-        return response()->json([
-            'success' => true,
-            'permissions' => $permissions,
-            'message' => 'Permissions fetched successfully.',
         ]);
     }
 }

@@ -13,6 +13,5 @@
 	"err_create": "Record could not be saved.",
 	"err_update": "The record could not be updated.",
 	"err_dlt": "The record could not be deleted.",
-	"err_attr_association": "Attribute is associated with an attribute group and cannot be deleted.",
-	"err_role_association": "Role is associated with an user and cannot be deleted."
+	"err_attr_association": "Attribute is associated with an attribute group and cannot be deleted."
 }

@@ -22,12 +22,6 @@ class FaqCategoryController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->can('list faq category')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         return response()->json(FaqCategory::with('faqs')->where('status', 'published')->get());
     }
 
@@ -57,12 +51,6 @@ class FaqCategoryController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add faq category')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $request->validate([
             'name' => 'required|string',
             'order' => 'required|integer',
@@ -98,12 +86,6 @@ class FaqCategoryController extends Controller
      */
     public function show(FaqCategory $category)
     {
-        if (!auth()->user()->can('show faq category')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         return response()->json($category->load('faqs'));
     }
 
@@ -139,12 +121,6 @@ class FaqCategoryController extends Controller
      */
     public function update(Request $request, FaqCategory $category)
     {
-        if (!auth()->user()->can('update faq category')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $request->validate([
             'name' => 'sometimes|string',
             'order' => 'sometimes|integer',
@@ -180,12 +156,6 @@ class FaqCategoryController extends Controller
      */
     public function destroy(FaqCategory $category)
     {
-        if (!auth()->user()->can('delete faq category')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $category->delete();
         return response()->json(['message' => 'Category deleted successfully']);
     }

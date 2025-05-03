@@ -47,12 +47,6 @@ class AttributeGroupController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		if (!auth()->user()->can('list attribute group')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$records = AttributeGroup::with(['categories:id,name,parent_id', 'groupAttributes:id,code,name']);
 
 		/* Pagination */
@@ -100,12 +94,6 @@ class AttributeGroupController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		if (!auth()->user()->can('add attribute group')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name',
 			'category_ids' => 'required|array|min:1',
@@ -194,12 +182,6 @@ class AttributeGroupController extends BaseController
 	 */
 	public function show($id, Request $request)
 	{
-		if (!auth()->user()->can('show attribute group')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$record = AttributeGroup::with('categories:id,name,parent_id')->find($id);
 
 		if (!$record) {
@@ -296,12 +278,6 @@ class AttributeGroupController extends BaseController
 	 */
 	public function update(Request $request, $id)
 	{
-		if (!auth()->user()->can('update attribute group')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$attributeGroup = AttributeGroup::find($id);
 		if (!$attributeGroup) {
 			return response()->json([
@@ -369,12 +345,6 @@ class AttributeGroupController extends BaseController
 	 */
 	public function destroy($id)
 	{
-		if (!auth()->user()->can('delete attribute group')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$attributeGroup = AttributeGroup::find($id);
 
 		if (!$attributeGroup) {

@@ -52,12 +52,6 @@ class DiscountController extends Controller
  */
 public function index(Request $request)
 {
-    if (!auth()->user()->can('list discount')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
     // Set default limit (20) and fetch paginated results
     $limit = $request->query('limit', 20); // Default limit 20 if not provided
     $discounts = Discount::paginate($limit);
@@ -101,12 +95,6 @@ public function index(Request $request)
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add discount')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $request->validate([
             'title' => 'required|string|max:120',
             'code' => 'nullable|string|max:20|unique:ec_discounts,code',
@@ -152,12 +140,6 @@ public function index(Request $request)
      */
     public function show($id)
     {
-        if (!auth()->user()->can('show discount')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $discount = Discount::find($id);
         if (!$discount) {
             return response()->json(['message' => 'Discount not found'], 404);
@@ -197,12 +179,6 @@ public function index(Request $request)
      */
     public function update(Request $request, $id)
     {
-        if (!auth()->user()->can('update discount')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $discount = Discount::find($id);
         if (!$discount) {
             return response()->json(['message' => 'Discount not found'], 404);
@@ -239,12 +215,6 @@ public function index(Request $request)
      */
     public function destroy($id)
     {
-        if (!auth()->user()->can('delete discount')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $discount = Discount::find($id);
         if (!$discount) {
             return response()->json(['message' => 'Discount not found'], 404);

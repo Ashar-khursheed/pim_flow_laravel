@@ -18,12 +18,6 @@ class MediaController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->can('list media mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $folders = Storage::disk('s3')->directories('production');
         return response()->json(['folders' => $folders]);
     }
@@ -39,12 +33,6 @@ class MediaController extends Controller
      */
     public function show($folder)
     {
-        if (!auth()->user()->can('show media mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $files = Storage::disk('s3')->files("production/$folder");
         return response()->json(['files' => $files]);
     }
@@ -69,12 +57,6 @@ class MediaController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add media mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $request->validate([
             'file' => 'required|file',
             'folder' => 'nullable|string'
@@ -99,12 +81,6 @@ class MediaController extends Controller
      */
     public function destroy($file)
     {
-        if (!auth()->user()->can('delete media mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $filePath = "production/{$file}";
         if (Storage::disk('s3')->exists($filePath)) {
             Storage::disk('s3')->delete($filePath);

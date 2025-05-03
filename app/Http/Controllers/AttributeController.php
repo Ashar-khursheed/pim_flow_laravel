@@ -85,13 +85,6 @@ class AttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		if (!auth()->user()->can('list attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-
 		$hasGroup = $request->query('has_group', $request->input('has_group'));
 
 		if ($hasGroup !== null) {
@@ -156,12 +149,6 @@ class AttributeController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		if (!auth()->user()->can('add attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		/* Validate request data */
 		$request->validate([
 			'name' => "required|unique:attributes,name",
@@ -206,13 +193,6 @@ class AttributeController extends BaseController
 	 */
 	public function show($attributeId)
 	{
-		if (!auth()->user()->can('show attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-
 		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroups:id,name'])->find($attributeId);
 		if (!$attribute) {
 			return response()->json([
@@ -277,12 +257,6 @@ class AttributeController extends BaseController
 	 */
 	public function update(Request $request, $attributeId)
 	{
-		if (!auth()->user()->can('update attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$attribute = Attribute::find($attributeId);
 		if (!$attribute) {
 			return response()->json([
@@ -379,12 +353,6 @@ class AttributeController extends BaseController
 	 */
 	public function destroy($id)
 	{
-		if (!auth()->user()->can('delete attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		$attribute = Attribute::find($id);
 
 		if (!$attribute) {
@@ -431,12 +399,6 @@ class AttributeController extends BaseController
 	 */
 	public function export(Request $request)
 	{
-		if (!auth()->user()->can('export attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		/* Validate request data */
 		$request->validate([
 			'parent_category_id' => 'required|integer|exists:ec_product_categories,id',
@@ -561,12 +523,6 @@ class AttributeController extends BaseController
 	 */
 	public function import(Request $request)
 	{
-		if (!auth()->user()->can('import attribute')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
 		try {
 			/* Validate request data */
 			$request->validate([

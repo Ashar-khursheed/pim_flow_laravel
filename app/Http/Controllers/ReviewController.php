@@ -48,12 +48,6 @@ class ReviewController extends Controller
 
     public function index()
     {
-        if (!auth()->user()->can('list review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         return response()->json(Review::all(), 200);
     }
 
@@ -84,12 +78,6 @@ class ReviewController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $validator = Validator::make($request->all(), [
             'customer_name' => 'required|string|max:191',
             'customer_email'=> 'required|email|max:191',
@@ -98,13 +86,13 @@ class ReviewController extends Controller
             'comment'       => 'required|string',
             'status'        => 'nullable|string|max:60',
             'images.*'      => 'nullable|file|mimes:jpg,jpeg,png,webp|max:2048',
-
+            
         ]);
-
+    
         if ($validator->fails()) {
             return response()->json(['error' => $validator->errors()], 422);
         }
-
+    
         $imagePaths = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
@@ -112,7 +100,7 @@ class ReviewController extends Controller
                 $imagePaths[] = Storage::disk('s3')->url($path);
             }
         }
-
+    
         $review = Review::create([
             'customer_name' => $request->customer_name,
             'customer_email'=> $request->customer_email,
@@ -122,10 +110,10 @@ class ReviewController extends Controller
             'status'        => $request->status ?? 'published',
             'images'        => $imagePaths // Store as an array, not JSON string
         ]);
-
+    
         return response()->json(['message' => 'Review added', 'review' => $review], 201);
     }
-
+    
 
     /**
      * @OA\Get(
@@ -140,12 +128,6 @@ class ReviewController extends Controller
      */
     public function show($id)
     {
-        if (!auth()->user()->can('show review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
@@ -211,14 +193,8 @@ class ReviewController extends Controller
 
          public function update(Request $request, $id)
          {
-        if (!auth()->user()->can('update review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
              $review = Review::findOrFail($id);
-
+         
              // Validate request
              $request->validate([
                  'star' => 'nullable|integer|min:1|max:5',
@@ -231,27 +207,27 @@ class ReviewController extends Controller
                  'customer_name' => 'nullable|string|max:191',
                  'customer_email' => 'nullable|email|max:191'
              ]);
-
+         
              // Update fields
              $review->star = $request->input('star', $review->star);
              $review->comment = $request->input('comment');
              $review->status = $request->input('status', $review->status);
              $review->customer_name = $request->input('customer_name', $review->customer_name);
              $review->customer_email = $request->input('customer_email', $review->customer_email);
-
+         
              // Ensure existing images are an array
              $existingImages = is_string($review->images) ? json_decode($review->images, true) ?? [] : [];
-
+         
              // Remove selected images safely
              if ($request->filled('delete_images')) {
                  $deleteImages = $request->input('delete_images', []);
-
+                 
                  // Remove only if they exist in the array
                  $existingImages = array_values(array_filter($existingImages, function ($image) use ($deleteImages) {
                      return !in_array($image, $deleteImages);
                  }));
              }
-
+         
              // Upload new images to S3 and append to existing images
              if ($request->hasFile('images')) {
                  foreach ($request->file('images') as $image) {
@@ -259,25 +235,25 @@ class ReviewController extends Controller
                      $existingImages[] = Storage::disk('s3')->url($path); // Append new image URL
                  }
              }
-
+         
              // Store updated images list as JSON (Fix double escaping issue)
              $review->images = json_encode(array_values($existingImages), JSON_UNESCAPED_SLASHES);
-
+         
              // Allow modification of created_at only
              if ($request->has('created_at')) {
                  $review->created_at = $request->created_at;
              }
-
+         
              $review->save();
-
+         
              return response()->json([
                  'message' => 'Review updated successfully',
                  'review' => $review
              ]);
          }
-
-
-
+         
+    
+    
     /**
      * @OA\Delete(
      *     path="/api/reviews/{id}",
@@ -291,12 +267,6 @@ class ReviewController extends Controller
      */
     public function destroy($id)
     {
-        if (!auth()->user()->can('delete review')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $review = Review::find($id);
         if (!$review) {
             return response()->json(['message' => 'Review not found'], 404);
