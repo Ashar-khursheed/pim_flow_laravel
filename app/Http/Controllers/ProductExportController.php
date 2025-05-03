@@ -9,6 +9,7 @@ use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 class ProductExportController extends Controller
 {
@@ -33,7 +34,13 @@ class ProductExportController extends Controller
 	 *             required={"relational_id", "range_from", "range_to"},
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
-	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)"),
+	 *             @OA\Property(
+	 *                 property="selected_fields",
+	 *                 type="array",
+	 *                 description="Optional list of fields to export. If blank, all fields will be exported.",
+	 *                 @OA\Items(type="string", example="name")
+	 *             )
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
@@ -48,17 +55,100 @@ class ProductExportController extends Controller
 			'relational_id' => 'required|integer',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+			'selected_fields' => 'nullable|array',
+			'selected_fields.*' => 'string',
 		]);
 
+		$selectedFields = $request->selected_fields;
+
+		/* Get all DB columns from products table */
+		$baseFields = Schema::getColumnListing('ec_products');
+
+		/* Determine fields to select */
+		if (!empty($selectedFields)) {
+			$fieldsToSelect = array_intersect($selectedFields, $baseFields);
+			if (empty($fieldsToSelect)) {
+				$fieldsToSelect = ['*'];
+			}
+		} else {
+			$fieldsToSelect = ['*'];
+		}
+
+		$query = Product::with(['categories:id,name', 'brand:id,name', 'store:id,name', 'tags', 'seoMetaData']);
+
+		/* Only apply select if not wildcard */
+		if ($fieldsToSelect !== ['*']) {
+			// Make sure to include necessary foreign keys for relations
+			$requiredRelationKeys = ['brand_id', 'store_id', 'id'];
+			foreach ($requiredRelationKeys as $key) {
+				if (!in_array($key, $fieldsToSelect)) {
+					$fieldsToSelect[] = $key;
+				}
+			}
+			$query->select($fieldsToSelect);
+		}
+
+		/* Apply relational filters */
+		if ($request->type == "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type == "Store") {
+			$query->where('store_id', $request->relational_id);
+		} elseif ($request->type == "Category") {
+			$category = Category::find($request->relational_id);
+			$leafCategories = Category::getLeafCategories($category);
+			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
+				$q->whereIn('category_id', $leafCategoryIds);
+			});
+		}
+
+		$products = $query->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get();
+
+		/* Return message if products empty */
+		if ($products->isEmpty()) {
+			return response()->json([
+				"success" => false,
+				"message" => "No products found for the given criteria.",
+			]);
+		}
+
 		/* Define pretty headers that match exactly what you requested */
-		$headerMap = [
+		$headerMap1 = [
 			'id' => 'Id',
 			'url' => 'URL',
+			'sku' => 'SKU',
 			'name' => 'Name',
 			'content' => 'Content',
+		];
+		$benifitsFeaturesColumns =[
+			'benefit1' => 'Benefit1',
+			'feature1' => 'Feature1',
+			'benefit2' => 'Benefit2',
+			'feature2' => 'Feature2',
+			'benefit3' => 'Benefit3',
+			'feature3' => 'Feature3',
+			'benefit4' => 'Benefit4',
+			'feature4' => 'Feature4',
+			'benefit5' => 'Benefit5',
+			'feature5' => 'Feature5',
+			'benefit6' => 'Benefit6',
+			'feature6' => 'Feature6',
+			'benefit7' => 'Benefit7',
+			'feature7' => 'Feature7',
+			'benefit8' => 'Benefit8',
+			'feature8' => 'Feature8',
+			'benefit9' => 'Benefit9',
+			'feature9' => 'Feature9',
+			'benefit10' => 'Benefit10',
+			'feature10' => 'Feature10',
+		];
+
+		$headerMap2 = [
 			'description' => 'Description',
 			'warranty_information' => 'Warranty Information',
-			'sku' => 'SKU',
 			'brand' => 'Brand',
 			'vendor' => 'Vendor',
 			'categories' => 'Categories',
@@ -112,6 +202,9 @@ class ProductExportController extends Controller
 			'variant_color_title' => 'Variant Color Title',
 			'variant_color_value' => 'Variant Color Value',
 			'variant_color_products' => 'Variant Color Products',
+		];
+
+		$discountSection = [
 			'buying_quantity1' => 'Buying Quantity1',
 			'discount1' => 'Discount1',
 			'start_date1' => 'Start Date1',
@@ -124,42 +217,47 @@ class ProductExportController extends Controller
 			'discount3' => 'Discount3',
 			'start_date3' => 'Start Date3',
 			'end_date3' => 'End Date3',
+		];
+
+		$translationSection = [
 			'name_ar' => 'Name (AR)',
 			'description_ar' => 'Description (AR)',
 			'content_ar' => 'Content (AR)',
 			'warranty_information_ar' => 'Warranty Information (AR)'
 		];
 
+		/* Initialize header map */
+		$headerMap = [];
+
+		/* Helper to decide if a section should be included */
+		$includeSection = function ($key) use ($selectedFields) {
+			return empty($selectedFields) || in_array($key, $selectedFields);
+		};
+
+		/* Always filter headerMap1 and headerMap2 based on selected fields if provided */
+		$filteredHeaderMap1 = empty($selectedFields) ? $headerMap1 : array_intersect_key($headerMap1, array_flip($selectedFields));
+		$filteredHeaderMap2 = empty($selectedFields) ? $headerMap2 : array_intersect_key($headerMap2, array_flip($selectedFields));
+
+		/* Start building final header map */
+		$headerMap = array_merge($headerMap, $filteredHeaderMap1);
+
+		/* Include benefits_features if requested or blank */
+		if ($includeSection('benefits_features')) {
+			$headerMap = array_merge($headerMap, $benifitsFeaturesColumns);
+		}
+
+		/* Add remaining fields */
+		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
+
+		if ($includeSection('discount_section')) {
+			$headerMap = array_merge($headerMap, $discountSection);
+		}
+
+		if ($includeSection('translation_section')) {
+			$headerMap = array_merge($headerMap, $translationSection);
+		}
+
 		$allFields = array_keys($headerMap);
-
-		$query = Product::with(['categories', 'brand', 'store', 'tags', 'seoMetaData']);
-
-		if ($request->type == "Brand") {
-			$query->where('brand_id', $request->relational_id);
-		} elseif ($request->type == "Store") {
-			$query->where('store_id', $request->relational_id);
-		} elseif ($request->type == "Category") {
-			$category = Category::find($request->relational_id);
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
-			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
-				$q->whereIn('category_id', $leafCategoryIds);
-			});
-		}
-
-		$products = $query->offset($request->range_from - 1)->limit($request->range_to - $request->range_from + 1)->orderBy('id', 'asc')->get();
-
-		/* Return message if products empty */
-		if ($products->isEmpty()) {
-			return response()->json([
-				"success" => false,
-				"message" => "No products found for the given criteria.",
-			]);
-		}
-		// dd($products->first()->store);
-
-		/* Use selected fields if provided, otherwise use all fields */
-		// $fields = !empty($selectedFields) ? array_intersect($allFields, $selectedFields) : $allFields;
 
 		/* CSV response create karna */
 		$response = new StreamedResponse(function () use ($products, $allFields, $headerMap) {
@@ -175,6 +273,21 @@ class ProductExportController extends Controller
 			foreach ($products as $product) {
 				$row = [];
 				foreach ($allFields as $field) {
+					$skipFields = [
+						'discount1', 'start_date1', 'end_date1',
+						'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
+						'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
+						'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+						'benefit4', 'feature4', 'benefit5', 'feature5',
+						'benefit6', 'feature6', 'benefit7', 'feature7',
+						'benefit8', 'feature8', 'benefit9', 'feature9',
+						'benefit10', 'feature10',
+						'description_ar', 'content_ar', 'warranty_information_ar'
+					];
+
+					if (in_array($field, $skipFields)) {
+						continue; /* skip this field entirely */
+					}
 					/* Format special sfields */
 					switch ($field) {
 						case 'categories':
@@ -309,58 +422,33 @@ class ProductExportController extends Controller
 						$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
 						break;
 
-
 						case 'buying_quantity1':
-						case 'discount1':
-						case 'start_date1':
-						case 'end_date1':
-						case 'buying_quantity2':
-						case 'discount2':
-						case 'start_date2':
-						case 'end_date2':
-						case 'buying_quantity3':
-						case 'discount3':
-						case 'start_date3':
-						case 'end_date3':
 						$discounts = $product->discounts->take(3); /* Get up to 3 discounts */
 
-						/* Default empty values */
-						$discountValues = [
-							'buying_quantity1' => '',
-							'discount1' => '',
-							'start_date1' => '',
-							'end_date1' => '',
-							'buying_quantity2' => '',
-							'discount2' => '',
-							'start_date2' => '',
-							'end_date2' => '',
-							'buying_quantity3' => '',
-							'discount3' => '',
-							'start_date3' => '',
-							'end_date3' => '',
-						];
-
-						/* Populate discount values */
-						foreach ($discounts as $index => $discount) {
-							if ($index == 0) {
-								$discountValues['buying_quantity1'] = $discount->product_quantity ?? '';
-								$discountValues['discount1'] = $discount->value ?? '';
-								$discountValues['start_date1'] = $discount->start_date ?? '';
-								$discountValues['end_date1'] = $discount->end_date ?? '';
-							} elseif ($index == 1) {
-								$discountValues['buying_quantity2'] = $discount->product_quantity ?? '';
-								$discountValues['discount2'] = $discount->value ?? '';
-								$discountValues['start_date2'] = $discount->start_date ?? '';
-								$discountValues['end_date2'] = $discount->end_date ?? '';
-							} elseif ($index == 2) {
-								$discountValues['buying_quantity3'] = $discount->product_quantity ?? '';
-								$discountValues['discount3'] = $discount->value ?? '';
-								$discountValues['start_date3'] = $discount->start_date ?? '';
-								$discountValues['end_date3'] = $discount->end_date ?? '';
-							}
+						for ($i = 0; $i < 3; $i++) {
+							$discount = $discounts[$i] ?? null;
+							$row[] = $discount->product_quantity ?? '';
+							$row[] = $discount->value ?? '';
+							$row[] = $discount->start_date ?? '';
+							$row[] = $discount->end_date ?? '';
 						}
+						break;
 
-						$row[] = $discountValues[$field]; /* Add the correct field value to CSV row */
+						case 'benefit1':
+						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+
+						for ($i = 0; $i < 10; $i++) {
+							$row[] = $benefits[$i]['benefit'] ?? '';
+							$row[] = $benefits[$i]['feature'] ?? '';
+						}
+						break;
+
+						case 'name_ar':
+						$arTranslations = $product->arTranslations;
+						$row[] = $arTranslations['name'] ?? '';
+						$row[] = $arTranslations['description'] ?? '';
+						$row[] = $arTranslations['content'] ?? '';
+						$row[] = $arTranslations['warranty_information'] ?? '';
 						break;
 
 						default:

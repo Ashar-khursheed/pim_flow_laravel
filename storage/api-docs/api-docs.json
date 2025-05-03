@@ -9643,6 +9643,14 @@
                                         "description": "Ending range (must be >= range_from and max 2000 more)",
                                         "type": "integer",
                                         "example": 50
+                                    },
+                                    "selected_fields": {
+                                        "description": "Optional list of fields to export. If blank, all fields will be exported.",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "name"
+                                        }
                                     }
                                 },
                                 "type": "object"
