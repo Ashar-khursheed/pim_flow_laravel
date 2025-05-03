@@ -24,7 +24,7 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
- *     name="JWT",
+ *     name="Auth",
  *     description="To generate Json Web Token"
  * )
  *

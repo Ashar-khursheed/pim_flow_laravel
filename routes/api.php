@@ -56,26 +56,19 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
+	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
+	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
+
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
     Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
     Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
-
-
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 
-	Route::prefix('users')->group(function () {
-		Route::post('/', [UserController::class, 'store']);
-		Route::get('/', [UserController::class, 'index']);
-		Route::get('/{id}', [UserController::class, 'show']);
-		Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
-		Route::delete('/{id}', [UserController::class, 'destroy']);
-		Route::put('/{id}', [UserController::class, 'update']);
-
-	});
+	Route::apiResource('users', UserController::class);
 
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
@@ -144,6 +137,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
+	Route::get('permissions', [RoleController::class, 'getAllPermissions']);
 	Route::apiResource('roles', RoleController::class);
 
 
