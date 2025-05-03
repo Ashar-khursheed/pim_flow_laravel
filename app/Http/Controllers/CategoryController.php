@@ -693,7 +693,7 @@ class CategoryController extends BaseController
         }
     }
 
-   /**
+  /**
  * Update the order of categories (for drag and drop functionality).
  *
  * @OA\Post(
