@@ -1879,9 +1879,9 @@ class ProductController extends BaseController
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
 		} catch(\Exception $exception) {
-			$error[] = 'Error: ' . $e->getMessage();
-			$error[] = 'File: ' . $e->getFile();
-			$error[] = 'Line: ' . $e->getLine();
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
 				'message' => $error
