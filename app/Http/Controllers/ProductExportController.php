@@ -47,7 +47,7 @@ class ProductExportController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request)
+	public function export(Request $request, CsvImporterService $csvImporter)
 	{
 		/* Validate request data */
 		$request->validate([
