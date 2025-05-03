@@ -693,7 +693,7 @@ class CategoryController extends BaseController
         }
     }
 
-  /**
+    /**
  * Update the order of categories (for drag and drop functionality).
  *
  * @OA\Post(
@@ -709,7 +709,7 @@ class CategoryController extends BaseController
  *                 type="object",
  *                 required={"id", "position", "parentId"},
  *                 @OA\Property(property="id", type="integer", example=40),
- *                 @OA\Property(property="name", type="string", example="Cooking Equipment (9)"),
+ *                 @OA\Property(property="title", type="string", example="Cooking Equipment (9)"),
  *                 @OA\Property(property="position", type="integer", example=0),
  *                 @OA\Property(property="parentId", type="integer", example=1)
  *             )
@@ -737,16 +737,12 @@ class CategoryController extends BaseController
  */
 public function reorder(Request $request): JsonResponse
 {
-    // Get categories data, handling both direct array and wrapped "categories" formats
-    $categoriesData = $request->has('categories') ? $request->categories : $request->all();
-    
-    // Validate the array of categories with higher limits for large datasets
-    $validator = Validator::make(['categories' => $categoriesData], [
-        'categories' => 'required|array|max:10000',
-        'categories.*.id' => 'required|integer|exists:ec_product_categories,id',
-        'categories.*.position' => 'required|integer|min:0',
-        'categories.*.parentId' => 'required|integer',
-        'categories.*.name' => 'sometimes|string'
+    // Validate the entire array of categories
+    $validator = Validator::make($request->all(), [
+        '*.id' => 'required|integer|exists:ec_product_categories,id',
+        '*.position' => 'required|integer|min:0',
+        '*.parentId' => 'required|integer',
+        '*.title' => 'sometimes|string'
     ]);
     
     if ($validator->fails()) {
@@ -760,36 +756,26 @@ public function reorder(Request $request): JsonResponse
     try {
         \DB::beginTransaction();
         
-        // Use a collection for better handling of large datasets
-        collect($categoriesData)->chunk(500)->each(function ($chunk) {
-            $chunk->each(function ($categoryData) {
-                $category = Category::find($categoryData['id']);
-                if (!$category) {
-                    Log::warning("Category not found", ['id' => $categoryData['id']]);
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Category with ID {$categoryData['id']} not found."
-                    ], 404);
-                }
-                                
-                $updateData = [
-                    'order' => $categoryData['position'],
-                    'parent_id' => $categoryData['parentId']
-                ];
+        // Process each category in the array
+        foreach ($request->all() as $categoryData) {
+            $category = Category::findOrFail($categoryData['id']);
+            
+            $updateData = [
+                'order' => $categoryData['position'],
+                'parent_id' => $categoryData['parentId']
+            ];
+            
+            // Update title if it exists and is different
+            if (isset($categoryData['title'])) {
+                // Extract the base title without the count in parentheses
+                $titleParts = explode(' (', $categoryData['title']);
+                $baseTitle = $titleParts[0];
                 
-                // Update title if it exists and is different
-                if (isset($categoryData['title'])) {
-                    // Extract the base title without the count in parentheses
-                    $titleParts = explode(' (', $categoryData['name']);
-                    $baseTitle = $titleParts[0];
-                    
-                    // Map the title to the name column in database
-                    $updateData['name'] = $baseTitle;
-                }
-                
-                $category->update($updateData);
-            });
-        });
+                $updateData['name'] = $baseTitle;
+            }
+            
+            $category->update($updateData);
+        }
         
         \DB::commit();
         
@@ -813,8 +799,6 @@ public function reorder(Request $request): JsonResponse
         ], 500);
     }
 }
-
-
 	/**
      * Move a category up in order.
      *
