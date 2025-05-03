@@ -693,108 +693,119 @@ class CategoryController extends BaseController
         }
     }
 
-    /**
-     * Update the order of categories (for drag and drop functionality).
-     *
-     * @OA\Post(
-     *     path="/api/categories/reorder",
-     *     summary="Reorder categories",
-     *     description="Updates the order of categories for drag and drop functionality",
-     *     tags={"Categories"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"categories"},
-     *             @OA\Property(
-     *                 property="categories",
-     *                 type="array",
-     *                 @OA\Items(
-     *                     type="object",
-     *                     required={"id", "order", "parent_id"},
-     *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="order", type="integer", example=2),
-     *                     @OA\Property(property="parent_id", type="integer", example=0)
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Categories reordered successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Categories reordered successfully")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Validation error"),
-     *             @OA\Property(property="errors", type="object")
-     *         )
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-
- public function reorder(Request $request): JsonResponse
-    {
-    if (!auth()->user()->can('update category')) {
+   /**
+ * Update the order of categories (for drag and drop functionality).
+ *
+ * @OA\Post(
+ *     path="/api/categories/reorder",
+ *     summary="Reorder categories",
+ *     description="Updates the order of categories for drag and drop functionality",
+ *     tags={"Categories"},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             type="array",
+ *             @OA\Items(
+ *                 type="object",
+ *                 required={"id", "position", "parentId"},
+ *                 @OA\Property(property="id", type="integer", example=40),
+ *                 @OA\Property(property="title", type="string", example="Cooking Equipment (9)"),
+ *                 @OA\Property(property="position", type="integer", example=0),
+ *                 @OA\Property(property="parentId", type="integer", example=1)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Categories reordered successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Categories reordered successfully")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Validation error"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function reorder(Request $request): JsonResponse
+{
+    // Get categories data, handling both direct array and wrapped "categories" formats
+    $categoriesData = $request->has('categories') ? $request->categories : $request->all();
+    
+    // Validate the array of categories with higher limits for large datasets
+    $validator = Validator::make(['categories' => $categoriesData], [
+        'categories' => 'required|array|max:10000',
+        'categories.*.id' => 'required|integer|exists:ec_product_categories,id',
+        'categories.*.position' => 'required|integer|min:0',
+        'categories.*.parentId' => 'required|integer',
+        'categories.*.title' => 'sometimes|string'
+    ]);
+    
+    if ($validator->fails()) {
         return response()->json([
             'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
+            'message' => 'Validation error',
+            'errors' => $validator->errors()
+        ], 422);
     }
-        $validator = Validator::make($request->all(), [
-            'categories' => 'required|array',
-            'categories.*.id' => 'required|integer|exists:ec_product_categories,id',
-            'categories.*.order' => 'required|integer|min:0',
-            'categories.*.parent_id' => 'required|integer'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        try {
-            \DB::beginTransaction();
-
-            foreach ($request->categories as $categoryData) {
+    
+    try {
+        \DB::beginTransaction();
+        
+        // Use a collection for better handling of large datasets
+        collect($categoriesData)->chunk(500)->each(function ($chunk) {
+            $chunk->each(function ($categoryData) {
                 $category = Category::findOrFail($categoryData['id']);
-                $category->update([
-                    'order' => $categoryData['order'],
-                    'parent_id' => $categoryData['parent_id']
-                ]);
-            }
-
-            \DB::commit();
-
-            // Clear cache
-            Cache::forget('all_categories');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Categories reordered successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            \DB::rollBack();
-
-            Log::error('Error reordering categories: ' . $e->getMessage());
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to reorder categories',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+                
+                $updateData = [
+                    'order' => $categoryData['position'],
+                    'parent_id' => $categoryData['parentId']
+                ];
+                
+                // Update title if it exists and is different
+                if (isset($categoryData['title'])) {
+                    // Extract the base title without the count in parentheses
+                    $titleParts = explode(' (', $categoryData['title']);
+                    $baseTitle = $titleParts[0];
+                    
+                    // Map the title to the name column in database
+                    $updateData['name'] = $baseTitle;
+                }
+                
+                $category->update($updateData);
+            });
+        });
+        
+        \DB::commit();
+        
+        // Clear cache
+        Cache::forget('all_categories');
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Categories reordered successfully'
+        ]);
+        
+    } catch (\Exception $e) {
+        \DB::rollBack();
+        
+        Log::error('Error reordering categories: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to reorder categories',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
 
 	/**
