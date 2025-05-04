@@ -1779,7 +1779,7 @@ class ProductController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function import(Request $request)
+	public function import(Request $request, CsvImporterService $csvImporter)
 	{
 		/* Validate request data */
 		$request->validate([
