@@ -18,67 +18,135 @@ class BrandController extends BaseController
 	 * Display a listing of the resource.
 	 */
 	/**
-	 * @OA\Get(
-	 *     path="/api/brands",
-	 *     summary="Get brands List",
-	 *     description="Fetches a list of all brands.",
-	 *     tags={"Brands"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function index(Request $request)
-	{
-		if (!auth()->user()->can('list brand')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
-		$brands = Brand::query();
+ * @OA\Get(
+ *     path="/api/brands",
+ *     summary="Get brands list",
+ *     description="Fetches a paginated list of all brands with optional search and sorting.",
+ *     tags={"Brands"},
+ *     @OA\Parameter(
+ *         name="page",
+ *         in="query",
+ *         description="Page number for pagination. Starts from 1.",
+ *         required=false,
+ *         example=1,
+ *         @OA\Schema(type="integer", minimum=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="length",
+ *         in="query",
+ *         description="Number of records per page.",
+ *         required=false,
+ *         example=20,
+ *         @OA\Schema(type="integer", minimum=1)
+ *     ),
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search term applied to all fields.",
+ *         required=false,
+ *         example="Nike",
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Field name to sort by (e.g., id, name, created_at, etc.).",
+ *         required=false,
+ *         example="name",
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_order",
+ *         in="query",
+ *         description="Sorting direction: asc or desc.",
+ *         required=false,
+ *         example="asc",
+ *         @OA\Schema(type="string", enum={"asc", "desc"})
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Success - Returns the list of brands.",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Brand List"),
+ *             @OA\Property(
+ *                 property="brands",
+ *                 type="array",
+ *                 @OA\Items(
+ *                     type="object",
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="name", type="string", example="Nike"),
+ *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-01-01T12:00:00Z"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-01-05T12:00:00Z")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=401,
+ *         description="Unauthorized"
+ *     ),
+ *     security={{"bearerAuth":{}}}
+ * )
+ */
+public function index(Request $request)
+{
+    $brands = Brand::query();
+    // Apply search filter (searches across all columns)
+    if ($request->filled('search')) {
+        $search = $request->input('search');
+        $brands = $brands->where(function ($query) use ($search) {
+            $columns = Schema::getColumnListing((new Brand)->getTable());
+            foreach ($columns as $column) {
+                $query->orWhere($column, 'LIKE', "%{$search}%");
+            }
+        });
+    }
 
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$brands = $brands->offset(($page - 1)*$length)->limit($length);
-		}
+    // Sorting
+    if ($request->filled('sort_by') && $request->filled('sort_order')) {
+        $sortBy = $request->input('sort_by');
+        $sortOrder = $request->input('sort_order') == 'desc' ? 'desc' : 'asc';
+        if (Schema::hasColumn((new Brand)->getTable(), $sortBy)) {
+            $brands = $brands->orderBy($sortBy, $sortOrder);
+        }
+    }
 
-		$brands = $brands->pluck('name', 'id');
+    // Pagination
+    if ($request->filled('page') && $request->filled('length')) {
+        $page = $request->input('page');
+        $length = $request->input('length');
+        $brands = $brands->offset(($page - 1) * $length)->limit($length);
+    }
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Brand List',
-			'brands' => $brands
-		]);
-	}
+    $brands = $brands->get();
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Brand List',
+        'brands' => $brands
+    ]);
+}
+
+	// public function index(Request $request)
+	// {
+	// 	$brands = Brand::query();
+
+	// 	if($request->filled('page') && $request->filled('length')){
+	// 		$page = $request->input('page');
+	// 		$length = $request->input('length');
+	// 		$brands = $brands->offset(($page - 1)*$length)->limit($length);
+	// 	}
+
+	// 	$brands = $brands->pluck('name', 'id');
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => 'Brand List',
+	// 		'brands' => $brands
+	// 	]);
+	// }
 
 /**
  * @OA\Post(
