@@ -8,6 +8,7 @@ use App\Models\Store;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Schema;
 use ZipArchive;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
