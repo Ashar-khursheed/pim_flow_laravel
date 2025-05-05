@@ -693,7 +693,7 @@ class CategoryController extends BaseController
         }
     }
 
-     /**
+    /**
      * Update the order of categories (for drag and drop functionality).
      *
      * @OA\Post(
@@ -745,9 +745,16 @@ class CategoryController extends BaseController
             '*.title' => 'sometimes|string'
         ]);
         
-        // Process each category in the array
-        foreach ($request->all() as $categoryData) {
-            $category = Category::findOrFail($categoryData['id']);
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+        
+        try {
+            \DB::beginTransaction();
             
             // Process each category in the array
             foreach ($request->all() as $categoryData) {
@@ -770,30 +777,29 @@ class CategoryController extends BaseController
                 $category->update($updateData);
             }
             
-            $category->update($updateData);
+            \DB::commit();
+            
+            // Clear cache
+            Cache::forget('all_categories');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Categories reordered successfully'
+            ]);
+            
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            
+            Log::error('Error reordering categories: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to reorder categories',
+                'error' => $e->getMessage()
+            ], 500);
         }
-        
-        \DB::commit();
-        
-        // Clear cache
-        Cache::forget('all_categories');
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Categories reordered successfully'
-        ]);
-        
-    } catch (\Exception $e) {
-        \DB::rollBack();
-        
-        Log::error('Error reordering categories: ' . $e->getMessage());
-        
-        return response()->json([
-            'success' => false,
-            'message' => 'Failed to reorder categories',
-            'error' => $e->getMessage()
-        ], 500);
     }
+
 	/**
      * Move a category up in order.
      *
@@ -832,50 +838,44 @@ class CategoryController extends BaseController
      */
 
   public function moveUp($id): JsonResponse
-	{
-    if (!auth()->user()->can('update category')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
+			{
 				try {
 					$category = Category::findOrFail($id);
 					$parentId = $category->parent_id;
-
+					
 					// Find the category directly above this one
 					$aboveCategory = Category::where('parent_id', $parentId)
 						->where('order', '<', $category->order)
 						->orderBy('order', 'desc')
 						->first();
-
+					
 					if ($aboveCategory) {
 						\DB::beginTransaction();
-
+						
 						// Swap orders
 						$tempOrder = $aboveCategory->order;
 						$aboveCategory->order = $category->order;
 						$category->order = $tempOrder;
-
+						
 						$aboveCategory->save();
 						$category->save();
-
+						
 						\DB::commit();
-
+						
 						// Clear cache
 						Cache::forget('all_categories');
-
+						
 						return response()->json([
 							'success' => true,
 							'message' => 'Category moved up successfully'
 						]);
 					}
-
+					
 					return response()->json([
 						'success' => false,
 						'message' => 'Category is already at the top'
 					]);
-
+					
 				} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
 					return response()->json([
 						'success' => false,
@@ -886,9 +886,9 @@ class CategoryController extends BaseController
 					if (\DB::transactionLevel() > 0) {
 						\DB::rollBack();
 					}
-
+					
 					Log::error('Error moving category up: ' . $e->getMessage());
-
+					
 					return response()->json([
 						'success' => false,
 						'message' => 'Failed to move category up',
@@ -896,7 +896,7 @@ class CategoryController extends BaseController
 					], 500);
 				}
 	        }
-
+		
 	/**
 	 * Move a category down in the order.
 	 *
@@ -935,49 +935,43 @@ class CategoryController extends BaseController
 	 */
 	public function moveDown($id): JsonResponse
 	{
-    if (!auth()->user()->can('update category')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
 		try {
 			$category = Category::findOrFail($id);
 			$parentId = $category->parent_id;
-
+			
 			// Find the category directly below this one
 			$belowCategory = Category::where('parent_id', $parentId)
 				->where('order', '>', $category->order)
 				->orderBy('order', 'asc')
 				->first();
-
+			
 			if ($belowCategory) {
 				\DB::beginTransaction();
-
+				
 				// Swap orders
 				$tempOrder = $belowCategory->order;
 				$belowCategory->order = $category->order;
 				$category->order = $tempOrder;
-
+				
 				$belowCategory->save();
 				$category->save();
-
+				
 				\DB::commit();
-
+				
 				// Clear cache
 				Cache::forget('all_categories');
-
+				
 				return response()->json([
 					'success' => true,
 					'message' => 'Category moved down successfully'
 				]);
 			}
-
+			
 			return response()->json([
 				'success' => false,
 				'message' => 'Category is already at the bottom'
 			]);
-
+			
 		} catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
 			return response()->json([
 				'success' => false,
@@ -988,9 +982,9 @@ class CategoryController extends BaseController
 			if (\DB::transactionLevel() > 0) {
 				\DB::rollBack();
 			}
-
+			
 			Log::error('Error moving category down: ' . $e->getMessage());
-
+			
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to move category down',
