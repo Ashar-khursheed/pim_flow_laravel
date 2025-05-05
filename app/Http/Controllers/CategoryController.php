@@ -693,85 +693,81 @@ class CategoryController extends BaseController
         }
     }
 
-    /**
- * Update the order of categories (for drag and drop functionality).
- *
- * @OA\Post(
- *     path="/api/reorder",
- *     summary="Reorder categories",
- *     description="Updates the order of categories for drag and drop functionality",
- *     tags={"Reorder"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             type="array",
- *             @OA\Items(
- *                 type="object",
- *                 required={"id", "position", "parentId"},
- *                 @OA\Property(property="id", type="integer", example=40),
- *                 @OA\Property(property="title", type="string", example="Cooking Equipment (9)"),
- *                 @OA\Property(property="position", type="integer", example=0),
- *                 @OA\Property(property="parentId", type="integer", example=1)
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Categories reordered successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Categories reordered successfully")
- *         )
- *     ),
- *     @OA\Response(
- *         response=422,
- *         description="Validation error",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=false),
- *             @OA\Property(property="message", type="string", example="Validation error"),
- *             @OA\Property(property="errors", type="object")
- *         )
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function reorder(Request $request): JsonResponse
-{
-    // Validate the entire array of categories
-    $validator = Validator::make($request->all(), [
-        '*.id' => 'required|integer|exists:ec_product_categories,id',
-        '*.position' => 'required|integer|min:0',
-        '*.parentId' => 'required|integer',
-        '*.title' => 'sometimes|string'
-    ]);
-    
-    if ($validator->fails()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Validation error',
-            'errors' => $validator->errors()
-        ], 422);
-    }
-    
-    try {
-        \DB::beginTransaction();
+     /**
+     * Update the order of categories (for drag and drop functionality).
+     *
+     * @OA\Post(
+     *     path="/api/reorder",
+     *     summary="Reorder categories",
+     *     description="Updates the order of categories for drag and drop functionality",
+     *     tags={"Reorder"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 required={"id", "position", "parentId"},
+     *                 @OA\Property(property="id", type="integer", example=40),
+     *                 @OA\Property(property="title", type="string", example="Cooking Equipment (9)"),
+     *                 @OA\Property(property="position", type="integer", example=0),
+     *                 @OA\Property(property="parentId", type="integer", example=1)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Categories reordered successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Categories reordered successfully")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation error"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function reorder(Request $request): JsonResponse
+    {
+        // Validate the entire array of categories
+        $validator = Validator::make($request->all(), [
+            '*.id' => 'required|integer|exists:ec_product_categories,id',
+            '*.position' => 'required|integer|min:0',
+            '*.parentId' => 'required|integer',
+            '*.title' => 'sometimes|string'
+        ]);
         
         // Process each category in the array
         foreach ($request->all() as $categoryData) {
             $category = Category::findOrFail($categoryData['id']);
             
-            $updateData = [
-                'order' => $categoryData['position'],
-                'parent_id' => $categoryData['parentId']
-            ];
-            
-            // Update title if it exists and is different
-            if (isset($categoryData['title'])) {
-                // Extract the base title without the count in parentheses
-                $titleParts = explode(' (', $categoryData['title']);
-                $baseTitle = $titleParts[0];
+            // Process each category in the array
+            foreach ($request->all() as $categoryData) {
+                $category = Category::findOrFail($categoryData['id']);
                 
-                $updateData['name'] = $baseTitle;
+                $updateData = [
+                    'order' => $categoryData['position'],
+                    'parent_id' => $categoryData['parentId']
+                ];
+                
+                // Update title if it exists and is different
+                if (isset($categoryData['title'])) {
+                    // Extract the base title without the count in parentheses
+                    $titleParts = explode(' (', $categoryData['title']);
+                    $baseTitle = $titleParts[0];
+                    
+                    $updateData['name'] = $baseTitle;
+                }
+                
+                $category->update($updateData);
             }
             
             $category->update($updateData);
@@ -798,7 +794,6 @@ public function reorder(Request $request): JsonResponse
             'error' => $e->getMessage()
         ], 500);
     }
-}
 	/**
      * Move a category up in order.
      *
