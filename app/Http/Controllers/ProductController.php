@@ -1788,20 +1788,26 @@ class ProductController extends BaseController
 		]);
 
 		try {
-			$productFileFormatArray = [
+			$productFileFormatArray = [];
+			$idArray = [
 				'Id' => 'id',
+			];
+			$urlArray = [
 				'URL' => 'url',
+			];
+			$generalFieldArray = [
 				'Name' => 'name',
 				'SKU' => 'sku',
 				'Brand' => 'brand',
 				'Categories' => 'category',
-				// 'Content' => 'content',
-
+			];
+			$descriptionSectionArray = [
 				'Description1' => 'description1',
 				'Description2' => 'description2',
 				'Description3' => 'description3',
 				'Description4' => 'description4',
-
+			];
+			$benefitSectionArray = [
 				'Benefit1' => 'benefit1',
 				'Feature1' => 'feature1',
 				'Benefit2' => 'benefit2',
@@ -1822,7 +1828,8 @@ class ProductController extends BaseController
 				'Feature9' => 'feature9',
 				'Benefit10' => 'benefit10',
 				'Feature10' => 'feature10',
-
+			];
+			$advanceFieldArray = [
 				'Warranty Information' => 'warrantyInformation',
 				'Vendor' => 'vendor',
 				'Tags' => 'tags',
@@ -1875,6 +1882,8 @@ class ProductController extends BaseController
 				'Variant Color Title' => 'variantColorTitle',
 				'Variant Color Value' => 'variantColorValue',
 				'Variant Color Products' => 'variantColorProducts',
+			];
+			$discountSectionArray = [
 				'Buying Quantity1' => 'buyingQuantity1',
 				'Discount1' => 'discount1',
 				'Start Date1' => 'startDate1',
@@ -1887,11 +1896,35 @@ class ProductController extends BaseController
 				'Discount3' => 'discount3',
 				'Start Date3' => 'startDate3',
 				'End Date3' => 'endDate3',
+			];
+			$translationSectionArray = [
 				'Name (AR)' => 'nameAr',
 				'Description (AR)' => 'descriptionAr',
 				'Content (AR)' => 'contentAr',
 				'Warranty Information (AR)' => 'warrantyInformationAr',
 			];
+
+			$userRole = $request->user_role ?? null;
+
+			if (empty($userRole) || $userRole !== 'content_writer') {
+				$productFileFormatArray = array_merge(
+					$idArray,
+					$urlArray,
+					$generalFieldArray,
+					$descriptionSectionArray,
+					$benefitSectionArray,
+					$advanceFieldArray,
+					$discountSectionArray,
+					$translationSectionArray
+				);
+			} elseif ($userRole === 'content_writer') {
+				$productFileFormatArray = array_merge(
+					$idArray,
+					$generalFieldArray,
+					$descriptionSectionArray,
+					$benefitSectionArray
+				);
+			}
 
 			$csvImporter->processImport(
 				$request->file('upload_file')->getRealPath(),
