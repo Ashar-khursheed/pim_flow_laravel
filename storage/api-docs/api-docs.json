@@ -3615,50 +3615,46 @@
                 ]
             }
         },
-        "/api/categories/reorder": {
+        "/api/reorder": {
             "post": {
                 "tags": [
-                    "Categories"
+                    "Reorder"
                 ],
                 "summary": "Reorder categories",
                 "description": "Updates the order of categories for drag and drop functionality",
-                "operationId": "6d6f00a49335289df918f785cb67d788",
+                "operationId": "2aecf3105502927939ff51a64f5b36a6",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "categories"
-                                ],
-                                "properties": {
-                                    "categories": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "id",
-                                                "order",
-                                                "parent_id"
-                                            ],
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "order": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "parent_id": {
-                                                    "type": "integer",
-                                                    "example": 0
-                                                }
-                                            },
-                                            "type": "object"
+                                "type": "array",
+                                "items": {
+                                    "required": [
+                                        "id",
+                                        "position",
+                                        "parentId"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 40
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "example": "Cooking Equipment (9)"
+                                        },
+                                        "position": {
+                                            "type": "integer",
+                                            "example": 0
+                                        },
+                                        "parentId": {
+                                            "type": "integer",
+                                            "example": 1
                                         }
-                                    }
-                                },
-                                "type": "object"
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     }
@@ -14857,6 +14853,10 @@
         {
             "name": "BrandTemp3",
             "description": "BrandTemp3"
+        },
+        {
+            "name": "Reorder",
+            "description": "Reorder"
         },
         {
             "name": "Category Pages",

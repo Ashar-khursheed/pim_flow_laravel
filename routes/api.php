@@ -189,7 +189,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
 	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
-	Route::post('/categories/reorder', [CategoryController::class ,'reorder']);
+	Route::post('/reorder', [CategoryController::class ,'reorder']);
     Route::apiResource('categories', CategoryController::class);
 
 
