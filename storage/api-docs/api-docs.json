@@ -2834,18 +2834,9 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "attribute_ids",
                                     "attribute_group_ids"
                                 ],
                                 "properties": {
-                                    "attribute_ids": {
-                                        "description": "Array of attribute IDs to associate with the category",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 5
-                                        }
-                                    },
                                     "attribute_group_ids": {
                                         "description": "Array of attribute group IDs to associate with the category",
                                         "type": "array",
@@ -2899,12 +2890,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "attribute_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    },
                                     "attribute_group_ids": {
                                         "type": "array",
                                         "items": {
@@ -2932,13 +2917,13 @@
                 ]
             }
         },
-        "/api/category-attributes/{id}/remove-attribute": {
+        "/api/category-attributes/{id}/remove-attribute-group/{attribute_group_id}": {
             "delete": {
                 "tags": [
                     "Category Attribute Group"
                 ],
-                "summary": "Remove specific attributes or attribute groups from a category",
-                "operationId": "eac4b91fde709243f089b381042f199c",
+                "summary": "Remove an attribute group from a category",
+                "operationId": "b7f945a5866ce800495bb27d27041c4a",
                 "parameters": [
                     {
                         "name": "id",
@@ -2948,32 +2933,17 @@
                         "schema": {
                             "type": "integer"
                         }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "attribute_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "attribute_group_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
+                    },
+                    {
+                        "name": "attribute_group_id",
+                        "in": "path",
+                        "description": "Attribute Group ID to remove from the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",

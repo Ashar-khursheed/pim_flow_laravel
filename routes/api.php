@@ -84,7 +84,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
 	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
-	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
+	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroups']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);

@@ -49,7 +49,6 @@ class CategoryAttributeController extends BaseController
 	public function index(Request $request)
 	{
 		$records = Category::with([
-			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
 			'attributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children');
@@ -69,7 +68,6 @@ class CategoryAttributeController extends BaseController
 
 		// Hide pivot data manually
 		$records->each(function ($category) {
-			$category->categoryAttributes->each->makeHidden(['pivot']);
 			$category->attributeGroups->each->makeHidden(['pivot']);
 			$category->attributeGroups->each(function ($group) {
 				$group->groupAttributes->each->makeHidden(['pivot']);
@@ -108,7 +106,6 @@ class CategoryAttributeController extends BaseController
 	public function show($id)
 	{
 		$record = Category::with([
-			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
 			'attributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children')
@@ -122,7 +119,6 @@ class CategoryAttributeController extends BaseController
 				'message' => 'Record does not exist with given ID.'
 			]);
 		}
-		$record->categoryAttributes->each->makeHidden(['pivot']);
 		$record->attributeGroups->each->makeHidden(['pivot']);
 		$record->attributeGroups->each(function ($group) {
 			$group->groupAttributes->each->makeHidden(['pivot']);
@@ -154,13 +150,7 @@ class CategoryAttributeController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"attribute_ids", "attribute_group_ids"},
-	 *             @OA\Property(
-	 *                 property="attribute_ids",
-	 *                 type="array",
-	 *                 description="Array of attribute IDs to associate with the category",
-	 *                 @OA\Items(type="integer", example=5)
-	 *             ),
+	 *             required={"attribute_group_ids"},
 	 *             @OA\Property(
 	 *                 property="attribute_group_ids",
 	 *                 type="array",
@@ -177,7 +167,7 @@ class CategoryAttributeController extends BaseController
 	{
 		$record = Category::whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
-		->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+		->with(['attributeGroups:id,name'])
 		->where('id', $id)
 		->first();
 
@@ -189,8 +179,6 @@ class CategoryAttributeController extends BaseController
 		}
 
 		$request->validate([
-			'attribute_ids' => 'array',
-			'attribute_ids.*' => 'integer|exists:attributes,id',
 			'attribute_group_ids' => 'array',
 			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
 		]);
@@ -198,20 +186,18 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$record->categoryAttributes()->sync($request->attribute_ids);
 			$record->attributeGroups()->sync($request->attribute_group_ids);
 
 			/* Fetch updated data with only required fields */
 			$updatedRecord = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+			->with('attributeGroups:id,name')
 			->where('id', $id)
 			->first();
 
 			/* Ensure we don't try to access null values */
 			if ($updatedRecord) {
 				$updatedRecord->attributeGroups->each->makeHidden(['pivot']);
-				$updatedRecord->categoryAttributes->each->makeHidden(['pivot']);
 			}
 
 			DB::commit();
@@ -248,7 +234,6 @@ class CategoryAttributeController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
 	 *             @OA\Property(property="attribute_group_ids", type="array", @OA\Items(type="integer"))
 	 *         )
 	 *     ),
@@ -267,8 +252,6 @@ class CategoryAttributeController extends BaseController
 		}
 
 		$request->validate([
-			'attribute_ids' => 'array',
-			'attribute_ids.*' => 'integer|exists:attributes,id',
 			'attribute_group_ids' => 'array',
 			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
 		]);
@@ -276,17 +259,15 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$record->categoryAttributes()->syncWithoutDetaching($request->attribute_ids);
 			$record->attributeGroups()->syncWithoutDetaching($request->attribute_group_ids);
 
 			/* Updated record */
 			$record = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+			->with('attributeGroups:id,name')
 			->where('id', $id)
 			->first();
 			$record->attributeGroups->each->makeHidden(['pivot']);
-			$record->categoryAttributes->each->makeHidden(['pivot']);
 
 			DB::commit();
 
@@ -309,62 +290,45 @@ class CategoryAttributeController extends BaseController
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/category-attributes/{id}/remove-attribute",
-	 *     summary="Remove specific attributes or attribute groups from a category",
+	 *     path="/api/category-attributes/{id}/remove-attribute-group/{attribute_group_id}",
+	 *     summary="Remove an attribute group from a category",
 	 *     tags={"Category Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         description="Category ID",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
-	 *             @OA\Property(property="attribute_group_ids", type="array", @OA\Items(type="integer"))
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="id", in="path", description="Category ID", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="attribute_group_id", in="path", description="Attribute Group ID to remove from the category", required=true, @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function removeAttributes(Request $request, $id)
+	public function removeAttributeGroups($id, $attribute_group_id)
 	{
 		$record = Category::whereDoesntHave('children')->find($id);
 
 		if (!$record) {
-			return response()->json(['success' => false, 'message' => 'Category not found'], 404);
+			return response()->json(['success' => false, 'message' => 'Category not found']);
 		}
 
-		$request->validate([
-			'attribute_ids' => 'array',
-			'attribute_ids.*' => 'integer|exists:attributes,id',
-			'attribute_group_ids' => 'array',
-			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
-		]);
+		if (!AttributeGroup::find($attribute_group_id)) {
+			return response()->json(['success' => false, 'message' => 'Attribute group not found']);
+		}
 
 		DB::beginTransaction();
 
 		try {
-			$record->categoryAttributes()->detach($request->attribute_ids);
-			$record->attributeGroups()->detach($request->attribute_group_ids);
+			$record->attributeGroups()->detach($attribute_group_id);
 
 			/* Updated record */
 			$record = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
+			->with('attributeGroups:id,name')
 			->where('id', $id)
 			->first();
 			$record->attributeGroups->each->makeHidden(['pivot']);
-			$record->categoryAttributes->each->makeHidden(['pivot']);
 
 			DB::commit();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Attributes and attribute groups removed successfully.',
+				'message' => 'Attributes groups removed successfully.',
 				'data' => $record
 			], 200);
 
@@ -429,20 +393,20 @@ class CategoryAttributeController extends BaseController
 	 $validated = Validator::make(['category_id' => $category_id], [
 		 'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
 	 ]);
- 
+
 	 // If validation fails, return error response
 	 if ($validated->fails()) {
 		 return response()->json([
 			 'message' => 'Invalid category ID or category not found'
 		 ], 404);
 	 }
- 
+
 	 // Step 2: Find the category by ID
 	 $category = Category::findOrFail($category_id);
- 
+
 	 // Step 3: Get the attribute groups related to the category
 	 $attributeGroups = $category->attributeGroups(); // Access related attribute groups
- 
+
 	 // Step 4: Get all the attributes from those groups, plucking only the 'id' and 'name' fields
 	 $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
 								   ->get() // Get the groups
@@ -454,10 +418,10 @@ class CategoryAttributeController extends BaseController
 										   'name' => $attribute->name,
 									   ];
 								   }); // Map to include only id and name
- 
+
 	 // Step 5: Return the attributes in the response
 	 return response()->json($attributes);
  }
- 
+
 
 }
