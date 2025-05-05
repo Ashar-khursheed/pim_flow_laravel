@@ -690,15 +690,15 @@
                 "tags": [
                     "Brands"
                 ],
-                "summary": "Get brands List",
-                "description": "Fetches a list of all brands.",
+                "summary": "Get brands list",
+                "description": "Fetches a paginated list of all brands with optional search and sorting.",
                 "operationId": "3c41aa2e65314941e37a634e810c5f73",
                 "parameters": [
                     {
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -709,20 +709,97 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term applied to all fields.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Nike"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field name to sort by (e.g., id, name, created_at, etc.).",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "name"
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sorting direction: asc or desc.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Success",
+                    "200": {
+                        "description": "Success - Returns the list of brands.",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand List"
+                                        },
+                                        "brands": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Nike"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-01T12:00:00Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-05T12:00:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
