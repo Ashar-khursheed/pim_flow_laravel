@@ -9403,6 +9403,10 @@
                                         "description": "CSV file (.csv) max 5MB",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "user_role": {
+                                        "description": "Optional user role context for import",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"

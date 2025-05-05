@@ -1770,7 +1770,8 @@ class ProductController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB"),
+	 *                 @OA\Property(property="user_role", type="string", description="Optional user role context for import")
 	 *             )
 	 *         )
 	 *     ),
@@ -1783,6 +1784,7 @@ class ProductController extends BaseController
 		/* Validate request data */
 		$request->validate([
 			'upload_file' => 'required|file|mimes:csv,txt|max:5120',
+			'user_role' => 'nullable|string',
 		]);
 
 		try {
@@ -1790,13 +1792,39 @@ class ProductController extends BaseController
 				'Id' => 'id',
 				'URL' => 'url',
 				'Name' => 'name',
-				'Content' => 'content',
-				'Description' => 'description',
-				'Warranty Information' => 'warrantyInformation',
 				'SKU' => 'sku',
 				'Brand' => 'brand',
-				'Vendor' => 'vendor',
 				'Categories' => 'category',
+				// 'Content' => 'content',
+
+				'Description1' => 'description1',
+				'Description2' => 'description2',
+				'Description3' => 'description3',
+				'Description4' => 'description4',
+
+				'Benefit1' => 'benefit1',
+				'Feature1' => 'feature1',
+				'Benefit2' => 'benefit2',
+				'Feature2' => 'feature2',
+				'Benefit3' => 'benefit3',
+				'Feature3' => 'feature3',
+				'Benefit4' => 'benefit4',
+				'Feature4' => 'feature4',
+				'Benefit5' => 'benefit5',
+				'Feature5' => 'feature5',
+				'Benefit6' => 'benefit6',
+				'Feature6' => 'feature6',
+				'Benefit7' => 'benefit7',
+				'Feature7' => 'feature7',
+				'Benefit8' => 'benefit8',
+				'Feature8' => 'feature8',
+				'Benefit9' => 'benefit9',
+				'Feature9' => 'feature9',
+				'Benefit10' => 'benefit10',
+				'Feature10' => 'feature10',
+
+				'Warranty Information' => 'warrantyInformation',
+				'Vendor' => 'vendor',
 				'Tags' => 'tags',
 				'Stock Status' => 'stockStatus',
 				'With Storehouse Management' => 'withStorehouseManagement',
@@ -1871,7 +1899,8 @@ class ProductController extends BaseController
 				'Product',
 				'JOB1',
 				'Product Import',
-				\App\Jobs\ImportProductJob::class
+				\App\Jobs\ImportProductJob::class,
+				$request->user_role
 			);
 
 			return response()->json([

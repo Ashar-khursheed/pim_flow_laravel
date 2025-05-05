@@ -40,6 +40,7 @@ class ImportProductJob implements ShouldQueue
 	protected $categoryIdNames;
 	protected $tagIdNames;
 	protected $productFileFormatArray;
+	protected $userRole;
 
 	public function __construct($data)
 	{
@@ -47,6 +48,7 @@ class ImportProductJob implements ShouldQueue
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
 		$this->productFileFormatArray = $data['fileFormatArray'];
+		$this->userRole = $data['userRole'];
 	}
 
 	public function handle()
@@ -80,7 +82,7 @@ class ImportProductJob implements ShouldQueue
 				$failed++;
 				continue;
 			}
-
+			dd($rowData);
 			foreach ($this->productFileFormatArray as $headerKey => $variableName) {
 				if (in_array($headerKey, $this->header)) {
 					${$variableName} = trim($rowData[$headerKey]);
@@ -88,7 +90,19 @@ class ImportProductJob implements ShouldQueue
 			}
 
 			/* Required data validation */
-			if (empty($url) || empty($name) || empty($sku) || empty($brand) || empty($vendor) || empty($category) || empty($status)) {
+			$rowError = [];
+
+			if ($userRole === 'content_writer') {
+				if (empty($id)) {
+					$rowError[] = 'ID is missing';
+				}
+				if (empty($name)) {
+					$rowError[] = 'Name is missing';
+				}
+				if (empty($sku)) {
+					$rowError[] = 'SKU is missing';
+				}
+			} else {
 				if (empty($url)) {
 					$rowError[] = 'URL is missing';
 				}
@@ -110,6 +124,9 @@ class ImportProductJob implements ShouldQueue
 				if (empty($status)) {
 					$rowError[] = 'Status is missing';
 				}
+			}
+
+			if (!empty($rowError)) {
 				$errorArray[] = [
 					"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
@@ -157,156 +174,216 @@ class ImportProductJob implements ShouldQueue
 				}
 			}
 
-			/* Brand validation */
-			if (!in_array($brand, array_values($brandIdNames))) {
-				$rowError[] = "$brand brand does not exist.";
-			} else {
-				$brandId = array_search($brand, $brandIdNames);
+			/* Validate Description Fields */
+			if (empty($description1)) {
+				$rowError[] = 'Description1 is required';
 			}
 
-			/* Vendor validation */
-			if (!in_array($vendor, array_values($storeIdNames))) {
-				$rowError[] = "$vendor vendor does not exist.";
-			} else {
-				$storeId = array_search($vendor, $storeIdNames);
-			}
-
-			/* Category validation */
-			$lowercaseCategory = strtolower($category);
-			$lowercaseCategoryIdNames = array_change_key_case(array_flip($this->categoryIdNames), CASE_LOWER);
-			if (array_key_exists($lowercaseCategory, $lowercaseCategoryIdNames)) {
-				$categoryId = $lowercaseCategoryIdNames[$lowercaseCategory];
-			} else {
-				$rowError[] = "$category category does not exist or is not a valid lowest-level category.";
-			}
-
-			$usStatusArray = [
-				1 => "published",
-				2 => "draft",
-				3 => "pending"
-			];
-			/* Status validation */
-			if (!is_numeric($status) || !in_array($status, [1, 2, 3])) {
-				$rowError[] = "Status should be numeric and either 1 for Published, 2 for Draft, or 3 for Pending.";
-			} else {
-				$status = $usStatusArray[$status];
-			}
-
-			/* Additional field validations */
-
-			/* Stock status validation */
-			$usStockStatusArray = [
-				1 => "in_stock",
-				2 => "out_of_stock",
-				3 => "on_backorder"
-			];
-
-			if ($stockStatus) {
-				if (!is_numeric($stockStatus) || !array_key_exists((int) $stockStatus, $usStockStatusArray)) {
-					$rowError[] = "Stock status should be numeric and either 1 for In-Stock, 2 for Out of Stock, or 3 for Pre Order.";
-				} else {
-					$stockStatus = $usStockStatusArray[(int) $stockStatus];
+			$descriptionFields = [$description1, $description2, $description3, $description4];
+			foreach ($descriptionFields as $index => $desc) {
+				if (!empty($desc) && strlen($desc) > 500) {
+					$rowError[] = 'Maximum 500 characters allowed in Description' . ($index + 1);
 				}
-			} else {
-				$stockStatus = null;
 			}
 
-			/* With storehouse management validation (Check for 0 if empty) */
-			if ($withStorehouseManagement !== '' && (!is_numeric($withStorehouseManagement) || !in_array($withStorehouseManagement, [0, 1]))) {
-				$rowError[] = "With storehouse management should be numeric and either 1 for Yes, or 0 for No.";
-			} else {
-				$withStorehouseManagement = $withStorehouseManagement !== '' ? (int) $withStorehouseManagement : 0;
+			/* Validate Benefit1 to Benefit10 and Feature1 to Feature10 */
+			for ($i = 1; $i <= 10; $i++) {
+				$benefit = ${'benefit' . $i} ?? '';
+				$feature = ${'feature' . $i} ?? '';
+
+				/* First 5 benefits and features are required */
+				if ($i <= 5) {
+					if (empty($benefit)) {
+						$rowError[] = "Benefit{$i} is required";
+					}
+					if (empty($feature)) {
+						$rowError[] = "Feature{$i} is required";
+					}
+				}
+
+				/* Max length validations */
+				if (!empty($benefit) && strlen($benefit) > 40) {
+					$rowError[] = "Maximum 40 characters allowed in Benefit{$i}";
+				}
+				if (!empty($feature) && strlen($feature) > 200) {
+					$rowError[] = "Maximum 200 characters allowed in Feature{$i}";
+				}
 			}
 
-			/* Unit of measurement validation */
-			$usUnitOfMeasurementArray = UnitOfMeasurement::pluck('name', 'id')->all();
-			if ($unitOfMeasurement && (!is_numeric($unitOfMeasurement) || !array_key_exists((int) $unitOfMeasurement, $usUnitOfMeasurementArray))) {
-				$rowError[] = "Unit of measurement should be numeric and either 1 for Each, 2 for Dozen, 3 for Box, or 4 for Case.";
-			} else {
-				$unitOfMeasurementID = $unitOfMeasurement ? $unitOfMeasurement : null;
-			}
+			if (empty($userRole) || (!empty($userRole) && $userRole !== 'content_writer')) {
+				/* Brand validation */
+				if (!in_array($brand, array_values($brandIdNames))) {
+					$rowError[] = "$brand brand does not exist.";
+				} else {
+					$brandId = array_search($brand, $brandIdNames);
+				}
 
-			/* Variant requires shipping validation (Check for 0 if empty) */
-			if ($variantRequiresShipping !== '' && (!is_numeric($variantRequiresShipping) || !in_array($variantRequiresShipping, [0, 1]))) {
-				$rowError[] = "Variant requires shipping should be numeric and either 1 for Yes, or 0 for No.";
-			} else {
-				$variantRequiresShipping = $variantRequiresShipping !== '' ? (int) $variantRequiresShipping : null;
-			}
+				/* Vendor validation */
+				if (!in_array($vendor, array_values($storeIdNames))) {
+					$rowError[] = "$vendor vendor does not exist.";
+				} else {
+					$storeId = array_search($vendor, $storeIdNames);
+				}
 
-			/* Refund policy validation */
-			$usRefundPolicyArray = [
-				1 => "non-refundable",
-				2 => "15 days",
-				3 => "90 days"
-			];
-			if ($refundPolicy && (!is_numeric($refundPolicy) || !in_array($refundPolicy, [1, 2, 3]))) {
-				$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-			} else {
-				$refundPolicy = $refundPolicy ? $usRefundPolicyArray[$refundPolicy] ?? null : null;
-			}
+				/* Category validation */
+				$lowercaseCategory = strtolower($category);
+				$lowercaseCategoryIdNames = array_change_key_case(array_flip($this->categoryIdNames), CASE_LOWER);
+				if (array_key_exists($lowercaseCategory, $lowercaseCategoryIdNames)) {
+					$categoryId = $lowercaseCategoryIdNames[$lowercaseCategory];
+				} else {
+					$rowError[] = "$category category does not exist or is not a valid lowest-level category.";
+				}
 
-			/* Is featured validation (Check for 0 if empty) */
-			if ($isFeatured !== '' && (!is_numeric($isFeatured) || !in_array($isFeatured, [0, 1]))) {
-				$rowError[] = "Is featured should be numeric and either 1 for Enable, or 0 for Disable.";
-			} else {
-				$isFeatured = $isFeatured !== '' ? (int) $isFeatured : 0;
-			}
+				$usStatusArray = [
+					1 => "published",
+					2 => "draft",
+					3 => "pending"
+				];
 
-			/* Weight option validation */
-			$usWeightArray = [
-				5 => "kg",
-				6 => "g",
-				9 => "lbs",
-			];
-			if ($weightOption && !in_array($weightOption, ['lbs', 'kg', 'g'])) {
-				$rowError[] = "Weight option should be 'lbs', 'kg', or 'g'.";
-			} else {
-				$weightOption = $weightOption ? array_search($weightOption, $usWeightArray) : 9;
-			}
+				/* Status validation */
+				if (!is_numeric($status) || !in_array($status, [1, 2, 3])) {
+					$rowError[] = "Status should be numeric and either 1 for Published, 2 for Draft, or 3 for Pending.";
+				} else {
+					$status = $usStatusArray[$status];
+				}
 
-			/* Dimension option validation */
-			$usDimensionArray = [
-				1 => "cm",
-				3 => "inch",
-				11 => "mm",
-			];
-			if ($dimensionOption && !in_array($dimensionOption, ['inch', 'cm', 'mm'])) {
-				$rowError[] = "Dimension option should be 'inch', 'cm', or 'mm'.";
-			} else {
-				$dimensionOption = $dimensionOption ? array_search($dimensionOption, $usDimensionArray) : 3;
-			}
+				/* Additional field validations */
 
-			/* Shipping weight option validation */
-			if ($shippingWeightOption && !in_array($shippingWeightOption, ['lbs', 'kg', 'g'])) {
-				$rowError[] = "Shipping weight option should be 'lbs', 'kg', or 'g'.";
-			} else {
-				$shippingWeightOption = $shippingWeightOption ? $shippingWeightOption : 'lbs';
-			}
+				/* Stock status validation */
+				$usStockStatusArray = [
+					1 => "in_stock",
+					2 => "out_of_stock",
+					3 => "on_backorder"
+				];
 
-			/* Shipping dimension option validation */
-			if ($shippingDimensionOption && !in_array($shippingDimensionOption, ['inch', 'cm', 'mm'])) {
-				$rowError[] = "Shipping dimension option should be 'inch', 'cm', or 'mm'.";
-			} else {
-				$shippingDimensionOption = $shippingDimensionOption ? $shippingDimensionOption : 'inch';
-			}
+				if ($stockStatus) {
+					if (!is_numeric($stockStatus) || !array_key_exists((int) $stockStatus, $usStockStatusArray)) {
+						$rowError[] = "Stock status should be numeric and either 1 for In-Stock, 2 for Out of Stock, or 3 for Pre Order.";
+					} else {
+						$stockStatus = $usStockStatusArray[(int) $stockStatus];
+					}
+				} else {
+					$stockStatus = null;
+				}
 
-			$frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
-			if ($frequentlyBoughtTogether) {
-				$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
-			} else {
-				$frequentlyBoughtTogether = null;
-			}
+				/* With storehouse management validation (Check for 0 if empty) */
+				if ($withStorehouseManagement !== '' && (!is_numeric($withStorehouseManagement) || !in_array($withStorehouseManagement, [0, 1]))) {
+					$rowError[] = "With storehouse management should be numeric and either 1 for Yes, or 0 for No.";
+				} else {
+					$withStorehouseManagement = $withStorehouseManagement !== '' ? (int) $withStorehouseManagement : 0;
+				}
 
-			$compareProducts = trim($rowData['Compare Products']);
-			if ($compareProducts) {
-				$compareProductsArray = array_unique(array_map(fn($value) => trim($value), explode(',', $compareProducts)));
-				$compareProducts = !empty($compareProductsArray) ? json_encode($compareProductsArray) : null;
-			} else {
-				$compareProducts = null;
-			}
+				/* Unit of measurement validation */
+				$usUnitOfMeasurementArray = UnitOfMeasurement::pluck('name', 'id')->all();
+				if ($unitOfMeasurement && (!is_numeric($unitOfMeasurement) || !array_key_exists((int) $unitOfMeasurement, $usUnitOfMeasurementArray))) {
+					$rowError[] = "Unit of measurement should be numeric and either 1 for Each, 2 for Dozen, 3 for Box, or 4 for Case.";
+				} else {
+					$unitOfMeasurementID = $unitOfMeasurement ? $unitOfMeasurement : null;
+				}
 
-			if ($price && $salePrice && $price < $salePrice) {
-				$rowError[] = "The sale price must be less than the price.";
+				/* Variant requires shipping validation (Check for 0 if empty) */
+				if ($variantRequiresShipping !== '' && (!is_numeric($variantRequiresShipping) || !in_array($variantRequiresShipping, [0, 1]))) {
+					$rowError[] = "Variant requires shipping should be numeric and either 1 for Yes, or 0 for No.";
+				} else {
+					$variantRequiresShipping = $variantRequiresShipping !== '' ? (int) $variantRequiresShipping : null;
+				}
+
+				/* Refund policy validation */
+				$usRefundPolicyArray = [
+					1 => "non-refundable",
+					2 => "15 days",
+					3 => "90 days"
+				];
+				if ($refundPolicy && (!is_numeric($refundPolicy) || !in_array($refundPolicy, [1, 2, 3]))) {
+					$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
+				} else {
+					$refundPolicy = $refundPolicy ? $usRefundPolicyArray[$refundPolicy] ?? null : null;
+				}
+
+				/* Is featured validation (Check for 0 if empty) */
+				if ($isFeatured !== '' && (!is_numeric($isFeatured) || !in_array($isFeatured, [0, 1]))) {
+					$rowError[] = "Is featured should be numeric and either 1 for Enable, or 0 for Disable.";
+				} else {
+					$isFeatured = $isFeatured !== '' ? (int) $isFeatured : 0;
+				}
+
+				/* Weight option validation */
+				$usWeightArray = [
+					5 => "kg",
+					6 => "g",
+					9 => "lbs",
+				];
+				if ($weightOption && !in_array($weightOption, ['lbs', 'kg', 'g'])) {
+					$rowError[] = "Weight option should be 'lbs', 'kg', or 'g'.";
+				} else {
+					$weightOption = $weightOption ? array_search($weightOption, $usWeightArray) : 9;
+				}
+
+				/* Dimension option validation */
+				$usDimensionArray = [
+					1 => "cm",
+					3 => "inch",
+					11 => "mm",
+				];
+				if ($dimensionOption && !in_array($dimensionOption, ['inch', 'cm', 'mm'])) {
+					$rowError[] = "Dimension option should be 'inch', 'cm', or 'mm'.";
+				} else {
+					$dimensionOption = $dimensionOption ? array_search($dimensionOption, $usDimensionArray) : 3;
+				}
+
+				/* Shipping weight option validation */
+				if ($shippingWeightOption && !in_array($shippingWeightOption, ['lbs', 'kg', 'g'])) {
+					$rowError[] = "Shipping weight option should be 'lbs', 'kg', or 'g'.";
+				} else {
+					$shippingWeightOption = $shippingWeightOption ? $shippingWeightOption : 'lbs';
+				}
+
+				/* Shipping dimension option validation */
+				if ($shippingDimensionOption && !in_array($shippingDimensionOption, ['inch', 'cm', 'mm'])) {
+					$rowError[] = "Shipping dimension option should be 'inch', 'cm', or 'mm'.";
+				} else {
+					$shippingDimensionOption = $shippingDimensionOption ? $shippingDimensionOption : 'inch';
+				}
+
+				$frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
+				if ($frequentlyBoughtTogether) {
+					$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
+				} else {
+					$frequentlyBoughtTogether = null;
+				}
+
+				$compareProducts = trim($rowData['Compare Products']);
+				if ($compareProducts) {
+					$compareProductsArray = array_unique(array_map(fn($value) => trim($value), explode(',', $compareProducts)));
+					$compareProducts = !empty($compareProductsArray) ? json_encode($compareProductsArray) : null;
+				} else {
+					$compareProducts = null;
+				}
+
+				if ($price && $salePrice && $price < $salePrice) {
+					$rowError[] = "The sale price must be less than the price.";
+				}
+
+				if ($rowError) {
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
+				}
+
+				/* Process Images */
+				$fetchedImages = $this->getImageURLs((array) $images ?? []);
+
+
+				/* Get Sale Type */
+				$saleType = ($startDateSalePrice || $endDateSalePrice) ? 1 : 0;
+
+				/* Set Quantity */
+				if (!$withStorehouseManagement) {
+					$quantity = null;
+				}
 			}
 
 			if ($rowError) {
@@ -318,26 +395,15 @@ class ImportProductJob implements ShouldQueue
 				continue;
 			}
 
-			/* Process Images */
-			$fetchedImages = $this->getImageURLs((array) $images ?? []);
-
-
-			/* Get Sale Type */
-			$saleType = ($startDateSalePrice || $endDateSalePrice) ? 1 : 0;
-
-			/* Set Quantity */
-			if (!$withStorehouseManagement) {
-				$quantity = null;
-			}
-
 			// Wrap in a transaction
 			DB::beginTransaction();
 
 			try {
 				/*************/
+
 				$product->name = $name;
-				$product->description = !empty($description) ? $description : null;
-				$product->content = !empty($content) ? $content : null;
+				// $product->description = !empty($description) ? $description : null;
+				// $product->content = !empty($content) ? $content : null;
 				$product->warranty_information = !empty($warrantyInformation) ? $warrantyInformation : null;
 				$product->sku = $sku;
 				$product->status = $status;

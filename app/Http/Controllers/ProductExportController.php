@@ -117,113 +117,121 @@ class ProductExportController extends Controller
 
 		/* Define pretty headers that match exactly what you requested */
 		$headerMap1 = [
-			'id' => 'Id',
-			'url' => 'URL',
-			'sku' => 'SKU',
-			'name' => 'Name',
-			'content' => 'Content',
+			"id" => "Id",
+			"url" => "URL",
+			"name" => "Name",
+			"sku" => "SKU",
+			"brand" => "Brand",
+			"categories" => "Categories",
+			// "content" => "Content",
 		];
+
+		$descriptionColumns =[
+			"description1" => "Description1",
+			"description2" => "Description2",
+			"description3" => "Description3",
+			"description4" => "Description4",
+		];
+
 		$benifitsFeaturesColumns =[
-			'benefit1' => 'Benefit1',
-			'feature1' => 'Feature1',
-			'benefit2' => 'Benefit2',
-			'feature2' => 'Feature2',
-			'benefit3' => 'Benefit3',
-			'feature3' => 'Feature3',
-			'benefit4' => 'Benefit4',
-			'feature4' => 'Feature4',
-			'benefit5' => 'Benefit5',
-			'feature5' => 'Feature5',
-			'benefit6' => 'Benefit6',
-			'feature6' => 'Feature6',
-			'benefit7' => 'Benefit7',
-			'feature7' => 'Feature7',
-			'benefit8' => 'Benefit8',
-			'feature8' => 'Feature8',
-			'benefit9' => 'Benefit9',
-			'feature9' => 'Feature9',
-			'benefit10' => 'Benefit10',
-			'feature10' => 'Feature10',
+			"benefit1" => "Benefit1",
+			"feature1" => "Feature1",
+			"benefit2" => "Benefit2",
+			"feature2" => "Feature2",
+			"benefit3" => "Benefit3",
+			"feature3" => "Feature3",
+			"benefit4" => "Benefit4",
+			"feature4" => "Feature4",
+			"benefit5" => "Benefit5",
+			"feature5" => "Feature5",
+			"benefit6" => "Benefit6",
+			"feature6" => "Feature6",
+			"benefit7" => "Benefit7",
+			"feature7" => "Feature7",
+			"benefit8" => "Benefit8",
+			"feature8" => "Feature8",
+			"benefit9" => "Benefit9",
+			"feature9" => "Feature9",
+			"benefit10" => "Benefit10",
+			"feature10" => "Feature10",
 		];
 
 		$headerMap2 = [
-			'description' => 'Description',
-			'warranty_information' => 'Warranty Information',
-			'brand' => 'Brand',
-			'vendor' => 'Vendor',
-			'categories' => 'Categories',
-			'tags' => 'Tags',
-			'stock_status' => 'Stock Status',
-			'with_storehouse_management' => 'With Storehouse Management',
-			'quantity' => 'Quantity',
-			'cost_per_item' => 'Cost Per Item',
-			'unit_of_measurement' => 'Unit of Measurement',
-			'price' => 'Price',
-			'sale_price' => 'Sale Price',
-			'start_date_sale_price' => 'Start Date Sale Price',
-			'end_date_sale_price' => 'End Date Sale Price',
-			'minimum_order_quantity' => 'Minimum Order Quantity',
-			'box_quantity' => 'Box Quantity',
-			'delivery_days' => 'Delivery Days',
-			'variant_requires_shipping' => 'Variant Requires Shipping',
-			'images' => 'Images',
-			'upload_video' => 'Upload Video',
-			'barcode' => 'Barcode (ISBN, UPC, GTIN, etc.)',
-			'refund_policy' => 'Refund Policy',
-			'status' => 'Status',
-			'google_shopping_category' => 'Google Shopping Category',
-			'google_shopping_mpn' => 'Google Shopping Mpn',
-			'is_featured' => 'Is Featured',
-			'weight_option' => 'Weight Option',
-			'weight' => 'Weight',
-			'dimension_option' => 'Dimension Option',
-			'length' => 'Length',
-			'width' => 'Width',
-			'height' => 'Height',
-			'depth' => 'Depth',
-			'shipping_weight_option' => 'Shipping Weight Option',
-			'shipping_weight' => 'Shipping Weight',
-			'shipping_dimension_option' => 'Shipping Dimension Option',
-			'shipping_width' => 'Shipping Width',
-			'shipping_depth' => 'Shipping Depth',
-			'shipping_height' => 'Shipping Height',
-			'shipping_length' => 'Shipping Length',
-			'frequently_bought_together' => 'Frequently Bought Together',
-			'compare_products' => 'Compare Products',
-			'variant_1_title' => 'Variant 1 Title',
-			'variant_1_value' => 'Variant 1 Value',
-			'variant_1_products' => 'Variant 1 Products',
-			'variant_2_title' => 'Variant 2 Title',
-			'variant_2_value' => 'Variant 2 Value',
-			'variant_2_products' => 'Variant 2 Products',
-			'variant_3_title' => 'Variant 3 Title',
-			'variant_3_value' => 'Variant 3 Value',
-			'variant_3_products' => 'Variant 3 Products',
-			'variant_color_title' => 'Variant Color Title',
-			'variant_color_value' => 'Variant Color Value',
-			'variant_color_products' => 'Variant Color Products',
+			// "description" => "Description",
+			"warranty_information" => "Warranty Information",
+			"vendor" => "Vendor",
+			"tags" => "Tags",
+			"stock_status" => "Stock Status",
+			"with_storehouse_management" => "With Storehouse Management",
+			"quantity" => "Quantity",
+			"cost_per_item" => "Cost Per Item",
+			"unit_of_measurement" => "Unit of Measurement",
+			"price" => "Price",
+			"sale_price" => "Sale Price",
+			"start_date_sale_price" => "Start Date Sale Price",
+			"end_date_sale_price" => "End Date Sale Price",
+			"minimum_order_quantity" => "Minimum Order Quantity",
+			"box_quantity" => "Box Quantity",
+			"delivery_days" => "Delivery Days",
+			"variant_requires_shipping" => "Variant Requires Shipping",
+			"images" => "Images",
+			"upload_video" => "Upload Video",
+			"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
+			"refund_policy" => "Refund Policy",
+			"status" => "Status",
+			"google_shopping_category" => "Google Shopping Category",
+			"google_shopping_mpn" => "Google Shopping Mpn",
+			"is_featured" => "Is Featured",
+			"weight_option" => "Weight Option",
+			"weight" => "Weight",
+			"dimension_option" => "Dimension Option",
+			"length" => "Length",
+			"width" => "Width",
+			"height" => "Height",
+			"depth" => "Depth",
+			"shipping_weight_option" => "Shipping Weight Option",
+			"shipping_weight" => "Shipping Weight",
+			"shipping_dimension_option" => "Shipping Dimension Option",
+			"shipping_width" => "Shipping Width",
+			"shipping_depth" => "Shipping Depth",
+			"shipping_height" => "Shipping Height",
+			"shipping_length" => "Shipping Length",
+			"frequently_bought_together" => "Frequently Bought Together",
+			"compare_products" => "Compare Products",
+			"variant_1_title" => "Variant 1 Title",
+			"variant_1_value" => "Variant 1 Value",
+			"variant_1_products" => "Variant 1 Products",
+			"variant_2_title" => "Variant 2 Title",
+			"variant_2_value" => "Variant 2 Value",
+			"variant_2_products" => "Variant 2 Products",
+			"variant_3_title" => "Variant 3 Title",
+			"variant_3_value" => "Variant 3 Value",
+			"variant_3_products" => "Variant 3 Products",
+			"variant_color_title" => "Variant Color Title",
+			"variant_color_value" => "Variant Color Value",
+			"variant_color_products" => "Variant Color Products",
 		];
 
 		$discountSection = [
-			'buying_quantity1' => 'Buying Quantity1',
-			'discount1' => 'Discount1',
-			'start_date1' => 'Start Date1',
-			'end_date1' => 'End Date1',
-			'buying_quantity2' => 'Buying Quantity2',
-			'discount2' => 'Discount2',
-			'start_date2' => 'Start Date2',
-			'end_date2' => 'End Date2',
-			'buying_quantity3' => 'Buying Quantity3',
-			'discount3' => 'Discount3',
-			'start_date3' => 'Start Date3',
-			'end_date3' => 'End Date3',
+			"buying_quantity1" => "Buying Quantity1",
+			"discount1" => "Discount1",
+			"start_date1" => "Start Date1",
+			"end_date1" => "End Date1",
+			"buying_quantity2" => "Buying Quantity2",
+			"discount2" => "Discount2",
+			"start_date2" => "Start Date2",
+			"end_date2" => "End Date2",
+			"buying_quantity3" => "Buying Quantity3",
+			"discount3" => "Discount3",
+			"start_date3" => "Start Date3",
+			"end_date3" => "End Date3",
 		];
 
 		$translationSection = [
-			'name_ar' => 'Name (AR)',
-			'description_ar' => 'Description (AR)',
-			'content_ar' => 'Content (AR)',
-			'warranty_information_ar' => 'Warranty Information (AR)'
+			"name_ar" => "Name (AR)",
+			"description_ar" => "Description (AR)",
+			"content_ar" => "Content (AR)",
+			"warranty_information_ar" => "Warranty Information (AR)"
 		];
 
 		/* Initialize header map */
@@ -240,6 +248,11 @@ class ProductExportController extends Controller
 
 		/* Start building final header map */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap1);
+
+		/* Include description if requested or blank */
+		if ($includeSection('description')) {
+			$headerMap = array_merge($headerMap, $descriptionColumns);
+		}
 
 		/* Include benefits_features if requested or blank */
 		if ($includeSection('benefits_features')) {
@@ -278,6 +291,7 @@ class ProductExportController extends Controller
 						'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
 						'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
 						'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+						'description2', 'description3', 'description4',
 						'benefit4', 'feature4', 'benefit5', 'feature5',
 						'benefit6', 'feature6', 'benefit7', 'feature7',
 						'benefit8', 'feature8', 'benefit9', 'feature9',
@@ -431,6 +445,14 @@ class ProductExportController extends Controller
 							$row[] = $discount->value ?? '';
 							$row[] = $discount->start_date ?? '';
 							$row[] = $discount->end_date ?? '';
+						}
+						break;
+
+						case 'description1':
+						$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
+
+						for ($i = 0; $i < 4; $i++) {
+							$row[] = $descriptions[$i] ?? '';
 						}
 						break;
 
