@@ -9806,7 +9806,7 @@
                     "Products"
                 ],
                 "summary": "Upload product images from zip file",
-                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. Only webp images with dimensions 1000x1000 are allowed.",
                 "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
                 "requestBody": {
                     "required": true,
@@ -9815,7 +9815,7 @@
                             "schema": {
                                 "properties": {
                                     "zip_file": {
-                                        "description": "ZIP file containing product images organized in folders by SKU",
+                                        "description": "ZIP file containing product images organized in folders by SKU. Only webp images with dimensions 1000x1000 are allowed.",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -9849,7 +9849,7 @@
                                                         "example": "ABC123"
                                                     },
                                                     "status": {
-                                                        "description": "success, no_images_found, or product_not_found",
+                                                        "description": "success, no_images_found, product_not_found, validation_error",
                                                         "type": "string",
                                                         "example": "success"
                                                     },
@@ -9857,6 +9857,13 @@
                                                         "description": "Number of images processed for this SKU",
                                                         "type": "integer",
                                                         "example": 5
+                                                    },
+                                                    "errors": {
+                                                        "description": "Array of error messages for invalid images",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
                                                     }
                                                 },
                                                 "type": "object"

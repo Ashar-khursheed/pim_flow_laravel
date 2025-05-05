@@ -25,7 +25,7 @@ class ProductImageUploadController extends Controller
      * @OA\Post(
      *     path="/api/product/upload-images",
      *     summary="Upload product images from zip file",
-     *     description="Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+     *     description="Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. Only webp images with dimensions 1000x1000 are allowed.",
      *     tags={"Products"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
@@ -37,7 +37,7 @@ class ProductImageUploadController extends Controller
      *                     property="zip_file",
      *                     type="string",
      *                     format="binary",
-     *                     description="ZIP file containing product images organized in folders by SKU"
+     *                     description="ZIP file containing product images organized in folders by SKU. Only webp images with dimensions 1000x1000 are allowed."
      *                 )
      *             )
      *         )
@@ -54,8 +54,9 @@ class ProductImageUploadController extends Controller
      *                 @OA\Items(
      *                     type="object",
      *                     @OA\Property(property="sku", type="string", example="ABC123"),
-     *                     @OA\Property(property="status", type="string", example="success", description="success, no_images_found, or product_not_found"),
-     *                     @OA\Property(property="image_count", type="integer", example=5, description="Number of images processed for this SKU")
+     *                     @OA\Property(property="status", type="string", example="success", description="success, no_images_found, product_not_found, validation_error"),
+     *                     @OA\Property(property="image_count", type="integer", example=5, description="Number of images processed for this SKU"),
+     *                     @OA\Property(property="errors", type="array", @OA\Items(type="string"), description="Array of error messages for invalid images")
      *                 )
      *             )
      *         )
@@ -164,22 +165,24 @@ class ProductImageUploadController extends Controller
             
             if ($product) {
                 // Process images for this product
-                $imageUrls = $this->uploadProductImagesToS3($skuDir, $sku);
+                $result = $this->uploadProductImagesToS3($skuDir, $sku);
                 
-                if (!empty($imageUrls)) {
+                if (!empty($result['imageUrls'])) {
                     // Update the product record with new image URLs
-                    $product->images = $imageUrls;
+                    $product->images = $result['imageUrls'];
                     $product->save();
                     
                     $processedSkus[] = [
                         'sku' => $sku,
-                        'status' => 'success',
-                        'image_count' => count($imageUrls) - 1 // Subtract 1 for the "string" element
+                        'status' => empty($result['errors']) ? 'success' : 'partial_success',
+                        'image_count' => count($result['imageUrls']),
+                        'errors' => $result['errors']
                     ];
                 } else {
                     $processedSkus[] = [
                         'sku' => $sku,
-                        'status' => 'no_images_found'
+                        'status' => 'no_valid_images_found',
+                        'errors' => $result['errors']
                     ];
                 }
             } else {
@@ -194,7 +197,7 @@ class ProductImageUploadController extends Controller
     }
 
     /**
-     * Upload images to S3 and return array of URLs
+     * Upload images to S3 and return array of URLs and errors
      *
      * @param string $imagesDir
      * @param string $sku
@@ -202,40 +205,79 @@ class ProductImageUploadController extends Controller
      */
     private function uploadProductImagesToS3($imagesDir, $sku)
     {
-        $s3Path = 'tanuj_local/products/images';
+        $storageEnv = env('STORAGE_ENV');
+        $s3Path = $storageEnv . '/products/images/';
         $imageUrls = [];
+        $errors = [];
         
-        // Get all image files in the SKU directory
-        $imageFiles = File::files($imagesDir);
+        // Get all files in the SKU directory
+        $files = File::files($imagesDir);
         
-        // Filter for image files only
-        $imageFiles = array_filter($imageFiles, function($file) {
+        // Filter for webp files only
+        $imageFiles = [];
+        foreach ($files as $file) {
             $extension = strtolower($file->getExtension());
-            return in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
-        });
+            
+            if ($extension !== 'webp') {
+                $errors[] = "File {$file->getFilename()} in SKU folder {$sku} is not a webp image.";
+                continue;
+            }
+            
+            $imageFiles[] = $file;
+        }
         
         if (empty($imageFiles)) {
-            return $imageUrls;
+            $errors[] = "No webp image files found in SKU folder {$sku}.";
+            return [
+                'imageUrls' => $imageUrls,
+                'errors' => $errors
+            ];
         }
         
-        // Upload each image directly to S3
+        // Upload each valid image to S3
         foreach ($imageFiles as $imageFile) {
-            // Generate a unique filename to prevent overwriting
-            $uniqueFileName = Str::random(40) . '.' . $imageFile->getExtension();
-            $s3FilePath = $s3Path . $uniqueFileName;
-            
-            // Open file and directly upload to S3
-            $fileStream = fopen($imageFile->getPathname(), 'r');
-            Storage::disk('s3')->put($s3FilePath, $fileStream);
-            fclose($fileStream);
-            
-            // Get the full URL from S3 storage
-            $imageUrl = Storage::disk('s3')->url($s3FilePath);
-            
-            // Add the full URL to the image URLs array
-            $imageUrls[] = $imageUrl;
+            try {
+                // Verify image dimensions using PHP's built-in GD library
+                $imageInfo = getimagesize($imageFile->getPathname());
+                if ($imageInfo === false) {
+                    $errors[] = "Could not read image information for {$imageFile->getFilename()} in SKU folder {$sku}.";
+                    continue;
+                }
+                
+                $width = $imageInfo[0];
+                $height = $imageInfo[1];
+                
+                if ($width !== 1000 || $height !== 1000) {
+                    $errors[] = "Image {$imageFile->getFilename()} in SKU folder {$sku} has dimensions {$width}x{$height}, but must be exactly 1000x1000.";
+                    continue;
+                }
+                
+                // Generate a unique filename to prevent overwriting
+                $uniqueFileName = $sku . '_' . Str::random(20) . '.webp';
+                $s3FilePath = $s3Path . $uniqueFileName;
+                
+                // Open file and directly upload to S3
+                $fileStream = fopen($imageFile->getPathname(), 'r');
+                Storage::disk('s3')->put($s3FilePath, $fileStream);
+                fclose($fileStream);
+                
+                // Get the full URL from S3 storage
+                $imageUrl = Storage::disk('s3')->url($s3FilePath);
+                
+                // Add the full URL to the image URLs array
+                $imageUrls[] = $imageUrl;
+            } catch (\Exception $e) {
+                $errors[] = "Error processing image {$imageFile->getFilename()} in SKU folder {$sku}: {$e->getMessage()}";
+            }
         }
         
-        return $imageUrls;
+        if (empty($imageUrls)) {
+            $errors[] = "No valid images found in SKU folder {$sku} that meet the required criteria (webp format, 1000x1000 dimensions).";
+        }
+        
+        return [
+            'imageUrls' => $imageUrls,
+            'errors' => $errors
+        ];
     }
 }
