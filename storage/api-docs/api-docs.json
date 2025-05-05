@@ -3672,14 +3672,14 @@
                 ]
             }
         },
-        "/api/categories/reorder": {
+        "/api/reorder": {
             "post": {
                 "tags": [
-                    "Categories"
+                    "Reorder"
                 ],
                 "summary": "Reorder categories",
                 "description": "Updates the order of categories for drag and drop functionality",
-                "operationId": "6d6f00a49335289df918f785cb67d788",
+                "operationId": "2aecf3105502927939ff51a64f5b36a6",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -14627,6 +14627,10 @@
         {
             "name": "BrandTemp3",
             "description": "BrandTemp3"
+        },
+        {
+            "name": "Reorder",
+            "description": "Reorder"
         },
         {
             "name": "Category Pages",

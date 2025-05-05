@@ -697,10 +697,10 @@ class CategoryController extends BaseController
  * Update the order of categories (for drag and drop functionality).
  *
  * @OA\Post(
- *     path="/api/categories/reorder",
+ *     path="/api/reorder",
  *     summary="Reorder categories",
  *     description="Updates the order of categories for drag and drop functionality",
- *     tags={"Categories"},
+ *     tags={"Reorder"},
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
