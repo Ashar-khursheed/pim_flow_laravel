@@ -12,8 +12,6 @@ use Illuminate\Support\Facades\Schema;
 use ZipArchive;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Schema;
-
 class BrandController extends BaseController
 {
 	/**
