@@ -173,6 +173,79 @@ class RoleController extends BaseController
 	// 		'data' => $role
 	// 	]);
 	// }
+	// public function show($roleId)
+	// {
+	// 	if (!auth()->user()->can('show role')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+
+	// 	$role = Role::find($roleId);
+	// 	if (!$role) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => __("err_exist")
+	// 		]);
+	// 	}
+
+	// 	// Get all permissions associated with this role
+	// 	$rolePermissions = $role->permissions()->get(['id', 'name']);
+
+	// 	// Get all available permissions
+	// 	$allPermissions = Permission::orderBy('id', 'asc')->get(['id', 'name']);
+
+	// 	// Group permissions by module
+	// 	$groupedPermissions = [];
+
+	// 	foreach ($allPermissions as $permission) {
+	// 		$nameParts = explode(' ', $permission->name);
+
+	// 		// Skip if there's less than 2 parts
+	// 		if (count($nameParts) < 2) {
+	// 			continue;
+	// 		}
+
+	// 		$action = $nameParts[0]; // First part is the action (list, add, update, etc.)
+	// 		$module = implode(' ', array_slice($nameParts, 1)); // Rest is the module name
+
+	// 		// Initialize module if it doesn't exist
+	// 		if (!isset($groupedPermissions[$module])) {
+	// 			$groupedPermissions[$module] = [];
+	// 		}
+
+	// 		// Add permission to its module with check if role has this permission
+	// 		$groupedPermissions[$module][] = [
+	// 			'id' => $permission->id,
+	// 			'name' => $permission->name,
+	// 			'assigned' => $rolePermissions->contains('id', $permission->id)
+	// 		];
+	// 	}
+
+	// 	// Convert to required format
+	// 	$formattedModules = [];
+	// 	foreach ($groupedPermissions as $module => $permissions) {
+	// 		$formattedModules[] = [
+	// 			'name' => $module,
+	// 			'permissions' => $permissions
+	// 		];
+	// 	}
+
+	// 	// Build the response data
+	// 	$responseData = [
+	// 		'id' => $role->id,
+	// 		'name' => $role->name,
+	// 		'modules' => $formattedModules
+	// 	];
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __("msg_rec_dtl"),
+	// 		'data' => $responseData
+	// 	]);
+	// }
+
 	public function show($roleId)
 	{
 		if (!auth()->user()->can('show role')) {
@@ -182,7 +255,7 @@ class RoleController extends BaseController
 			]);
 		}
 
-		$role = Role::find($roleId);
+		$role = Role::with('permissions:id,name')->find($roleId);
 		if (!$role) {
 			return response()->json([
 				'success' => false,
@@ -190,40 +263,24 @@ class RoleController extends BaseController
 			]);
 		}
 
-		// Get all permissions associated with this role
-		$rolePermissions = $role->permissions()->get(['id', 'name']);
-
-		// Get all available permissions
-		$allPermissions = Permission::orderBy('id', 'asc')->get(['id', 'name']);
-
-		// Group permissions by module
+	// Optionally group by module if needed
 		$groupedPermissions = [];
-
-		foreach ($allPermissions as $permission) {
+		foreach ($role->permissions as $permission) {
 			$nameParts = explode(' ', $permission->name);
+			if (count($nameParts) < 2) continue;
 
-			// Skip if there's less than 2 parts
-			if (count($nameParts) < 2) {
-				continue;
-			}
+			$module = implode(' ', array_slice($nameParts, 1));
 
-			$action = $nameParts[0]; // First part is the action (list, add, update, etc.)
-			$module = implode(' ', array_slice($nameParts, 1)); // Rest is the module name
-
-			// Initialize module if it doesn't exist
 			if (!isset($groupedPermissions[$module])) {
 				$groupedPermissions[$module] = [];
 			}
 
-			// Add permission to its module with check if role has this permission
 			$groupedPermissions[$module][] = [
 				'id' => $permission->id,
 				'name' => $permission->name,
-				'assigned' => $rolePermissions->contains('id', $permission->id)
 			];
 		}
 
-		// Convert to required format
 		$formattedModules = [];
 		foreach ($groupedPermissions as $module => $permissions) {
 			$formattedModules[] = [
@@ -232,19 +289,17 @@ class RoleController extends BaseController
 			];
 		}
 
-		// Build the response data
-		$responseData = [
-			'id' => $role->id,
-			'name' => $role->name,
-			'modules' => $formattedModules
-		];
-
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_dtl"),
-			'data' => $responseData
+			'data' => [
+				'id' => $role->id,
+				'name' => $role->name,
+				'modules' => $formattedModules
+			]
 		]);
 	}
+
 	/**
 	 * @OA\Put(
 	 *     path="/api/roles/{id}",
@@ -441,71 +496,71 @@ class RoleController extends BaseController
 	// 	]);
 	// }
 	public function getAllPermissions(Request $request)
-{
-    if (!auth()->user()->can('list permission')) {
-        return response()->json([
-            'success' => false,
-            'message' => "You don't have permission to access this module.",
-        ]);
-    }
+	{
+		if (!auth()->user()->can('list permission')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 
-    $records = Permission::query();
+		$records = Permission::query();
 
-    /* Pagination */
-    if ($request->filled('page') && $request->filled('length')) {
-        $page = (int) $request->input('page');
-        $length = (int) $request->input('length');
-        $totalRecords = $records->count();
-        $totalPages = ceil($totalRecords / $length);
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$page = (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $records->count();
+			$totalPages = ceil($totalRecords / $length);
 
-        $permissions = $records->offset(($page - 1) * $length)
-                            ->limit($length)
-                            ->orderBy('id', 'asc')
-                            ->get();
-    } else {
-        $permissions = $records->orderBy('id', 'asc')->get();
-        $totalRecords = $permissions->count();
-    }
+			$permissions = $records->offset(($page - 1) * $length)
+			->limit($length)
+			->orderBy('id', 'asc')
+			->get();
+		} else {
+			$permissions = $records->orderBy('id', 'asc')->get();
+			$totalRecords = $permissions->count();
+		}
 
-    // Group permissions by parent category
-    $groupedPermissions = [];
+	// Group permissions by parent category
+		$groupedPermissions = [];
 
-    foreach ($permissions as $permission) {
-        // Parse the permission name to extract category
-        $nameParts = explode(' ', $permission->name);
+		foreach ($permissions as $permission) {
+		// Parse the permission name to extract category
+			$nameParts = explode(' ', $permission->name);
 
-        // Skip if there's less than 2 parts
-        if (count($nameParts) < 2) {
-            continue;
-        }
+		// Skip if there's less than 2 parts
+			if (count($nameParts) < 2) {
+				continue;
+			}
 
-        $action = $nameParts[0]; // First part is the action (list, add, update, etc.)
-        $category = implode(' ', array_slice($nameParts, 1)); // Rest is the category
+		$action = $nameParts[0]; // First part is the action (list, add, update, etc.)
+		$category = implode(' ', array_slice($nameParts, 1)); // Rest is the category
 
-        // Initialize category if it doesn't exist
-        if (!isset($groupedPermissions[$category])) {
-            $groupedPermissions[$category] = [];
-        }
+		// Initialize category if it doesn't exist
+		if (!isset($groupedPermissions[$category])) {
+			$groupedPermissions[$category] = [];
+		}
 
-        // Add permission to its category
-        $groupedPermissions[$category][] = $permission;
-    }
+		// Add permission to its category
+		$groupedPermissions[$category][] = $permission;
+	}
 
-    // Convert to required format
-    $formattedData = [];
-    foreach ($groupedPermissions as $category => $perms) {
-        $formattedData[] = [
-            'name' => $category,
-            'permissions' => $perms
-        ];
-    }
+	// Convert to required format
+	$formattedData = [];
+	foreach ($groupedPermissions as $category => $perms) {
+		$formattedData[] = [
+			'name' => $category,
+			'permissions' => $perms
+		];
+	}
 
-    return response()->json([
-        'success' => true,
-        'message' => __("msg_rec_list"),
-        'data' => $formattedData,
-        'total_pages' => $totalPages ?? 1,
-        'total_records' => $totalRecords,
-    ]);
+	return response()->json([
+		'success' => true,
+		'message' => __("msg_rec_list"),
+		'data' => $formattedData,
+		'total_pages' => $totalPages ?? 1,
+		'total_records' => $totalRecords,
+	]);
 }
 }
