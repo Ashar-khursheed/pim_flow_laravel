@@ -254,7 +254,7 @@ class RoleController extends BaseController
 			]);
 		}
 	
-		$role = Role::find($roleId);
+		$role = Role::with('permissions:id,name')->find($roleId);
 		if (!$role) {
 			return response()->json([
 				'success' => false,
@@ -262,32 +262,43 @@ class RoleController extends BaseController
 			]);
 		}
 	
-		// Get all available permissions in the system
+		// Get all available permissions in the system to extract all module names
 		$allPermissions = Permission::select('id', 'name')->get();
 		
-		// Group permissions by module
-		$groupedPermissions = [];
+		// Extract all unique module names from all permissions
+		$allModules = [];
 		foreach ($allPermissions as $permission) {
 			$nameParts = explode(' ', $permission->name);
 			if (count($nameParts) < 2) continue;
 			
 			$module = implode(' ', array_slice($nameParts, 1));
+			$allModules[$module] = true;
+		}
+		
+		// Group the role's permissions by module
+		$rolePermissions = [];
+		foreach ($role->permissions as $permission) {
+			$nameParts = explode(' ', $permission->name);
+			if (count($nameParts) < 2) continue;
+			
+			$module = implode(' ', array_slice($nameParts, 1));
 	
-			if (!isset($groupedPermissions[$module])) {
-				$groupedPermissions[$module] = [];
+			if (!isset($rolePermissions[$module])) {
+				$rolePermissions[$module] = [];
 			}
 	
-			$groupedPermissions[$module][] = [
+			$rolePermissions[$module][] = [
 				'id' => $permission->id,
 				'name' => $permission->name,
 			];
 		}
 	
+		// Create the final formatted modules list including all modules
 		$formattedModules = [];
-		foreach ($groupedPermissions as $module => $permissions) {
+		foreach (array_keys($allModules) as $module) {
 			$formattedModules[] = [
 				'name' => $module,
-				'permissions' => $permissions
+				'permissions' => isset($rolePermissions[$module]) ? $rolePermissions[$module] : []
 			];
 		}
 	
