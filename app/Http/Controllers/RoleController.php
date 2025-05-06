@@ -246,41 +246,43 @@ class RoleController extends BaseController
 	// 	]);
 	// }
 
-	public function show($roleId)
-	{
+	public function show($roleId) {
 		if (!auth()->user()->can('show role')) {
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-
-		$role = Role::with('permissions:id,name')->find($roleId);
+	
+		$role = Role::find($roleId);
 		if (!$role) {
 			return response()->json([
 				'success' => false,
 				'message' => __("err_exist")
 			]);
 		}
-
-	// Optionally group by module if needed
+	
+		// Get all available permissions in the system
+		$allPermissions = Permission::select('id', 'name')->get();
+		
+		// Group permissions by module
 		$groupedPermissions = [];
-		foreach ($role->permissions as $permission) {
+		foreach ($allPermissions as $permission) {
 			$nameParts = explode(' ', $permission->name);
 			if (count($nameParts) < 2) continue;
-
+			
 			$module = implode(' ', array_slice($nameParts, 1));
-
+	
 			if (!isset($groupedPermissions[$module])) {
 				$groupedPermissions[$module] = [];
 			}
-
+	
 			$groupedPermissions[$module][] = [
 				'id' => $permission->id,
 				'name' => $permission->name,
 			];
 		}
-
+	
 		$formattedModules = [];
 		foreach ($groupedPermissions as $module => $permissions) {
 			$formattedModules[] = [
@@ -288,7 +290,7 @@ class RoleController extends BaseController
 				'permissions' => $permissions
 			];
 		}
-
+	
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_dtl"),
