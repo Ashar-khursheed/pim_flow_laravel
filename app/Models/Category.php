@@ -60,14 +60,24 @@ class Category extends Model
 		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
 	}
 
-	public function categoryAttributes()
-	{
-		return $this->morphedByMany(Attribute::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
-	}
+	// public function categoryAttributes()
+	// {
+	// 	return $this->morphedByMany(Attribute::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
+	// }
 
 	public function attributeGroups()
 	{
 		return $this->morphedByMany(AttributeGroup::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
+	}
+
+	public function categoryAttributeGroups()
+	{
+		return $this->belongsToMany(
+			AttributeGroup::class,
+			'category_attribute_groups',
+			'category_id',
+			'attribute_group_id'
+		);
 	}
 
 	public static function getLeafCategories($category)

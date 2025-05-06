@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attribute extends Model
 {
-	protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+	protected $guarded = [];
+	// protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+
+	public function creator()
+	{
+		return $this->belongsTo(User::class, 'created_by');
+	}
 
 	/* Relation with AttributeGroup */
 	public function attributeGroups()
@@ -17,6 +23,11 @@ class Attribute extends Model
 			'attribute_id',
 			'attribute_group_id'
 		);
+	}
+
+	public function attributeGroup()
+	{
+		return $this->belongsTo(AttributeGroup::class);
 	}
 
 	public function categories()

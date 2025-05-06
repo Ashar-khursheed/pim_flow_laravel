@@ -49,8 +49,8 @@ class CategoryAttributeController extends BaseController
 	public function index(Request $request)
 	{
 		$records = Category::with([
-			'attributeGroups:id,name',
-			'attributeGroups.groupAttributes:id,code,name'
+			'categoryAttributeGroups:id,name',
+			'categoryAttributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children');
 
 		/* Pagination */
@@ -68,8 +68,8 @@ class CategoryAttributeController extends BaseController
 
 		// Hide pivot data manually
 		$records->each(function ($category) {
-			$category->attributeGroups->each->makeHidden(['pivot']);
-			$category->attributeGroups->each(function ($group) {
+			$category->categoryAttributeGroups->each->makeHidden(['pivot']);
+			$category->categoryAttributeGroups->each(function ($group) {
 				$group->groupAttributes->each->makeHidden(['pivot']);
 			});
 		});
@@ -106,8 +106,8 @@ class CategoryAttributeController extends BaseController
 	public function show($id)
 	{
 		$record = Category::with([
-			'attributeGroups:id,name',
-			'attributeGroups.groupAttributes:id,code,name'
+			'categoryAttributeGroups:id,name',
+			'categoryAttributeGroups.groupAttributes:id,code,name'
 		])->whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
 		->where('id', $id)
@@ -119,8 +119,8 @@ class CategoryAttributeController extends BaseController
 				'message' => 'Record does not exist with given ID.'
 			]);
 		}
-		$record->attributeGroups->each->makeHidden(['pivot']);
-		$record->attributeGroups->each(function ($group) {
+		$record->categoryAttributeGroups->each->makeHidden(['pivot']);
+		$record->categoryAttributeGroups->each(function ($group) {
 			$group->groupAttributes->each->makeHidden(['pivot']);
 		});
 
