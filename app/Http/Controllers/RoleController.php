@@ -19,7 +19,6 @@ class RoleController extends BaseController
 	 *         name="page",
 	 *         in="query",
 	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
 	 *         example=1,
 	 *         @OA\Schema(
 	 *             type="integer",
@@ -30,7 +29,6 @@ class RoleController extends BaseController
 	 *         name="length",
 	 *         in="query",
 	 *         description="Number of records per page.",
-	 *         required=true,
 	 *         example=20,
 	 *         @OA\Schema(
 	 *             type="integer",
@@ -50,24 +48,26 @@ class RoleController extends BaseController
 			]);
 		}
 
-		$records = Role::with('permissions:id,name');
+		$records = Role::query();
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
+			$records->with('permissions:id,name');
 			$page = (int) $request->input('page');
 			$length = (int) $request->input('length');
 			$totalRecords = $records->count();
 			$totalPages = ceil($totalRecords / $length);
 
 			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+
+			$records->each(function ($role) {
+				$role->permissions->each->makeHidden(['pivot']);
+			});
 		} else {
-			$records = $records->get();
+			$records = $records->orderBy('name', 'asc')->get(['id', 'name']);
 			$totalRecords = $records->count();
 		}
 
-		$records->each(function ($role) {
-			$role->permissions->each->makeHidden(['pivot']);
-		});
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_list"),
@@ -181,7 +181,7 @@ class RoleController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		
+
 		$role = Role::find($roleId);
 		if (!$role) {
 			return response()->json([
@@ -189,32 +189,32 @@ class RoleController extends BaseController
 				'message' => __("err_exist")
 			]);
 		}
-		
+
 		// Get all permissions associated with this role
 		$rolePermissions = $role->permissions()->get(['id', 'name']);
-		
+
 		// Get all available permissions
 		$allPermissions = Permission::orderBy('id', 'asc')->get(['id', 'name']);
-		
+
 		// Group permissions by module
 		$groupedPermissions = [];
-		
+
 		foreach ($allPermissions as $permission) {
 			$nameParts = explode(' ', $permission->name);
-			
+
 			// Skip if there's less than 2 parts
 			if (count($nameParts) < 2) {
 				continue;
 			}
-			
+
 			$action = $nameParts[0]; // First part is the action (list, add, update, etc.)
 			$module = implode(' ', array_slice($nameParts, 1)); // Rest is the module name
-			
+
 			// Initialize module if it doesn't exist
 			if (!isset($groupedPermissions[$module])) {
 				$groupedPermissions[$module] = [];
 			}
-			
+
 			// Add permission to its module with check if role has this permission
 			$groupedPermissions[$module][] = [
 				'id' => $permission->id,
@@ -222,7 +222,7 @@ class RoleController extends BaseController
 				'assigned' => $rolePermissions->contains('id', $permission->id)
 			];
 		}
-		
+
 		// Convert to required format
 		$formattedModules = [];
 		foreach ($groupedPermissions as $module => $permissions) {
@@ -231,14 +231,14 @@ class RoleController extends BaseController
 				'permissions' => $permissions
 			];
 		}
-		
+
 		// Build the response data
 		$responseData = [
 			'id' => $role->id,
 			'name' => $role->name,
 			'modules' => $formattedModules
 		];
-		
+
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_dtl"),
@@ -469,28 +469,28 @@ class RoleController extends BaseController
 
     // Group permissions by parent category
     $groupedPermissions = [];
-    
+
     foreach ($permissions as $permission) {
         // Parse the permission name to extract category
         $nameParts = explode(' ', $permission->name);
-        
+
         // Skip if there's less than 2 parts
         if (count($nameParts) < 2) {
             continue;
         }
-        
+
         $action = $nameParts[0]; // First part is the action (list, add, update, etc.)
         $category = implode(' ', array_slice($nameParts, 1)); // Rest is the category
-        
+
         // Initialize category if it doesn't exist
         if (!isset($groupedPermissions[$category])) {
             $groupedPermissions[$category] = [];
         }
-        
+
         // Add permission to its category
         $groupedPermissions[$category][] = $permission;
     }
-    
+
     // Convert to required format
     $formattedData = [];
     foreach ($groupedPermissions as $category => $perms) {

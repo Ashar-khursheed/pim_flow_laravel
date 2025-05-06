@@ -10358,7 +10358,6 @@
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -10369,7 +10368,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -12075,11 +12073,14 @@
                                     "properties": {
                                         "score": {
                                             "type": "integer",
-                                            "example": 48
+                                            "example": 75
                                         },
                                         "grade": {
                                             "type": "string",
                                             "example": "B"
+                                        },
+                                        "breakdown": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
