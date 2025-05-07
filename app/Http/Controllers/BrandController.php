@@ -119,14 +119,12 @@ public function index(Request $request)
     if ($request->filled('page') && $request->filled('length')) {
         $page = $request->input('page');
         $length = $request->input('length');
-        $brands = $brands->offset(($page - 1) * $length)->limit($length);
+        $brands = $brands->offset(($page - 1) * $length)->limit($length)->get();
     } else {
 		$brands = $brands->orderBy('name', 'asc')->get([
 			'id', 'name'
 		]);
 	}
-
-    $brands = $brands->get();
 
     return response()->json([
         'success' => true,
