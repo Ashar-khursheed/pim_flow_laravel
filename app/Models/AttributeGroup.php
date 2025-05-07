@@ -8,14 +8,19 @@ class AttributeGroup extends Model
 {
 	protected $fillable = ['name'];
 
-	public function groupAttributes()
+	// public function groupAttributes()
+	// {
+	// 	return $this->belongsToMany(
+	// 		Attribute::class,
+	// 		'attribute_group_attributes',
+	// 		'attribute_group_id',
+	// 		'attribute_id'
+	// 	);
+	// }
+
+	public function groupsAttributes()
 	{
-		return $this->belongsToMany(
-			Attribute::class,
-			'attribute_group_attributes',
-			'attribute_group_id',
-			'attribute_id'
-		);
+		return $this->hasMany(Attribute::class);
 	}
 
 	public function categories()

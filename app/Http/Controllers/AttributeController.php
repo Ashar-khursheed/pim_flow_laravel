@@ -46,7 +46,7 @@ class AttributeController extends BaseController
 	 *     @OA\Parameter(name="has_group", in="query",  @OA\Schema(type="string", enum={"true", "false"}, nullable=true),
 	 *         description="Filter attributes that have at least one associated group. Accepts 'true' or 'false'. If omitted, no filtering is applied."
 	 *     ),
-	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="id", in="query", description="Search by attribute id", @OA\Schema(type="integer")),

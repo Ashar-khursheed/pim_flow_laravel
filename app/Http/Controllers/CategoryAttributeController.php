@@ -20,72 +20,81 @@ class CategoryAttributeController extends BaseController
 	 *     summary="Get Categrory List with Atribute & Attribute Group",
 	 *     description="Fetches a list of categrory with atribute & attribute group.",
 	 *     tags={"Category Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by category id", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="name", in="query", description="Search by category name", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "attribute_count"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
-		$records = Category::with([
-			'categoryAttributeGroups:id,name',
-			'categoryAttributeGroups.groupAttributes:id,code,name'
-		])->whereDoesntHave('children');
+		$searchableColumns = ['id', 'name'];
+		$sortableColumns = array_merge($searchableColumns, ['attribute_count']);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		/* Pagination */
+		/* Base query: categories without children */
+		$recordsQuery = Category::whereDoesntHave('children');
+
+		/* Only apply filtering/sorting when pagination is requested */
 		if ($request->filled('page') && $request->filled('length')) {
+
+			/* Add attribute_count via subquery */
+			$recordsQuery->select('ec_product_categories.id', 'ec_product_categories.name')->selectSub(function ($query) {
+				$query->from('category_attribute_groups')
+				->join('attributes', 'attributes.attribute_group_id', '=', 'category_attribute_groups.attribute_group_id')
+				->whereColumn('category_attribute_groups.category_id', 'ec_product_categories.id')
+				->selectRaw('COUNT(DISTINCT attributes.id)');
+			}, 'attribute_count');
+
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
 			$page = (int) $request->input('page');
 			$length = (int) $request->input('length');
-			$totalRecords = $records->count();
+			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $records->offset(($page - 1) * $length)->limit($length)->get(['id', 'name', 'parent_id']);
+			$records = $recordsQuery->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 		} else {
-			$records = $records->get(['id', 'name', 'parent_id']);
+			$records = $recordsQuery->orderBy('name', 'asc')->get(['id', 'name']);
 			$totalRecords = $records->count();
+			$totalPages = 1;
 		}
-
-		// Hide pivot data manually
-		$records->each(function ($category) {
-			$category->categoryAttributeGroups->each->makeHidden(['pivot']);
-			$category->categoryAttributeGroups->each(function ($group) {
-				$group->groupAttributes->each->makeHidden(['pivot']);
-			});
-		});
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Categrory List with Atribute & Attribute Group',
+			'message' => 'Product family list with attribute count',
 			'data' => $records,
-			'total_pages' => $totalPages ?? 1,
+			'total_pages' => $totalPages,
 			'total_records' => $totalRecords,
 		]);
 	}
 
-	/**
-	 * Display the specified resource.
-	 */
 	/**
 	 * @OA\Get(
 	 *     path="/api/category-attributes/{category_id}",
@@ -107,7 +116,7 @@ class CategoryAttributeController extends BaseController
 	{
 		$record = Category::with([
 			'categoryAttributeGroups:id,name',
-			'categoryAttributeGroups.groupAttributes:id,code,name'
+			'categoryAttributeGroups.groupsAttributes:id,attribute_group_id,code,name'
 		])->whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
 		->where('id', $id)
@@ -116,24 +125,21 @@ class CategoryAttributeController extends BaseController
 		if (!$record) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Record does not exist with given ID.'
+				'message' => 'Product family not found.'
 			]);
 		}
 		$record->categoryAttributeGroups->each->makeHidden(['pivot']);
 		$record->categoryAttributeGroups->each(function ($group) {
-			$group->groupAttributes->each->makeHidden(['pivot']);
+			$group->groupsAttributes->each->makeHidden(['attribute_group_id']);
 		});
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Category with Attribute & Attribute Group',
+			'message' => 'Product family with Attribute & Attribute Group',
 			'data' => $record
 		]);
 	}
 
-	/**
-	 * Update the specified resource in storage.
-	 */
 	/**
 	 * @OA\Put(
 	 *     path="/api/category-attributes/{category_id}",
@@ -165,16 +171,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function update(Request $request, $id)
 	{
-		$record = Category::whereDoesntHave('children')
-		->select(['id', 'name', 'parent_id'])
-		->with(['attributeGroups:id,name'])
-		->where('id', $id)
-		->first();
+		$record = Category::whereDoesntHave('children')->where('id', $id)->first();
 
 		if (!$record) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Record does not exist with given ID.'
+				'message' => 'Product family not found.'
 			]);
 		}
 
@@ -186,25 +188,42 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$record->attributeGroups()->sync($request->attribute_group_ids);
+			$existingGroupIds = $record->categoryAttributeGroups()->pluck('attribute_group_id')->toArray();
+			$syncData = collect($request->attribute_group_ids)->mapWithKeys(function ($id) use ($existingGroupIds) {
+				if (in_array($id, $existingGroupIds)) {
+					/* Existing group, do not modify created_by, created_at */
+					return [
+						$id => []
+					];
+				} else {
+					/* New group, set created_by, created_at */
+					return [
+						$id => [
+							'created_by' => auth()->id() ?? 1,
+							'created_at' => now()
+						]
+					];
+				}
+			})->toArray();
+			$record->categoryAttributeGroups()->sync($syncData);
 
 			/* Fetch updated data with only required fields */
 			$updatedRecord = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with('attributeGroups:id,name')
+			->with('categoryAttributeGroups:id,name')
 			->where('id', $id)
 			->first();
 
 			/* Ensure we don't try to access null values */
 			if ($updatedRecord) {
-				$updatedRecord->attributeGroups->each->makeHidden(['pivot']);
+				$updatedRecord->categoryAttributeGroups->each->makeHidden(['pivot']);
 			}
 
 			DB::commit();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Category successfully updated with attributes and attribute groups.',
+				'message' => 'Product family successfully updated with attribute groups.',
 				'data' => $updatedRecord,
 			], 200);
 
@@ -213,76 +232,7 @@ class CategoryAttributeController extends BaseController
 
 			return response()->json([
 				'success' => false,
-				'message' => 'An error occurred while updating the category. Please try again.',
-				'error' => $e->getMessage(),
-			], 500);
-		}
-	}
-
-	/**
-	 * @OA\Post(
-	 *     path="/api/category-attributes/{id}/add-attribute",
-	 *     summary="Add specific attributes or attribute groups to a category",
-	 *     tags={"Category Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         description="Category ID",
-	 *         required=true,
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="attribute_group_ids", type="array", @OA\Items(type="integer"))
-	 *         )
-	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function addAttributes(Request $request, $id)
-	{
-		$record = Category::whereDoesntHave('children')->find($id);
-		if (!$record) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Record does not exist with given ID.'
-			]);
-		}
-
-		$request->validate([
-			'attribute_group_ids' => 'array',
-			'attribute_group_ids.*' => 'integer|exists:attribute_groups,id',
-		]);
-
-		DB::beginTransaction();
-
-		try {
-			$record->attributeGroups()->syncWithoutDetaching($request->attribute_group_ids);
-
-			/* Updated record */
-			$record = Category::whereDoesntHave('children')
-			->select(['id', 'name', 'parent_id'])
-			->with('attributeGroups:id,name')
-			->where('id', $id)
-			->first();
-			$record->attributeGroups->each->makeHidden(['pivot']);
-
-			DB::commit();
-
-			return response()->json([
-				'success' => true,
-				'message' => 'Attributes and attribute groups added successfully.',
-				'data' => $record,
-			], 200);
-
-		} catch (\Exception $e) {
-			DB::rollBack();
-
-			return response()->json([
-				'success' => false,
-				'message' => 'An error occurred while adding attributes.',
+				'message' => 'An error occurred while updating the Product family. Please try again.',
 				'error' => $e->getMessage(),
 			], 500);
 		}
@@ -301,10 +251,10 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function removeAttributeGroups($id, $attribute_group_id)
 	{
-		$record = Category::whereDoesntHave('children')->find($id);
+		$record = Category::whereDoesntHave('children')->where('id', $id)->first();
 
 		if (!$record) {
-			return response()->json(['success' => false, 'message' => 'Category not found']);
+			return response()->json(['success' => false, 'message' => 'Product family not found']);
 		}
 
 		if (!AttributeGroup::find($attribute_group_id)) {
@@ -314,15 +264,15 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$record->attributeGroups()->detach($attribute_group_id);
+			$record->categoryAttributeGroups()->detach($attribute_group_id);
 
 			/* Updated record */
 			$record = Category::whereDoesntHave('children')
 			->select(['id', 'name', 'parent_id'])
-			->with('attributeGroups:id,name')
+			->with('categoryAttributeGroups:id,name')
 			->where('id', $id)
 			->first();
-			$record->attributeGroups->each->makeHidden(['pivot']);
+			$record->categoryAttributeGroups->each->makeHidden(['pivot']);
 
 			DB::commit();
 
@@ -343,85 +293,30 @@ class CategoryAttributeController extends BaseController
 		}
 	}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/category/getAttributesByCategory/{category_id}",
+	 *     summary="Get all attributes assigned to a specific category",
+	 *     tags={"Category Attribute Group"},
+	 *     @OA\Parameter(name="category_id", in="path", required=true, description="The ID of the category to fetch attributes", @OA\Schema(type="integer")),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function getAttributesByCategory($category_id)
+	{
+		$record = Category::whereDoesntHave('children')->where('id', $category_id)->first();
 
-
-/**
- * @OA\Get(
- *     path="/api/category/getAttributesByCategory/{category_id}",
- *     summary="Get all attributes assigned to a specific category",
- *     tags={"Category Attribute Group"},
- *     @OA\Parameter(
- *         name="category_id",
- *         in="path",
- *         required=true,
- *         description="The ID of the category to fetch attributes for",
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="A list of attributes assigned to the specified category",
- *         @OA\MediaType(mediaType="application/json",
- *             @OA\Schema(
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     @OA\Property(property="id", type="integer"),
- *                     @OA\Property(property="name", type="string"),
- *                     @OA\Property(property="type", type="string"),
- *                     @OA\Property(property="is_required", type="boolean")
- *                 )
- *             )
- *         )
- *     ),
- *     @OA\Response(
- *         response=404,
- *         description="Category not found",
- *         @OA\MediaType(mediaType="application/json",
- *             @OA\Schema(
- *                 type="object",
- *                 @OA\Property(property="message", type="string", example="Category not found")
- *             )
- *         )
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
-
- public function getAttributesByCategory($category_id)
- {
-	 // Step 1: Validate that category_id is a valid integer and exists in the database
-	 $validated = Validator::make(['category_id' => $category_id], [
-		 'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
-	 ]);
-
-	 // If validation fails, return error response
-	 if ($validated->fails()) {
-		 return response()->json([
-			 'message' => 'Invalid category ID or category not found'
-		 ], 404);
-	 }
-
-	 // Step 2: Find the category by ID
-	 $category = Category::findOrFail($category_id);
-
-	 // Step 3: Get the attribute groups related to the category
-	 $attributeGroups = $category->attributeGroups(); // Access related attribute groups
-
-	 // Step 4: Get all the attributes from those groups, plucking only the 'id' and 'name' fields
-	 $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
-								   ->get() // Get the groups
-								   ->pluck('groupAttributes') // Extract the groupAttributes collection
-								   ->flatten() // Flatten into a single collection of attributes
-								   ->map(function ($attribute) {
-									   return [
-										   'id' => $attribute->id,
-										   'name' => $attribute->name,
-									   ];
-								   }); // Map to include only id and name
-
-	 // Step 5: Return the attributes in the response
-	 return response()->json($attributes);
- }
-
-
+		if (!$record) {
+			return response()->json(['success' => false, 'message' => 'Product family not found']);
+		}
+		$attributes = $record->categoryAllAttributes()->map(function ($attribute) {
+			return $attribute->only(['id', 'name']);
+		});
+		return response()->json([
+			'success' => true,
+			'message' => 'Product family attribute list.',
+			'data' => $attributes
+		]);
+	}
 }

@@ -65,10 +65,10 @@ class Category extends Model
 	// 	return $this->morphedByMany(Attribute::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
 	// }
 
-	public function attributeGroups()
-	{
-		return $this->morphedByMany(AttributeGroup::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
-	}
+	// public function attributeGroups()
+	// {
+	// 	return $this->morphedByMany(AttributeGroup::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
+	// }
 
 	public function categoryAttributeGroups()
 	{
@@ -94,15 +94,9 @@ class Category extends Model
 	/* Get unique attributes associated with the product's latest category */
 	public function categoryAllAttributes()
 	{
-		/* Fetch attributes from groups */
-		$groupAttributes = $this->attributeGroups->flatMap->groupAttributes;
-
-		/* Fetch direct attributes */
-		// $directAttributes = $this->categoryAttributes;
-
-		/* Merge and return unique attributes */
-		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
-		return $groupAttributes->unique('id')->values();
+		/* Fetch all attributes from groups */
+		$categoryAttributeGroups = $this->categoryAttributeGroups->flatMap->groupsAttributes;
+		return $categoryAttributeGroups->unique('id')->values();
 	}
 
 	public function categorySeoDetails()

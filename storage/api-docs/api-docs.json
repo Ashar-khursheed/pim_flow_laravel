@@ -41,7 +41,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -256,9 +256,7 @@
                                 "required": [
                                     "name",
                                     "code",
-                                    "type",
-                                    "is_required",
-                                    "validations"
+                                    "type"
                                 ],
                                 "properties": {
                                     "name": {
@@ -2806,8 +2804,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -2818,12 +2815,61 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by category id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search by category name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "attribute_count"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -2932,57 +2978,6 @@
                 ]
             }
         },
-        "/api/category-attributes/{id}/add-attribute": {
-            "post": {
-                "tags": [
-                    "Category Attribute Group"
-                ],
-                "summary": "Add specific attributes or attribute groups to a category",
-                "operationId": "82f05163ab57b2d5f024f7e18b5f55d6",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "attribute_group_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/category-attributes/{id}/remove-attribute-group/{attribute_group_id}": {
             "delete": {
                 "tags": [
@@ -3036,7 +3031,7 @@
                     {
                         "name": "category_id",
                         "in": "path",
-                        "description": "The ID of the category to fetch attributes for",
+                        "description": "The ID of the category to fetch attributes",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -3045,46 +3040,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "A list of attributes assigned to the specified category",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer"
-                                            },
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "type": {
-                                                "type": "string"
-                                            },
-                                            "is_required": {
-                                                "type": "boolean"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -12246,11 +12204,14 @@
                                     "properties": {
                                         "score": {
                                             "type": "integer",
-                                            "example": 48
+                                            "example": 75
                                         },
                                         "grade": {
                                             "type": "string",
                                             "example": "B"
+                                        },
+                                        "breakdown": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"

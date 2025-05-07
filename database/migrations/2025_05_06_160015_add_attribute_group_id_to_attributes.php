@@ -43,8 +43,7 @@ return new class extends Migration
 			$table->integer('category_id')->index();
 			$table->integer('attribute_group_id')->index();
 			$table->integer('created_by')->default(1);
-			$table->integer('updated_by')->nullable();
-			$table->timestamps();
+			$table->timestamp('created_at')->nullable();
 		});
 
 		/* Insert into category_attribute_groups from attribute_group_categories */
@@ -56,9 +55,7 @@ return new class extends Migration
 				'category_id' => $row->category_id,
 				'attribute_group_id' => $row->relational_id,
 				'created_by' => 1,
-				'updated_by' => null,
 				'created_at' => $row->created_at,
-				'updated_at' => $row->updated_at,
 			]);
 		});
 	}
