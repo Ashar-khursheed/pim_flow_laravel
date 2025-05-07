@@ -120,7 +120,11 @@ public function index(Request $request)
         $page = $request->input('page');
         $length = $request->input('length');
         $brands = $brands->offset(($page - 1) * $length)->limit($length);
-    }
+    } else {
+		$brands = $brands->orderBy('name', 'asc')->get([
+			'id', 'name'
+		]);
+	}
 
     $brands = $brands->get();
 
@@ -990,7 +994,7 @@ public function store(Request $request)
 	 public function getCategories($id)
 	 {
 		 $brand = Brand::with(['products.categories:id,name'])->findOrFail($id);
-	 
+
 		 // Flatten and get unique categories, only with id and name
 		 $categories = $brand->products
 			 ->flatMap(function ($product) {
@@ -1003,12 +1007,12 @@ public function store(Request $request)
 			 })
 			 ->unique('id')
 			 ->values();
-	 
+
 		 return response()->json([
 			 'sucess' => 'true',
 			 'brand_id' => $id,
 			 'categories' => $categories
 		 ]);
 	 }
-	 
+
 }
