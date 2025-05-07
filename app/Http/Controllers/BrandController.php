@@ -118,7 +118,11 @@ public function index(Request $request)
         $page = $request->input('page');
         $length = $request->input('length');
         $brands = $brands->offset(($page - 1) * $length)->limit($length);
-    }
+    } else {
+		$brands = $brands->orderBy('name', 'asc')->get([
+			'id', 'name'
+		]);
+	}
 
     $brands = $brands->get();
 
