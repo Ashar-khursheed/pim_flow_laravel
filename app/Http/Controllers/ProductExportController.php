@@ -35,6 +35,7 @@ class ProductExportController extends Controller
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)"),
+	 *             @OA\Property(property="user_role", type="string", description="Optional user role"),
 	 *             @OA\Property(
 	 *                 property="selected_fields",
 	 *                 type="array",
@@ -57,36 +58,38 @@ class ProductExportController extends Controller
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 			'selected_fields' => 'nullable|array',
 			'selected_fields.*' => 'string',
+			'user_role' => 'nullable|string',
 		]);
 
-		$selectedFields = $request->selected_fields;
-
-		/* Get all DB columns from products table */
 		$baseFields = Schema::getColumnListing('ec_products');
 
-		/* Determine fields to select */
+		/* Default empty if not set */
+		$selectedFields = $request->selected_fields ?? [];
+
+		/* If role is content_writer, enforce valid fields */
+		if (!empty($request->user_role) && $request->user_role === 'content_writer') {
+			$validFields = [
+				"id", "sku", "name", "brand", "categories",
+				"description", "benefits_features", "faq_section", "seo_section"
+			];
+
+			/* If no selectedFields given, use all valid fields */
+			if (empty($selectedFields)) {
+				$selectedFields = $validFields;
+			} else {
+				$selectedFields = array_intersect($validFields, $selectedFields);
+			}
+		}
+
+		/* Final filtering with DB columns */
 		if (!empty($selectedFields)) {
 			$fieldsToSelect = array_intersect($selectedFields, $baseFields);
-			if (empty($fieldsToSelect)) {
-				$fieldsToSelect = ['*'];
-			}
+			$fieldsToSelect = empty($fieldsToSelect) ? ['*'] : array_values($fieldsToSelect);
 		} else {
 			$fieldsToSelect = ['*'];
 		}
 
 		$query = Product::with(['categories:id,name', 'brand:id,name', 'store:id,name', 'tags', 'seoMetaData']);
-
-		/* Only apply select if not wildcard */
-		if ($fieldsToSelect !== ['*']) {
-			// Make sure to include necessary foreign keys for relations
-			$requiredRelationKeys = ['brand_id', 'store_id', 'id'];
-			foreach ($requiredRelationKeys as $key) {
-				if (!in_array($key, $fieldsToSelect)) {
-					$fieldsToSelect[] = $key;
-				}
-			}
-			$query->select($fieldsToSelect);
-		}
 
 		/* Apply relational filters */
 		if ($request->type == "Brand") {
@@ -117,113 +120,149 @@ class ProductExportController extends Controller
 
 		/* Define pretty headers that match exactly what you requested */
 		$headerMap1 = [
-			'id' => 'Id',
-			'url' => 'URL',
-			'sku' => 'SKU',
-			'name' => 'Name',
-			'content' => 'Content',
+			"id" => "Id",
+			"url" => "URL",
+			"name" => "Name",
+			"sku" => "SKU",
+			"brand" => "Brand",
+			"categories" => "Categories",
+			// "content" => "Content",
 		];
-		$benifitsFeaturesColumns =[
-			'benefit1' => 'Benefit1',
-			'feature1' => 'Feature1',
-			'benefit2' => 'Benefit2',
-			'feature2' => 'Feature2',
-			'benefit3' => 'Benefit3',
-			'feature3' => 'Feature3',
-			'benefit4' => 'Benefit4',
-			'feature4' => 'Feature4',
-			'benefit5' => 'Benefit5',
-			'feature5' => 'Feature5',
-			'benefit6' => 'Benefit6',
-			'feature6' => 'Feature6',
-			'benefit7' => 'Benefit7',
-			'feature7' => 'Feature7',
-			'benefit8' => 'Benefit8',
-			'feature8' => 'Feature8',
-			'benefit9' => 'Benefit9',
-			'feature9' => 'Feature9',
-			'benefit10' => 'Benefit10',
-			'feature10' => 'Feature10',
+
+		$descriptionColumns = [
+			"description1" => "Description1",
+			"description2" => "Description2",
+			"description3" => "Description3",
+			"description4" => "Description4",
+		];
+
+		$benifitsFeaturesColumns = [
+			"benefit1" => "Benefit1",
+			"feature1" => "Feature1",
+			"benefit2" => "Benefit2",
+			"feature2" => "Feature2",
+			"benefit3" => "Benefit3",
+			"feature3" => "Feature3",
+			"benefit4" => "Benefit4",
+			"feature4" => "Feature4",
+			"benefit5" => "Benefit5",
+			"feature5" => "Feature5",
+			"benefit6" => "Benefit6",
+			"feature6" => "Feature6",
+			"benefit7" => "Benefit7",
+			"feature7" => "Feature7",
+			"benefit8" => "Benefit8",
+			"feature8" => "Feature8",
+			"benefit9" => "Benefit9",
+			"feature9" => "Feature9",
+			"benefit10" => "Benefit10",
+			"feature10" => "Feature10",
+		];
+
+		$faqColumns = [
+			"faq_question1" => "FAQ Question1",
+			"faq_answer1" => "FAQ Answer1",
+			"faq_question2" => "FAQ Question2",
+			"faq_answer2" => "FAQ Answer2",
+			"faq_question3" => "FAQ Question3",
+			"faq_answer3" => "FAQ Answer3",
+			"faq_question4" => "FAQ Question4",
+			"faq_answer4" => "FAQ Answer4",
+			"faq_question5" => "FAQ Question5",
+			"faq_answer5" => "FAQ Answer5",
+			"faq_question6" => "FAQ Question6",
+			"faq_answer6" => "FAQ Answer6",
+			"faq_question7" => "FAQ Question7",
+			"faq_answer7" => "FAQ Answer7",
+			"faq_question8" => "FAQ Question8",
+			"faq_answer8" => "FAQ Answer8",
+			"faq_question9" => "FAQ Question9",
+			"faq_answer9" => "FAQ Answer9",
+			"faq_question10" => "FAQ Question10",
+			"faq_answer10" => "FAQ Answer10",
 		];
 
 		$headerMap2 = [
-			'description' => 'Description',
-			'warranty_information' => 'Warranty Information',
-			'brand' => 'Brand',
-			'vendor' => 'Vendor',
-			'categories' => 'Categories',
-			'tags' => 'Tags',
-			'stock_status' => 'Stock Status',
-			'with_storehouse_management' => 'With Storehouse Management',
-			'quantity' => 'Quantity',
-			'cost_per_item' => 'Cost Per Item',
-			'unit_of_measurement' => 'Unit of Measurement',
-			'price' => 'Price',
-			'sale_price' => 'Sale Price',
-			'start_date_sale_price' => 'Start Date Sale Price',
-			'end_date_sale_price' => 'End Date Sale Price',
-			'minimum_order_quantity' => 'Minimum Order Quantity',
-			'box_quantity' => 'Box Quantity',
-			'delivery_days' => 'Delivery Days',
-			'variant_requires_shipping' => 'Variant Requires Shipping',
-			'images' => 'Images',
-			'upload_video' => 'Upload Video',
-			'barcode' => 'Barcode (ISBN, UPC, GTIN, etc.)',
-			'refund_policy' => 'Refund Policy',
-			'status' => 'Status',
-			'google_shopping_category' => 'Google Shopping Category',
-			'google_shopping_mpn' => 'Google Shopping Mpn',
-			'is_featured' => 'Is Featured',
-			'weight_option' => 'Weight Option',
-			'weight' => 'Weight',
-			'dimension_option' => 'Dimension Option',
-			'length' => 'Length',
-			'width' => 'Width',
-			'height' => 'Height',
-			'depth' => 'Depth',
-			'shipping_weight_option' => 'Shipping Weight Option',
-			'shipping_weight' => 'Shipping Weight',
-			'shipping_dimension_option' => 'Shipping Dimension Option',
-			'shipping_width' => 'Shipping Width',
-			'shipping_depth' => 'Shipping Depth',
-			'shipping_height' => 'Shipping Height',
-			'shipping_length' => 'Shipping Length',
-			'frequently_bought_together' => 'Frequently Bought Together',
-			'compare_products' => 'Compare Products',
-			'variant_1_title' => 'Variant 1 Title',
-			'variant_1_value' => 'Variant 1 Value',
-			'variant_1_products' => 'Variant 1 Products',
-			'variant_2_title' => 'Variant 2 Title',
-			'variant_2_value' => 'Variant 2 Value',
-			'variant_2_products' => 'Variant 2 Products',
-			'variant_3_title' => 'Variant 3 Title',
-			'variant_3_value' => 'Variant 3 Value',
-			'variant_3_products' => 'Variant 3 Products',
-			'variant_color_title' => 'Variant Color Title',
-			'variant_color_value' => 'Variant Color Value',
-			'variant_color_products' => 'Variant Color Products',
+			// "description" => "Description",
+			"warranty_information" => "Warranty Information",
+			"vendor" => "Vendor",
+			"tags" => "Tags",
+			"stock_status" => "Stock Status",
+			"with_storehouse_management" => "With Storehouse Management",
+			"quantity" => "Quantity",
+			"cost_per_item" => "Cost Per Item",
+			"unit_of_measurement" => "Unit of Measurement",
+			"price" => "Price",
+			"sale_price" => "Sale Price",
+			"start_date_sale_price" => "Start Date Sale Price",
+			"end_date_sale_price" => "End Date Sale Price",
+			"minimum_order_quantity" => "Minimum Order Quantity",
+			"box_quantity" => "Box Quantity",
+			"delivery_days" => "Delivery Days",
+			"variant_requires_shipping" => "Variant Requires Shipping",
+			"images" => "Images",
+			"upload_video" => "Upload Video",
+			"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
+			"refund_policy" => "Refund Policy",
+			"status" => "Status",
+			"google_shopping_category" => "Google Shopping Category",
+			"google_shopping_mpn" => "Google Shopping Mpn",
+			"is_featured" => "Is Featured",
+			"weight_option" => "Weight Option",
+			"weight" => "Weight",
+			"dimension_option" => "Dimension Option",
+			"length" => "Length",
+			"width" => "Width",
+			"height" => "Height",
+			"depth" => "Depth",
+			"shipping_weight_option" => "Shipping Weight Option",
+			"shipping_weight" => "Shipping Weight",
+			"shipping_dimension_option" => "Shipping Dimension Option",
+			"shipping_width" => "Shipping Width",
+			"shipping_depth" => "Shipping Depth",
+			"shipping_height" => "Shipping Height",
+			"shipping_length" => "Shipping Length",
+			"frequently_bought_together" => "Frequently Bought Together",
+			"compare_products" => "Compare Products",
+			"variant_1_title" => "Variant 1 Title",
+			"variant_1_value" => "Variant 1 Value",
+			"variant_1_products" => "Variant 1 Products",
+			"variant_2_title" => "Variant 2 Title",
+			"variant_2_value" => "Variant 2 Value",
+			"variant_2_products" => "Variant 2 Products",
+			"variant_3_title" => "Variant 3 Title",
+			"variant_3_value" => "Variant 3 Value",
+			"variant_3_products" => "Variant 3 Products",
+			"variant_color_title" => "Variant Color Title",
+			"variant_color_value" => "Variant Color Value",
+			"variant_color_products" => "Variant Color Products",
+		];
+
+		$seoSection = [
+			"meta_title" => "Meta Title",
+			"meta_description" => "Meta Description",
 		];
 
 		$discountSection = [
-			'buying_quantity1' => 'Buying Quantity1',
-			'discount1' => 'Discount1',
-			'start_date1' => 'Start Date1',
-			'end_date1' => 'End Date1',
-			'buying_quantity2' => 'Buying Quantity2',
-			'discount2' => 'Discount2',
-			'start_date2' => 'Start Date2',
-			'end_date2' => 'End Date2',
-			'buying_quantity3' => 'Buying Quantity3',
-			'discount3' => 'Discount3',
-			'start_date3' => 'Start Date3',
-			'end_date3' => 'End Date3',
+			"buying_quantity1" => "Buying Quantity1",
+			"discount1" => "Discount1",
+			"start_date1" => "Start Date1",
+			"end_date1" => "End Date1",
+			"buying_quantity2" => "Buying Quantity2",
+			"discount2" => "Discount2",
+			"start_date2" => "Start Date2",
+			"end_date2" => "End Date2",
+			"buying_quantity3" => "Buying Quantity3",
+			"discount3" => "Discount3",
+			"start_date3" => "Start Date3",
+			"end_date3" => "End Date3",
 		];
 
 		$translationSection = [
-			'name_ar' => 'Name (AR)',
-			'description_ar' => 'Description (AR)',
-			'content_ar' => 'Content (AR)',
-			'warranty_information_ar' => 'Warranty Information (AR)'
+			"name_ar" => "Name (AR)",
+			"description_ar" => "Description (AR)",
+			"content_ar" => "Content (AR)",
+			"warranty_information_ar" => "Warranty Information (AR)"
 		];
 
 		/* Initialize header map */
@@ -241,13 +280,27 @@ class ProductExportController extends Controller
 		/* Start building final header map */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap1);
 
+		/* Include description if requested or blank */
+		if ($includeSection('description')) {
+			$headerMap = array_merge($headerMap, $descriptionColumns);
+		}
+
 		/* Include benefits_features if requested or blank */
 		if ($includeSection('benefits_features')) {
 			$headerMap = array_merge($headerMap, $benifitsFeaturesColumns);
 		}
 
+		/* Include benefits_features if requested or blank */
+		if ($includeSection('faq_section')) {
+			$headerMap = array_merge($headerMap, $faqColumns);
+		}
+
 		/* Add remaining fields */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
+
+		if ($includeSection('seo_section')) {
+			$headerMap = array_merge($headerMap, $seoSection);
+		}
 
 		if ($includeSection('discount_section')) {
 			$headerMap = array_merge($headerMap, $discountSection);
@@ -278,10 +331,15 @@ class ProductExportController extends Controller
 						'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
 						'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
 						'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+						'description2', 'description3', 'description4',
 						'benefit4', 'feature4', 'benefit5', 'feature5',
 						'benefit6', 'feature6', 'benefit7', 'feature7',
 						'benefit8', 'feature8', 'benefit9', 'feature9',
 						'benefit10', 'feature10',
+						"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
+						"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
+						"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+						"meta_description",
 						'description_ar', 'content_ar', 'warranty_information_ar'
 					];
 
@@ -434,9 +492,39 @@ class ProductExportController extends Controller
 						}
 						break;
 
+						case 'description1':
+						$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
+
+						for ($i = 0; $i < 4; $i++) {
+							$row[] = $descriptions[$i] ?? '';
+						}
+						break;
+
 						case 'benefit1':
 						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
 
+						for ($i = 0; $i < 10; $i++) {
+							$row[] = $benefits[$i]['benefit'] ?? '';
+							$row[] = $benefits[$i]['feature'] ?? '';
+						}
+						break;
+
+						case 'faq_question1':
+						$faqs = $product->faqs->take(10); /* Get up to 3 discounts */
+
+						for ($i = 0; $i < 10; $i++) {
+							$faq = $faqs[$i] ?? null;
+							$row[] = $faq->question ?? '';
+							$row[] = $faq->answer ?? '';
+						}
+						break;
+
+						case 'meta_title':
+						$row[] = $product->seoManagement->meta_title ?? '';
+						$row[] = $product->seoManagement->meta_description ?? '';
+						break;
+
+						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
 						for ($i = 0; $i < 10; $i++) {
 							$row[] = $benefits[$i]['benefit'] ?? '';
 							$row[] = $benefits[$i]['feature'] ?? '';
