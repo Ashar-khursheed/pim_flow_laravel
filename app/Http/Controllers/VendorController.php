@@ -749,10 +749,7 @@ class VendorController extends BaseController
 					$record->logo_url,
 					$record->tax_certificate_url,
 					$record->business_licence_number,
-					$record->business_licence_url,
-					$record->og_image_alt_text,
-					$record->og_image_name,
-					$record->tags,
+					$record->business_licence_url
 				]);
 			}
 
