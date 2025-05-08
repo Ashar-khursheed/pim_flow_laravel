@@ -9800,6 +9800,58 @@
                 ]
             }
         },
+        "/api/product-groups-listing": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Product Groups",
+                "description": "Fetches a list of product groups with ID and name.",
+                "operationId": "45f853e6f984eed60e4eac55ab1334e5",
+                "responses": {
+                    "200": {
+                        "description": "Successful response with list of product groups",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Mixers"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/generate-groups": {
             "post": {
                 "tags": [
@@ -9830,17 +9882,30 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Groups saved successfully",
+                        "description": "Successfully fetched product groups",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Groups saved successfully"
-                                        }
-                                    },
-                                    "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "The ID of the product group",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "description": "The name of the product group",
+                                                "type": "string",
+                                                "example": "Group 1"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "example": {
+                                    "id": 1,
+                                    "name": "Group 1"
                                 }
                             }
                         }
@@ -10026,6 +10091,262 @@
                     },
                     "404": {
                         "description": "Product Group or Product Group Item not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brands/{brand_id}/categories": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Brand Categories",
+                "description": "Retrieves brand with primary and secondary categories and product family information.",
+                "operationId": "da6a18f4b09c50f6cd70c4f6d9724dfa",
+                "parameters": [
+                    {
+                        "name": "brand_id",
+                        "in": "path",
+                        "description": "ID of the brand",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Brand with category details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "brand_name": {
+                                            "type": "string",
+                                            "example": "Brand 4"
+                                        },
+                                        "primary_category": {
+                                            "type": "string",
+                                            "example": "Category 4"
+                                        },
+                                        "secondary_category": {
+                                            "type": "string",
+                                            "example": "Second Category 4"
+                                        },
+                                        "product_family": {
+                                            "type": "string",
+                                            "example": "product_family 4"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-21"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-20"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brands/categories": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Categories for All Brands",
+                "description": "Returns a list of all brands with their hierarchical categories (primary, secondary, product family, and additional child categories).",
+                "operationId": "c1fa3775e872a2ba486a9ec7d004d34b",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for brand name or category name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by (brand_name, created_at)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "brand_name"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc, desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of all brands with their categorized hierarchy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 14
+                                                    },
+                                                    "brand_name": {
+                                                        "type": "string",
+                                                        "example": "Atosa"
+                                                    },
+                                                    "primary_category": {
+                                                        "type": "string",
+                                                        "example": "Refrigeration"
+                                                    },
+                                                    "secondary_category": {
+                                                        "type": "string",
+                                                        "example": "Commercial Refrigerator"
+                                                    },
+                                                    "product_family": {
+                                                        "type": "string",
+                                                        "example": "Back Bar Refrigerator"
+                                                    },
+                                                    "additional_categories": {
+                                                        "description": "Additional category levels beyond the standard three",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "level": {
+                                                                    "type": "integer",
+                                                                    "example": 3
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Double Door"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-10-22"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-02-11"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "first_page_url": {
+                                            "type": "string"
+                                        },
+                                        "from": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_page_url": {
+                                            "type": "string"
+                                        },
+                                        "links": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "prev_page_url": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "to": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "description": "Unauthorized"
