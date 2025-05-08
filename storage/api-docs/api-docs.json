@@ -12214,11 +12214,14 @@
                                     "properties": {
                                         "score": {
                                             "type": "integer",
-                                            "example": 48
+                                            "example": 75
                                         },
                                         "grade": {
                                             "type": "string",
                                             "example": "B"
+                                        },
+                                        "breakdown": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
