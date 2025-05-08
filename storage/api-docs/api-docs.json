@@ -690,15 +690,15 @@
                 "tags": [
                     "Brands"
                 ],
-                "summary": "Get brands List",
-                "description": "Fetches a list of all brands.",
+                "summary": "Get brands list",
+                "description": "Fetches a paginated list of all brands with optional search and sorting.",
                 "operationId": "3c41aa2e65314941e37a634e810c5f73",
                 "parameters": [
                     {
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -709,20 +709,97 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
+                        "required": false,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term applied to all fields.",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Nike"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field name to sort by (e.g., id, name, created_at, etc.).",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "name"
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sorting direction: asc or desc.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
-                    "201": {
-                        "description": "Success",
+                    "200": {
+                        "description": "Success - Returns the list of brands.",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand List"
+                                        },
+                                        "brands": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Nike"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-01T12:00:00Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-01-05T12:00:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -3538,50 +3615,46 @@
                 ]
             }
         },
-        "/api/categories/reorder": {
+        "/api/reorder": {
             "post": {
                 "tags": [
-                    "Categories"
+                    "Reorder"
                 ],
                 "summary": "Reorder categories",
                 "description": "Updates the order of categories for drag and drop functionality",
-                "operationId": "6d6f00a49335289df918f785cb67d788",
+                "operationId": "2aecf3105502927939ff51a64f5b36a6",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "required": [
-                                    "categories"
-                                ],
-                                "properties": {
-                                    "categories": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "id",
-                                                "order",
-                                                "parent_id"
-                                            ],
-                                            "properties": {
-                                                "id": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "order": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "parent_id": {
-                                                    "type": "integer",
-                                                    "example": 0
-                                                }
-                                            },
-                                            "type": "object"
+                                "type": "array",
+                                "items": {
+                                    "required": [
+                                        "id",
+                                        "position",
+                                        "parentId"
+                                    ],
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 40
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "example": "Cooking Equipment (9)"
+                                        },
+                                        "position": {
+                                            "type": "integer",
+                                            "example": 0
+                                        },
+                                        "parentId": {
+                                            "type": "integer",
+                                            "example": 1
                                         }
-                                    }
-                                },
-                                "type": "object"
+                                    },
+                                    "type": "object"
+                                }
                             }
                         }
                     }
@@ -9683,7 +9756,7 @@
                     "Products"
                 ],
                 "summary": "Upload product images from zip file",
-                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database.",
+                "description": "Upload a ZIP file containing product images organized by SKU folders, extract and process them to S3, and update product records in the database. Only webp images with dimensions 1000x1000 are allowed.",
                 "operationId": "e3e5a4a2e8a7e47751553cf5c9ec8909",
                 "requestBody": {
                     "required": true,
@@ -9692,7 +9765,7 @@
                             "schema": {
                                 "properties": {
                                     "zip_file": {
-                                        "description": "ZIP file containing product images organized in folders by SKU",
+                                        "description": "ZIP file containing product images organized in folders by SKU. Only webp images with dimensions 1000x1000 are allowed.",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -9726,7 +9799,7 @@
                                                         "example": "ABC123"
                                                     },
                                                     "status": {
-                                                        "description": "success, no_images_found, or product_not_found",
+                                                        "description": "success, no_images_found, product_not_found, validation_error",
                                                         "type": "string",
                                                         "example": "success"
                                                     },
@@ -9734,6 +9807,13 @@
                                                         "description": "Number of images processed for this SKU",
                                                         "type": "integer",
                                                         "example": 5
+                                                    },
+                                                    "errors": {
+                                                        "description": "Array of error messages for invalid images",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
                                                     }
                                                 },
                                                 "type": "object"
@@ -14784,6 +14864,10 @@
         {
             "name": "BrandTemp3",
             "description": "BrandTemp3"
+        },
+        {
+            "name": "Reorder",
+            "description": "Reorder"
         },
         {
             "name": "Category Pages",
