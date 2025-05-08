@@ -85,23 +85,23 @@ class ProductGroupController extends Controller
     *             example={"id": 1, "name": "Group 1"}
     *         )
     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Validation Error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="error", type="string", example="Category ID is required")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Internal Server Error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="error", type="string", example="Error running script")
-     *         )
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
+    *     @OA\Response(
+    *         response=400,
+    *         description="Validation Error",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="error", type="string", example="Category ID is required")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=500,
+    *         description="Internal Server Error",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="error", type="string", example="Error running script")
+    *         )
+    *     ),
+    *     security={{"bearerAuth":{}}}
+    * )
+    */
 
      public function generateGroups(Request $request)
      {
@@ -325,6 +325,71 @@ class ProductGroupController extends Controller
         return response()->json([
             'message' => 'Parent updated successfully.',
             'new_parent_name' => $newGroup->name,
+        ]);
+    }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/product-groups/{group_id}/items/{item_id}/parent",
+     *     summary="Remove Product Group Item from its Parent",
+     *     description="Removes the association between a product group item and its parent group, effectively unparenting the item.",
+     *     tags={"Product Groups"},
+     *     @OA\Parameter(
+     *         name="group_id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the parent product group.",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="item_id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the product group item to unparent.",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Child successfully removed from parent",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="message", type="string", example="Child removed from parent successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product Group Item not found"
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+
+     public function removeProductGroupItemParent($groupId, $itemId)
+    {
+        \Log::info('Removing parent from ProductGroupItem', [
+            'group_id' => $groupId,
+            'item_id' => $itemId
+        ]);
+
+        // Find the product group item
+        $item = ProductGroupItem::where('group_id', $groupId)
+                                ->where('product_id', $itemId)
+                                ->first();
+
+        if (!$item) {
+            return response()->json(['message' => 'Product Group Item not found'], 404);
+        }
+
+        // Remove the parent relationship (set group_id to null or other logic)
+        $item->group_id = null;
+        $item->save();
+
+        return response()->json([
+            'message' => 'Child removed from parent successfully.'
         ]);
     }
 
