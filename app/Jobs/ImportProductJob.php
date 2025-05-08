@@ -28,6 +28,7 @@ use App\Models\Discount;
 use App\Models\DiscountProduct;
 use App\Models\TransactionLog;
 use App\Models\UnitOfMeasurement;
+use App\Models\Faq;
 
 class ImportProductJob implements ShouldQueue
 {
@@ -194,25 +195,70 @@ class ImportProductJob implements ShouldQueue
 				}
 			}
 
+			/* Validate FAQ fields*/
+			for ($i = 1; $i <= 10; $i++) {
+				$faqQuestion = ${'faq_question' . $i} ?? '';
+				$faqAnswer = ${'faq_answer' . $i} ?? '';
+
+				/* Max length validations */
+				if (!empty($faqQuestion) && strlen($faqQuestion) > 300) {
+					$rowError[] = "Maximum 300 characters allowed in Benefit{$i}";
+				}
+				if (!empty($faqAnswer) && strlen($faqAnswer) > 500) {
+					$rowError[] = "Maximum 500 characters allowed in Feature{$i}";
+				}
+			}
+
+			if (!empty($meta_title)) {
+				if (strlen($meta_title) > 60) {
+					$rowError[] = "Maximum 60 characters allowed in Meta Title{$i}.";
+				}
+
+				if (!$product || !$product->seoManagement()->exists()) {
+					$rowError[] = "Meta Title should be blank because no SEO details exist for this product.";
+				}
+			}
+
+			if (!empty($meta_description)) {
+				if (strlen($meta_description) > 160) {
+					$rowError[] = "Maximum 160 characters allowed in Meta Description{$i}.";
+				}
+
+				if (!$product || !$product->seoManagement()->exists()) {
+					$rowError[] = "Meta Description should be blank because no SEO details exist for this product.";
+				}
+			}
+
+
 			if (!empty($this->userRole) && $this->userRole === 'content_writer') {
 				/* Validate Description Fields */
 				if (empty($description1)) {
 					$rowError[] = 'Description1 is required';
 				}
 
-				/* Validate Benefit1 to Benefit10 and Feature1 to Feature10 */
-				for ($i = 1; $i <= 10; $i++) {
+				/* First 5 benefits and features are required */
+				for ($i = 1; $i <=5; $i++) {
 					$benefit = ${'benefit' . $i} ?? '';
 					$feature = ${'feature' . $i} ?? '';
 
-					/* First 5 benefits and features are required */
-					if ($i <= 5) {
-						if (empty($benefit)) {
-							$rowError[] = "Benefit{$i} is required";
-						}
-						if (empty($feature)) {
-							$rowError[] = "Feature{$i} is required";
-						}
+					if (empty($benefit)) {
+						$rowError[] = "Benefit{$i} is required";
+					}
+					if (empty($feature)) {
+						$rowError[] = "Feature{$i} is required";
+					}
+				}
+
+				/* First 5 faq questions and faq answers are required */
+				for ($i = 1; $i <= 5; $i++) {
+					$faqQuestion = ${'faq_question' . $i} ?? '';
+					$faqAnswer = ${'faq_answer' . $i} ?? '';
+
+					if (empty($faqQuestion)) {
+						$rowError[] = "FAQ Question{$i} is required";
+					}
+					if (empty($faqAnswer)) {
+						$rowError[] = "FAQ Answer{$i} is required";
 					}
 				}
 			} else {
@@ -516,6 +562,45 @@ class ImportProductJob implements ShouldQueue
 					$this->saveTranslation($product, $rowData);
 					$this->saveDiscount($product, $rowData);
 				}
+
+				if (!empty($meta_title) && !empty($meta_description) && $product->seoManagement) {
+					$product->seoManagement->update([
+						'meta_title' => $meta_title,
+						'meta_description' => $meta_description,
+					]);
+				}
+
+				$submittedQuestions = [];
+				/* Fetch existing FAQs for this product */
+				$existingFaqs = $product->faqs()->get()->keyBy('question');
+
+				for ($i = 1; $i <= 10; $i++) {
+					$faqQuestion = trim(${'faq_question' . $i} ?? '');
+					$faqAnswer = trim(${'faq_answer' . $i} ?? '');
+
+					if (!empty($faqQuestion)) {
+						$submittedQuestions[] = $faqQuestion;
+
+						if ($existingFaqs->has($faqQuestion)) {
+							/* Update */
+							$existingFaqs[$faqQuestion]->update([
+								'answer' => $faqAnswer,
+							]);
+						} else {
+							/* Create */
+							Faq::create([
+								'product_id' => $product->id,
+								'category_id' => 4,
+								'question' => $faqQuestion,
+								'answer' => $faqAnswer,
+								'status' => 'published',
+							]);
+						}
+					}
+				}
+
+				/* Delete FAQs not in current submission */
+				$product->faqs()->whereNotIn('question', $submittedQuestions)->delete();
 
 				DB::commit();
 

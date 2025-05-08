@@ -1792,21 +1792,25 @@ class ProductController extends BaseController
 			$idArray = [
 				'Id' => 'id',
 			];
+
 			$urlArray = [
 				'URL' => 'url',
 			];
+
 			$generalFieldArray = [
 				'Name' => 'name',
 				'SKU' => 'sku',
 				'Brand' => 'brand',
 				'Categories' => 'category',
 			];
+
 			$descriptionSectionArray = [
 				'Description1' => 'description1',
 				'Description2' => 'description2',
 				'Description3' => 'description3',
 				'Description4' => 'description4',
 			];
+
 			$benefitSectionArray = [
 				'Benefit1' => 'benefit1',
 				'Feature1' => 'feature1',
@@ -1829,6 +1833,31 @@ class ProductController extends BaseController
 				'Benefit10' => 'benefit10',
 				'Feature10' => 'feature10',
 			];
+
+			$faqSectionArray = [
+				"FAQ Question1" => "faq_question1",
+				"FAQ Answer1" => "faq_answer1",
+				"FAQ Question2" => "faq_question2",
+				"FAQ Answer2" => "faq_answer2",
+				"FAQ Question3" => "faq_question3",
+				"FAQ Answer3" => "faq_answer3",
+				"FAQ Question4" => "faq_question4",
+				"FAQ Answer4" => "faq_answer4",
+				"FAQ Question5" => "faq_question5",
+				"FAQ Answer5" => "faq_answer5",
+				"FAQ Question6" => "faq_question6",
+				"FAQ Answer6" => "faq_answer6",
+				"FAQ Question7" => "faq_question7",
+				"FAQ Answer7" => "faq_answer7",
+				"FAQ Question8" => "faq_question8",
+				"FAQ Answer8" => "faq_answer8",
+				"FAQ Question9" => "faq_question9",
+				"FAQ Answer9" => "faq_answer9",
+				"FAQ Question10" => "faq_question10",
+				"FAQ Answer10" => "faq_answer10",
+			];
+
+
 			$advanceFieldArray = [
 				'Warranty Information' => 'warrantyInformation',
 				'Vendor' => 'vendor',
@@ -1883,6 +1912,13 @@ class ProductController extends BaseController
 				'Variant Color Value' => 'variantColorValue',
 				'Variant Color Products' => 'variantColorProducts',
 			];
+
+			$seoSection = [
+				"Meta Title" => "meta_title",
+				"Meta Description" => "meta_description",
+			];
+
+
 			$discountSectionArray = [
 				'Buying Quantity1' => 'buyingQuantity1',
 				'Discount1' => 'discount1',
@@ -1897,6 +1933,7 @@ class ProductController extends BaseController
 				'Start Date3' => 'startDate3',
 				'End Date3' => 'endDate3',
 			];
+
 			$translationSectionArray = [
 				'Name (AR)' => 'nameAr',
 				'Description (AR)' => 'descriptionAr',
@@ -1913,7 +1950,9 @@ class ProductController extends BaseController
 					$generalFieldArray,
 					$descriptionSectionArray,
 					$benefitSectionArray,
+					$faqSectionArray,
 					$advanceFieldArray,
+					$seoSection,
 					$discountSectionArray,
 					$translationSectionArray
 				);
@@ -1922,7 +1961,9 @@ class ProductController extends BaseController
 					$idArray,
 					$generalFieldArray,
 					$descriptionSectionArray,
-					$benefitSectionArray
+					$benefitSectionArray,
+					$faqSectionArray,
+					$seoSection,
 				);
 			}
 

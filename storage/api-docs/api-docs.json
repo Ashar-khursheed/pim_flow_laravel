@@ -9721,6 +9721,10 @@
                                         "type": "integer",
                                         "example": 50
                                     },
+                                    "user_role": {
+                                        "description": "Optional user role",
+                                        "type": "string"
+                                    },
                                     "selected_fields": {
                                         "description": "Optional list of fields to export. If blank, all fields will be exported.",
                                         "type": "array",

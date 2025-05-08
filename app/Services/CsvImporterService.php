@@ -44,6 +44,7 @@ class CsvImporterService
 
 				if (array_filter($row)) {
 					if (count($row) != $requiredRowCount) {
+						// dd(count($row), $requiredRowCount, $row);
 						throw new \Exception("The data in row $rowIndex is not compatible for import.");
 					}
 					$data[] = $row;

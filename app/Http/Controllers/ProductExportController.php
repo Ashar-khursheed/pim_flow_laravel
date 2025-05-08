@@ -35,6 +35,7 @@ class ProductExportController extends Controller
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)"),
+	 *             @OA\Property(property="user_role", type="string", description="Optional user role"),
 	 *             @OA\Property(
 	 *                 property="selected_fields",
 	 *                 type="array",
@@ -57,36 +58,38 @@ class ProductExportController extends Controller
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 			'selected_fields' => 'nullable|array',
 			'selected_fields.*' => 'string',
+			'user_role' => 'nullable|string',
 		]);
 
-		$selectedFields = $request->selected_fields;
-
-		/* Get all DB columns from products table */
 		$baseFields = Schema::getColumnListing('ec_products');
 
-		/* Determine fields to select */
+		/* Default empty if not set */
+		$selectedFields = $request->selected_fields ?? [];
+
+		/* If role is content_writer, enforce valid fields */
+		if (!empty($request->user_role) && $request->user_role === 'content_writer') {
+			$validFields = [
+				"id", "sku", "name", "brand", "categories",
+				"description", "benefits_features", "faq_section", "seo_section"
+			];
+
+			/* If no selectedFields given, use all valid fields */
+			if (empty($selectedFields)) {
+				$selectedFields = $validFields;
+			} else {
+				$selectedFields = array_intersect($validFields, $selectedFields);
+			}
+		}
+
+		/* Final filtering with DB columns */
 		if (!empty($selectedFields)) {
 			$fieldsToSelect = array_intersect($selectedFields, $baseFields);
-			if (empty($fieldsToSelect)) {
-				$fieldsToSelect = ['*'];
-			}
+			$fieldsToSelect = empty($fieldsToSelect) ? ['*'] : array_values($fieldsToSelect);
 		} else {
 			$fieldsToSelect = ['*'];
 		}
 
 		$query = Product::with(['categories:id,name', 'brand:id,name', 'store:id,name', 'tags', 'seoMetaData']);
-
-		/* Only apply select if not wildcard */
-		if ($fieldsToSelect !== ['*']) {
-			// Make sure to include necessary foreign keys for relations
-			$requiredRelationKeys = ['brand_id', 'store_id', 'id'];
-			foreach ($requiredRelationKeys as $key) {
-				if (!in_array($key, $fieldsToSelect)) {
-					$fieldsToSelect[] = $key;
-				}
-			}
-			$query->select($fieldsToSelect);
-		}
 
 		/* Apply relational filters */
 		if ($request->type == "Brand") {
@@ -126,14 +129,14 @@ class ProductExportController extends Controller
 			// "content" => "Content",
 		];
 
-		$descriptionColumns =[
+		$descriptionColumns = [
 			"description1" => "Description1",
 			"description2" => "Description2",
 			"description3" => "Description3",
 			"description4" => "Description4",
 		];
 
-		$benifitsFeaturesColumns =[
+		$benifitsFeaturesColumns = [
 			"benefit1" => "Benefit1",
 			"feature1" => "Feature1",
 			"benefit2" => "Benefit2",
@@ -154,6 +157,29 @@ class ProductExportController extends Controller
 			"feature9" => "Feature9",
 			"benefit10" => "Benefit10",
 			"feature10" => "Feature10",
+		];
+
+		$faqColumns = [
+			"faq_question1" => "FAQ Question1",
+			"faq_answer1" => "FAQ Answer1",
+			"faq_question2" => "FAQ Question2",
+			"faq_answer2" => "FAQ Answer2",
+			"faq_question3" => "FAQ Question3",
+			"faq_answer3" => "FAQ Answer3",
+			"faq_question4" => "FAQ Question4",
+			"faq_answer4" => "FAQ Answer4",
+			"faq_question5" => "FAQ Question5",
+			"faq_answer5" => "FAQ Answer5",
+			"faq_question6" => "FAQ Question6",
+			"faq_answer6" => "FAQ Answer6",
+			"faq_question7" => "FAQ Question7",
+			"faq_answer7" => "FAQ Answer7",
+			"faq_question8" => "FAQ Question8",
+			"faq_answer8" => "FAQ Answer8",
+			"faq_question9" => "FAQ Question9",
+			"faq_answer9" => "FAQ Answer9",
+			"faq_question10" => "FAQ Question10",
+			"faq_answer10" => "FAQ Answer10",
 		];
 
 		$headerMap2 = [
@@ -212,6 +238,11 @@ class ProductExportController extends Controller
 			"variant_color_products" => "Variant Color Products",
 		];
 
+		$seoSection = [
+			"meta_title" => "Meta Title",
+			"meta_description" => "Meta Description",
+		];
+
 		$discountSection = [
 			"buying_quantity1" => "Buying Quantity1",
 			"discount1" => "Discount1",
@@ -259,8 +290,17 @@ class ProductExportController extends Controller
 			$headerMap = array_merge($headerMap, $benifitsFeaturesColumns);
 		}
 
+		/* Include benefits_features if requested or blank */
+		if ($includeSection('faq_section')) {
+			$headerMap = array_merge($headerMap, $faqColumns);
+		}
+
 		/* Add remaining fields */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
+
+		if ($includeSection('seo_section')) {
+			$headerMap = array_merge($headerMap, $seoSection);
+		}
 
 		if ($includeSection('discount_section')) {
 			$headerMap = array_merge($headerMap, $discountSection);
@@ -296,6 +336,10 @@ class ProductExportController extends Controller
 						'benefit6', 'feature6', 'benefit7', 'feature7',
 						'benefit8', 'feature8', 'benefit9', 'feature9',
 						'benefit10', 'feature10',
+						"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
+						"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
+						"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+						"meta_description",
 						'description_ar', 'content_ar', 'warranty_information_ar'
 					];
 
@@ -459,6 +503,28 @@ class ProductExportController extends Controller
 						case 'benefit1':
 						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
 
+						for ($i = 0; $i < 10; $i++) {
+							$row[] = $benefits[$i]['benefit'] ?? '';
+							$row[] = $benefits[$i]['feature'] ?? '';
+						}
+						break;
+
+						case 'faq_question1':
+						$faqs = $product->faqs->take(10); /* Get up to 3 discounts */
+
+						for ($i = 0; $i < 10; $i++) {
+							$faq = $faqs[$i] ?? null;
+							$row[] = $faq->question ?? '';
+							$row[] = $faq->answer ?? '';
+						}
+						break;
+
+						case 'meta_title':
+						$row[] = $product->seoManagement->meta_title ?? '';
+						$row[] = $product->seoManagement->meta_description ?? '';
+						break;
+
+						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
 						for ($i = 0; $i < 10; $i++) {
 							$row[] = $benefits[$i]['benefit'] ?? '';
 							$row[] = $benefits[$i]['feature'] ?? '';
