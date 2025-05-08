@@ -9800,6 +9800,91 @@
                 ]
             }
         },
+        "/api/generate-groups": {
+            "post": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Generate Product Groups by Category",
+                "description": "Runs a Python script to group products by category and saves them into the database as product groups.",
+                "operationId": "generateProductGroups",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "The ID of the category to process.",
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Groups saved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Groups saved successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Category ID is required"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error running script"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product/upload-images": {
             "post": {
                 "tags": [
@@ -14695,6 +14780,10 @@
         {
             "name": "Pre Onboarding Vendors",
             "description": "Pre Onboarding Vendors"
+        },
+        {
+            "name": "Product Groups",
+            "description": "Product Groups"
         },
         {
             "name": "Redirect Links",

@@ -45,6 +45,8 @@ use App\Http\Controllers\SupplierScoreController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductGroupController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -57,6 +59,9 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
 Route::middleware(['auth:api'])->group(function () {
+	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
+
+
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
