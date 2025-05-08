@@ -42,6 +42,10 @@ class PermissionSeeder extends Seeder
 			'show product',
 			'import product',
 			'export product',
+			'importfeatures product',
+			'exportfeatures product',
+			'image product',
+			'document product',
 
 			'list category',
 			'add category',
@@ -116,7 +120,12 @@ class PermissionSeeder extends Seeder
 			'update vendor',
 			'delete vendor',
 			'show vendor',
-
+			'import vendor',
+			'export vendor',
+			'upload vendor',
+			'view vendor',
+			'download vendor',
+			
 			'list media mgmt',
 			'add media mgmt',
 			'update media mgmt',
