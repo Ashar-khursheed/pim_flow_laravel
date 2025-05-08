@@ -9885,6 +9885,159 @@
                 ]
             }
         },
+        "/api/product-groups": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Grouped Product List",
+                "description": "Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy.",
+                "operationId": "53460efd1592b1fa4aace8ef15953f85",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": [
+                                        {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "BMPM007"
+                                                    },
+                                                    "image": {
+                                                        "type": "string"
+                                                    },
+                                                    "brand": {
+                                                        "type": "string",
+                                                        "example": "BakeMax"
+                                                    },
+                                                    "store": {
+                                                        "type": "string",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "published"
+                                                    },
+                                                    "product_family": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "Food Preparation Equipment"
+                                                        }
+                                                    },
+                                                    "taxonomy_path": {
+                                                        "type": "string",
+                                                        "example": "bakemax-bmpm007-181-countertop-planetary-mixer-7-qt"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "property": "BakeMax BM"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-groups/{group_id}/items/{item_id}/parent": {
+            "put": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Update Parent of Product Group Item",
+                "description": "Updates the parent of a product group item, allowing it to be reassigned to a different group.",
+                "operationId": "f1385d38d0eecbb54fcb96c596273cb8",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "description": "The ID of the product group to which the item currently belongs.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "The ID of the product group item whose parent group is being updated.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "new_group_id": {
+                                        "description": "The ID of the new parent product group",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Parent updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Parent updated successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product Group or Product Group Item not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product/upload-images": {
             "post": {
                 "tags": [

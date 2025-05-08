@@ -60,8 +60,8 @@ Route::post('/login', [AuthController::class, 'store'])->name('login');
 /* Protect routes with authentication */
 Route::middleware(['auth:api'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
-
-
+	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
+	Route::put('product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 

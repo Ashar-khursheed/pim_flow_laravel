@@ -11,4 +11,9 @@ class ProductGroupItem extends Model
     {
         return $this->belongsTo(ProductGroup::class, 'group_id');
     }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, "product_id"); // Adjust 'your_foreign_key_here' to match the column name
+    }
 }
