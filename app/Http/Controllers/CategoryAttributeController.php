@@ -249,7 +249,7 @@ class CategoryAttributeController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function removeAttributeGroups($id, $attribute_group_id)
+	public function removeAttributeGroup($id, $attribute_group_id)
 	{
 		$record = Category::whereDoesntHave('children')->where('id', $id)->first();
 

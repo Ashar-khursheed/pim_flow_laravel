@@ -15,7 +15,7 @@ class TransactionLogObserver
 
 	public function updating($model)
 	{
-		dd(request()->all(), $model->attributeValues->toArray(), $model->attributeGroups()->pluck('name')->toArray());
+		dd(request()->all(), $model->attributeValues->toArray(), $model->attributesGroups()->pluck('name')->toArray());
 	}
 
 	public function updated($model)

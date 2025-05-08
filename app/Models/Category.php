@@ -60,16 +60,6 @@ class Category extends Model
 		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
 	}
 
-	// public function categoryAttributes()
-	// {
-	// 	return $this->morphedByMany(Attribute::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
-	// }
-
-	// public function attributeGroups()
-	// {
-	// 	return $this->morphedByMany(AttributeGroup::class, 'relational', 'attribute_group_categories', 'category_id', 'relational_id');
-	// }
-
 	public function categoryAttributeGroups()
 	{
 		return $this->belongsToMany(
@@ -95,8 +85,8 @@ class Category extends Model
 	public function categoryAllAttributes()
 	{
 		/* Fetch all attributes from groups */
-		$categoryAttributeGroups = $this->categoryAttributeGroups->flatMap->groupsAttributes;
-		return $categoryAttributeGroups->unique('id')->values();
+		$categoryAttributes = $this->categoryAttributeGroups->flatMap->groupsAttributes;
+		return $categoryAttributes->unique('id')->values();
 	}
 
 	public function categorySeoDetails()

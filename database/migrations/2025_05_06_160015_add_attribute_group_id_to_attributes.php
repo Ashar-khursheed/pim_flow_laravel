@@ -26,6 +26,16 @@ return new class extends Migration
 			}
 		});
 
+		Schema::table('attribute_groups', function (Blueprint $table) {
+			if (!Schema::hasColumn('attribute_groups', 'created_by')) {
+				$table->integer('created_by')->default(1)->after('name');
+			}
+
+			if (!Schema::hasColumn('attribute_groups', 'updated_by')) {
+				$table->integer('updated_by')->nullable()->after('created_by');
+			}
+		});
+
 		/* update attributes with the group ID from the pivot table */
 		DB::table('attribute_group_attributes')
 		->select('attribute_id', 'attribute_group_id')
@@ -58,6 +68,9 @@ return new class extends Migration
 				'created_at' => $row->created_at,
 			]);
 		});
+
+		Schema::dropIfExists('attribute_group_attributes');
+		Schema::dropIfExists('attribute_group_categories');
 	}
 
 	/**
@@ -77,6 +90,30 @@ return new class extends Migration
 			}
 		});
 
+		Schema::table('attribute_groups', function (Blueprint $table) {
+			if (Schema::hasColumn('attribute_groups', 'created_by')) {
+				$table->dropColumn('created_by');
+			}
+			if (Schema::hasColumn('attribute_groups', 'updated_by')) {
+				$table->dropColumn('updated_by');
+			}
+		});
+
 		Schema::dropIfExists('category_attribute_groups');
+
+		Schema::create('attribute_group_attributes', function (Blueprint $table) {
+			$table->id();
+			$table->integer('attribute_group_id');
+			$table->integer('attribute_id');
+			$table->timestamps();
+		});
+
+		Schema::create('attribute_group_categories', function (Blueprint $table) {
+			$table->id();
+			$table->integer('category_id');
+			$table->integer('relational_id')->index();
+			$table->string('relational_type')->index();
+			$table->timestamps();
+		});
 	}
 };

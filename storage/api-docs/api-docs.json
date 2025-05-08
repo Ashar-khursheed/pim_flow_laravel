@@ -59,6 +59,16 @@
                         "example": 20
                     },
                     {
+                        "name": "attribute_group_id",
+                        "in": "query",
+                        "description": "Search by attribute group id.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 6
+                    },
+                    {
                         "name": "global",
                         "in": "query",
                         "description": "Global search for All field",
@@ -462,8 +472,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -474,12 +483,63 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by attribute group id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search by attribute group name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "groups_attributes_count",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -521,6 +581,13 @@
                                         "items": {
                                             "type": "integer",
                                             "example": 5
+                                        }
+                                    },
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
                                         }
                                     }
                                 },
@@ -566,8 +633,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -578,7 +644,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -625,19 +690,25 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "attribute_ids"
+                                    "name"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "example": "General Attribute"
+                                        "example": "Electronics Equipments"
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
                                     },
                                     "attribute_ids": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
-                                            "example": 5
+                                            "example": 1
                                         }
                                     }
                                 },
@@ -678,6 +749,48 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attribute-groups/{id}/remove-attribute/{attribute_id}": {
+            "delete": {
+                "tags": [
+                    "Attribute Group"
+                ],
+                "summary": "Remove an attribute from an attribute group",
+                "operationId": "357b689c0dc82d45ade6fdf718415c8c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Attribute Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "attribute_id",
+                        "in": "path",
+                        "description": "Attribute ID to remove from the attribute group",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],

@@ -48,6 +48,7 @@ class AttributeController extends BaseController
 	 *     ),
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="attribute_group_id", in="query", description="Search by attribute group id.", example=6, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="id", in="query", description="Search by attribute id", @OA\Schema(type="integer")),
 	 *     @OA\Parameter(name="name", in="query", description="Search by attribute name", @OA\Schema(type="string")),
@@ -66,64 +67,63 @@ class AttributeController extends BaseController
 		if ($hasGroup !== null) {
 			$hasGroup = filter_var($hasGroup, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE);
 		}
-		// $recordsQuery = Attribute::with(['attributeGroup:id,name', 'attributeValues:id,attribute_id,attribute_value']);
-		$recordsQuery = Attribute::with(['attributeGroup:id,name']);
 
-		if ($hasGroup === true) {
-			$recordsQuery->whereHas('attributeGroup');
-		} elseif ($hasGroup === false) {
-			$recordsQuery->whereDoesntHave('attributeGroup');
-		}
-
-		/* Dynamic search filters */
-		$searchableColumns = [
-			'id', 'name', 'code', 'type'
-		];
-
-		if ($request->filled('global')) {
-			$globalSearch = $request->input('global');
-			$recordsQuery->where(function ($query) use ($searchableColumns, $globalSearch) {
-				foreach ($searchableColumns as $column) {
-					$query->orWhere($column, 'LIKE', '%' . $globalSearch . '%');
-				}
-			});
-		} else {
-			/* Apply individual column filters */
-			foreach ($searchableColumns as $column) {
-				if ($request->filled($column)) {
-					$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
-				}
-			}
-		}
-
-		/* Sorting */
+		$searchableColumns = ['id', 'name', 'code', 'type'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDir = $request->input('sort_dir', 'desc');
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		if (!in_array($sortBy, $sortableColumns)) {
-			$sortBy = 'id';
+		// $recordsQuery = Attribute::with(['attributeGroup:id,name', 'attributeValues:id,attribute_id,attribute_value']);
+		$recordsQuery = Attribute::query();
+
+		if ($hasGroup === false) {
+			$recordsQuery->whereNull('attribute_group_id');
+		} elseif ($hasGroup === true) {
+			$recordsQuery->whereNotNull('attribute_group_id');
 		}
-		$sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+
+		if (!empty($request->attribute_group_id)) {
+			$recordsQuery->where('attribute_group_id', $request->attribute_group_id);
+		}
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
+			$recordsQuery->with(['attributeGroup:id,name']);
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
 			$page = (int) $request->input('page');
 			$length = (int) $request->input('length');
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $recordsQuery->orderBy($sortBy, $sortDir)->offset(($page - 1) * $length)->limit($length)->get([
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
 				'id', 'name', 'code', 'type', 'attribute_group_id', 'created_by', 'created_at', 'updated_at'
 			]);
-			/* Add country_name and created_by */
+
+			/* Add attribute_group_name and created_by */
 			$records->transform(function ($record) {
 				$record->attribute_group_name = $record->attributeGroup->name ?? null;
 				unset($record->attributeGroup);
 				unset($record->attribute_group_id);
 
-			$record->created_by = $record->creator->name;
-			unset($record->creator);
+				$record->created_by = $record->creator->name;
+				unset($record->creator);
 				return $record;
 			});
 		} else {
@@ -143,9 +143,6 @@ class AttributeController extends BaseController
 		]);
 	}
 
-	/**
-	 * Store a newly created resource in storage.
-	 */
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes",
@@ -178,7 +175,7 @@ class AttributeController extends BaseController
 		$attribute->name = $request->name;
 		$attribute->code = $request->code;
 		$attribute->type = $request->type;
-			$attribute->created_by = auth()->id();
+		$attribute->created_by = auth()->id();
 		$attribute->created_at = now();
 		$attribute->updated_at = now();
 		$attribute->save();
@@ -190,9 +187,6 @@ class AttributeController extends BaseController
 		]);
 	}
 
-	/**
-	 * Display the specified resource.
-	 */
 	/**
 	 * @OA\Get(
 	 *     path="/api/attributes/{attribute_id}",
@@ -229,9 +223,6 @@ class AttributeController extends BaseController
 		]);
 	}
 
-	/**
-	 * Update the specified resource in storage.
-	 */
 	/**
 	 * @OA\Put(
 	 *     path="/api/attributes/{id}",
@@ -346,9 +337,6 @@ class AttributeController extends BaseController
 		}
 	}
 
-	/**
-	 * Remove the specified resource from storage.
-	 */
 	/**
 	 * @OA\Delete(
 	 *     path="/api/attributes/{id}",
