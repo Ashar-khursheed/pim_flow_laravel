@@ -841,7 +841,6 @@ class ProductGroupController extends Controller
             $sortOrder = 'asc';
         }
     
-        // Base query with eager loading
         $brandsQuery = Brand::with(['products.categories']);
     
         if ($search) {
@@ -857,16 +856,16 @@ class ProductGroupController extends Controller
             $brandsQuery->orderBy($sortBy, $sortOrder);
         }
     
-        // Paginate brands first
-        $brands = $brandsQuery->paginate($perPage, ['*'], 'page', $currentPage);
+        // Get all brands without pagination
+        $allBrands = $brandsQuery->get();
     
-        // Load all categories and build map
+        // Load all categories
         $allCategories = Category::all()->keyBy('id');
         $categoryPathCache = [];
     
         $transformedData = collect();
     
-        foreach ($brands as $brand) {
+        foreach ($allBrands as $brand) {
             $productCategories = $brand->products->flatMap(function ($product) {
                 return $product->categories;
             })->unique('id');
@@ -903,16 +902,21 @@ class ProductGroupController extends Controller
             }
         }
     
-        return response()->json([
-            'data' => $transformedData,
-            'pagination' => [
-                'total' => $brands->total(),
-                'per_page' => $brands->perPage(),
-                'current_page' => $brands->currentPage(),
-                'last_page' => $brands->lastPage(),
-            ]
-        ]);
+        // Manual pagination
+        $total = $transformedData->count();
+        $sliced = $transformedData->slice(($currentPage - 1) * $perPage, $perPage)->values();
+    
+        $paginator = new LengthAwarePaginator(
+            $sliced,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => url()->current()]
+        );
+    
+        return response()->json($paginator);
     }
+    
 
   
     /**
