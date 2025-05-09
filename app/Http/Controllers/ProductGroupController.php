@@ -706,133 +706,78 @@ class ProductGroupController extends Controller
      * )
      */
 
-    //  public function getBrandsWithCategories(Request $request)
-    //     {
-    //         $query = Brand::with([
-    //             'products.categories.parent.parent', // Load up to 3 levels of category parents
-    //         ]);
+     public function getBrandsWithCategories(Request $request)
+        {
+            $query = Brand::with([
+                'products.categories.parent.parent', // Load up to 3 levels of category parents
+            ]);
 
-    //         // Search by brand name
-    //         if ($request->filled('search')) {
-    //             $query->where('name', 'LIKE', '%' . $request->search . '%');
-    //         }
+            // Search by brand name
+            if ($request->filled('search')) {
+                $query->where('name', 'LIKE', '%' . $request->search . '%');
+            }
 
-    //         // Sorting
-    //         if ($request->filled('sort_by')) {
-    //             $query->orderBy($request->sort_by, $request->get('sort_dir', 'asc'));
-    //         }
+            // Sorting
+            if ($request->filled('sort_by')) {
+                $query->orderBy($request->sort_by, $request->get('sort_dir', 'asc'));
+            }
 
-    //         // Get the paginated brands
-    //         $brands = $query->paginate($request->get('per_page', 10));
+            // Get the paginated brands
+            $brands = $query->paginate($request->get('per_page', 10));
 
-    //         // Transform the brands
-    //         $transformed = $brands->getCollection()->map(function ($brand) {
-    //             $productCategories = $brand->products->flatMap(function ($product) {
-    //                 return $product->categories;
-    //             })->unique('id');
+            // Transform the brands
+            $transformed = $brands->getCollection()->map(function ($brand) {
+                $productCategories = $brand->products->flatMap(function ($product) {
+                    return $product->categories;
+                })->unique('id');
 
-    //             $entries = [];
+                $entries = [];
 
-    //             foreach ($productCategories as $category) {
-    //                 $resolved = $this->resolveCategoryTree($category);
+                foreach ($productCategories as $category) {
+                    $resolved = $this->resolveCategoryTree($category);
 
-    //                 $entries[] = [
-    //                     'id' => $brand->id,
-    //                     'brand_name' => $brand->name,
-    //                     'primary_category' => $resolved['level_1'],
-    //                     'secondary_category' => $resolved['level_2'],
-    //                     'product_family' => $resolved['level_3'],
-    //                     'additional_categories' => $resolved['additional'],
-    //                     'created_at' => $brand->created_at,
-    //                     'updated_at' => $brand->updated_at,
-    //                 ];
-    //             }
+                    $entries[] = [
+                        'id' => $brand->id,
+                        'brand_name' => $brand->name,
+                        'primary_category' => $resolved['level_1'],
+                        'secondary_category' => $resolved['level_2'],
+                        'product_family' => $resolved['level_3'],
+                        'additional_categories' => $resolved['additional'],
+                        'created_at' => $brand->created_at,
+                        'updated_at' => $brand->updated_at,
+                    ];
+                }
 
-    //             // return multiple rows per brand (flatten at the end)
-    //             return $entries;
-    //         })->flatten(1); // flatten the nested arrays per brand
+                // return multiple rows per brand (flatten at the end)
+                return $entries;
+            })->flatten(1); // flatten the nested arrays per brand
 
-    //         // Create a new LengthAwarePaginator for the transformed data
-    //         $currentPage = $brands->currentPage();
-    //         $perPage = $brands->perPage();
-    //         $total = $transformed->count();
-    //         $currentItems = $transformed->slice(($currentPage - 1) * $perPage, $perPage)->values();
+            // Create a new LengthAwarePaginator for the transformed data
+            $currentPage = $brands->currentPage();
+            $perPage = $brands->perPage();
+            $total = $transformed->count();
+            $currentItems = $transformed->slice(($currentPage - 1) * $perPage, $perPage)->values();
 
-    //         $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
-    //             $currentItems,
-    //             $total,
-    //             $perPage,
-    //             $currentPage,
-    //             ['path' => $request->url(), 'query' => $request->query()]
-    //         );
+            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentItems,
+                $total,
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
 
-    //         return response()->json([
-    //             'current_page' => $paginatedData->currentPage(),
-    //             'per_page' => $paginatedData->perPage(),
-    //             'last_page' => $paginatedData->lastPage(),
-    //             'total' => $paginatedData->total(),
-    //             'data' => $paginatedData->items(), // final transformed data
-    //         ]);
-    //     }
+            return response()->json([
+                'current_page' => $paginatedData->currentPage(),
+                'per_page' => $paginatedData->perPage(),
+                'last_page' => $paginatedData->lastPage(),
+                'total' => $paginatedData->total(),
+                'data' => $paginatedData->items(), // final transformed data
+            ]);
+        }
 
-    public function getBrandsWithCategories(Request $request)
-{
-    $query = Brand::with(['products.categories.parent.parent']);
+    
+    
 
-    // Search by brand name
-    if ($request->filled('search')) {
-        $query->where('name', 'LIKE', '%' . $request->search . '%');
-    }
-
-    // Sorting
-    if ($request->filled('sort_by')) {
-        $query->orderBy($request->sort_by, $request->get('sort_dir', 'asc'));
-    }
-
-    // Paginate the brands
-    $brands = $query->paginate($request->get('per_page', 10));
-
-    // Transform the brands
-    $transformed = $brands->getCollection()->flatMap(function ($brand) {
-        return $brand->products->flatMap(function ($product) use ($brand) {
-            return $product->categories->map(function ($category) use ($brand) {
-                $resolved = $this->resolveCategoryTree($category);
-                return [
-                    'id' => $brand->id,
-                    'brand_name' => $brand->name,
-                    'primary_category' => $resolved['level_1'],
-                    'secondary_category' => $resolved['level_2'],
-                    'product_family' => $resolved['level_3'],
-                    'additional_categories' => $resolved['additional'],
-                    'created_at' => $brand->created_at,
-                    'updated_at' => $brand->updated_at,
-                ];
-            });
-        });
-    });
-
-    // Create a new LengthAwarePaginator for the transformed data
-    $currentPage = $brands->currentPage();
-    $perPage = $brands->perPage();
-    $total = $transformed->count();
-    $currentItems = $transformed->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-    $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
-        $currentItems,
-        $total,
-        $perPage,
-        $currentPage,
-        ['path' => $request->url(), 'query' => $request->query()]
-    );
-
-    return response()->json([
-        'current_page' => $paginatedData->currentPage(),
-        'per_page' => $paginatedData->perPage(),
-        'last_page' => $paginatedData->lastPage(),
-        'total' => $paginatedData->total(),
-        'data' => $paginatedData->items(),
-    ]);
-}
 
 
      
