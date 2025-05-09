@@ -1771,7 +1771,6 @@ class ProductController extends BaseController
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
 	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB"),
-	 *                 @OA\Property(property="user_role", type="string", description="Optional user role context for import")
 	 *             )
 	 *         )
 	 *     ),
@@ -1784,7 +1783,6 @@ class ProductController extends BaseController
 		/* Validate request data */
 		$request->validate([
 			'upload_file' => 'required|file|mimes:csv,txt|max:5120',
-			'user_role' => 'nullable|string',
 		]);
 
 		try {
@@ -1941,9 +1939,9 @@ class ProductController extends BaseController
 				'Warranty Information (AR)' => 'warrantyInformationAr',
 			];
 
-			$userRole = $request->user_role ?? null;
+			$userRole = auth()->user()->getRoleNames()->first() ?? null;
 
-			if (empty($userRole) || $userRole !== 'content_writer') {
+			if (empty($userRole) || !in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
 				$productFileFormatArray = array_merge(
 					$idArray,
 					$urlArray,
@@ -1956,7 +1954,7 @@ class ProductController extends BaseController
 					$discountSectionArray,
 					$translationSectionArray
 				);
-			} elseif ($userRole === 'content_writer') {
+			} elseif (in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
 				$productFileFormatArray = array_merge(
 					$idArray,
 					$generalFieldArray,
@@ -1974,7 +1972,7 @@ class ProductController extends BaseController
 				'JOB1',
 				'Product Import',
 				\App\Jobs\ImportProductJob::class,
-				$request->user_role
+				$userRole
 			);
 
 			return response()->json([

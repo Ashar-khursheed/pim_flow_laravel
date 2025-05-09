@@ -92,7 +92,7 @@ class ImportProductJob implements ShouldQueue
 			/* Required data validation */
 			$rowError = [];
 
-			if ($this->userRole === 'content_writer') {
+			if (in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 				if (empty($id)) {
 					$rowError[] = 'ID is missing';
 				}
@@ -230,7 +230,7 @@ class ImportProductJob implements ShouldQueue
 			}
 
 
-			if (!empty($this->userRole) && $this->userRole === 'content_writer') {
+			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 				/* Validate Description Fields */
 				if (empty($description1)) {
 					$rowError[] = 'Description1 is required';
@@ -481,7 +481,7 @@ class ImportProductJob implements ShouldQueue
 				$product->description = $jsonDescription;
 				$product->benefits_features = $jsonBenefitsFeatures;
 
-				if (!empty($this->userRole) && $this->userRole === 'content_writer') {
+				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 					$product->save();
 				} else {
 					$product->name = $name;

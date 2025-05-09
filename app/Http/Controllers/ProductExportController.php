@@ -35,7 +35,6 @@ class ProductExportController extends Controller
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)"),
-	 *             @OA\Property(property="user_role", type="string", description="Optional user role"),
 	 *             @OA\Property(
 	 *                 property="selected_fields",
 	 *                 type="array",
@@ -64,7 +63,6 @@ class ProductExportController extends Controller
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 			'selected_fields' => 'nullable|array',
 			'selected_fields.*' => 'string',
-			'user_role' => 'nullable|string',
 		]);
 
 		$baseFields = Schema::getColumnListing('ec_products');
@@ -72,8 +70,10 @@ class ProductExportController extends Controller
 		/* Default empty if not set */
 		$selectedFields = $request->selected_fields ?? [];
 
-		/* If role is content_writer, enforce valid fields */
-		if (!empty($request->user_role) && $request->user_role === 'content_writer') {
+		$userRole = auth()->user()->getRoleNames()->first() ?? null;
+
+		/* If role is in 'Content Writing Manager', 'Content Writer', enforce valid fields */
+		if (!empty($userRole) && in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
 			$validFields = [
 				"id", "sku", "name", "brand", "categories",
 				"description", "benefits_features", "faq_section", "seo_section"
