@@ -9583,6 +9583,10 @@
                                         "description": "CSV file (.csv) max 5MB",
                                         "type": "string",
                                         "format": "binary"
+                                    },
+                                    "user_role": {
+                                        "description": "Optional user role context for import",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -9823,6 +9827,10 @@
                                         "description": "Ending range (must be >= range_from and max 2000 more)",
                                         "type": "integer",
                                         "example": 50
+                                    },
+                                    "user_role": {
+                                        "description": "Optional user role",
+                                        "type": "string"
                                     },
                                     "selected_fields": {
                                         "description": "Optional list of fields to export. If blank, all fields will be exported.",

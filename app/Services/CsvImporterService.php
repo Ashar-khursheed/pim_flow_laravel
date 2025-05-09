@@ -9,7 +9,7 @@ use App\Models\TransactionLog;
 
 class CsvImporterService
 {
-	public function processImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass)
+	public function processImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass, string $userRole = null)
 	{
 		$requiredRowCount = count($fileFormatArray);
 		$requiredHeaderArray = array_keys($fileFormatArray);
@@ -44,6 +44,7 @@ class CsvImporterService
 
 				if (array_filter($row)) {
 					if (count($row) != $requiredRowCount) {
+						// dd(count($row), $requiredRowCount, $row);
 						throw new \Exception("The data in row $rowIndex is not compatible for import.");
 					}
 					$data[] = $row;
@@ -107,7 +108,9 @@ class CsvImporterService
 				'fileFormatArray' => $fileFormatArray,
 				'header' => $header,
 				'chunk' => $chunk,
-				'userId' => auth()->id()
+				'userId' => auth()->id(),
+				// 'userRole' => auth()->user_role(),
+				'userRole' => $userRole,
 			]));
 		}
 	}

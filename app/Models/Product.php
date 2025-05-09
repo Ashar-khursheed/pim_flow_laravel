@@ -164,12 +164,15 @@ class Product extends Model
 		return $this->belongsToMany(Tag::class, 'ec_product_tag_product', 'product_id', 'tag_id');
 	}
 
-
 	public function seoMetaData()
 	{
 		return $this->morphOne(Metabox::class, 'reference')->where('meta_key', 'seo_meta');
 	}
 
+	public function seoManagement()
+	{
+		return $this->morphOne(SeoManagement::class, 'relational');
+	}
 
 	public function specifications()
 	{
