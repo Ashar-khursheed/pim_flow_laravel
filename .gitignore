@@ -23,3 +23,11 @@ yarn-error.log
 /.zed
 .env
 .env.save
+
+# Ignore Python bytecode files
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore the virtual environment directory
+venv/
