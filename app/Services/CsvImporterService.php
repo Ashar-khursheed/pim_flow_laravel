@@ -109,7 +109,6 @@ class CsvImporterService
 				'header' => $header,
 				'chunk' => $chunk,
 				'userId' => auth()->id(),
-				// 'userRole' => auth()->user_role(),
 				'userRole' => $userRole,
 			]));
 		}

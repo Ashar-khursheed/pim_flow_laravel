@@ -44,7 +44,7 @@ class VendorDocumentController extends Controller
 	{
 		$request->validate([
 			'name' => 'required|string|max:255',
-			'document' => 'required|file|max:10240|mimes:png,jpg,jpeg,webp,pdf,xls,xlsx,mp4,mkv,csv,txt'
+			'document' => 'required|file|max:10240|mimes:png,jpg,jpeg,webp,pdf,xls,xlsx,mp4,mkv,csv,txt,doc,docx'
 		]);
 
 		$file = $request->file('document');
@@ -54,7 +54,7 @@ class VendorDocumentController extends Controller
 		if (in_array($extension, ['png', 'jpg', 'jpeg', 'webp'])) {
 			$url = $this->uploadImageToS3($file, $request->input('name'), $envPath);
 			$type = 'image';
-		} elseif (in_array($extension, ['pdf', 'xls', 'xlsx', 'csv', 'txt'])) {
+		} elseif (in_array($extension, ['pdf', 'xls', 'xlsx', 'csv', 'txt', 'doc', 'docx'])) {
 			$url = $this->uploadGenericFileToS3($file, $request->input('name'), $envPath);
 			$type = 'file';
 		} elseif (in_array($extension, ['mp4', 'mkv'])) {
