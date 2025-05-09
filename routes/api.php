@@ -45,6 +45,8 @@ use App\Http\Controllers\SupplierScoreController;
 use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ProductGroupController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -56,26 +58,26 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 
 /* Protect routes with authentication */
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:api'])->group(function () {
+	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
+	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
+	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
+	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
+	Route::get('/brands/categories', [ProductGroupController::class, 'getAllBrandsWithCategories']);
+	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
+	
+	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
+	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
+
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
     Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
     Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
-
-
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 
-	Route::prefix('users')->group(function () {
-		Route::post('/', [UserController::class, 'store']);
-		Route::get('/', [UserController::class, 'index']);
-		Route::get('/{id}', [UserController::class, 'show']);
-		Route::post('/{id}', [UserController::class, 'update'])->name('users.update');
-		Route::delete('/{id}', [UserController::class, 'destroy']);
-		Route::put('/{id}', [UserController::class, 'update']);
-
-	});
+	Route::apiResource('users', UserController::class);
 
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
@@ -144,6 +146,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 	Route::get('roles/names', [RoleController::class, 'getRoleNames']);
 	Route::get('/roles/{role}/permissions', [RoleController::class, 'getRolePermissions']);
+	Route::get('permissions', [RoleController::class, 'getAllPermissions']);
 	Route::apiResource('roles', RoleController::class);
 
 

@@ -34,6 +34,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
+		if (!auth()->user()->can('list product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$searchableColumns = ['id', 'name'];
 		$sortableColumns = array_merge($searchableColumns, ['attribute_count']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
@@ -114,6 +120,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function show($id)
 	{
+		if (!auth()->user()->can('show product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$record = Category::with([
 			'categoryAttributeGroups:id,name',
 			'categoryAttributeGroups.groupsAttributes:id,attribute_group_id,code,name'
@@ -171,6 +183,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function update(Request $request, $id)
 	{
+		if (!auth()->user()->can('update product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$record = Category::whereDoesntHave('children')->where('id', $id)->first();
 
 		if (!$record) {
@@ -310,9 +328,11 @@ class CategoryAttributeController extends BaseController
 		if (!$record) {
 			return response()->json(['success' => false, 'message' => 'Product family not found']);
 		}
+
 		$attributes = $record->categoryAllAttributes()->map(function ($attribute) {
 			return $attribute->only(['id', 'name']);
 		});
+
 		return response()->json([
 			'success' => true,
 			'message' => 'Product family attribute list.',

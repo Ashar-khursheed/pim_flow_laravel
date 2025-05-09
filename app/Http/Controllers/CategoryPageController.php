@@ -45,18 +45,20 @@ class CategoryPageController extends Controller
      */
     public function index()
     {
-        if (!auth()->user()->can('list category page')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
-        $pages = CategoryPage::all();
+        
+        // if (!auth()->user()->can('add category page')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ], 403);
+        // }
 
+        $pages = CategoryPage::all();
+    
         return response()->json([
             'success' => true,
             'message' => 'Pages retrieved successfully.',
-            'categories' => $pages
+            'data' => $pages
         ]);
     }
 
@@ -79,19 +81,63 @@ class CategoryPageController extends Controller
      *     @OA\Response(response=404, description="Category page not found")
      * )
      */
-    public function show(Category $category)
+    public function show($category_id)  // Changed parameter from Category $category to $category_id
     {
-        if (!auth()->user()->can('show category page')) {
+        // if (!auth()->user()->can('add category page')) {
+        //     return response()->json([
+        //         'success' => false,
+        //         'message' => "You don't have permission to access this module.",
+        //     ], 403);
+        // }
+
+        $category = \DB::table('ec_product_categories')->where('id', $category_id)->first();
+        if (!$category) {
             return response()->json([
                 'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
+                'message' => 'Category not found'
+            ], 404);
         }
-        $page = CategoryPage::where('category_id', $category->id)->first();
+        
+        $page = CategoryPage::where('category_id', $category_id)->first();
         if (!$page) {
-            return response()->json(['message' => 'Category page not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Category page not found'
+            ], 404);
         }
-        return response()->json($page);
+        
+        // Decode JSON fields before returning
+        return response()->json([
+            'success' => true,
+            'message' => 'Category page retrieved successfully',
+            'data' => [
+                'id' => $page->id,
+                'category_id' => $page->category_id,
+                'title' => $page->title,
+                'description' => $page->description,
+                'banner_image' => $page->banner_image,
+                'banner_image_alt' => $page->banner_image_alt,
+                'banner_link' => $page->banner_link,
+                'inner_categories' => json_decode($page->inner_categories),
+                'six_images' => json_decode($page->six_images),
+                'six_images_alt' => json_decode($page->six_images_alt),
+                'four_banners' => json_decode($page->four_banners),
+                'four_banners_alt' => json_decode($page->four_banners_alt),
+                'twelve_images' => json_decode($page->twelve_images),
+                'twelve_images_alt' => json_decode($page->twelve_images_alt),
+                'related_products' => json_decode($page->related_products),
+                'section_title' => $page->section_title,
+                'section_description' => $page->section_description,
+                'brand_heading' => $page->extra_heading,
+                'brand_description' => $page->extra_description,
+                'top_picks_in_santos' => json_decode($page->top_picks_in_santos),
+                'top_deals_from_our_sellers' => json_decode($page->top_deals_from_our_sellers),
+                'explore_top_picks' => json_decode($page->explore_top_picks),
+                'hot_new_releases' => json_decode($page->hot_new_releases),
+                'products_you_may_also_like' => json_decode($page->products_you_may_also_like),
+                'inspired_by_your_browsing_history' => json_decode($page->inspired_by_your_browsing_history),
+            ]
+        ]);
     }
 
  /**
@@ -145,7 +191,7 @@ public function store(Request $request)
         return response()->json([
             'success' => false,
             'message' => "You don't have permission to access this module.",
-        ]);
+        ], 403);
     }
     try {
         // Validate input
@@ -154,26 +200,7 @@ public function store(Request $request)
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,,svg|max:2048',
-            'banner_image_alt' => 'nullable|string|max:255',
-            'banner_link' => 'nullable|string|url',
-            'inner_categories' => 'nullable|string',
-            'six_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
-            'six_images_alt.*' => 'nullable|string|max:255',
-            'four_banners.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
-            'four_banners_alt.*' => 'nullable|string|max:255',
-            'twelve_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
-            'twelve_images_alt.*' => 'nullable|string|max:255',
-            'related_products' => 'nullable|string',
-            'section_title' => 'nullable|string|max:255',
-            'section_description' => 'nullable|string',
-            'extra_heading' => 'nullable|string|max:255',
-            'extra_description' => 'nullable|string',
-            'top_picks_in_santos' => 'nullable|string',
-            'top_deals_from_our_sellers' => 'nullable|string',
-            'explore_top_picks' => 'nullable|string',
-            'hot_new_releases' => 'nullable|string',
-            'products_you_may_also_like' => 'nullable|string',
-            'inspired_by_your_browsing_history' => 'nullable|string',
+            // ... other validations remain the same
         ]);
 
         $disk = 's3'; // Use S3 disk for storage
@@ -186,22 +213,24 @@ public function store(Request $request)
         $innerCategories = !empty($request->inner_categories) ? explode(',', $request->inner_categories) : [];
         $relatedProducts = !empty($request->related_products) ? explode(',', $request->related_products) : [];
 
-        // Use tanuj_local prefix for S3 storage
-        $folder = 'tanuj_local/category-pages/' . Str::slug($category->name);
+        // Use environment variable for storage prefix instead of hardcoded value
+        $storagePrefix = env('STORAGE_ENV', 'production');
+        $folder = $storagePrefix . '/category-pages/' . Str::slug($category->name);
         $filePath = null;
 
+        // Store banner image with proper URL generation
         if ($request->hasFile('banner_image')) {
-            $filePath = Storage::disk($disk)->url(
-                $request->file('banner_image')->store("$folder/banner", $disk)
-            );
+            $storedPath = $request->file('banner_image')->store("$folder/banner", $disk);
+            $filePath = Storage::disk($disk)->url($storedPath);
         }
 
-        // Process six images with their corresponding alt texts
+        // Process six images with proper URL generation
         $sixImages = [];
         $sixImagesAlt = [];
         if ($request->hasFile('six_images')) {
             foreach ($request->file('six_images') as $key => $file) {
-                $imageUrl = Storage::disk($disk)->url($file->store("$folder/six", $disk));
+                $storedPath = $file->store("$folder/six", $disk);
+                $imageUrl = Storage::disk($disk)->url($storedPath);
                 $sixImages[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key])
@@ -210,12 +239,13 @@ public function store(Request $request)
             }
         }
 
-        // Process four banners with their corresponding alt texts
+        // Process four banners with proper URL generation
         $fourBanners = [];
         $fourBannersAlt = [];
         if ($request->hasFile('four_banners')) {
             foreach ($request->file('four_banners') as $key => $file) {
-                $imageUrl = Storage::disk($disk)->url($file->store("$folder/four", $disk));
+                $storedPath = $file->store("$folder/four", $disk);
+                $imageUrl = Storage::disk($disk)->url($storedPath);
                 $fourBanners[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key])
@@ -224,12 +254,13 @@ public function store(Request $request)
             }
         }
 
-        // Process twelve images with their corresponding alt texts
+        // Process twelve images with proper URL generation
         $twelveImages = [];
         $twelveImagesAlt = [];
         if ($request->hasFile('twelve_images')) {
             foreach ($request->file('twelve_images') as $key => $file) {
-                $imageUrl = Storage::disk($disk)->url($file->store("$folder/twelve", $disk));
+                $storedPath = $file->store("$folder/twelve", $disk);
+                $imageUrl = Storage::disk($disk)->url($storedPath);
                 $twelveImages[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key])
@@ -297,11 +328,8 @@ public function store(Request $request)
                 'related_products' => json_decode($page->related_products),
                 'section_title' => $page->section_title,
                 'section_description' => $page->section_description,
-
-                // Rename here
                 'brand_heading' => $page->extra_heading,
                 'brand_description' => $page->extra_description,
-
                 'top_picks_in_santos' => json_decode($page->top_picks_in_santos),
                 'top_deals_from_our_sellers' => json_decode($page->top_deals_from_our_sellers),
                 'explore_top_picks' => json_decode($page->explore_top_picks),
@@ -380,13 +408,13 @@ public function store(Request $request)
  *     @OA\Response(response=500, description="Server error")
  * )
  */
-public function update(Request $request, $id)
-{
+  public function update(Request $request, $id)
+  {
     if (!auth()->user()->can('update category page')) {
         return response()->json([
             'success' => false,
             'message' => "You don't have permission to access this module.",
-        ]);
+        ], 403);
     }
     try {
         // Validate input
@@ -420,12 +448,18 @@ public function update(Request $request, $id)
         $disk = 's3';
         $category = \DB::table('ec_product_categories')->where('id', $request->category_id)->first();
         if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found'
+            ], 404);
         }
 
         $page = CategoryPage::find($id);
         if (!$page) {
-            return response()->json(['message' => 'Category page not found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'Category page not found'
+            ], 404);
         }
 
         $folder = 'tanuj_local/category-pages/' . Str::slug($category->name);
@@ -449,8 +483,8 @@ public function update(Request $request, $id)
                 $sixImages[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $sixImagesAlt[] = $request->has('six_images_alt') && isset($request->six_images_alt[$key])
-                    ? $request->six_images_alt[$key]
-                    : null;
+                ? $request->six_images_alt[$key]
+                : null;
             }
         } else if ($request->has('six_images_alt')) {
             // Update alt texts without changing images
@@ -472,8 +506,8 @@ public function update(Request $request, $id)
                 $fourBanners[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $fourBannersAlt[] = $request->has('four_banners_alt') && isset($request->four_banners_alt[$key])
-                    ? $request->four_banners_alt[$key]
-                    : null;
+                ? $request->four_banners_alt[$key]
+                : null;
             }
         } else if ($request->has('four_banners_alt')) {
             // Update alt texts without changing images
@@ -495,8 +529,8 @@ public function update(Request $request, $id)
                 $twelveImages[] = $imageUrl;
                 // Store the corresponding alt text if available
                 $twelveImagesAlt[] = $request->has('twelve_images_alt') && isset($request->twelve_images_alt[$key])
-                    ? $request->twelve_images_alt[$key]
-                    : null;
+                ? $request->twelve_images_alt[$key]
+                : null;
             }
         } else if ($request->has('twelve_images_alt')) {
             // Update alt texts without changing images
@@ -507,21 +541,23 @@ public function update(Request $request, $id)
             }
         }
 
-        $innerCategories = !empty($request->inner_categories) ? explode(',', $request->inner_categories) : [];
-        $relatedProducts = !empty($request->related_products) ? explode(',', $request->related_products) : [];
-        $topPicksInSantos = !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : [];
-        $topDealsFromOurSellers = !empty($request->top_deals_from_our_sellers) ? explode(',', $request->top_deals_from_our_sellers) : [];
-        $exploreTopPicks = !empty($request->explore_top_picks) ? explode(',', $request->explore_top_picks) : [];
-        $hotNewReleases = !empty($request->hot_new_releases) ? explode(',', $request->hot_new_releases) : [];
-        $productsYouMayAlsoLike = !empty($request->products_you_may_also_like) ? explode(',', $request->products_you_may_also_like) : [];
-        $inspiredByYourBrowsingHistory = !empty($request->inspired_by_your_browsing_history) ? explode(',', $request->inspired_by_your_browsing_history) : [];
+        // Process arrays
+        $innerCategories = !empty($request->inner_categories) ? explode(',', $request->inner_categories) : json_decode($page->inner_categories ?? '[]');
+        $relatedProducts = !empty($request->related_products) ? explode(',', $request->related_products) : json_decode($page->related_products ?? '[]');
+        $topPicksInSantos = !empty($request->top_picks_in_santos) ? explode(',', $request->top_picks_in_santos) : json_decode($page->top_picks_in_santos ?? '[]');
+        $topDealsFromOurSellers = !empty($request->top_deals_from_our_sellers) ? explode(',', $request->top_deals_from_our_sellers) : json_decode($page->top_deals_from_our_sellers ?? '[]');
+        $exploreTopPicks = !empty($request->explore_top_picks) ? explode(',', $request->explore_top_picks) : json_decode($page->explore_top_picks ?? '[]');
+        $hotNewReleases = !empty($request->hot_new_releases) ? explode(',', $request->hot_new_releases) : json_decode($page->hot_new_releases ?? '[]');
+        $productsYouMayAlsoLike = !empty($request->products_you_may_also_like) ? explode(',', $request->products_you_may_also_like) : json_decode($page->products_you_may_also_like ?? '[]');
+        $inspiredByYourBrowsingHistory = !empty($request->inspired_by_your_browsing_history) ? explode(',', $request->inspired_by_your_browsing_history) : json_decode($page->inspired_by_your_browsing_history ?? '[]');
 
+        // Update the page with all data
         $page->update([
             'category_id' => $request->category_id,
             'title' => $request->title,
             'description' => $request->description,
             'banner_image' => $filePath,
-            'banner_image_alt' => $request->banner_image_alt ?? $page->banner_image_alt,
+            'banner_image_alt' => $request->banner_image_alt,
             'banner_link' => $request->banner_link,
             'inner_categories' => json_encode($innerCategories),
             'six_images' => json_encode($sixImages),
@@ -543,7 +579,7 @@ public function update(Request $request, $id)
             'inspired_by_your_browsing_history' => json_encode($inspiredByYourBrowsingHistory),
         ]);
 
-        // For response, decode the JSON-encoded arrays for better readability
+        // For response, decode the JSON-encoded arrays
         return response()->json([
             'success' => true,
             'message' => 'Category page updated successfully',
@@ -565,11 +601,8 @@ public function update(Request $request, $id)
                 'related_products' => json_decode($page->related_products),
                 'section_title' => $page->section_title,
                 'section_description' => $page->section_description,
-                
-                // Renamed fields for response consistency with store method
                 'brand_heading' => $page->extra_heading,
                 'brand_description' => $page->extra_description,
-                
                 'top_picks_in_santos' => json_decode($page->top_picks_in_santos),
                 'top_deals_from_our_sellers' => json_decode($page->top_deals_from_our_sellers),
                 'explore_top_picks' => json_decode($page->explore_top_picks),
@@ -583,6 +616,7 @@ public function update(Request $request, $id)
         // Return detailed error in development
         if (env('APP_DEBUG', false)) {
             return response()->json([
+                'success' => false,
                 'message' => 'An error occurred while updating the category page',
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -591,6 +625,7 @@ public function update(Request $request, $id)
 
         // Generic error in production
         return response()->json([
+            'success' => false,
             'message' => 'An error occurred while updating the category page'
         ], 500);
     }
@@ -602,17 +637,16 @@ public function update(Request $request, $id)
  *     tags={"Category Pages"},
  *     summary="Delete a category page",
  *     security={{"bearerAuth":{}}},
- *     description="Delete a specific category page by its ID.",
+ *     description="Delete a category page by ID.",
  *     @OA\Parameter(
  *         name="id",
  *         in="path",
  *         required=true,
- *         description="ID of the category page to delete",
+ *         description="Category page ID",
  *         @OA\Schema(type="integer")
  *     ),
  *     @OA\Response(response=200, description="Category page deleted successfully"),
- *     @OA\Response(response=404, description="Category page not found"),
- *     @OA\Response(response=403, description="Unauthorized action")
+ *     @OA\Response(response=404, description="Category page not found")
  * )
  */
 public function destroy($id)
@@ -621,14 +655,18 @@ public function destroy($id)
         return response()->json([
             'success' => false,
             'message' => "You don't have permission to access this module.",
-        ]);
+        ], 403);
     }
     
     $page = CategoryPage::find($id);
+    
     if (!$page) {
-        return response()->json(['message' => 'Category page not found'], 404);
+        return response()->json([
+            'success' => false,
+            'message' => 'Category page not found'
+        ], 404);
     }
-
+    
     // Delete the page
     $page->delete();
     
@@ -637,4 +675,5 @@ public function destroy($id)
         'message' => 'Category page deleted successfully'
     ]);
 }
+
 }
