@@ -827,7 +827,6 @@ class ProductGroupController extends Controller
     {
         $perPage = $request->input('per_page', 10);
         $currentPage = $request->input('page', 1);
-        $items = $transformedData->forPage($currentPage, $perPage)->values();
         $search = $request->input('search');
         $sortBy = $request->input('sort_by', 'brand_name');
         $sortOrder = $request->input('sort_order', 'asc');
@@ -903,6 +902,7 @@ class ProductGroupController extends Controller
                 }
             }
         }
+        $items = $transformedData->forPage($currentPage, $perPage)->values();
 
         $paginator = new LengthAwarePaginator(
             $items,
