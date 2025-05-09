@@ -629,26 +629,6 @@
                             "type": "integer",
                             "example": 1
                         }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number for pagination",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 1
-                    },
-                    {
-                        "name": "length",
-                        "in": "query",
-                        "description": "Number of records per page.",
-                        "schema": {
-                            "type": "integer",
-                            "minimum": 1
-                        },
-                        "example": 20
                     }
                 ],
                 "responses": {
@@ -773,7 +753,7 @@
                     "Attribute Group"
                 ],
                 "summary": "Remove an attribute from an attribute group",
-                "operationId": "357b689c0dc82d45ade6fdf718415c8c",
+                "operationId": "2867ce1c24c6205692d32f4acbd87f22",
                 "parameters": [
                     {
                         "name": "id",
@@ -3154,7 +3134,7 @@
                     "Category Attribute Group"
                 ],
                 "summary": "Remove an attribute group from a category",
-                "operationId": "b7f945a5866ce800495bb27d27041c4a",
+                "operationId": "1f76582968de8cec0cbcfc5463659427",
                 "parameters": [
                     {
                         "name": "id",
