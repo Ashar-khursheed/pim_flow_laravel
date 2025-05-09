@@ -393,525 +393,154 @@ class ProductGroupController extends Controller
             'message' => 'Child removed from parent successfully.'
         ]);
     }
-
-
-    /**
+        
+           /**
      * @OA\Get(
-     *     path="/api/brands/{brand_id}/categories",
-     *     summary="Get Brand Categories",
-     *     description="Retrieves brand with primary and secondary categories and product family information.",
+     *     path="/api/product-groups/brands-with-categories",
+     *     summary="Get Brands with Leaf Categories",
+     *     description="Fetches a paginated, searchable, and sortable flat list of brands and their associated leaf categories. Includes created_at and updated_at timestamps for brands.",
      *     tags={"Product Groups"},
      *     @OA\Parameter(
-     *         name="brand_id",
-     *         in="path",
+     *         name="page",
+     *         in="query",
+     *         description="Page number for pagination. Starts from 1.",
      *         required=true,
-     *         description="ID of the brand",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Brand with category details",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="brand_name", type="string", example="Brand 4"),
-     *             @OA\Property(property="primary_category", type="string", example="Category 4"),
-     *             @OA\Property(property="secondary_category", type="string", example="Second Category 4"),
-     *             @OA\Property(property="product_family", type="string", example="product_family 4"),
-     *             @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-21"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-20")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Brand not found"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized"
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function getBrandCategories($brandId)
-    {
-        // Find the brand or return a 404 response
-        $brand = Brand::findOrFail($brandId);
-        
-        // Get all product IDs for this brand
-        $productIds = $brand->products()->pluck('id')->toArray();
-        
-        if (empty($productIds)) {
-            return response()->json([
-                'message' => 'No products found for this brand.',
-            ], 404);
-        }
-        
-        // Get all category IDs associated with these products through the pivot table
-        $categoryIds = \DB::table('ec_product_category_product')
-            ->whereIn('product_id', $productIds)
-            ->pluck('category_id')
-            ->unique()
-            ->toArray();
-        
-        if (empty($categoryIds)) {
-            return response()->json([
-                'message' => 'No categories linked to products of this brand.',
-            ], 404);
-        }
-        
-        // Get all categories and build a hierarchy for analysis
-        $allCategories = Category::whereIn('id', $categoryIds)
-            ->orWhereHas('childrenRecursive', function($query) use ($categoryIds) {
-                $query->whereIn('id', $categoryIds);
-            })
-            ->with('childrenRecursive')
-            ->get();
-        
-        // Structure to track primary, secondary and product family categories
-        $categoryAnalysis = [
-            'primary' => null,
-            'secondary' => null,
-            'product_family' => null,
-        ];
-        
-        // Identify root categories (those with no parent or parent_id = 0)
-        $rootCategories = $allCategories->filter(function($category) {
-            return $category->parent_id === null || $category->parent_id === 0;
-        });
-        
-        // If we have root categories, set the most common one as primary
-        if ($rootCategories->isNotEmpty()) {
-            // Count how many products are related to each root category
-            $rootCategoryCounts = collect();
-            
-            foreach ($rootCategories as $rootCategory) {
-                // Get all descendant category IDs (including the root itself)
-                $descendantIds = $this->getAllDescendantIds($rootCategory, $allCategories);
-                
-                // Count products linked to these categories
-                $count = \DB::table('ec_product_category_product')
-                    ->whereIn('category_id', $descendantIds)
-                    ->whereIn('product_id', $productIds)
-                    ->distinct('product_id')
-                    ->count('product_id');
-                
-                $rootCategoryCounts->push([
-                    'category' => $rootCategory,
-                    'count' => $count
-                ]);
-            }
-            
-            // Sort by count descending and get the most common one
-            $sortedRoots = $rootCategoryCounts->sortByDesc('count');
-            
-            if ($sortedRoots->isNotEmpty()) {
-                $primaryCategory = $sortedRoots->first()['category'];
-                $categoryAnalysis['primary'] = $primaryCategory->name;
-                
-                // Now find the most common secondary category (child of primary)
-                $secondaryCategories = $allCategories->filter(function($category) use ($primaryCategory) {
-                    return $category->parent_id == $primaryCategory->id;
-                });
-                
-                if ($secondaryCategories->isNotEmpty()) {
-                    // Similar process to find most common secondary category
-                    $secondaryCategoryCounts = collect();
-                    
-                    foreach ($secondaryCategories as $secondaryCategory) {
-                        $descendantIds = $this->getAllDescendantIds($secondaryCategory, $allCategories);
-                        
-                        $count = \DB::table('ec_product_category_product')
-                            ->whereIn('category_id', $descendantIds)
-                            ->whereIn('product_id', $productIds)
-                            ->distinct('product_id')
-                            ->count('product_id');
-                        
-                        $secondaryCategoryCounts->push([
-                            'category' => $secondaryCategory,
-                            'count' => $count
-                        ]);
-                    }
-                    
-                    $sortedSecondary = $secondaryCategoryCounts->sortByDesc('count');
-                    
-                    if ($sortedSecondary->isNotEmpty()) {
-                        $secondaryCategory = $sortedSecondary->first()['category'];
-                        $categoryAnalysis['secondary'] = $secondaryCategory->name;
-                        
-                        // Finally, find product family (child of secondary)
-                        $productFamilyCategories = $allCategories->filter(function($category) use ($secondaryCategory) {
-                            return $category->parent_id == $secondaryCategory->id;
-                        });
-                        
-                        if ($productFamilyCategories->isNotEmpty()) {
-                            // Similar process for product family
-                            $familyCategoryCounts = collect();
-                            
-                            foreach ($productFamilyCategories as $familyCategory) {
-                                $descendantIds = $this->getAllDescendantIds($familyCategory, $allCategories);
-                                
-                                $count = \DB::table('ec_product_category_product')
-                                    ->whereIn('category_id', $descendantIds)
-                                    ->whereIn('product_id', $productIds)
-                                    ->distinct('product_id')
-                                    ->count('product_id');
-                                
-                                $familyCategoryCounts->push([
-                                    'category' => $familyCategory,
-                                    'count' => $count
-                                ]);
-                            }
-                            
-                            $sortedFamily = $familyCategoryCounts->sortByDesc('count');
-                            
-                            if ($sortedFamily->isNotEmpty()) {
-                                $categoryAnalysis['product_family'] = $sortedFamily->first()['category']->name;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        // If we still don't have a product family, try to find the most common leaf category
-        if (!$categoryAnalysis['product_family']) {
-            // Get all leaf categories (those that don't have children within our set)
-            $leafCategories = $allCategories->filter(function($category) use ($allCategories) {
-                return !$allCategories->contains('parent_id', $category->id);
-            });
-            
-            if ($leafCategories->isNotEmpty()) {
-                // Count products per leaf category
-                $leafCategoryCounts = collect();
-                
-                foreach ($leafCategories as $leafCategory) {
-                    $count = \DB::table('ec_product_category_product')
-                        ->where('category_id', $leafCategory->id)
-                        ->whereIn('product_id', $productIds)
-                        ->count();
-                    
-                    $leafCategoryCounts->push([
-                        'category' => $leafCategory,
-                        'count' => $count
-                    ]);
-                }
-                
-                $sortedLeaves = $leafCategoryCounts->sortByDesc('count');
-                
-                if ($sortedLeaves->isNotEmpty()) {
-                    $categoryAnalysis['product_family'] = $sortedLeaves->first()['category']->name;
-                }
-            }
-        }
-        
-        // Format the response according to the requested structure
-        $response = [
-            'id' => (int) $brandId,
-            'brand_name' => $brand->name,
-            'primary_category' => $categoryAnalysis['primary'],
-            'secondary_category' => $categoryAnalysis['secondary'],
-            'product_family' => $categoryAnalysis['product_family'],
-            'created_at' => $brand->created_at->format('Y-m-d'),
-            'updated_at' => $brand->updated_at->format('Y-m-d')
-        ];
-        
-        return response()->json($response);
-    }
-
-    /**
-     * Helper method to get all descendant IDs including the given category itself
-     * 
-     * @param Category $category
-     * @param Collection $allCategories
-     * @return array
-     */
-    private function getAllDescendantIds($category, $allCategories)
-    {
-        $ids = [$category->id];
-        
-        $children = $allCategories->filter(function($cat) use ($category) {
-            return $cat->parent_id == $category->id;
-        });
-        
-        foreach ($children as $child) {
-            $ids = array_merge($ids, $this->getAllDescendantIds($child, $allCategories));
-        }
-        
-        return $ids;
-    }
-            
-     
-    /**
-     * @OA\Get(
-     *     path="/api/brands-with-categories",
-     *     summary="Get Brands with Categories",
-     *     description="Retrieve a paginated list of brands along with their product categories, including primary, secondary, and product family.",
-     *     tags={"Product Groups"},
-     *     @OA\Parameter(
-     *         name="search",
-     *         in="query",
-     *         required=false,
-     *         description="Search by brand name",
-     *         @OA\Schema(type="string", example="Nike")
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_by",
-     *         in="query",
-     *         required=false,
-     *         description="Column to sort by (e.g., name, created_at)",
-     *         @OA\Schema(type="string", example="name")
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_dir",
-     *         in="query",
-     *         required=false,
-     *         description="Sort direction (asc or desc)",
-     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="asc")
+     *         example=1,
+     *         @OA\Schema(type="integer", minimum=1)
      *     ),
      *     @OA\Parameter(
      *         name="per_page",
      *         in="query",
+     *         description="Number of records per page.",
+     *         required=true,
+     *         example=10,
+     *         @OA\Schema(type="integer", minimum=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         description="Search brands or categories by name.",
      *         required=false,
-     *         description="Number of results per page",
-     *         @OA\Schema(type="integer", example=10)
+     *         example="Nike",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         description="Field to sort by: brand_name, category_name, brand_created_at, brand_updated_at.",
+     *         required=false,
+     *         example="brand_name",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_order",
+     *         in="query",
+     *         description="Sort order: asc or desc.",
+     *         required=false,
+     *         example="asc",
+     *         @OA\Schema(type="string", enum={"asc", "desc"})
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="List of brands with their categories",
+     *         description="Success",
      *         @OA\JsonContent(
-     *             type="array",
-     *             @OA\Items(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Brand List with Categories"),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="brand_id", type="integer", example=13),
+     *                     @OA\Property(property="brand_name", type="string", example="Nike Updated"),
+     *                     @OA\Property(property="category_id", type="integer", example=47),
+     *                     @OA\Property(property="category_name", type="string", example="Chef Base Refrigerators"),
+     *                     @OA\Property(property="brand_created_at", type="string", format="date-time", example="2024-10-16 08:31:24"),
+     *                     @OA\Property(property="brand_updated_at", type="string", format="date-time", example="2025-04-05 07:04:29")
+     *                 )
+     *             ),
+     *             @OA\Property(
+     *                 property="meta",
      *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="brand_name", type="string", example="Brand 4"),
-     *                 @OA\Property(property="primary_category", type="string", example="Electronics"),
-     *                 @OA\Property(property="secondary_category", type="string", example="Laptops"),
-     *                 @OA\Property(property="product_family", type="string", example="Gaming Laptops"),
-     *                 @OA\Property(
-     *                     property="additional_categories",
-     *                     type="array",
-     *                     @OA\Items(type="string", example="Accessories")
-     *                 ),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-21T12:34:56Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-22T08:15:00Z")
+     *                 @OA\Property(property="total", type="integer", example=100),
+     *                 @OA\Property(property="current_page", type="integer", example=1),
+     *                 @OA\Property(property="per_page", type="integer", example=10),
+     *                 @OA\Property(property="last_page", type="integer", example=10)
      *             )
      *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthorized"
      *     ),
      *     security={{"bearerAuth":{}}}
      * )
      */
+    public function getBrandsWithCategories(Request $request)
+    {
+        $page = max((int) $request->input('page', 1), 1);
+        $perPage = max((int) $request->input('per_page', 10), 1);
+        $search = $request->input('search', '');
 
-     public function getBrandsWithCategories(Request $request)
-        {
-            $query = Brand::with([
-                'products.categories.parent.parent', // Load up to 3 levels of category parents
-            ]);
+        $sortBy = $request->input('sort_by', 'brand_name');
+        $sortOrder = strtolower($request->input('sort_order', 'asc')) === 'desc' ? 'desc' : 'asc';
 
-            // Search by brand name
-            if ($request->filled('search')) {
-                $query->where('name', 'LIKE', '%' . $request->search . '%');
-            }
+        // Allowed fields for sorting mapped to actual columns
+        $sortFieldsMap = [
+            'brand_name' => 'b.name',
+            'category_name' => 'c.name',
+            'brand_created_at' => 'b.created_at',
+            'brand_updated_at' => 'b.updated_at',
+        ];
 
-            // Sorting
-            if ($request->filled('sort_by')) {
-                $query->orderBy($request->sort_by, $request->get('sort_dir', 'asc'));
-            }
+        $sortColumn = $sortFieldsMap[$sortBy] ?? 'b.name';
 
-            // Get the paginated brands
-            $brands = $query->paginate($request->get('per_page', 10));
+        $query = DB::table('ec_products as p')
+            ->join('ec_brands as b', 'p.brand_id', '=', 'b.id')
+            ->join('ec_product_category_product as pcp', 'p.id', '=', 'pcp.product_id')
+            ->join('ec_product_categories as c', 'pcp.category_id', '=', 'c.id')
+            ->leftJoin('ec_product_categories as sub', 'c.id', '=', 'sub.parent_id')
+            ->whereNull('sub.id') // Only leaf categories
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($query) use ($search) {
+                    $query->where('b.name', 'LIKE', '%' . $search . '%')
+                        ->orWhere('c.name', 'LIKE', '%' . $search . '%');
+                });
+            })
+            ->select([
+                'b.id as brand_id',
+                'b.name as brand_name',
+                'b.created_at as brand_created_at',
+                'b.updated_at as brand_updated_at',
+                'c.id as category_id',
+                'c.name as category_name'
+            ])
+            ->distinct();
 
-            // Transform the brands
-            $transformed = $brands->getCollection()->map(function ($brand) {
-                $productCategories = $brand->products->flatMap(function ($product) {
-                    return $product->categories;
-                })->unique('id');
+        $total = $query->count();
 
-                $entries = [];
+        $results = $query
+            ->orderBy($sortColumn, $sortOrder)
+            ->offset(($page - 1) * $perPage)
+            ->limit($perPage)
+            ->get();
 
-                foreach ($productCategories as $category) {
-                    $resolved = $this->resolveCategoryTree($category);
-
-                    $entries[] = [
-                        'id' => $brand->id,
-                        'brand_name' => $brand->name,
-                        'primary_category' => $resolved['level_1'],
-                        'secondary_category' => $resolved['level_2'],
-                        'product_family' => $resolved['level_3'],
-                        'additional_categories' => $resolved['additional'],
-                        'created_at' => $brand->created_at,
-                        'updated_at' => $brand->updated_at,
-                    ];
-                }
-
-                // return multiple rows per brand (flatten at the end)
-                return $entries;
-            })->flatten(1); // flatten the nested arrays per brand
-
-            // Create a new LengthAwarePaginator for the transformed data
-            $currentPage = $brands->currentPage();
-            $perPage = $brands->perPage();
-            $total = $transformed->count();
-            $currentItems = $transformed->slice(($currentPage - 1) * $perPage, $perPage)->values();
-
-            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
-                $currentItems,
-                $total,
-                $perPage,
-                $currentPage,
-                ['path' => $request->url(), 'query' => $request->query()]
-            );
-
-            return response()->json([
-                'current_page' => $paginatedData->currentPage(),
-                'per_page' => $paginatedData->perPage(),
-                'last_page' => $paginatedData->lastPage(),
-                'total' => $paginatedData->total(),
-                'data' => $paginatedData->items(), // final transformed data
-            ]);
-        }
-
-    
-    
+        return response()->json([
+            'success' => true,
+            'message' => 'Brand List with Categories',
+            'data' => $results,
+            'meta' => [
+                'total' => $total,
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'last_page' => ceil($total / $perPage),
+            ],
+        ]);
+    }
 
 
 
-     
-     private function resolveCategoryTree($category)
-     {
-         $levels = []; // Array to hold all levels of the hierarchy
-         $additional = []; // For any extra levels beyond a set depth
-         $level = 0;
-         $current = $category;
-     
-         // Traverse up the category tree until the top (parent_id == 0)
-         while ($current) {
-             // Add the category to the levels array
-             $levels[] = $current->name;
-     
-             // Move up the parent category
-             $current = $current->parent;
-             $level++;
-         }
-     
-         // Reverse the levels so the top-most parent comes first
-         $levels = array_reverse($levels);
-     
-         // If the depth is more than 3 levels, any extra categories go into 'additional'
-         if (count($levels) > 3) {
-             $additional = array_splice($levels, 3);
-         }
-     
-         return [
-             'level_1' => $levels[0] ?? null, // Primary category (Top-level)
-             'level_2' => $levels[1] ?? null, // Secondary category
-             'level_3' => $levels[2] ?? null, // Product family category
-             'additional' => $additional, // Any additional nested categories
-         ];
-     }
-     
 
-     
+         
 
-
-
-  // public function getAllBrandsWithCategories(Request $request)
-    // {
-    //     // Parse request parameters
-    //     $perPage = $request->input('per_page', 10);
-    //     $search = $request->input('search');
-    //     $sortBy = $request->input('sort_by', 'brand_name');
-    //     $sortOrder = $request->input('sort_order', 'asc');
-        
-    //     // Validate sort parameters
-    //     $allowedSortFields = ['brand_name', 'created_at', 'updated_at'];
-    //     if (!in_array($sortBy, $allowedSortFields)) {
-    //         $sortBy = 'brand_name';
-    //     }
-        
-    //     $allowedSortOrders = ['asc', 'desc'];
-    //     if (!in_array($sortOrder, $allowedSortOrders)) {
-    //         $sortOrder = 'asc';
-    //     }
-        
-    //     // Start building the query
-    //     $brandsQuery = Brand::query();
-        
-    //     // Apply search if provided
-    //     if ($search) {
-    //         $brandsQuery->where('name', 'like', "%{$search}%");
-            
-    //         // Also include brands that have products in categories matching the search
-    //         $brandsQuery->orWhereHas('products.categories', function ($query) use ($search) {
-    //             $query->where('name', 'like', "%{$search}%");
-    //         });
-    //     }
-        
-    //     // Apply sorting
-    //     if ($sortBy === 'brand_name') {
-    //         $brandsQuery->orderBy('name', $sortOrder);
-    //     } else {
-    //         $brandsQuery->orderBy($sortBy, $sortOrder);
-    //     }
-        
-    //     // Execute the paginated query (do this **before** transforming data)
-    //     $brands = $brandsQuery->paginate($perPage);
-        
-    //     // Transform the paginated results
-    //     $transformedData = $brands->getCollection()->flatMap(function ($brand) {
-    //         // Get all product IDs for this brand
-    //         $productIds = $brand->products()->pluck('id')->toArray();
-            
-    //         // Initialize array to hold results
-    //         $result = [];
-            
-    //         if (!empty($productIds)) {
-    //             // Get all categories associated with these products through the pivot table
-    //             $categories = \DB::table('ec_product_category_product')
-    //                 ->whereIn('product_id', $productIds)
-    //                 ->pluck('category_id')
-    //                 ->unique()
-    //                 ->toArray();
-                
-    //             if (!empty($categories)) {
-    //                 // Get all categories and organize them by level
-    //                 $categoryData = $this->getCategoriesByLevel($categories);
-                    
-    //                 // Get primary, secondary, product family, and additional categories
-    //                 $primaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 0);
-    //                 $secondaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 1);
-    //                 $productFamilies = $this->getAllUniqueCategoriesAtLevel($categoryData, 2);
-                    
-    //                 // Add combinations of brand, category, and product family
-    //                 foreach ($primaryCategories as $primaryCategory) {
-    //                     foreach ($secondaryCategories as $secondaryCategory) {
-    //                         foreach ($productFamilies as $productFamily) {
-    //                             $result[] = [
-    //                                 'id' => $brand->id,
-    //                                 'brand_name' => $brand->name,
-    //                                 'primary_category' => $primaryCategory,
-    //                                 'secondary_category' => $secondaryCategory,
-    //                                 'product_family' => $productFamily,
-    //                             ];
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-            
-    //         return $result;
-    //     });
-        
-    //     // Set the transformed data collection back to the paginator while keeping pagination metadata
-    //     $brands->setCollection($transformedData);
-        
-    //     return response()->json($brands);
-    // }
-
+  
     /**
      * @OA\Schema(
      *     schema="BrandCategoryResponse",

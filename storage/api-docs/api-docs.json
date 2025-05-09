@@ -10247,191 +10247,147 @@
                 ]
             }
         },
-        "/api/brands/{brand_id}/categories": {
+        "/api/product-groups/brands-with-categories": {
             "get": {
                 "tags": [
                     "Product Groups"
                 ],
-                "summary": "Get Brand Categories",
-                "description": "Retrieves brand with primary and secondary categories and product family information.",
-                "operationId": "da6a18f4b09c50f6cd70c4f6d9724dfa",
+                "summary": "Get Brands with Leaf Categories",
+                "description": "Fetches a paginated, searchable, and sortable flat list of brands and their associated leaf categories. Includes created_at and updated_at timestamps for brands.",
+                "operationId": "9cef27d518e7cd0997ac4c07c62a7a0a",
                 "parameters": [
                     {
-                        "name": "brand_id",
-                        "in": "path",
-                        "description": "ID of the brand",
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
                         "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Brand with category details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "brand_name": {
-                                            "type": "string",
-                                            "example": "Brand 4"
-                                        },
-                                        "primary_category": {
-                                            "type": "string",
-                                            "example": "Category 4"
-                                        },
-                                        "secondary_category": {
-                                            "type": "string",
-                                            "example": "Second Category 4"
-                                        },
-                                        "product_family": {
-                                            "type": "string",
-                                            "example": "product_family 4"
-                                        },
-                                        "created_at": {
-                                            "type": "string",
-                                            "format": "date-time",
-                                            "example": "2025-05-21"
-                                        },
-                                        "updated_at": {
-                                            "type": "string",
-                                            "format": "date-time",
-                                            "example": "2025-05-20"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
                     },
-                    "404": {
-                        "description": "Brand not found"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    }
-                },
-                "security": [
                     {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/brands-with-categories": {
-            "get": {
-                "tags": [
-                    "Product Groups"
-                ],
-                "summary": "Get Brands with Categories",
-                "description": "Retrieve a paginated list of brands along with their product categories, including primary, secondary, and product family.",
-                "operationId": "b99186f3a21bbda9c423ee9a6f02cf4f",
-                "parameters": [
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 10
+                    },
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search by brand name",
+                        "description": "Search brands or categories by name.",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "Nike"
-                        }
+                            "type": "string"
+                        },
+                        "example": "Nike"
                     },
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column to sort by (e.g., name, created_at)",
+                        "description": "Field to sort by: brand_name, category_name, brand_created_at, brand_updated_at.",
                         "required": false,
                         "schema": {
-                            "type": "string",
-                            "example": "name"
-                        }
+                            "type": "string"
+                        },
+                        "example": "brand_name"
                     },
                     {
-                        "name": "sort_dir",
+                        "name": "sort_order",
                         "in": "query",
-                        "description": "Sort direction (asc or desc)",
+                        "description": "Sort order: asc or desc.",
                         "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "asc",
                                 "desc"
-                            ],
-                            "example": "asc"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Number of results per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "example": 10
-                        }
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of brands with their categories",
+                        "description": "Success",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "brand_name": {
-                                                "type": "string",
-                                                "example": "Brand 4"
-                                            },
-                                            "primary_category": {
-                                                "type": "string",
-                                                "example": "Electronics"
-                                            },
-                                            "secondary_category": {
-                                                "type": "string",
-                                                "example": "Laptops"
-                                            },
-                                            "product_family": {
-                                                "type": "string",
-                                                "example": "Gaming Laptops"
-                                            },
-                                            "additional_categories": {
-                                                "type": "array",
-                                                "items": {
-                                                    "type": "string",
-                                                    "example": "Accessories"
-                                                }
-                                            },
-                                            "created_at": {
-                                                "type": "string",
-                                                "format": "date-time",
-                                                "example": "2025-05-21T12:34:56Z"
-                                            },
-                                            "updated_at": {
-                                                "type": "string",
-                                                "format": "date-time",
-                                                "example": "2025-05-22T08:15:00Z"
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand List with Categories"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "brand_id": {
+                                                        "type": "integer",
+                                                        "example": 13
+                                                    },
+                                                    "brand_name": {
+                                                        "type": "string",
+                                                        "example": "Nike Updated"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 47
+                                                    },
+                                                    "category_name": {
+                                                        "type": "string",
+                                                        "example": "Chef Base Refrigerators"
+                                                    },
+                                                    "brand_created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-10-16 08:31:24"
+                                                    },
+                                                    "brand_updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-04-05 07:04:29"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
-                                        "type": "object"
-                                    }
+                                        "meta": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 100
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized"
                     }
                 },
                 "security": [
