@@ -761,10 +761,7 @@ public function getAllBrandsWithCategories(Request $request)
     // Use query builder for better control over the query
     $query = Brand::query()
         ->with(['products' => function($query) {
-            $query->with(['categories' => function($query) {
-                // Eager load parents to reduce N+1 query issues
-                $query->with('ancestors');
-            }]);
+            $query->with('categories');
         }]);
     
     // Apply search if provided
@@ -786,7 +783,7 @@ public function getAllBrandsWithCategories(Request $request)
     $brands = $query->paginate($perPage);
     
     // Load all categories at once to reduce database access
-    $allCategories = Category::with('ancestors')->get()->keyBy('id');
+    $allCategories = Category::all()->keyBy('id');
     
     // Transform data to match API specification
     $transformedData = $brands->map(function ($brand) use ($allCategories) {
@@ -889,21 +886,18 @@ private function processBrandCategories($brand, $allCategories)
  */
 private function getCategoryPath($category, $allCategories)
 {
-    // If the category has ancestors loaded, use them
-    if ($category->relationLoaded('ancestors')) {
-        // Get ancestors sorted by depth and add current category
-        $ancestors = $category->ancestors->sortBy('depth')->pluck('name')->toArray();
-        $ancestors[] = $category->name;
-        return $ancestors;
-    }
-    
-    // Fallback: build path using the category map
+    // Build path using the category map
     $path = [$category->name];
     $current = $category;
     
-    while ($current->parent_id && isset($allCategories[$current->parent_id])) {
+    // Use a safety counter to prevent infinite loops
+    $safetyCounter = 0;
+    $maxDepth = 10; // Reasonable limit for category depth
+    
+    while ($current->parent_id && isset($allCategories[$current->parent_id]) && $safetyCounter < $maxDepth) {
         $current = $allCategories[$current->parent_id];
         array_unshift($path, $current->name);
+        $safetyCounter++;
     }
     
     return $path;
