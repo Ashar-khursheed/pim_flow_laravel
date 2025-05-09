@@ -48,6 +48,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function index(Request $request)
 	{
+		if (!auth()->user()->can('list product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$records = Category::with([
 			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
@@ -107,6 +113,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function show($id)
 	{
+		if (!auth()->user()->can('show product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$record = Category::with([
 			'categoryAttributes:id,name',
 			'attributeGroups:id,name',
@@ -175,6 +187,12 @@ class CategoryAttributeController extends BaseController
 	 */
 	public function update(Request $request, $id)
 	{
+		if (!auth()->user()->can('update product family attribute group')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$record = Category::whereDoesntHave('children')
 		->select(['id', 'name', 'parent_id'])
 		->with(['categoryAttributes:id,name', 'attributeGroups:id,name'])
@@ -429,20 +447,20 @@ class CategoryAttributeController extends BaseController
 	 $validated = Validator::make(['category_id' => $category_id], [
 		 'category_id' => 'required|integer|exists:attribute_group_categories,category_id',
 	 ]);
- 
+
 	 // If validation fails, return error response
 	 if ($validated->fails()) {
 		 return response()->json([
 			 'message' => 'Invalid category ID or category not found'
 		 ], 404);
 	 }
- 
+
 	 // Step 2: Find the category by ID
 	 $category = Category::findOrFail($category_id);
- 
+
 	 // Step 3: Get the attribute groups related to the category
 	 $attributeGroups = $category->attributeGroups(); // Access related attribute groups
- 
+
 	 // Step 4: Get all the attributes from those groups, plucking only the 'id' and 'name' fields
 	 $attributes = $attributeGroups->with('groupAttributes') // Load groupAttributes for each group
 								   ->get() // Get the groups
@@ -454,10 +472,10 @@ class CategoryAttributeController extends BaseController
 										   'name' => $attribute->name,
 									   ];
 								   }); // Map to include only id and name
- 
+
 	 // Step 5: Return the attributes in the response
 	 return response()->json($attributes);
  }
- 
+
 
 }

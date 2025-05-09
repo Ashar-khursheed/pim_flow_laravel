@@ -54,18 +54,18 @@ public function stats(Request $request)
     if ($range !== 'lifetime' && isset($ranges[$range])) {
         $date = $ranges[$range];
 
-        $productsCount = \App\Models\Product::where('created_at', '>=', $date)->count();
-        $ordersCount = \App\Models\Order::where('created_at', '>=', $date)->count();
-        $categoriesCount = \App\Models\Category::where('created_at', '>=', $date)->count();
-        $publishedProducts = \App\Models\Product::where('status', 'published')->where('created_at', '>=', $date)->count();
-        $draftProducts = \App\Models\Product::where('status', 'draft')->where('created_at', '>=', $date)->count();
+        $productsCount = Product::where('created_at', '>=', $date)->count();
+        $ordersCount = Order::where('created_at', '>=', $date)->count();
+        $categoriesCount = Category::where('created_at', '>=', $date)->count();
+        $publishedProducts = Product::where('status', 'published')->where('created_at', '>=', $date)->count();
+        $draftProducts = Product::where('status', 'draft')->where('created_at', '>=', $date)->count();
     } else {
         // Lifetime counts
-        $productsCount = \App\Models\Product::count();
-        $ordersCount = \App\Models\Order::count();
-        $categoriesCount = \App\Models\Category::count();
-        $publishedProducts = \App\Models\Product::where('status', 'published')->count();
-        $draftProducts = \App\Models\Product::where('status', 'draft')->count();
+        $productsCount = Product::count();
+        $ordersCount = Order::count();
+        $categoriesCount = Category::count();
+        $publishedProducts = Product::where('status', 'published')->count();
+        $draftProducts = Product::where('status', 'draft')->count();
     }
 
     return response()->json([

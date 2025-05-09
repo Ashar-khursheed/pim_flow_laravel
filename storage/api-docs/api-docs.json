@@ -635,7 +635,7 @@
         "/api/login": {
             "post": {
                 "tags": [
-                    "JWT"
+                    "Auth"
                 ],
                 "summary": "User Login",
                 "operationId": "de45964bd236f87e5860ad7e58ec540f",
@@ -683,6 +683,63 @@
                         "description": "Unauthorized"
                     }
                 }
+            }
+        },
+        "/api/auth/has-permission": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Check if the authenticated user has a specific permission",
+                "description": "Returns true or false based on whether the user has the given permission.",
+                "operationId": "67984d21cffbbad376c369db36fb3d31",
+                "parameters": [
+                    {
+                        "name": "permission",
+                        "in": "query",
+                        "description": "The name of the permission to check (e.g., 'brand.create')",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permission check result",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/auth/permissions": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Get all permission names for the authenticated user",
+                "description": "Returns a list of permission names granted to the currently authenticated user.",
+                "operationId": "6c73d5e63be03ddd18b8bd30c7d3eb8a",
+                "responses": {
+                    "200": {
+                        "description": "List of permissions",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/brands": {
@@ -4253,13 +4310,13 @@
                     "Category Pages"
                 ],
                 "summary": "Delete a category page",
-                "description": "Delete a specific category page by its ID.",
+                "description": "Delete a category page by ID.",
                 "operationId": "09d47c5e2d7a034ca021db3a931ac2cc",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "ID of the category page to delete",
+                        "description": "Category page ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -4272,9 +4329,6 @@
                     },
                     "404": {
                         "description": "Category page not found"
-                    },
-                    "403": {
-                        "description": "Unauthorized action"
                     }
                 },
                 "security": [
@@ -9754,6 +9808,565 @@
                 ]
             }
         },
+        "/api/product-groups-listing": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Product Groups",
+                "description": "Fetches a list of product groups with ID and name.",
+                "operationId": "45f853e6f984eed60e4eac55ab1334e5",
+                "responses": {
+                    "200": {
+                        "description": "Successful response with list of product groups",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Mixers"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/generate-groups": {
+            "post": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Generate Product Groups by Category",
+                "description": "Runs a Python script to group products by category and saves them into the database as product groups.",
+                "operationId": "generateProductGroups",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "The ID of the category to process.",
+                                        "type": "integer",
+                                        "example": 5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successfully fetched product groups",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "description": "The ID of the product group",
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "description": "The name of the product group",
+                                                "type": "string",
+                                                "example": "Group 1"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "example": {
+                                    "id": 1,
+                                    "name": "Group 1"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Category ID is required"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Error running script"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-groups": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Grouped Product List",
+                "description": "Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy.",
+                "operationId": "53460efd1592b1fa4aace8ef15953f85",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "additionalProperties": [
+                                        {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "BMPM007"
+                                                    },
+                                                    "image": {
+                                                        "type": "string"
+                                                    },
+                                                    "brand": {
+                                                        "type": "string",
+                                                        "example": "BakeMax"
+                                                    },
+                                                    "store": {
+                                                        "type": "string",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "published"
+                                                    },
+                                                    "product_family": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "Food Preparation Equipment"
+                                                        }
+                                                    },
+                                                    "taxonomy_path": {
+                                                        "type": "string",
+                                                        "example": "bakemax-bmpm007-181-countertop-planetary-mixer-7-qt"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "property": "BakeMax BM"
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-groups/{group_id}/items/{item_id}/parent": {
+            "put": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Update Parent of Product Group Item",
+                "description": "Updates the parent of a product group item, allowing it to be reassigned to a different group.",
+                "operationId": "f1385d38d0eecbb54fcb96c596273cb8",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "description": "The ID of the product group to which the item currently belongs.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "The ID of the product group item whose parent group is being updated.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "new_group_id": {
+                                        "description": "The ID of the new parent product group",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Parent updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Parent updated successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product Group or Product Group Item not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brands/{brand_id}/categories": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Brand Categories",
+                "description": "Retrieves brand with primary and secondary categories and product family information.",
+                "operationId": "da6a18f4b09c50f6cd70c4f6d9724dfa",
+                "parameters": [
+                    {
+                        "name": "brand_id",
+                        "in": "path",
+                        "description": "ID of the brand",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Brand with category details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "brand_name": {
+                                            "type": "string",
+                                            "example": "Brand 4"
+                                        },
+                                        "primary_category": {
+                                            "type": "string",
+                                            "example": "Category 4"
+                                        },
+                                        "secondary_category": {
+                                            "type": "string",
+                                            "example": "Second Category 4"
+                                        },
+                                        "product_family": {
+                                            "type": "string",
+                                            "example": "product_family 4"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-21"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-05-20"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/brands/categories": {
+            "get": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Get Categories for All Brands",
+                "description": "Returns a list of all brands with their hierarchical categories (primary, secondary, product family, and additional child categories).",
+                "operationId": "c1fa3775e872a2ba486a9ec7d004d34b",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for brand name or category name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by (brand_name, created_at)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "brand_name"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc, desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of all brands with their categorized hierarchy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 14
+                                                    },
+                                                    "brand_name": {
+                                                        "type": "string",
+                                                        "example": "Atosa"
+                                                    },
+                                                    "primary_category": {
+                                                        "type": "string",
+                                                        "example": "Refrigeration"
+                                                    },
+                                                    "secondary_category": {
+                                                        "type": "string",
+                                                        "example": "Commercial Refrigerator"
+                                                    },
+                                                    "product_family": {
+                                                        "type": "string",
+                                                        "example": "Back Bar Refrigerator"
+                                                    },
+                                                    "additional_categories": {
+                                                        "description": "Additional category levels beyond the standard three",
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "level": {
+                                                                    "type": "integer",
+                                                                    "example": 3
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Double Door"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-10-22"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-02-11"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "first_page_url": {
+                                            "type": "string"
+                                        },
+                                        "from": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_page_url": {
+                                            "type": "string"
+                                        },
+                                        "links": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "path": {
+                                            "type": "string"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "prev_page_url": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "to": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product/upload-images": {
             "post": {
                 "tags": [
@@ -10303,22 +10916,37 @@
         "/api/roles": {
             "get": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Get list of roles",
                 "operationId": "77e3636d8592997ce9d6d27b50857a69",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of roles",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Role"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -10330,10 +10958,10 @@
             },
             "post": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Create a new role",
-                "description": "Create a new role with given details",
+                "description": "Creates a new role.",
                 "operationId": "4a563842fbfcad237f63da43065fca3d",
                 "requestBody": {
                     "required": true,
@@ -10341,25 +10969,21 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "slug",
-                                    "name"
+                                    "name",
+                                    "permissions"
                                 ],
                                 "properties": {
-                                    "slug": {
-                                        "type": "string",
-                                        "example": "admin"
-                                    },
                                     "name": {
                                         "type": "string",
-                                        "example": "Administrator"
+                                        "example": "Admin"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Full access to all functionalities"
-                                    },
-                                    "is_default": {
-                                        "type": "boolean",
-                                        "example": false
+                                    "permissions": {
+                                        "description": "Array of permissions",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "example": "create record"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -10369,13 +10993,44 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Role created successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/roles/{role_id}": {
+            "get": {
+                "tags": [
+                    "Roles and Permissions"
+                ],
+                "summary": "Get role details",
+                "description": "Fetches role details based on the given role ID.",
+                "operationId": "6e550a8305421d12dc28ce088debd3fc",
+                "parameters": [
+                    {
+                        "name": "role_id",
+                        "in": "path",
+                        "description": "ID of the role",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -10387,57 +11042,22 @@
             }
         },
         "/api/roles/{id}": {
-            "get": {
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Get role details",
-                "description": "Retrieve details of a specific role by ID",
-                "operationId": "7fb0667a295b7678a30353aa11739683",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Role ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Role details",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
             "put": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
-                "summary": "Update a role",
-                "description": "Update an existing role by ID",
+                "summary": "Update an existing role",
+                "description": "Updates an role's details",
                 "operationId": "786d6990093a8eb3a56931f19a827e43",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Role ID",
+                        "description": "ID of the role to update",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -10446,21 +11066,22 @@
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "name",
+                                    "permissions"
+                                ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "example": "Super Admin"
+                                        "example": "Admin"
                                     },
                                     "permissions": {
+                                        "description": "Array of permissions",
                                         "type": "array",
                                         "items": {
-                                            "type": "string"
-                                        },
-                                        "example": [
-                                            "manage_users",
-                                            "edit_posts",
-                                            "delete_posts"
-                                        ]
+                                            "type": "string",
+                                            "example": "create record"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -10470,13 +11091,9 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Role updated successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Role"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -10488,37 +11105,28 @@
             },
             "delete": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
                 "summary": "Delete a role",
-                "description": "Remove an existing role by ID",
-                "operationId": "8285c46981c60ad600aa4077307aec04",
+                "description": "Deletes a role.",
+                "operationId": "deleteRole",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Role ID",
+                        "description": "ID of the role to delete",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role deleted successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Role deleted successfully"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -10529,108 +11137,40 @@
                 ]
             }
         },
-        "/api/roles/names": {
+        "/api/permissions": {
             "get": {
                 "tags": [
-                    "Roles"
+                    "Roles and Permissions"
                 ],
-                "summary": "Get list of roles with only ID and Name",
-                "operationId": "6b91dd5a93782467c95df3f389b0bfd9",
-                "responses": {
-                    "200": {
-                        "description": "List of roles with only ID and Name",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "Admin"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/roles/{id}/permissions": {
-            "get": {
-                "tags": [
-                    "Roles"
-                ],
-                "summary": "Get role permissions",
-                "description": "Retrieve a structured list of permissions for a specific role.",
-                "operationId": "46acead909e43ce50b76559bd9ba3165",
+                "summary": "Get list of permissions",
+                "operationId": "0d154cd37639e01950a4cc13ca2a2c4a",
                 "parameters": [
                     {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Role ID",
-                        "required": true,
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
                         "schema": {
-                            "type": "integer"
-                        }
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Role permissions fetched successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "permissions": {
-                                            "type": "object",
-                                            "example": {
-                                                "ads": {
-                                                    "create": true,
-                                                    "edit": false,
-                                                    "delete": true,
-                                                    "update": true
-                                                },
-                                                "posts": {
-                                                    "create": true,
-                                                    "edit": true,
-                                                    "delete": false,
-                                                    "update": true
-                                                }
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Role not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Role not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -10639,124 +11179,6 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/seo-details": {
-            "post": {
-                "tags": [
-                    "SEO Details"
-                ],
-                "summary": "Create SEO Details for Product",
-                "operationId": "9a9cfc35d737498eb00bf2d992fc360e",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "primary_keyword",
-                                    "primary_keyword_search_volume",
-                                    "url",
-                                    "meta_title"
-                                ],
-                                "properties": {
-                                    "primary_keyword": {
-                                        "type": "string",
-                                        "example": "Product A"
-                                    },
-                                    "primary_keyword_search_volume": {
-                                        "type": "integer",
-                                        "example": 500
-                                    },
-                                    "secondary_keywords": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "url": {
-                                        "type": "string",
-                                        "example": "https://example.com/product-a"
-                                    },
-                                    "meta_title": {
-                                        "type": "string",
-                                        "example": "Meta Title of Product A"
-                                    },
-                                    "meta_description": {
-                                        "type": "string",
-                                        "example": "Description of Product A"
-                                    },
-                                    "og_title": {
-                                        "type": "string",
-                                        "example": "OG Title of Product A"
-                                    },
-                                    "og_description": {
-                                        "type": "string",
-                                        "example": "OG Description of Product A"
-                                    },
-                                    "og_image": {
-                                        "type": "string",
-                                        "example": "https://example.com/image.jpg"
-                                    },
-                                    "canonical_tag": {
-                                        "type": "string",
-                                        "example": "https://example.com/product-a-canonical"
-                                    },
-                                    "internal_links": {
-                                        "type": "string",
-                                        "example": "https://example.com/internal-link-1"
-                                    },
-                                    "indexing": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "SEO details successfully created",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
-                                        },
-                                        "data": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation error"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
             }
         },
         "/api/seo-management": {
@@ -12376,11 +12798,38 @@
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get all users",
+                "summary": "Get list of users",
                 "operationId": "c457726701591d1183b53aa71fc13441",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination. Starts from 1.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of users"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -12394,25 +12843,34 @@
                     "Users"
                 ],
                 "summary": "Create a new user",
+                "description": "Creates a new user.",
                 "operationId": "592819a0265360b2014512d6dbfaf0e7",
                 "requestBody": {
+                    "description": "User creation payload",
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
                                     "email",
+                                    "username",
                                     "password",
-                                    "role_id"
+                                    "role"
                                 ],
                                 "properties": {
                                     "email": {
                                         "type": "string",
-                                        "example": "test@example.com"
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "johndoe"
                                     },
                                     "password": {
                                         "type": "string",
-                                        "example": "password"
+                                        "format": "password",
+                                        "example": "securePass123"
                                     },
                                     "first_name": {
                                         "type": "string",
@@ -12422,9 +12880,9 @@
                                         "type": "string",
                                         "example": "Doe"
                                     },
-                                    "role_id": {
-                                        "type": "integer",
-                                        "example": 1
+                                    "role": {
+                                        "type": "string",
+                                        "example": "admin"
                                     }
                                 },
                                 "type": "object"
@@ -12434,72 +12892,44 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "User created successfully",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "id": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "email": {
-                                            "type": "string",
-                                            "example": "test@example.com"
-                                        },
-                                        "first_name": {
-                                            "type": "string",
-                                            "example": "John"
-                                        },
-                                        "last_name": {
-                                            "type": "string",
-                                            "example": "Doe"
-                                        },
-                                        "roles": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "400": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Validation error"
-                                        },
-                                        "errors": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/users/{user_id}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Get user details",
+                "description": "Fetches user details based on the given user ID.",
+                "operationId": "e10f96743f349605ddec7dd8f1a09324",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "path",
+                        "description": "ID of the user",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
                         }
-                    },
-                    "409": {
-                        "description": "User already exists",
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "User already exists"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -12511,68 +12941,51 @@
             }
         },
         "/api/users/{id}": {
-            "get": {
+            "put": {
                 "tags": [
                     "Users"
                 ],
-                "summary": "Get user details",
-                "operationId": "36a33ff774d5cba33c039dec2c3e0287",
+                "summary": "Update an existing user",
+                "description": "Updates an user's details",
+                "operationId": "b9091397c8b25f12c6adb74be6ce3a5a",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "User ID",
+                        "description": "ID of the user to update",
                         "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "User details"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    }
-                }
-            },
-            "post": {
-                "tags": [
-                    "Users"
-                ],
-                "summary": "Update a user",
-                "operationId": "5dffc13650a9258709dafdf024abddb4",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "User ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "requestBody": {
+                    "description": "User creation payload",
                     "required": true,
                     "content": {
-                        "multipart/form-data": {
+                        "application/json": {
                             "schema": {
                                 "required": [
                                     "email",
-                                    "first_name",
-                                    "last_name"
+                                    "username",
+                                    "password",
+                                    "role"
                                 ],
                                 "properties": {
-                                    "_method": {
-                                        "type": "string",
-                                        "example": "PUT"
-                                    },
                                     "email": {
                                         "type": "string",
                                         "format": "email",
                                         "example": "user@example.com"
+                                    },
+                                    "username": {
+                                        "type": "string",
+                                        "example": "johndoe"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "securePass123"
                                     },
                                     "first_name": {
                                         "type": "string",
@@ -12582,25 +12995,9 @@
                                         "type": "string",
                                         "example": "Doe"
                                     },
-                                    "avatar": {
+                                    "role": {
                                         "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "old_password": {
-                                        "type": "string",
-                                        "example": "oldpassword"
-                                    },
-                                    "new_password": {
-                                        "type": "string",
-                                        "example": "newpassword"
-                                    },
-                                    "confirm_password": {
-                                        "type": "string",
-                                        "example": "newpassword"
-                                    },
-                                    "role_id": {
-                                        "type": "integer",
-                                        "example": 10
+                                        "example": "admin"
                                     }
                                 },
                                 "type": "object"
@@ -12610,22 +13007,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "User updated successfully"
-                    },
-                    "400": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "404": {
-                        "description": "User not found"
-                    },
-                    "405": {
-                        "description": "Method Not Allowed"
-                    },
-                    "500": {
-                        "description": "Internal server error"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -12639,24 +13024,26 @@
                     "Users"
                 ],
                 "summary": "Delete a user",
-                "operationId": "fa56cffde745d3f152f95cbacd936c0b",
+                "description": "Deletes a user.",
+                "operationId": "deleteUser",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "User ID",
+                        "description": "ID of the user to delete",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "User deleted"
-                    },
-                    "404": {
-                        "description": "User not found"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -14571,58 +14958,6 @@
                 },
                 "type": "object"
             },
-            "Role": {
-                "title": "Role",
-                "description": "Role model",
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "slug": {
-                        "type": "string",
-                        "example": "admin"
-                    },
-                    "name": {
-                        "type": "string",
-                        "example": "Administrator"
-                    },
-                    "permissions": {
-                        "type": "object",
-                        "example": {
-                            "create": true,
-                            "delete": false
-                        }
-                    },
-                    "description": {
-                        "type": "string",
-                        "example": "Admin role with all permissions"
-                    },
-                    "is_default": {
-                        "type": "boolean",
-                        "example": true
-                    },
-                    "created_by": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "updated_by": {
-                        "type": "integer",
-                        "example": 2
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-08-01T12:00:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-08-02T12:00:00Z"
-                    }
-                },
-                "type": "object"
-            },
             "SimpleSlider": {
                 "title": "Simple Slider",
                 "required": [
@@ -14817,7 +15152,7 @@
     },
     "tags": [
         {
-            "name": "JWT",
+            "name": "Auth",
             "description": "To generate Json Web Token"
         },
         {
@@ -14847,10 +15182,6 @@
         {
             "name": "Newsletters",
             "description": "API Endpoints for managing newsletters"
-        },
-        {
-            "name": "Roles",
-            "description": "API Endpoints for managing roles"
         },
         {
             "name": "Sliders",
@@ -14933,12 +15264,16 @@
             "description": "Pre Onboarding Vendors"
         },
         {
+            "name": "Product Groups",
+            "description": "Product Groups"
+        },
+        {
             "name": "Redirect Links",
             "description": "Redirect Links"
         },
         {
-            "name": "SEO Details",
-            "description": "SEO Details"
+            "name": "Roles and Permissions",
+            "description": "Roles and Permissions"
         },
         {
             "name": "SEO Management",

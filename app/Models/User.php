@@ -10,10 +10,14 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Spatie\Permission\Traits\HasRoles;
+
 class User extends Authenticatable
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+
+    protected $guard_name = 'api';
 
     /**
      * The attributes that are mass assignable.
@@ -27,8 +31,7 @@ class User extends Authenticatable
         'first_name',
         'last_name',
         'password',
-        'avatar_id',
-        'permissions',
+        'profile_img'
     ];
 
     /**
@@ -59,16 +62,11 @@ class User extends Authenticatable
      *
      * @return BelongsToMany
      */
-    public function roles(): BelongsToMany
-    {
-        return $this->belongsToMany(Role::class, 'role_users');
-    }
+    // public function roles(): BelongsToMany
+    // {
+    //     return $this->belongsToMany(Role::class, 'role_users');
+    // }
 
-    // Relationship: User has one Avatar (from Media)
-    public function avatar()
-    {
-        return $this->belongsTo(MediaFile::class, 'avatar_id');
-    }
 
     // Relationship: User has many media files
     public function mediaFiles()

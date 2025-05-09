@@ -33,6 +33,12 @@ class NewsletterController extends Controller
      */
     public function index()
     {
+        if (!auth()->user()->can('list news letter')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json(Newsletter::latest()->paginate(20));
     }
 
@@ -60,6 +66,12 @@ class NewsletterController extends Controller
      */
     public function store(Request $request)
     {
+        if (!auth()->user()->can('add news letter')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $request->validate([
             'email' => 'required|email|unique:newsletters,email',
             'name' => 'nullable|string|max:120',
@@ -91,6 +103,12 @@ class NewsletterController extends Controller
      */
     public function show($id)
     {
+        if (!auth()->user()->can('show news letter')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         return response()->json(Newsletter::findOrFail($id));
     }
 
@@ -125,6 +143,12 @@ class NewsletterController extends Controller
      */
     public function update(Request $request, $id)
     {
+        if (!auth()->user()->can('update news letter')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $newsletter = Newsletter::findOrFail($id);
         $request->validate([
             'email' => 'required|email|unique:newsletters,email,' . $id,
@@ -158,6 +182,12 @@ class NewsletterController extends Controller
      */
     public function destroy($id)
     {
+        if (!auth()->user()->can('delete news letter')) {
+            return response()->json([
+                'success' => false,
+                'message' => "You don't have permission to access this module.",
+            ]);
+        }
         $newsletter = Newsletter::findOrFail($id);
         $newsletter->delete();
 
