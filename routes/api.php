@@ -82,11 +82,11 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
+	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
-	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
-	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
+	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);

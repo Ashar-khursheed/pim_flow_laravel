@@ -272,7 +272,7 @@ class ProductController extends BaseController
 	 */
 	public function show($productId, Request $request)
 	{
-		$attributeGroups = [
+		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
 			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
@@ -288,7 +288,7 @@ class ProductController extends BaseController
 			'All' => []
 		];
 
-		$attributeGroups['All'] = array_merge(...array_values(array_filter($attributeGroups, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
+		$attributeGroup['All'] = array_merge(...array_values(array_filter($attributeGroup, fn($key) => $key !== 'All', ARRAY_FILTER_USE_KEY)));
 
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
@@ -300,7 +300,7 @@ class ProductController extends BaseController
 		];
 
 		$attrType = $request->attr_type ?? 'All';
-		$attributes = $attributeGroups[$attrType] ?? $attributeGroups['All'];
+		$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
 		$with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
@@ -1731,14 +1731,14 @@ class ProductController extends BaseController
 
 		$productAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id');
 
-		$attributeGroups = $category->attributeGroups()
-		->with(['groupAttributes'])
+		$attributeGroup = $category->categoryAttributeGroups()
+		->with(['groupsAttributes'])
 		->get()
 		->map(function ($group) use ($productAttributes) {
 			return [
 				'id' => $group->id,
 				'name' => $group->name,
-				'group_attributes' => $group->groupAttributes->map(function ($attribute) use ($productAttributes) {
+				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes) {
 					return [
 						'id' => $attribute->id,
 						'name' => $attribute->name,
@@ -1755,7 +1755,7 @@ class ProductController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Product category attribute groups',
-			'data' => $attributeGroups
+			'data' => $attributeGroup
 		]);
 	}
 

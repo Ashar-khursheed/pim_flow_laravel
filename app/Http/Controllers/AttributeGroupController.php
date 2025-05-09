@@ -7,40 +7,24 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\AttributeGroup;
 use App\Models\Category;
+use App\Models\Attribute;
 
 class AttributeGroupController extends BaseController
 {
-	/**
-	 * Display a listing of the resource.
-	 */
 	/**
 	 * @OA\Get(
 	 *     path="/api/attribute-groups",
 	 *     summary="Get Attribute Group List",
 	 *     description="Fetches a list of attribute groups.",
 	 *     tags={"Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by attribute group id", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="name", in="query", description="Search by attribute group name", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "groups_attributes_count", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -53,19 +37,58 @@ class AttributeGroupController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$records = AttributeGroup::with(['categories:id,name,parent_id', 'groupAttributes:id,code,name']);
+		$searchableColumns = ['id', 'name'];
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at', 'groups_attributes_count']);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+		// $records = AttributeGroup::with(['categories:id,name,parent_id', 'groupsAttributes:id,code,name']);
+		$recordsQuery = AttributeGroup::query();
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
+			$recordsQuery->withCount('groupsAttributes')->with(['creator:id,first_name,last_name']);
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
 			$page = (int) $request->input('page');
 			$length = (int) $request->input('length');
-			$totalRecords = $records->count();
+			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $records->offset(($page - 1) * $length)->limit($length)->get();
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
+				'id', 'name', 'created_by', 'created_at', 'updated_at'
+			]);
+			$records->transform(function ($record) {
+				$record->attribute_count = $record->groups_attributes_count;
+				unset($record->groups_attributes_count);
+
+				$record->created_by = $record->creator->name;
+				unset($record->creator);
+
+				return $record;
+			});
 		} else {
-			$records = $records->get();
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name'
+			]);
 			$totalRecords = $records->count();
+			$totalPages = 1;
 		}
 
 		return response()->json([
@@ -87,11 +110,8 @@ class AttributeGroupController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"name", "category_ids"},
 	 *             @OA\Property(property="name", type="string", example="Electronics Equipments"),
-	 *             @OA\Property(
-	 *                 property="category_ids",
-	 *                 type="array",
-	 *                 @OA\Items(type="integer", example=5)
-	 *             )
+	 *             @OA\Property(property="category_ids", type="array", @OA\Items(type="integer", example=5)),
+	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer", example=1))
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Success", @OA\MediaType(mediaType="application/json")),
@@ -109,50 +129,72 @@ class AttributeGroupController extends BaseController
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name',
 			'category_ids' => 'required|array|min:1',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id'
+			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'attribute_ids' => 'array',
+			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);
 
-		$leafCategoryIds = Category::whereDoesntHave('children')->pluck('id')->all();
+		/* Ensure only leaf (last-level) categories are used */
+		$validLeafCategoryIds = Category::whereDoesntHave('children')->pluck('id')->all();
 
-		if (array_diff($request->category_ids, $leafCategoryIds)) {
+		if (array_diff($request->category_ids, $validLeafCategoryIds)) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Invalid category. Only last-child categories are allowed.'
-			], 400);
+				'message' => 'Only leaf-level categories (categories without children) can be selected.',
+			]);
 		}
 
+		/* Check for already associated attributes */
+		if (!empty($request->attribute_ids)) {
+			$alreadyGroupedAttributes = Attribute::whereIn('id', $request->attribute_ids)
+			->whereNotNull('attribute_group_id')
+			->pluck('id')
+			->all();
+
+			if (!empty($alreadyGroupedAttributes)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Some attributes are already assigned to another attribute group and cannot be reassigned.',
+					'conflicts' => $alreadyGroupedAttributes
+				]);
+			}
+		}
 		DB::beginTransaction();
+
 		try {
 			$attributeGroup = AttributeGroup::create([
 				'name' => $request->name
 			]);
+
 			if (!empty($request->category_ids)) {
 				$attributeGroup->categories()->sync($request->category_ids);
+			}
+
+			if (!empty($request->attribute_ids)) {
+				Attribute::whereIn('id', $request->attribute_ids)
+				->update(['attribute_group_id' => $attributeGroup->id]);
 			}
 
 			DB::commit();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Attribute group created successfully',
-				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
-			], 201);
+				'message' => 'Attribute Group created successfully with associated categories and attributes.',
+				// 'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupsAttributes:id,code,name,attribute_group_id'])
+				'data' => $attributeGroup
+			]);
 
 		} catch (\Exception $e) {
 			DB::rollBack();
 
 			return response()->json([
 				'success' => false,
-				'message' => 'Failed to create attribute group.',
+				'message' => 'An error occurred while creating the attribute group.',
 				'error' => $e->getMessage()
 			], 500);
 		}
-
 	}
 
-	/**
-	 * Display the specified resource.
-	 */
 	/**
 	 * @OA\Get(
 	 *     path="/api/attribute-groups/{attribute_group_id}",
@@ -166,28 +208,6 @@ class AttributeGroupController extends BaseController
 	 *         description="ID of the attribute group",
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -200,7 +220,7 @@ class AttributeGroupController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$record = AttributeGroup::with('categories:id,name,parent_id')->find($id);
+		$record = AttributeGroup::with('categories:id,name', 'groupsAttributes:id,name,attribute_group_id')->find($id);
 
 		if (!$record) {
 			return response()->json([
@@ -209,61 +229,16 @@ class AttributeGroupController extends BaseController
 			]);
 		}
 
-		if ($request->filled('page') && $request->filled('length')) {
-			$page = (int) $request->input('page');
-			$length = (int) $request->input('length');
-
-			$groupAttributesQuery = $record->groupAttributes();
-
-			$totalRecords = $groupAttributesQuery->count();
-			$totalPages = ceil($totalRecords / $length);
-
-			$groupAttributes = $groupAttributesQuery
-			->select(
-				'attributes.id',
-				'attributes.code',
-				'attributes.name',
-				'attribute_group_attributes.attribute_group_id',
-				'attribute_group_attributes.attribute_id'
-			)
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
-		} else {
-			$groupAttributes = $record->groupAttributes()
-			->select(
-				'attributes.id',
-				'attributes.code',
-				'attributes.name',
-				'attribute_group_attributes.attribute_group_id',
-				'attribute_group_attributes.attribute_id'
-			)
-			->get();
-			$totalRecords = $groupAttributes->count();
-			$totalPages = 1;
-		}
+		$record->categories->each->makeHidden(['pivot']);
+		$record->groupsAttributes->each->makeHidden(['attribute_group_id']);
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Attribute group detail',
-			'data' => [
-				[
-					'id' => $record->id,
-					'name' => $record->name,
-					'created_at' => $record->created_at,
-					'updated_at' => $record->updated_at,
-					'categories' => $record->categories,
-					'groupAttributes' => $groupAttributes,
-					'total_pages' => $totalPages,
-					'total_records' => $totalRecords
-				]
-			]
+			'data' => $record
 		]);
 	}
 
-	/**
-	 * Update the specified resource in storage.
-	 */
 	/**
 	 * @OA\Put(
 	 *     path="/api/attribute-groups/{attribute_group_id}",
@@ -271,23 +246,14 @@ class AttributeGroupController extends BaseController
 	 *     description="Updates an existing attribute group based on the provided JSON payload.",
 	 *     operationId="updateAttributeGroup",
 	 *     tags={"Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="attribute_group_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="ID of the attribute group",
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
+	 *     @OA\Parameter(name="attribute_group_id", in="path", required=true, description="ID of the attribute group", @OA\Schema(type="integer", example=1)),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"name", "attribute_ids"},
-	 *             @OA\Property(property="name", type="string", example="General Attribute"),
-	 *             @OA\Property(
-	 *                 property="attribute_ids",
-	 *                 type="array",
-	 *                 @OA\Items(type="integer", example=5)
-	 *             )
+	 *             required={"name"},
+	 *             @OA\Property(property="name", type="string", example="Electronics Equipments"),
+	 *             @OA\Property(property="category_ids", type="array", @OA\Items(type="integer", example=5)),
+	 *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer", example=1))
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
@@ -310,34 +276,73 @@ class AttributeGroupController extends BaseController
 			]);
 		}
 
+		// dd($request->all());
+
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name,'.$id,
+			'category_ids' => 'array',
+			'category_ids.*' => 'integer|exists:ec_product_categories,id',
 			'attribute_ids' => 'array',
-			// 'attribute_ids' => 'required|array|min:1',
-			// 'attribute_ids.*' => 'integer|exists:attributes,id'
+			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);
+
+		/* Ensure only leaf (last-level) categories are used */
+		$validLeafCategoryIds = Category::whereDoesntHave('children')->pluck('id')->all();
+
+		if (array_diff($request->category_ids, $validLeafCategoryIds)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf-level categories (categories without children) can be selected.',
+			]);
+		}
+
+		/* Check for already associated attributes */
+		if (!empty($request->attribute_ids)) {
+			$alreadyGroupedAttributes = Attribute::whereIn('id', $request->attribute_ids)
+			->whereNotNull('attribute_group_id')
+			->where('attribute_group_id', '!=', $attributeGroup->id)
+			->pluck('id')
+			->all();
+
+			if (!empty($alreadyGroupedAttributes)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Some attributes are already assigned to another attribute group and cannot be reassigned.',
+					'conflicts' => $alreadyGroupedAttributes
+				]);
+			}
+		}
 
 		DB::beginTransaction();
 
 		try {
-			// Update attribute group name
+			/* Update attribute group name */
 			$attributeGroup->name = $request->name;
 			$attributeGroup->save();
 
-			// Sync attributes in pivot table
-			if ($request->attribute_ids) {
-				// code...
-				$attributeGroup->groupAttributes()->sync($request->attribute_ids);
+			if (!empty($request->category_ids)) {
+				$attributeGroup->categories()->sync($request->category_ids);
+			}
+
+			if (!empty($request->attribute_ids)) {
+				/* Detach attributes that were previously in this group but are not in the new list */
+				Attribute::where('attribute_group_id', $attributeGroup->id)
+				->whereNotIn('id', $request->attribute_ids)
+				->update(['attribute_group_id' => null]);
+
+				/* Assign submitted attributes to this group */
+				Attribute::whereIn('id', $request->attribute_ids)
+				->update(['attribute_group_id' => $attributeGroup->id]);
 			}
 
 			DB::commit();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Attribute group updated successfully',
-				'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupAttributes:id,code,name'])
-			], 200);
-
+				'message' => 'Attribute Group updated successfully with associated categories and attributes.',
+				// 'data' => $attributeGroup->load(['categories:id,name,parent_id', 'groupsAttributes:id,code,name,attribute_group_id'])
+				'data' => $attributeGroup
+			]);
 		} catch (\Exception $e) {
 			DB::rollBack();
 
@@ -345,7 +350,7 @@ class AttributeGroupController extends BaseController
 				'success' => false,
 				'message' => 'Failed to update attribute group.',
 				'error' => $e->getMessage()
-			], 500);
+			]);
 		}
 	}
 
@@ -356,13 +361,7 @@ class AttributeGroupController extends BaseController
 	 *     description="Deletes an attribute group along with its associated records in the attribute_group_attributes table.",
 	 *     operationId="deleteAttributeGroup",
 	 *     tags={"Attribute Group"},
-	 *     @OA\Parameter(
-	 *         name="id",
-	 *         in="path",
-	 *         description="ID of the attribute group to delete",
-	 *         required=true,
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
+	 *     @OA\Parameter(name="id", in="path", description="ID of the attribute group to delete", required=true, @OA\Schema(type="integer", example=1)),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -388,8 +387,8 @@ class AttributeGroupController extends BaseController
 
 		try {
 			/* Delete related records in related tables */
-			$attributeGroup->groupAttributes()->detach();
 			$attributeGroup->categories()->detach();
+			Attribute::where('attribute_group_id', $attributeGroup->id)->update(['attribute_group_id' => null]);
 
 			/* Delete the attribute group */
 			$attributeGroup->delete();
@@ -410,5 +409,40 @@ class AttributeGroupController extends BaseController
 				'error' => $e->getMessage()
 			], 500);
 		}
+	}
+
+	/**
+	 * @OA\Delete(
+	 *     path="/api/attribute-groups/{id}/remove-attribute/{attribute_id}",
+	 *     summary="Remove an attribute from an attribute group",
+	 *     tags={"Attribute Group"},
+	 *     @OA\Parameter(name="id", in="path", description="Attribute Group ID", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="attribute_id", in="path", description="Attribute ID to remove from the attribute group", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function removeAttribute($id, $attribute_id)
+	{
+		$attributeGroup = AttributeGroup::find($id);
+
+		if (!$attributeGroup) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Record does not exist with given ID.'
+			]);
+		}
+
+		$attribute = Attribute::find($attribute_id);
+		if (!$attribute) {
+			return response()->json(['success' => false, 'message' => 'Attribute not found']);
+		}
+
+		$attribute->update(['attribute_group_id' => null]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Attributes removed successfully.',
+		]);
 	}
 }

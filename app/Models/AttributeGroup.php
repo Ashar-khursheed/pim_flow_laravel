@@ -6,20 +6,27 @@ use Illuminate\Database\Eloquent\Model;
 
 class AttributeGroup extends Model
 {
-	protected $fillable = ['name'];
+	// protected $fillable = ['name'];
+	protected $guarded = [];
 
-	public function groupAttributes()
+	public function creator()
 	{
-		return $this->belongsToMany(
-			Attribute::class,
-			'attribute_group_attributes',
-			'attribute_group_id',
-			'attribute_id'
-		);
+		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function groupsAttributes()
+	{
+		return $this->hasMany(Attribute::class, 'attribute_group_id', 'id');
+		// return $this->hasMany(Attribute::class);
 	}
 
 	public function categories()
 	{
-		return $this->morphToMany(Category::class, 'relational', 'attribute_group_categories', 'relational_id', 'category_id');
+		return $this->belongsToMany(
+			Category::class,
+			'category_attribute_groups',
+			'attribute_group_id',
+			'category_id'
+		);
 	}
 }

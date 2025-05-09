@@ -6,22 +6,18 @@ use Illuminate\Database\Eloquent\Model;
 
 class Attribute extends Model
 {
-	protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+	// protected $guarded = [];
+	// protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
+	protected $fillable = ['name', 'code', 'type', 'attribute_group_id','validations'];
 
-	/* Relation with AttributeGroup */
-	public function attributeGroups()
+	public function creator()
 	{
-		return $this->belongsToMany(
-			AttributeGroup::class,
-			'attribute_group_attributes',
-			'attribute_id',
-			'attribute_group_id'
-		);
+		return $this->belongsTo(User::class, 'created_by');
 	}
 
-	public function categories()
+	public function attributeGroup()
 	{
-		return $this->morphToMany(Category::class, 'relational', 'attribute_group_categories', 'relational_id', 'category_id');
+		return $this->belongsTo(AttributeGroup::class);
 	}
 
 	/* Relation with AttributeValue */

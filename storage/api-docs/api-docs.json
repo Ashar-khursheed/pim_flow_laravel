@@ -29,7 +29,6 @@
                         "name": "has_group",
                         "in": "query",
                         "description": "Filter attributes that have at least one associated group. Accepts 'true' or 'false'. If omitted, no filtering is applied.",
-                        "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -42,8 +41,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -54,12 +52,90 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "attribute_group_id",
+                        "in": "query",
+                        "description": "Search by attribute group id.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 6
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by attribute id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search by attribute name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "code",
+                        "in": "query",
+                        "description": "Search by attribute code",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "type",
+                        "in": "query",
+                        "description": "Search by attribute type",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "code",
+                                "type",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -190,9 +266,7 @@
                                 "required": [
                                     "name",
                                     "code",
-                                    "type",
-                                    "is_required",
-                                    "validations"
+                                    "type"
                                 ],
                                 "properties": {
                                     "name": {
@@ -398,8 +472,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -410,12 +483,63 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by attribute group id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search by attribute group name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "groups_attributes_count",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -457,6 +581,13 @@
                                         "items": {
                                             "type": "integer",
                                             "example": 5
+                                        }
+                                    },
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
                                         }
                                     }
                                 },
@@ -502,8 +633,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -514,7 +644,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -561,19 +690,25 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "attribute_ids"
+                                    "name"
                                 ],
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "example": "General Attribute"
+                                        "example": "Electronics Equipments"
+                                    },
+                                    "category_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
                                     },
                                     "attribute_ids": {
                                         "type": "array",
                                         "items": {
                                             "type": "integer",
-                                            "example": 5
+                                            "example": 1
                                         }
                                     }
                                 },
@@ -614,6 +749,48 @@
                         "schema": {
                             "type": "integer",
                             "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/attribute-groups/{id}/remove-attribute/{attribute_id}": {
+            "delete": {
+                "tags": [
+                    "Attribute Group"
+                ],
+                "summary": "Remove an attribute from an attribute group",
+                "operationId": "357b689c0dc82d45ade6fdf718415c8c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Attribute Group ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "attribute_id",
+                        "in": "path",
+                        "description": "Attribute ID to remove from the attribute group",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ],
@@ -2797,8 +2974,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -2809,12 +2985,61 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by category id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "name",
+                        "in": "query",
+                        "description": "Search by category name",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "attribute_count"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -2891,18 +3116,9 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "attribute_ids",
                                     "attribute_group_ids"
                                 ],
                                 "properties": {
-                                    "attribute_ids": {
-                                        "description": "Array of attribute IDs to associate with the category",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 5
-                                        }
-                                    },
                                     "attribute_group_ids": {
                                         "description": "Array of attribute group IDs to associate with the category",
                                         "type": "array",
@@ -2932,70 +3148,13 @@
                 ]
             }
         },
-        "/api/category-attributes/{id}/add-attribute": {
-            "post": {
-                "tags": [
-                    "Category Attribute Group"
-                ],
-                "summary": "Add specific attributes or attribute groups to a category",
-                "operationId": "82f05163ab57b2d5f024f7e18b5f55d6",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "attribute_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "attribute_group_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/category-attributes/{id}/remove-attribute": {
+        "/api/category-attributes/{id}/remove-attribute-group/{attribute_group_id}": {
             "delete": {
                 "tags": [
                     "Category Attribute Group"
                 ],
-                "summary": "Remove specific attributes or attribute groups from a category",
-                "operationId": "eac4b91fde709243f089b381042f199c",
+                "summary": "Remove an attribute group from a category",
+                "operationId": "b7f945a5866ce800495bb27d27041c4a",
                 "parameters": [
                     {
                         "name": "id",
@@ -3005,32 +3164,17 @@
                         "schema": {
                             "type": "integer"
                         }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "attribute_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "attribute_group_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
+                    },
+                    {
+                        "name": "attribute_group_id",
+                        "in": "path",
+                        "description": "Attribute Group ID to remove from the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
-                },
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",
@@ -3057,7 +3201,7 @@
                     {
                         "name": "category_id",
                         "in": "path",
-                        "description": "The ID of the category to fetch attributes for",
+                        "description": "The ID of the category to fetch attributes",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -3066,46 +3210,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "A list of attributes assigned to the specified category",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer"
-                                            },
-                                            "name": {
-                                                "type": "string"
-                                            },
-                                            "type": {
-                                                "type": "string"
-                                            },
-                                            "is_required": {
-                                                "type": "boolean"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Category not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Category not found"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },

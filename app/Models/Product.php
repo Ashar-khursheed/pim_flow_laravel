@@ -223,17 +223,9 @@ class Product extends Model
 			return collect();
 		}
 
-		/* Fetch attributes from groups */
-		// $groupAttributes = $category->attributeGroups->flatMap->groupAttributes;
+		$categoryAttributes = $category->categoryAttributeGroups->flatMap->groupsAttributes ?? [];
 
-		// /* Fetch direct attributes */
-		// $directAttributes = $category->categoryAttributes;
-
-		// /* Merge and return unique attributes */
-		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
-		$groupAttributes = $category->attributeGroups->flatMap->groupAttributes ?? [];
-
-		return $groupAttributes->unique('id')->values();
+		return $categoryAttributes->unique('id')->values();
 	}
 
 	// public function seo()
