@@ -729,154 +729,74 @@ class ProductGroupController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    // public function getAllBrandsWithCategories(Request $request)
-    // {
-    //     // Parse request parameters
-    //     $perPage = $request->input('per_page', 10);
-    //     $search = $request->input('search');
-    //     $sortBy = $request->input('sort_by', 'brand_name');
-    //     $sortOrder = $request->input('sort_order', 'asc');
-        
-    //     // Validate sort parameters
-    //     $allowedSortFields = ['brand_name', 'created_at', 'updated_at'];
-    //     if (!in_array($sortBy, $allowedSortFields)) {
-    //         $sortBy = 'brand_name';
-    //     }
-        
-    //     $allowedSortOrders = ['asc', 'desc'];
-    //     if (!in_array($sortOrder, $allowedSortOrders)) {
-    //         $sortOrder = 'asc';
-    //     }
-        
-    //     // Start building the query
-    //     $brandsQuery = Brand::query();
-        
-    //     // Apply search if provided
-    //     if ($search) {
-    //         $brandsQuery->where('name', 'like', "%{$search}%");
-            
-    //         // Also include brands that have products in categories matching the search
-    //         $brandsQuery->orWhereHas('products.categories', function ($query) use ($search) {
-    //             $query->where('name', 'like', "%{$search}%");
-    //         });
-    //     }
-        
-    //     // Apply sorting
-    //     if ($sortBy === 'brand_name') {
-    //         $brandsQuery->orderBy('name', $sortOrder);
-    //     } else {
-    //         $brandsQuery->orderBy($sortBy, $sortOrder);
-    //     }
-        
-    //     // Execute the paginated query (do this **before** transforming data)
-    //     $brands = $brandsQuery->paginate($perPage);
-        
-    //     // Transform the paginated results
-    //     $transformedData = $brands->getCollection()->flatMap(function ($brand) {
-    //         // Get all product IDs for this brand
-    //         $productIds = $brand->products()->pluck('id')->toArray();
-            
-    //         // Initialize array to hold results
-    //         $result = [];
-            
-    //         if (!empty($productIds)) {
-    //             // Get all categories associated with these products through the pivot table
-    //             $categories = \DB::table('ec_product_category_product')
-    //                 ->whereIn('product_id', $productIds)
-    //                 ->pluck('category_id')
-    //                 ->unique()
-    //                 ->toArray();
-                
-    //             if (!empty($categories)) {
-    //                 // Get all categories and organize them by level
-    //                 $categoryData = $this->getCategoriesByLevel($categories);
-                    
-    //                 // Get primary, secondary, product family, and additional categories
-    //                 $primaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 0);
-    //                 $secondaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 1);
-    //                 $productFamilies = $this->getAllUniqueCategoriesAtLevel($categoryData, 2);
-                    
-    //                 // Add combinations of brand, category, and product family
-    //                 foreach ($primaryCategories as $primaryCategory) {
-    //                     foreach ($secondaryCategories as $secondaryCategory) {
-    //                         foreach ($productFamilies as $productFamily) {
-    //                             $result[] = [
-    //                                 'id' => $brand->id,
-    //                                 'brand_name' => $brand->name,
-    //                                 'primary_category' => $primaryCategory,
-    //                                 'secondary_category' => $secondaryCategory,
-    //                                 'product_family' => $productFamily,
-    //                             ];
-    //                         }
-    //                     }
-    //                 }
-    //             }
-    //         }
-            
-    //         return $result;
-    //     });
-        
-    //     // Set the transformed data collection back to the paginator while keeping pagination metadata
-    //     $brands->setCollection($transformedData);
-        
-    //     return response()->json($brands);
-    // }
-
-   
     public function getAllBrandsWithCategories(Request $request)
     {
+        // Parse request parameters
         $perPage = $request->input('per_page', 10);
-        $currentPage = $request->input('page', 1);
         $search = $request->input('search');
         $sortBy = $request->input('sort_by', 'brand_name');
         $sortOrder = $request->input('sort_order', 'asc');
-    
+        
+        // Validate sort parameters
         $allowedSortFields = ['brand_name', 'created_at', 'updated_at'];
         if (!in_array($sortBy, $allowedSortFields)) {
             $sortBy = 'brand_name';
         }
-    
+        
         $allowedSortOrders = ['asc', 'desc'];
         if (!in_array($sortOrder, $allowedSortOrders)) {
             $sortOrder = 'asc';
         }
-    
+        
+        // Start building the query
         $brandsQuery = Brand::query();
-    
+        
+        // Apply search if provided
         if ($search) {
-            $brandsQuery->where('name', 'like', "%{$search}%")
-                ->orWhereHas('products.categories', function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%");
-                });
+            $brandsQuery->where('name', 'like', "%{$search}%");
+            
+            // Also include brands that have products in categories matching the search
+            $brandsQuery->orWhereHas('products.categories', function ($query) use ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            });
         }
-    
+        
+        // Apply sorting
         if ($sortBy === 'brand_name') {
             $brandsQuery->orderBy('name', $sortOrder);
         } else {
             $brandsQuery->orderBy($sortBy, $sortOrder);
         }
-    
-        // Get all brands (unpaginated for transformation)
-        $allBrands = $brandsQuery->get();
-    
-        // Transform the data before pagination
-        $transformedData = $allBrands->flatMap(function ($brand) {
+        
+        // Execute the paginated query (do this **before** transforming data)
+        $brands = $brandsQuery->paginate($perPage);
+        
+        // Transform the paginated results
+        $transformedData = $brands->getCollection()->flatMap(function ($brand) {
+            // Get all product IDs for this brand
             $productIds = $brand->products()->pluck('id')->toArray();
+            
+            // Initialize array to hold results
             $result = [];
-    
+            
             if (!empty($productIds)) {
+                // Get all categories associated with these products through the pivot table
                 $categories = \DB::table('ec_product_category_product')
                     ->whereIn('product_id', $productIds)
                     ->pluck('category_id')
                     ->unique()
                     ->toArray();
-    
+                
                 if (!empty($categories)) {
+                    // Get all categories and organize them by level
                     $categoryData = $this->getCategoriesByLevel($categories);
+                    
+                    // Get primary, secondary, product family, and additional categories
                     $primaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 0);
                     $secondaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 1);
                     $productFamilies = $this->getAllUniqueCategoriesAtLevel($categoryData, 2);
-    
+                    
+                    // Add combinations of brand, category, and product family
                     foreach ($primaryCategories as $primaryCategory) {
                         foreach ($secondaryCategories as $secondaryCategory) {
                             foreach ($productFamilies as $productFamily) {
@@ -892,24 +812,104 @@ class ProductGroupController extends Controller
                     }
                 }
             }
-    
+            
             return $result;
-        })->values();
-    
-        // Paginate manually
-        $total = $transformedData->count();
-        $sliced = $transformedData->slice(($currentPage - 1) * $perPage, $perPage)->values();
-    
-        $paginator = new LengthAwarePaginator(
-            $sliced,
-            $total,
-            $perPage,
-            $currentPage,
-            ['path' => url()->current()]
-        );
-    
-        return response()->json($paginator);
+        });
+        
+        // Set the transformed data collection back to the paginator while keeping pagination metadata
+        $brands->setCollection($transformedData);
+        
+        return response()->json($brands);
     }
+
+   
+    // public function getAllBrandsWithCategories(Request $request)
+    // {
+    //     $perPage = $request->input('per_page', 10);
+    //     $currentPage = $request->input('page', 1);
+    //     $search = $request->input('search');
+    //     $sortBy = $request->input('sort_by', 'brand_name');
+    //     $sortOrder = $request->input('sort_order', 'asc');
+    
+    //     $allowedSortFields = ['brand_name', 'created_at', 'updated_at'];
+    //     if (!in_array($sortBy, $allowedSortFields)) {
+    //         $sortBy = 'brand_name';
+    //     }
+    
+    //     $allowedSortOrders = ['asc', 'desc'];
+    //     if (!in_array($sortOrder, $allowedSortOrders)) {
+    //         $sortOrder = 'asc';
+    //     }
+    
+    //     $brandsQuery = Brand::query();
+    
+    //     if ($search) {
+    //         $brandsQuery->where('name', 'like', "%{$search}%")
+    //             ->orWhereHas('products.categories', function ($query) use ($search) {
+    //                 $query->where('name', 'like', "%{$search}%");
+    //             });
+    //     }
+    
+    //     if ($sortBy === 'brand_name') {
+    //         $brandsQuery->orderBy('name', $sortOrder);
+    //     } else {
+    //         $brandsQuery->orderBy($sortBy, $sortOrder);
+    //     }
+    
+    //     // Get all brands (unpaginated for transformation)
+    //     $allBrands = $brandsQuery->get();
+    
+    //     // Transform the data before pagination
+    //     $transformedData = $allBrands->flatMap(function ($brand) {
+    //         $productIds = $brand->products()->pluck('id')->toArray();
+    //         $result = [];
+    
+    //         if (!empty($productIds)) {
+    //             $categories = \DB::table('ec_product_category_product')
+    //                 ->whereIn('product_id', $productIds)
+    //                 ->pluck('category_id')
+    //                 ->unique()
+    //                 ->toArray();
+    
+    //             if (!empty($categories)) {
+    //                 $categoryData = $this->getCategoriesByLevel($categories);
+    //                 $primaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 0);
+    //                 $secondaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryData, 1);
+    //                 $productFamilies = $this->getAllUniqueCategoriesAtLevel($categoryData, 2);
+    
+    //                 foreach ($primaryCategories as $primaryCategory) {
+    //                     foreach ($secondaryCategories as $secondaryCategory) {
+    //                         foreach ($productFamilies as $productFamily) {
+    //                             $result[] = [
+    //                                 'id' => $brand->id,
+    //                                 'brand_name' => $brand->name,
+    //                                 'primary_category' => $primaryCategory,
+    //                                 'secondary_category' => $secondaryCategory,
+    //                                 'product_family' => $productFamily,
+    //                             ];
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    
+    //         return $result;
+    //     })->values();
+    
+    //     // Paginate manually
+    //     $total = $transformedData->count();
+    //     $sliced = $transformedData->slice(($currentPage - 1) * $perPage, $perPage)->values();
+    
+    //     $paginator = new LengthAwarePaginator(
+    //         $sliced,
+    //         $total,
+    //         $perPage,
+    //         $currentPage,
+    //         ['path' => url()->current()]
+    //     );
+    
+    //     return response()->json($paginator);
+    // }
     
 
   
