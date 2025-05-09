@@ -9637,10 +9637,6 @@
                                         "description": "CSV file (.csv) max 5MB",
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "user_role": {
-                                        "description": "Optional user role context for import",
-                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -9881,10 +9877,6 @@
                                         "description": "Ending range (must be >= range_from and max 2000 more)",
                                         "type": "integer",
                                         "example": 50
-                                    },
-                                    "user_role": {
-                                        "description": "Optional user role",
-                                        "type": "string"
                                     },
                                     "selected_fields": {
                                         "description": "Optional list of fields to export. If blank, all fields will be exported.",
@@ -10206,6 +10198,63 @@
                     },
                     "404": {
                         "description": "Product Group or Product Group Item not found"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Groups"
+                ],
+                "summary": "Remove Product Group Item from its Parent",
+                "description": "Removes the association between a product group item and its parent group, effectively unparenting the item.",
+                "operationId": "63a096aaefee7e4c76d551cea6b60dcc",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "path",
+                        "description": "The ID of the parent product group.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "The ID of the product group item to unparent.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Child successfully removed from parent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Child removed from parent successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product Group Item not found"
                     },
                     "401": {
                         "description": "Unauthorized"
