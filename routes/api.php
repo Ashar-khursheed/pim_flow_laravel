@@ -63,7 +63,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
 	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
-	Route::get('/brands/categories', [ProductGroupController::class, 'getAllBrandsWithCategories']);
+	Route::get('/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 	
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);

@@ -642,266 +642,177 @@ class ProductGroupController extends Controller
     }
             
      
+    /**
+     * @OA\Get(
+     *     path="/api/brands-with-categories",
+     *     summary="Get Brands with Categories",
+     *     description="Retrieve a paginated list of brands along with their product categories, including primary, secondary, and product family.",
+     *     tags={"Product Groups"},
+     *     @OA\Parameter(
+     *         name="search",
+     *         in="query",
+     *         required=false,
+     *         description="Search by brand name",
+     *         @OA\Schema(type="string", example="Nike")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_by",
+     *         in="query",
+     *         required=false,
+     *         description="Column to sort by (e.g., name, created_at)",
+     *         @OA\Schema(type="string", example="name")
+     *     ),
+     *     @OA\Parameter(
+     *         name="sort_dir",
+     *         in="query",
+     *         required=false,
+     *         description="Sort direction (asc or desc)",
+     *         @OA\Schema(type="string", enum={"asc", "desc"}, example="asc")
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         required=false,
+     *         description="Number of results per page",
+     *         @OA\Schema(type="integer", example=10)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of brands with their categories",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="brand_name", type="string", example="Brand 4"),
+     *                 @OA\Property(property="primary_category", type="string", example="Electronics"),
+     *                 @OA\Property(property="secondary_category", type="string", example="Laptops"),
+     *                 @OA\Property(property="product_family", type="string", example="Gaming Laptops"),
+     *                 @OA\Property(
+     *                     property="additional_categories",
+     *                     type="array",
+     *                     @OA\Items(type="string", example="Accessories")
+     *                 ),
+     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-21T12:34:56Z"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-22T08:15:00Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
 
- /**
- * @OA\Get(
- *     path="/api/brands/categories",
- *     summary="Get Categories for All Brands",
- *     description="Returns a list of all brands with their hierarchical categories (primary, secondary, product family, and additional child categories).",
- *     tags={"Product Groups"},
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number",
- *         required=false,
- *         @OA\Schema(type="integer", default=1)
- *     ),
- *     @OA\Parameter(
- *         name="per_page",
- *         in="query",
- *         description="Number of items per page",
- *         required=false,
- *         @OA\Schema(type="integer", default=10)
- *     ),
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Search term for brand name or category name",
- *         required=false,
- *         @OA\Schema(type="string")
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Field to sort by (brand_name, created_at)",
- *         required=false,
- *         @OA\Schema(type="string", default="brand_name")
- *     ),
- *     @OA\Parameter(
- *         name="sort_order",
- *         in="query",
- *         description="Sort order (asc, desc)",
- *         required=false,
- *         @OA\Schema(type="string", default="asc")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="List of all brands with their categorized hierarchy",
- *         @OA\JsonContent(
- *             type="object",
- *             @OA\Property(property="current_page", type="integer", example=1),
- *             @OA\Property(property="data", type="array", 
- *                 @OA\Items(
- *                     type="object",
- *                     @OA\Property(property="id", type="integer", example=14),
- *                     @OA\Property(property="brand_name", type="string", example="Atosa"),
- *                     @OA\Property(property="primary_category", type="string", example="Refrigeration"),
- *                     @OA\Property(property="secondary_category", type="string", example="Commercial Refrigerator"),
- *                     @OA\Property(property="product_family", type="string", example="Back Bar Refrigerator"),
- *                     @OA\Property(property="additional_categories", type="array", 
- *                        @OA\Items(
- *                            type="object",
- *                            @OA\Property(property="level", type="integer", example=3),
- *                            @OA\Property(property="name", type="string", example="Double Door")
- *                        ),
- *                        description="Additional category levels beyond the standard three"
- *                     ),
- *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-10-22"),
- *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-02-11")
- *                 )
- *             ),
- *             @OA\Property(property="first_page_url", type="string"),
- *             @OA\Property(property="from", type="integer"),
- *             @OA\Property(property="last_page", type="integer"),
- *             @OA\Property(property="last_page_url", type="string"),
- *             @OA\Property(property="links", type="array", @OA\Items(type="object")),
- *             @OA\Property(property="next_page_url", type="string", nullable=true),
- *             @OA\Property(property="path", type="string"),
- *             @OA\Property(property="per_page", type="integer"),
- *             @OA\Property(property="prev_page_url", type="string", nullable=true),
- *             @OA\Property(property="to", type="integer"),
- *             @OA\Property(property="total", type="integer")
- *         )
- *     ),
- *     @OA\Response(
- *         response=401,
- *         description="Unauthorized"
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function getAllBrandsWithCategories(Request $request)
-{
-    // Get and validate request parameters
-    $perPage = (int)$request->input('per_page', 10);
-    $search = $request->input('search');
-    $sortBy = $request->input('sort_by', 'brand_name');
-    $sortOrder = strtolower($request->input('sort_order', 'asc'));
-    
-    // Map API parameter names to database column names
-    $sortFieldMap = [
-        'brand_name' => 'name',
-        'created_at' => 'created_at',
-        'updated_at' => 'updated_at'
-    ];
-    
-    // Validate and set default sort parameters
-    if (!array_key_exists($sortBy, $sortFieldMap)) {
-        $sortBy = 'brand_name';
-    }
-    
-    if (!in_array($sortOrder, ['asc', 'desc'])) {
-        $sortOrder = 'asc';
-    }
-    
-    // Use mapped database field for sorting
-    $dbSortField = $sortFieldMap[$sortBy];
-    
-    // Optimize query: eager load products with their categories
-    // Use query builder for better control over the query
-    $query = Brand::query()
-        ->with(['products' => function($query) {
-            $query->with('categories');
-        }]);
-    
-    // Apply search if provided
-    if ($search) {
-        $query->where(function ($q) use ($search) {
-            // Search brand name
-            $q->where('name', 'like', "%{$search}%")
-              // Search category names connected to brand products
-              ->orWhereHas('products.categories', function ($subq) use ($search) {
-                  $subq->where('name', 'like', "%{$search}%");
-              });
-        });
-    }
-    
-    // Apply sorting
-    $query->orderBy($dbSortField, $sortOrder);
-    
-    // Execute paginated query
-    $brands = $query->paginate($perPage);
-    
-    // Load all categories at once to reduce database access
-    $allCategories = Category::all()->keyBy('id');
-    
-    // Transform data to match API specification
-    $transformedData = $brands->map(function ($brand) use ($allCategories) {
-        // Process all product categories for this brand
-        $categoryData = $this->processBrandCategories($brand, $allCategories);
-        
-        return [
-            'id' => $brand->id,
-            'brand_name' => $brand->name,
-            'primary_category' => $categoryData['primary'] ?? null,
-            'secondary_category' => $categoryData['secondary'] ?? null,
-            'product_family' => $categoryData['family'] ?? null,
-            'additional_categories' => $categoryData['additional'] ?? [],
-            'created_at' => $brand->created_at->format('Y-m-d'),
-            'updated_at' => $brand->updated_at->format('Y-m-d')
-        ];
-    });
-    
-    // Return paginated response with the correct format
-    return response()->json($brands->setCollection($transformedData));
-}
+     public function getBrandsWithCategories(Request $request)
+        {
+            $query = Brand::with([
+                'products.categories.parent.parent', // Load up to 3 levels of category parents
+            ]);
 
-/**
- * Process categories for a brand and organize them into hierarchical levels
- * 
- * @param Brand $brand
- * @param Collection $allCategories
- * @return array
- */
-private function processBrandCategories($brand, $allCategories)
-{
-    // Initialize result structure
-    $result = [
-        'primary' => null,
-        'secondary' => null,
-        'family' => null,
-        'additional' => []
-    ];
-    
-    // Set for deduplication
-    $primarySet = [];
-    $secondarySet = [];
-    $familySet = [];
-    $additionalSet = [];
-    
-    // Process each product's categories
-    foreach ($brand->products as $product) {
-        foreach ($product->categories as $category) {
-            // Build the full category path from root to current node
-            $path = $this->getCategoryPath($category, $allCategories);
-            
-            // Assign categories to appropriate levels based on their position in hierarchy
-            $pathCount = count($path);
-            
-            if ($pathCount > 0 && !in_array($path[0], $primarySet)) {
-                $primarySet[] = $path[0];
-                if (empty($result['primary'])) {
-                    $result['primary'] = $path[0];
-                }
+            // Search by brand name
+            if ($request->filled('search')) {
+                $query->where('name', 'LIKE', '%' . $request->search . '%');
             }
-            
-            if ($pathCount > 1 && !in_array($path[1], $secondarySet)) {
-                $secondarySet[] = $path[1];
-                if (empty($result['secondary'])) {
-                    $result['secondary'] = $path[1];
-                }
+
+            // Sorting
+            if ($request->filled('sort_by')) {
+                $query->orderBy($request->sort_by, $request->get('sort_dir', 'asc'));
             }
-            
-            if ($pathCount > 2 && !in_array($path[2], $familySet)) {
-                $familySet[] = $path[2];
-                if (empty($result['family'])) {
-                    $result['family'] = $path[2];
-                }
-            }
-            
-            // Add any deeper levels to additional categories
-            for ($i = 3; $i < $pathCount; $i++) {
-                $additionalKey = $i . ':' . $path[$i];
-                if (!in_array($additionalKey, $additionalSet)) {
-                    $additionalSet[] = $additionalKey;
-                    $result['additional'][] = [
-                        'level' => $i,
-                        'name' => $path[$i]
+
+            // Get the paginated brands
+            $brands = $query->paginate($request->get('per_page', 10));
+
+            // Transform the brands
+            $transformed = $brands->getCollection()->map(function ($brand) {
+                $productCategories = $brand->products->flatMap(function ($product) {
+                    return $product->categories;
+                })->unique('id');
+
+                $entries = [];
+
+                foreach ($productCategories as $category) {
+                    $resolved = $this->resolveCategoryTree($category);
+
+                    $entries[] = [
+                        'id' => $brand->id,
+                        'brand_name' => $brand->name,
+                        'primary_category' => $resolved['level_1'],
+                        'secondary_category' => $resolved['level_2'],
+                        'product_family' => $resolved['level_3'],
+                        'additional_categories' => $resolved['additional'],
+                        'created_at' => $brand->created_at,
+                        'updated_at' => $brand->updated_at,
                     ];
                 }
-            }
-        }
-    }
-    
-    return $result;
-}
 
-/**
- * Get the full path from root to the given category
- * Optimized to use pre-loaded category data
- *
- * @param Category $category
- * @param Collection $allCategories
- * @return array
- */
-private function getCategoryPath($category, $allCategories)
-{
-    // Build path using the category map
-    $path = [$category->name];
-    $current = $category;
-    
-    // Use a safety counter to prevent infinite loops
-    $safetyCounter = 0;
-    $maxDepth = 10; // Reasonable limit for category depth
-    
-    while ($current->parent_id && isset($allCategories[$current->parent_id]) && $safetyCounter < $maxDepth) {
-        $current = $allCategories[$current->parent_id];
-        array_unshift($path, $current->name);
-        $safetyCounter++;
-    }
-    
-    return $path;
-}
+                // return multiple rows per brand (flatten at the end)
+                return $entries;
+            })->flatten(1); // flatten the nested arrays per brand
+
+            // Create a new LengthAwarePaginator for the transformed data
+            $currentPage = $brands->currentPage();
+            $perPage = $brands->perPage();
+            $total = $transformed->count();
+            $currentItems = $transformed->slice(($currentPage - 1) * $perPage, $perPage)->values();
+
+            $paginatedData = new \Illuminate\Pagination\LengthAwarePaginator(
+                $currentItems,
+                $total,
+                $perPage,
+                $currentPage,
+                ['path' => $request->url(), 'query' => $request->query()]
+            );
+
+            return response()->json([
+                'current_page' => $paginatedData->currentPage(),
+                'per_page' => $paginatedData->perPage(),
+                'last_page' => $paginatedData->lastPage(),
+                'total' => $paginatedData->total(),
+                'data' => $paginatedData->items(), // final transformed data
+            ]);
+        }
+
+     
+     private function resolveCategoryTree($category)
+     {
+         $levels = []; // Array to hold all levels of the hierarchy
+         $additional = []; // For any extra levels beyond a set depth
+         $level = 0;
+         $current = $category;
+     
+         // Traverse up the category tree until the top (parent_id == 0)
+         while ($current) {
+             // Add the category to the levels array
+             $levels[] = $current->name;
+     
+             // Move up the parent category
+             $current = $current->parent;
+             $level++;
+         }
+     
+         // Reverse the levels so the top-most parent comes first
+         $levels = array_reverse($levels);
+     
+         // If the depth is more than 3 levels, any extra categories go into 'additional'
+         if (count($levels) > 3) {
+             $additional = array_splice($levels, 3);
+         }
+     
+         return [
+             'level_1' => $levels[0] ?? null, // Primary category (Top-level)
+             'level_2' => $levels[1] ?? null, // Secondary category
+             'level_3' => $levels[2] ?? null, // Product family category
+             'additional' => $additional, // Any additional nested categories
+         ];
+     }
+     
+
+     
+
+
 
   // public function getAllBrandsWithCategories(Request $request)
     // {

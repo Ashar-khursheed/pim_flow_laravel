@@ -10323,171 +10323,109 @@
                 ]
             }
         },
-        "/api/brands/categories": {
+        "/api/brands-with-categories": {
             "get": {
                 "tags": [
                     "Product Groups"
                 ],
-                "summary": "Get Categories for All Brands",
-                "description": "Returns a list of all brands with their hierarchical categories (primary, secondary, product family, and additional child categories).",
-                "operationId": "c1fa3775e872a2ba486a9ec7d004d34b",
+                "summary": "Get Brands with Categories",
+                "description": "Retrieve a paginated list of brands along with their product categories, including primary, secondary, and product family.",
+                "operationId": "b99186f3a21bbda9c423ee9a6f02cf4f",
                 "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Number of items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 10
-                        }
-                    },
                     {
                         "name": "search",
                         "in": "query",
-                        "description": "Search term for brand name or category name",
+                        "description": "Search by brand name",
                         "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "example": "Nike"
                         }
                     },
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Field to sort by (brand_name, created_at)",
+                        "description": "Column to sort by (e.g., name, created_at)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "brand_name"
+                            "example": "name"
                         }
                     },
                     {
-                        "name": "sort_order",
+                        "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort order (asc, desc)",
+                        "description": "Sort direction (asc or desc)",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "default": "asc"
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "asc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of results per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of all brands with their categorized hierarchy",
+                        "description": "List of brands with their categories",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "properties": {
-                                        "current_page": {
-                                            "type": "integer",
-                                            "example": 1
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer",
-                                                        "example": 14
-                                                    },
-                                                    "brand_name": {
-                                                        "type": "string",
-                                                        "example": "Atosa"
-                                                    },
-                                                    "primary_category": {
-                                                        "type": "string",
-                                                        "example": "Refrigeration"
-                                                    },
-                                                    "secondary_category": {
-                                                        "type": "string",
-                                                        "example": "Commercial Refrigerator"
-                                                    },
-                                                    "product_family": {
-                                                        "type": "string",
-                                                        "example": "Back Bar Refrigerator"
-                                                    },
-                                                    "additional_categories": {
-                                                        "description": "Additional category levels beyond the standard three",
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "level": {
-                                                                    "type": "integer",
-                                                                    "example": 3
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "Double Door"
-                                                                }
-                                                            },
-                                                            "type": "object"
-                                                        }
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2024-10-22"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time",
-                                                        "example": "2025-02-11"
-                                                    }
-                                                },
-                                                "type": "object"
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "brand_name": {
+                                                "type": "string",
+                                                "example": "Brand 4"
+                                            },
+                                            "primary_category": {
+                                                "type": "string",
+                                                "example": "Electronics"
+                                            },
+                                            "secondary_category": {
+                                                "type": "string",
+                                                "example": "Laptops"
+                                            },
+                                            "product_family": {
+                                                "type": "string",
+                                                "example": "Gaming Laptops"
+                                            },
+                                            "additional_categories": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string",
+                                                    "example": "Accessories"
+                                                }
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-21T12:34:56Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2025-05-22T08:15:00Z"
                                             }
                                         },
-                                        "first_page_url": {
-                                            "type": "string"
-                                        },
-                                        "from": {
-                                            "type": "integer"
-                                        },
-                                        "last_page": {
-                                            "type": "integer"
-                                        },
-                                        "last_page_url": {
-                                            "type": "string"
-                                        },
-                                        "links": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        },
-                                        "next_page_url": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "path": {
-                                            "type": "string"
-                                        },
-                                        "per_page": {
-                                            "type": "integer"
-                                        },
-                                        "prev_page_url": {
-                                            "type": "string",
-                                            "nullable": true
-                                        },
-                                        "to": {
-                                            "type": "integer"
-                                        },
-                                        "total": {
-                                            "type": "integer"
-                                        }
-                                    },
-                                    "type": "object"
+                                        "type": "object"
+                                    }
                                 }
                             }
                         }
