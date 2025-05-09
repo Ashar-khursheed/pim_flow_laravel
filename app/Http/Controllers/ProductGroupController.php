@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Models\Brand;
 use App\Http\Controllers\JsonResponse;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 
 class ProductGroupController extends Controller
 {
@@ -823,105 +824,80 @@ class ProductGroupController extends Controller
     // }
 
    
-    public function getAllBrandsWithCategories(Request $request)
-    {
-        $perPage = $request->input('per_page', 10);
-        $currentPage = $request->input('page', 1);
-        $search = $request->input('search');
-        $sortBy = $request->input('sort_by', 'brand_name');
-        $sortOrder = $request->input('sort_order', 'asc');
-    
-        $allowedSortFields = ['brand_name', 'created_at', 'updated_at'];
-        if (!in_array($sortBy, $allowedSortFields)) {
-            $sortBy = 'brand_name';
-        }
-    
-        $allowedSortOrders = ['asc', 'desc'];
-        if (!in_array($sortOrder, $allowedSortOrders)) {
-            $sortOrder = 'asc';
-        }
-    
-        // Base query with eager loading
-        $brandsQuery = Brand::with(['products.categories']);
-    
-        if ($search) {
-            $brandsQuery->where('name', 'like', "%{$search}%")
-                ->orWhereHas('products.categories', function ($query) use ($search) {
-                    $query->where('name', 'like', "%{$search}%");
-                });
-        }
-    
-        if ($sortBy === 'brand_name') {
-            $brandsQuery->orderBy('name', $sortOrder);
-        } else {
-            $brandsQuery->orderBy($sortBy, $sortOrder);
-        }
-    
-        // Paginate brands first
-        $brands = $brandsQuery->paginate($perPage, ['*'], 'page', $currentPage);
-    
-        // Load all categories and build map
-        $allCategories = Category::all()->keyBy('id');
-        $categoryPathCache = [];
-    
-        $transformedData = collect();
-    
-        foreach ($brands as $brand) {
-            $productCategories = $brand->products->flatMap(function ($product) {
-                return $product->categories;
-            })->unique('id');
-    
-            $categoryLevels = [];
-    
-            foreach ($productCategories as $category) {
-                $path = $this->buildCategoryPathFromMap($category, $allCategories, $categoryPathCache);
-                $depth = count($path) - 1;
-    
-                if (!isset($categoryLevels[$depth])) {
-                    $categoryLevels[$depth] = [];
-                }
-    
-                $categoryLevels[$depth][] = $category->name;
-            }
-    
-            $primaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryLevels, 0);
-            $secondaryCategories = $this->getAllUniqueCategoriesAtLevel($categoryLevels, 1);
-            $productFamilies = $this->getAllUniqueCategoriesAtLevel($categoryLevels, 2);
-    
-            foreach ($primaryCategories as $primaryCategory) {
-                foreach ($secondaryCategories as $secondaryCategory) {
-                    foreach ($productFamilies as $productFamily) {
-                        $transformedData->push([
-                            'id' => $brand->id,
-                            'brand_name' => $brand->name,
-                            'primary_category' => $primaryCategory,
-                            'secondary_category' => $secondaryCategory,
-                            'product_family' => $productFamily,
-                        ]);
-                    }
-                }
-            }
-        }
-        $items = $transformedData->forPage($currentPage, $perPage)->values();
+   
+public function getAllBrandsWithCategories(Request $request)
+{
+    $perPage = $request->input('per_page', 10);
+    $currentPage = $request->input('page', 1);
+    $search = $request->input('search');
+    $sortBy = $request->input('sort_by', 'name');
+    $sortOrder = $request->input('sort_order', 'asc');
 
-        $paginator = new LengthAwarePaginator(
-            $items,
-            $transformedData->count(),
-            $perPage,
-            $currentPage,
-            ['path' => url()->current(), 'query' => $request->query()]
-        );
-    
-        return response()->json([
-            'data' => $transformedData,
-            'pagination' => [
-                'total' => $brands->total(),
-                'per_page' => $brands->perPage(),
-                'current_page' => $brands->currentPage(),
-                'last_page' => $brands->lastPage(),
-            ]
-        ]);
+    // Valid sort fields
+    $sortBy = in_array($sortBy, ['name', 'created_at', 'updated_at']) ? $sortBy : 'name';
+    $sortOrder = in_array($sortOrder, ['asc', 'desc']) ? $sortOrder : 'asc';
+
+    // Build base query
+    $query = Brand::with(['products.categories']);
+
+    if ($search) {
+        $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', "%{$search}%")
+              ->orWhereHas('products.categories', function ($sub) use ($search) {
+                  $sub->where('name', 'like', "%{$search}%");
+              });
+        });
     }
+
+    $brands = $query->orderBy($sortBy, $sortOrder)->paginate($perPage, ['*'], 'page', $currentPage);
+
+    // Cache all categories once
+    $allCategories = Category::all()->keyBy('id');
+    $categoryPathCache = [];
+
+    $results = [];
+
+    foreach ($brands as $brand) {
+        $seen = [];
+
+        foreach ($brand->products as $product) {
+            foreach ($product->categories as $category) {
+                // Avoid duplicate category chains
+                if (isset($seen[$category->id])) continue;
+                $seen[$category->id] = true;
+
+                $path = $this->buildCategoryPathFromMap($category, $allCategories, $categoryPathCache);
+
+                $results[] = [
+                    'id' => $brand->id,
+                    'brand_name' => $brand->name,
+                    'primary_category' => $path[0] ?? null,
+                    'secondary_category' => $path[1] ?? null,
+                    'product_family' => $path[2] ?? null,
+                ];
+            }
+        }
+    }
+
+    // Manually paginate flattened array
+    $total = count($results);
+    $sliced = array_slice($results, ($currentPage - 1) * $perPage, $perPage);
+
+    $paginator = new LengthAwarePaginator($sliced, $total, $perPage, $currentPage, [
+        'path' => url()->current(),
+        'query' => $request->query(),
+    ]);
+
+    return response()->json([
+        'data' => $paginator->items(),
+        'pagination' => [
+            'total' => $paginator->total(),
+            'per_page' => $paginator->perPage(),
+            'current_page' => $paginator->currentPage(),
+            'last_page' => $paginator->lastPage(),
+        ],
+    ]);
+}
 
   
     /**
