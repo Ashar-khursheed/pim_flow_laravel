@@ -64,12 +64,12 @@ class TransactionLogController extends BaseController
 
 	public function index(Request $request)
 	{
-		if (!auth()->user()->can('list activity log')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
+		// if (!auth()->user()->can('list activity log')) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => "You don't have permission to access this module.",
+		// 	]);
+		// }
 
 		// dd(auth()->id());
 		$records = TransactionLog::with(['createdBy:id,first_name,last_name'])->orderBy('id', 'desc');
@@ -145,12 +145,12 @@ class TransactionLogController extends BaseController
 	 */
 	public function show($id)
 	{
-		if (!auth()->user()->can('show activity log')) {
-			return response()->json([
-				'success' => false,
-				'message' => "You don't have permission to access this module.",
-			]);
-		}
+		// if (!auth()->user()->can('show activity log')) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => "You don't have permission to access this module.",
+		// 	]);
+		// }
 		$record = TransactionLog::with(['createdBy:id,first_name,last_name'])->find($id);
 
 		/* Check if record exists */
