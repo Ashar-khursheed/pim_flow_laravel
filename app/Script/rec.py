@@ -2,19 +2,28 @@ import os
 import json
 import requests
 from dotenv import load_dotenv
-import json
 import sys
 load_dotenv()
 
 class ClaudeRecommender:
-    def __init__(self):
-        self.headers = {
-            "x-api-key": os.getenv("CLAUDE_API_KEY"),
-            "anthropic-version": os.getenv("CLAUDE_VERSION"),
-            "Content-Type": "application/json"
-        }
-        self.api_url = os.getenv("CLAUDE_API_URL")
-        self.model = os.getenv("CLAUDE_MODEL")
+    def __init__(self, env_config=None):
+        # Use environment variables from config if provided, otherwise use env vars
+        if env_config:
+            self.headers = {
+                "x-api-key": env_config.get("CLAUDE_API_KEY"),
+                "anthropic-version": env_config.get("CLAUDE_VERSION"),
+                "Content-Type": "application/json"
+            }
+            self.api_url = env_config.get("CLAUDE_API_URL")
+            self.model = env_config.get("CLAUDE_MODEL")
+        else:
+            self.headers = {
+                "x-api-key": os.getenv("CLAUDE_API_KEY"),
+                "anthropic-version": os.getenv("CLAUDE_VERSION"),
+                "Content-Type": "application/json"
+            }
+            self.api_url = os.getenv("CLAUDE_API_URL")
+            self.model = os.getenv("CLAUDE_MODEL")
 
     def get_attributes_from_claude(self, parent_id, child_ids):
         """Get AI-generated attributes using parent/child context"""
@@ -52,7 +61,7 @@ class ClaudeRecommender:
             response.raise_for_status()
             return json.loads(response.json()['content'][0]['text'])
         except Exception as e:
-            print(f"Claude API Error: {str(e)}")
+            print(f"Claude API Error: {str(e)}", file=sys.stderr)
             return None
 
 def process_families(input_data):
@@ -89,37 +98,41 @@ def process_families(input_data):
     
     return families
 
-
-
 def main():
     try:
-        # Read all input from stdin
-        raw_input = sys.stdin.read()
+        # Get arguments from command line
+        if len(sys.argv) != 3:
+            raise ValueError("Expected exactly two arguments: env_config and input_data")
         
-        # Debug: Check what's being received
-        print("Received raw input:", repr(raw_input[:100]))  # First 100 characters
+        env_config = json.loads(sys.argv[1])
+        input_data = json.loads(sys.argv[2])
         
-        input_data = json.loads(raw_input)
+        # Initialize recommender with env config
+        recommender = ClaudeRecommender(env_config)
         
-        # Rest of your processing code
+        # Process the families
+        families = process_families(input_data)
+        
+        # Return the result
         result = {
             "success": True,
-            "families": []  # Your actual processing here
+            "families": families
         }
         
-        print(json.dumps(result, indent=2))
+        print(json.dumps(result))
         
     except json.JSONDecodeError as e:
         print(json.dumps({
             "success": False,
             "error": f"JSON Error: {str(e)}",
-            "received_sample": raw_input[:100]  # First 100 chars for debugging
-        }, indent=2))
+            "received_env": sys.argv[1][:100] if len(sys.argv) > 1 else "No env data",
+            "received_input": sys.argv[2][:100] if len(sys.argv) > 2 else "No input data"
+        }))
     except Exception as e:
         print(json.dumps({
             "success": False,
             "error": str(e)
-        }, indent=2))
+        }))
 
 if __name__ == "__main__":
     main()
