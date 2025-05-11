@@ -75,6 +75,7 @@ Here are the product variants and their attributes:
         try:
             response = requests.post(self.api_url, json=payload, headers=self.headers)
             response.raise_for_status()
+            print("Claude raw response:", json.dumps(response.json(), indent=2), file=sys.stderr)
             return json.loads(response.json()['content'][0]['text'])
         except Exception as e:
             print(f"Claude API Error: {str(e)}", file=sys.stderr)
@@ -102,7 +103,6 @@ def fetch_product_attributes(child_ids):
             cursor.execute(query)
             results = cursor.fetchall()
 
-        # Group attributes by product_id
         product_map = {}
         for row in results:
             pid = row["product_id"]
@@ -113,7 +113,6 @@ def fetch_product_attributes(child_ids):
                 "attribute_value": row["attribute_value"]
             })
 
-        # Convert to list of product objects
         return [
             {"product_id": pid, "attributes": attrs}
             for pid, attrs in product_map.items()
@@ -133,8 +132,10 @@ def process_families(input_data):
             continue
 
         products = fetch_product_attributes(child_ids)
-        if not products or len(products) != len(child_ids):
-            print(f"Warning: Some product attributes missing for parent_id {parent_id}", file=sys.stderr)
+        print("Fetched product attributes:", json.dumps(products, indent=2), file=sys.stderr)
+
+        if not products:
+            continue
 
         ai_response = recommender.get_attributes_from_claude(parent_id, products)
 
@@ -168,7 +169,7 @@ def main():
 
         env_config = json.loads(sys.argv[1])
         input_payload = json.loads(sys.argv[2])
-        input_data = input_payload.get("groups", [])
+        input_data = input_payload  # ← FIXED this line
 
         families = process_families(input_data)
 
