@@ -10515,8 +10515,19 @@
                     "Product Groups"
                 ],
                 "summary": "Get Grouped Product List",
-                "description": "Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy.",
+                "description": "Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy. Optionally filter by category.",
                 "operationId": "53460efd1592b1fa4aace8ef15953f85",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "query",
+                        "description": "Filter products by category ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",

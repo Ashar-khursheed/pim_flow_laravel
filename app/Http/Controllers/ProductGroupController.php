@@ -165,12 +165,19 @@ class ProductGroupController extends Controller
      }
 
 
-        /**
+       /**
      * @OA\Get(
      *     path="/api/product-groups",
      *     summary="Get Grouped Product List",
-     *     description="Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy.",
+     *     description="Fetches a list of product groups with their related products, including brand, image, categories, and taxonomy. Optionally filter by category.",
      *     tags={"Product Groups"},
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="query",
+     *         description="Filter products by category ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Response(
      *         response=200,
      *         description="Success",
@@ -204,40 +211,51 @@ class ProductGroupController extends Controller
      * )
      */
 
-     public function getGroupedProductDetails()
-     {
-         $groups = ProductGroup::with(['items.product' => function ($query) {
-             $query->with(['brand', 'categories', 'slug']);
-         }])->get();
-     
-         $result = [];
-     
-         foreach ($groups as $group) {
-             $products = [];
-     
-             foreach ($group->items as $item) {
-                 $product = $item->product;
-     
-                 if (!$product) continue;
-     
-                 $products[] = [
-                     'id' => $product->id,
-                     'name' => $product->name,
-                     'sku' => $product->sku,
-                     'image' => $product->image ? asset('storage/products/' . basename($product->image)) : null,
-                     'brand' => optional($product->brand)->name,
-                     'store' => null,
-                     'status' => $product->status,
-                     'product_family' => $product->categories->pluck('name')->unique()->values()->all(),
-                     'taxonomy_path' => optional($product->slug)->key,
-                 ];
-             }
-     
-             $result[$group->name] = $products;
-         }
-     
-         return $result;
-     }
+    public function getGroupedProductDetails(Request $request)
+    {
+        // Get the category_id from the query string, if it exists
+        $categoryId = $request->query('category_id');
+        
+        // Start building the query
+        $groups = ProductGroup::with(['items.product' => function ($query) use ($categoryId) {
+            $query->with(['brand', 'categories', 'slug']);
+            
+            // If category_id is provided, filter products by category
+            if ($categoryId) {
+                $query->whereHas('categories', function ($query) use ($categoryId) {
+                    $query->where('categories.id', $categoryId);
+                });
+            }
+        }])->get();
+
+        $result = [];
+
+        foreach ($groups as $group) {
+            $products = [];
+
+            foreach ($group->items as $item) {
+                $product = $item->product;
+
+                if (!$product) continue;
+
+                $products[] = [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'image' => $product->image ? asset('storage/products/' . basename($product->image)) : null,
+                    'brand' => optional($product->brand)->name,
+                    'store' => null,
+                    'status' => $product->status,
+                    'product_family' => $product->categories->pluck('name')->unique()->values()->all(),
+                    'taxonomy_path' => optional($product->slug)->key,
+                ];
+            }
+
+            $result[$group->name] = $products;
+        }
+
+        return $result;
+    }
 
     /**
      * @OA\Put(
