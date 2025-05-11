@@ -145,24 +145,36 @@ class ProductGroupController extends Controller
          // Extract the grouped products data
          $data = $result['data'];
      
-         // Process and save the grouped products
-         try {
-             foreach ($data as $groupName => $products) {
-                 $group = ProductGroup::create(['name' => $groupName]);
-     
-                 foreach ($products as $product) {
-                     ProductGroupItem::create([
-                         'group_id' => $group->id,
-                         'product_id' => $product['id']
-                     ]);
-                 }
-             }
-         } catch (\Exception $e) {
-             return response()->json(['error' => 'Error saving groups: ' . $e->getMessage()], 500);
-         }
-     
-         return response()->json(['message' => 'Groups saved successfully', 'data' => $data]);
-     }
+                // Process and save the grouped products
+        $productGroupMap = [];
+
+        try {
+            foreach ($data as $groupName => $products) {
+                $group = ProductGroup::create(['name' => $groupName]);
+
+                foreach ($products as $product) {
+                    ProductGroupItem::create([
+                        'group_id' => $group->id,
+                        'product_id' => $product['id']
+                    ]);
+
+                    // Map product ID to group ID
+                    $productGroupMap[$product['id']] = $group->id;
+                }
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error saving groups: ' . $e->getMessage()], 500);
+        }
+
+        // Return original structure plus group mapping
+        return response()->json([
+            'message' => 'Groups saved successfully',
+            'data' => $data,
+            'product_group_map' => $productGroupMap
+        ]);
+
+    } 
+
 
 
        /**
@@ -268,6 +280,7 @@ class ProductGroupController extends Controller
 
             $products[] = [
                 'id' => $product->id,
+                'group_id' => $group->id, // <-- Added this line
                 'name' => $product->name,
                 'sku' => $product->sku,
                 'image' => $product->image ?: null,
