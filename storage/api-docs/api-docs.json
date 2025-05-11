@@ -789,6 +789,478 @@
                 ]
             }
         },
+        "/api/generate-recommendations": {
+            "post": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Generate attribute recommendations for product groups",
+                "description": "Generates common attributes and variant combinations for grouped products using an AI script, and stores them in the attribute_recommendations table.",
+                "operationId": "c3d6116e534a5a8f1e7080bf95780317",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "groups": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "parent_id": {
+                                                    "description": "Parent group ID",
+                                                    "type": "integer"
+                                                },
+                                                "child_ids": {
+                                                    "description": "Array of product IDs",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success - Recommendations generated and stored.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "stored": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "AI processing failed or Python script error.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string"
+                                        },
+                                        "details": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/recommendations": {
+            "get": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Get all attribute recommendations",
+                "description": "Returns a list of all attribute recommendations",
+                "operationId": "getAttributeRecommendations",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "parent_id": {
+                                                "type": "integer",
+                                                "example": 101
+                                            },
+                                            "family_name": {
+                                                "type": "string",
+                                                "example": "Shirts Family"
+                                            },
+                                            "common_attributes": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                },
+                                                "example": [
+                                                    "color",
+                                                    "size",
+                                                    "material"
+                                                ]
+                                            },
+                                            "variants": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "color": {
+                                                            "type": "string"
+                                                        },
+                                                        "size": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-09-01T12:00:00Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-09-01T12:00:00Z"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/recommendations/{id}": {
+            "get": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Get a specific attribute recommendation",
+                "description": "Returns a specific attribute recommendation by ID",
+                "operationId": "showAttributeRecommendation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute recommendation",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "family_name": {
+                                            "type": "string",
+                                            "example": "Shirts Family"
+                                        },
+                                        "common_attributes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "color",
+                                                "size",
+                                                "material"
+                                            ]
+                                        },
+                                        "variants": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "color": {
+                                                        "type": "string"
+                                                    },
+                                                    "size": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-09-01T12:00:00Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-09-01T12:00:00Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Attribute recommendation not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Update an attribute recommendation",
+                "description": "Updates a specific attribute recommendation by ID",
+                "operationId": "updateAttributeRecommendation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute recommendation",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "family_name": {
+                                        "type": "string",
+                                        "example": "Shirts Family"
+                                    },
+                                    "common_attributes": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "example": [
+                                            "color",
+                                            "size",
+                                            "material"
+                                        ]
+                                    },
+                                    "variants": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "color": {
+                                                    "type": "string"
+                                                },
+                                                "size": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "parent_id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "family_name": {
+                                            "type": "string",
+                                            "example": "Shirts Family"
+                                        },
+                                        "common_attributes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "example": [
+                                                "color",
+                                                "size",
+                                                "material"
+                                            ]
+                                        },
+                                        "variants": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "color": {
+                                                        "type": "string"
+                                                    },
+                                                    "size": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-09-01T12:00:00Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-09-01T12:00:00Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Attribute recommendation not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Recommendations"
+                ],
+                "summary": "Delete an attribute recommendation",
+                "description": "Deletes a specific attribute recommendation by ID",
+                "operationId": "deleteAttributeRecommendation",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the attribute recommendation",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successfully deleted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Successfully deleted"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Attribute recommendation not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/login": {
             "post": {
                 "tags": [
@@ -15216,6 +15688,10 @@
         {
             "name": "Sliders",
             "description": "API for managing sliders"
+        },
+        {
+            "name": "Recommendations",
+            "description": "Recommendations"
         },
         {
             "name": "Brands",
