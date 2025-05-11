@@ -46,6 +46,7 @@ use App\Http\Controllers\VendorController;
 use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductGroupController;
+use App\Http\Controllers\AttributeRecommendationController;
 
 
 
@@ -68,6 +69,9 @@ Route::middleware(['auth:api'])->group(function () {
 	
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
+
+	Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
+    Route::apiResource('recommendations', AttributeRecommendationController::class);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
     Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
