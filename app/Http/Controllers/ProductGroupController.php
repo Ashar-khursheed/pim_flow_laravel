@@ -270,7 +270,7 @@ class ProductGroupController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'sku' => $product->sku,
-                'image' => $product->image ? basename($product->image) : null,
+                'image' => $product->image ?: null,
                 'brand' => optional($product->brand)->name,
                 'store' => null,
                 'status' => $product->status,
