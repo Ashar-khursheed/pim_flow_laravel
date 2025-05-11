@@ -1,13 +1,14 @@
 import os
 import json
 import requests
-from dotenv import load_dotenv
+import pymysql
 import sys
+from dotenv import load_dotenv
+
 load_dotenv()
 
 class ClaudeRecommender:
     def __init__(self, env_config=None):
-        # Use environment variables from config if provided, otherwise use env vars
         if env_config:
             self.headers = {
                 "x-api-key": env_config.get("CLAUDE_API_KEY"),
@@ -25,20 +26,35 @@ class ClaudeRecommender:
             self.api_url = os.getenv("CLAUDE_API_URL")
             self.model = os.getenv("CLAUDE_MODEL")
 
-    def get_attributes_from_claude(self, parent_id, child_ids):
-        """Get AI-generated attributes using parent/child context"""
+    def get_attributes_from_claude(self, parent_id, products):
         prompt = f"""
-        Analyze product family with parent ID {parent_id} containing variants {child_ids}.
-        Recommend relevant technical attributes and values in JSON format:
-        {{
-          "common_attributes": [{{"attribute_id": int, "attribute_name": string}}],
-          "variants": [
-            {{
-              "product_id": int, 
-              "attributes": [{{"attribute_name": string, "value": string}}]
-            }}
-          ]
-        }}
+You are a product information expert.
+
+Below is a list of product variants under a parent product ID {parent_id}. Each product has technical attributes.
+
+Your task:
+1. Identify attributes that exist in **every product**.
+2. From those, choose the **top 3 most relevant**.
+3. Return the result in the format:
+
+{{
+  "common_attributes": [
+    {{ "attribute_name": "Color", "reason": "e.g. always shown on product listings" }},
+    ...
+  ],
+  "variants": [
+    {{
+      "product_id": 2971,
+      "attributes": [
+        {{ "attribute_name": "Color", "value": "Black" }},
+        ...
+      ]
+    }}
+  ]
+}}
+
+Here are the product variants and their attributes:
+{json.dumps(products, indent=2)}
         """
 
         payload = {
@@ -46,14 +62,14 @@ class ClaudeRecommender:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a PIM specialist analyzing product relationships. Focus on technical specifications."
+                    "content": "You are a PIM specialist focused on choosing key product attributes."
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            "max_tokens": 1000
+            "max_tokens": 1500
         }
 
         try:
@@ -64,16 +80,63 @@ class ClaudeRecommender:
             print(f"Claude API Error: {str(e)}", file=sys.stderr)
             return None
 
+def fetch_product_attributes(child_ids):
+    db = pymysql.connect(
+        host=os.getenv("DB_HOST"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+        database=os.getenv("DB_NAME"),
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+
+    try:
+        with db.cursor() as cursor:
+            format_ids = ",".join(str(pid) for pid in child_ids)
+            query = f"""
+            SELECT pa.product_id, a.name as attribute_name, pa.attribute_value
+            FROM product_attributes pa
+            JOIN attributes a ON pa.attribute_id = a.id
+            WHERE pa.product_id IN ({format_ids})
+            """
+            cursor.execute(query)
+            results = cursor.fetchall()
+
+        # Group attributes by product_id
+        product_map = {}
+        for row in results:
+            pid = row["product_id"]
+            if pid not in product_map:
+                product_map[pid] = []
+            product_map[pid].append({
+                "attribute_name": row["attribute_name"],
+                "attribute_value": row["attribute_value"]
+            })
+
+        # Convert to list of product objects
+        return [
+            {"product_id": pid, "attributes": attrs}
+            for pid, attrs in product_map.items()
+        ]
+    finally:
+        db.close()
+
 def process_families(input_data):
     recommender = ClaudeRecommender()
     families = []
 
     for item in input_data:
-        if not item["child_ids"]:
+        parent_id = item.get("parent_id")
+        child_ids = item.get("child_ids")
+
+        if not child_ids:
             continue
 
-        parent_id = item["parent_id"]
-        ai_response = recommender.get_attributes_from_claude(parent_id, item["child_ids"])
+        products = fetch_product_attributes(child_ids)
+        if not products or len(products) != len(child_ids):
+            print(f"Warning: Some product attributes missing for parent_id {parent_id}", file=sys.stderr)
+
+        ai_response = recommender.get_attributes_from_claude(parent_id, products)
 
         if not ai_response:
             continue
@@ -81,7 +144,7 @@ def process_families(input_data):
         family = {
             "parent_id": parent_id,
             "family_name": f"family-{parent_id}",
-            "child_ids": item["child_ids"],
+            "child_ids": child_ids,
             "common_attributes": ai_response.get("common_attributes", []),
             "variants": []
         }
@@ -95,32 +158,27 @@ def process_families(input_data):
             })
 
         families.append(family)
-    
+
     return families
 
 def main():
     try:
-        # Get arguments from command line
         if len(sys.argv) != 3:
             raise ValueError("Expected exactly two arguments: env_config and input_data")
-        
+
         env_config = json.loads(sys.argv[1])
-        input_data = json.loads(sys.argv[2])
-        
-        # Initialize recommender with env config
-        recommender = ClaudeRecommender(env_config)
-        
-        # Process the families
+        input_payload = json.loads(sys.argv[2])
+        input_data = input_payload.get("groups", [])
+
         families = process_families(input_data)
-        
-        # Return the result
+
         result = {
             "success": True,
             "families": families
         }
-        
+
         print(json.dumps(result))
-        
+
     except json.JSONDecodeError as e:
         print(json.dumps({
             "success": False,
