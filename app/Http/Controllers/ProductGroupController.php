@@ -165,7 +165,7 @@ class ProductGroupController extends Controller
      }
 
 
-    /**
+       /**
      * @OA\Get(
      *     path="/api/product-groups",
      *     summary="Get Grouped Product List",
@@ -212,51 +212,81 @@ class ProductGroupController extends Controller
      */
 
     public function getGroupedProductDetails(Request $request)
-    {
-        // Get the category_id from the query string, if it exists
-        $categoryId = $request->query('category_id');
-        
-        // Start building the query
-        $groups = ProductGroup::with(['items.product' => function ($query) use ($categoryId) {
-            $query->with(['brand', 'categories', 'slug']);
-            
-            // If category_id is provided, filter products by category
-            if ($categoryId) {
-                $query->whereHas('categories', function ($query) use ($categoryId) {
-                    $query->where('categories.id', $categoryId);
-                });
-            }
-        }])->get();
+{
+    // Get the category_id from the query string
+    $categoryId = $request->query('category_id');
+    
+    // If no category ID provided, return error response
+    if (!$categoryId) {
+        return response()->json([
+            'error' => 'Category ID is required for filtering',
+            'status' => false
+        ], 400);
+    }
+    
+    // First, find product IDs that belong to the requested category
+    $productIdsInCategory = DB::table('ec_product_category_product')
+        ->where('category_id', $categoryId)
+        ->pluck('product_id')
+        ->toArray();
+    
+    if (empty($productIdsInCategory)) {
+        return response()->json([
+            'message' => 'No products found in this category',
+            'status' => true,
+            'data' => []
+        ]);
+    }
+    
+    // Now get the groups that contain these products
+    $groups = ProductGroup::with(['items' => function ($query) use ($productIdsInCategory) {
+        $query->whereIn('product_id', $productIdsInCategory);
+    }, 'items.product' => function ($query) {
+        $query->with(['brand', 'categories', 'slug']);
+    }])
+    ->whereHas('items', function ($query) use ($productIdsInCategory) {
+        $query->whereIn('product_id', $productIdsInCategory);
+    })
+    ->get();
 
-        $result = [];
+    $result = [];
 
-        foreach ($groups as $group) {
-            $products = [];
+    foreach ($groups as $group) {
+        $products = [];
 
-            foreach ($group->items as $item) {
-                $product = $item->product;
+        foreach ($group->items as $item) {
+            $product = $item->product;
 
-                if (!$product) continue;
+            if (!$product) continue;
 
-                $products[] = [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'image' => $product->image ? asset('storage/products/' . basename($product->image)) : null,
-                    'brand' => optional($product->brand)->name,
-                    'store' => null,
-                    'status' => $product->status,
-                    'product_family' => $product->categories->pluck('name')->unique()->values()->all(),
-                    'taxonomy_path' => optional($product->slug)->key,
-                ];
-            }
+            // Verify this product is in the requested category (double-check)
+            $inCategory = $product->categories->contains(function ($category) use ($categoryId) {
+                return $category->id == $categoryId;
+            });
 
-            $result[$group->name] = $products;
+            if (!$inCategory) continue;
+
+            $products[] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'image' => $product->image ? basename($product->image) : null,
+                'brand' => optional($product->brand)->name,
+                'store' => null,
+                'status' => $product->status,
+                'product_family' => $product->categories->pluck('name')->unique()->values()->all(),
+                'taxonomy_path' => optional($product->slug)->key,
+            ];
         }
 
-        return $result;
+        // Only include groups that have products in this category
+        if (count($products) > 0) {
+            $result[$group->name] = $products;
+        }
     }
 
+    return $result;
+}
 
     /**
      * @OA\Put(
