@@ -1,14 +1,14 @@
 import os
 import json
-import requests
 import pymysql
-import sys
+import requests
 from dotenv import load_dotenv
-
+import sys
 load_dotenv()
 
 class ClaudeRecommender:
     def __init__(self, env_config=None):
+        # Use environment variables from config if provided, otherwise use env vars
         if env_config:
             self.headers = {
                 "x-api-key": env_config.get("CLAUDE_API_KEY"),
@@ -17,6 +17,10 @@ class ClaudeRecommender:
             }
             self.api_url = env_config.get("CLAUDE_API_URL")
             self.model = env_config.get("CLAUDE_MODEL")
+            self.db_host = env_config.get("DB_HOST")
+            self.db_name = env_config.get("DB_DATABASE")
+            self.db_user = env_config.get("DB_USERNAME")
+            self.db_password = env_config.get("DB_PASSWORD")
         else:
             self.headers = {
                 "x-api-key": os.getenv("CLAUDE_API_KEY"),
@@ -25,36 +29,73 @@ class ClaudeRecommender:
             }
             self.api_url = os.getenv("CLAUDE_API_URL")
             self.model = os.getenv("CLAUDE_MODEL")
+            self.db_host = os.getenv("DB_HOST")
+            self.db_name = os.getenv("DB_DATABASE")
+            self.db_user = os.getenv("DB_USERNAME")
+            self.db_password = os.getenv("DB_PASSWORD")
 
-    def get_attributes_from_claude(self, parent_id, products):
+    def connect_to_db(self):
+        """Connect to the database and return the connection"""
+        try:
+            connection = pymysql.connect(
+                host=self.db_host,
+                user=self.db_user,
+                password=self.db_password,
+                database=self.db_name
+            )
+            return connection
+        except pymysql.MySQLError as e:
+            print(f"Error connecting to database: {e}", file=sys.stderr)
+            return None
+
+    def get_attributes_from_db(self, child_ids):
+        """Get attributes for the given child product IDs"""
+        connection = self.connect_to_db()
+        if connection is None:
+            return []
+
+        try:
+            with connection.cursor() as cursor:
+                # Query to fetch the attributes for the child products
+                query = """
+                    SELECT pa.product_id, a.id as attribute_id, a.name as attribute_name, pa.value as attribute_value
+                    FROM product_attributes pa
+                    JOIN attributes a ON pa.attribute_id = a.id
+                    WHERE pa.product_id IN (%s)
+                """
+                cursor.execute(query, (",".join(map(str, child_ids)),))
+                results = cursor.fetchall()
+
+            attributes = {}
+            for row in results:
+                product_id = row["product_id"]
+                attribute = {
+                    "attribute_id": row["attribute_id"],
+                    "attribute_name": row["attribute_name"],
+                    "attribute_value": row["attribute_value"]
+                }
+                if product_id not in attributes:
+                    attributes[product_id] = []
+                attributes[product_id].append(attribute)
+
+            return attributes
+        finally:
+            connection.close()
+
+    def get_attributes_from_claude(self, parent_id, child_ids):
+        """Get AI-generated attributes using parent/child context"""
         prompt = f"""
-You are a product information expert.
-
-Below is a list of product variants under a parent product ID {parent_id}. Each product has technical attributes.
-
-Your task:
-1. Identify attributes that exist in **every product**.
-2. From those, choose the **top 3 most relevant**.
-3. Return the result in the format:
-
-{{
-  "common_attributes": [
-    {{ "attribute_name": "Color", "reason": "e.g. always shown on product listings" }},
-    ...
-  ],
-  "variants": [
-    {{
-      "product_id": 2971,
-      "attributes": [
-        {{ "attribute_name": "Color", "value": "Black" }},
-        ...
-      ]
-    }}
-  ]
-}}
-
-Here are the product variants and their attributes:
-{json.dumps(products, indent=2)}
+        Analyze product family with parent ID {parent_id} containing variants {child_ids}.
+        Recommend relevant technical attributes and values in JSON format:
+        {{
+          "common_attributes": [{{"attribute_id": int, "attribute_name": string}}],
+          "variants": [
+            {{
+              "product_id": int, 
+              "attributes": [{{"attribute_name": string, "value": string}}]
+            }}
+          ]
+        }}
         """
 
         payload = {
@@ -62,90 +103,42 @@ Here are the product variants and their attributes:
             "messages": [
                 {
                     "role": "system",
-                    "content": "You are a PIM specialist focused on choosing key product attributes."
+                    "content": "You are a PIM specialist analyzing product relationships. Focus on technical specifications."
                 },
                 {
                     "role": "user",
                     "content": prompt
                 }
             ],
-            "max_tokens": 1500
+            "max_tokens": 1000
         }
 
         try:
             response = requests.post(self.api_url, json=payload, headers=self.headers)
             response.raise_for_status()
-            print("Claude raw response:", json.dumps(response.json(), indent=2), file=sys.stderr)
             return json.loads(response.json()['content'][0]['text'])
         except Exception as e:
             print(f"Claude API Error: {str(e)}", file=sys.stderr)
             return None
-
-def fetch_product_attributes(child_ids):
-    db = pymysql.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor
-    )
-
-    try:
-        with db.cursor() as cursor:
-            format_ids = ",".join(str(pid) for pid in child_ids)
-            query = f"""
-            SELECT pa.product_id, a.name as attribute_name, pa.attribute_value
-            FROM product_attributes pa
-            JOIN attributes a ON pa.attribute_id = a.id
-            WHERE pa.product_id IN ({format_ids})
-            """
-            cursor.execute(query)
-            results = cursor.fetchall()
-
-        product_map = {}
-        for row in results:
-            pid = row["product_id"]
-            if pid not in product_map:
-                product_map[pid] = []
-            product_map[pid].append({
-                "attribute_name": row["attribute_name"],
-                "attribute_value": row["attribute_value"]
-            })
-
-        return [
-            {"product_id": pid, "attributes": attrs}
-            for pid, attrs in product_map.items()
-        ]
-    finally:
-        db.close()
 
 def process_families(input_data):
     recommender = ClaudeRecommender()
     families = []
 
     for item in input_data:
-        parent_id = item.get("parent_id")
-        child_ids = item.get("child_ids")
-
-        if not child_ids:
+        if not item["child_ids"]:
             continue
 
-        products = fetch_product_attributes(child_ids)
-        print("Fetched product attributes:", json.dumps(products, indent=2), file=sys.stderr)
-
-        if not products:
-            continue
-
-        ai_response = recommender.get_attributes_from_claude(parent_id, products)
-
+        parent_id = item["parent_id"]
+        ai_response = recommender.get_attributes_from_claude(parent_id, item["child_ids"])
+        
         if not ai_response:
             continue
 
         family = {
             "parent_id": parent_id,
             "family_name": f"family-{parent_id}",
-            "child_ids": child_ids,
+            "child_ids": item["child_ids"],
             "common_attributes": ai_response.get("common_attributes", []),
             "variants": []
         }
@@ -159,27 +152,32 @@ def process_families(input_data):
             })
 
         families.append(family)
-
+    
     return families
 
 def main():
     try:
+        # Get arguments from command line
         if len(sys.argv) != 3:
             raise ValueError("Expected exactly two arguments: env_config and input_data")
-
+        
         env_config = json.loads(sys.argv[1])
-        input_payload = json.loads(sys.argv[2])
-        input_data = input_payload  # ← FIXED this line
-
+        input_data = json.loads(sys.argv[2])
+        
+        # Initialize recommender with env config
+        recommender = ClaudeRecommender(env_config)
+        
+        # Process the families
         families = process_families(input_data)
-
+        
+        # Return the result
         result = {
             "success": True,
             "families": families
         }
-
+        
         print(json.dumps(result))
-
+        
     except json.JSONDecodeError as e:
         print(json.dumps({
             "success": False,
