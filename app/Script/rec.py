@@ -134,6 +134,9 @@ def process_families(input_data):
         
         if not ai_response:
             continue
+        
+        # Debug: Log AI response
+        print(f"AI Response for Parent ID {parent_id}: {ai_response}", file=sys.stderr)
 
         family = {
             "parent_id": parent_id,
