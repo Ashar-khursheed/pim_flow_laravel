@@ -1,14 +1,15 @@
 import os
 import json
-import pymysql
 import requests
 from dotenv import load_dotenv
 import sys
+from collections import Counter
+
 load_dotenv()
 
 class ClaudeRecommender:
     def __init__(self, env_config=None):
-        # Use environment variables from config if provided, otherwise use env vars
+        """Initialize the Claude Recommender with environment configurations."""
         if env_config:
             self.headers = {
                 "x-api-key": env_config.get("CLAUDE_API_KEY"),
@@ -17,10 +18,6 @@ class ClaudeRecommender:
             }
             self.api_url = env_config.get("CLAUDE_API_URL")
             self.model = env_config.get("CLAUDE_MODEL")
-            self.db_host = env_config.get("DB_HOST")
-            self.db_name = env_config.get("DB_DATABASE")
-            self.db_user = env_config.get("DB_USERNAME")
-            self.db_password = env_config.get("DB_PASSWORD")
         else:
             self.headers = {
                 "x-api-key": os.getenv("CLAUDE_API_KEY"),
@@ -29,86 +26,33 @@ class ClaudeRecommender:
             }
             self.api_url = os.getenv("CLAUDE_API_URL")
             self.model = os.getenv("CLAUDE_MODEL")
-            self.db_host = os.getenv("DB_HOST")
-            self.db_name = os.getenv("DB_DATABASE")
-            self.db_user = os.getenv("DB_USERNAME")
-            self.db_password = os.getenv("DB_PASSWORD")
-
-    def connect_to_db(self):
-        """Connect to the database and return the connection"""
-        try:
-            connection = pymysql.connect(
-                host=self.db_host,
-                user=self.db_user,
-                password=self.db_password,
-                database=self.db_name
-            )
-            return connection
-        except pymysql.MySQLError as e:
-            print(f"Error connecting to database: {e}", file=sys.stderr)
-            return None
-
-    def get_attributes_from_db(self, child_ids):
-        """Get attributes for the given child product IDs"""
-        connection = self.connect_to_db()
-        if connection is None:
-            return []
-
-        try:
-            with connection.cursor() as cursor:
-                # Query to fetch the attributes for the child products
-                query = """
-                    SELECT pa.product_id, a.id as attribute_id, a.name as attribute_name, pa.value as attribute_value
-                    FROM product_attributes pa
-                    JOIN attributes a ON pa.attribute_id = a.id
-                    WHERE pa.product_id IN (%s)
-                """
-                cursor.execute(query, (",".join(map(str, child_ids)),))
-                results = cursor.fetchall()
-
-            attributes = {}
-            for row in results:
-                product_id = row["product_id"]
-                attribute = {
-                    "attribute_id": row["attribute_id"],
-                    "attribute_name": row["attribute_name"],
-                    "attribute_value": row["attribute_value"]
-                }
-                if product_id not in attributes:
-                    attributes[product_id] = []
-                attributes[product_id].append(attribute)
-
-            return attributes
-        finally:
-            connection.close()
 
     def get_attributes_from_claude(self, parent_id, child_ids):
-        """Get AI-generated attributes using parent/child context"""
+        """Get AI-generated attributes using parent/child context."""
         prompt = f"""
-        Analyze product family with parent ID {parent_id} containing variants {child_ids}.
-        Recommend relevant technical attributes and values in JSON format:
+        Analyze the following product family with parent ID {parent_id} containing product variants {child_ids}.
+        Please identify the top 3 most relevant common attributes shared across all products in the family.
+        The attributes should be listed in JSON format, with each attribute having a name and value.
+        The returned JSON should contain:
         {{
-          "common_attributes": [{{"attribute_id": int, "attribute_name": string}}],
-          "variants": [
-            {{
-              "product_id": int, 
-              "attributes": [{{"attribute_name": string, "value": string}}]
-            }}
-          ]
+            "common_attributes": [
+                {{"attribute_name": string, "value": string}}
+            ],
+            "variants": [
+                {{
+                    "product_id": int,
+                    "attributes": [
+                        {{"attribute_name": string, "value": string}}
+                    ]
+                }}
+            ]
         }}
         """
-
         payload = {
             "model": self.model,
             "messages": [
-                {
-                    "role": "system",
-                    "content": "You are a PIM specialist analyzing product relationships. Focus on technical specifications."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
+                {"role": "system", "content": "You are an expert analyzing product attributes and identifying the most relevant ones."},
+                {"role": "user", "content": prompt}
             ],
             "max_tokens": 1000
         }
@@ -121,7 +65,24 @@ class ClaudeRecommender:
             print(f"Claude API Error: {str(e)}", file=sys.stderr)
             return None
 
+    def process_common_attributes(self, attributes_data):
+        """Process and filter attributes that are common across all products."""
+        all_attributes = []
+        for product in attributes_data:
+            for attribute in product.get('attributes', []):
+                all_attributes.append(attribute['attribute_name'])
+
+        # Count how many times each attribute occurs across the products
+        attribute_counts = Counter(all_attributes)
+
+        # Find common attributes that are available in every product (i.e., appear in all products)
+        common_attributes = [attr for attr, count in attribute_counts.items() if count == len(attributes_data)]
+        
+        return common_attributes[:3]  # Only return top 3 most common attributes
+
+
 def process_families(input_data):
+    """Process each family and return the common top 3 attributes for each."""
     recommender = ClaudeRecommender()
     families = []
 
@@ -130,19 +91,25 @@ def process_families(input_data):
             continue
 
         parent_id = item["parent_id"]
+        
+        # Get AI response for the common attributes of the given product group
         ai_response = recommender.get_attributes_from_claude(parent_id, item["child_ids"])
         
         if not ai_response:
             continue
-        
-        # Debug: Log AI response
-        print(f"AI Response for Parent ID {parent_id}: {ai_response}", file=sys.stderr)
 
+        # Process the attributes returned by Claude to get the common ones
+        common_attributes = recommender.process_common_attributes(ai_response.get("variants", []))
+
+        # If no common attributes, skip this family
+        if not common_attributes:
+            continue
+        
         family = {
             "parent_id": parent_id,
             "family_name": f"family-{parent_id}",
             "child_ids": item["child_ids"],
-            "common_attributes": ai_response.get("common_attributes", []),
+            "common_attributes": [{"attribute_name": attr, "value": "N/A"} for attr in common_attributes],
             "variants": []
         }
 
@@ -151,43 +118,34 @@ def process_families(input_data):
                 "product_id": variant["product_id"],
                 "product_name": f"Product {parent_id}-{variant['product_id']}",
                 "image": f"https://example.com/{variant['product_id']}.webp",
-                "attributes": variant["attributes"]
+                "attributes": [{"attribute_name": attr['attribute_name'], "value": attr['value']} for attr in variant.get('attributes', [])]
             })
 
         families.append(family)
-    
+
     return families
+
 
 def main():
     try:
-        # Get arguments from command line
         if len(sys.argv) != 3:
             raise ValueError("Expected exactly two arguments: env_config and input_data")
         
         env_config = json.loads(sys.argv[1])
         input_data = json.loads(sys.argv[2])
-        
-        # Initialize recommender with env config
+
         recommender = ClaudeRecommender(env_config)
-        
-        # Process the families
+
+        # Process families based on the input data
         families = process_families(input_data)
-        
-        # Return the result
+
         result = {
             "success": True,
             "families": families
         }
-        
+
         print(json.dumps(result))
-        
-    except json.JSONDecodeError as e:
-        print(json.dumps({
-            "success": False,
-            "error": f"JSON Error: {str(e)}",
-            "received_env": sys.argv[1][:100] if len(sys.argv) > 1 else "No env data",
-            "received_input": sys.argv[2][:100] if len(sys.argv) > 2 else "No input data"
-        }))
+
     except Exception as e:
         print(json.dumps({
             "success": False,
