@@ -49,34 +49,51 @@ class ClaudeRecommender:
             Attributes:
             {json.dumps(attributes_data, indent=2)}
 
-            Select the most relevant technical attributes for this family and its variants. Prioritize attributes such as:
-            - Width (e.g., "54 1/8\"")
-            - Voltage (e.g., "115 V")
-            - Capacity (e.g., "50 cu. ft.")
-            - Door Type (e.g., "Glass")
-            - Compressor Location (e.g., "Bottom Mount")
+            Select the three most relevant technical attributes for this product family based on the product names and available attributes.
+        These attributes must be shared across all variants and used consistently in both common_attributes and variants.
+        Prioritize attributes that are critical for comparing variants of this product type (e.g., for refrigerators: Width, Capacity, Number of Doors; for ovens: Temperature Range, Fuel Type, Oven Capacity).
 
-            Output a JSON object with the following schema:
+        Output a JSON object with the following schema:
+        {{
+          "common_attributes": [
+            {{"attribute_id": int, "attribute_name": string}}
+          ],
+          "variants": [
             {{
-              "common_attributes": [
-                {{"attribute_id": int, "attribute_name": string}}
-              ],
-              "variants": [
-                {{
-                  "product_id": int,
-                  "attributes": [
-                    {{"attribute_name": string, "value": string}}
-                  ]
-                }}
+              "product_id": int,
+              "attributes": [
+                {{"attribute_name": string, "value": string}}
               ]
             }}
+          ]
+        }}
 
-            - "common_attributes" should list 2-3 attributes shared across all variants.
-            - Each variant should have 2-3 attributes.
-            - Use attribute IDs from the provided attributes if available.
-            - Ensure attributes are consistent with the product names.
-            - Do not include any text, comments, or explanations outside the JSON object.
-            """
+        - "common_attributes" must list exactly three attributes shared across all variants.
+        - Each variant must list exactly these three attributes with their specific values.
+        - Use attribute IDs from the provided attributes if available; otherwise, assign unique integers starting from 1.
+        - Use values from the provided attributes or infer realistic values based on the product names and context.
+        - Ensure attributes are consistent with the product names and relevant to the product type.
+        - Do not include any text, comments, or explanations outside the JSON object.
+
+        Example for refrigerators:
+        {{
+          "common_attributes": [
+            {{"attribute_id": 597, "attribute_name": "Width"}},
+            {{"attribute_id": 194, "attribute_name": "Capacity"}},
+            {{"attribute_id": 75, "attribute_name": "Number of Doors"}}
+          ],
+          "variants": [
+            {{
+              "product_id": 2951,
+              "attributes": [
+                {{"attribute_name": "Width", "value": "27.5\""}},
+                {{"attribute_name": "Capacity", "value": "7.2 Cu.Ft"}},
+                {{"attribute_name": "Number of Doors", "value": "1 door"}}
+              ]
+            }}
+          ]
+        }}
+        """
 
             payload = {
                 "model": self.model,
@@ -116,9 +133,10 @@ class ClaudeRecommender:
             print(traceback.format_exc(), file=sys.stderr)
             return None
 
-def get_product_ids(group_id, connection_config):
+def get_product_ids(group_id):
     """Fetch product IDs from product_group_items for a given group_id"""
-    connection = pymysql.connect(**connection_config)
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -129,24 +147,16 @@ def get_product_ids(group_id, connection_config):
             """
             cursor.execute(sql, (group_id,))
             results = cursor.fetchall()
-            product_ids = [row['product_id'] for row in results]
-            
-            print(f"Fetched Product IDs for Group {group_id}: {product_ids}", file=sys.stderr)
-            return product_ids
-    except Exception as e:
-        print(f"Error fetching product IDs: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+            return [row['product_id'] for row in results]
+    except Exception:
         return []
     finally:
         connection.close()
 
-def get_product_data(product_ids, connection_config):
+def get_product_data(product_ids):
     """Fetch product details from ec_products and related tables"""
-    if not product_ids:
-        print("No product IDs provided to get_product_data", file=sys.stderr)
-        return {}
-
-    connection = pymysql.connect(**connection_config)
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -158,20 +168,31 @@ def get_product_data(product_ids, connection_config):
                     p.image,
                     b.name AS brand,
                     c.name AS product_family,
-                    COALESCE(s.key, 'Unknown') AS taxonomy_path
+                    COALESCE((
+                        SELECT GROUP_CONCAT(c2.name SEPARATOR ' > ')
+                        FROM ec_product_categories c2
+                        WHERE c2.id IN (
+                            WITH RECURSIVE category_path AS (
+                                SELECT id, name, parent_id
+                                FROM ec_product_categories
+                                WHERE id = cp.category_id
+                                UNION ALL
+                                SELECT c3.id, c3.name, c3.parent_id
+                                FROM ec_product_categories c3
+                                INNER JOIN category_path cp2 ON c3.id = cp2.parent_id
+                            )
+                            SELECT id FROM category_path
+                        )
+                    ), 'Unknown') AS taxonomy_path
                 FROM ec_products p
                 INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
                 INNER JOIN ec_product_categories c ON cp.category_id = c.id
                 LEFT JOIN ec_brands b ON p.brand_id = b.id
-                LEFT JOIN slugs s ON p.id = s.reference_id
                 WHERE p.id IN %s AND p.status = 'published'
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
-            
-            print("Product Data Results:", json.dumps(results, indent=2), file=sys.stderr)
-            
-            product_dict = {
+            return {
                 str(row['id']): {
                     "name": row['name'],
                     "sku": row['sku'],
@@ -181,23 +202,15 @@ def get_product_data(product_ids, connection_config):
                     "taxonomy_path": row['taxonomy_path']
                 } for row in results
             }
-            
-            print("Processed Product Dictionary:", json.dumps(product_dict, indent=2), file=sys.stderr)
-            return product_dict
-    except Exception as e:
-        print(f"Error fetching product data: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception:
         return {}
     finally:
         connection.close()
 
-def get_product_attributes(product_ids, connection_config):
+def get_product_attributes(product_ids):
     """Fetch attributes from product_attributes joined with attributes"""
-    if not product_ids:
-        print("No product IDs provided to get_product_attributes", file=sys.stderr)
-        return []
-
-    connection = pymysql.connect(**connection_config)
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -213,13 +226,8 @@ def get_product_attributes(product_ids, connection_config):
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
-            
-            print("Product Attributes Results:", json.dumps(results, indent=2), file=sys.stderr)
-            
             return results
-    except Exception as e:
-        print(f"Error fetching product attributes: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+    except Exception:
         return []
     finally:
         connection.close()
@@ -228,8 +236,6 @@ def get_common_family_name(product_names):
     """Extract brand and product family from product names for family_name"""
     if not product_names:
         return "Unknown Family"
-    
-    print(f"Product Names for Family Name: {product_names}", file=sys.stderr)
     
     words = [name.split() for name in product_names]
     min_length = min(len(w) for w in words)
@@ -241,7 +247,7 @@ def get_common_family_name(product_names):
         else:
             break
     
-    brand = " ".join(common_words[:2]) if len(common_words) >= 2 else product_names[0].split()[0]
+    brand = common_words[0] if common_words else product_names[0].split()[0]
     
     family_terms = []
     for name in product_names:
@@ -252,15 +258,13 @@ def get_common_family_name(product_names):
             if term in ["Worktop", "Refrigerator"]:
                 capture = True
                 descriptive_terms.append(term)
-            elif capture and term != "Cu.Ft":
+            elif capture and term not in ["Cu.Ft", "27.5\"", "48.3\"", "60.2\""]:
                 descriptive_terms.append(term)
         if descriptive_terms:
             family_terms.append(" ".join(descriptive_terms))
     
     family_part = family_terms[0] if family_terms else "Refrigerator"
     family_name = f"{brand} {family_part}".strip()
-    
-    print(f"Generated Family Name: {family_name}", file=sys.stderr)
     
     return family_name or "Unknown Family"
 
@@ -276,35 +280,27 @@ def clean_json(input_str):
     return '\n'.join(lines)
 
 def process_families(input_data):
-    # Get database connection config
-    config = DBConfig().connection
     recommender = ClaudeRecommender()
     families = []
-
-    print("Processing Families - Input Data:", json.dumps(input_data, indent=2), file=sys.stderr)
 
     for item in input_data:
         parent_id = item.get("parent_id")
         if not parent_id:
-            print("Skipping item - No parent_id", file=sys.stderr)
             continue
 
-        child_ids = get_product_ids(parent_id, config)
+        child_ids = get_product_ids(parent_id)[:3]  # Limit to top 3 products
         if not child_ids:
-            print(f"No child IDs found for parent ID {parent_id}", file=sys.stderr)
             continue
         
-        product_data = get_product_data(tuple(child_ids), config)
+        product_data = get_product_data(tuple(child_ids))
         if not product_data:
-            print(f"No product data found for child IDs {child_ids}", file=sys.stderr)
             continue
         
         product_names = [info["name"] for info in product_data.values()]
         family_name = get_common_family_name(product_names)
         
-        attributes = get_product_attributes(tuple(child_ids), config)
+        attributes = get_product_attributes(tuple(child_ids))
         if not attributes:
-            print(f"No attributes found for child IDs {child_ids}", file=sys.stderr)
             continue
         
         attributes_data = {}
@@ -318,15 +314,22 @@ def process_families(input_data):
                 "value": attr['value']
             })
         
-        print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
-        
         ai_response = recommender.get_attributes_from_claude(parent_id, child_ids, attributes_data, product_names)
         if not ai_response or not isinstance(ai_response, dict):
-            print("Claude AI did not return a valid response", file=sys.stderr)
             continue
 
         if not ai_response.get("common_attributes") or not ai_response.get("variants"):
-            print("Claude AI response lacks common attributes or variants", file=sys.stderr)
+            continue
+
+        # Validate that variants have the same attributes as common_attributes
+        expected_attrs = {attr["attribute_name"] for attr in ai_response["common_attributes"]}
+        valid_variants = []
+        for variant in ai_response["variants"]:
+            variant_attrs = {attr["attribute_name"] for attr in variant.get("attributes", [])}
+            if variant_attrs == expected_attrs:
+                valid_variants.append(variant)
+
+        if not valid_variants:
             continue
 
         family = {
@@ -337,10 +340,9 @@ def process_families(input_data):
             "variants": []
         }
 
-        for variant in ai_response["variants"]:
+        for variant in valid_variants[:3]:  # Limit to top 3 variants
             product_id = variant.get("product_id")
             if product_id not in child_ids:
-                print(f"Skipping variant - product ID {product_id} not in child IDs", file=sys.stderr)
                 continue
 
             product_info = product_data.get(str(product_id), {
@@ -366,14 +368,11 @@ def process_families(input_data):
         if family["variants"]:
             families.append(family)
     
-    print(f"Total Families Processed: {len(families)}", file=sys.stderr)
-
     if not families:
         return {
             "success": False,
             "category_id": str(parent_id) if 'parent_id' in locals() else "unknown",
-            "error": "No valid families processed",
-            "debug_info": "Check system error log for detailed debugging information"
+            "error": "No valid families processed"
         }
 
     return {
