@@ -129,8 +129,11 @@ class AttributeController extends BaseController
 				unset($record->attributeGroup);
 				unset($record->attribute_group_id);
 
-				$record->created_by = $record->creator->name;
+				$record->created_by = $record->creator->name ?? null;
 				unset($record->creator);
+
+				$record->updated_by = $record->updator->name ?? null;
+				unset($record->updator);
 				return $record;
 			});
 		} else {
