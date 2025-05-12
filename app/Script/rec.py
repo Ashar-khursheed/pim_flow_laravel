@@ -3,7 +3,7 @@ import json
 import requests
 import sys
 import re
-import json
+import traceback
 import pymysql
 
 class DBConfig:
@@ -30,74 +30,88 @@ class ClaudeRecommender:
 
     def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
         """Get AI-selected relevant attributes using database-fetched data"""
-        prompt = f"""
-        You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
-        Below are the product names and attributes fetched from the database for these variants:
+        try:
+            # Debug: Print input data
+            print(f"Claude Input - Parent ID: {parent_id}", file=sys.stderr)
+            print(f"Child IDs: {child_ids}", file=sys.stderr)
+            print("Product Names:", json.dumps(product_names, indent=2), file=sys.stderr)
+            print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
 
-        Product Names:
-        {json.dumps(product_names, indent=2)}
+            prompt = f"""
+            You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
+            Below are the product names and attributes fetched from the database for these variants:
 
-        Attributes:
-        {json.dumps(attributes_data, indent=2)}
+            Product Names:
+            {json.dumps(product_names, indent=2)}
 
-        Select the most relevant technical attributes for this family and its variants. Prioritize attributes such as:
-        - Width (e.g., "54 1/8\"")
-        - Voltage (e.g., "115 V")
-        - Capacity (e.g., "50 cu. ft.")
-        - Door Type (e.g., "Glass")
-        - Compressor Location (e.g., "Bottom Mount")
+            Attributes:
+            {json.dumps(attributes_data, indent=2)}
 
-        Output a JSON object with the following schema:
-        {{
-          "common_attributes": [
-            {{"attribute_id": int, "attribute_name": string}}
-          ],
-          "variants": [
+            Select the most relevant technical attributes for this family and its variants. Prioritize attributes such as:
+            - Width (e.g., "54 1/8\"")
+            - Voltage (e.g., "115 V")
+            - Capacity (e.g., "50 cu. ft.")
+            - Door Type (e.g., "Glass")
+            - Compressor Location (e.g., "Bottom Mount")
+
+            Output a JSON object with the following schema:
             {{
-              "product_id": int,
-              "attributes": [
-                {{"attribute_name": string, "value": string}}
+              "common_attributes": [
+                {{"attribute_id": int, "attribute_name": string}}
+              ],
+              "variants": [
+                {{
+                  "product_id": int,
+                  "attributes": [
+                    {{"attribute_name": string, "value": string}}
+                  ]
+                }}
               ]
             }}
-          ]
-        }}
 
-        - "common_attributes" should list 2-3 attributes shared across all variants (e.g., Voltage, Door Type).
-        - Each variant should have 2-3 attributes, including at least one unique attribute (e.g., Width, Capacity).
-        - Use attribute IDs from the provided attributes if available; otherwise, assign unique integers starting from 1.
-        - Use values from the provided attributes or infer realistic values based on the product names and context (kitchen equipment).
-        - Ensure attributes are consistent with the product names (e.g., reflect dimensions or features mentioned).
-        - Do not include any text, comments, or explanations outside the JSON object.
-        """
+            - "common_attributes" should list 2-3 attributes shared across all variants.
+            - Each variant should have 2-3 attributes.
+            - Use attribute IDs from the provided attributes if available.
+            - Ensure attributes are consistent with the product names.
+            - Do not include any text, comments, or explanations outside the JSON object.
+            """
 
-        payload = {
-            "model": self.model,
-            "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 1000
-        }
+            payload = {
+                "model": self.model,
+                "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
+                "messages": [
+                    {
+                        "role": "user",
+                        "content": prompt
+                    }
+                ],
+                "max_tokens": 1000
+            }
 
-        try:
             response = requests.post(self.api_url, json=payload, headers=self.headers)
             response.raise_for_status()
             content = response.json()
             raw_response = content['content'][0]['text']
             
+            print(f"Raw Claude Response: {raw_response}", file=sys.stderr)
+            
             try:
-                return json.loads(raw_response)
+                parsed_response = json.loads(raw_response)
             except json.JSONDecodeError:
                 json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
                 if json_match:
                     json_string = json_match.group(0)
-                    return json.loads(json_string)
+                    parsed_response = json.loads(json_string)
                 else:
-                    raise ValueError("No valid JSON found in Claude response")
-        except requests.exceptions.RequestException:
+                    print("No valid JSON found in Claude response", file=sys.stderr)
+                    return None
+
+            print("Parsed Claude Response:", json.dumps(parsed_response, indent=2), file=sys.stderr)
+            return parsed_response
+
+        except Exception as e:
+            print(f"Error in get_attributes_from_claude: {str(e)}", file=sys.stderr)
+            print(traceback.format_exc(), file=sys.stderr)
             return None
 
 def get_product_ids(group_id, connection_config):
@@ -113,15 +127,23 @@ def get_product_ids(group_id, connection_config):
             """
             cursor.execute(sql, (group_id,))
             results = cursor.fetchall()
-            return [row['product_id'] for row in results]
+            product_ids = [row['product_id'] for row in results]
+            
+            print(f"Fetched Product IDs for Group {group_id}: {product_ids}", file=sys.stderr)
+            return product_ids
     except Exception as e:
         print(f"Error fetching product IDs: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
         return []
     finally:
         connection.close()
 
 def get_product_data(product_ids, connection_config):
     """Fetch product details from ec_products and related tables"""
+    if not product_ids:
+        print("No product IDs provided to get_product_data", file=sys.stderr)
+        return {}
+
     connection = pymysql.connect(**connection_config)
     
     try:
@@ -144,7 +166,10 @@ def get_product_data(product_ids, connection_config):
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
-            return {
+            
+            print("Product Data Results:", json.dumps(results, indent=2), file=sys.stderr)
+            
+            product_dict = {
                 str(row['id']): {
                     "name": row['name'],
                     "sku": row['sku'],
@@ -154,14 +179,22 @@ def get_product_data(product_ids, connection_config):
                     "taxonomy_path": row['taxonomy_path']
                 } for row in results
             }
+            
+            print("Processed Product Dictionary:", json.dumps(product_dict, indent=2), file=sys.stderr)
+            return product_dict
     except Exception as e:
         print(f"Error fetching product data: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
         return {}
     finally:
         connection.close()
 
 def get_product_attributes(product_ids, connection_config):
     """Fetch attributes from product_attributes joined with attributes"""
+    if not product_ids:
+        print("No product IDs provided to get_product_attributes", file=sys.stderr)
+        return []
+
     connection = pymysql.connect(**connection_config)
     
     try:
@@ -178,9 +211,13 @@ def get_product_attributes(product_ids, connection_config):
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
+            
+            print("Product Attributes Results:", json.dumps(results, indent=2), file=sys.stderr)
+            
             return results
     except Exception as e:
         print(f"Error fetching product attributes: {e}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
         return []
     finally:
         connection.close()
@@ -189,6 +226,8 @@ def get_common_family_name(product_names):
     """Extract brand and product family from product names for family_name"""
     if not product_names:
         return "Unknown Family"
+    
+    print(f"Product Names for Family Name: {product_names}", file=sys.stderr)
     
     words = [name.split() for name in product_names]
     min_length = min(len(w) for w in words)
@@ -219,6 +258,8 @@ def get_common_family_name(product_names):
     family_part = family_terms[0] if family_terms else "Refrigerator"
     family_name = f"{brand} {family_part}".strip()
     
+    print(f"Generated Family Name: {family_name}", file=sys.stderr)
+    
     return family_name or "Unknown Family"
 
 def clean_json(input_str):
@@ -238,17 +279,22 @@ def process_families(input_data):
     recommender = ClaudeRecommender()
     families = []
 
+    print("Processing Families - Input Data:", json.dumps(input_data, indent=2), file=sys.stderr)
+
     for item in input_data:
         parent_id = item.get("parent_id")
         if not parent_id:
+            print("Skipping item - No parent_id", file=sys.stderr)
             continue
 
         child_ids = get_product_ids(parent_id, config)
         if not child_ids:
+            print(f"No child IDs found for parent ID {parent_id}", file=sys.stderr)
             continue
         
         product_data = get_product_data(tuple(child_ids), config)
         if not product_data:
+            print(f"No product data found for child IDs {child_ids}", file=sys.stderr)
             continue
         
         product_names = [info["name"] for info in product_data.values()]
@@ -256,6 +302,7 @@ def process_families(input_data):
         
         attributes = get_product_attributes(tuple(child_ids), config)
         if not attributes:
+            print(f"No attributes found for child IDs {child_ids}", file=sys.stderr)
             continue
         
         attributes_data = {}
@@ -269,11 +316,15 @@ def process_families(input_data):
                 "value": attr['value']
             })
         
+        print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
+        
         ai_response = recommender.get_attributes_from_claude(parent_id, child_ids, attributes_data, product_names)
         if not ai_response or not isinstance(ai_response, dict):
+            print("Claude AI did not return a valid response", file=sys.stderr)
             continue
 
         if not ai_response.get("common_attributes") or not ai_response.get("variants"):
+            print("Claude AI response lacks common attributes or variants", file=sys.stderr)
             continue
 
         family = {
@@ -287,6 +338,7 @@ def process_families(input_data):
         for variant in ai_response["variants"]:
             product_id = variant.get("product_id")
             if product_id not in child_ids:
+                print(f"Skipping variant - product ID {product_id} not in child IDs", file=sys.stderr)
                 continue
 
             product_info = product_data.get(str(product_id), {
@@ -312,11 +364,14 @@ def process_families(input_data):
         if family["variants"]:
             families.append(family)
     
+    print(f"Total Families Processed: {len(families)}", file=sys.stderr)
+
     if not families:
         return {
             "success": False,
             "category_id": str(parent_id) if 'parent_id' in locals() else "unknown",
-            "error": "No valid families processed"
+            "error": "No valid families processed",
+            "debug_info": "Check system error log for detailed debugging information"
         }
 
     return {
@@ -334,8 +389,12 @@ def main():
         if not raw_input.strip():
             raise ValueError("No input provided")
         
+        print(f"Raw Input Received: {raw_input}", file=sys.stderr)
+        
         # Clean and parse input JSON
         cleaned_input = clean_json(raw_input)
+        print(f"Cleaned Input: {cleaned_input}", file=sys.stderr)
+        
         input_data = json.loads(cleaned_input)
         
         # Process families
@@ -346,17 +405,26 @@ def main():
     
     except json.JSONDecodeError as e:
         # Handle JSON parsing errors
-        print(json.dumps({
+        error_details = {
             "success": False,
             "error": f"JSON Error: {str(e)}",
-            "received_sample": raw_input[:100]
-        }, indent=2))
+            "received_sample": raw_input[:100],
+            "full_error": traceback.format_exc()
+        }
+        print(json.dumps(error_details, indent=2))
+        print(f"JSON Decode Error: {str(e)}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
+    
     except Exception as e:
         # Handle any other unexpected errors
-        print(json.dumps({
+        error_details = {
             "success": False,
-            "error": str(e)
-        }, indent=2))
+            "error": str(e),
+            "full_error": traceback.format_exc()
+        }
+        print(json.dumps(error_details, indent=2))
+        print(f"Unexpected Error: {str(e)}", file=sys.stderr)
+        print(traceback.format_exc(), file=sys.stderr)
 
 if __name__ == "__main__":
     main()
