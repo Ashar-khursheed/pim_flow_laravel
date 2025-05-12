@@ -9059,6 +9059,16 @@
                             "type": "string",
                             "example": "samsung"
                         }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter products by status (e.g., active, inactive)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "active"
+                        }
                     }
                 ],
                 "responses": {
@@ -9335,6 +9345,14 @@
                                     "refund": {
                                         "type": "string",
                                         "example": "1"
+                                    },
+                                    "categories": {
+                                        "description": "Array of category IDs (can include parent and child)",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "quantity": {
                                         "type": "integer",
