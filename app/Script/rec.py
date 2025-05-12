@@ -6,6 +6,7 @@ import re
 import traceback
 import pymysql
 from dotenv import load_dotenv
+from itertools import combinations
 load_dotenv(dotenv_path='.env')  # Adjust path if needed
 
 class DBConfig:
@@ -30,123 +31,102 @@ class ClaudeRecommender:
         self.api_url = os.getenv("CLAUDE_API_URL")
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-sonnet-20240229")
 
-    def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
-        """Get AI-selected relevant attributes using database-fetched data"""
-        try:
-            # Debug: Print input data
-            print(f"Claude Input - Parent ID: {parent_id}", file=sys.stderr)
-            print(f"Child IDs: {child_ids}", file=sys.stderr)
-            print("Product Names:", json.dumps(product_names, indent=2), file=sys.stderr)
-            print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
+    def find_common_and_best_attributes(self, product_ids, attributes_data, product_names):
+        """
+        Find common attributes across products and select the most relevant ones
+        """
+        # Group attributes by attribute name
+        attribute_groups = {}
+        for pid, attrs in attributes_data.items():
+            for attr in attrs:
+                name = attr['attribute_name']
+                value = attr['value']
+                if name not in attribute_groups:
+                    attribute_groups[name] = {}
+                attribute_groups[name][pid] = value
 
+        # Find attributes present in all products
+        common_attributes = {}
+        for name, values in attribute_groups.items():
+            if len(values) == len(product_ids):
+                common_attributes[name] = values
+
+        # If no common attributes, return None
+        if not common_attributes:
+            return None
+
+        # If more than 3 common attributes, use Claude to select top 3
+        if len(common_attributes) > 3:
             prompt = f"""
-            You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
-            Below are the product names and attributes fetched from the database for these variants:
+            You are analyzing commercial kitchen equipment with the following common attributes:
+            {json.dumps(common_attributes, indent=2)}
 
-            Product Names:
-            {json.dumps(product_names, indent=2)}
+            Product Names: {json.dumps(product_names, indent=2)}
 
-            Attributes:
-            {json.dumps(attributes_data, indent=2)}
+            Select the three most relevant technical attributes for these products.
+            Prioritize attributes that:
+            1. Are critical for comparing product variants
+            2. Provide meaningful differentiation
+            3. Are technical and measurable
 
-            Select the most relevant technical attributes for this family and its variants. Prioritize attributes such as:
-            - Width (e.g., "54 1/8\"")
-            - Voltage (e.g., "115 V")
-            - Capacity (e.g., "50 cu. ft.")
-            - Door Type (e.g., "Glass")
-            - Compressor Location (e.g., "Bottom Mount")
-
-            Output a JSON object with the following schema:
-            {{
-              "common_attributes": [
-                {{"attribute_id": int, "attribute_name": string}}
-              ],
-              "variants": [
-                {{
-                  "product_id": int,
-                  "attributes": [
-                    {{"attribute_name": string, "value": string}}
-                  ]
-                }}
-              ]
-            }}
-
-            - "common_attributes" should list 2-3 attributes shared across all variants.
-            - Each variant should have 2-3 attributes.
-            - Use attribute IDs from the provided attributes if available.
-            - Ensure attributes are consistent with the product names.
-            - Do not include any text, comments, or explanations outside the JSON object.
+            Respond ONLY with a JSON array of the three attribute names you select.
             """
 
             payload = {
                 "model": self.model,
-                "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "max_tokens": 1000
+                "system": "You are a PIM specialist analyzing product specifications. Be precise and strategic.",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 100
             }
 
-            response = requests.post(self.api_url, json=payload, headers=self.headers)
-            response.raise_for_status()
-            content = response.json()
-            raw_response = content['content'][0]['text']
-            
-            print(f"Raw Claude Response: {raw_response}", file=sys.stderr)
-            
             try:
-                parsed_response = json.loads(raw_response)
-            except json.JSONDecodeError:
-                json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+                response = requests.post(self.api_url, json=payload, headers=self.headers)
+                response.raise_for_status()
+                content = response.json()
+                raw_response = content['content'][0]['text']
+                
+                # Extract JSON array
+                json_match = re.search(r'\[.*?\]', raw_response, re.DOTALL)
                 if json_match:
-                    json_string = json_match.group(0)
-                    parsed_response = json.loads(json_string)
+                    selected_attrs = json.loads(json_match.group(0))
+                    common_attributes = {k: common_attributes[k] for k in selected_attrs if k in common_attributes}
                 else:
-                    print("No valid JSON found in Claude response", file=sys.stderr)
-                    return None
+                    # Fallback to first 3 if JSON parsing fails
+                    common_attributes = dict(list(common_attributes.items())[:3])
+            except Exception:
+                # Fallback to first 3 if Claude fails
+                common_attributes = dict(list(common_attributes.items())[:3])
 
-            print("Parsed Claude Response:", json.dumps(parsed_response, indent=2), file=sys.stderr)
-            return parsed_response
+        # Prepare the result
+        result = {
+            "common_attributes": [
+                {"attribute_name": name, "attribute_id": i+1} 
+                for i, name in enumerate(common_attributes.keys())
+            ],
+            "variants": []
+        }
 
-        except Exception as e:
-            print(f"Error in get_attributes_from_claude: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
-            return None
-
-def get_product_ids(group_id, connection_config):
-    """Fetch product IDs from product_group_items for a given group_id"""
-    connection = pymysql.connect(**connection_config)
-    
-    try:
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
-            sql = """
-                SELECT product_id
-                FROM product_group_items
-                WHERE group_id = %s
-            """
-            cursor.execute(sql, (group_id,))
-            results = cursor.fetchall()
-            product_ids = [row['product_id'] for row in results]
+        # Add variants with their attribute values
+        for pid in product_ids:
+            variant_attrs = []
+            for attr_name in common_attributes.keys():
+                value = common_attributes[attr_name].get(str(pid), "N/A")
+                variant_attrs.append({
+                    "attribute_name": attr_name,
+                    "value": value
+                })
             
-            print(f"Fetched Product IDs for Group {group_id}: {product_ids}", file=sys.stderr)
-            return product_ids
-    except Exception as e:
-        print(f"Error fetching product IDs: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-        return []
-    finally:
-        connection.close()
+            result["variants"].append({
+                "product_id": pid,
+                "attributes": variant_attrs
+            })
 
-def get_product_data(product_ids, connection_config):
+        return result
+
+def get_product_data(product_ids):
     """Fetch product details from ec_products and related tables"""
-    if not product_ids:
-        print("No product IDs provided to get_product_data", file=sys.stderr)
-        return {}
-
-    connection = pymysql.connect(**connection_config)
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -158,20 +138,31 @@ def get_product_data(product_ids, connection_config):
                     p.image,
                     b.name AS brand,
                     c.name AS product_family,
-                    COALESCE(s.key, 'Unknown') AS taxonomy_path
+                    COALESCE((
+                        SELECT GROUP_CONCAT(c2.name SEPARATOR ' > ')
+                        FROM ec_product_categories c2
+                        WHERE c2.id IN (
+                            WITH RECURSIVE category_path AS (
+                                SELECT id, name, parent_id
+                                FROM ec_product_categories
+                                WHERE id = cp.category_id
+                                UNION ALL
+                                SELECT c3.id, c3.name, c3.parent_id
+                                FROM ec_product_categories c3
+                                INNER JOIN category_path cp2 ON c3.id = cp2.parent_id
+                            )
+                            SELECT id FROM category_path
+                        )
+                    ), 'Unknown') AS taxonomy_path
                 FROM ec_products p
                 INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
                 INNER JOIN ec_product_categories c ON cp.category_id = c.id
                 LEFT JOIN ec_brands b ON p.brand_id = b.id
-                LEFT JOIN slugs s ON p.id = s.reference_id
                 WHERE p.id IN %s AND p.status = 'published'
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
-            
-            print("Product Data Results:", json.dumps(results, indent=2), file=sys.stderr)
-            
-            product_dict = {
+            return {
                 str(row['id']): {
                     "name": row['name'],
                     "sku": row['sku'],
@@ -181,23 +172,16 @@ def get_product_data(product_ids, connection_config):
                     "taxonomy_path": row['taxonomy_path']
                 } for row in results
             }
-            
-            print("Processed Product Dictionary:", json.dumps(product_dict, indent=2), file=sys.stderr)
-            return product_dict
     except Exception as e:
-        print(f"Error fetching product data: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+        print(f"Error in get_product_data: {e}")
         return {}
     finally:
         connection.close()
 
-def get_product_attributes(product_ids, connection_config):
+def get_product_attributes(product_ids):
     """Fetch attributes from product_attributes joined with attributes"""
-    if not product_ids:
-        print("No product IDs provided to get_product_attributes", file=sys.stderr)
-        return []
-
-    connection = pymysql.connect(**connection_config)
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -214,13 +198,21 @@ def get_product_attributes(product_ids, connection_config):
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
             
-            print("Product Attributes Results:", json.dumps(results, indent=2), file=sys.stderr)
+            attributes_data = {}
+            for row in results:
+                pid = str(row['product_id'])
+                if pid not in attributes_data:
+                    attributes_data[pid] = []
+                attributes_data[pid].append({
+                    "attribute_id": row['attribute_id'],
+                    "attribute_name": row['attribute_name'],
+                    "value": row['value']
+                })
             
-            return results
+            return attributes_data
     except Exception as e:
-        print(f"Error fetching product attributes: {e}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-        return []
+        print(f"Error in get_product_attributes: {e}")
+        return {}
     finally:
         connection.close()
 
@@ -228,8 +220,6 @@ def get_common_family_name(product_names):
     """Extract brand and product family from product names for family_name"""
     if not product_names:
         return "Unknown Family"
-    
-    print(f"Product Names for Family Name: {product_names}", file=sys.stderr)
     
     words = [name.split() for name in product_names]
     min_length = min(len(w) for w in words)
@@ -241,7 +231,7 @@ def get_common_family_name(product_names):
         else:
             break
     
-    brand = " ".join(common_words[:2]) if len(common_words) >= 2 else product_names[0].split()[0]
+    brand = common_words[0] if common_words else product_names[0].split()[0]
     
     family_terms = []
     for name in product_names:
@@ -252,81 +242,45 @@ def get_common_family_name(product_names):
             if term in ["Worktop", "Refrigerator"]:
                 capture = True
                 descriptive_terms.append(term)
-            elif capture and term != "Cu.Ft":
+            elif capture and term not in ["Cu.Ft", "27.5\"", "48.3\"", "60.2\""]:
                 descriptive_terms.append(term)
         if descriptive_terms:
             family_terms.append(" ".join(descriptive_terms))
     
-    family_part = family_terms[0] if family_terms else "Refrigerator"
+    family_part = family_terms[0] if family_terms else "Product"
     family_name = f"{brand} {family_part}".strip()
-    
-    print(f"Generated Family Name: {family_name}", file=sys.stderr)
     
     return family_name or "Unknown Family"
 
-def clean_json(input_str):
-    """Remove comments and trailing commas from JSON"""
-    lines = []
-    for line in input_str.split('\n'):
-        line = re.sub(r'//.*', '', line)
-        line = re.sub(r',\s*}(?=\s*})', '}', line)
-        line = re.sub(r',\s*\](?=\s*\])', ']', line)
-        if line.strip():
-            lines.append(line)
-    return '\n'.join(lines)
-
 def process_families(input_data):
-    # Get database connection config
-    config = DBConfig().connection
     recommender = ClaudeRecommender()
     families = []
 
-    print("Processing Families - Input Data:", json.dumps(input_data, indent=2), file=sys.stderr)
-
     for item in input_data:
         parent_id = item.get("parent_id")
-        if not parent_id:
-            print("Skipping item - No parent_id", file=sys.stderr)
-            continue
-
-        child_ids = get_product_ids(parent_id, config)
+        input_child_ids = item.get("child_ids", [])
+        
+        # Use input child IDs instead of fetching from database
+        child_ids = [str(pid) for pid in input_child_ids]
+        
         if not child_ids:
-            print(f"No child IDs found for parent ID {parent_id}", file=sys.stderr)
             continue
         
-        product_data = get_product_data(tuple(child_ids), config)
+        product_data = get_product_data(tuple(child_ids))
         if not product_data:
-            print(f"No product data found for child IDs {child_ids}", file=sys.stderr)
             continue
         
         product_names = [info["name"] for info in product_data.values()]
         family_name = get_common_family_name(product_names)
         
-        attributes = get_product_attributes(tuple(child_ids), config)
+        attributes = get_product_attributes(tuple(child_ids))
         if not attributes:
-            print(f"No attributes found for child IDs {child_ids}", file=sys.stderr)
             continue
         
-        attributes_data = {}
-        for attr in attributes:
-            pid = str(attr['product_id'])
-            if pid not in attributes_data:
-                attributes_data[pid] = []
-            attributes_data[pid].append({
-                "attribute_id": attr['attribute_id'],
-                "attribute_name": attr['attribute_name'],
-                "value": attr['value']
-            })
+        # Find common and best attributes
+        ai_response = recommender.find_common_and_best_attributes(child_ids, attributes, product_names)
         
-        print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
-        
-        ai_response = recommender.get_attributes_from_claude(parent_id, child_ids, attributes_data, product_names)
-        if not ai_response or not isinstance(ai_response, dict):
-            print("Claude AI did not return a valid response", file=sys.stderr)
-            continue
-
-        if not ai_response.get("common_attributes") or not ai_response.get("variants"):
-            print("Claude AI response lacks common attributes or variants", file=sys.stderr)
+        if not ai_response or not ai_response.get("common_attributes") or not ai_response.get("variants"):
             continue
 
         family = {
@@ -340,7 +294,6 @@ def process_families(input_data):
         for variant in ai_response["variants"]:
             product_id = variant.get("product_id")
             if product_id not in child_ids:
-                print(f"Skipping variant - product ID {product_id} not in child IDs", file=sys.stderr)
                 continue
 
             product_info = product_data.get(str(product_id), {
@@ -366,14 +319,11 @@ def process_families(input_data):
         if family["variants"]:
             families.append(family)
     
-    print(f"Total Families Processed: {len(families)}", file=sys.stderr)
-
     if not families:
         return {
             "success": False,
             "category_id": str(parent_id) if 'parent_id' in locals() else "unknown",
-            "error": "No valid families processed",
-            "debug_info": "Check system error log for detailed debugging information"
+            "error": "No valid families processed"
         }
 
     return {
@@ -384,49 +334,28 @@ def process_families(input_data):
 
 def main():
     try:
-        # Read input from stdin
         raw_input = sys.stdin.read()
-        
-        # Check if input is empty
         if not raw_input.strip():
             raise ValueError("No input provided")
         
-        print(f"Raw Input Received: {raw_input}", file=sys.stderr)
-        
-        # Clean and parse input JSON
-        cleaned_input = clean_json(raw_input)
-        print(f"Cleaned Input: {cleaned_input}", file=sys.stderr)
-        
+        # Remove comments and clean JSON
+        cleaned_input = re.sub(r'//.*', '', raw_input)
         input_data = json.loads(cleaned_input)
         
-        # Process families
         result = process_families(input_data)
-        
-        # Output result as JSON
         print(json.dumps(result, indent=2))
-    
     except json.JSONDecodeError as e:
-        # Handle JSON parsing errors
-        error_details = {
+        print(json.dumps({
             "success": False,
             "error": f"JSON Error: {str(e)}",
-            "received_sample": raw_input[:100],
-            "full_error": traceback.format_exc()
-        }
-        print(json.dumps(error_details, indent=2))
-        print(f"JSON Decode Error: {str(e)}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-    
+            "received_sample": raw_input[:100]
+        }, indent=2))
     except Exception as e:
-        # Handle any other unexpected errors
-        error_details = {
+        print(json.dumps({
             "success": False,
             "error": str(e),
-            "full_error": traceback.format_exc()
-        }
-        print(json.dumps(error_details, indent=2))
-        print(f"Unexpected Error: {str(e)}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+            "trace": traceback.format_exc()
+        }, indent=2))
 
 if __name__ == "__main__":
     main()
