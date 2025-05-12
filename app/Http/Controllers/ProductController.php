@@ -54,6 +54,13 @@ class ProductController extends BaseController
 	 *         required=false,
 	 *         @OA\Schema(type="string", example="samsung")
 	 *     ),
+	 *		@OA\Parameter(
+	 * 				name="status",
+	 *				in="query",
+	 *				description="Filter products by status (e.g., active, inactive)",
+	 *				required=false,
+	 *				@OA\Schema(type="string", example="active")
+	 *				),
 	 *     @OA\Response(
 	 *         response=200,
 	 *         description="Successful response",
@@ -98,6 +105,8 @@ class ProductController extends BaseController
 	{
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
+		$status = $request->input('status'); // Add this line
+
 
 		$query = Product::with([
 			'brand:id,name',
@@ -108,6 +117,12 @@ class ProductController extends BaseController
 		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
 
 		/* Apply search if provided */
+
+		  // Apply status filter
+		  if ($status !== null) {
+			$query->where('status', $status);
+		}
+
 		if ($search) {
 			$query->where(function($q) use ($search) {
 				$q->where('name', 'like', "%{$search}%")
@@ -274,6 +289,7 @@ class ProductController extends BaseController
 	{
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
+
 			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
 			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
 			'Marketing' => ['name', 'content', 'description'],
@@ -300,10 +316,60 @@ class ProductController extends BaseController
 		];
 
 		$attrType = $request->attr_type ?? 'All';
+
 		$attributes = $attributeGroup[$attrType] ?? $attributeGroup['All'];
-		$with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
+		// $with = array_merge($relations[$attrType] ?? [], ['categories:id,name,parent_id']);
+		$with = array_merge($relations[$attrType] ?? [], [
+			'categories:id,name,parent_id',
+			'categories.parent:id,name,parent_id',
+			'categories.parent.parent:id,name,parent_id',
+			'categories.children:id,name,parent_id'
+		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+		$formattedCategories = [];
+
+		foreach ($product->categories as $category) {
+			$chain = [];
+
+			// Step 1: Build the chain from current to root
+			$current = $category;
+			while ($current) {
+				$chain[] = $current;
+				$current = $current->parent;
+			}
+
+			// Step 2: Reverse to go from root to child
+			$chain = array_reverse($chain);
+
+			// Step 3: Build nested structure, merging by ID
+			$ref = &$formattedCategories;
+
+			foreach ($chain as $cat) {
+				// Check if this category already exists at this level
+				$found = false;
+				foreach ($ref as &$item) {
+					if ($item['id'] == $cat->id) {
+						$ref = &$item['children'];
+						$found = true;
+						break;
+					}
+				}
+
+				if (! $found) {
+					$new = [
+						'id' => $cat->id,
+						'name' => $cat->name,
+						'children' => []
+					];
+					$ref[] = $new;
+					$ref = &$ref[array_key_last($ref)]['children'];
+				}
+			}
+
+			unset($ref); // Clear reference
+		}
+
 
 		if (!$product) {
 			return response()->json([
@@ -352,6 +418,8 @@ class ProductController extends BaseController
 			}, $product->documents);
 		}
 		$formattedProduct = [];
+
+		$formattedProduct['categories'] = $formattedCategories;
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
@@ -608,6 +676,7 @@ class ProductController extends BaseController
 			'success' => true,
 			'message' => 'Product detail',
 			'product' => $formattedProduct,
+			'categories_hierarchy' => $formattedCategories,
 			'admin_reviews' => $adminReviews,
 			'faq' => $faqs ?? [],
 
@@ -638,6 +707,12 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="barcode", type="string", example="9509297558375"),
 	 *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
 	 *                 @OA\Property(property="refund", type="string", example="1"),
+	 *				   @OA\Property(
+	 *					property="categories",
+	 *					type="array",
+	 *					@OA\Items(type="integer", example=1),
+	 *					description="Array of category IDs (can include parent and child)"
+	 *					),
 	 *                 @OA\Property(property="quantity", type="integer", example=100),
 	 *                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
 	 *                 @OA\Property(property="status", type="string", example="draft"),
@@ -997,6 +1072,9 @@ class ProductController extends BaseController
 			$review->save(); /* ✅ Save either as new or updated review */
 		}
 
+		if ($request->has('categories')) {
+			$product->categories()->sync($request->input('categories'));
+		}
 
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
