@@ -1,265 +1,357 @@
 import os
 import json
 import requests
-from dotenv import load_dotenv
 import sys
-from collections import Counter
+import re
+import pymysql
+from dotenv import load_dotenv
+from config.database import DBConfig
 
 load_dotenv()
 
 class ClaudeRecommender:
-    def __init__(self, env_config=None):
-        """Initialize the Claude Recommender with environment configurations."""
-        if env_config:
-            self.headers = {
-                "x-api-key": env_config.get("CLAUDE_API_KEY"),
-                "anthropic-version": env_config.get("CLAUDE_VERSION"),
-                "Content-Type": "application/json"
-            }
-            self.api_url = env_config.get("CLAUDE_API_URL")
-            self.model = env_config.get("CLAUDE_MODEL")
-        else:
-            self.headers = {
-                "x-api-key": os.getenv("CLAUDE_API_KEY"),
-                "anthropic-version": os.getenv("CLAUDE_VERSION"),
-                "Content-Type": "application/json"
-            }
-            self.api_url = os.getenv("CLAUDE_API_URL")
-            self.model = os.getenv("CLAUDE_MODEL")
-        
-        # Add debug logging
-        print(f"API URL: {self.api_url}", file=sys.stderr)
-        print(f"Model: {self.model}", file=sys.stderr)
-        print(f"API Key is set: {'Yes' if self.headers.get('x-api-key') else 'No'}", file=sys.stderr)
+    def __init__(self):
+        self.headers = {
+            "x-api-key": os.getenv("CLAUDE_API_KEY"),
+            "anthropic-version": os.getenv("CLAUDE_VERSION"),
+            "Content-Type": "application/json"
+        }
+        self.api_url = os.getenv("CLAUDE_API_URL")
+        self.model = os.getenv("CLAUDE_MODEL")
 
-    def get_attributes_from_claude(self, parent_id, child_ids):
-        """Get AI-generated attributes using parent/child context."""
+    def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
+        """Get AI-selected relevant attributes using database-fetched data"""
         prompt = f"""
-        Analyze the following product family with parent ID {parent_id} containing product variants {child_ids}.
-        Please identify the top 3 most relevant common attributes shared across all products in the family.
-        The attributes should be listed in JSON format, with each attribute having a name and value.
-        The returned JSON should contain:
+        You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
+        Below are the product names and attributes fetched from the database for these variants:
+
+        Product Names:
+        {json.dumps(product_names, indent=2)}
+
+        Attributes:
+        {json.dumps(attributes_data, indent=2)}
+
+        Select the most relevant technical attributes for this family and its variants. Prioritize attributes such as:
+        - Width (e.g., "54 1/8\"")
+        - Voltage (e.g., "115 V")
+        - Capacity (e.g., "50 cu. ft.")
+        - Door Type (e.g., "Glass")
+        - Compressor Location (e.g., "Bottom Mount")
+
+        Output a JSON object with the following schema:
         {{
-            "common_attributes": [
+          "common_attributes": [
+            {{"attribute_id": int, "attribute_name": string}}
+          ],
+          "variants": [
+            {{
+              "product_id": int,
+              "attributes": [
                 {{"attribute_name": string, "value": string}}
-            ],
-            "variants": [
-                {{
-                    "product_id": int,
-                    "attributes": [
-                        {{"attribute_name": string, "value": string}}
-                    ]
-                }}
-            ]
+              ]
+            }}
+          ]
+        }}
+
+        - "common_attributes" should list 2-3 attributes shared across all variants (e.g., Voltage, Door Type).
+        - Each variant should have 2-3 attributes, including at least one unique attribute (e.g., Width, Capacity).
+        - Use attribute IDs from the provided attributes if available; otherwise, assign unique integers starting from 1.
+        - Use values from the provided attributes or infer realistic values based on the product names and context (kitchen equipment).
+        - Ensure attributes are consistent with the product names (e.g., reflect dimensions or features mentioned).
+        - Do not include any text, comments, or explanations outside the JSON object.
+
+        Example:
+        {{
+          "common_attributes": [
+            {{"attribute_id": 1, "attribute_name": "Voltage"}},
+            {{"attribute_id": 2, "attribute_name": "Door Type"}}
+          ],
+          "variants": [
+            {{
+              "product_id": 2336,
+              "attributes": [
+                {{"attribute_name": "Width", "value": "54 1/8\""}},
+                {{"attribute_name": "Voltage", "value": "115 V"}},
+                {{"attribute_name": "Capacity", "value": "50 cu. ft."}}
+              ]
+            }}
+          ]
         }}
         """
-        
-        # Using the messages format for Claude API
+
         payload = {
             "model": self.model,
+            "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
             "messages": [
-                {"role": "system", "content": "You are an expert analyzing product attributes and identifying the most relevant ones."},
-                {"role": "user", "content": prompt}
+                {
+                    "role": "user",
+                    "content": prompt
+                }
             ],
             "max_tokens": 1000
         }
 
         try:
-            print(f"Sending request to Claude API for parent_id {parent_id}...", file=sys.stderr)
             response = requests.post(self.api_url, json=payload, headers=self.headers)
+            response.raise_for_status()
+            content = response.json()
+            raw_response = content['content'][0]['text']
             
-            # Print response status and headers for debugging
-            print(f"API Response Status: {response.status_code}", file=sys.stderr)
-            print(f"API Response Headers: {response.headers}", file=sys.stderr)
-            
-            # Handle non-200 responses properly
-            if response.status_code != 200:
-                print(f"API Error: {response.text}", file=sys.stderr)
-                return None
-                
-            # Print first part of response for debugging
-            resp_text = response.text[:500]
-            print(f"API Response (truncated): {resp_text}...", file=sys.stderr)
-            
-            # Parse the response JSON
-            resp_json = response.json()
-            
-            # Handle both possible API response structures
-            if 'content' in resp_json and len(resp_json['content']) > 0:
-                # New Claude API format (messages API)
-                content = resp_json['content'][0]['text']
-                print(f"Extracted content: {content[:100]}...", file=sys.stderr)
-                
-                # Try to extract JSON from the content
-                try:
-                    # Look for JSON objects in the response
-                    import re
-                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                    if json_match:
-                        extracted_json = json_match.group(0)
-                        return json.loads(extracted_json)
-                    else:
-                        print("No JSON object found in response", file=sys.stderr)
-                        return None
-                except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON from content: {e}", file=sys.stderr)
-                    return None
-            elif 'completion' in resp_json:
-                # Old Claude API format
-                try:
-                    # Look for JSON objects in the response
-                    import re
-                    json_match = re.search(r'\{.*\}', resp_json['completion'], re.DOTALL)
-                    if json_match:
-                        extracted_json = json_match.group(0)
-                        return json.loads(extracted_json)
-                    else:
-                        print("No JSON object found in completion", file=sys.stderr)
-                        return None
-                except json.JSONDecodeError as e:
-                    print(f"Failed to parse JSON from completion: {e}", file=sys.stderr)
-                    return None
-            else:
-                print("Unexpected API response format", file=sys.stderr)
-                return None
-                
-        except Exception as e:
-            print(f"Claude API Error: {str(e)}", file=sys.stderr)
-            import traceback
-            traceback.print_exc(file=sys.stderr)
+            try:
+                return json.loads(raw_response)
+            except json.JSONDecodeError:
+                json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
+                if json_match:
+                    json_string = json_match.group(0)
+                    return json.loads(json_string)
+                else:
+                    raise ValueError("No valid JSON found in Claude response")
+        except requests.exceptions.RequestException:
             return None
 
-    def process_common_attributes(self, attributes_data):
-        """Process and filter attributes that are common across all products."""
-        if not attributes_data:
-            print("No attributes data provided", file=sys.stderr)
-            return []
-            
-        all_attributes = []
-        for product in attributes_data:
-            for attribute in product.get('attributes', []):
-                all_attributes.append(attribute['attribute_name'])
+def get_product_ids(group_id):
+    """Fetch product IDs from product_group_items for a given group_id"""
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
+    
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+                SELECT product_id
+                FROM product_group_items
+                WHERE group_id = %s
+            """
+            cursor.execute(sql, (group_id,))
+            results = cursor.fetchall()
+            return [row['product_id'] for row in results]
+    except Exception:
+        return []
+    finally:
+        connection.close()
 
-        # Count how many times each attribute occurs across the products
-        attribute_counts = Counter(all_attributes)
-        
-        print(f"Attribute counts: {dict(attribute_counts)}", file=sys.stderr)
+def get_product_data(product_ids):
+    """Fetch product details from ec_products and related tables"""
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
+    
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+                SELECT 
+                    p.id,
+                    p.name,
+                    p.sku,
+                    p.image,
+                    b.name AS brand,
+                    c.name AS product_family,
+                    COALESCE(s.key, 'Unknown') AS taxonomy_path
+                FROM ec_products p
+                INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
+                INNER JOIN ec_product_categories c ON cp.category_id = c.id
+                LEFT JOIN ec_brands b ON p.brand_id = b.id
+                LEFT JOIN slugs s ON p.id = s.reference_id
+                WHERE p.id IN %s AND p.status = 'published'
+            """
+            cursor.execute(sql, (product_ids,))
+            results = cursor.fetchall()
+            return {
+                str(row['id']): {
+                    "name": row['name'],
+                    "sku": row['sku'],
+                    "image": row['image'],
+                    "brand": row['brand'],
+                    "product_family": row['product_family'],
+                    "taxonomy_path": row['taxonomy_path']
+                } for row in results
+            }
+    except Exception:
+        return {}
+    finally:
+        connection.close()
 
-        # Find common attributes that are available in every product (i.e., appear in all products)
-        common_attributes = [attr for attr, count in attribute_counts.items() if count == len(attributes_data)]
-        
-        print(f"Common attributes: {common_attributes}", file=sys.stderr)
-        
-        return common_attributes[:3]  # Only return top 3 most common attributes
+def get_product_attributes(product_ids):
+    """Fetch attributes from product_attributes joined with attributes"""
+    config = DBConfig().connection
+    connection = pymysql.connect(**config)
+    
+    try:
+        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+            sql = """
+                SELECT 
+                    pa.product_id,
+                    pa.attribute_id,
+                    pa.attribute_value AS value,
+                    COALESCE(a.name, 'Unknown') AS attribute_name
+                FROM product_attributes pa
+                LEFT JOIN attributes a ON pa.attribute_id = a.id
+                WHERE pa.product_id IN %s
+            """
+            cursor.execute(sql, (product_ids,))
+            results = cursor.fetchall()
+            return results
+    except Exception:
+        return []
+    finally:
+        connection.close()
 
+def get_common_family_name(product_names):
+    """Extract brand and product family from product names for family_name"""
+    if not product_names:
+        return "Unknown Family"
+    
+    words = [name.split() for name in product_names]
+    min_length = min(len(w) for w in words)
+    common_words = []
+    
+    for i in range(min_length):
+        if all(words[0][i] == w[i] for w in words):
+            common_words.append(words[0][i])
+        else:
+            break
+    
+    brand = " ".join(common_words[:2]) if len(common_words) >= 2 else product_names[0].split()[0]
+    
+    family_terms = []
+    for name in product_names:
+        terms = name.split(',')[0].split()
+        descriptive_terms = []
+        capture = False
+        for term in terms:
+            if term in ["Worktop", "Refrigerator"]:
+                capture = True
+                descriptive_terms.append(term)
+            elif capture and term != "Cu.Ft":
+                descriptive_terms.append(term)
+        if descriptive_terms:
+            family_terms.append(" ".join(descriptive_terms))
+    
+    family_part = family_terms[0] if family_terms else "Refrigerator"
+    family_name = f"{brand} {family_part}".strip()
+    
+    return family_name or "Unknown Family"
+
+def clean_json(input_str):
+    """Remove comments and trailing commas from JSON"""
+    lines = []
+    for line in input_str.split('\n'):
+        line = re.sub(r'//.*', '', line)
+        line = re.sub(r',\s*}(?=\s*})', '}', line)
+        line = re.sub(r',\s*\](?=\s*\])', ']', line)
+        if line.strip():
+            lines.append(line)
+    return '\n'.join(lines)
 
 def process_families(input_data):
-    """Process each family and return the common top 3 attributes for each."""
     recommender = ClaudeRecommender()
     families = []
 
-    print(f"Processing {len(input_data)} families...", file=sys.stderr)
-    
-    for idx, item in enumerate(input_data):
-        print(f"Processing family {idx+1}/{len(input_data)}", file=sys.stderr)
-        
-        if not item.get("child_ids"):
-            print(f"Skipping family with parent_id {item.get('parent_id')} - no child_ids", file=sys.stderr)
+    for item in input_data:
+        parent_id = item.get("parent_id")
+        if not parent_id:
             continue
 
-        parent_id = item["parent_id"]
-        child_ids = item["child_ids"]
-        
-        print(f"Processing parent_id: {parent_id} with {len(child_ids)} children", file=sys.stderr)
-        
-        # Get AI response for the common attributes of the given product group
-        ai_response = recommender.get_attributes_from_claude(parent_id, child_ids)
-        
-        if not ai_response:
-            print(f"No AI response for parent_id {parent_id}, skipping", file=sys.stderr)
-            continue
-            
-        print(f"AI response keys: {ai_response.keys()}", file=sys.stderr)
-
-        # Check for expected data structure
-        if "variants" not in ai_response:
-            print(f"Missing 'variants' in AI response for parent_id {parent_id}", file=sys.stderr)
-            continue
-
-        # Process the attributes returned by Claude to get the common ones
-        common_attributes = recommender.process_common_attributes(ai_response.get("variants", []))
-
-        # If no common attributes, skip this family
-        if not common_attributes:
-            print(f"No common attributes found for parent_id {parent_id}", file=sys.stderr)
+        child_ids = get_product_ids(parent_id)
+        if not child_ids:
             continue
         
-        print(f"Found {len(common_attributes)} common attributes for parent_id {parent_id}", file=sys.stderr)
+        product_data = get_product_data(tuple(child_ids))
+        if not product_data:
+            continue
         
+        product_names = [info["name"] for info in product_data.values()]
+        family_name = get_common_family_name(product_names)
+        
+        attributes = get_product_attributes(tuple(child_ids))
+        if not attributes:
+            continue
+        
+        attributes_data = {}
+        for attr in attributes:
+            pid = str(attr['product_id'])
+            if pid not in attributes_data:
+                attributes_data[pid] = []
+            attributes_data[pid].append({
+                "attribute_id": attr['attribute_id'],
+                "attribute_name": attr['attribute_name'],
+                "value": attr['value']
+            })
+        
+        ai_response = recommender.get_attributes_from_claude(parent_id, child_ids, attributes_data, product_names)
+        if not ai_response or not isinstance(ai_response, dict):
+            continue
+
+        if not ai_response.get("common_attributes") or not ai_response.get("variants"):
+            continue
+
         family = {
             "parent_id": parent_id,
-            "family_name": f"family-{parent_id}",
-            "child_ids": item["child_ids"],
-            "common_attributes": [{"attribute_name": attr, "value": "N/A"} for attr in common_attributes],
+            "family_name": family_name,
+            "child_ids": child_ids,
+            "common_attributes": ai_response["common_attributes"],
             "variants": []
         }
 
-        # Process each variant from the AI response
-        for variant in ai_response.get("variants", []):
-            if "product_id" not in variant:
-                print(f"Missing product_id in variant for parent_id {parent_id}", file=sys.stderr)
+        for variant in ai_response["variants"]:
+            product_id = variant.get("product_id")
+            if product_id not in child_ids:
                 continue
-                
-            family["variants"].append({
-                "product_id": variant["product_id"],
-                "product_name": f"Product {parent_id}-{variant['product_id']}",
-                "image": f"https://example.com/{variant['product_id']}.webp",
-                "attributes": [{"attribute_name": attr['attribute_name'], "value": attr['value']} 
-                              for attr in variant.get('attributes', [])]
+
+            product_info = product_data.get(str(product_id), {
+                "name": f"Product {parent_id}-{product_id}",
+                "sku": f"SKU-{product_id}",
+                "image": f"https://example.com/{product_id}.webp",
+                "brand": "Unknown",
+                "product_family": "Unknown",
+                "taxonomy_path": "Unknown"
             })
 
-        families.append(family)
-        print(f"Added family for parent_id {parent_id}", file=sys.stderr)
+            family["variants"].append({
+                "product_id": product_id,
+                "product_name": product_info["name"],
+                "sku": product_info["sku"],
+                "image": product_info["image"] if product_info["image"] else "https://example.com/no_image.webp",
+                "brand": product_info["brand"],
+                "product_family": product_info["product_family"],
+                "taxonomy_path": product_info["taxonomy_path"],
+                "attributes": variant.get("attributes", [])
+            })
 
-    print(f"Processed {len(families)} families successfully", file=sys.stderr)
-    return families
+        if family["variants"]:
+            families.append(family)
+    
+    if not families:
+        return {
+            "success": False,
+            "category_id": str(parent_id) if 'parent_id' in locals() else "unknown",
+            "error": "No valid families processed"
+        }
 
+    return {
+        "success": True,
+        "category_id": str(parent_id),
+        "families": families
+    }
 
 def main():
     try:
-        print("Starting script...", file=sys.stderr)
-        
-        if len(sys.argv) != 3:
-            print(f"Expected exactly two arguments, but got {len(sys.argv)-1}", file=sys.stderr)
-            raise ValueError("Expected exactly two arguments: env_config and input_data")
-        
-        print("Parsing arguments...", file=sys.stderr)
-        env_config = json.loads(sys.argv[1])
-        input_data = json.loads(sys.argv[2])
-
-        print(f"Initializing recommender...", file=sys.stderr)
-        recommender = ClaudeRecommender(env_config)
-
-        # Process families based on the input data
-        print(f"Processing families...", file=sys.stderr)
-        families = process_families(input_data)
-
-        result = {
-            "success": True,
-            "families": families
-        }
-
-        print(f"Returning result with {len(families)} families", file=sys.stderr)
-        print(json.dumps(result))
-
+        raw_input = sys.stdin.read()
+        if not raw_input.strip():
+            raise ValueError("No input provided")
+        cleaned_input = clean_json(raw_input)
+        input_data = json.loads(cleaned_input)
+        result = process_families(input_data)
+        print(json.dumps(result, indent=2))
+    except json.JSONDecodeError as e:
+        print(json.dumps({
+            "success": False,
+            "error": f"JSON Error: {str(e)}",
+            "received_sample": raw_input[:100]
+        }, indent=2))
     except Exception as e:
-        print(f"Error in main: {str(e)}", file=sys.stderr)
-        import traceback
-        traceback.print_exc(file=sys.stderr)
         print(json.dumps({
             "success": False,
             "error": str(e)
-        }))
+        }, indent=2))
 
 if __name__ == "__main__":
     main()

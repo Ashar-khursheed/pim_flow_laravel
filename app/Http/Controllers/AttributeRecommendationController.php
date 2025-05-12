@@ -10,6 +10,8 @@ use Symfony\Component\Process\Process;
 class AttributeRecommendationController extends Controller
 {
     /**
+     * Generate attribute recommendations for product groups using AI-powered Python script
+     *
      * @OA\Post(
      *     path="/api/generate-recommendations",
      *     summary="Generate attribute recommendations for product groups",
@@ -56,87 +58,9 @@ class AttributeRecommendationController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-
-    // public function generate(Request $request)
-    // {
-    //     // Validate the incoming request to ensure the payload format is correct
-    //     $request->validate([
-    //         'groups' => 'required|array',
-    //         'groups.*.parent_id' => 'required|integer',
-    //         'groups.*.child_ids' => 'required|array',
-    //         'groups.*.child_ids.*' => 'integer',
-    //     ]);
-
-    //     // Get the 'groups' data from the request
-    //     $groups = $request->input('groups'); // Array of parent-child relationships
-
-    //     // Prepare the input for the Python script
-    //     $input = [];
-    //     foreach ($groups as $group) {
-    //         $input[] = [
-    //             'parent_id' => $group['parent_id'],
-    //             'child_ids' => $group['child_ids'],
-    //         ];
-    //     }
-
-    //     // Set up the environment variables for the Python script
-    //     $env = [
-    //         'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
-    //         'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
-    //         'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
-    //         'CLAUDE_MODEL' => env('CLAUDE_MODEL'),
-    //     ];
-
-    //     // Specify the path to the Python script and the Python executable
-    //     $scriptPath = base_path('app/Script/rec.py');
-    //     $pythonCmd = base_path('venv/bin/python');
-    //     $workingDirectory = base_path('app/Script');
-
-    //     // Run the Python script
-    //     $process = new Process([$pythonCmd, $scriptPath, json_encode($env), json_encode($input)], $workingDirectory);
-    //     $process->run();
-
-    //     // Handle errors if the process is not successful
-    //     if (!$process->isSuccessful()) {
-    //         Log::error("Python script execution failed: " . $process->getErrorOutput());
-    //         return response()->json([
-    //             'error' => 'Python script execution failed',
-    //             'details' => $process->getErrorOutput(),
-    //         ], 500);
-    //     }
-
-    //     // Decode the result from the Python script
-    //     $result = json_decode($process->getOutput(), true);
-
-    //     // Handle case if the AI processing did not return a valid result
-    //     if (!$result || !$result['success']) {
-    //         return response()->json([
-    //             'error' => $result['error'] ?? 'AI processing failed',
-    //             'details' => $process->getOutput(),
-    //         ], 500);
-    //     }
-
-    //     // Update or create AttributeRecommendations based on the result
-    //     foreach ($result['families'] as $family) {
-    //         AttributeRecommendation::updateOrCreate(
-    //             ['parent_id' => $family['parent_id']],
-    //             [
-    //                 'family_name' => $family['family_name'],
-    //                 'common_attributes' => $family['common_attributes'],
-    //                 'variants' => $family['variants'],
-    //             ]
-    //         );
-    //     }
-
-    //     // Return a success response
-    //     return response()->json([
-    //         'success' => true,
-    //         'stored' => count($result['families']),
-    //     ]);
-    // }
-
-        public function generate(Request $request)
-        {
+    public function generate(Request $request)
+    {
+        try {
             // Validate the incoming request
             $request->validate([
                 'groups' => 'required|array',
@@ -148,110 +72,193 @@ class AttributeRecommendationController extends Controller
             // Get the 'groups' data from the request
             $groups = $request->input('groups');
 
-            // Prepare the input for the Python script - keep the same structure
-            $input = $groups; // No need to restructure, pass as is
+            // Prepare the environment configuration for the Python script
+            $env = $this->prepareEnvironmentConfig();
 
-            // Set up the environment variables for the Python script
-            $env = [
-                'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
-                'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
-                'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
-                'CLAUDE_MODEL' => env('CLAUDE_MODEL', 'claude-3-sonnet-20240229'),
-
-                // Pass the database credentials as well
-                'DB_HOST' => env('DB_HOST'),
-                'DB_DATABASE' => env('DB_DATABASE'),
-                'DB_USERNAME' => env('DB_USERNAME'),
-                'DB_PASSWORD' => env('DB_PASSWORD'),
-            ];
-
-            // Log the data being sent
-            Log::debug("Sending to Python script:", [
-                'env_vars' => array_map(function($val) { 
-                    return substr($val, 0, 3) . '...'; // Truncate sensitive values
-                }, $env),
-                'input_data' => $input
-            ]);
+            // Log the input data with sensitive information masked
+            $this->logInputData($env, $groups);
 
             // Specify the path to the Python script
             $scriptPath = base_path('app/Script/rec.py');
             $pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
             $workingDirectory = base_path('app/Script');
 
-            // Run the Python script with proper arguments
+            // Prepare the input data as a JSON string
+            $inputJson = json_encode($groups);
+
+            // Run the Python script
             $process = new Process(
-                [$pythonCmd, $scriptPath, json_encode($env), json_encode($input)],
+                [$pythonCmd, $scriptPath],
                 $workingDirectory,
                 null,
-                null,
-                60 // Increase timeout to 60 seconds
+                $inputJson,
+                120 // Increased timeout to 2 minutes
             );
             
             $process->run();
 
-            // Handle errors if the process is not successful
+            // Handle process execution errors
             if (!$process->isSuccessful()) {
-                Log::error("Python script execution failed: " . $process->getErrorOutput());
+                $errorOutput = $process->getErrorOutput();
+                Log::error("Python script execution failed", [
+                    'error' => $errorOutput,
+                    'command' => $process->getCommandLine()
+                ]);
+
                 return response()->json([
+                    'success' => false,
                     'error' => 'Python script execution failed',
-                    'details' => $process->getErrorOutput(),
-                    'command' => $process->getCommandLine(),
+                    'details' => $errorOutput
                 ], 500);
             }
 
-            // Get the output
+            // Get and parse the output
             $output = $process->getOutput();
-            Log::debug("Python script output: " . substr($output, 0, 500) . "...");
+            $result = $this->parseScriptOutput($output);
 
-            // Try to decode the result
-            $result = json_decode($output, true);
-            
-            // Check if the result is valid
-            if (!$result || json_last_error() !== JSON_ERROR_NONE) {
-                Log::error("Failed to decode JSON output: " . json_last_error_msg());
-                return response()->json([
-                    'error' => 'Invalid JSON response from Python script',
-                    'details' => $output,
-                ], 500);
-            }
+            // Process and store recommendations
+            return $this->processRecommendations($result);
 
-            // Check if the result indicates success
-            if (!isset($result['success']) || $result['success'] !== true) {
-                return response()->json([
-                    'error' => $result['error'] ?? 'AI processing failed',
-                    'details' => $output,
-                ], 500);
-            }
-
-            // Process successful results
-            if (!isset($result['families']) || !is_array($result['families'])) {
-                return response()->json([
-                    'error' => 'Invalid result structure: missing families array',
-                    'details' => $output,
-                ], 500);
-            }
-
-            // Update or create AttributeRecommendations based on the result
-            $stored = 0;
-            foreach ($result['families'] as $family) {
-                AttributeRecommendation::updateOrCreate(
-                    ['parent_id' => $family['parent_id']],
-                    [
-                        'family_name' => $family['family_name'],
-                        'common_attributes' => json_encode($family['common_attributes']),
-                        'variants' => json_encode($family['variants']),
-                    ]
-                );
-                $stored++;
-            }
-
-            // Return a success response
+        } catch (ValidationException $e) {
+            // Handle validation errors
             return response()->json([
-                'success' => true,
-                'stored' => $stored,
+                'success' => false,
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            // Handle unexpected errors
+            Log::error("Recommendation generation failed", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Prepare environment configuration for the Python script
+     *
+     * @return array
+     */
+    private function prepareEnvironmentConfig(): array
+    {
+        return [
+            'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
+            'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
+            'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
+            'CLAUDE_MODEL' => env('CLAUDE_MODEL', 'claude-3-sonnet-20240229'),
+
+            // Database credentials
+            'DB_HOST' => env('DB_HOST'),
+            'DB_DATABASE' => env('DB_DATABASE'),
+            'DB_USERNAME' => env('DB_USERNAME'),
+            'DB_PASSWORD' => env('DB_PASSWORD'),
+        ];
+    }
+
+    /**
+     * Log input data with sensitive information masked
+     *
+     * @param array $env
+     * @param array $groups
+     */
+    private function logInputData(array $env, array $groups): void
+    {
+        Log::info("Generating recommendations", [
+            'env_vars' => array_map(function($val) { 
+                return is_string($val) ? substr($val, 0, 3) . '...' : $val; 
+            }, $env),
+            'groups_count' => count($groups),
+            'group_ids' => array_column($groups, 'parent_id')
+        ]);
+    }
+
+    /**
+     * Parse the output from the Python script
+     *
+     * @param string $output
+     * @return array
+     * @throws \Exception
+     */
+    private function parseScriptOutput(string $output): array
+    {
+        // Try to decode the JSON output
+        $result = json_decode($output, true);
+        
+        // Check if JSON decoding was successful
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("Failed to parse JSON output", [
+                'raw_output' => $output,
+                'json_error' => json_last_error_msg()
+            ]);
+
+            throw new \Exception('Invalid JSON response from Python script');
         }
 
+        // Validate the result structure
+        if (!isset($result['success']) || $result['success'] !== true) {
+            Log::error("Python script returned an error", [
+                'error' => $result['error'] ?? 'Unknown error',
+                'output' => $output
+            ]);
+
+            throw new \Exception($result['error'] ?? 'AI processing failed');
+        }
+
+        // Validate families array
+        if (!isset($result['families']) || !is_array($result['families'])) {
+            throw new \Exception('Invalid result structure: missing families array');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Process and store recommendations
+     *
+     * @param array $result
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function processRecommendations(array $result)
+    {
+        $stored = 0;
+        $processedFamilyIds = [];
+
+        // Store or update attribute recommendations
+        foreach ($result['families'] as $family) {
+            $recommendation = AttributeRecommendation::updateOrCreate(
+                ['parent_id' => $family['parent_id']],
+                [
+                    'family_name' => $family['family_name'],
+                    'common_attributes' => json_encode($family['common_attributes']),
+                    'variants' => json_encode($family['variants']),
+                ]
+            );
+
+            $stored++;
+            $processedFamilyIds[] = $family['parent_id'];
+        }
+
+        // Log the successful processing
+        Log::info("Recommendations processed", [
+            'stored' => $stored,
+            'family_ids' => $processedFamilyIds
+        ]);
+
+        // Return success response
+        return response()->json([
+            'success' => true,
+            'stored' => $stored,
+            'processed_families' => $processedFamilyIds
+        ]);
+    }
     /**
      * @OA\Get(
      *     path="/api/recommendations",
