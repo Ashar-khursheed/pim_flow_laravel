@@ -5,6 +5,8 @@ import sys
 import re
 import traceback
 import pymysql
+from dotenv import load_dotenv
+load_dotenv(dotenv_path='.env')  # Adjust path if needed
 
 class DBConfig:
     @property
