@@ -383,49 +383,24 @@ def process_families(input_data):
 
 def main():
     try:
-        # Read input from stdin
         raw_input = sys.stdin.read()
-        
-        # Check if input is empty
         if not raw_input.strip():
             raise ValueError("No input provided")
-        
-        print(f"Raw Input Received: {raw_input}", file=sys.stderr)
-        
-        # Clean and parse input JSON
         cleaned_input = clean_json(raw_input)
-        print(f"Cleaned Input: {cleaned_input}", file=sys.stderr)
-        
         input_data = json.loads(cleaned_input)
-        
-        # Process families
         result = process_families(input_data)
-        
-        # Output result as JSON
         print(json.dumps(result, indent=2))
-    
     except json.JSONDecodeError as e:
-        # Handle JSON parsing errors
-        error_details = {
+        print(json.dumps({
             "success": False,
             "error": f"JSON Error: {str(e)}",
-            "received_sample": raw_input[:100],
-            "full_error": traceback.format_exc()
-        }
-        print(json.dumps(error_details, indent=2))
-        print(f"JSON Decode Error: {str(e)}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
-    
+            "received_sample": raw_input[:100]
+        }, indent=2))
     except Exception as e:
-        # Handle any other unexpected errors
-        error_details = {
+        print(json.dumps({
             "success": False,
-            "error": str(e),
-            "full_error": traceback.format_exc()
-        }
-        print(json.dumps(error_details, indent=2))
-        print(f"Unexpected Error: {str(e)}", file=sys.stderr)
-        print(traceback.format_exc(), file=sys.stderr)
+            "error": str(e)
+        }, indent=2))
 
 if __name__ == "__main__":
     main()
