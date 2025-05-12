@@ -32,24 +32,17 @@ class ClaudeRecommender:
 
     def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
         """Get AI-selected relevant attributes using database-fetched data"""
-        try:
-            # Debug: Print input data
-            print(f"Claude Input - Parent ID: {parent_id}", file=sys.stderr)
-            print(f"Child IDs: {child_ids}", file=sys.stderr)
-            print("Product Names:", json.dumps(product_names, indent=2), file=sys.stderr)
-            print("Attributes Data:", json.dumps(attributes_data, indent=2), file=sys.stderr)
+        prompt = f"""
+        You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
+        Below are the product names and attributes fetched from the database for these variants:
 
-            prompt = f"""
-            You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
-            Below are the product names and attributes fetched from the database for these variants:
+        Product Names:
+        {json.dumps(product_names, indent=2)}
 
-            Product Names:
-            {json.dumps(product_names, indent=2)}
+        Attributes:
+        {json.dumps(attributes_data, indent=2)}
 
-            Attributes:
-            {json.dumps(attributes_data, indent=2)}
-
-            Select the three most relevant technical attributes for this product family based on the product names and available attributes.
+        Select the three most relevant technical attributes for this product family based on the product names and available attributes.
         These attributes must be shared across all variants and used consistently in both common_attributes and variants.
         Prioritize attributes that are critical for comparing variants of this product type (e.g., for refrigerators: Width, Capacity, Number of Doors; for ovens: Temperature Range, Fuel Type, Oven Capacity).
 
@@ -95,42 +88,34 @@ class ClaudeRecommender:
         }}
         """
 
-            payload = {
-                "model": self.model,
-                "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
-                "messages": [
-                    {
-                        "role": "user",
-                        "content": prompt
-                    }
-                ],
-                "max_tokens": 1000
-            }
+        payload = {
+            "model": self.model,
+            "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "max_tokens": 1000
+        }
 
+        try:
             response = requests.post(self.api_url, json=payload, headers=self.headers)
             response.raise_for_status()
             content = response.json()
             raw_response = content['content'][0]['text']
             
-            print(f"Raw Claude Response: {raw_response}", file=sys.stderr)
-            
             try:
-                parsed_response = json.loads(raw_response)
+                return json.loads(raw_response)
             except json.JSONDecodeError:
                 json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
                 if json_match:
                     json_string = json_match.group(0)
-                    parsed_response = json.loads(json_string)
+                    return json.loads(json_string)
                 else:
-                    print("No valid JSON found in Claude response", file=sys.stderr)
-                    return None
-
-            print("Parsed Claude Response:", json.dumps(parsed_response, indent=2), file=sys.stderr)
-            return parsed_response
-
-        except Exception as e:
-            print(f"Error in get_attributes_from_claude: {str(e)}", file=sys.stderr)
-            print(traceback.format_exc(), file=sys.stderr)
+                    raise ValueError("No valid JSON found in Claude response")
+        except requests.exceptions.RequestException:
             return None
 
 def get_product_ids(group_id):
