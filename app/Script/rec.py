@@ -3,11 +3,20 @@ import json
 import requests
 import sys
 import re
+import json
 import pymysql
-from dotenv import load_dotenv
-from config.database import DBConfig
 
-load_dotenv()
+class DBConfig:
+    @property
+    def connection(self):
+        return {
+            'host': os.getenv('DB_HOST'),
+            'user': os.getenv('DB_USERNAME'),
+            'password': os.getenv('DB_PASSWORD'),
+            'database': os.getenv('DB_DATABASE'),
+            'charset': 'utf8mb4',
+            'cursorclass': pymysql.cursors.DictCursor
+        }
 
 class ClaudeRecommender:
     def __init__(self):
@@ -17,7 +26,7 @@ class ClaudeRecommender:
             "Content-Type": "application/json"
         }
         self.api_url = os.getenv("CLAUDE_API_URL")
-        self.model = os.getenv("CLAUDE_MODEL")
+        self.model = os.getenv("CLAUDE_MODEL", "claude-3-sonnet-20240229")
 
     def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
         """Get AI-selected relevant attributes using database-fetched data"""
@@ -59,24 +68,6 @@ class ClaudeRecommender:
         - Use values from the provided attributes or infer realistic values based on the product names and context (kitchen equipment).
         - Ensure attributes are consistent with the product names (e.g., reflect dimensions or features mentioned).
         - Do not include any text, comments, or explanations outside the JSON object.
-
-        Example:
-        {{
-          "common_attributes": [
-            {{"attribute_id": 1, "attribute_name": "Voltage"}},
-            {{"attribute_id": 2, "attribute_name": "Door Type"}}
-          ],
-          "variants": [
-            {{
-              "product_id": 2336,
-              "attributes": [
-                {{"attribute_name": "Width", "value": "54 1/8\""}},
-                {{"attribute_name": "Voltage", "value": "115 V"}},
-                {{"attribute_name": "Capacity", "value": "50 cu. ft."}}
-              ]
-            }}
-          ]
-        }}
         """
 
         payload = {
@@ -109,10 +100,9 @@ class ClaudeRecommender:
         except requests.exceptions.RequestException:
             return None
 
-def get_product_ids(group_id):
+def get_product_ids(group_id, connection_config):
     """Fetch product IDs from product_group_items for a given group_id"""
-    config = DBConfig().connection
-    connection = pymysql.connect(**config)
+    connection = pymysql.connect(**connection_config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -124,15 +114,15 @@ def get_product_ids(group_id):
             cursor.execute(sql, (group_id,))
             results = cursor.fetchall()
             return [row['product_id'] for row in results]
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching product IDs: {e}", file=sys.stderr)
         return []
     finally:
         connection.close()
 
-def get_product_data(product_ids):
+def get_product_data(product_ids, connection_config):
     """Fetch product details from ec_products and related tables"""
-    config = DBConfig().connection
-    connection = pymysql.connect(**config)
+    connection = pymysql.connect(**connection_config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -164,15 +154,15 @@ def get_product_data(product_ids):
                     "taxonomy_path": row['taxonomy_path']
                 } for row in results
             }
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching product data: {e}", file=sys.stderr)
         return {}
     finally:
         connection.close()
 
-def get_product_attributes(product_ids):
+def get_product_attributes(product_ids, connection_config):
     """Fetch attributes from product_attributes joined with attributes"""
-    config = DBConfig().connection
-    connection = pymysql.connect(**config)
+    connection = pymysql.connect(**connection_config)
     
     try:
         with connection.cursor(pymysql.cursors.DictCursor) as cursor:
@@ -189,7 +179,8 @@ def get_product_attributes(product_ids):
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
             return results
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching product attributes: {e}", file=sys.stderr)
         return []
     finally:
         connection.close()
@@ -242,6 +233,8 @@ def clean_json(input_str):
     return '\n'.join(lines)
 
 def process_families(input_data):
+    # Get database connection config
+    config = DBConfig().connection
     recommender = ClaudeRecommender()
     families = []
 
@@ -250,18 +243,18 @@ def process_families(input_data):
         if not parent_id:
             continue
 
-        child_ids = get_product_ids(parent_id)
+        child_ids = get_product_ids(parent_id, config)
         if not child_ids:
             continue
         
-        product_data = get_product_data(tuple(child_ids))
+        product_data = get_product_data(tuple(child_ids), config)
         if not product_data:
             continue
         
         product_names = [info["name"] for info in product_data.values()]
         family_name = get_common_family_name(product_names)
         
-        attributes = get_product_attributes(tuple(child_ids))
+        attributes = get_product_attributes(tuple(child_ids), config)
         if not attributes:
             continue
         
@@ -334,20 +327,32 @@ def process_families(input_data):
 
 def main():
     try:
+        # Read input from stdin
         raw_input = sys.stdin.read()
+        
+        # Check if input is empty
         if not raw_input.strip():
             raise ValueError("No input provided")
+        
+        # Clean and parse input JSON
         cleaned_input = clean_json(raw_input)
         input_data = json.loads(cleaned_input)
+        
+        # Process families
         result = process_families(input_data)
+        
+        # Output result as JSON
         print(json.dumps(result, indent=2))
+    
     except json.JSONDecodeError as e:
+        # Handle JSON parsing errors
         print(json.dumps({
             "success": False,
             "error": f"JSON Error: {str(e)}",
             "received_sample": raw_input[:100]
         }, indent=2))
     except Exception as e:
+        # Handle any other unexpected errors
         print(json.dumps({
             "success": False,
             "error": str(e)
