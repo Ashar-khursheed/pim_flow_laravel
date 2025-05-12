@@ -6,6 +6,7 @@ import re
 import traceback
 import pymysql
 from dotenv import load_dotenv
+from itertools import combinations
 load_dotenv(dotenv_path='.env')  # Adjust path if needed
 
 class DBConfig:
@@ -30,113 +31,97 @@ class ClaudeRecommender:
         self.api_url = os.getenv("CLAUDE_API_URL")
         self.model = os.getenv("CLAUDE_MODEL", "claude-3-sonnet-20240229")
 
-    def get_attributes_from_claude(self, parent_id, child_ids, attributes_data, product_names):
-        """Get AI-selected relevant attributes using database-fetched data"""
-        prompt = f"""
-        You are analyzing a product family of commercial kitchen equipment with parent ID {parent_id} and variant IDs {child_ids}.
-        Below are the product names and attributes fetched from the database for these variants:
-
-        Product Names:
-        {json.dumps(product_names, indent=2)}
-
-        Attributes:
-        {json.dumps(attributes_data, indent=2)}
-
-        Select the three most relevant technical attributes for this product family based on the product names and available attributes.
-        These attributes must be shared across all variants and used consistently in both common_attributes and variants.
-        Prioritize attributes that are critical for comparing variants of this product type (e.g., for refrigerators: Width, Capacity, Number of Doors; for ovens: Temperature Range, Fuel Type, Oven Capacity).
-
-        Output a JSON object with the following schema:
-        {{
-          "common_attributes": [
-            {{"attribute_id": int, "attribute_name": string}}
-          ],
-          "variants": [
-            {{
-              "product_id": int,
-              "attributes": [
-                {{"attribute_name": string, "value": string}}
-              ]
-            }}
-          ]
-        }}
-
-        - "common_attributes" must list exactly three attributes shared across all variants.
-        - Each variant must list exactly these three attributes with their specific values.
-        - Use attribute IDs from the provided attributes if available; otherwise, assign unique integers starting from 1.
-        - Use values from the provided attributes or infer realistic values based on the product names and context.
-        - Ensure attributes are consistent with the product names and relevant to the product type.
-        - Do not include any text, comments, or explanations outside the JSON object.
-
-        Example for refrigerators:
-        {{
-          "common_attributes": [
-            {{"attribute_id": 597, "attribute_name": "Width"}},
-            {{"attribute_id": 194, "attribute_name": "Capacity"}},
-            {{"attribute_id": 75, "attribute_name": "Number of Doors"}}
-          ],
-          "variants": [
-            {{
-              "product_id": 2951,
-              "attributes": [
-                {{"attribute_name": "Width", "value": "27.5\""}},
-                {{"attribute_name": "Capacity", "value": "7.2 Cu.Ft"}},
-                {{"attribute_name": "Number of Doors", "value": "1 door"}}
-              ]
-            }}
-          ]
-        }}
+    def find_common_and_best_attributes(self, product_ids, attributes_data, product_names):
         """
+        Find common attributes across products and select the most relevant ones
+        """
+        # Group attributes by attribute name
+        attribute_groups = {}
+        for pid, attrs in attributes_data.items():
+            for attr in attrs:
+                name = attr['attribute_name']
+                value = attr['value']
+                if name not in attribute_groups:
+                    attribute_groups[name] = {}
+                attribute_groups[name][pid] = value
 
-        payload = {
-            "model": self.model,
-            "system": "You are a PIM specialist analyzing commercial kitchen equipment specifications. Provide precise, realistic attributes.",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            "max_tokens": 1000
-        }
+        # Find attributes present in all products
+        common_attributes = {}
+        for name, values in attribute_groups.items():
+            if len(values) == len(product_ids):
+                common_attributes[name] = values
 
-        try:
-            response = requests.post(self.api_url, json=payload, headers=self.headers)
-            response.raise_for_status()
-            content = response.json()
-            raw_response = content['content'][0]['text']
-            
-            try:
-                return json.loads(raw_response)
-            except json.JSONDecodeError:
-                json_match = re.search(r'\{.*\}', raw_response, re.DOTALL)
-                if json_match:
-                    json_string = json_match.group(0)
-                    return json.loads(json_string)
-                else:
-                    raise ValueError("No valid JSON found in Claude response")
-        except requests.exceptions.RequestException:
+        # If no common attributes, return None
+        if not common_attributes:
             return None
 
-def get_product_ids(group_id):
-    """Fetch product IDs from product_group_items for a given group_id"""
-    config = DBConfig().connection
-    connection = pymysql.connect(**config)
-    
-    try:
-        with connection.cursor(pymysql.cursors.DictCursor) as cursor:
-            sql = """
-                SELECT product_id
-                FROM product_group_items
-                WHERE group_id = %s
+        # If more than 3 common attributes, use Claude to select top 3
+        if len(common_attributes) > 3:
+            prompt = f"""
+            You are analyzing commercial kitchen equipment with the following common attributes:
+            {json.dumps(common_attributes, indent=2)}
+
+            Product Names: {json.dumps(product_names, indent=2)}
+
+            Select the three most relevant technical attributes for these products.
+            Prioritize attributes that:
+            1. Are critical for comparing product variants
+            2. Provide meaningful differentiation
+            3. Are technical and measurable
+
+            Respond ONLY with a JSON array of the three attribute names you select.
             """
-            cursor.execute(sql, (group_id,))
-            results = cursor.fetchall()
-            return [row['product_id'] for row in results]
-    except Exception:
-        return []
-    finally:
-        connection.close()
+
+            payload = {
+                "model": self.model,
+                "system": "You are a PIM specialist analyzing product specifications. Be precise and strategic.",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 100
+            }
+
+            try:
+                response = requests.post(self.api_url, json=payload, headers=self.headers)
+                response.raise_for_status()
+                content = response.json()
+                raw_response = content['content'][0]['text']
+                
+                # Extract JSON array
+                json_match = re.search(r'\[.*?\]', raw_response, re.DOTALL)
+                if json_match:
+                    selected_attrs = json.loads(json_match.group(0))
+                    common_attributes = {k: common_attributes[k] for k in selected_attrs if k in common_attributes}
+                else:
+                    # Fallback to first 3 if JSON parsing fails
+                    common_attributes = dict(list(common_attributes.items())[:3])
+            except Exception:
+                # Fallback to first 3 if Claude fails
+                common_attributes = dict(list(common_attributes.items())[:3])
+
+        # Prepare the result
+        result = {
+            "common_attributes": [
+                {"attribute_name": name, "attribute_id": i+1} 
+                for i, name in enumerate(common_attributes.keys())
+            ],
+            "variants": []
+        }
+
+        # Add variants with their attribute values
+        for pid in product_ids:
+            variant_attrs = []
+            for attr_name in common_attributes.keys():
+                value = common_attributes[attr_name].get(str(pid), "N/A")
+                variant_attrs.append({
+                    "attribute_name": attr_name,
+                    "value": value
+                })
+            
+            result["variants"].append({
+                "product_id": pid,
+                "attributes": variant_attrs
+            })
+
+        return result
 
 def get_product_data(product_ids):
     """Fetch product details from ec_products and related tables"""
@@ -187,7 +172,8 @@ def get_product_data(product_ids):
                     "taxonomy_path": row['taxonomy_path']
                 } for row in results
             }
-    except Exception:
+    except Exception as e:
+        print(f"Error in get_product_data: {e}")
         return {}
     finally:
         connection.close()
@@ -211,9 +197,22 @@ def get_product_attributes(product_ids):
             """
             cursor.execute(sql, (product_ids,))
             results = cursor.fetchall()
-            return results
-    except Exception:
-        return []
+            
+            attributes_data = {}
+            for row in results:
+                pid = str(row['product_id'])
+                if pid not in attributes_data:
+                    attributes_data[pid] = []
+                attributes_data[pid].append({
+                    "attribute_id": row['attribute_id'],
+                    "attribute_name": row['attribute_name'],
+                    "value": row['value']
+                })
+            
+            return attributes_data
+    except Exception as e:
+        print(f"Error in get_product_attributes: {e}")
+        return {}
     finally:
         connection.close()
 
@@ -248,21 +247,10 @@ def get_common_family_name(product_names):
         if descriptive_terms:
             family_terms.append(" ".join(descriptive_terms))
     
-    family_part = family_terms[0] if family_terms else "Refrigerator"
+    family_part = family_terms[0] if family_terms else "Product"
     family_name = f"{brand} {family_part}".strip()
     
     return family_name or "Unknown Family"
-
-def clean_json(input_str):
-    """Remove comments and trailing commas from JSON"""
-    lines = []
-    for line in input_str.split('\n'):
-        line = re.sub(r'//.*', '', line)
-        line = re.sub(r',\s*}(?=\s*})', '}', line)
-        line = re.sub(r',\s*\](?=\s*\])', ']', line)
-        if line.strip():
-            lines.append(line)
-    return '\n'.join(lines)
 
 def process_families(input_data):
     recommender = ClaudeRecommender()
@@ -270,10 +258,11 @@ def process_families(input_data):
 
     for item in input_data:
         parent_id = item.get("parent_id")
-        if not parent_id:
-            continue
-
-        child_ids = get_product_ids(parent_id)[:3]  # Limit to top 3 products
+        input_child_ids = item.get("child_ids", [])
+        
+        # Use input child IDs instead of fetching from database
+        child_ids = [str(pid) for pid in input_child_ids]
+        
         if not child_ids:
             continue
         
@@ -288,33 +277,10 @@ def process_families(input_data):
         if not attributes:
             continue
         
-        attributes_data = {}
-        for attr in attributes:
-            pid = str(attr['product_id'])
-            if pid not in attributes_data:
-                attributes_data[pid] = []
-            attributes_data[pid].append({
-                "attribute_id": attr['attribute_id'],
-                "attribute_name": attr['attribute_name'],
-                "value": attr['value']
-            })
+        # Find common and best attributes
+        ai_response = recommender.find_common_and_best_attributes(child_ids, attributes, product_names)
         
-        ai_response = recommender.get_attributes_from_claude(parent_id, child_ids, attributes_data, product_names)
-        if not ai_response or not isinstance(ai_response, dict):
-            continue
-
-        if not ai_response.get("common_attributes") or not ai_response.get("variants"):
-            continue
-
-        # Validate that variants have the same attributes as common_attributes
-        expected_attrs = {attr["attribute_name"] for attr in ai_response["common_attributes"]}
-        valid_variants = []
-        for variant in ai_response["variants"]:
-            variant_attrs = {attr["attribute_name"] for attr in variant.get("attributes", [])}
-            if variant_attrs == expected_attrs:
-                valid_variants.append(variant)
-
-        if not valid_variants:
+        if not ai_response or not ai_response.get("common_attributes") or not ai_response.get("variants"):
             continue
 
         family = {
@@ -325,7 +291,7 @@ def process_families(input_data):
             "variants": []
         }
 
-        for variant in valid_variants[:3]:  # Limit to top 3 variants
+        for variant in ai_response["variants"]:
             product_id = variant.get("product_id")
             if product_id not in child_ids:
                 continue
@@ -371,8 +337,11 @@ def main():
         raw_input = sys.stdin.read()
         if not raw_input.strip():
             raise ValueError("No input provided")
-        cleaned_input = clean_json(raw_input)
+        
+        # Remove comments and clean JSON
+        cleaned_input = re.sub(r'//.*', '', raw_input)
         input_data = json.loads(cleaned_input)
+        
         result = process_families(input_data)
         print(json.dumps(result, indent=2))
     except json.JSONDecodeError as e:
@@ -384,7 +353,8 @@ def main():
     except Exception as e:
         print(json.dumps({
             "success": False,
-            "error": str(e)
+            "error": str(e),
+            "trace": traceback.format_exc()
         }, indent=2))
 
 if __name__ == "__main__":
