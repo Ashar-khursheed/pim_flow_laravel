@@ -10,6 +10,8 @@ use Symfony\Component\Process\Process;
 class AttributeRecommendationController extends Controller
 {
     /**
+     * Generate attribute recommendations for product groups using AI-powered Python script
+     *
      * @OA\Post(
      *     path="/api/generate-recommendations",
      *     summary="Generate attribute recommendations for product groups",
@@ -56,195 +58,207 @@ class AttributeRecommendationController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-
-    // public function generate(Request $request)
-    // {
-    //     // Validate the incoming request to ensure the payload format is correct
-    //     $request->validate([
-    //         'groups' => 'required|array',
-    //         'groups.*.parent_id' => 'required|integer',
-    //         'groups.*.child_ids' => 'required|array',
-    //         'groups.*.child_ids.*' => 'integer',
-    //     ]);
-
-    //     // Get the 'groups' data from the request
-    //     $groups = $request->input('groups'); // Array of parent-child relationships
-
-    //     // Prepare the input for the Python script
-    //     $input = [];
-    //     foreach ($groups as $group) {
-    //         $input[] = [
-    //             'parent_id' => $group['parent_id'],
-    //             'child_ids' => $group['child_ids'],
-    //         ];
-    //     }
-
-    //     // Set up the environment variables for the Python script
-    //     $env = [
-    //         'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
-    //         'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
-    //         'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
-    //         'CLAUDE_MODEL' => env('CLAUDE_MODEL'),
-    //     ];
-
-    //     // Specify the path to the Python script and the Python executable
-    //     $scriptPath = base_path('app/Script/rec.py');
-    //     $pythonCmd = base_path('venv/bin/python');
-    //     $workingDirectory = base_path('app/Script');
-
-    //     // Run the Python script
-    //     $process = new Process([$pythonCmd, $scriptPath, json_encode($env), json_encode($input)], $workingDirectory);
-    //     $process->run();
-
-    //     // Handle errors if the process is not successful
-    //     if (!$process->isSuccessful()) {
-    //         Log::error("Python script execution failed: " . $process->getErrorOutput());
-    //         return response()->json([
-    //             'error' => 'Python script execution failed',
-    //             'details' => $process->getErrorOutput(),
-    //         ], 500);
-    //     }
-
-    //     // Decode the result from the Python script
-    //     $result = json_decode($process->getOutput(), true);
-
-    //     // Handle case if the AI processing did not return a valid result
-    //     if (!$result || !$result['success']) {
-    //         return response()->json([
-    //             'error' => $result['error'] ?? 'AI processing failed',
-    //             'details' => $process->getOutput(),
-    //         ], 500);
-    //     }
-
-    //     // Update or create AttributeRecommendations based on the result
-    //     foreach ($result['families'] as $family) {
-    //         AttributeRecommendation::updateOrCreate(
-    //             ['parent_id' => $family['parent_id']],
-    //             [
-    //                 'family_name' => $family['family_name'],
-    //                 'common_attributes' => $family['common_attributes'],
-    //                 'variants' => $family['variants'],
-    //             ]
-    //         );
-    //     }
-
-    //     // Return a success response
-    //     return response()->json([
-    //         'success' => true,
-    //         'stored' => count($result['families']),
-    //     ]);
-    // }
-
     public function generate(Request $request)
-{
-    // Validate the incoming request
-    $request->validate([
-        'groups' => 'required|array',
-        'groups.*.parent_id' => 'required|integer',
-        'groups.*.child_ids' => 'required|array',
-        'groups.*.child_ids.*' => 'integer',
-    ]);
+    {
+        try {
+            // Validate the incoming request
+            $request->validate([
+                'groups' => 'required|array',
+                'groups.*.parent_id' => 'required|integer',
+                'groups.*.child_ids' => 'required|array',
+                'groups.*.child_ids.*' => 'integer',
+            ]);
 
-    // Get the 'groups' data from the request
-    $groups = $request->input('groups');
+            // Get the 'groups' data from the request
+            $groups = $request->input('groups');
 
-    // Prepare the input for the Python script - keep the same structure
-    $input = $groups; // No need to restructure, pass as is
+            // Prepare the environment configuration for the Python script
+            $env = $this->prepareEnvironmentConfig();
 
-    // Set up the environment variables for the Python script
-    $env = [
-        'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
-        'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
-        'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
-        'CLAUDE_MODEL' => env('CLAUDE_MODEL', 'claude-3-sonnet-20240229'),
-    ];
+            // Log the input data with sensitive information masked
+            $this->logInputData($env, $groups);
 
-    // Log the data being sent
-    Log::debug("Sending to Python script:", [
-        'env_vars' => array_map(function($val) { 
-            return substr($val, 0, 3) . '...'; // Truncate sensitive values
-        }, $env),
-        'input_data' => $input
-    ]);
+            // Specify the path to the Python script
+            $scriptPath = base_path('app/Script/rec.py');
+            $pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
+            $workingDirectory = base_path('app/Script');
 
-    // Specify the path to the Python script
-    $scriptPath = base_path('app/Script/rec.py');
-    $pythonCmd = env('PYTHON_PATH', base_path('venv/bin/python'));
-    $workingDirectory = base_path('app/Script');
+            // Prepare the input data as a JSON string
+            $inputJson = json_encode($groups);
 
-    // Run the Python script with proper arguments
-    $process = new Process(
-        [$pythonCmd, $scriptPath, json_encode($env), json_encode($input)],
-        $workingDirectory,
-        null,
-        null,
-        60 // Increase timeout to 60 seconds
-    );
-    
-    $process->run();
+            // Run the Python script
+            $process = new Process(
+                [$pythonCmd, $scriptPath],
+                $workingDirectory,
+                null,
+                $inputJson,
+                120 // Increased timeout to 2 minutes
+            );
+            
+            $process->run();
 
-    // Handle errors if the process is not successful
-    if (!$process->isSuccessful()) {
-        Log::error("Python script execution failed: " . $process->getErrorOutput());
+            // Handle process execution errors
+            if (!$process->isSuccessful()) {
+                $errorOutput = $process->getErrorOutput();
+                Log::error("Python script execution failed", [
+                    'error' => $errorOutput,
+                    'command' => $process->getCommandLine()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'error' => 'Python script execution failed',
+                    'details' => $errorOutput
+                ], 500);
+            }
+
+            // Get and parse the output
+            $output = $process->getOutput();
+            $result = $this->parseScriptOutput($output);
+
+            // Process and store recommendations
+            return $this->processRecommendations($result);
+
+        } catch (ValidationException $e) {
+            // Handle validation errors
+            return response()->json([
+                'success' => false,
+                'error' => 'Validation failed',
+                'details' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            // Handle unexpected errors
+            Log::error("Recommendation generation failed", [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Internal server error',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Prepare environment configuration for the Python script
+     *
+     * @return array
+     */
+    private function prepareEnvironmentConfig(): array
+    {
+        return [
+            'CLAUDE_API_KEY' => env('CLAUDE_API_KEY'),
+            'CLAUDE_VERSION' => env('CLAUDE_VERSION'),
+            'CLAUDE_API_URL' => env('CLAUDE_API_URL'),
+            'CLAUDE_MODEL' => env('CLAUDE_MODEL', 'claude-3-sonnet-20240229'),
+
+            // Database credentials
+            'DB_HOST' => env('DB_HOST'),
+            'DB_DATABASE' => env('DB_DATABASE'),
+            'DB_USERNAME' => env('DB_USERNAME'),
+            'DB_PASSWORD' => env('DB_PASSWORD'),
+        ];
+    }
+
+    /**
+     * Log input data with sensitive information masked
+     *
+     * @param array $env
+     * @param array $groups
+     */
+    private function logInputData(array $env, array $groups): void
+    {
+        Log::info("Generating recommendations", [
+            'env_vars' => array_map(function($val) { 
+                return is_string($val) ? substr($val, 0, 3) . '...' : $val; 
+            }, $env),
+            'groups_count' => count($groups),
+            'group_ids' => array_column($groups, 'parent_id')
+        ]);
+    }
+
+    /**
+     * Parse the output from the Python script
+     *
+     * @param string $output
+     * @return array
+     * @throws \Exception
+     */
+    private function parseScriptOutput(string $output): array
+    {
+        // Try to decode the JSON output
+        $result = json_decode($output, true);
+        
+        // Check if JSON decoding was successful
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            Log::error("Failed to parse JSON output", [
+                'raw_output' => $output,
+                'json_error' => json_last_error_msg()
+            ]);
+
+            throw new \Exception('Invalid JSON response from Python script');
+        }
+
+        // Validate the result structure
+        if (!isset($result['success']) || $result['success'] !== true) {
+            Log::error("Python script returned an error", [
+                'error' => $result['error'] ?? 'Unknown error',
+                'output' => $output
+            ]);
+
+            throw new \Exception($result['error'] ?? 'AI processing failed');
+        }
+
+        // Validate families array
+        if (!isset($result['families']) || !is_array($result['families'])) {
+            throw new \Exception('Invalid result structure: missing families array');
+        }
+
+        return $result;
+    }
+
+    /**
+     * Process and store recommendations
+     *
+     * @param array $result
+     * @return \Illuminate\Http\JsonResponse
+     */
+    private function processRecommendations(array $result)
+    {
+        $stored = 0;
+        $processedFamilyIds = [];
+
+        // Store or update attribute recommendations
+        foreach ($result['families'] as $family) {
+            $recommendation = AttributeRecommendation::updateOrCreate(
+                ['parent_id' => $family['parent_id']],
+                [
+                    'family_name' => $family['family_name'],
+                    'common_attributes' => json_encode($family['common_attributes']),
+                    'variants' => json_encode($family['variants']),
+                ]
+            );
+
+            $stored++;
+            $processedFamilyIds[] = $family['parent_id'];
+        }
+
+        // Log the successful processing
+        Log::info("Recommendations processed", [
+            'stored' => $stored,
+            'family_ids' => $processedFamilyIds
+        ]);
+
+        // Return success response
         return response()->json([
-            'error' => 'Python script execution failed',
-            'details' => $process->getErrorOutput(),
-            'command' => $process->getCommandLine(),
-        ], 500);
+            'success' => true,
+            'stored' => $stored,
+            'processed_families' => $processedFamilyIds
+        ]);
     }
-
-    // Get the output
-    $output = $process->getOutput();
-    Log::debug("Python script output: " . substr($output, 0, 500) . "...");
-
-    // Try to decode the result
-    $result = json_decode($output, true);
-    
-    // Check if the result is valid
-    if (!$result || json_last_error() !== JSON_ERROR_NONE) {
-        Log::error("Failed to decode JSON output: " . json_last_error_msg());
-        return response()->json([
-            'error' => 'Invalid JSON response from Python script',
-            'details' => $output,
-        ], 500);
-    }
-
-    // Check if the result indicates success
-    if (!isset($result['success']) || $result['success'] !== true) {
-        return response()->json([
-            'error' => $result['error'] ?? 'AI processing failed',
-            'details' => $output,
-        ], 500);
-    }
-
-    // Process successful results
-    if (!isset($result['families']) || !is_array($result['families'])) {
-        return response()->json([
-            'error' => 'Invalid result structure: missing families array',
-            'details' => $output,
-        ], 500);
-    }
-
-    // Update or create AttributeRecommendations based on the result
-    $stored = 0;
-    foreach ($result['families'] as $family) {
-        AttributeRecommendation::updateOrCreate(
-            ['parent_id' => $family['parent_id']],
-            [
-                'family_name' => $family['family_name'],
-                'common_attributes' => json_encode($family['common_attributes']),
-                'variants' => json_encode($family['variants']),
-            ]
-        );
-        $stored++;
-    }
-
-    // Return a success response
-    return response()->json([
-        'success' => true,
-        'stored' => $stored,
-    ]);
-}
     /**
      * @OA\Get(
      *     path="/api/recommendations",
@@ -274,61 +288,121 @@ class AttributeRecommendationController extends Controller
      */
 
 
-    public function index()
-    {
-        return response()->json(AttributeRecommendation::all());
-    }
+     public function index()
+     {
+         $recommendations = AttributeRecommendation::all()->map(function ($item) {
+             return [
+                 'id' => $item->id,
+                 'parent_id' => $item->parent_id,
+                 'family_name' => $item->family_name,
+                 'common_attributes' => json_decode($item->common_attributes),
+                 'variants' => json_decode($item->variants),
+                 'created_at' => $item->created_at,
+                 'updated_at' => $item->updated_at,
+             ];
+         });
+     
+         return response()->json($recommendations);
+     }
+     
 
 
    /**
-     * @OA\Get(
-     *     path="/api/recommendations/{id}",
-     *     operationId="showAttributeRecommendation",
-     *     tags={"Recommendations"},
-     *     summary="Get a specific attribute recommendation",
-     *     description="Returns a specific attribute recommendation by ID",
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="ID of the attribute recommendation",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="parent_id", type="integer", example=101),
-     *             @OA\Property(property="family_name", type="string", example="Shirts Family"),
-     *             @OA\Property(property="common_attributes", type="array", @OA\Items(type="string"), example={"color", "size", "material"}),
-     *             @OA\Property(property="variants", type="array", @OA\Items(type="object", @OA\Property(property="color", type="string"), @OA\Property(property="size", type="string"))),
-     *             @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-01T12:00:00Z"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-01T12:00:00Z")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Attribute recommendation not found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Not found")
-     *         )
-     *     ),
-     *    security={{"bearerAuth":{}}}
-     * )
-     */
-    public function show($id)
+    * @OA\Get(
+    *     path="/api/recommendations/{parent_id}",
+    *     operationId="showAttributeRecommendation",
+    *     tags={"Recommendations"},
+    *     summary="Get a specific attribute recommendation by parent_id",
+    *     description="Returns a specific attribute recommendation by parent_id",
+    *     @OA\Parameter(
+    *         name="parent_id",
+    *         in="path",
+    *         description="Parent ID of the attribute recommendation",
+    *         required=true,
+    *         @OA\Schema(type="integer")
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful response",
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="id", type="integer", example=11),
+    *             @OA\Property(property="parent_id", type="integer", example=1),
+    *             @OA\Property(property="family_name", type="string", example="Atosa Product"),
+    *             @OA\Property(
+    *                 property="common_attributes",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="attribute_name", type="string", example="Width"),
+    *                     @OA\Property(property="attribute_id", type="integer", example=1)
+    *                 )
+    *             ),
+    *             @OA\Property(
+    *                 property="variants",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="product_id", type="string", example="2971"),
+    *                     @OA\Property(property="product_name", type="string"),
+    *                     @OA\Property(property="sku", type="string"),
+    *                     @OA\Property(property="image", type="string", format="url"),
+    *                     @OA\Property(property="brand", type="string", example="Atosa"),
+    *                     @OA\Property(property="product_family", type="string", example="Commercial Chef Base"),
+    *                     @OA\Property(property="taxonomy_path", type="string", example="Commercial Chef Base > Commercial Refrigerator > Refrigeration"),
+    *                     @OA\Property(
+    *                         property="attributes",
+    *                         type="array",
+    *                         @OA\Items(
+    *                             type="object",
+    *                             @OA\Property(property="attribute_name", type="string", example="Width"),
+    *                             @OA\Property(property="value", type="string", example="76")
+    *                         )
+    *                     )
+    *                 )
+    *             ),
+    *             @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-13T13:35:50.000000Z"),
+    *             @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-13T13:35:50.000000Z")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=404,
+    *         description="Attribute recommendation not found",
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string", example="Not found")
+    *         )
+    *     ),
+    *     security={{"bearerAuth":{}}}
+    * )
+    */
+
+    public function show($parentId)
     {
-        $recommendation = AttributeRecommendation::find($id);
+        $recommendation = AttributeRecommendation::where('parent_id', $parentId)->first();
 
         if (!$recommendation) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        return response()->json($recommendation, 200);
+        // Decode the JSON strings into PHP arrays
+        $commonAttributes = json_decode($recommendation->common_attributes, true);
+        $variants = json_decode($recommendation->variants, true);
+
+        // Build the response structure
+        $data = [
+            'id' => $recommendation->id,
+            'parent_id' => $recommendation->parent_id,
+            'family_name' => $recommendation->family_name,
+            'common_attributes' => $commonAttributes,
+            'variants' => $variants,
+            'created_at' => $recommendation->created_at,
+            'updated_at' => $recommendation->updated_at,
+        ];
+
+        return response()->json($data, 200);
     }
+
 
 
     /**
