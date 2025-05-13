@@ -47,6 +47,7 @@ use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductGroupController;
 use App\Http\Controllers\AttributeRecommendationController;
+use App\Http\Controllers\AppKeywordController;
 
 
 
@@ -66,7 +67,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
-	
+
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
@@ -98,6 +99,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
+
+	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
+	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
 	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);

@@ -11,19 +11,16 @@ return new class extends Migration
 	 */
 	public function up(): void
 	{
-		Schema::create('app_keywords', function (Blueprint $table) {
+		Schema::rename('languages', 'languages1');
+		Schema::create('languages', function (Blueprint $table) {
 			$table->id();
-			$table->string("code")->nullable();
+			$table->string('code')->index();
+			$table->string('name')->index();
+			$table->boolean('rtl')->default(0);
+			$table->boolean('isDefault')->default(0);
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();
 			$table->timestamps();
-		});
-
-		Schema::create('app_keyword_translations', function (Blueprint $table) {
-			$table->id();
-			$table->string("locale", 2);
-			$table->integer("app_keyword_id");
-			$table->longText("title");
 		});
 	}
 
@@ -32,7 +29,7 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::dropIfExists('app_keywords');
-		Schema::dropIfExists('app_keyword_translations');
+		Schema::dropIfExists('languages');
+		Schema::rename('languages1', 'languages');
 	}
 };

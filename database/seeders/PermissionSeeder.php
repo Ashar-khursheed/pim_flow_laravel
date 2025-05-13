@@ -125,7 +125,7 @@ class PermissionSeeder extends Seeder
 			'upload vendor',
 			'view vendor',
 			'download vendor',
-			
+
 			'list media mgmt',
 			'add media mgmt',
 			'update media mgmt',
@@ -182,6 +182,9 @@ class PermissionSeeder extends Seeder
 			'update flash sale',
 			'delete flash sale',
 			'show flash sale',
+
+			'import keywords',
+			'export keywords',
 		];
 
 		$validPermissionIds = [];

@@ -1965,7 +1965,7 @@ class ProductController extends BaseController
 				);
 			}
 
-			$csvImporter->processImport(
+			$csvImporter->processCsvImport(
 				$request->file('upload_file')->getRealPath(),
 				$productFileFormatArray,
 				'Product',
