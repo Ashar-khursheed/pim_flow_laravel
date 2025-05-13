@@ -250,22 +250,22 @@ class ExcelRepository
 /**
  * Define a Read Filter class implementing \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
  */
-// class ChunkReadFilter implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
-// {
-// 	private $startRow = 0;
-// 	private $endRow   = 0;
+class ChunkReadFilter implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
+{
+	private $startRow = 0;
+	private $endRow   = 0;
 
-// 	/**  Set the list of rows that we want to read  */
-// 	public function setRows($startRow, $endRow) {
-// 		$this->startRow = $startRow;
-// 		$this->endRow = $endRow;
-// 	}
+	/**  Set the list of rows that we want to read  */
+	public function setRows($startRow, $endRow) {
+		$this->startRow = $startRow;
+		$this->endRow = $endRow;
+	}
 
-// 	public function readCell(string $column, int $row, string $worksheetName = ''):bool {
-// 		# Only read the heading row, and the configured rows
-// 		if ($row >= $this->startRow && $row <= $this->endRow) {
-// 			return true;
-// 		}
-// 		return false;
-// 	}
-// }
+	public function readCell(string $column, int $row, string $worksheetName = ''):bool {
+		# Only read the heading row, and the configured rows
+		if ($row >= $this->startRow && $row <= $this->endRow) {
+			return true;
+		}
+		return false;
+	}
+}

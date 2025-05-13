@@ -16,6 +16,92 @@
         }
     },
     "paths": {
+        "/api/keywords/export": {
+            "post": {
+                "tags": [
+                    "Keywords"
+                ],
+                "summary": "Api to export the keyword file",
+                "operationId": "07bbb4330e4cd54744e665b8f3e3a88e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/keywords/import": {
+            "post": {
+                "tags": [
+                    "Keywords"
+                ],
+                "summary": "Import keywords from a csv file",
+                "operationId": "339faf5df666be1af0938896622020bc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "CSV file (.csv) max 5MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/attributes": {
             "get": {
                 "tags": [
@@ -16113,6 +16199,10 @@
         {
             "name": "Sliders",
             "description": "API for managing sliders"
+        },
+        {
+            "name": "Keywords",
+            "description": "Keywords"
         },
         {
             "name": "Recommendations",

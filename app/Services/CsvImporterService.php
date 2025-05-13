@@ -9,7 +9,7 @@ use App\Models\TransactionLog;
 
 class CsvImporterService
 {
-	public function processImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass, string $userRole = null)
+	public function processCsvImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass, string $userRole = null)
 	{
 		$requiredRowCount = count($fileFormatArray);
 		$requiredHeaderArray = array_keys($fileFormatArray);
