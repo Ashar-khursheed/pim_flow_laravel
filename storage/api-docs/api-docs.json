@@ -11088,6 +11088,305 @@
                 ]
             }
         },
+        "/api/product-suppliers": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Get all product suppliers",
+                "description": "Returns a list of all product suppliers",
+                "operationId": "getProductSuppliers",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductSupplier"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Create a new product supplier",
+                "description": "Creates a new product supplier entry",
+                "operationId": "storeProductSupplier",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "sku",
+                                    "vendor_id",
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "sku": {
+                                        "type": "string"
+                                    },
+                                    "vendor_id": {
+                                        "type": "integer"
+                                    },
+                                    "product_id": {
+                                        "type": "integer"
+                                    },
+                                    "warranty_information": {
+                                        "type": "string"
+                                    },
+                                    "refund": {
+                                        "type": "string"
+                                    },
+                                    "delivery_days": {
+                                        "type": "string"
+                                    },
+                                    "cost_per_item": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "margin": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "inventory": {
+                                        "type": "integer"
+                                    },
+                                    "additional_cost": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "final_cost_price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductSupplier"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/{id}": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Get a product supplier by ID",
+                "description": "Returns a product supplier",
+                "operationId": "getProductSupplierById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductSupplier"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Update a product supplier",
+                "description": "Updates the details of a product supplier",
+                "operationId": "updateProductSupplier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product supplier to update",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "sku": {
+                                        "type": "string"
+                                    },
+                                    "vendor_id": {
+                                        "type": "integer"
+                                    },
+                                    "product_id": {
+                                        "type": "integer"
+                                    },
+                                    "warranty_information": {
+                                        "type": "string"
+                                    },
+                                    "refund": {
+                                        "type": "string"
+                                    },
+                                    "delivery_days": {
+                                        "type": "string"
+                                    },
+                                    "cost_per_item": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "margin": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "inventory": {
+                                        "type": "integer"
+                                    },
+                                    "additional_cost": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "final_cost_price": {
+                                        "type": "number",
+                                        "format": "float"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductSupplier"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Delete a product supplier",
+                "description": "Deletes a product supplier by ID",
+                "operationId": "deleteProductSupplier",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product supplier to delete",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
@@ -15532,6 +15831,60 @@
                 },
                 "type": "object"
             },
+            "ProductSupplier": {
+                "title": "Product Supplier",
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "sku": {
+                        "type": "string"
+                    },
+                    "vendor_id": {
+                        "type": "integer"
+                    },
+                    "product_id": {
+                        "type": "integer"
+                    },
+                    "warranty_information": {
+                        "type": "string"
+                    },
+                    "refund": {
+                        "type": "string"
+                    },
+                    "delivery_days": {
+                        "type": "string"
+                    },
+                    "cost_per_item": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "sale_price": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "margin": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "inventory": {
+                        "type": "integer"
+                    },
+                    "additional_cost": {
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "final_cost_price": {
+                        "type": "number",
+                        "format": "float"
+                    }
+                },
+                "type": "object"
+            },
             "SimpleSlider": {
                 "title": "Simple Slider",
                 "required": [
@@ -15844,6 +16197,10 @@
         {
             "name": "Product Groups",
             "description": "Product Groups"
+        },
+        {
+            "name": "Product Suppliers",
+            "description": "Product Suppliers"
         },
         {
             "name": "Redirect Links",

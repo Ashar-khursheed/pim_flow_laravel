@@ -47,6 +47,8 @@ use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductGroupController;
 use App\Http\Controllers\AttributeRecommendationController;
+use App\Http\Controllers\ProductSupplierController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -80,6 +82,8 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
+	
+	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	Route::apiResource('users', UserController::class);
 
