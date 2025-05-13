@@ -288,61 +288,121 @@ class AttributeRecommendationController extends Controller
      */
 
 
-    public function index()
-    {
-        return response()->json(AttributeRecommendation::all());
-    }
+     public function index()
+     {
+         $recommendations = AttributeRecommendation::all()->map(function ($item) {
+             return [
+                 'id' => $item->id,
+                 'parent_id' => $item->parent_id,
+                 'family_name' => $item->family_name,
+                 'common_attributes' => json_decode($item->common_attributes),
+                 'variants' => json_decode($item->variants),
+                 'created_at' => $item->created_at,
+                 'updated_at' => $item->updated_at,
+             ];
+         });
+     
+         return response()->json($recommendations);
+     }
+     
 
 
    /**
-     * @OA\Get(
-     *     path="/api/recommendations/{id}",
-     *     operationId="showAttributeRecommendation",
-     *     tags={"Recommendations"},
-     *     summary="Get a specific attribute recommendation",
-     *     description="Returns a specific attribute recommendation by ID",
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="ID of the attribute recommendation",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Successful response",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="id", type="integer", example=1),
-     *             @OA\Property(property="parent_id", type="integer", example=101),
-     *             @OA\Property(property="family_name", type="string", example="Shirts Family"),
-     *             @OA\Property(property="common_attributes", type="array", @OA\Items(type="string"), example={"color", "size", "material"}),
-     *             @OA\Property(property="variants", type="array", @OA\Items(type="object", @OA\Property(property="color", type="string"), @OA\Property(property="size", type="string"))),
-     *             @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-01T12:00:00Z"),
-     *             @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-01T12:00:00Z")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Attribute recommendation not found",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="message", type="string", example="Not found")
-     *         )
-     *     ),
-     *    security={{"bearerAuth":{}}}
-     * )
-     */
-    public function show($id)
+    * @OA\Get(
+    *     path="/api/recommendations/{parent_id}",
+    *     operationId="showAttributeRecommendation",
+    *     tags={"Recommendations"},
+    *     summary="Get a specific attribute recommendation by parent_id",
+    *     description="Returns a specific attribute recommendation by parent_id",
+    *     @OA\Parameter(
+    *         name="parent_id",
+    *         in="path",
+    *         description="Parent ID of the attribute recommendation",
+    *         required=true,
+    *         @OA\Schema(type="integer")
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Successful response",
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="id", type="integer", example=11),
+    *             @OA\Property(property="parent_id", type="integer", example=1),
+    *             @OA\Property(property="family_name", type="string", example="Atosa Product"),
+    *             @OA\Property(
+    *                 property="common_attributes",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="attribute_name", type="string", example="Width"),
+    *                     @OA\Property(property="attribute_id", type="integer", example=1)
+    *                 )
+    *             ),
+    *             @OA\Property(
+    *                 property="variants",
+    *                 type="array",
+    *                 @OA\Items(
+    *                     type="object",
+    *                     @OA\Property(property="product_id", type="string", example="2971"),
+    *                     @OA\Property(property="product_name", type="string"),
+    *                     @OA\Property(property="sku", type="string"),
+    *                     @OA\Property(property="image", type="string", format="url"),
+    *                     @OA\Property(property="brand", type="string", example="Atosa"),
+    *                     @OA\Property(property="product_family", type="string", example="Commercial Chef Base"),
+    *                     @OA\Property(property="taxonomy_path", type="string", example="Commercial Chef Base > Commercial Refrigerator > Refrigeration"),
+    *                     @OA\Property(
+    *                         property="attributes",
+    *                         type="array",
+    *                         @OA\Items(
+    *                             type="object",
+    *                             @OA\Property(property="attribute_name", type="string", example="Width"),
+    *                             @OA\Property(property="value", type="string", example="76")
+    *                         )
+    *                     )
+    *                 )
+    *             ),
+    *             @OA\Property(property="created_at", type="string", format="date-time", example="2025-05-13T13:35:50.000000Z"),
+    *             @OA\Property(property="updated_at", type="string", format="date-time", example="2025-05-13T13:35:50.000000Z")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=404,
+    *         description="Attribute recommendation not found",
+    *         @OA\JsonContent(
+    *             type="object",
+    *             @OA\Property(property="message", type="string", example="Not found")
+    *         )
+    *     ),
+    *     security={{"bearerAuth":{}}}
+    * )
+    */
+
+    public function show($parentId)
     {
-        $recommendation = AttributeRecommendation::find($id);
+        $recommendation = AttributeRecommendation::where('parent_id', $parentId)->first();
 
         if (!$recommendation) {
             return response()->json(['message' => 'Not found'], 404);
         }
 
-        return response()->json($recommendation, 200);
+        // Decode the JSON strings into PHP arrays
+        $commonAttributes = json_decode($recommendation->common_attributes, true);
+        $variants = json_decode($recommendation->variants, true);
+
+        // Build the response structure
+        $data = [
+            'id' => $recommendation->id,
+            'parent_id' => $recommendation->parent_id,
+            'family_name' => $recommendation->family_name,
+            'common_attributes' => $commonAttributes,
+            'variants' => $variants,
+            'created_at' => $recommendation->created_at,
+            'updated_at' => $recommendation->updated_at,
+        ];
+
+        return response()->json($data, 200);
     }
+
 
 
     /**
