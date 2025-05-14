@@ -42,7 +42,6 @@ class ProductSupplierController extends Controller
      *             required={"sku", "vendor_id", "product_id"},
      *             @OA\Property(property="sku", type="string"),
      *             @OA\Property(property="vendor_id", type="integer"),
-     *             @OA\Property(property="product_id", type="integer"),
      *             @OA\Property(property="warranty_information", type="string"),
      *             @OA\Property(property="refund", type="string"),
      *             @OA\Property(property="delivery_days", type="string"),
@@ -67,6 +66,7 @@ class ProductSupplierController extends Controller
     {
         $data = $request->validate([
             'sku' => 'required|string',
+            'vendor_sku' => 'required|string',
             'vendor_id' => 'required|integer',
             'product_id' => 'nullable|integer', // changed to nullable
             'warranty_information' => 'nullable|string',
@@ -159,6 +159,7 @@ class ProductSupplierController extends Controller
                 'id' => $supplier->id,
                 'product_id' => $supplier->product_id,
                 'sku' => $supplier->sku,
+                'vendor_sku' => $supplier->vendor_sku,
                 'vendor_id' => $supplier->vendor_id,
                 'vendor_name' => $supplier->vendor ? $supplier->vendor->name : null,
                 'warranty_information' => $supplier->warranty_information,
@@ -206,6 +207,7 @@ class ProductSupplierController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             @OA\Property(property="sku", type="string"),
+     *             @OA\Property(property="vendor_sku", type="string"),
      *             @OA\Property(property="vendor_id", type="integer"),
      *             @OA\Property(property="product_id", type="integer"),
      *             @OA\Property(property="warranty_information", type="string"),
