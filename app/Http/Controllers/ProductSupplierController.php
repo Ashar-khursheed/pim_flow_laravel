@@ -80,20 +80,31 @@ class ProductSupplierController extends Controller
             'additional_cost' => 'nullable|numeric',
             'final_cost_price' => 'nullable|numeric',
         ]);
-    
+
+        // Check if a record with the same sku and vendor_id already exists
+        $existingEntry = ProductSupplier::where('sku', $data['sku'])
+                                        ->where('vendor_id', $data['vendor_id'])
+                                        ->first();
+
+        if ($existingEntry) {
+            return response()->json([
+                'message' => 'A product supplier with the same SKU and Vendor ID already exists.',
+            ], 422);
+        }
+
         // Automatically fetch product_id if not provided
         if (empty($data['product_id']) && !empty($data['sku'])) {
             $product = \DB::table('ec_products')->where('sku', $data['sku'])->first();
-    
+
             if (!$product) {
                 return response()->json([
                     'message' => 'No product found with the given SKU.',
                 ], 422);
             }
-    
+
             $data['product_id'] = $product->id;
         }
-    
+
         // Validate price logic
         if (
             isset($data['price'], $data['sale_price']) &&
@@ -103,9 +114,10 @@ class ProductSupplierController extends Controller
                 'message' => 'Price cannot be less than sale price.',
             ], 422);
         }
-    
+
         return ProductSupplier::create($data);
     }
+
     
     
 
