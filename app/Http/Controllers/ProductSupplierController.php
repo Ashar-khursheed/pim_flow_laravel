@@ -41,6 +41,7 @@ class ProductSupplierController extends Controller
      *         @OA\JsonContent(
      *             required={"sku", "vendor_id", "product_id"},
      *             @OA\Property(property="sku", type="string"),
+     *             @OA\Property(property="vendor_sku", type="string"),
      *             @OA\Property(property="vendor_id", type="integer"),
      *             @OA\Property(property="warranty_information", type="string"),
      *             @OA\Property(property="refund", type="string"),
