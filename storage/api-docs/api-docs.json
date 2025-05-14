@@ -11248,10 +11248,10 @@
                                     "sku": {
                                         "type": "string"
                                     },
-                                    "vendor_id": {
-                                        "type": "integer"
+                                    "vendor_sku": {
+                                        "type": "string"
                                     },
-                                    "product_id": {
+                                    "vendor_id": {
                                         "type": "integer"
                                     },
                                     "warranty_information": {
@@ -11394,6 +11394,9 @@
                             "schema": {
                                 "properties": {
                                     "sku": {
+                                        "type": "string"
+                                    },
+                                    "vendor_sku": {
                                         "type": "string"
                                     },
                                     "vendor_id": {
