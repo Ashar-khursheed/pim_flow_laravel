@@ -68,7 +68,7 @@ class ProductSupplierController extends Controller
         $data = $request->validate([
             'sku' => 'required|string',
             'vendor_id' => 'required|integer',
-            'product_id' => 'required|integer',
+            'product_id' => 'nullable|integer', // changed to nullable
             'warranty_information' => 'nullable|string',
             'refund' => 'nullable|string',
             'delivery_days' => 'nullable|string',
@@ -80,22 +80,47 @@ class ProductSupplierController extends Controller
             'additional_cost' => 'nullable|numeric',
             'final_cost_price' => 'nullable|numeric',
         ]);
-
+    
+        // Automatically fetch product_id if not provided
+        if (empty($data['product_id']) && !empty($data['sku'])) {
+            $product = \DB::table('ec_products')->where('sku', $data['sku'])->first();
+    
+            if (!$product) {
+                return response()->json([
+                    'message' => 'No product found with the given SKU.',
+                ], 422);
+            }
+    
+            $data['product_id'] = $product->id;
+        }
+    
+        // Validate price logic
+        if (
+            isset($data['price'], $data['sale_price']) &&
+            $data['price'] < $data['sale_price']
+        ) {
+            return response()->json([
+                'message' => 'Price cannot be less than sale price.',
+            ], 422);
+        }
+    
         return ProductSupplier::create($data);
     }
+    
+    
 
-    /**
+   /**
      * @OA\Get(
-     *     path="/api/product-suppliers/{id}",
-     *     operationId="getProductSupplierById",
+     *     path="/api/product-suppliers/{product_id}",
+     *     operationId="getProductSupplierByProductId",
      *     tags={"Product Suppliers"},
-     *     summary="Get a product supplier by ID",
-     *     description="Returns a product supplier",
+     *     summary="Get a product supplier by Product ID",
+     *     description="Returns a product supplier by its associated product ID",
      *     @OA\Parameter(
-     *         name="id",
+     *         name="product_id",
      *         in="path",
      *         required=true,
-     *         description="ID of the product supplier",
+     *         description="Product ID",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
@@ -110,10 +135,36 @@ class ProductSupplierController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function show($id)
+    public function show($product_id)
     {
-        return ProductSupplier::findOrFail($id);
+        $supplier = ProductSupplier::with('vendor')->where('product_id', $product_id)->first();
+
+        if (!$supplier) {
+            return response()->json(['message' => 'Product supplier not found'], 404);
+        }
+
+        return response()->json([
+            'id' => $supplier->id,
+            'product_id' => $supplier->product_id,
+            'sku' => $supplier->sku,
+            'vendor_id' => $supplier->vendor_id,
+            'vendor_name' => $supplier->vendor ? $supplier->vendor->name : null,
+            'warranty_information' => $supplier->warranty_information,
+            'refund' => $supplier->refund,
+            'delivery_days' => $supplier->delivery_days,
+            'cost_per_item' => $supplier->cost_per_item,
+            'sale_price' => $supplier->sale_price,
+            'price' => $supplier->price,
+            'margin' => $supplier->margin,
+            'inventory' => $supplier->inventory,
+            'additional_cost' => $supplier->additional_cost,
+            'final_cost_price' => $supplier->final_cost_price,
+            'created_at' => $supplier->created_at,
+            'updated_at' => $supplier->updated_at,
+        ]);
     }
+
+    
 
     /**
      * @OA\Put(

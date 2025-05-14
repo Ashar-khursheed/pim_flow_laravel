@@ -41,4 +41,10 @@ class ProductSupplier extends Model
         'additional_cost',
         'final_cost_price',
     ];
+
+    public function vendor()
+{
+    return $this->belongsTo(Vendor::class, 'vendor_id');
+}
+
 }

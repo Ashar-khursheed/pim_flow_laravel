@@ -11291,19 +11291,19 @@
                 ]
             }
         },
-        "/api/product-suppliers/{id}": {
+        "/api/product-suppliers/{product_id}": {
             "get": {
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Get a product supplier by ID",
-                "description": "Returns a product supplier",
-                "operationId": "getProductSupplierById",
+                "summary": "Get a product supplier by Product ID",
+                "description": "Returns a product supplier by its associated product ID",
+                "operationId": "getProductSupplierByProductId",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier",
+                        "description": "Product ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11330,7 +11330,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/product-suppliers/{id}": {
             "put": {
                 "tags": [
                     "Product Suppliers"
