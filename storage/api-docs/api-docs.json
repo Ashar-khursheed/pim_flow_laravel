@@ -11296,8 +11296,8 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Get a product supplier by Product ID",
-                "description": "Returns a product supplier by its associated product ID",
+                "summary": "Get product suppliers by Product ID",
+                "description": "Returns all product suppliers associated with a specific product ID",
                 "operationId": "getProductSupplierByProductId",
                 "parameters": [
                     {
@@ -11316,7 +11316,10 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ProductSupplier"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductSupplier"
+                                    }
                                 }
                             }
                         }
@@ -11332,19 +11335,28 @@
                 ]
             }
         },
-        "/api/product-suppliers/{id}": {
+        "/api/product-suppliers/{product_id}/{vendor_id}": {
             "put": {
                 "tags": [
                     "Product Suppliers"
                 ],
                 "summary": "Update a product supplier",
-                "description": "Updates the details of a product supplier",
+                "description": "Updates the details of a product supplier based on product_id and vendor_id",
                 "operationId": "updateProductSupplier",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier to update",
+                        "description": "Product ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID associated with the supplier",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11428,7 +11440,9 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/product-suppliers/{id}": {
             "delete": {
                 "tags": [
                     "Product Suppliers"
