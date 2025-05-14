@@ -11440,21 +11440,28 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/product-suppliers/{id}": {
+            },
             "delete": {
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Delete a product supplier",
-                "description": "Deletes a product supplier by ID",
-                "operationId": "deleteProductSupplier",
+                "summary": "Delete a product supplier by product and vendor",
+                "description": "Deletes a product supplier using product_id and vendor_id",
+                "operationId": "deleteProductSupplierByProductAndVendor",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier to delete",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID",
                         "required": true,
                         "schema": {
                             "type": "integer"

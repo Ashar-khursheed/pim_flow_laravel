@@ -252,16 +252,23 @@ class ProductSupplierController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/product-suppliers/{id}",
-     *     operationId="deleteProductSupplier",
+     *     path="/api/product-suppliers/{product_id}/{vendor_id}",
+     *     operationId="deleteProductSupplierByProductAndVendor",
      *     tags={"Product Suppliers"},
-     *     summary="Delete a product supplier",
-     *     description="Deletes a product supplier by ID",
+     *     summary="Delete a product supplier by product and vendor",
+     *     description="Deletes a product supplier using product_id and vendor_id",
      *     @OA\Parameter(
-     *         name="id",
+     *         name="product_id",
      *         in="path",
      *         required=true,
-     *         description="ID of the product supplier to delete",
+     *         description="Product ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="vendor_id",
+     *         in="path",
+     *         required=true,
+     *         description="Vendor ID",
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
@@ -278,9 +285,19 @@ class ProductSupplierController extends Controller
      *     security={{"bearerAuth":{}}}
      * )
      */
-    public function destroy($id)
+
+    public function destroy($product_id, $vendor_id)
     {
-        ProductSupplier::destroy($id);
+        $supplier = ProductSupplier::where('product_id', $product_id)
+            ->where('vendor_id', $vendor_id)
+            ->first();
+
+        if (!$supplier) {
+            return response()->json(['message' => 'Product supplier not found'], 404);
+        }
+
+        $supplier->delete();
+
         return response()->json(['message' => 'Deleted successfully']);
     }
 
