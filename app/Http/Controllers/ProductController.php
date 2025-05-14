@@ -684,256 +684,257 @@ class ProductController extends BaseController
 	}
 
 	/**
-     * @OA\Post(
-     *     path="/api/products/{product}",
-     *     summary="Update a product using POST with _method=PUT",
-     *     description="Updates an existing product based on the provided form data using POST with _method=PUT. Can also create or update a product review within the same request.",
-     *     operationId="updateProductPost",
-     *     tags={"Products"},
-     *     @OA\Parameter(
-     *         name="product",
-     *         in="path",
-     *         description="ID of the product to update",
-     *         required=true,
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="multipart/form-data",
-     *             @OA\Schema(
-     *                 @OA\Property(property="_method", type="string", example="PUT"),
-     *                 @OA\Property(property="sku", type="string", example="PROD-123"),
-     *                 @OA\Property(property="barcode", type="string", example="9509297558375"),
-     *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
-     *                 @OA\Property(property="refund", type="string", example="1"),
-     *                 @OA\Property(
-     *                   property="categories",
-     *                   type="array",
-     *                   @OA\Items(type="integer", example=1),
-     *                   description="Array of category IDs (can include parent and child)"
-     *                   ),
-     *                 @OA\Property(property="quantity", type="integer", example=100),
-     *                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
-     *                 @OA\Property(property="status", type="string", example="draft"),
-     *                 @OA\Property(property="with_storehouse_management", type="boolean", example=true),
-     *                 @OA\Property(property="stock_status", type="string", example="1"),
-     *                 @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
-     *                 @OA\Property(property="variant_inventory_quantity", type="integer", example=50),
-     *                 @OA\Property(property="variant_inventory_policy", type="string", example="deny"),
-     *                 @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
-     *                 @OA\Property(property="price", type="number", format="float", example=199.99),
-     *                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
-     *                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
-     *                 @OA\Property(property="sale_type", type="string", example="percentage"),
-     *                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
-     *                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
-     *                 @OA\Property(
-     *                     property="cost_type",
-     *                     type="string",
-     *                     enum={"percentage", "value"},
-     *                     example="percentage",
-     *                     description="Defines how additional cost is calculated"
-     *                 ),
-     *                 @OA\Property(property="additional_cost_percentage", type="number", format="float", example=10.0, description="Percentage to add to the base cost_per_item"),
-     *                 @OA\Property(property="additional_cost_value", type="number", format="float", example=5.0, description="Fixed value to add to cost_per_item"),
-     *                 @OA\Property(property="total_cost_per_item", type="number", format="float", example=55.0, description="Automatically calculated total cost per item"),
-     *                 @OA\Property(property="tax_id", type="integer", example=3),
-     *                 @OA\Property(property="currency_id", type="integer", example=1),
-     *                 @OA\Property(property="minimum_order_quantity", type="integer", example=1),
-     *                 @OA\Property(property="maximum_order_quantity", type="integer", example=10),
-     *                 @OA\Property(property="name", type="string", example="Sample Product"),
-     *                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
-     *                 @OA\Property(property="description", type="string", example="Short description."),
-     *                    @OA\Property(
-     *                 property="benefits_features",
-     *                 type="array",
-     *                 @OA\Items(
-     *                  type="object",
-     *                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
-     *                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
-     *                         )
-     *                   ),
-     *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="image", type="string", format="binary"),
-     *                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
-     *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
-     *                 @OA\Property(property="length", type="number", format="float", example=10.5),
-     *                 @OA\Property(property="length_unit_id", type="integer", example=1),
-     *                 @OA\Property(property="width", type="number", format="float", example=5.0),
-     *                 @OA\Property(property="height", type="number", format="float", example=3.0),
-     *                 @OA\Property(property="depth", type="number", format="float", example=2.0),
-     *                 @OA\Property(property="weight", type="number", format="float", example=1.5),
-     *                 @OA\Property(property="weight_unit_id", type="integer", example=5),
-     *                 @OA\Property(property="shipping_weight_option", type="string", example="lbs"),
-     *                 @OA\Property(property="shipping_weight", type="number", format="float", example=2.0),
-     *                 @OA\Property(property="shipping_dimension_option", type="string", example="inch"),
-     *                 @OA\Property(property="shipping_width", type="number", format="float", example=6.0),
-     *                 @OA\Property(property="shipping_depth", type="number", format="float", example=4.0),
-     *                 @OA\Property(property="shipping_height", type="number", format="float", example=3.5),
-     *                 @OA\Property(property="shipping_length", type="number", format="float", example=11.0),
-     *                 @OA\Property(property="shipping_length_id", type="integer", example=1),
-     *                 @OA\Property(property="is_variation", type="boolean", example=false),
-     *                 @OA\Property(property="variant_grams", type="number", format="float", example=500),
-     *                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
-     *                 @OA\Property(property="variant_barcode", type="string", example="123456789012"),
-     *                 @OA\Property(property="variant_color_title", type="string", example="Red"),
-     *                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
-     *                 @OA\Property(property="store_id", type="integer", example=7),
-     *                 @OA\Property(property="brand_id", type="integer", example=13),
-     *                 @OA\Property(property="views", type="integer", example=200),
-     *                 @OA\Property(property="units_sold", type="integer", example=50),
-     *                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
-     *                 @OA\Property(property="compare_type", type="string", example=""),
-     *                 @OA\Property(property="compare_products[]", type="array", @OA\Items(type="integer", example=102)),
-     *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
-     *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
-     *                 @OA\Property(property="order", type="integer", example=1),
-     *                 @OA\Property(property="box_quantity", type="integer", example=5),
-     *                 @OA\Property(property="delivery_days", type="integer", example=3),
-     *
-     *                  @OA\Property(
-     *                     property="review_customer_name",
-     *                     type="string",
-     *                     example="John Doe",
-     *                     description="Name of the customer leaving the review"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="review_customer_email",
-     *                     type="string",
-     *                     format="email",
-     *                     example="john.doe@example.com",
-     *                     description="Email of the customer leaving the review"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="review_star",
-     *                     type="integer",
-     *                     minimum=1,
-     *                     maximum=5,
-     *                     example=5,
-     *                     description="Star rating given by the customer"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="review_comment",
-     *                     type="string",
-     *                     example="Great product, highly recommended!",
-     *                     description="Review comment provided by the customer"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="review_status",
-     *                     type="string",
-     *                     enum={"pending", "published", "rejected"},
-     *                     example="pending",
-     *                     description="Status of the review"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="review_images[]",
-     *                     type="array",
-     *                     @OA\Items(type="string", format="binary"),
-     *                     description="Review images to upload"
-     *                 ),
-     *                 @OA\Property(
-     *                     property="faqs",
-     *                     type="array",
-     *                     @OA\Items(
-     *                         @OA\Property(property="question", type="string", example="What is the warranty period?"),
-     *                         @OA\Property(property="answer", type="string", example="The warranty period is 1 year."),
-     *                         @OA\Property(property="category_id", type="integer", nullable=true, example=2),
-     *                         @OA\Property(property="status", type="integer", example=1)
-     *                     )
-     *                 ),
-     *                 @OA\Property(
-     *                     property="product_attributes",
-     *                     type="object",
-     *                     description="Dynamic attributes with attribute_id as key",
-     *                     @OA\AdditionalProperties(
-     *                         type="string",
-     *                         description="Attribute value corresponding to the attribute_id"
-     *                     ),
-     *                     example={
-     *                         "1": "1111",
-     *                         "4": "tanuj",
-     *                         "5": "raaj",
-     *                         "11": "ahmad"
-     *                     },
-     *                     nullable=true
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Review created successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Review created successfully."),
-     *             @OA\Property(property="review", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="customer_id", type="integer", example=1),
-     *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
-     *                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
-     *                 @OA\Property(property="product_id", type="integer", example=5),
-     *                 @OA\Property(property="star", type="integer", example=5),
-     *                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
-     *                 @OA\Property(property="status", type="string", example="pending"),
-     *                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-     *                  @OA\Property(property="faqs", type="array",
-     *                 @OA\Items(
-     *                     @OA\Property(property="question", type="string"),
-     *                     @OA\Property(property="answer", type="string"),
-     *                     @OA\Property(property="category_id", type="integer", nullable=true),
-     *                     @OA\Property(property="status", type="integer")
-     *                 )
-     *             )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Review updated successfully",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Review updated successfully."),
-     *             @OA\Property(property="review", type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="customer_id", type="integer", example=1),
-     *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
-     *                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
-     *                 @OA\Property(property="product_id", type="integer", example=5),
-     *                 @OA\Property(property="star", type="integer", example=5),
-     *                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
-     *                 @OA\Property(property="status", type="string", example="published"),
-     *                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
-     *                 @OA\Property(property="created_at", type="string", format="date-time"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=400,
-     *         description="Validation Error",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="array", @OA\Items(type="string"), example={
-     *                 "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
-     *                 "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
-     *                 "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-     *                 "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
-     *                 "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-     *                 "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
-     *                 "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
-     *             })
-     *         )
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
+	 * @OA\Post(
+	 *     path="/api/products/{product}",
+	 *     summary="Update a product using POST with _method=PUT",
+	 *     description="Updates an existing product based on the provided form data using POST with _method=PUT. Can also create or update a product review within the same request.",
+	 *     operationId="updateProductPost",
+	 *     tags={"Products"},
+	 *     @OA\Parameter(
+	 *         name="product",
+	 *         in="path",
+	 *         description="ID of the product to update",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 @OA\Property(property="_method", type="string", example="PUT"),
+	 *                 @OA\Property(property="sku", type="string", example="PROD-123"),
+	 *                 @OA\Property(property="barcode", type="string", example="9509297558375"),
+	 *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
+	 *                 @OA\Property(property="refund", type="string", example="1"),
+	 *				   @OA\Property(
+	*					property="categories",
+	*					type="array",
+	*					@OA\Items(type="integer", example=1),
+	*					description="Array of category IDs (can include parent and child)"
+	*					),
+	*                 @OA\Property(property="quantity", type="integer", example=100),
+	*                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
+	*                 @OA\Property(property="status", type="string", example="draft"),
+	*                 @OA\Property(property="with_storehouse_management", type="boolean", example=true),
+	*                 @OA\Property(property="stock_status", type="string", example="1"),
+	*                 @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
+	*                 @OA\Property(property="variant_inventory_quantity", type="integer", example=50),
+	*                 @OA\Property(property="variant_inventory_policy", type="string", example="deny"),
+	*                 @OA\Property(property="variant_fulfillment_service", type="string", example="manual"),
+	*                 @OA\Property(property="price", type="number", format="float", example=199.99),
+	*                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
+	*                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
+	*                 @OA\Property(property="sale_type", type="string", example="percentage"),
+	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
+	*                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
+	*                 @OA\Property(
+	*                     property="cost_type",
+	*                     type="string",
+	*                     enum={"percentage", "value"},
+	*                     example="percentage",
+	*                     description="Defines how additional cost is calculated"
+	*                 ),
+	*                 @OA\Property(property="additional_cost_percentage", type="number", format="float", example=10.0, description="Percentage to add to the base cost_per_item"),
+	*                 @OA\Property(property="additional_cost_value", type="number", format="float", example=5.0, description="Fixed value to add to cost_per_item"),
+	*                 @OA\Property(property="total_cost_per_item", type="number", format="float", example=55.0, description="Automatically calculated total cost per item"),
+	*                 @OA\Property(property="tax_id", type="integer", example=3),
+	*                 @OA\Property(property="currency_id", type="integer", example=1),
+	*                 @OA\Property(property="minimum_order_quantity", type="integer", example=1),
+	*                 @OA\Property(property="maximum_order_quantity", type="integer", example=10),
+	*                 @OA\Property(property="name", type="string", example="Sample Product"),
+	*                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
+	*                 @OA\Property(property="description", type="string", example="Short description."),
+	*                    @OA\Property(
+	*                 property="benefits_features",
+	*                 type="array",
+	*                 @OA\Items(
+	*                  type="object",
+	*                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
+	*                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
+	*            			  )
+	* 					),
+	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
+	*                 @OA\Property(property="image", type="string", format="binary"),
+	*                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
+	*                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
+	*                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
+	*                 @OA\Property(property="length", type="number", format="float", example=10.5),
+	*                 @OA\Property(property="length_unit_id", type="integer", example=1),
+	*                 @OA\Property(property="width", type="number", format="float", example=5.0),
+	*                 @OA\Property(property="height", type="number", format="float", example=3.0),
+	*                 @OA\Property(property="depth", type="number", format="float", example=2.0),
+	*                 @OA\Property(property="weight", type="number", format="float", example=1.5),
+	*                 @OA\Property(property="weight_unit_id", type="integer", example=5),
+	*                 @OA\Property(property="shipping_weight_option", type="string", example="lbs"),
+	*                 @OA\Property(property="shipping_weight", type="number", format="float", example=2.0),
+	*                 @OA\Property(property="shipping_dimension_option", type="string", example="inch"),
+	*                 @OA\Property(property="shipping_width", type="number", format="float", example=6.0),
+	*                 @OA\Property(property="shipping_depth", type="number", format="float", example=4.0),
+	*                 @OA\Property(property="shipping_height", type="number", format="float", example=3.5),
+	*                 @OA\Property(property="shipping_length", type="number", format="float", example=11.0),
+	*                 @OA\Property(property="shipping_length_id", type="integer", example=1),
+	*                 @OA\Property(property="is_variation", type="boolean", example=false),
+	*                 @OA\Property(property="variant_grams", type="number", format="float", example=500),
+	*                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
+	*                 @OA\Property(property="variant_barcode", type="string", example="123456789012"),
+	*                 @OA\Property(property="variant_color_title", type="string", example="Red"),
+	*                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
+	*                 @OA\Property(property="store_id", type="integer", example=7),
+	*                 @OA\Property(property="brand_id", type="integer", example=13),
+	*                 @OA\Property(property="views", type="integer", example=200),
+	*                 @OA\Property(property="units_sold", type="integer", example=50),
+	*                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
+	*                 @OA\Property(property="compare_type", type="string", example=""),
+	*                 @OA\Property(property="compare_products[]", type="array", @OA\Items(type="integer", example=102)),
+	*                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
+	*                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
+	*                 @OA\Property(property="order", type="integer", example=1),
+	*                 @OA\Property(property="box_quantity", type="integer", example=5),
+	*                 @OA\Property(property="delivery_days", type="integer", example=3),
+	*
+	*                  @OA\Property(
+	*                     property="review_customer_name",
+	*                     type="string",
+	*                     example="John Doe",
+	*                     description="Name of the customer leaving the review"
+	*                 ),
+	*                 @OA\Property(
+	*                     property="review_customer_email",
+	*                     type="string",
+	*                     format="email",
+	*                     example="john.doe@example.com",
+	*                     description="Email of the customer leaving the review"
+	*                 ),
+	*                 @OA\Property(
+	*                     property="review_star",
+	*                     type="integer",
+	*                     minimum=1,
+	*                     maximum=5,
+	*                     example=5,
+	*                     description="Star rating given by the customer"
+	*                 ),
+	*                 @OA\Property(
+	*                     property="review_comment",
+	*                     type="string",
+	*                     example="Great product, highly recommended!",
+	*                     description="Review comment provided by the customer"
+	*                 ),
+	*                 @OA\Property(
+	*                     property="review_status",
+	*                     type="string",
+	*                     enum={"pending", "published", "rejected"},
+	*                     example="pending",
+	*                     description="Status of the review"
+	*                 ),
+	*                 @OA\Property(
+	*                     property="review_images[]",
+	*                     type="array",
+	*                     @OA\Items(type="string", format="binary"),
+	*                     description="Review images to upload"
+	*                 ),
+	* 				  @OA\Property(
+	*                     property="faqs",
+	*                     type="array",
+	*                     @OA\Items(
+	*                         @OA\Property(property="question", type="string", example="What is the warranty period?"),
+	*                         @OA\Property(property="answer", type="string", example="The warranty period is 1 year."),
+	*                         @OA\Property(property="category_id", type="integer", nullable=true, example=2),
+	*                         @OA\Property(property="status", type="integer", example=1)
+	*                     )
+	*                 ),
+	* 				  @OA\Property(
+	* 				      property="product_attributes",
+	* 				      type="object",
+	* 				      description="Dynamic attributes with attribute_id as key",
+	* 				      @OA\AdditionalProperties(
+	* 				          type="string",
+	* 				          description="Attribute value corresponding to the attribute_id"
+	* 				      ),
+	* 				      example={
+	* 				          "1": "1111",
+	* 				          "4": "tanuj",
+	* 				          "5": "raaj",
+	* 				          "11": "ahmad"
+	* 				      },
+	* 				      nullable=true
+	* 				  )
+	*             )
+	*         )
+	*     ),
+	*     @OA\Response(
+	*         response=201,
+	*         description="Review created successfully",
+	*         @OA\JsonContent(
+	*             type="object",
+	*             @OA\Property(property="success", type="boolean", example=true),
+	*             @OA\Property(property="message", type="string", example="Review created successfully."),
+	*             @OA\Property(property="review", type="object",
+	*                 @OA\Property(property="id", type="integer", example=1),
+	*                 @OA\Property(property="customer_id", type="integer", example=1),
+	*                 @OA\Property(property="customer_name", type="string", example="John Doe"),
+	*                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
+	*                 @OA\Property(property="product_id", type="integer", example=5),
+	*                 @OA\Property(property="star", type="integer", example=5),
+	*                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
+	*                 @OA\Property(property="status", type="string", example="pending"),
+	*                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
+	*                 @OA\Property(property="created_at", type="string", format="date-time"),
+	*                 @OA\Property(property="updated_at", type="string", format="date-time"),
+	* 				   @OA\Property(property="faqs", type="array",
+	*                 @OA\Items(
+	*                     @OA\Property(property="question", type="string"),
+	*                     @OA\Property(property="answer", type="string"),
+	*                     @OA\Property(property="category_id", type="integer", nullable=true),
+	*                     @OA\Property(property="status", type="integer")
+	*                 )
+	*             )
+	*             )
+	*         )
+	*     ),
+	*     @OA\Response(
+	*         response=200,
+	*         description="Review updated successfully",
+	*         @OA\JsonContent(
+	*             type="object",
+	*             @OA\Property(property="success", type="boolean", example=true),
+	*             @OA\Property(property="message", type="string", example="Review updated successfully."),
+	*             @OA\Property(property="review", type="object",
+	*                 @OA\Property(property="id", type="integer", example=1),
+	*                 @OA\Property(property="customer_id", type="integer", example=1),
+	*                 @OA\Property(property="customer_name", type="string", example="John Doe"),
+	*                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
+	*                 @OA\Property(property="product_id", type="integer", example=5),
+	*                 @OA\Property(property="star", type="integer", example=5),
+	*                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
+	*                 @OA\Property(property="status", type="string", example="published"),
+	*                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
+	*                 @OA\Property(property="created_at", type="string", format="date-time"),
+	*                 @OA\Property(property="updated_at", type="string", format="date-time")
+	*             )
+	*         )
+	*     ),
+
+	*     @OA\Response(
+	*         response=400,
+	*         description="Validation Error",
+	*         @OA\JsonContent(
+	*             type="object",
+	*             @OA\Property(property="success", type="boolean", example=false),
+	*             @OA\Property(property="message", type="array", @OA\Items(type="string"), example={
+	*                 "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
+	*                 "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
+	*                 "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+	*                 "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
+	*                 "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+	*                 "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
+	*                 "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
+	*             })
+	*         )
+	*     ),
+	*     security={{"bearerAuth":{}}}
+	* )
+	*/
 	public function update(Request $request, $productId)
 	{
 		/* Log the incoming request for debugging */
@@ -956,16 +957,16 @@ class ProductController extends BaseController
 				'raw' => $request->input('categories'),
 				'type' => gettype($request->input('categories'))
 			]);
-
+			
 			$categories = $request->input('categories');
-
+			
 			// Handle cases where categories might be sent as a JSON string
 			if (is_string($categories) && (
-				strpos($categories, '[') === 0 ||
+				strpos($categories, '[') === 0 || 
 				strpos($categories, '{') === 0
 			)) {
 				$categories = json_decode($categories, true);
-			}
+			} 
 			// Handle comma-separated string format
 			else if (is_string($categories) && strpos($categories, ',') !== false) {
 				$categories = array_map('trim', explode(',', $categories));
@@ -974,7 +975,7 @@ class ProductController extends BaseController
 			else if (is_string($categories) && is_numeric($categories)) {
 				$categories = [(int)$categories];
 			}
-
+			
 			// Ensure we have a valid array
 			if (is_array($categories)) {
 				// Convert all values to integers to ensure proper comparison
