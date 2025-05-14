@@ -61,6 +61,20 @@ class ProductController extends BaseController
 	 *				required=false,
 	 *				@OA\Schema(type="string", example="active")
 	 *				),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Column to sort by (id, name, sku, brand_id, store_id, status)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="id")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_direction",
+	 *         in="query",
+	 *         description="Sort direction (asc or desc)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+	 *     ),
 	 *     @OA\Response(
 	 *         response=200,
 	 *         description="Successful response",
@@ -105,8 +119,20 @@ class ProductController extends BaseController
 	{
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
-		$status = $request->input('status'); // Add this line
+		$status = $request->input('status');
+		$sortBy = $request->input('sort_by', 'id');
+		$sortDirection = $request->input('sort_direction', 'desc');
 
+		// Validate sort columns to prevent SQL injection
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'store_id', 'status'];
+		if (!in_array($sortBy, $allowedSortColumns)) {
+			$sortBy = 'id'; // Default to id if invalid column
+		}
+
+		// Validate sort direction
+		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+			$sortDirection = 'desc'; // Default to descending if invalid direction
+		}
 
 		$query = Product::with([
 			'brand:id,name',
@@ -118,8 +144,8 @@ class ProductController extends BaseController
 
 		/* Apply search if provided */
 
-		  // Apply status filter
-		  if ($status !== null) {
+		// Apply status filter
+		if ($status !== null) {
 			$query->where('status', $status);
 		}
 
@@ -139,7 +165,7 @@ class ProductController extends BaseController
 			});
 		}
 
-		$products = $query->orderBy('id', 'desc')
+		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
 		/* Formatting response */
