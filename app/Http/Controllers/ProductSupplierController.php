@@ -117,10 +117,7 @@ class ProductSupplierController extends Controller
 
         return ProductSupplier::create($data);
     }
-
-    
-    
-
+   
    /**
      * @OA\Get(
      *     path="/api/product-suppliers/{product_id}",
