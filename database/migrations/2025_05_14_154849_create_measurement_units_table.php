@@ -36,7 +36,7 @@ return new class extends Migration
 
 		Schema::table('product_attributes', function (Blueprint $table) {
 			if (!Schema::hasColumn('product_attributes', 'measurement_unit')) {
-				$table->string('measurement_unit')->nullable()->after('attribute_value');
+				$table->integer('measurement_unit_id')->nullable()->after('attribute_value');
 			}
 		});
 	}
@@ -51,8 +51,8 @@ return new class extends Migration
 		Schema::dropIfExists('attribute_measurements');
 
 		Schema::table('product_attributes', function (Blueprint $table) {
-			if (Schema::hasColumn('product_attributes', 'measurement_unit')) {
-				$table->dropColumn('measurement_unit');
+			if (Schema::hasColumn('product_attributes', 'measurement_unit_id')) {
+				$table->dropColumn('measurement_unit_id');
 			}
 		});
 	}
