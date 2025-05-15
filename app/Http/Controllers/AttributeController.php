@@ -491,7 +491,7 @@ class AttributeController extends BaseController
 
 		$attributeNames = array_map(function ($attr) {
 			if ($attr['type'] === 'measurement') {
-				return [$attr['name'], $attr['name'] . ' Measurement Units'];
+				return [$attr['name'], $attr['name'] . ' Measurement Unit'];
 			}
 			return [$attr['name']];
 		}, $uniqueAttributes);
@@ -553,7 +553,7 @@ class AttributeController extends BaseController
 						$spreadsheet,
 						$sheet,
 						$unitCell,
-						$attributeDetail['name'] . ' Measurement Units',
+						$attributeDetail['name'] . ' Measurement Unit',
 						$attributeDetail['measurement_units'],
 						$existingMeasurementValue
 				);
@@ -612,7 +612,7 @@ class AttributeController extends BaseController
 		try {
 			/* Validate request data */
 			$request->validate([
-				'upload_file' => 'required|file|mimes:xlsx|max:2018',
+				'upload_file' => 'required|file|mimes:xlsx|max:2048',
 			]);
 
 			$mandatoryHeaders = ['ID', 'SKU', 'Name'];
