@@ -66,6 +66,41 @@ class StoreController extends BaseController
 			'stores' => $stores
 		]);
 	}
+   /**
+     * @OA\Get(
+     *     path="/api/stores/list",
+     *     summary="Get stores id and name list",
+     *     description="Fetches a list of all stores with only id and name.",
+     *     tags={"Stores"},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(
+     *                 property="stores",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Store Name")
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function storeList()
+    {
+        $stores = Store::select('id', 'name')->get();
+
+        return response()->json([
+            'message' => 'Store ID and Name List',
+            'stores' => $stores
+        ]);
+    }
+
 
 	
     /**

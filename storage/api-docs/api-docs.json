@@ -12866,6 +12866,51 @@
                 ]
             }
         },
+        "/api/stores/list": {
+            "get": {
+                "tags": [
+                    "Stores"
+                ],
+                "summary": "Get stores id and name list",
+                "description": "Fetches a list of all stores with only id and name.",
+                "operationId": "01d9cf0a8dabae830e55ba5c7df90ee6",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "stores": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Store Name"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/stores/{id}": {
             "get": {
                 "tags": [

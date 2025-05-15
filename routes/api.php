@@ -144,6 +144,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brands', BrandController::class);
 
 	Route::get('getStoresList', [StoreController::class, 'getStoresList']);
+	Route::get('/stores/list', [StoreController::class, 'storeList']);
 	Route::apiResource('stores', StoreController::class);
 
 
