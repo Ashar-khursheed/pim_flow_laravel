@@ -47,6 +47,7 @@ use App\Http\Controllers\VendorDocumentController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductGroupController;
 use App\Http\Controllers\AttributeRecommendationController;
+use App\Http\Controllers\ProductSupplierController;
 
 
 
@@ -100,6 +101,15 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-1', BrandTemp1Controller::class);
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
+
+	
+
+	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
+	Route::apiResource('product-suppliers', ProductSupplierController::class);
+
+
+
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
 	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
