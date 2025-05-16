@@ -91,10 +91,10 @@ Route::middleware(['auth:api'])->group(function () {
     Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
     
     // Import/Export operations
-    Route::post('/product-suppliers/import', [ProductSupplierImportController::class, 'import']);
-    Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierImportController::class, 'importStatus']);
-    Route::get('/product-suppliers/export', [ProductSupplierImportController::class, 'export']);
-    Route::get('/product-suppliers/template', [ProductSupplierImportController::class, 'downloadTemplate']);
+    Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
+    Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
+    Route::get('/product-suppliers/export', [ProductSupplierController::class, 'export']);
+    Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	Route::apiResource('users', UserController::class);
