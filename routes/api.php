@@ -83,6 +83,8 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
 
+	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	Route::apiResource('users', UserController::class);
@@ -142,6 +144,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brands', BrandController::class);
 
 	Route::get('getStoresList', [StoreController::class, 'getStoresList']);
+	Route::get('/stores/list', [StoreController::class, 'storeList']);
 	Route::apiResource('stores', StoreController::class);
 
 

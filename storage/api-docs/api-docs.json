@@ -9264,6 +9264,30 @@
                             "type": "string",
                             "example": "active"
                         }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, name, sku, brand_id, store_id, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ],
+                            "example": "desc"
+                        }
                     }
                 ],
                 "responses": {
@@ -11290,10 +11314,10 @@
                                     "sku": {
                                         "type": "string"
                                     },
-                                    "vendor_id": {
-                                        "type": "integer"
+                                    "vendor_sku": {
+                                        "type": "string"
                                     },
-                                    "product_id": {
+                                    "vendor_id": {
                                         "type": "integer"
                                     },
                                     "warranty_information": {
@@ -11357,19 +11381,19 @@
                 ]
             }
         },
-        "/api/product-suppliers/{id}": {
+        "/api/product-suppliers/{product_id}": {
             "get": {
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Get a product supplier by ID",
-                "description": "Returns a product supplier",
-                "operationId": "getProductSupplierById",
+                "summary": "Get product suppliers by Product ID",
+                "description": "Returns all product suppliers associated with a specific product ID",
+                "operationId": "getProductSupplierByProductId",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier",
+                        "description": "Product ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11382,7 +11406,10 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/ProductSupplier"
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/ProductSupplier"
+                                    }
                                 }
                             }
                         }
@@ -11396,19 +11423,30 @@
                         "bearerAuth": []
                     }
                 ]
-            },
+            }
+        },
+        "/api/product-suppliers/{product_id}/{vendor_id}": {
             "put": {
                 "tags": [
                     "Product Suppliers"
                 ],
                 "summary": "Update a product supplier",
-                "description": "Updates the details of a product supplier",
+                "description": "Updates the details of a product supplier based on product_id and vendor_id",
                 "operationId": "updateProductSupplier",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier to update",
+                        "description": "Product ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID associated with the supplier",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -11422,6 +11460,9 @@
                             "schema": {
                                 "properties": {
                                     "sku": {
+                                        "type": "string"
+                                    },
+                                    "vendor_sku": {
                                         "type": "string"
                                     },
                                     "vendor_id": {
@@ -11497,14 +11538,23 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Delete a product supplier",
-                "description": "Deletes a product supplier by ID",
-                "operationId": "deleteProductSupplier",
+                "summary": "Delete a product supplier by product and vendor",
+                "description": "Deletes a product supplier using product_id and vendor_id",
+                "operationId": "deleteProductSupplierByProductAndVendor",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "product_id",
                         "in": "path",
-                        "description": "ID of the product supplier to delete",
+                        "description": "Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -13070,6 +13120,51 @@
                 "responses": {
                     "201": {
                         "description": "Store Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/stores/list": {
+            "get": {
+                "tags": [
+                    "Stores"
+                ],
+                "summary": "Get stores id and name list",
+                "description": "Fetches a list of all stores with only id and name.",
+                "operationId": "01d9cf0a8dabae830e55ba5c7df90ee6",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "stores": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Store Name"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

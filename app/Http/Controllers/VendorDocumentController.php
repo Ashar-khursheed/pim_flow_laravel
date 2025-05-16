@@ -44,7 +44,7 @@ class VendorDocumentController extends Controller
 	{
 		$request->validate([
 			'name' => 'required|string|max:255',
-			'document' => 'required|file|max:10240|mimes:png,jpg,jpeg,webp,pdf,xls,xlsx,mp4,mkv,csv,txt,doc,docx'
+			'document' => 'required|file|max:51200|mimes:png,jpg,jpeg,webp,pdf,xls,xlsx,mp4,mkv,csv,txt,doc,docx',
 		]);
 
 		$file = $request->file('document');
