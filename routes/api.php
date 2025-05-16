@@ -82,9 +82,19 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
-
+	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+	
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
+    // Bulk operations
+    Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
+    Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
+    
+    // Import/Export operations
+    Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
+    Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
+    Route::get('/product-suppliers/export', [ProductSupplierController::class, 'export']);
+    Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	Route::apiResource('users', UserController::class);

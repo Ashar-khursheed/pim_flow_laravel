@@ -11426,6 +11426,54 @@
             }
         },
         "/api/product-suppliers/{product_id}/{vendor_id}": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Get a product supplier by product_id and vendor_id",
+                "description": "Fetch the details of a product supplier using product_id and vendor_id",
+                "operationId": "getProductSupplier",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "Product ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductSupplier"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Product Suppliers"
@@ -11580,6 +11628,172 @@
                     },
                     "404": {
                         "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/import": {
+            "post": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Import product suppliers from a CSV file",
+                "operationId": "34d42f80f5eb46061a4d6487c01e3723",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "description": "CSV file (.csv) max 10MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "chunk_size": {
+                                        "description": "Optional chunk size (default is 100)",
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The import process has been scheduled successfully. Please track it under import log."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The uploaded CSV file does not contain any records."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "You don't have permission to access this module."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/export": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Export product suppliers to CSV",
+                "description": "Exports all product suppliers to a CSV file",
+                "operationId": "exportProductSuppliers",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "query",
+                        "description": "Filter by vendor ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file download",
+                        "content": {
+                            "text/csv": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/template": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Download import template",
+                "description": "Downloads a CSV template for product supplier imports",
+                "operationId": "downloadSupplierTemplate",
+                "responses": {
+                    "200": {
+                        "description": "CSV template download",
+                        "content": {
+                            "text/csv": {}
+                        }
                     }
                 },
                 "security": [
