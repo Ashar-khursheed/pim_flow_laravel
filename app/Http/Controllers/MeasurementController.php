@@ -33,13 +33,13 @@ class MeasurementController extends BaseController
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/measurement-units/{type_id}",
+	 *     path="/api/measurement-units",
 	 *     summary="Get measurement units by type",
 	 *     description="Returns a list of measurement units grouped or filtered by type",
 	 *     tags={"Measurement"},
 	 *     @OA\Parameter(
 	 *         name="type_id",
-	 *         in="path",
+	 *         in="query",
 	 *         description="ID of the measurement type",
 	 *         required=true,
 	 *         @OA\Schema(type="integer", example=1)
