@@ -9,6 +9,8 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
@@ -19,105 +21,122 @@ class ImportSupplierJob implements ShouldQueue
     public $timeout = 43200;
 
     protected $header;
-    protected $rows;
+    protected $chunk;
     protected $userId;
     protected $fieldMapping;
 
+    /**
+     * Create a new job instance.
+     *
+     * @param array $data
+     */
     public function __construct(array $data)
     {
         $this->header = $data['header'];
-        $this->rows = $data['chunk'];
+        $this->chunk = $data['chunk'];
         $this->userId = $data['userId'];
         $this->fieldMapping = $data['fileFormatArray'];
     }
 
+    /**
+     * Execute the job.
+     *
+     * @return void
+     */
     public function handle()
     {
         $log = TransactionLog::where('identifier', $this->batch()->id)->first();
-        $desc = json_decode($log->description, true) ?? ["Errors" => ''];
-        $prevSuccess = $desc["Success Count"] ?? 0;
-        $prevFail = $desc["Failed Count"] ?? 0;
+        $descArray = json_decode($log->description, true) ?? ["Errors" => ''];
+        $previousSuccessCount = $descArray["Success Count"] ?? 0;
+        $previousFailedCount = $descArray["Failed Count"] ?? 0;
 
-        $errors = [];
-        $successCount = 0;
-        $failCount = 0;
+        $errorArray = [];
+        $success = 0;
+        $failed = 0;
 
-        foreach ($this->rows as $index => $row) {
-            $rowErrors = [];
+        foreach ($this->chunk as $index => $row) {
+            $rowData = [];
+            $rowError = [];
 
-            // Validate column count
-            if (count($this->header) !== count($row)) {
-                $rowErrors[] = 'Invalid column count.';
-                $this->logError($errors, $index, $prevSuccess, $prevFail, $rowErrors);
-                $failCount++;
+            /* Validate column count */
+            if (count($this->header) === count($row)) {
+                $rowData = array_combine($this->header, $row);
+            } else {
+                $rowError[] = 'Column mismatch: Row has incorrect data structure.';
+                $this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+                $failed++;
                 continue;
             }
 
-            // Map header to values
-            $data = array_combine($this->header, $row);
-            foreach ($this->fieldMapping as $header => $varName) {
-                ${$varName} = trim($data[$header] ?? '');
+            /* Map data fields using field mapping */
+            $mappedData = [];
+            foreach ($this->fieldMapping as $header => $fieldName) {
+                $mappedData[$fieldName] = trim($rowData[$header] ?? '');
             }
 
-            // Basic validation
-            if (empty($sku)) {
-                $rowErrors[] = 'SKU is required.';
+            /* Basic validation */
+            if (empty($mappedData['sku'])) {
+                $rowError[] = 'SKU is required.';
             }
-            if (empty($vendor_id)) {
-                $rowErrors[] = 'Vendor ID is required.';
+            
+            if (empty($mappedData['vendor_id'])) {
+                $rowError[] = 'Vendor ID is required.';
             }
-            if (empty($vendor_sku)) {
-                $rowErrors[] = 'Vendor SKU is required.';
+            
+            if (empty($mappedData['vendor_sku'])) {
+                $rowError[] = 'Vendor SKU is required.';
             }
 
-            // Product existence check
+            /* Product existence check */
             $product = null;
-            if (!empty($sku)) {
-                $product = DB::table('ec_products')->where('sku', $sku)->first();
+            if (!empty($mappedData['sku'])) {
+                $product = DB::table('ec_products')->where('sku', $mappedData['sku'])->first();
                 if (!$product) {
-                    $rowErrors[] = "No product found with SKU: $sku.";
+                    $rowError[] = "No product found with SKU: {$mappedData['sku']}.";
                 }
             }
 
-            // Vendor existence check
-            if (!empty($vendor_id)) {
-                $vendor = DB::table('vendors')->where('id', $vendor_id)->first();
+            /* Vendor existence check */
+            if (!empty($mappedData['vendor_id'])) {
+                $vendor = DB::table('vendors')->where('id', $mappedData['vendor_id'])->first();
                 if (!$vendor) {
-                    $rowErrors[] = "Vendor with ID $vendor_id not found.";
+                    $rowError[] = "Vendor with ID {$mappedData['vendor_id']} not found.";
                 }
             }
 
-            // Validate price logic
-            if (!empty($price) && !empty($sale_price) && (float)$price < (float)$sale_price) {
-                $rowErrors[] = 'Price cannot be less than sale price.';
+            /* Validate price logic */
+            if (!empty($mappedData['price']) && !empty($mappedData['sale_price']) && 
+                (float)$mappedData['price'] < (float)$mappedData['sale_price']) {
+                $rowError[] = 'Price cannot be less than sale price.';
             }
 
-            // Existing supplier check
+            /* Existing supplier check */
             $existingSupplier = null;
-            if (!empty($id)) {
-                $existingSupplier = ProductSupplier::find($id);
+            if (!empty($mappedData['id'])) {
+                $existingSupplier = ProductSupplier::find($mappedData['id']);
                 if (!$existingSupplier) {
-                    $rowErrors[] = "Supplier with ID $id not found.";
+                    $rowError[] = "Supplier with ID {$mappedData['id']} not found.";
                 }
-            } else if (!empty($sku) && !empty($vendor_id)) {
+            } elseif (!empty($mappedData['sku']) && !empty($mappedData['vendor_id'])) {
                 $product_id = $product ? $product->id : null;
                 if ($product_id) {
                     $existingSupplier = ProductSupplier::where('product_id', $product_id)
-                        ->where('vendor_id', $vendor_id)
+                        ->where('vendor_id', $mappedData['vendor_id'])
                         ->first();
                 }
             }
 
-            // If errors, skip to next row
-            if (!empty($rowErrors)) {
-                $this->logError($errors, $index, $prevSuccess, $prevFail, $rowErrors);
-                $failCount++;
-                continue;
-            }
+            /* Start Transaction */
+            DB::beginTransaction();
 
-            // Save or update ProductSupplier
             try {
-                DB::beginTransaction();
+                /* If errors exist, log and continue to next row */
+                if (!empty($rowError)) {
+                    $this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+                    $failed++;
+                    DB::rollBack();
+                    continue;
+                }
 
                 if (!$existingSupplier) {
                     $existingSupplier = new ProductSupplier();
@@ -126,57 +145,117 @@ class ImportSupplierJob implements ShouldQueue
 
                 $product_id = $product ? $product->id : null;
 
-                $existingSupplier->sku = $sku;
-                $existingSupplier->vendor_sku = $vendor_sku;
-                $existingSupplier->vendor_id = $vendor_id;
+                /* Set required fields */
+                $existingSupplier->sku = $mappedData['sku'];
+                $existingSupplier->vendor_sku = $mappedData['vendor_sku'];
+                $existingSupplier->vendor_id = $mappedData['vendor_id'];
                 $existingSupplier->product_id = $product_id;
 
-                // Optional fields
-                $existingSupplier->warranty_information = $warranty_information ?? null;
-                $existingSupplier->refund = $refund ?? null;
-                $existingSupplier->delivery_days = $delivery_days ?? null;
-                $existingSupplier->cost_per_item = isset($cost_per_item) ? (float)$cost_per_item : null;
-                $existingSupplier->sale_price = isset($sale_price) ? (float)$sale_price : null;
-                $existingSupplier->price = isset($price) ? (float)$price : null;
-                $existingSupplier->margin = isset($margin) ? (float)$margin : null;
-                $existingSupplier->inventory = isset($inventory) ? (int)$inventory : null;
-                $existingSupplier->additional_cost = isset($additional_cost) ? (float)$additional_cost : null;
-                $existingSupplier->final_cost_price = isset($final_cost_price) ? (float)$final_cost_price : null;
+                /* Set optional fields */
+                $existingSupplier->warranty_information = $mappedData['warranty_information'] ?? null;
+                $existingSupplier->refund = $mappedData['refund'] ?? null;
+                $existingSupplier->delivery_days = $mappedData['delivery_days'] ?? null;
+                
+                /* Set numeric fields with type casting */
+                if (isset($mappedData['cost_per_item'])) {
+                    $existingSupplier->cost_per_item = (float)$mappedData['cost_per_item'];
+                }
+                
+                if (isset($mappedData['sale_price'])) {
+                    $existingSupplier->sale_price = (float)$mappedData['sale_price'];
+                }
+                
+                if (isset($mappedData['price'])) {
+                    $existingSupplier->price = (float)$mappedData['price'];
+                }
+                
+                if (isset($mappedData['margin'])) {
+                    $existingSupplier->margin = (float)$mappedData['margin'];
+                }
+                
+                if (isset($mappedData['inventory'])) {
+                    $existingSupplier->inventory = (int)$mappedData['inventory'];
+                }
+                
+                if (isset($mappedData['additional_cost'])) {
+                    $existingSupplier->additional_cost = (float)$mappedData['additional_cost'];
+                }
+                
+                if (isset($mappedData['final_cost_price'])) {
+                    $existingSupplier->final_cost_price = (float)$mappedData['final_cost_price'];
+                }
 
                 $existingSupplier->updated_at = now();
                 $existingSupplier->save();
 
                 DB::commit();
-                $successCount++;
-            } catch (\Exception $e) {
+                $success++;
+            } catch (Throwable $e) {
                 DB::rollBack();
-                $this->logError($errors, $index, $prevSuccess, $prevFail, [
-                    $e->getMessage(),
-                    "File: " . $e->getFile(),
-                    "Line: " . $e->getLine(),
-                ]);
-                $failCount++;
+                $rowError = [
+                    'Error processing row: ' . $e->getMessage(),
+                    'File: ' . $e->getFile(),
+                    'Line: ' . $e->getLine()
+                ];
+                
+                $this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+                $failed++;
             }
         }
 
-        // Update transaction log
-        $desc["Success Count"] = $prevSuccess + $successCount;
-        $desc["Failed Count"] = $prevFail + $failCount;
-        $desc["Errors"] = array_merge($desc["Errors"] ?? [], $errors);
-
-        $log->update(['description' => json_encode($desc)]);
+        /* Update Transaction Log */
+        $this->updateTransactionLog($log, $success, $failed, $errorArray);
     }
 
-    protected function logError(&$errors, $index, $prevSuccess, $prevFail, array $rowErrors)
+    /**
+     * Log errors for a specific row.
+     *
+     * @param array $rowError
+     * @param int $failed
+     * @param int $success
+     * @param int $previousSuccessCount
+     * @param int $previousFailedCount
+     * @param array $errorArray
+     * @return void
+     */
+    private function logError(&$rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, &$errorArray)
     {
-        $errors[] = [
-            "Row Number" => $index + 2 + $prevSuccess + $prevFail,
-            "Error" => implode(' | ', $rowErrors),
+        $errorArray[] = [
+            "Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+            "Error" => implode(' | ', $rowError),
         ];
     }
 
-    public function failed(\Throwable $exception): void
+    /**
+     * Update Transaction Log.
+     *
+     * @param TransactionLog $log
+     * @param int $success
+     * @param int $failed
+     * @param array $errorArray
+     * @return void
+     */
+    private function updateTransactionLog($log, $success, $failed, $errorArray)
     {
-        logger("Supplier Import Error: " . $exception->getMessage() . "\n" . $exception->getTraceAsString());
+        $descArray = json_decode($log->description, true) ?? ["Errors" => ''];
+        $descArray["Success Count"] = ($descArray["Success Count"] ?? 0) + $success;
+        $descArray["Failed Count"] = ($descArray["Failed Count"] ?? 0) + $failed;
+        $descArray["Errors"] = array_merge($descArray["Errors"] ?? [], $errorArray);
+
+        $log->update([
+            'description' => json_encode($descArray),
+        ]);
+    }
+
+    /**
+     * Handle a job failure.
+     *
+     * @param Throwable $exception
+     * @return void
+     */
+    public function failed(Throwable $exception): void
+    {
+        $error = $exception->getMessage() . "\n" . $exception->getTraceAsString();
+        Log::error("Supplier Import Error: " . $error);
     }
 }
