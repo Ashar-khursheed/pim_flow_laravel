@@ -6,6 +6,14 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\ProductSupplier;
 use Illuminate\Http\Request;
+use App\Models\TransactionLog;
+use App\Jobs\ImportSupplierJob;
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Support\Facades\DB;
+use Maatwebsite\Excel\Facades\Excel;
+use League\Csv\Reader;
+use League\Csv\Writer;
+use SplTempFileObject;
 
 class ProductSupplierController extends Controller
 {
@@ -352,6 +360,349 @@ class ProductSupplierController extends Controller
         return response()->json(['message' => 'Deleted successfully']);
     }
 
+
+      /**
+     * @OA\Post(
+     *     path="/api/product-suppliers/import",
+     *     operationId="importProductSuppliers",
+     *     tags={"Product Suppliers"},
+     *     summary="Import product suppliers from CSV",
+     *     description="Imports product suppliers from a CSV file",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="multipart/form-data",
+     *             @OA\Schema(
+     *                 @OA\Property(
+     *                     property="file",
+     *                     type="file",
+     *                     description="CSV file to import"
+     *                 ),
+     *                 @OA\Property(
+     *                     property="chunk_size",
+     *                     type="integer",
+     *                     default=100,
+     *                     description="Number of rows to process per chunk"
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Import started successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Import job started"),
+     *             @OA\Property(property="batch_id", type="string", example="123e4567-e89b-12d3-a456-426614174000")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:csv,txt|max:10240',
+            'chunk_size' => 'nullable|integer|min:1|max:1000',
+        ]);
+
+        $file = $request->file('file');
+        $chunkSize = $request->input('chunk_size', 100);
+        
+        // Parse CSV file
+        $csv = Reader::createFromPath($file->getPathname(), 'r');
+        $csv->setHeaderOffset(0);
+        $header = $csv->getHeader();
+        $records = iterator_to_array($csv->getRecords());
+        $totalRows = count($records);
+        
+        // Define field mapping - this maps CSV headers to model variables
+        $fileFormatArray = [
+            'ID' => 'id',
+            'SKU' => 'sku',
+            'Vendor SKU' => 'vendor_sku', 
+            'Vendor ID' => 'vendor_id',
+            'Warranty Information' => 'warranty_information',
+            'Refund' => 'refund',
+            'Delivery Days' => 'delivery_days',
+            'Cost Per Item' => 'cost_per_item',
+            'Sale Price' => 'sale_price',
+            'Price' => 'price',
+            'Margin' => 'margin',
+            'Inventory' => 'inventory',
+            'Additional Cost' => 'additional_cost',
+            'Final Cost Price' => 'final_cost_price'
+        ];
+
+        // Create batch jobs
+        $batch = Bus::batch([])
+            ->name('Import Suppliers')
+            ->dispatch();
+
+        // Create transaction log
+        $transactionLog = new TransactionLog();
+        $transactionLog->identifier = $batch->id;
+        $transactionLog->type = 'supplier_import';
+        $transactionLog->description = json_encode([
+            'Total Rows' => $totalRows,
+            'Success Count' => 0,
+            'Failed Count' => 0,
+            'Errors' => []
+        ]);
+        $transactionLog->user_id = auth()->id();
+        $transactionLog->save();
+
+        // Process in chunks
+        $chunks = array_chunk($records, $chunkSize);
+        foreach ($chunks as $chunk) {
+            $batch->add(new ImportSupplierJob([
+                'header' => $header,
+                'chunk' => $chunk,
+                'userId' => auth()->id(),
+                'fileFormatArray' => $fileFormatArray
+            ]));
+        }
+
+        return response()->json([
+            'message' => 'Import job started',
+            'batch_id' => $batch->id
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-suppliers/import/status/{batch_id}",
+     *     operationId="getImportStatus",
+     *     tags={"Product Suppliers"},
+     *     summary="Get import job status",
+     *     description="Returns the status of an import job",
+     *     @OA\Parameter(
+     *         name="batch_id",
+     *         in="path",
+     *         required=true,
+     *         description="Batch ID returned from import endpoint",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Import status",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="processing"),
+     *             @OA\Property(property="processed", type="integer", example=50),
+     *             @OA\Property(property="total", type="integer", example=100),
+     *             @OA\Property(property="succeeded", type="integer", example=48),
+     *             @OA\Property(property="failed", type="integer", example=2),
+     *             @OA\Property(property="errors", type="array", @OA\Items(type="object"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Batch not found"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function importStatus($batchId)
+    {
+        $batch = Bus::findBatch($batchId);
+        
+        if (!$batch) {
+            return response()->json(['message' => 'Batch not found'], 404);
+        }
+        
+        $log = TransactionLog::where('identifier', $batchId)->first();
+        $description = json_decode($log->description, true) ?? [];
+        
+        return response()->json([
+            'status' => $batch->finished() ? 'completed' : 'processing',
+            'processed' => $batch->processedJobs(),
+            'total' => $batch->totalJobs,
+            'succeeded' => $description['Success Count'] ?? 0,
+            'failed' => $description['Failed Count'] ?? 0,
+            'errors' => $description['Errors'] ?? []
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-suppliers/export",
+     *     operationId="exportProductSuppliers",
+     *     tags={"Product Suppliers"},
+     *     summary="Export product suppliers to CSV",
+     *     description="Exports all product suppliers to a CSV file",
+     *     @OA\Parameter(
+     *         name="vendor_id",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by vendor ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="query",
+     *         required=false,
+     *         description="Filter by product ID",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="CSV file download",
+     *         @OA\MediaType(mediaType="text/csv")
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function export(Request $request)
+    {
+        // Create query with filters
+        $query = ProductSupplier::query();
+        
+        if ($request->has('vendor_id')) {
+            $query->where('vendor_id', $request->vendor_id);
+        }
+        
+        if ($request->has('product_id')) {
+            $query->where('product_id', $request->product_id);
+        }
+        
+        // Load relationships
+        $suppliers = $query->with('vendor')->get();
+        
+        // Create CSV
+        $csv = Writer::createFromFileObject(new SplTempFileObject());
+        
+        // Add headers
+        $csv->insertOne([
+            'ID', 
+            'SKU', 
+            'Vendor SKU', 
+            'Vendor ID',
+            'Vendor Name',
+            'Product ID',
+            'Warranty Information',
+            'Refund',
+            'Delivery Days',
+            'Cost Per Item',
+            'Sale Price',
+            'Price',
+            'Margin',
+            'Inventory',
+            'Additional Cost',
+            'Final Cost Price'
+        ]);
+        
+        // Add rows
+        foreach ($suppliers as $supplier) {
+            $csv->insertOne([
+                $supplier->id,
+                $supplier->sku,
+                $supplier->vendor_sku,
+                $supplier->vendor_id,
+                $supplier->vendor ? $supplier->vendor->name : '',
+                $supplier->product_id,
+                $supplier->warranty_information,
+                $supplier->refund,
+                $supplier->delivery_days,
+                $supplier->cost_per_item,
+                $supplier->sale_price,
+                $supplier->price,
+                $supplier->margin,
+                $supplier->inventory,
+                $supplier->additional_cost,
+                $supplier->final_cost_price
+            ]);
+        }
+        
+        // Generate filename with date
+        $filename = 'product_suppliers_' . date('Y-m-d') . '.csv';
+        
+        // Set headers for download
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ];
+        
+        // Return the CSV file as a download
+        return response($csv->getContent(), 200, $headers);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-suppliers/template",
+     *     operationId="downloadSupplierTemplate",
+     *     tags={"Product Suppliers"},
+     *     summary="Download import template",
+     *     description="Downloads a CSV template for product supplier imports",
+     *     @OA\Response(
+     *         response=200,
+     *         description="CSV template download",
+     *         @OA\MediaType(mediaType="text/csv")
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function downloadTemplate()
+    {
+        // Create CSV
+        $csv = Writer::createFromFileObject(new SplTempFileObject());
+        
+        // Add headers
+        $csv->insertOne([
+            'ID', 
+            'SKU', 
+            'Vendor SKU', 
+            'Vendor ID',
+            'Warranty Information',
+            'Refund',
+            'Delivery Days',
+            'Cost Per Item',
+            'Sale Price',
+            'Price',
+            'Margin',
+            'Inventory',
+            'Additional Cost',
+            'Final Cost Price'
+        ]);
+        
+        // Add sample row
+        $csv->insertOne([
+            '', // Leave ID blank for new entries
+            'PROD001',
+            'V-001',
+            '1',
+            '12 months warranty',
+            '30 days refund policy',
+            '3-5',
+            '10.50',
+            '15.75',
+            '19.99',
+            '25',
+            '100',
+            '1.50',
+            '12.00'
+        ]);
+        
+        // Generate filename
+        $filename = 'supplier_import_template.csv';
+        
+        // Set headers for download
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0'
+        ];
+        
+        // Return the CSV file as a download
+        return response($csv->getContent(), 200, $headers);
+    }
 
     
 
