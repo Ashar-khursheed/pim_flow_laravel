@@ -365,7 +365,7 @@ class ProductSupplierController extends Controller
      * @OA\Post(
      *     path="/api/product-suppliers/import",
      *     summary="Import product suppliers from a CSV file",
-     *     tags={"Suppliers"},
+     *     tags={"Product Suppliers"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(

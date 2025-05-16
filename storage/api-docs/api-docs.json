@@ -11640,7 +11640,7 @@
         "/api/product-suppliers/import": {
             "post": {
                 "tags": [
-                    "Suppliers"
+                    "Product Suppliers"
                 ],
                 "summary": "Import product suppliers from a CSV file",
                 "operationId": "34d42f80f5eb46061a4d6487c01e3723",
@@ -16670,10 +16670,6 @@
         {
             "name": "Product Suppliers",
             "description": "Product Suppliers"
-        },
-        {
-            "name": "Suppliers",
-            "description": "Suppliers"
         },
         {
             "name": "Redirect Links",
