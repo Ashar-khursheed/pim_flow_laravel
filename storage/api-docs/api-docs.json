@@ -11637,6 +11637,202 @@
                 ]
             }
         },
+        "/api/product-suppliers/import": {
+            "post": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Import product suppliers from CSV",
+                "description": "Imports product suppliers from a CSV file",
+                "operationId": "importProductSuppliers",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "file": {
+                                        "description": "CSV file to import",
+                                        "type": "file"
+                                    },
+                                    "chunk_size": {
+                                        "description": "Number of rows to process per chunk",
+                                        "type": "integer",
+                                        "default": 100
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Import started successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Import job started"
+                                        },
+                                        "batch_id": {
+                                            "type": "string",
+                                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/import/status/{batch_id}": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Get import job status",
+                "description": "Returns the status of an import job",
+                "operationId": "getImportStatus",
+                "parameters": [
+                    {
+                        "name": "batch_id",
+                        "in": "path",
+                        "description": "Batch ID returned from import endpoint",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Import status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "processing"
+                                        },
+                                        "processed": {
+                                            "type": "integer",
+                                            "example": 50
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 100
+                                        },
+                                        "succeeded": {
+                                            "type": "integer",
+                                            "example": 48
+                                        },
+                                        "failed": {
+                                            "type": "integer",
+                                            "example": 2
+                                        },
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Batch not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/export": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Export product suppliers to CSV",
+                "description": "Exports all product suppliers to a CSV file",
+                "operationId": "exportProductSuppliers",
+                "parameters": [
+                    {
+                        "name": "vendor_id",
+                        "in": "query",
+                        "description": "Filter by vendor ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "CSV file download",
+                        "content": {
+                            "text/csv": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/template": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Download import template",
+                "description": "Downloads a CSV template for product supplier imports",
+                "operationId": "downloadSupplierTemplate",
+                "responses": {
+                    "200": {
+                        "description": "CSV template download",
+                        "content": {
+                            "text/csv": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
