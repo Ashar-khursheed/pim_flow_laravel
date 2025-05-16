@@ -6932,18 +6932,18 @@
                 ]
             }
         },
-        "/api/measurement-units/{type_id}": {
+        "/api/measurement-units": {
             "get": {
                 "tags": [
                     "Measurement"
                 ],
                 "summary": "Get measurement units by type",
                 "description": "Returns a list of measurement units grouped or filtered by type",
-                "operationId": "1496f6a02d0f2ed2ded9991e52c44575",
+                "operationId": "c2cd0de9103d875821bde685f98bed0e",
                 "parameters": [
                     {
                         "name": "type_id",
-                        "in": "path",
+                        "in": "query",
                         "description": "ID of the measurement type",
                         "required": true,
                         "schema": {

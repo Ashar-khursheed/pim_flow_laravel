@@ -97,7 +97,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
 	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
-	Route::get('/measurement-units/{type_id}', [MeasurementController::class, 'getMeasurementUnitsByType']);
+	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
