@@ -600,7 +600,12 @@ class ProductController extends BaseController
 				preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
 				$formattedProduct[$attribute] = $matches[1] ?? [];
 				break;
-
+				
+				case 'description':
+					$decodedDescription = json_decode($value, true);
+					$formattedProduct['description'] = is_array($decodedDescription) ? implode("\n", $decodedDescription) : $value;
+					break;
+				
 
 				case 'frequently_bought_together':
 				/* Ensure $value is a valid JSON string */
