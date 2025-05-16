@@ -9,7 +9,6 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\DB;
-
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
@@ -46,6 +45,7 @@ class ImportSupplierJob implements ShouldQueue
         foreach ($this->rows as $index => $row) {
             $rowErrors = [];
 
+            // Validate column count
             if (count($this->header) !== count($row)) {
                 $rowErrors[] = 'Invalid column count.';
                 $this->logError($errors, $index, $prevSuccess, $prevFail, $rowErrors);
@@ -53,25 +53,24 @@ class ImportSupplierJob implements ShouldQueue
                 continue;
             }
 
+            // Map header to values
             $data = array_combine($this->header, $row);
             foreach ($this->fieldMapping as $header => $varName) {
                 ${$varName} = trim($data[$header] ?? '');
             }
 
-            /* Validations */
+            // Basic validation
             if (empty($sku)) {
                 $rowErrors[] = 'SKU is required.';
             }
-
             if (empty($vendor_id)) {
                 $rowErrors[] = 'Vendor ID is required.';
             }
-
             if (empty($vendor_sku)) {
                 $rowErrors[] = 'Vendor SKU is required.';
             }
 
-            /* Check if product exists */
+            // Product existence check
             $product = null;
             if (!empty($sku)) {
                 $product = DB::table('ec_products')->where('sku', $sku)->first();
@@ -80,7 +79,7 @@ class ImportSupplierJob implements ShouldQueue
                 }
             }
 
-            /* Check if vendor exists */
+            // Vendor existence check
             if (!empty($vendor_id)) {
                 $vendor = DB::table('vendors')->where('id', $vendor_id)->first();
                 if (!$vendor) {
@@ -88,15 +87,12 @@ class ImportSupplierJob implements ShouldQueue
                 }
             }
 
-            /* Validate price logic if provided */
-            if (
-                !empty($price) && !empty($sale_price) &&
-                (float)$price < (float)$sale_price
-            ) {
+            // Validate price logic
+            if (!empty($price) && !empty($sale_price) && (float)$price < (float)$sale_price) {
                 $rowErrors[] = 'Price cannot be less than sale price.';
             }
 
-            /* Check if a record already exists */
+            // Existing supplier check
             $existingSupplier = null;
             if (!empty($id)) {
                 $existingSupplier = ProductSupplier::find($id);
@@ -104,7 +100,6 @@ class ImportSupplierJob implements ShouldQueue
                     $rowErrors[] = "Supplier with ID $id not found.";
                 }
             } else if (!empty($sku) && !empty($vendor_id)) {
-                // Check if this sku-vendor combination already exists
                 $product_id = $product ? $product->id : null;
                 if ($product_id) {
                     $existingSupplier = ProductSupplier::where('product_id', $product_id)
@@ -113,13 +108,14 @@ class ImportSupplierJob implements ShouldQueue
                 }
             }
 
+            // If errors, skip to next row
             if (!empty($rowErrors)) {
                 $this->logError($errors, $index, $prevSuccess, $prevFail, $rowErrors);
                 $failCount++;
                 continue;
             }
 
-            /* Save supplier */
+            // Save or update ProductSupplier
             try {
                 DB::beginTransaction();
 
@@ -134,46 +130,18 @@ class ImportSupplierJob implements ShouldQueue
                 $existingSupplier->vendor_sku = $vendor_sku;
                 $existingSupplier->vendor_id = $vendor_id;
                 $existingSupplier->product_id = $product_id;
-                
-                if (isset($warranty_information)) {
-                    $existingSupplier->warranty_information = $warranty_information;
-                }
-                
-                if (isset($refund)) {
-                    $existingSupplier->refund = $refund;
-                }
-                
-                if (isset($delivery_days)) {
-                    $existingSupplier->delivery_days = $delivery_days;
-                }
-                
-                if (isset($cost_per_item)) {
-                    $existingSupplier->cost_per_item = (float)$cost_per_item;
-                }
-                
-                if (isset($sale_price)) {
-                    $existingSupplier->sale_price = (float)$sale_price;
-                }
-                
-                if (isset($price)) {
-                    $existingSupplier->price = (float)$price;
-                }
-                
-                if (isset($margin)) {
-                    $existingSupplier->margin = (float)$margin;
-                }
-                
-                if (isset($inventory)) {
-                    $existingSupplier->inventory = (int)$inventory;
-                }
-                
-                if (isset($additional_cost)) {
-                    $existingSupplier->additional_cost = (float)$additional_cost;
-                }
-                
-                if (isset($final_cost_price)) {
-                    $existingSupplier->final_cost_price = (float)$final_cost_price;
-                }
+
+                // Optional fields
+                $existingSupplier->warranty_information = $warranty_information ?? null;
+                $existingSupplier->refund = $refund ?? null;
+                $existingSupplier->delivery_days = $delivery_days ?? null;
+                $existingSupplier->cost_per_item = isset($cost_per_item) ? (float)$cost_per_item : null;
+                $existingSupplier->sale_price = isset($sale_price) ? (float)$sale_price : null;
+                $existingSupplier->price = isset($price) ? (float)$price : null;
+                $existingSupplier->margin = isset($margin) ? (float)$margin : null;
+                $existingSupplier->inventory = isset($inventory) ? (int)$inventory : null;
+                $existingSupplier->additional_cost = isset($additional_cost) ? (float)$additional_cost : null;
+                $existingSupplier->final_cost_price = isset($final_cost_price) ? (float)$final_cost_price : null;
 
                 $existingSupplier->updated_at = now();
                 $existingSupplier->save();
@@ -191,7 +159,7 @@ class ImportSupplierJob implements ShouldQueue
             }
         }
 
-        /* Update transaction log */
+        // Update transaction log
         $desc["Success Count"] = $prevSuccess + $successCount;
         $desc["Failed Count"] = $prevFail + $failCount;
         $desc["Errors"] = array_merge($desc["Errors"] ?? [], $errors);
