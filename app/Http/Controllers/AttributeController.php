@@ -308,8 +308,11 @@ class AttributeController extends BaseController
 			'code' => "required|unique:attributes,code," . $attributeId,
 			'type' => "required",
 			'attribute_group_id' => 'nullable|exists:attribute_groups,id',
-			'measurement_units_ids' => 'array|required_if:type,measurement',
+			// 'measurement_units_ids' => 'array|required_if:type,measurement',
+			'measurement_units_ids' => 'array',
 			'measurement_units_ids.*' => 'integer|exists:measurement_units,id',
+			'attribute_values' => 'array',
+			'attribute_values.*' => 'string',
 		]);
 
 		$input = $request->all();
@@ -321,10 +324,20 @@ class AttributeController extends BaseController
 				$attribute->validations = json_encode($input['validations']);
 			}
 
-			/* Handle attribute values sync */
-			if (array_key_exists('attribute_values', $input)) {
+			/* Sync measurement units if type is 'measurement' */
+			if ($request->type === 'measurement' && isset($input['measurement_units_ids'])) {
+				$attribute->measurementUnits()->sync($input['measurement_units_ids']);
+			}
+
+			/* Detach measurement units if type changed from 'measurement' */
+			if ($request->type !== 'measurement' && $attribute->type === 'measurement') {
+				$attribute->measurementUnits()->detach();
+			}
+
+			/* Sync attribute values if type is 'select' */
+			if ($request->type === 'select' && isset($input['attribute_values'])) {
 				$providedValues = $input['attribute_values'];
-				$existingValues = $attribute->attributeValues->pluck('attribute_value')->toArray();
+				$existingValues = $attribute->attributeValues()->pluck('attribute_value')->toArray();
 
 				$valuesToDelete = array_diff($existingValues, $providedValues);
 				$valuesToAdd = array_diff($providedValues, $existingValues);
@@ -338,10 +351,11 @@ class AttributeController extends BaseController
 				}
 			}
 
-			/* Handle measurement unit sync */
-			if ($request->type === 'measurement' && isset($input['measurement_units_ids'])) {
-				$attribute->measurementUnits()->sync($input['measurement_units_ids']);
+			/* Delete attribute values if type changed from 'select' */
+			if ($request->type !== 'select' && $attribute->type === 'select') {
+				$attribute->attributeValues()->delete();
 			}
+
 
 			/* Fill only the allowed fields */
 			$fillableFields = [
@@ -556,7 +570,7 @@ class AttributeController extends BaseController
 						$attributeDetail['name'] . ' Measurement Unit',
 						$attributeDetail['measurement_units'],
 						$existingMeasurementValue
-				);
+					);
 
 				} else {
 					$sheet->setCellValue($cell, $existingVal);

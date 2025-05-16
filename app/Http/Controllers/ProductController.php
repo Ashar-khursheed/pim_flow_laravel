@@ -983,16 +983,16 @@ class ProductController extends BaseController
 				'raw' => $request->input('categories'),
 				'type' => gettype($request->input('categories'))
 			]);
-			
+
 			$categories = $request->input('categories');
-			
+
 			// Handle cases where categories might be sent as a JSON string
 			if (is_string($categories) && (
-				strpos($categories, '[') === 0 || 
+				strpos($categories, '[') === 0 ||
 				strpos($categories, '{') === 0
 			)) {
 				$categories = json_decode($categories, true);
-			} 
+			}
 			// Handle comma-separated string format
 			else if (is_string($categories) && strpos($categories, ',') !== false) {
 				$categories = array_map('trim', explode(',', $categories));
@@ -1001,7 +1001,7 @@ class ProductController extends BaseController
 			else if (is_string($categories) && is_numeric($categories)) {
 				$categories = [(int)$categories];
 			}
-			
+
 			// Ensure we have a valid array
 			if (is_array($categories)) {
 				// Convert all values to integers to ensure proper comparison
@@ -1016,7 +1016,7 @@ class ProductController extends BaseController
 		}
 
 		if ($request->product_attributes) {
-			$productAttributes = json_decode($request->product_attributes, true);
+			$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
 
 			if (is_array($productAttributes) && count($productAttributes) > 0) {
 				$productAttributes = array_filter($productAttributes, function ($value) {
@@ -1033,7 +1033,6 @@ class ProductController extends BaseController
 
 				foreach ($productAttributes as $attributeId => $attributeValue) {
 					$existingAttribute = Attribute::find($attributeId);
-
 					if (!$existingAttribute) {
 						return response()->json([
 							'success' => false,
@@ -1041,16 +1040,30 @@ class ProductController extends BaseController
 						]);
 					}
 
+					$value = null;
+					$measurementUnitID = null;
+
+					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+						$value = $attributeValue['value'] ?? null;
+						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+					} else {
+						$value = $attributeValue;
+					}
+
 					$product->productAttributes()->updateOrCreate(
 						['attribute_id' => $attributeId],
-						['attribute_value' => $attributeValue]
+						[
+							'attribute_value' => $value,
+							'measurement_unit_id' => $measurementUnitID
+						]
 					);
 
-					if ($existingAttribute->attributeValues()->where('attribute_value', $attributeValue)->doesntExist()) {
-						$existingAttribute->attributeValues()->create([
-							'attribute_id' => $attributeId,
-							'attribute_value' => $attributeValue
-						]);
+					if ($existingAttribute->type === 'select') {
+						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+							$existingAttribute->attributeValues()->create([
+								'attribute_value' => $value
+							]);
+						}
 					}
 				}
 			}
@@ -1860,27 +1873,39 @@ class ProductController extends BaseController
 		}
 
 		$productAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id');
+		$productAttributeMeasurement = $product->productAttributes->pluck('measurement_unit_id', 'attribute_id');
 
 		$attributeGroup = $category->categoryAttributeGroups()
-		->with(['groupsAttributes'])
-		->get()
-		->map(function ($group) use ($productAttributes) {
-			return [
-				'id' => $group->id,
-				'name' => $group->name,
-				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes) {
-					return [
-						'id' => $attribute->id,
-						'name' => $attribute->name,
-						'code' => $attribute->code,
-						'type' => $attribute->type,
-						'validations' => json_decode($attribute->validations, true),
-						'attributeValues' => $attribute->attributeValues->pluck('attribute_value')->values()->all(), /* Reset array keys */
-						'currentValue' => $productAttributes[$attribute->id] ?? null,
-					];
-				})->toArray(),
-			];
-		});
+			->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
+			->get()
+			->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
+				return [
+					'id' => $group->id,
+					'name' => $group->name,
+					'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
+						$data = [
+							'id' => $attribute->id,
+							'name' => $attribute->name,
+							'code' => $attribute->code,
+							'type' => $attribute->type,
+							'validations' => json_decode($attribute->validations, true),
+							'currentValue' => $productAttributes[$attribute->id] ?? null,
+						];
+
+						if ($attribute->type === 'select') {
+							$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
+						}
+
+						if ($attribute->type === 'measurement') {
+							$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
+							$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
+						}
+
+						return $data;
+					})->toArray(),
+				];
+			});
+
 
 		return response()->json([
 			'success' => true,
