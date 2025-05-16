@@ -497,7 +497,8 @@ class ProductSupplierController extends Controller
                          "Failed Count" => 0,
                          "Errors" => [],
                      ];
-     
+
+                     dd("123");
                      $log = new TransactionLog();
                      $log->module = "Product Supplier";
                      $log->action = "Import";
@@ -517,7 +518,7 @@ class ProductSupplierController extends Controller
                      }
                  })
                  ->name('Import Suppliers')
-                 ->onQueue('JOB2')
+                 ->onQueue('JOB6')
                  ->dispatch();
      
              return response()->json([
