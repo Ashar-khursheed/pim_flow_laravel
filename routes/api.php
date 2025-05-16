@@ -82,8 +82,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
-
+	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+	
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 

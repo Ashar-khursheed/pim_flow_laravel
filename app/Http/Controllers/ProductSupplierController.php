@@ -181,6 +181,54 @@ class ProductSupplierController extends Controller
         return response()->json($response);
     }
 
+
+    /**
+     * @OA\Get(
+     *     path="/api/product-suppliers/{product_id}/{vendor_id}",
+     *     operationId="getProductSupplier",
+     *     tags={"Product Suppliers"},
+     *     summary="Get a product supplier by product_id and vendor_id",
+     *     description="Fetch the details of a product supplier using product_id and vendor_id",
+     *     @OA\Parameter(
+     *         name="product_id",
+     *         in="path",
+     *         required=true,
+     *         description="Product ID associated with the supplier",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="vendor_id",
+     *         in="path",
+     *         required=true,
+     *         description="Vendor ID associated with the supplier",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Successful retrieval",
+     *         @OA\JsonContent(ref="#/components/schemas/ProductSupplier")
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product supplier not found"
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     */
+    public function getproductvendor($product_id, $vendor_id)
+    {
+        $supplier = ProductSupplier::where('product_id', $product_id)
+                                    ->where('vendor_id', $vendor_id)
+                                    ->first();
+
+        if (!$supplier) {
+            return response()->json(['message' => 'Product supplier not found'], 404);
+        }
+
+        return response()->json($supplier, 200);
+    }
+
+
     
 
         /**

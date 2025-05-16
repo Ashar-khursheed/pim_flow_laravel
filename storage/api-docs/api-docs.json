@@ -11426,6 +11426,54 @@
             }
         },
         "/api/product-suppliers/{product_id}/{vendor_id}": {
+            "get": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Get a product supplier by product_id and vendor_id",
+                "description": "Fetch the details of a product supplier using product_id and vendor_id",
+                "operationId": "getProductSupplier",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "Product ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "vendor_id",
+                        "in": "path",
+                        "description": "Vendor ID associated with the supplier",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ProductSupplier"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Product Suppliers"
