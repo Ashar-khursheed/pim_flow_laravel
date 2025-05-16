@@ -405,12 +405,12 @@ class ProductSupplierController extends Controller
     
      public function import(Request $request)
      {
-         if (!auth()->user()->can('import supplier')) {
-             return response()->json([
-                 'success' => false,
-                 'message' => "You don't have permission to access this module.",
-             ]);
-         }
+        //  if (!auth()->user()->can('import supplier')) {
+        //      return response()->json([
+        //          'success' => false,
+        //          'message' => "You don't have permission to access this module.",
+        //      ]);
+        //  }
      
          try {
              // Validate request data
