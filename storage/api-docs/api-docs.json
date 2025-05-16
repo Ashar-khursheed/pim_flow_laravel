@@ -11637,13 +11637,13 @@
                 ]
             }
         },
-        "/api/suppliers/import": {
+        "/api/product-suppliers/import": {
             "post": {
                 "tags": [
                     "Suppliers"
                 ],
                 "summary": "Import product suppliers from a CSV file",
-                "operationId": "3e08b8efdd64961f1dc9dd3450ee46ee",
+                "operationId": "34d42f80f5eb46061a4d6487c01e3723",
                 "requestBody": {
                     "required": true,
                     "content": {

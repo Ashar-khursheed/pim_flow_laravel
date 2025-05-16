@@ -363,7 +363,7 @@ class ProductSupplierController extends Controller
 
      /**
      * @OA\Post(
-     *     path="/api/suppliers/import",
+     *     path="/api/product-suppliers/import",
      *     summary="Import product suppliers from a CSV file",
      *     tags={"Suppliers"},
      *     @OA\RequestBody(
