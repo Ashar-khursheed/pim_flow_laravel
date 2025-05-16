@@ -49,7 +49,7 @@ use App\Http\Controllers\ProductGroupController;
 use App\Http\Controllers\AttributeRecommendationController;
 use App\Http\Controllers\ProductSupplierController;
 use App\Http\Controllers\AppKeywordController;
-
+use App\Http\Controllers\MeasurementController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -82,6 +82,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
+
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
@@ -94,6 +95,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
+
+	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
+	Route::get('/measurement-units/{type_id}', [MeasurementController::class, 'getMeasurementUnitsByType']);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);

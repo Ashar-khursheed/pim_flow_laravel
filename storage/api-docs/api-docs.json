@@ -371,6 +371,14 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
+                                    "measurement_units_ids": {
+                                        "description": "Required if type is 'measurement'",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": "1"
+                                        }
+                                    },
                                     "attribute_values": {
                                         "description": "Array of attribute values",
                                         "type": "array",
@@ -6884,6 +6892,64 @@
                             "minimum": 1
                         },
                         "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-types": {
+            "get": {
+                "tags": [
+                    "Measurement"
+                ],
+                "summary": "Get all measurement types",
+                "description": "Returns a list of measurement types",
+                "operationId": "ed9263d5de9b43365fbc368a237258ab",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-units/{type_id}": {
+            "get": {
+                "tags": [
+                    "Measurement"
+                ],
+                "summary": "Get measurement units by type",
+                "description": "Returns a list of measurement units grouped or filtered by type",
+                "operationId": "1496f6a02d0f2ed2ded9991e52c44575",
+                "parameters": [
+                    {
+                        "name": "type_id",
+                        "in": "path",
+                        "description": "ID of the measurement type",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
                     }
                 ],
                 "responses": {
@@ -16358,6 +16424,10 @@
         {
             "name": "Locations",
             "description": "Locations"
+        },
+        {
+            "name": "Measurement",
+            "description": "Measurement"
         },
         {
             "name": "Orders",

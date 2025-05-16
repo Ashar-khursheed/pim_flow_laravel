@@ -13,6 +13,7 @@ use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\TransactionLog;
+use App\Models\MeasurementUnit;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -228,7 +229,9 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name'])->find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name'])->find($attributeId);
+
+		$attribute->measurementUnits->each->makeHidden(['pivot']);
 
 		if (!$attribute) {
 			return response()->json([
@@ -267,12 +270,8 @@ class AttributeController extends BaseController
 	 *             @OA\Property(property="code", type="string", example="size"),
 	 *             @OA\Property(property="type", type="string", example="dropdown"),
 	 *             @OA\Property(property="attribute_group_id", type="integer", example="1"),
-	 *             @OA\Property(
-	 *                 property="attribute_values",
-	 *                 type="array",
-	 *                 description="Array of attribute values",
-	 *                 @OA\Items(type="string", example="value1")
-	 *             ),
+	 *             @OA\Property(property="measurement_units_ids", type="array", description="Required if type is 'measurement'", @OA\Items(type="integer", example="1")),
+	 *             @OA\Property(property="attribute_values", type="array", description="Array of attribute values", @OA\Items(type="string", example="value1")),
 	 *             @OA\Property(
 	 *                 property="validations",
 	 *                 type="object",
@@ -292,40 +291,42 @@ class AttributeController extends BaseController
 			return response()->json([
 				'success' => false,
 				'message' => "You don't have permission to access this module.",
-			]);
+			], 403);
 		}
+
 		$attribute = Attribute::find($attributeId);
 		if (!$attribute) {
 			return response()->json([
 				'success' => false,
 				'message' => __("err_exist")
-			]);
+			], 404);
 		}
 
 		/* Validate request data */
 		$request->validate([
-			'name' => "required|unique:attributes,name,".$attributeId,
-			'code' => "required|unique:attributes,code,".$attributeId,
+			'name' => "required|unique:attributes,name," . $attributeId,
+			'code' => "required|unique:attributes,code," . $attributeId,
 			'type' => "required",
-			'attribute_group_id' => 'nullable|exists:attribute_groups,id'
+			'attribute_group_id' => 'nullable|exists:attribute_groups,id',
+			'measurement_units_ids' => 'array|required_if:type,measurement',
+			'measurement_units_ids.*' => 'integer|exists:measurement_units,id',
 		]);
 
 		$input = $request->all();
 
-		if ($input['validations']) {
-			$attribute->validations = json_encode($input['validations']);
-		}
-
-
 		DB::beginTransaction();
 		try {
+			/* Update validations if provided */
+			if (isset($input['validations'])) {
+				$attribute->validations = json_encode($input['validations']);
+			}
+
+			/* Handle attribute values sync */
 			if (array_key_exists('attribute_values', $input)) {
 				$providedValues = $input['attribute_values'];
-
 				$existingValues = $attribute->attributeValues->pluck('attribute_value')->toArray();
 
 				$valuesToDelete = array_diff($existingValues, $providedValues);
-
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
 				if (!empty($valuesToDelete)) {
@@ -335,21 +336,28 @@ class AttributeController extends BaseController
 				foreach ($valuesToAdd as $newValue) {
 					$attribute->attributeValues()->create(['attribute_value' => $newValue]);
 				}
-				unset($input['attribute_values']);
 			}
 
-			/* Assign remaining valid fields to the attribute */
-			foreach ($input as $key => $value) {
-				$attribute->$key = $value;
+			/* Handle measurement unit sync */
+			if ($request->type === 'measurement' && isset($input['measurement_units_ids'])) {
+				$attribute->measurementUnits()->sync($input['measurement_units_ids']);
 			}
 
-			/* Save the attribute */
+			/* Fill only the allowed fields */
+			$fillableFields = [
+				'name', 'code', 'type', 'attribute_group_id'
+			];
+			foreach ($fillableFields as $field) {
+				if (isset($input[$field])) {
+					$attribute->$field = $input[$field];
+				}
+			}
+
 			$attribute->updated_by = auth()->id();
 			$attribute->save();
 
 			DB::commit();
 
-			/* Return success response */
 			return response()->json([
 				'success' => true,
 				'message' => __("msg_update"),
@@ -365,6 +373,7 @@ class AttributeController extends BaseController
 			], 500);
 		}
 	}
+
 
 	/**
 	 * @OA\Delete(
@@ -462,27 +471,33 @@ class AttributeController extends BaseController
 		->flatMap->categoryAllAttributes()
 		->unique('id')
 		->sortBy('id')
-		->reject(fn($attribute) => $attribute->type === 'multiselect') // Exclude multiselect
-		->mapWithKeys(fn($attribute) => [
-			$attribute->id => [
+		->reject(fn($attribute) => $attribute->type === 'multiselect')
+		->mapWithKeys(function ($attribute) {
+			$data = [
 				'name' => $attribute->name,
 				'type' => $attribute->type,
 				'attribute_value' => $attribute->type === 'toggle'
 				? ['Yes', 'No']
 				: $attribute->attributeValues->pluck('attribute_value')->toArray(),
-			]
-		])
+			];
+
+			if ($attribute->type === 'measurement') {
+				$data['measurement_units'] = $attribute->measurementUnits->pluck('name')->toArray();
+			}
+
+			return [$attribute->id => $data];
+		})
 		->toArray();
 
-		if (empty($uniqueAttributes)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No attributes exist in the associated leaf categories.'
-			]);
-		}
+		$attributeNames = array_map(function ($attr) {
+			if ($attr['type'] === 'measurement') {
+				return [$attr['name'], $attr['name'] . ' Measurement Unit'];
+			}
+			return [$attr['name']];
+		}, $uniqueAttributes);
 
-		/* Prepare headers */
-		$attributeNames = array_column($uniqueAttributes, 'name');
+		$attributeNames = array_merge(...$attributeNames);
+
 		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
 
 		/* Initialize spreadsheet */
@@ -508,9 +523,11 @@ class AttributeController extends BaseController
 		}
 
 		/* Populate data */
+		$measurementNameIds = MeasurementUnit::pluck('name', 'id')->toArray();
 		$row = 2;
 		foreach ($products as $product) {
 			$existingAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+			$existingMeasuments = $product->productAttributes->whereNotNull('measurement_unit_id')->pluck('measurement_unit_id', 'attribute_id')->toArray();
 			$col = 'A';
 
 			/* Set product details */
@@ -524,10 +541,28 @@ class AttributeController extends BaseController
 
 				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
 					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
+
+				} else if ($attributeDetail['type'] === 'measurement') {
+					$sheet->setCellValue($cell, $existingVal);
+
+					$existingMeasurementUnitID = $existingMeasuments[$attributeId] ?? '';
+					$existingMeasurementValue = $measurementNameIds[$existingMeasurementUnitID] ?? '';
+
+					$unitCell = $col++ . $row;
+					$this->excel->setDropdown(
+						$spreadsheet,
+						$sheet,
+						$unitCell,
+						$attributeDetail['name'] . ' Measurement Unit',
+						$attributeDetail['measurement_units'],
+						$existingMeasurementValue
+				);
+
 				} else {
 					$sheet->setCellValue($cell, $existingVal);
 				}
 			}
+
 			$row++;
 		}
 
@@ -577,7 +612,7 @@ class AttributeController extends BaseController
 		try {
 			/* Validate request data */
 			$request->validate([
-				'upload_file' => 'required|file|mimes:xlsx|max:2018',
+				'upload_file' => 'required|file|mimes:xlsx|max:2048',
 			]);
 
 			$mandatoryHeaders = ['ID', 'SKU', 'Name'];
