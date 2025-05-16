@@ -403,74 +403,125 @@ class ProductSupplierController extends Controller
      * )
      */
     
-        public function import(Request $request)
-        {
-            $request->validate([
-                'file' => 'required|file|mimes:csv,txt|max:10240',
-                'chunk_size' => 'nullable|integer|min:1|max:1000',
-            ]);
-
-            $file = $request->file('file');
-            $chunkSize = $request->input('chunk_size', 100);
-
-            // Parse CSV
-            $csv = Reader::createFromPath($file->getPathname(), 'r');
-            $csv->setHeaderOffset(0);
-            $header = $csv->getHeader();
-            $records = iterator_to_array($csv->getRecords());
-            $totalRows = count($records);
-
-            // Define CSV-to-model field mapping
-            $fileFormatArray = [
-                'ID' => 'id',
-                'SKU' => 'sku',
-                'Vendor SKU' => 'vendor_sku',
-                'Vendor Name' => 'vendor_name', // IMPORTANT
-                'Warranty Information' => 'warranty_information',
-                'Refund' => 'refund',
-                'Delivery Days' => 'delivery_days',
-                'Cost Per Item' => 'cost_per_item',
-                'Sale Price' => 'sale_price',
-                'Price' => 'price',
-                'Margin' => 'margin',
-                'Inventory' => 'inventory',
-                'Additional Cost' => 'additional_cost',
-                'Final Cost Price' => 'final_cost_price'
-            ];
-
-            // Create batch job
-            $batch = Bus::batch([])->name('Import Suppliers')->dispatch();
-
-            // Log the transaction
-            $transactionLog = new TransactionLog();
-            $transactionLog->identifier = $batch->id;
-            $transactionLog->type = 'supplier_import';
-            $transactionLog->description = json_encode([
-                'Total Rows' => $totalRows,
-                'Success Count' => 0,
-                'Failed Count' => 0,
-                'Errors' => [],
-            ]);
-            $transactionLog->user_id = auth()->id();
-            $transactionLog->save();
-
-            // Break into chunks
-            $chunks = array_chunk($records, $chunkSize);
-            foreach ($chunks as $chunk) {
-                $batch->add(new ImportSupplierJob([
-                    'header' => $header,
-                    'chunk' => $chunk,
-                    'userId' => auth()->id(),
-                    'fileFormatArray' => $fileFormatArray,
-                    'transaction_log_id' => $transactionLog->id,
-                ]));
-            }
-
-            return response()->json([
-                'message' => 'Import job started',
-                'batch_id' => $batch->id,
-            ]);
-        }
+     public function import(Request $request)
+     {
+         if (!auth()->user()->can('import supplier')) {
+             return response()->json([
+                 'success' => false,
+                 'message' => "You don't have permission to access this module.",
+             ]);
+         }
+     
+         try {
+             // Validate request data
+             $request->validate([
+                 'file' => 'required|file|mimes:csv,txt|max:10240',
+                 'chunk_size' => 'nullable|integer|min:1|max:1000',
+             ]);
+     
+             $mandatoryHeaders = ['ID', 'SKU', 'Vendor Name'];
+             $chunkSize = $request->input('chunk_size', 100);
+             $file = $request->file('file');
+     
+             // Parse CSV
+             $csv = Reader::createFromPath($file->getPathname(), 'r');
+             $csv->setHeaderOffset(0);
+             $header = $csv->getHeader();
+             $records = iterator_to_array($csv->getRecords());
+             $totalRows = count($records);
+     
+             // Check mandatory headers
+             $missingHeaders = array_diff($mandatoryHeaders, $header);
+             if (!empty($missingHeaders)) {
+                 return response()->json([
+                     'success' => false,
+                     'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders),
+                 ]);
+             }
+     
+             if ($totalRows == 0) {
+                 return response()->json([
+                     'success' => false,
+                     'message' => 'The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again.',
+                 ]);
+             }
+     
+             // Define field mapping
+             $fileFormatArray = [
+                 'ID' => 'id',
+                 'SKU' => 'sku',
+                 'Vendor SKU' => 'vendor_sku',
+                 'Vendor Name' => 'vendor_name',
+                 'Warranty Information' => 'warranty_information',
+                 'Refund' => 'refund',
+                 'Delivery Days' => 'delivery_days',
+                 'Cost Per Item' => 'cost_per_item',
+                 'Sale Price' => 'sale_price',
+                 'Price' => 'price',
+                 'Margin' => 'margin',
+                 'Inventory' => 'inventory',
+                 'Additional Cost' => 'additional_cost',
+                 'Final Cost Price' => 'final_cost_price',
+             ];
+     
+             // Create batch job
+             $batch = Bus::batch([])
+                 ->before(function (Batch $batch) use ($totalRows) {
+                     $descArray = [
+                         "Total Count" => $totalRows,
+                         "Success Count" => 0,
+                         "Failed Count" => 0,
+                         "Errors" => [],
+                     ];
+     
+                     $log = new TransactionLog();
+                     $log->module = "Product Supplier";
+                     $log->action = "Import";
+                     $log->identifier = $batch->id;
+                     $log->status = 'In-progress';
+                     $log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+                     $log->created_by = auth()->id() ?? null;
+                     $log->created_at = now();
+                     $log->save();
+                 })
+                 ->finally(function (Batch $batch) {
+                     $log = TransactionLog::where('identifier', $batch->id)->first();
+                     if ($log) {
+                         TransactionLog::where('id', $log->id)->update([
+                             'status' => 'Completed',
+                         ]);
+                     }
+                 })
+                 ->name('Import Suppliers')
+                 ->dispatch();
+     
+             // Break into chunks
+             $chunks = array_chunk($records, $chunkSize);
+             foreach ($chunks as $chunk) {
+                 $data = [
+                     'header' => $header,
+                     'chunk' => $chunk,
+                     'userId' => auth()->id(),
+                     'fileFormatArray' => $fileFormatArray,
+                     'batch_id' => $batch->id,
+                 ];
+                 $batch->options['queue'] = 'JOB2';
+                 $batch->add(new ImportSupplierJob($data));
+             }
+     
+             return response()->json([
+                 'success' => true,
+                 'message' => 'The import process has been scheduled successfully. Please track it under import log.',
+             ]);
+     
+         } catch (\Exception $e) {
+             return response()->json([
+                 'success' => false,
+                 'message' => $e->getMessage(),
+             ]);
+         }
+     }
+     
 
 
     /**
