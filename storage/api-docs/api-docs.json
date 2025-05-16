@@ -11637,28 +11637,30 @@
                 ]
             }
         },
-        "/api/product-suppliers/import": {
+        "/api/suppliers/import": {
             "post": {
                 "tags": [
-                    "Product Suppliers"
+                    "Suppliers"
                 ],
-                "summary": "Import product suppliers from CSV",
-                "description": "Imports product suppliers from a CSV file",
-                "operationId": "importProductSuppliers",
+                "summary": "Import product suppliers from a CSV file",
+                "operationId": "3e08b8efdd64961f1dc9dd3450ee46ee",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "file"
+                                ],
                                 "properties": {
                                     "file": {
-                                        "description": "CSV file to import",
-                                        "type": "file"
+                                        "description": "CSV file (.csv) max 10MB",
+                                        "type": "string",
+                                        "format": "binary"
                                     },
                                     "chunk_size": {
-                                        "description": "Number of rows to process per chunk",
-                                        "type": "integer",
-                                        "default": 100
+                                        "description": "Optional chunk size (default is 100)",
+                                        "type": "integer"
                                     }
                                 },
                                 "type": "object"
@@ -11668,18 +11670,18 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Import started successfully",
+                        "description": "Success",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
                                         "message": {
                                             "type": "string",
-                                            "example": "Import job started"
-                                        },
-                                        "batch_id": {
-                                            "type": "string",
-                                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                                            "example": "The import process has been scheduled successfully. Please track it under import log."
                                         }
                                     },
                                     "type": "object"
@@ -11688,67 +11690,18 @@
                         }
                     },
                     "422": {
-                        "description": "Validation error"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/product-suppliers/import/status/{batch_id}": {
-            "get": {
-                "tags": [
-                    "Product Suppliers"
-                ],
-                "summary": "Get import job status",
-                "description": "Returns the status of an import job",
-                "operationId": "getImportStatus",
-                "parameters": [
-                    {
-                        "name": "batch_id",
-                        "in": "path",
-                        "description": "Batch ID returned from import endpoint",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Import status",
+                        "description": "Validation error",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
                                             "type": "string",
-                                            "example": "processing"
-                                        },
-                                        "processed": {
-                                            "type": "integer",
-                                            "example": 50
-                                        },
-                                        "total": {
-                                            "type": "integer",
-                                            "example": 100
-                                        },
-                                        "succeeded": {
-                                            "type": "integer",
-                                            "example": 48
-                                        },
-                                        "failed": {
-                                            "type": "integer",
-                                            "example": 2
-                                        },
-                                        "errors": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
+                                            "example": "The uploaded CSV file does not contain any records."
                                         }
                                     },
                                     "type": "object"
@@ -11756,8 +11709,25 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Batch not found"
+                    "403": {
+                        "description": "Forbidden",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "You don't have permission to access this module."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -16700,6 +16670,10 @@
         {
             "name": "Product Suppliers",
             "description": "Product Suppliers"
+        },
+        {
+            "name": "Suppliers",
+            "description": "Suppliers"
         },
         {
             "name": "Redirect Links",

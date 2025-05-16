@@ -361,43 +361,54 @@ class ProductSupplierController extends Controller
     }
 
 
-      /**
+     /**
      * @OA\Post(
-     *     path="/api/product-suppliers/import",
-     *     operationId="importProductSuppliers",
-     *     tags={"Product Suppliers"},
-     *     summary="Import product suppliers from CSV",
-     *     description="Imports product suppliers from a CSV file",
+     *     path="/api/suppliers/import",
+     *     summary="Import product suppliers from a CSV file",
+     *     tags={"Suppliers"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="multipart/form-data",
      *             @OA\Schema(
+     *                 required={"file"},
      *                 @OA\Property(
      *                     property="file",
-     *                     type="file",
-     *                     description="CSV file to import"
+     *                     type="string",
+     *                     format="binary",
+     *                     description="CSV file (.csv) max 10MB"
      *                 ),
      *                 @OA\Property(
      *                     property="chunk_size",
      *                     type="integer",
-     *                     default=100,
-     *                     description="Number of rows to process per chunk"
+     *                     description="Optional chunk size (default is 100)"
      *                 )
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Import started successfully",
+     *         description="Success",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Import job started"),
-     *             @OA\Property(property="batch_id", type="string", example="123e4567-e89b-12d3-a456-426614174000")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="The import process has been scheduled successfully. Please track it under import log.")
      *         )
      *     ),
      *     @OA\Response(
      *         response=422,
-     *         description="Validation error"
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="The uploaded CSV file does not contain any records.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=403,
+     *         description="Forbidden",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="You don't have permission to access this module.")
+     *         )
      *     ),
      *     security={{"bearerAuth":{}}}
      * )
@@ -446,7 +457,6 @@ class ProductSupplierController extends Controller
                  ]);
              }
      
-             // Define field mapping
              $fileFormatArray = [
                  'ID' => 'id',
                  'SKU' => 'sku',
@@ -464,8 +474,22 @@ class ProductSupplierController extends Controller
                  'Final Cost Price' => 'final_cost_price',
              ];
      
-             // Create batch job
-             $batch = Bus::batch([])
+             // Prepare jobs
+             $chunkedJobs = [];
+             $chunks = array_chunk($records, $chunkSize);
+             foreach ($chunks as $chunk) {
+                 $data = [
+                     'header' => $header,
+                     'chunk' => $chunk,
+                     'userId' => auth()->id(),
+                     'fileFormatArray' => $fileFormatArray,
+                     // batch_id will be injected later from Batch
+                 ];
+                 $chunkedJobs[] = new ImportSupplierJob($data);
+             }
+     
+             // Create and dispatch batch
+             $batch = Bus::batch($chunkedJobs)
                  ->before(function (Batch $batch) use ($totalRows) {
                      $descArray = [
                          "Total Count" => $totalRows,
@@ -493,21 +517,8 @@ class ProductSupplierController extends Controller
                      }
                  })
                  ->name('Import Suppliers')
+                 ->onQueue('JOB2')
                  ->dispatch();
-     
-             // Break into chunks
-             $chunks = array_chunk($records, $chunkSize);
-             foreach ($chunks as $chunk) {
-                 $data = [
-                     'header' => $header,
-                     'chunk' => $chunk,
-                     'userId' => auth()->id(),
-                     'fileFormatArray' => $fileFormatArray,
-                     'batch_id' => $batch->id,
-                 ];
-                 $batch->options['queue'] = 'JOB2';
-                 $batch->add(new ImportSupplierJob($data));
-             }
      
              return response()->json([
                  'success' => true,
@@ -522,61 +533,7 @@ class ProductSupplierController extends Controller
          }
      }
      
-
-
-    /**
-     * @OA\Get(
-     *     path="/api/product-suppliers/import/status/{batch_id}",
-     *     operationId="getImportStatus",
-     *     tags={"Product Suppliers"},
-     *     summary="Get import job status",
-     *     description="Returns the status of an import job",
-     *     @OA\Parameter(
-     *         name="batch_id",
-     *         in="path",
-     *         required=true,
-     *         description="Batch ID returned from import endpoint",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Import status",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="processing"),
-     *             @OA\Property(property="processed", type="integer", example=50),
-     *             @OA\Property(property="total", type="integer", example=100),
-     *             @OA\Property(property="succeeded", type="integer", example=48),
-     *             @OA\Property(property="failed", type="integer", example=2),
-     *             @OA\Property(property="errors", type="array", @OA\Items(type="object"))
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Batch not found"
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function importStatus($batchId)
-    {
-        $batch = Bus::findBatch($batchId);
-        
-        if (!$batch) {
-            return response()->json(['message' => 'Batch not found'], 404);
-        }
-        
-        $log = TransactionLog::where('identifier', $batchId)->first();
-        $description = json_decode($log->description, true) ?? [];
-        
-        return response()->json([
-            'status' => $batch->finished() ? 'completed' : 'processing',
-            'processed' => $batch->processedJobs(),
-            'total' => $batch->totalJobs,
-            'succeeded' => $description['Success Count'] ?? 0,
-            'failed' => $description['Failed Count'] ?? 0,
-            'errors' => $description['Errors'] ?? []
-        ]);
-    }
+     
 
     /**
      * @OA\Get(
