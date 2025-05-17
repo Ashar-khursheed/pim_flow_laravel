@@ -607,8 +607,6 @@ class ProductController extends BaseController
 					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
 					break;
 
-				
-
 				case 'frequently_bought_together':
 				/* Ensure $value is a valid JSON string */
 				$decoded = json_decode($value, true);
