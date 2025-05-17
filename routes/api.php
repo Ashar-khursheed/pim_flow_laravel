@@ -84,17 +84,17 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
-	
+
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
-    // Bulk operations
-    Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
-    Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
-    
-    // Import/Export operations
-    Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
-    Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
-    Route::get('/product-suppliers/export', [ProductSupplierController::class, 'export']);
-    Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
+	// Bulk operations
+	Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
+	Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
+
+	// Import/Export operations
+	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
+	Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
+	Route::get('/product-suppliers/export', [ProductSupplierController::class, 'export']);
+	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 	Route::apiResource('users', UserController::class);
@@ -120,6 +120,11 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
 	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
+
+	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
+	Route::apiResource('product-suppliers', ProductSupplierController::class);
+
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
 	Route::get('/vendors/{vendor_id}/documents', [VendorDocumentController::class, 'show']);
@@ -258,8 +263,6 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
-
-
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
