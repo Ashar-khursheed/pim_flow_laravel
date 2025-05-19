@@ -529,8 +529,9 @@ class AttributeController extends BaseController
 			$writer = new Xlsx($spreadsheet);
 			$writer->save('php://output');
 		});
-
-		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategory->name}_products_{$request->range_from}-{$request->range_to}.xlsx")));
+		
+		$parentCategoryName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $parentCategory->name);
+		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategoryName}_products_{$request->range_from}-{$request->range_to}.xlsx")));
 
 		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
