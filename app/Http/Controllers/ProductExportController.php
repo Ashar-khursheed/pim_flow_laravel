@@ -7,12 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Support\Facades\Storage;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class ProductExportController extends Controller
@@ -20,7 +18,7 @@ class ProductExportController extends Controller
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/export",
-	 *     summary="Export products to CSV",
+	 *     summary="Export products to Excel",
 	 *     tags={"Products"},
 	 *     @OA\Parameter(
 	 *         name="type",
@@ -322,475 +320,319 @@ class ProductExportController extends Controller
 
 		$allFields = array_keys($headerMap);
 
-	// 	/* CSV response create karna */
-	// 	$response = new StreamedResponse(function () use ($products, $allFields, $headerMap) {
-	// 		$handle = fopen('php://output', 'w');
+		/* Create new Excel spreadsheet */
+		$spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        /* Set headers with proper capitalization */
+        $columnIndex = 1;
+        foreach ($allFields as $field) {
+            $sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex) . '1', $headerMap[$field] ?? $field);
+            $columnIndex++;
+        }
 
-	// 		/* Write headers with proper capitalization */
-	// 		$headers = [];
-	// 		foreach ($allFields as $field) {
-	// 			$headers[] = $headerMap[$field] ?? $field;
-	// 		}
-	// 		fputcsv($handle, $headers);
+        /* Style the header row */
+        $sheet->getStyle('A1:' . Coordinate::stringFromColumnIndex(count($allFields)) . '1')->applyFromArray([
+            'font' => [
+                'bold' => true,
+            ],
+            'fill' => [
+                'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                'startColor' => [
+                    'rgb' => 'E0E0E0',
+                ],
+            ],
+        ]);
 
-	// 		foreach ($products as $product) {
-	// 			$row = [];
-	// 			foreach ($allFields as $field) {
-	// 				$skipFields = [
-	// 					'discount1', 'start_date1', 'end_date1',
-	// 					'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
-	// 					'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
-	// 					'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
-	// 					'description2', 'description3', 'description4',
-	// 					'benefit4', 'feature4', 'benefit5', 'feature5',
-	// 					'benefit6', 'feature6', 'benefit7', 'feature7',
-	// 					'benefit8', 'feature8', 'benefit9', 'feature9',
-	// 					'benefit10', 'feature10',
-	// 					"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
-	// 					"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
-	// 					"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
-	// 					"meta_description",
-	// 					'description_ar', 'content_ar', 'warranty_information_ar'
-	// 				];
+		/* Add data rows */
+		$rowIndex = 2;
+		foreach ($products as $product) {
+			$columnIndex = 1;
+			foreach ($allFields as $field) {
+				$skipFields = [
+					'discount1', 'start_date1', 'end_date1',
+					'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
+					'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
+					'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+					'description2', 'description3', 'description4',
+					'benefit4', 'feature4', 'benefit5', 'feature5',
+					'benefit6', 'feature6', 'benefit7', 'feature7',
+					'benefit8', 'feature8', 'benefit9', 'feature9',
+					'benefit10', 'feature10',
+					"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
+					"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
+					"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+					"meta_description",
+					'description_ar', 'content_ar', 'warranty_information_ar'
+				];
 
-	// 				if (in_array($field, $skipFields)) {
-	// 					continue; /* skip this field entirely */
-	// 				}
-	// 				/* Format special sfields */
-	// 				switch ($field) {
-	// 					case 'categories':
-	// 					$lastCategory = $product->latestChildCategory() ? $product->latestChildCategory()->name ?? '' : '';
-	// 					$row[] = $lastCategory;
-	// 					break;
-
-	// 					case 'stock_status':
-	// 					$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
-	// 					$row[] = $stockMap[$product->stock_status] ?? '';
-	// 					break;
-
-	// 					case 'status':
-	// 					$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-	// 					$row[] = $statusMap[$product->status] ?? 2; /* Default to 'Draft' (2) if not found */
-	// 					break;
-
-	// 					case 'unit_of_measurement':
-	// 					$unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
-	// 					$row[] = $unitMap[$product->unit_of_measurement] ?? '';
-	// 					break;
-
-	// 					case 'with_storehouse_management':
-	// 					$row[] = $product->with_storehouse_management ? 1 : 0;
-	// 					break;
-
-	// 					case 'variant_requires_shipping':
-	// 					$row[] = $product->variant_requires_shipping ? 1 : 0;
-	// 					break;
-
-	// 					case 'refund_policy':
-	// 					$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
-	// 					$row[] = $refundMap[$product->refund_policy] ?? '';
-	// 					break;
-
-	// 					case 'is_featured':
-	// 					$row[] = $product->is_featured ? 1 : 0;
-	// 					break;
-
-	// 					case 'weight_option':
-	// 					case 'shipping_weight_option':
-	// 					$weightValidOptions = ['lbs', 'kg', 'g'];
-	// 					$row[] = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
-	// 					break;
-
-	// 					case 'dimension_option':
-	// 					case 'shipping_dimension_option':
-	// 					$dimensionValidOptions = ['inch', 'cm', 'mm'];
-	// 					$row[] = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
-	// 					break;
-
-	// 					case 'tags':
-	// 					$row[] = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
-	// 					break;
-
-	// 					case 'brand':
-	// 					/* Extract just the brand name from the object */
-	// 					if (is_string($product->brand) && json_decode($product->brand)) {
-	// 						$brandData = json_decode($product->brand, true);
-	// 						$row[] = $brandData['name'] ?? '';
-	// 					} elseif (is_object($product->brand) || is_array($product->brand)) {
-	// 						$brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
-	// 						$row[] = $brandData['name'] ?? '';
-	// 					} else {
-	// 						$row[] = $product->brand ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'vendor':
-	// 					$row[] = $product->store->name ?? '';
-	// 					break;
-
-	// 					case 'images':
-	// 					/* Format images as clean URLs */
-	// 					$imageData = $product->images;
-	// 					if (is_string($imageData) && json_decode($imageData)) {
-	// 						$imageArray = json_decode($imageData, true);
-	// 						$cleanUrls = [];
-	// 						foreach ($imageArray as $img) {
-	// 							if (is_string($img)) {
-	// 								$cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
-	// 							}
-	// 						}
-	// 						$row[] = implode(',', $cleanUrls);
-	// 					} else {
-	// 						$row[] = is_string($imageData) ? $imageData : '';
-	// 					}
-	// 					break;
-
-	// 					case 'upload_video':
-	// 					/* Format videos as clean URLs */
-	// 					$videoData = $product->upload_video;
-	// 					if (is_string($videoData) && json_decode($videoData)) {
-	// 						$videoArray = json_decode($videoData, true);
-	// 						$cleanUrls = [];
-	// 						foreach ($videoArray as $video) {
-	// 							if (is_string($video)) {
-	// 								$cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
-	// 							}
-	// 						}
-	// 						$row[] = implode(',', $cleanUrls);
-	// 					} else {
-	// 						$row[] = is_string($videoData) ? $videoData : '';
-	// 					}
-	// 					break;
-
-	// 					case 'frequently_bought_together':
-	// 					/* Format as comma-separated values */
-	// 					$fbtData = $product->frequently_bought_together;
-	// 					if (is_string($fbtData) && json_decode($fbtData)) {
-	// 						$fbtArray = json_decode($fbtData, true);
-	// 						$values = array_map(function($item) {
-	// 							return $item['value'] ?? '';
-	// 						}, $fbtArray);
-	// 						$row[] = implode(',', $values);
-	// 					} else {
-	// 						$row[] = is_string($fbtData) ? $fbtData : '';
-	// 					}
-	// 					break;
-
-	// 					case 'compare_products':
-	// 					/* Ensure it's an array and format as comma-separated IDs */
-	// 					$compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
-	// 					if (is_array($compareData)) {
-	// 						$row[] = implode(',', $compareData); /* Ensure IDs are separated properly */
-	// 					} else {
-	// 						$row[] = '';
-	// 					}
-	// 					break;
-
-	// 					case 'url':
-	// 					$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
-	// 					break;
-
-	// 					case 'buying_quantity1':
-	// 					$discounts = $product->discounts->take(3); /* Get up to 3 discounts */
-
-	// 					for ($i = 0; $i < 3; $i++) {
-	// 						$discount = $discounts[$i] ?? null;
-	// 						$row[] = $discount->product_quantity ?? '';
-	// 						$row[] = $discount->value ?? '';
-	// 						$row[] = $discount->start_date ?? '';
-	// 						$row[] = $discount->end_date ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'description1':
-	// 					$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
-
-	// 					for ($i = 0; $i < 4; $i++) {
-	// 						$row[] = $descriptions[$i] ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'benefit1':
-	// 					$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-
-	// 					for ($i = 0; $i < 10; $i++) {
-	// 						$row[] = $benefits[$i]['benefit'] ?? '';
-	// 						$row[] = $benefits[$i]['feature'] ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'faq_question1':
-	// 					$faqs = $product->faqs->take(10); /* Get up to 3 discounts */
-
-	// 					for ($i = 0; $i < 10; $i++) {
-	// 						$faq = $faqs[$i] ?? null;
-	// 						$row[] = $faq->question ?? '';
-	// 						$row[] = $faq->answer ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'meta_title':
-	// 					$row[] = $product->seoManagement->meta_title ?? '';
-	// 					$row[] = $product->seoManagement->meta_description ?? '';
-	// 					break;
-
-	// 					$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-	// 					for ($i = 0; $i < 10; $i++) {
-	// 						$row[] = $benefits[$i]['benefit'] ?? '';
-	// 						$row[] = $benefits[$i]['feature'] ?? '';
-	// 					}
-	// 					break;
-
-	// 					case 'name_ar':
-	// 					$arTranslations = $product->arTranslations;
-	// 					$row[] = $arTranslations['name'] ?? '';
-	// 					$row[] = $arTranslations['description'] ?? '';
-	// 					$row[] = $arTranslations['content'] ?? '';
-	// 					$row[] = $arTranslations['warranty_information'] ?? '';
-	// 					break;
-
-	// 					default:
-	// 					$row[] = $product->$field ?? '';
-	// 				}
-	// 			}
-	// 			fputcsv($handle, $row);
-	// 		}
-	// 		fclose($handle);
-	// 	});
-
-	// 	$response->headers->set('Content-Type', 'text/csv');//
-	// 	$response->headers->set('Content-Disposition', 'attachment; filename="products-' . date('Y-m-d') . '.csv"');
-
-	// 	return $response;
-	// }
-
-	$spreadsheet = new Spreadsheet();
-    $sheet = $spreadsheet->getActiveSheet();
-
-    // Prepare headers with proper capitalization
-    $headers = [];
-    foreach ($allFields as $field) {
-        $headers[] = $headerMap[$field] ?? $field;
-    }
-
-    // Write headers to first row (Excel rows start at 1)
-    foreach ($headers as $colIndex => $header) {
-        $sheet->setCellValueByColumnAndRow($colIndex + 1, 1, $header);
-    }
-
-    $skipFields = [
-        'discount1', 'start_date1', 'end_date1',
-        'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
-        'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
-        'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
-        'description2', 'description3', 'description4',
-        'benefit4', 'feature4', 'benefit5', 'feature5',
-        'benefit6', 'feature6', 'benefit7', 'feature7',
-        'benefit8', 'feature8', 'benefit9', 'feature9',
-        'benefit10', 'feature10',
-        "faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
-        "faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
-        "faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
-        "meta_description",
-        'description_ar', 'content_ar', 'warranty_information_ar'
-    ];
-
-	$rowIndex = 2;
-
-	foreach ($products as $product) {
-		$colIndex = 1;
-		foreach ($fieldsToSelect as $field) {
-			// your conditional logic here...
-			$columnLetter = Coordinate::stringFromColumnIndex($colIndex);
-			$sheet->setCellValue($columnLetter . $rowIndex, $value);
-			$colIndex++;
-		}
-		$rowIndex++;
-	}
-	
-            $value = '';
-
-            switch ($field) {
-                case 'categories':
-                    $value = $product->latestChildCategory() ? ($product->latestChildCategory()->name ?? '') : '';
-                    break;
-
-                case 'stock_status':
-                    $stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
-                    $value = $stockMap[$product->stock_status] ?? '';
-                    break;
-
-                case 'status':
-                    $statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-                    $value = $statusMap[$product->status] ?? 2;
-                    break;
-
-                case 'unit_of_measurement':
-                    $unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
-                    $value = $unitMap[$product->unit_of_measurement] ?? '';
-                    break;
-
-                case 'with_storehouse_management':
-                case 'variant_requires_shipping':
-                    $value = $product->$field ? 1 : 0;
-                    break;
-
-                case 'refund_policy':
-                    $refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
-                    $value = $refundMap[$product->refund_policy] ?? '';
-                    break;
-
-                case 'is_featured':
-                    $value = $product->is_featured ? 1 : 0;
-                    break;
-
-                case 'weight_option':
-                case 'shipping_weight_option':
-                    $weightValidOptions = ['lbs', 'kg', 'g'];
-                    $value = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
-                    break;
-
-                case 'dimension_option':
-                case 'shipping_dimension_option':
-                    $dimensionValidOptions = ['inch', 'cm', 'mm'];
-                    $value = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
-                    break;
-
-                case 'tags':
-                    $value = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
-                    break;
-
-                case 'brand':
-                    if (is_string($product->brand) && json_decode($product->brand)) {
-                        $brandData = json_decode($product->brand, true);
-                        $value = $brandData['name'] ?? '';
-                    } elseif (is_object($product->brand) || is_array($product->brand)) {
-                        $brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
-                        $value = $brandData['name'] ?? '';
-                    } else {
-                        $value = $product->brand ?? '';
-                    }
-                    break;
-
-                case 'vendor':
-                    $value = $product->store->name ?? '';
-                    break;
-
-                case 'images':
-                    $imageData = $product->images;
-                    if (is_string($imageData) && json_decode($imageData)) {
-                        $imageArray = json_decode($imageData, true);
-                        $cleanUrls = [];
-                        foreach ($imageArray as $img) {
-                            if (is_string($img)) {
-                                $cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
-                            }
-                        }
-                        $value = implode(',', $cleanUrls);
-                    } else {
-                        $value = is_string($imageData) ? $imageData : '';
-                    }
-                    break;
-
-                case 'upload_video':
-                    $videoData = $product->upload_video;
-                    if (is_string($videoData) && json_decode($videoData)) {
-                        $videoArray = json_decode($videoData, true);
-                        $cleanUrls = [];
-                        foreach ($videoArray as $video) {
-                            if (is_string($video)) {
-                                $cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
-                            }
-                        }
-                        $value = implode(',', $cleanUrls);
-                    } else {
-                        $value = is_string($videoData) ? $videoData : '';
-                    }
-                    break;
-
-                case 'frequently_bought_together':
-                    $fbtData = $product->frequently_bought_together;
-                    if (is_string($fbtData) && json_decode($fbtData)) {
-                        $fbtArray = json_decode($fbtData, true);
-                        $valuesArr = array_map(fn($item) => $item['value'] ?? '', $fbtArray);
-                        $value = implode(',', $valuesArr);
-                    } else {
-                        $value = is_string($fbtData) ? $fbtData : '';
-                    }
-                    break;
-
-                case 'compare_products':
-                    $compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
-                    $value = is_array($compareData) ? implode(',', $compareData) : '';
-                    break;
-
-                case 'url':
-                    $value = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
-                    break;
-
-                case 'buying_quantity1':
-                    $discounts = $product->discounts->take(3);
-                    for ($i = 0; $i < 3; $i++) {
-                        $discount = $discounts[$i] ?? null;
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->product_quantity ?? '');
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->value ?? '');
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->start_date ?? '');
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->end_date ?? '');
-                    }
-                    continue 2; // skip the rest of the current iteration
-
-                case 'description1':
-                    $descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
-                    for ($i = 0; $i < 4; $i++) {
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $descriptions[$i] ?? '');
-                    }
-                    continue 2;
-
-                case 'benefit1':
-                    $benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-                    for ($i = 0; $i < 10; $i++) {
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $benefits[$i]['benefit'] ?? '');
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $benefits[$i]['feature'] ?? '');
-                    }
-                    continue 2;
-
-                case 'faq_question1':
-                    $faqs = is_array($product->faqs) ? $product->faqs : json_decode($product->faqs, true);
-                    for ($i = 0; $i < 10; $i++) {
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $faqs[$i]['question'] ?? '');
-                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $faqs[$i]['answer'] ?? '');
-                    }
-					case 'meta_title':
-						$value = strip_tags($product->meta_title);
-						break;
-		
-					default:
-						$value = $product->$field ?? '';
-						break;
+				if (in_array($field, $skipFields)) {
+					continue; /* skip this field entirely */
 				}
-		
-				$columnLetter = Coordinate::stringFromColumnIndex($colIndex);
-				$sheet->setCellValue($columnLetter . $rowIndex, $value);
+				
+				/* Cell value for the current field */
+				$cellValue = '';
+                
+				/* Format special fields */
+				switch ($field) {
+					case 'categories':
+						$cellValue = $product->latestChildCategory() ? $product->latestChildCategory()->name ?? '' : '';
+						break;
 
+					case 'stock_status':
+						$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
+						$cellValue = $stockMap[$product->stock_status] ?? '';
+						break;
+
+					case 'status':
+						$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
+						$cellValue = $statusMap[$product->status] ?? 2; /* Default to 'Draft' (2) if not found */
+						break;
+
+					case 'unit_of_measurement':
+						$unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
+						$cellValue = $unitMap[$product->unit_of_measurement] ?? '';
+						break;
+
+					case 'with_storehouse_management':
+						$cellValue = $product->with_storehouse_management ? 1 : 0;
+						break;
+
+					case 'variant_requires_shipping':
+						$cellValue = $product->variant_requires_shipping ? 1 : 0;
+						break;
+
+					case 'refund_policy':
+						$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
+						$cellValue = $refundMap[$product->refund_policy] ?? '';
+						break;
+
+					case 'is_featured':
+						$cellValue = $product->is_featured ? 1 : 0;
+						break;
+
+					case 'weight_option':
+					case 'shipping_weight_option':
+						$weightValidOptions = ['lbs', 'kg', 'g'];
+						$cellValue = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
+						break;
+
+					case 'dimension_option':
+					case 'shipping_dimension_option':
+						$dimensionValidOptions = ['inch', 'cm', 'mm'];
+						$cellValue = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
+						break;
+
+					case 'tags':
+						$cellValue = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
+						break;
+
+					case 'brand':
+						/* Extract just the brand name from the object */
+						if (is_string($product->brand) && json_decode($product->brand)) {
+							$brandData = json_decode($product->brand, true);
+							$cellValue = $brandData['name'] ?? '';
+						} elseif (is_object($product->brand) || is_array($product->brand)) {
+							$brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
+							$cellValue = $brandData['name'] ?? '';
+						} else {
+							$cellValue = $product->brand ?? '';
+						}
+						break;
+
+					case 'vendor':
+						$cellValue = $product->store->name ?? '';
+						break;
+
+					case 'images':
+						/* Format images as clean URLs */
+						$imageData = $product->images;
+						if (is_string($imageData) && json_decode($imageData)) {
+							$imageArray = json_decode($imageData, true);
+							$cleanUrls = [];
+							foreach ($imageArray as $img) {
+								if (is_string($img)) {
+									$cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
+								}
+							}
+							$cellValue = implode(',', $cleanUrls);
+						} else {
+							$cellValue = is_string($imageData) ? $imageData : '';
+						}
+						break;
+
+					case 'upload_video':
+						/* Format videos as clean URLs */
+						$videoData = $product->upload_video;
+						if (is_string($videoData) && json_decode($videoData)) {
+							$videoArray = json_decode($videoData, true);
+							$cleanUrls = [];
+							foreach ($videoArray as $video) {
+								if (is_string($video)) {
+									$cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
+								}
+							}
+							$cellValue = implode(',', $cleanUrls);
+						} else {
+							$cellValue = is_string($videoData) ? $videoData : '';
+						}
+						break;
+
+					case 'frequently_bought_together':
+						/* Format as comma-separated values */
+						$fbtData = $product->frequently_bought_together;
+						if (is_string($fbtData) && json_decode($fbtData)) {
+							$fbtArray = json_decode($fbtData, true);
+							$values = array_map(function($item) {
+								return $item['value'] ?? '';
+							}, $fbtArray);
+							$cellValue = implode(',', $values);
+						} else {
+							$cellValue = is_string($fbtData) ? $fbtData : '';
+						}
+						break;
+
+					case 'compare_products':
+						/* Ensure it's an array and format as comma-separated IDs */
+						$compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
+						if (is_array($compareData)) {
+							$cellValue = implode(',', $compareData); /* Ensure IDs are separated properly */
+						} else {
+							$cellValue = '';
+						}
+						break;
+
+					case 'url':
+						$cellValue = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
+						break;
+
+					case 'buying_quantity1':
+						$discounts = $product->discounts->take(3); /* Get up to 3 discounts */
+						
+						/* Handle discounts in a different way for Excel - we need to set multiple cells */
+						$firstDiscount = $discounts[0] ?? null;
+						$cellValue = $firstDiscount->product_quantity ?? '';
+						
+						/* Set the next cells directly */
+						if (!empty($firstDiscount)) {
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 1) . $rowIndex, $firstDiscount->value ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 2) . $rowIndex, $firstDiscount->start_date ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 3) . $rowIndex, $firstDiscount->end_date ?? '');
+						}
+						
+						/* Second discount */
+						if (isset($discounts[1])) {
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 4) . $rowIndex, $discounts[1]->product_quantity ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 5) . $rowIndex, $discounts[1]->value ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 6) . $rowIndex, $discounts[1]->start_date ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 7) . $rowIndex, $discounts[1]->end_date ?? '');
+						}
+						
+						/* Third discount */
+						if (isset($discounts[2])) {
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 8) . $rowIndex, $discounts[2]->product_quantity ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 9) . $rowIndex, $discounts[2]->value ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 10) . $rowIndex, $discounts[2]->start_date ?? '');
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 11) . $rowIndex, $discounts[2]->end_date ?? '');
+						}
+						break;
+
+					case 'description1':
+						$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
+						
+						$cellValue = $descriptions[0] ?? '';
+						
+						/* Set additional description cells directly */
+						for ($i = 1; $i < 4; $i++) {
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + $i) . $rowIndex, $descriptions[$i] ?? '');
+						}
+						break;
+
+					case 'benefit1':
+						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+						
+						$cellValue = $benefits[0]['benefit'] ?? '';
+						
+						/* Set benefit-feature pairs directly in alternating cells */
+						$offset = 1;
+						for ($i = 0; $i < 10; $i++) {
+							$featureIndex = $columnIndex + $offset;
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($featureIndex) . $rowIndex, $benefits[$i]['feature'] ?? '');
+							
+							if ($i < 9) { // Don't set benefit for the last iteration
+								$benefitIndex = $columnIndex + $offset + 1;
+								$sheet->setCellValue(Coordinate::stringFromColumnIndex($benefitIndex) . $rowIndex, $benefits[$i+1]['benefit'] ?? '');
+							}
+							$offset += 2;
+						}
+						break;
+
+					case 'faq_question1':
+						$faqs = $product->faqs->take(10);
+						
+						$cellValue = $faqs[0]->question ?? '';
+						
+						/* Set question-answer pairs directly */
+						$offset = 1;
+						for ($i = 0; $i < 10; $i++) {
+							$faq = $faqs[$i] ?? null;
+							
+							if ($i > 0) {
+								$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + $offset) . $rowIndex, $faq->question ?? '');
+								$offset++;
+							}
+							
+							$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + $offset) . $rowIndex, $faq->answer ?? '');
+							$offset++;
+						}
+						break;
+
+					case 'meta_title':
+						$cellValue = $product->seoManagement->meta_title ?? '';
+						$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 1) . $rowIndex, $product->seoManagement->meta_description ?? '');
+						break;
+
+					case 'name_ar':
+						$arTranslations = $product->arTranslations;
+						$cellValue = $arTranslations['name'] ?? '';
+						
+						$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 1) . $rowIndex, $arTranslations['description'] ?? '');
+						$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 2) . $rowIndex, $arTranslations['content'] ?? '');
+						$sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex + 3) . $rowIndex, $arTranslations['warranty_information'] ?? '');
+						break;
+
+					default:
+						$cellValue = $product->$field ?? '';
+				}
+                
+                /* Set the cell value and increment the column index */
+                $sheet->setCellValue(Coordinate::stringFromColumnIndex($columnIndex) . $rowIndex, $cellValue);
+                $columnIndex++;
 			}
 			$rowIndex++;
 		}
-		
-		// Write Excel file to output stream for download
-		$writer = new Xlsx($spreadsheet);
-		
-		$response = new StreamedResponse(function () use ($writer) {
-			$writer->save('php://output');
-		});
-		
-		$filename = 'products_export_' . date('Ymd_His') . '.xlsx';
-		
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', 'attachment;filename="' . $filename . '"');
-		$response->headers->set('Cache-Control', 'max-age=0');
-		
-		return $response;
 
-		 
-}
+        /* Auto-size columns for better readability */
+        
+		for ($col = 1; $col <= count($allFields); $col++) {
+			$columnLetter = Coordinate::stringFromColumnIndex($col);
+			$sheet->getColumnDimension($columnLetter)->setAutoSize(true);
+		}
+
+		
+
+        /* Create Excel writer */
+        $writer = new Xlsx($spreadsheet);
+        
+        /* Save to temporary file */
+        $filename = 'products-' . date('Y-m-d') . '.xlsx';
+        $tempFilePath = tempnam(sys_get_temp_dir(), 'excel');
+        $writer->save($tempFilePath);
+        
+        /* Return Excel file as download */
+        return response()->download($tempFilePath, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"'
+        ])->deleteFileAfterSend(true);
+	}
 }
