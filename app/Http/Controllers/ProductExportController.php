@@ -614,9 +614,12 @@ class ProductExportController extends Controller
 
         /* Auto-size columns for better readability */
         $lastColumn = Coordinate::stringFromColumnIndex(count($allFields));
-        foreach ($sheet->getColumnDimensionIterator() as $column) {
-            $column->setAutoSize(true);
-        }
+
+		foreach (range('A', $lastColumn) as $columnID) {
+			$sheet->getColumnDimension($columnID)->setAutoSize(true);
+		}
+
+		
 
         /* Create Excel writer */
         $writer = new Xlsx($spreadsheet);
