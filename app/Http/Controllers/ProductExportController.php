@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class ProductExportController extends Controller
 {
@@ -318,245 +321,469 @@ class ProductExportController extends Controller
 
 		$allFields = array_keys($headerMap);
 
-		/* CSV response create karna */
-		$response = new StreamedResponse(function () use ($products, $allFields, $headerMap) {
-			$handle = fopen('php://output', 'w');
+	// 	/* CSV response create karna */
+	// 	$response = new StreamedResponse(function () use ($products, $allFields, $headerMap) {
+	// 		$handle = fopen('php://output', 'w');
 
-			/* Write headers with proper capitalization */
-			$headers = [];
-			foreach ($allFields as $field) {
-				$headers[] = $headerMap[$field] ?? $field;
-			}
-			fputcsv($handle, $headers);
+	// 		/* Write headers with proper capitalization */
+	// 		$headers = [];
+	// 		foreach ($allFields as $field) {
+	// 			$headers[] = $headerMap[$field] ?? $field;
+	// 		}
+	// 		fputcsv($handle, $headers);
 
-			foreach ($products as $product) {
-				$row = [];
-				foreach ($allFields as $field) {
-					$skipFields = [
-						'discount1', 'start_date1', 'end_date1',
-						'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
-						'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
-						'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
-						'description2', 'description3', 'description4',
-						'benefit4', 'feature4', 'benefit5', 'feature5',
-						'benefit6', 'feature6', 'benefit7', 'feature7',
-						'benefit8', 'feature8', 'benefit9', 'feature9',
-						'benefit10', 'feature10',
-						"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
-						"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
-						"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
-						"meta_description",
-						'description_ar', 'content_ar', 'warranty_information_ar'
-					];
+	// 		foreach ($products as $product) {
+	// 			$row = [];
+	// 			foreach ($allFields as $field) {
+	// 				$skipFields = [
+	// 					'discount1', 'start_date1', 'end_date1',
+	// 					'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
+	// 					'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
+	// 					'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+	// 					'description2', 'description3', 'description4',
+	// 					'benefit4', 'feature4', 'benefit5', 'feature5',
+	// 					'benefit6', 'feature6', 'benefit7', 'feature7',
+	// 					'benefit8', 'feature8', 'benefit9', 'feature9',
+	// 					'benefit10', 'feature10',
+	// 					"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
+	// 					"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
+	// 					"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+	// 					"meta_description",
+	// 					'description_ar', 'content_ar', 'warranty_information_ar'
+	// 				];
 
-					if (in_array($field, $skipFields)) {
-						continue; /* skip this field entirely */
-					}
-					/* Format special sfields */
-					switch ($field) {
-						case 'categories':
-						$lastCategory = $product->latestChildCategory() ? $product->latestChildCategory()->name ?? '' : '';
-						$row[] = $lastCategory;
+	// 				if (in_array($field, $skipFields)) {
+	// 					continue; /* skip this field entirely */
+	// 				}
+	// 				/* Format special sfields */
+	// 				switch ($field) {
+	// 					case 'categories':
+	// 					$lastCategory = $product->latestChildCategory() ? $product->latestChildCategory()->name ?? '' : '';
+	// 					$row[] = $lastCategory;
+	// 					break;
+
+	// 					case 'stock_status':
+	// 					$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
+	// 					$row[] = $stockMap[$product->stock_status] ?? '';
+	// 					break;
+
+	// 					case 'status':
+	// 					$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
+	// 					$row[] = $statusMap[$product->status] ?? 2; /* Default to 'Draft' (2) if not found */
+	// 					break;
+
+	// 					case 'unit_of_measurement':
+	// 					$unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
+	// 					$row[] = $unitMap[$product->unit_of_measurement] ?? '';
+	// 					break;
+
+	// 					case 'with_storehouse_management':
+	// 					$row[] = $product->with_storehouse_management ? 1 : 0;
+	// 					break;
+
+	// 					case 'variant_requires_shipping':
+	// 					$row[] = $product->variant_requires_shipping ? 1 : 0;
+	// 					break;
+
+	// 					case 'refund_policy':
+	// 					$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
+	// 					$row[] = $refundMap[$product->refund_policy] ?? '';
+	// 					break;
+
+	// 					case 'is_featured':
+	// 					$row[] = $product->is_featured ? 1 : 0;
+	// 					break;
+
+	// 					case 'weight_option':
+	// 					case 'shipping_weight_option':
+	// 					$weightValidOptions = ['lbs', 'kg', 'g'];
+	// 					$row[] = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
+	// 					break;
+
+	// 					case 'dimension_option':
+	// 					case 'shipping_dimension_option':
+	// 					$dimensionValidOptions = ['inch', 'cm', 'mm'];
+	// 					$row[] = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
+	// 					break;
+
+	// 					case 'tags':
+	// 					$row[] = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
+	// 					break;
+
+	// 					case 'brand':
+	// 					/* Extract just the brand name from the object */
+	// 					if (is_string($product->brand) && json_decode($product->brand)) {
+	// 						$brandData = json_decode($product->brand, true);
+	// 						$row[] = $brandData['name'] ?? '';
+	// 					} elseif (is_object($product->brand) || is_array($product->brand)) {
+	// 						$brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
+	// 						$row[] = $brandData['name'] ?? '';
+	// 					} else {
+	// 						$row[] = $product->brand ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'vendor':
+	// 					$row[] = $product->store->name ?? '';
+	// 					break;
+
+	// 					case 'images':
+	// 					/* Format images as clean URLs */
+	// 					$imageData = $product->images;
+	// 					if (is_string($imageData) && json_decode($imageData)) {
+	// 						$imageArray = json_decode($imageData, true);
+	// 						$cleanUrls = [];
+	// 						foreach ($imageArray as $img) {
+	// 							if (is_string($img)) {
+	// 								$cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
+	// 							}
+	// 						}
+	// 						$row[] = implode(',', $cleanUrls);
+	// 					} else {
+	// 						$row[] = is_string($imageData) ? $imageData : '';
+	// 					}
+	// 					break;
+
+	// 					case 'upload_video':
+	// 					/* Format videos as clean URLs */
+	// 					$videoData = $product->upload_video;
+	// 					if (is_string($videoData) && json_decode($videoData)) {
+	// 						$videoArray = json_decode($videoData, true);
+	// 						$cleanUrls = [];
+	// 						foreach ($videoArray as $video) {
+	// 							if (is_string($video)) {
+	// 								$cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
+	// 							}
+	// 						}
+	// 						$row[] = implode(',', $cleanUrls);
+	// 					} else {
+	// 						$row[] = is_string($videoData) ? $videoData : '';
+	// 					}
+	// 					break;
+
+	// 					case 'frequently_bought_together':
+	// 					/* Format as comma-separated values */
+	// 					$fbtData = $product->frequently_bought_together;
+	// 					if (is_string($fbtData) && json_decode($fbtData)) {
+	// 						$fbtArray = json_decode($fbtData, true);
+	// 						$values = array_map(function($item) {
+	// 							return $item['value'] ?? '';
+	// 						}, $fbtArray);
+	// 						$row[] = implode(',', $values);
+	// 					} else {
+	// 						$row[] = is_string($fbtData) ? $fbtData : '';
+	// 					}
+	// 					break;
+
+	// 					case 'compare_products':
+	// 					/* Ensure it's an array and format as comma-separated IDs */
+	// 					$compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
+	// 					if (is_array($compareData)) {
+	// 						$row[] = implode(',', $compareData); /* Ensure IDs are separated properly */
+	// 					} else {
+	// 						$row[] = '';
+	// 					}
+	// 					break;
+
+	// 					case 'url':
+	// 					$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
+	// 					break;
+
+	// 					case 'buying_quantity1':
+	// 					$discounts = $product->discounts->take(3); /* Get up to 3 discounts */
+
+	// 					for ($i = 0; $i < 3; $i++) {
+	// 						$discount = $discounts[$i] ?? null;
+	// 						$row[] = $discount->product_quantity ?? '';
+	// 						$row[] = $discount->value ?? '';
+	// 						$row[] = $discount->start_date ?? '';
+	// 						$row[] = $discount->end_date ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'description1':
+	// 					$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
+
+	// 					for ($i = 0; $i < 4; $i++) {
+	// 						$row[] = $descriptions[$i] ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'benefit1':
+	// 					$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+
+	// 					for ($i = 0; $i < 10; $i++) {
+	// 						$row[] = $benefits[$i]['benefit'] ?? '';
+	// 						$row[] = $benefits[$i]['feature'] ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'faq_question1':
+	// 					$faqs = $product->faqs->take(10); /* Get up to 3 discounts */
+
+	// 					for ($i = 0; $i < 10; $i++) {
+	// 						$faq = $faqs[$i] ?? null;
+	// 						$row[] = $faq->question ?? '';
+	// 						$row[] = $faq->answer ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'meta_title':
+	// 					$row[] = $product->seoManagement->meta_title ?? '';
+	// 					$row[] = $product->seoManagement->meta_description ?? '';
+	// 					break;
+
+	// 					$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+	// 					for ($i = 0; $i < 10; $i++) {
+	// 						$row[] = $benefits[$i]['benefit'] ?? '';
+	// 						$row[] = $benefits[$i]['feature'] ?? '';
+	// 					}
+	// 					break;
+
+	// 					case 'name_ar':
+	// 					$arTranslations = $product->arTranslations;
+	// 					$row[] = $arTranslations['name'] ?? '';
+	// 					$row[] = $arTranslations['description'] ?? '';
+	// 					$row[] = $arTranslations['content'] ?? '';
+	// 					$row[] = $arTranslations['warranty_information'] ?? '';
+	// 					break;
+
+	// 					default:
+	// 					$row[] = $product->$field ?? '';
+	// 				}
+	// 			}
+	// 			fputcsv($handle, $row);
+	// 		}
+	// 		fclose($handle);
+	// 	});
+
+	// 	$response->headers->set('Content-Type', 'text/csv');//
+	// 	$response->headers->set('Content-Disposition', 'attachment; filename="products-' . date('Y-m-d') . '.csv"');
+
+	// 	return $response;
+	// }
+
+	$spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+
+    // Prepare headers with proper capitalization
+    $headers = [];
+    foreach ($allFields as $field) {
+        $headers[] = $headerMap[$field] ?? $field;
+    }
+
+    // Write headers to first row (Excel rows start at 1)
+    foreach ($headers as $colIndex => $header) {
+        $sheet->setCellValueByColumnAndRow($colIndex + 1, 1, $header);
+    }
+
+    $skipFields = [
+        'discount1', 'start_date1', 'end_date1',
+        'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
+        'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
+        'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
+        'description2', 'description3', 'description4',
+        'benefit4', 'feature4', 'benefit5', 'feature5',
+        'benefit6', 'feature6', 'benefit7', 'feature7',
+        'benefit8', 'feature8', 'benefit9', 'feature9',
+        'benefit10', 'feature10',
+        "faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
+        "faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
+        "faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
+        "meta_description",
+        'description_ar', 'content_ar', 'warranty_information_ar'
+    ];
+
+    $rowIndex = 2; // Start from second row for product data
+
+    foreach ($products as $product) {
+        $colIndex = 1;
+        foreach ($allFields as $field) {
+            if (in_array($field, $skipFields)) {
+                continue; // skip these fields
+            }
+
+            $value = '';
+
+            switch ($field) {
+                case 'categories':
+                    $value = $product->latestChildCategory() ? ($product->latestChildCategory()->name ?? '') : '';
+                    break;
+
+                case 'stock_status':
+                    $stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
+                    $value = $stockMap[$product->stock_status] ?? '';
+                    break;
+
+                case 'status':
+                    $statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
+                    $value = $statusMap[$product->status] ?? 2;
+                    break;
+
+                case 'unit_of_measurement':
+                    $unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
+                    $value = $unitMap[$product->unit_of_measurement] ?? '';
+                    break;
+
+                case 'with_storehouse_management':
+                case 'variant_requires_shipping':
+                    $value = $product->$field ? 1 : 0;
+                    break;
+
+                case 'refund_policy':
+                    $refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
+                    $value = $refundMap[$product->refund_policy] ?? '';
+                    break;
+
+                case 'is_featured':
+                    $value = $product->is_featured ? 1 : 0;
+                    break;
+
+                case 'weight_option':
+                case 'shipping_weight_option':
+                    $weightValidOptions = ['lbs', 'kg', 'g'];
+                    $value = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
+                    break;
+
+                case 'dimension_option':
+                case 'shipping_dimension_option':
+                    $dimensionValidOptions = ['inch', 'cm', 'mm'];
+                    $value = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
+                    break;
+
+                case 'tags':
+                    $value = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
+                    break;
+
+                case 'brand':
+                    if (is_string($product->brand) && json_decode($product->brand)) {
+                        $brandData = json_decode($product->brand, true);
+                        $value = $brandData['name'] ?? '';
+                    } elseif (is_object($product->brand) || is_array($product->brand)) {
+                        $brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
+                        $value = $brandData['name'] ?? '';
+                    } else {
+                        $value = $product->brand ?? '';
+                    }
+                    break;
+
+                case 'vendor':
+                    $value = $product->store->name ?? '';
+                    break;
+
+                case 'images':
+                    $imageData = $product->images;
+                    if (is_string($imageData) && json_decode($imageData)) {
+                        $imageArray = json_decode($imageData, true);
+                        $cleanUrls = [];
+                        foreach ($imageArray as $img) {
+                            if (is_string($img)) {
+                                $cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
+                            }
+                        }
+                        $value = implode(',', $cleanUrls);
+                    } else {
+                        $value = is_string($imageData) ? $imageData : '';
+                    }
+                    break;
+
+                case 'upload_video':
+                    $videoData = $product->upload_video;
+                    if (is_string($videoData) && json_decode($videoData)) {
+                        $videoArray = json_decode($videoData, true);
+                        $cleanUrls = [];
+                        foreach ($videoArray as $video) {
+                            if (is_string($video)) {
+                                $cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
+                            }
+                        }
+                        $value = implode(',', $cleanUrls);
+                    } else {
+                        $value = is_string($videoData) ? $videoData : '';
+                    }
+                    break;
+
+                case 'frequently_bought_together':
+                    $fbtData = $product->frequently_bought_together;
+                    if (is_string($fbtData) && json_decode($fbtData)) {
+                        $fbtArray = json_decode($fbtData, true);
+                        $valuesArr = array_map(fn($item) => $item['value'] ?? '', $fbtArray);
+                        $value = implode(',', $valuesArr);
+                    } else {
+                        $value = is_string($fbtData) ? $fbtData : '';
+                    }
+                    break;
+
+                case 'compare_products':
+                    $compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
+                    $value = is_array($compareData) ? implode(',', $compareData) : '';
+                    break;
+
+                case 'url':
+                    $value = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
+                    break;
+
+                case 'buying_quantity1':
+                    $discounts = $product->discounts->take(3);
+                    for ($i = 0; $i < 3; $i++) {
+                        $discount = $discounts[$i] ?? null;
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->product_quantity ?? '');
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->value ?? '');
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->start_date ?? '');
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $discount->end_date ?? '');
+                    }
+                    continue 2; // skip the rest of the current iteration
+
+                case 'description1':
+                    $descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
+                    for ($i = 0; $i < 4; $i++) {
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $descriptions[$i] ?? '');
+                    }
+                    continue 2;
+
+                case 'benefit1':
+                    $benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+                    for ($i = 0; $i < 10; $i++) {
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $benefits[$i]['benefit'] ?? '');
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $benefits[$i]['feature'] ?? '');
+                    }
+                    continue 2;
+
+                case 'faq_question1':
+                    $faqs = is_array($product->faqs) ? $product->faqs : json_decode($product->faqs, true);
+                    for ($i = 0; $i < 10; $i++) {
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $faqs[$i]['question'] ?? '');
+                        $sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $faqs[$i]['answer'] ?? '');
+                    }
+					case 'meta_title':
+						$value = strip_tags($product->meta_title);
 						break;
-
-						case 'stock_status':
-						$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
-						$row[] = $stockMap[$product->stock_status] ?? '';
+		
+					default:
+						$value = $product->$field ?? '';
 						break;
-
-						case 'status':
-						$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-						$row[] = $statusMap[$product->status] ?? 2; /* Default to 'Draft' (2) if not found */
-						break;
-
-						case 'unit_of_measurement':
-						$unitMap = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
-						$row[] = $unitMap[$product->unit_of_measurement] ?? '';
-						break;
-
-						case 'with_storehouse_management':
-						$row[] = $product->with_storehouse_management ? 1 : 0;
-						break;
-
-						case 'variant_requires_shipping':
-						$row[] = $product->variant_requires_shipping ? 1 : 0;
-						break;
-
-						case 'refund_policy':
-						$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
-						$row[] = $refundMap[$product->refund_policy] ?? '';
-						break;
-
-						case 'is_featured':
-						$row[] = $product->is_featured ? 1 : 0;
-						break;
-
-						case 'weight_option':
-						case 'shipping_weight_option':
-						$weightValidOptions = ['lbs', 'kg', 'g'];
-						$row[] = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
-						break;
-
-						case 'dimension_option':
-						case 'shipping_dimension_option':
-						$dimensionValidOptions = ['inch', 'cm', 'mm'];
-						$row[] = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
-						break;
-
-						case 'tags':
-						$row[] = $product->tags ? implode(',', $product->tags->pluck('name')->toArray()) : '';
-						break;
-
-						case 'brand':
-						/* Extract just the brand name from the object */
-						if (is_string($product->brand) && json_decode($product->brand)) {
-							$brandData = json_decode($product->brand, true);
-							$row[] = $brandData['name'] ?? '';
-						} elseif (is_object($product->brand) || is_array($product->brand)) {
-							$brandData = is_array($product->brand) ? $product->brand : $product->brand->toArray();
-							$row[] = $brandData['name'] ?? '';
-						} else {
-							$row[] = $product->brand ?? '';
-						}
-						break;
-
-						case 'vendor':
-						$row[] = $product->store->name ?? '';
-						break;
-
-						case 'images':
-						/* Format images as clean URLs */
-						$imageData = $product->images;
-						if (is_string($imageData) && json_decode($imageData)) {
-							$imageArray = json_decode($imageData, true);
-							$cleanUrls = [];
-							foreach ($imageArray as $img) {
-								if (is_string($img)) {
-									$cleanUrls[] = str_replace('\/', '/', trim($img, '"'));
-								}
-							}
-							$row[] = implode(',', $cleanUrls);
-						} else {
-							$row[] = is_string($imageData) ? $imageData : '';
-						}
-						break;
-
-						case 'upload_video':
-						/* Format videos as clean URLs */
-						$videoData = $product->upload_video;
-						if (is_string($videoData) && json_decode($videoData)) {
-							$videoArray = json_decode($videoData, true);
-							$cleanUrls = [];
-							foreach ($videoArray as $video) {
-								if (is_string($video)) {
-									$cleanUrls[] = str_replace('\/', '/', trim($video, '"'));
-								}
-							}
-							$row[] = implode(',', $cleanUrls);
-						} else {
-							$row[] = is_string($videoData) ? $videoData : '';
-						}
-						break;
-
-						case 'frequently_bought_together':
-						/* Format as comma-separated values */
-						$fbtData = $product->frequently_bought_together;
-						if (is_string($fbtData) && json_decode($fbtData)) {
-							$fbtArray = json_decode($fbtData, true);
-							$values = array_map(function($item) {
-								return $item['value'] ?? '';
-							}, $fbtArray);
-							$row[] = implode(',', $values);
-						} else {
-							$row[] = is_string($fbtData) ? $fbtData : '';
-						}
-						break;
-
-						case 'compare_products':
-						/* Ensure it's an array and format as comma-separated IDs */
-						$compareData = is_string($product->compare_products) ? json_decode($product->compare_products, true) : $product->compare_products;
-						if (is_array($compareData)) {
-							$row[] = implode(',', $compareData); /* Ensure IDs are separated properly */
-						} else {
-							$row[] = '';
-						}
-						break;
-
-						case 'url':
-						$row[] = $product->slug ? 'https://thehorecastore.co/products/' . $product->slug->key : '';
-						break;
-
-						case 'buying_quantity1':
-						$discounts = $product->discounts->take(3); /* Get up to 3 discounts */
-
-						for ($i = 0; $i < 3; $i++) {
-							$discount = $discounts[$i] ?? null;
-							$row[] = $discount->product_quantity ?? '';
-							$row[] = $discount->value ?? '';
-							$row[] = $discount->start_date ?? '';
-							$row[] = $discount->end_date ?? '';
-						}
-						break;
-
-						case 'description1':
-						$descriptions = json_validate($product->description) ? json_decode($product->description, true) : (is_array($product->description) ? $product->description : explode('|', $product->description));
-
-						for ($i = 0; $i < 4; $i++) {
-							$row[] = $descriptions[$i] ?? '';
-						}
-						break;
-
-						case 'benefit1':
-						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-
-						for ($i = 0; $i < 10; $i++) {
-							$row[] = $benefits[$i]['benefit'] ?? '';
-							$row[] = $benefits[$i]['feature'] ?? '';
-						}
-						break;
-
-						case 'faq_question1':
-						$faqs = $product->faqs->take(10); /* Get up to 3 discounts */
-
-						for ($i = 0; $i < 10; $i++) {
-							$faq = $faqs[$i] ?? null;
-							$row[] = $faq->question ?? '';
-							$row[] = $faq->answer ?? '';
-						}
-						break;
-
-						case 'meta_title':
-						$row[] = $product->seoManagement->meta_title ?? '';
-						$row[] = $product->seoManagement->meta_description ?? '';
-						break;
-
-						$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-						for ($i = 0; $i < 10; $i++) {
-							$row[] = $benefits[$i]['benefit'] ?? '';
-							$row[] = $benefits[$i]['feature'] ?? '';
-						}
-						break;
-
-						case 'name_ar':
-						$arTranslations = $product->arTranslations;
-						$row[] = $arTranslations['name'] ?? '';
-						$row[] = $arTranslations['description'] ?? '';
-						$row[] = $arTranslations['content'] ?? '';
-						$row[] = $arTranslations['warranty_information'] ?? '';
-						break;
-
-						default:
-						$row[] = $product->$field ?? '';
-					}
 				}
-				fputcsv($handle, $row);
+		
+				$sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $value);
 			}
-			fclose($handle);
+			$rowIndex++;
+		}
+		
+		// Write Excel file to output stream for download
+		$writer = new Xlsx($spreadsheet);
+		
+		$response = new StreamedResponse(function () use ($writer) {
+			$writer->save('php://output');
 		});
-
-		$response->headers->set('Content-Type', 'text/csv');//
-		$response->headers->set('Content-Disposition', 'attachment; filename="products-' . date('Y-m-d') . '.csv"');
-
+		
+		$filename = 'products_export_' . date('Ymd_His') . '.xlsx';
+		
+		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		$response->headers->set('Content-Disposition', 'attachment;filename="' . $filename . '"');
+		$response->headers->set('Cache-Control', 'max-age=0');
+		
 		return $response;
-	}
+		
+		 
+}
 }
