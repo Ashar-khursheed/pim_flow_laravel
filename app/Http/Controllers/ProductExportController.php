@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 
 class ProductExportController extends Controller
 {
@@ -783,7 +784,7 @@ class ProductExportController extends Controller
 		$response->headers->set('Cache-Control', 'max-age=0');
 		
 		return $response;
-		
+
 		 
 }
 }
