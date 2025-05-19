@@ -229,9 +229,18 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name'])->find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
-		$attribute->measurementUnits->each->makeHidden(['pivot']);
+		/* Append measurement_type from first unit if exists */
+		$firstUnit = $attribute->measurementUnits->first();
+		if ($firstUnit && $firstUnit->type) {
+			$attribute->measurement_type = [
+				'id' => $firstUnit->type->id,
+				'name' => $firstUnit->type->name
+			];
+		}
+
+		$attribute->measurementUnits->each->makeHidden(['pivot', 'measurement_type_id']);
 
 		if (!$attribute) {
 			return response()->json([
