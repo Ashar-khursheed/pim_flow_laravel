@@ -2,19 +2,21 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
+
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
-class ImportSupplierJob implements ShouldQueue
+class ImportProductSupplierJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 
@@ -78,11 +80,11 @@ class ImportSupplierJob implements ShouldQueue
             if (empty($mappedData['sku'])) {
                 $rowError[] = 'SKU is required.';
             }
-            
+
             if (empty($mappedData['vendor_id'])) {
                 $rowError[] = 'Vendor ID is required.';
             }
-            
+
             if (empty($mappedData['vendor_sku'])) {
                 $rowError[] = 'Vendor SKU is required.';
             }
@@ -105,7 +107,7 @@ class ImportSupplierJob implements ShouldQueue
             }
 
             /* Validate price logic */
-            if (!empty($mappedData['price']) && !empty($mappedData['sale_price']) && 
+            if (!empty($mappedData['price']) && !empty($mappedData['sale_price']) &&
                 (float)$mappedData['price'] < (float)$mappedData['sale_price']) {
                 $rowError[] = 'Price cannot be less than sale price.';
             }
@@ -155,32 +157,32 @@ class ImportSupplierJob implements ShouldQueue
                 $existingSupplier->warranty_information = $mappedData['warranty_information'] ?? null;
                 $existingSupplier->refund = $mappedData['refund'] ?? null;
                 $existingSupplier->delivery_days = $mappedData['delivery_days'] ?? null;
-                
+
                 /* Set numeric fields with type casting */
                 if (isset($mappedData['cost_per_item'])) {
                     $existingSupplier->cost_per_item = (float)$mappedData['cost_per_item'];
                 }
-                
+
                 if (isset($mappedData['sale_price'])) {
                     $existingSupplier->sale_price = (float)$mappedData['sale_price'];
                 }
-                
+
                 if (isset($mappedData['price'])) {
                     $existingSupplier->price = (float)$mappedData['price'];
                 }
-                
+
                 if (isset($mappedData['margin'])) {
                     $existingSupplier->margin = (float)$mappedData['margin'];
                 }
-                
+
                 if (isset($mappedData['inventory'])) {
                     $existingSupplier->inventory = (int)$mappedData['inventory'];
                 }
-                
+
                 if (isset($mappedData['additional_cost'])) {
                     $existingSupplier->additional_cost = (float)$mappedData['additional_cost'];
                 }
-                
+
                 if (isset($mappedData['final_cost_price'])) {
                     $existingSupplier->final_cost_price = (float)$mappedData['final_cost_price'];
                 }
@@ -197,7 +199,7 @@ class ImportSupplierJob implements ShouldQueue
                     'File: ' . $e->getFile(),
                     'Line: ' . $e->getLine()
                 ];
-                
+
                 $this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
                 $failed++;
             }

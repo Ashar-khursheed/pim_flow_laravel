@@ -11274,16 +11274,9 @@
                 "operationId": "getProductSuppliers",
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ProductSupplier"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -11306,19 +11299,18 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "sku",
                                     "vendor_id",
                                     "product_id"
                                 ],
                                 "properties": {
-                                    "sku": {
-                                        "type": "string"
-                                    },
-                                    "vendor_sku": {
-                                        "type": "string"
+                                    "product_id": {
+                                        "type": "integer"
                                     },
                                     "vendor_id": {
                                         "type": "integer"
+                                    },
+                                    "vendor_sku": {
+                                        "type": "string"
                                     },
                                     "warranty_information": {
                                         "type": "string"
@@ -11345,9 +11337,6 @@
                                         "type": "number",
                                         "format": "float"
                                     },
-                                    "inventory": {
-                                        "type": "integer"
-                                    },
                                     "additional_cost": {
                                         "type": "number",
                                         "format": "float"
@@ -11355,6 +11344,12 @@
                                     "final_cost_price": {
                                         "type": "number",
                                         "format": "float"
+                                    },
+                                    "in_stock": {
+                                        "type": "integer"
+                                    },
+                                    "inventory": {
+                                        "type": "integer"
                                     }
                                 },
                                 "type": "object"
@@ -11366,11 +11361,7 @@
                     "201": {
                         "description": "Created successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductSupplier"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -11402,20 +11393,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/ProductSupplier"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "404": {
-                        "description": "Product supplier not found"
                     }
                 },
                 "security": [
@@ -11455,17 +11436,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful retrieval",
+                        "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductSupplier"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "404": {
-                        "description": "Product supplier not found"
                     }
                 },
                 "security": [
@@ -11507,17 +11481,8 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "sku": {
-                                        "type": "string"
-                                    },
                                     "vendor_sku": {
                                         "type": "string"
-                                    },
-                                    "vendor_id": {
-                                        "type": "integer"
-                                    },
-                                    "product_id": {
-                                        "type": "integer"
                                     },
                                     "warranty_information": {
                                         "type": "string"
@@ -11544,9 +11509,6 @@
                                         "type": "number",
                                         "format": "float"
                                     },
-                                    "inventory": {
-                                        "type": "integer"
-                                    },
                                     "additional_cost": {
                                         "type": "number",
                                         "format": "float"
@@ -11554,6 +11516,12 @@
                                     "final_cost_price": {
                                         "type": "number",
                                         "format": "float"
+                                    },
+                                    "in_stock": {
+                                        "type": "integer"
+                                    },
+                                    "inventory": {
+                                        "type": "integer"
                                     }
                                 },
                                 "type": "object"
@@ -11565,15 +11533,8 @@
                     "200": {
                         "description": "Updated successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ProductSupplier"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "404": {
-                        "description": "Product supplier not found"
                     }
                 },
                 "security": [
@@ -11613,21 +11574,61 @@
                     "200": {
                         "description": "Deleted successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Deleted successfully"
-                                        }
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-suppliers/export": {
+            "post": {
+                "tags": [
+                    "Product Suppliers"
+                ],
+                "summary": "Export product suppliers data to Excel",
+                "operationId": "e877d766ed6caaf1bdeeb2a4ee74dd6c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "range_from",
+                                    "range_to"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "Filter by product ID",
+                                        "type": "integer",
+                                        "example": 1
                                     },
-                                    "type": "object"
-                                }
+                                    "range_from": {
+                                        "description": "Starting range (must be >=1)",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "range_to": {
+                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "type": "integer",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
                             }
                         }
-                    },
-                    "404": {
-                        "description": "Product supplier not found"
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -11642,7 +11643,7 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Import product suppliers from a CSV file",
+                "summary": "Import product suppliers from an Excel file",
                 "operationId": "34d42f80f5eb46061a4d6487c01e3723",
                 "requestBody": {
                     "required": true,
@@ -11650,17 +11651,13 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "file"
+                                    "upload_file"
                                 ],
                                 "properties": {
-                                    "file": {
-                                        "description": "CSV file (.csv) max 10MB",
+                                    "upload_file": {
+                                        "description": "Excel file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
-                                    },
-                                    "chunk_size": {
-                                        "description": "Optional chunk size (default is 100)",
-                                        "type": "integer"
                                     }
                                 },
                                 "type": "object"
@@ -11672,104 +11669,7 @@
                     "200": {
                         "description": "Success",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The import process has been scheduled successfully. Please track it under import log."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The uploaded CSV file does not contain any records."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "You don't have permission to access this module."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/product-suppliers/export": {
-            "get": {
-                "tags": [
-                    "Product Suppliers"
-                ],
-                "summary": "Export product suppliers to CSV",
-                "description": "Exports all product suppliers to a CSV file",
-                "operationId": "exportProductSuppliers",
-                "parameters": [
-                    {
-                        "name": "vendor_id",
-                        "in": "query",
-                        "description": "Filter by vendor ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "product_id",
-                        "in": "query",
-                        "description": "Filter by product ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "CSV file download",
-                        "content": {
-                            "text/csv": {}
+                            "application/json": {}
                         }
                     }
                 },
@@ -11786,13 +11686,13 @@
                     "Product Suppliers"
                 ],
                 "summary": "Download import template",
-                "description": "Downloads a CSV template for product supplier imports",
-                "operationId": "downloadSupplierTemplate",
+                "description": "Downloads an Excel template for product supplier imports",
+                "operationId": "9f58fca7698c48fec31115d003dbd0c8",
                 "responses": {
                     "200": {
-                        "description": "CSV template download",
+                        "description": "Success",
                         "content": {
-                            "text/csv": {}
+                            "application/json": {}
                         }
                     }
                 },
@@ -16288,60 +16188,6 @@
                     },
                     "brand": {
                         "$ref": "#/components/schemas/Brand"
-                    }
-                },
-                "type": "object"
-            },
-            "ProductSupplier": {
-                "title": "Product Supplier",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    },
-                    "sku": {
-                        "type": "string"
-                    },
-                    "vendor_id": {
-                        "type": "integer"
-                    },
-                    "product_id": {
-                        "type": "integer"
-                    },
-                    "warranty_information": {
-                        "type": "string"
-                    },
-                    "refund": {
-                        "type": "string"
-                    },
-                    "delivery_days": {
-                        "type": "string"
-                    },
-                    "cost_per_item": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "sale_price": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "price": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "margin": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "inventory": {
-                        "type": "integer"
-                    },
-                    "additional_cost": {
-                        "type": "number",
-                        "format": "float"
-                    },
-                    "final_cost_price": {
-                        "type": "number",
-                        "format": "float"
                     }
                 },
                 "type": "object"
