@@ -10523,7 +10523,7 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Export products to Excel",
+                "summary": "Export products to CSV",
                 "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
                 "parameters": [
                     {
