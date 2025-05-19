@@ -613,10 +613,10 @@ class ProductExportController extends Controller
 		}
 
         /* Auto-size columns for better readability */
-        $lastColumn = Coordinate::stringFromColumnIndex(count($allFields));
-
-		foreach (range('A', $lastColumn) as $columnID) {
-			$sheet->getColumnDimension($columnID)->setAutoSize(true);
+        
+		for ($col = 1; $col <= count($allFields); $col++) {
+			$columnLetter = Coordinate::stringFromColumnIndex($col);
+			$sheet->getColumnDimension($columnLetter)->setAutoSize(true);
 		}
 
 		
