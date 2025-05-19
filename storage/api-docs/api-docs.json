@@ -10323,7 +10323,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "Excel file (.xlsx, .xls) max 5MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
