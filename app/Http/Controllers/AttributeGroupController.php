@@ -128,7 +128,7 @@ class AttributeGroupController extends BaseController
 		}
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name',
-			'category_ids' => 'required|array|min:1',
+			'category_ids' => 'array',
 			'category_ids.*' => 'integer|exists:ec_product_categories,id',
 			'attribute_ids' => 'array',
 			'attribute_ids.*' => 'integer|exists:attributes,id',
@@ -137,11 +137,13 @@ class AttributeGroupController extends BaseController
 		/* Ensure only leaf (last-level) categories are used */
 		$validLeafCategoryIds = Category::whereDoesntHave('children')->pluck('id')->all();
 
-		if (array_diff($request->category_ids, $validLeafCategoryIds)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Only leaf-level categories (categories without children) can be selected.',
-			]);
+		if (!empty($request->category_ids)) {
+			if (array_diff($request->category_ids, $validLeafCategoryIds)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'Only leaf-level categories (categories without children) can be selected.',
+				]);
+			}
 		}
 
 		/* Check for already associated attributes */
