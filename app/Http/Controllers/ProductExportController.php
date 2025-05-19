@@ -595,15 +595,19 @@ class ProductExportController extends Controller
         'description_ar', 'content_ar', 'warranty_information_ar'
     ];
 
-    $rowIndex = 2; // Start from second row for product data
+	$rowIndex = 2;
 
-    foreach ($products as $product) {
-        $colIndex = 1;
-        foreach ($allFields as $field) {
-            if (in_array($field, $skipFields)) {
-                continue; // skip these fields
-            }
-
+	foreach ($products as $product) {
+		$colIndex = 1;
+		foreach ($fieldsToSelect as $field) {
+			// your conditional logic here...
+			$columnLetter = Coordinate::stringFromColumnIndex($colIndex);
+			$sheet->setCellValue($columnLetter . $rowIndex, $value);
+			$colIndex++;
+		}
+		$rowIndex++;
+	}
+	
             $value = '';
 
             switch ($field) {
@@ -765,7 +769,9 @@ class ProductExportController extends Controller
 						break;
 				}
 		
-				$sheet->setCellValueByColumnAndRow($colIndex++, $rowIndex, $value);
+				$columnLetter = Coordinate::stringFromColumnIndex($colIndex);
+				$sheet->setCellValue($columnLetter . $rowIndex, $value);
+
 			}
 			$rowIndex++;
 		}
