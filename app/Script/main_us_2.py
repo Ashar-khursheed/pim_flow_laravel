@@ -6,7 +6,7 @@ from slugify import slugify
 import anthropic
 import os
 from dotenv import load_dotenv
-
+import pymysql
 # UTF-8 setup
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
@@ -306,3 +306,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+# if __name__ == "__main__":
+#     name = input("Enter product/page name: ")
+#     keyword = input("Enter keyword: ")
+#     page_type = input("Enter page type (product, collection, etc.): ")
+
+#     result = generate_seo_fields(name, keyword, page_type)
+
+#     for field, value in result.items():
+#         print(f"{field}: {value}")
