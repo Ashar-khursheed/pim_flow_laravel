@@ -229,7 +229,7 @@ class ImportSeoDetailJob implements ShouldQueue
 					$pythonCmd = base_path('venv/bin/python');
 					// $pythonCmd = 'python3';
 				} elseif (env('APP_WEBSITE') == 'US') {
-					$pythonScriptPath = base_path('app/Script/main_us.py');
+					$pythonScriptPath = base_path('app/Script/main_us_2.py');
 					$pythonCmd = base_path('venv/bin/python');
 				} else {
 					$pythonScriptPath = base_path('app/Script/main_us.py');
@@ -355,80 +355,238 @@ class ImportSeoDetailJob implements ShouldQueue
 		}
 	}
 
+// 	/**
+// 	 * Generate schema based on SEO record type
+// 	 *
+// 	 * @param SeoManagement $seo
+// 	 * @return array
+// 	 */
+// 	private function generateSchema(SeoManagement $seo)
+// 	{
+// 		// Check if the type is 'Product' and relational_id is available
+// 		if ($seo->relational_type === 'App\Models\Product' && $seo->relational_id) {
+// 			// Fetch product data from products table
+// 			$product = Product::find($seo->relational_id);
+
+// 			if ($product) {
+// 				// Fetch currency and brand names using relationships
+// 				$currencyName = $product->currency ? $product->currency->title : 'USD'; // Default to 'USD' if no currency found
+// 				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; // Default to 'Default Brand' if no brand found
+
+// 				// Generate schema with product-specific details
+// 				return [
+// 					"@context" => "https://schema.org",
+// 					"@type" => "Product",
+// 					"url" => $seo->url,
+// 					"name" => $seo->meta_title,
+// 					"description" => $seo->meta_description,
+// 					"keywords" => $seo->tags,
+// 					"image" => [
+// 						"@type" => "ImageObject",
+// 						"url" => $seo->og_image_url,
+// 						"name" => $seo->og_image_name,
+// 						"description" => $seo->og_image_alt_text
+// 					],
+// 					"aggregateRating" => [
+// 						"@type" => "AggregateRating",
+// 						"ratingValue" => $seo->schema_rating,
+// 						"reviewCount" => $seo->schema_reviews_count
+// 					],
+// 					"offers" => [
+// 						"@type" => "Offer",
+// 						"priceCurrency" => $currencyName,
+// 						"price" => $product->price ?? 0, // Default to 0 if no price found
+// 						"url" => $seo->url,
+// 					],
+// 					"sku" => $product->sku ?? null, // SKU if available
+// 					"brand" => [
+// 						"@type" => "Brand",
+// 						"name" => $brandName
+// 					],
+// 					"availability" => "https://schema.org/" . ($product->availability ?? 'InStock'), // Default to 'InStock' if no availability found
+// 				];
+// 			}
+// 		}
+
+// 		// If not a product, return the generic WebPage schema
+// 		return [
+// 			"@context" => "https://schema.org",
+// 			"@type" => str_replace('App\\Models\\', '', $seo->relational_type) ?? 'WebPage',
+// 			"url" => $seo->url,
+// 			"name" => $seo->meta_title,
+// 			"description" => $seo->meta_description,
+// 			"keywords" => $seo->tags,
+// 			"image" => [
+// 				"@type" => "ImageObject",
+// 				"url" => $seo->og_image_url,
+// 				"name" => $seo->og_image_name,
+// 				"description" => $seo->og_image_alt_text
+// 			],
+// 			"aggregateRating" => [
+// 				"@type" => "AggregateRating",
+// 				"ratingValue" => $seo->schema_rating,
+// 				"reviewCount" => $seo->schema_reviews_count
+// 			]
+// 		];
+// 	}
+
+// 	/**
+// 	 * Handle a job failure.
+// 	 */
+// 	public function failed(\Throwable $exception): void
+// 	{
+// 		$error = $exception->getMessage().$exception->getTraceAsString();
+// 		logger(__("SEO Import Error").': '.$error);
+// 	}
+//}
+
 	/**
-	 * Generate schema based on SEO record type
-	 *
-	 * @param SeoManagement $seo
-	 * @return array
-	 */
-	private function generateSchema(SeoManagement $seo)
-	{
-		// Check if the type is 'Product' and relational_id is available
-		if ($seo->relational_type === 'App\Models\Product' && $seo->relational_id) {
-			// Fetch product data from products table
-			$product = Product::find($seo->relational_id);
+ * Generate schema based on SEO record type
+ *
+ * @param SeoManagement $seo
+ * @return array
+ */
+private function generateSchema(SeoManagement $seo)
+{
+    // Base schema properties that will be common across all types
+    $baseSchema = [
+        "@context" => "https://schema.org",
+        "url" => $seo->url,
+        "name" => $seo->meta_title,
+        "description" => $seo->meta_description,
+        "keywords" => $seo->primary_keyword . ($seo->tags ? ', ' . $seo->tags : ''),
+        "mainEntityOfPage" => [
+            "@type" => "WebPage",
+            "@id" => $seo->url
+        ]
+    ];
 
-			if ($product) {
-				// Fetch currency and brand names using relationships
-				$currencyName = $product->currency ? $product->currency->title : 'USD'; // Default to 'USD' if no currency found
-				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; // Default to 'Default Brand' if no brand found
+    // Add image data if available
+    if ($seo->og_image_url) {
+        $baseSchema["image"] = [
+            "@type" => "ImageObject",
+            "url" => $seo->og_image_url,
+            "name" => $seo->og_image_name,
+            "description" => $seo->og_image_alt_text
+        ];
+    }
 
-				// Generate schema with product-specific details
-				return [
-					"@context" => "https://schema.org",
-					"@type" => "Product",
-					"url" => $seo->url,
-					"name" => $seo->meta_title,
-					"description" => $seo->meta_description,
-					"keywords" => $seo->tags,
-					"image" => [
-						"@type" => "ImageObject",
-						"url" => $seo->og_image_url,
-						"name" => $seo->og_image_name,
-						"description" => $seo->og_image_alt_text
-					],
-					"aggregateRating" => [
-						"@type" => "AggregateRating",
-						"ratingValue" => $seo->schema_rating,
-						"reviewCount" => $seo->schema_reviews_count
-					],
-					"offers" => [
-						"@type" => "Offer",
-						"priceCurrency" => $currencyName,
-						"price" => $product->price ?? 0, // Default to 0 if no price found
-						"url" => $seo->url,
-					],
-					"sku" => $product->sku ?? null, // SKU if available
-					"brand" => [
-						"@type" => "Brand",
-						"name" => $brandName
-					],
-					"availability" => "https://schema.org/" . ($product->availability ?? 'InStock'), // Default to 'InStock' if no availability found
-				];
-			}
-		}
+    // Add ratings if available
+    if ($seo->schema_rating && $seo->schema_reviews_count) {
+        $baseSchema["aggregateRating"] = [
+            "@type" => "AggregateRating",
+            "ratingValue" => $seo->schema_rating,
+            "reviewCount" => $seo->schema_reviews_count
+        ];
+    }
 
-		// If not a product, return the generic WebPage schema
-		return [
-			"@context" => "https://schema.org",
-			"@type" => str_replace('App\\Models\\', '', $seo->relational_type) ?? 'WebPage',
-			"url" => $seo->url,
-			"name" => $seo->meta_title,
-			"description" => $seo->meta_description,
-			"keywords" => $seo->tags,
-			"image" => [
-				"@type" => "ImageObject",
-				"url" => $seo->og_image_url,
-				"name" => $seo->og_image_name,
-				"description" => $seo->og_image_alt_text
-			],
-			"aggregateRating" => [
-				"@type" => "AggregateRating",
-				"ratingValue" => $seo->schema_rating,
-				"reviewCount" => $seo->schema_reviews_count
-			]
-		];
-	}
+    // Check if the type is 'Product' and relational_id is available
+    if ($seo->relational_type === 'App\Models\Product' && $seo->relational_id) {
+        // Fetch product data from products table
+        $product = Product::find($seo->relational_id);
+
+        if ($product) {
+            // Fetch currency and brand data using relationships
+            $currencyName = $product->currency ? $product->currency->title : 'USD';
+            $brandName = $product->brand ? $product->brand->name : 'Default Brand';
+
+            // Product-specific schema
+            $productSchema = array_merge($baseSchema, [
+                "@type" => "Product",
+                "brand" => [
+                    "@type" => "Brand",
+                    "name" => $brandName
+                ],
+                "sku" => $product->sku ?? null,
+                "mpn" => $product->mpn ?? null,
+                "offers" => [
+                    "@type" => "Offer",
+                    "priceCurrency" => $currencyName,
+                    "price" => $product->price ?? 0,
+                    "url" => $seo->url,
+                    "availability" => "https://schema.org/" . ($product->availability ?? 'InStock'),
+                    "priceValidUntil" => date('Y-m-d', strtotime('+1 year'))
+                ]
+            ]);
+
+            // Add product categories if available
+            if ($product->categories && $product->categories->count() > 0) {
+                $productSchema["category"] = $product->categories->pluck('name')->implode(', ');
+            }
+
+            return $productSchema;
+        }
+    } elseif ($seo->relational_type === 'App\Models\Blog' && $seo->relational_id) {
+        // Blog-specific schema
+        $blog = Blog::find($seo->relational_id);
+        
+        if ($blog) {
+            return array_merge($baseSchema, [
+                "@type" => "BlogPosting",
+                "headline" => $seo->meta_title,
+                "author" => [
+                    "@type" => "Person",
+                    "name" => $blog->author_name ?? "Admin"
+                ],
+                "datePublished" => $blog->published_at ?? $blog->created_at,
+                "dateModified" => $blog->updated_at,
+                "articleSection" => $blog->category ? $blog->category->name : null
+            ]);
+        }
+    } elseif ($seo->relational_type === 'App\Models\Category' && $seo->relational_id) {
+        // Category-specific schema
+        return array_merge($baseSchema, [
+            "@type" => "ItemList",
+            "itemListElement" => $this->getCategoryProducts($seo->relational_id)
+        ]);
+    } elseif ($seo->relational_type === 'App\Models\Brand' && $seo->relational_id) {
+        // Brand-specific schema
+        $brand = Brand::find($seo->relational_id);
+        
+        if ($brand) {
+            return array_merge($baseSchema, [
+                "@type" => "Brand",
+                "logo" => $brand->logo ?? $seo->og_image_url
+            ]);
+        }
+    }
+
+    // Default to WebPage schema
+    return array_merge($baseSchema, [
+        "@type" => str_replace('App\\Models\\', '', $seo->relational_type) ?? 'WebPage'
+    ]);
+}
+
+/**
+ * Get product items for category schema
+ * 
+ * @param int $categoryId
+ * @return array
+ */
+private function getCategoryProducts($categoryId)
+{
+    $products = Product::where('category_id', $categoryId)
+                      ->orWhereHas('categories', function($query) use ($categoryId) {
+                          $query->where('categories.id', $categoryId);
+                      })
+                      ->take(10)
+                      ->get();
+    
+    $items = [];
+    foreach ($products as $index => $product) {
+        $items[] = [
+            "@type" => "ListItem",
+            "position" => $index + 1,
+            "item" => [
+                "@type" => "Product",
+                "name" => $product->name,
+                "url" => route('product.show', $product->slug ?? $product->id)
+            ]
+        ];
+    }
+    
+    return $items;
+}
 
 	/**
 	 * Handle a job failure.
@@ -437,5 +595,5 @@ class ImportSeoDetailJob implements ShouldQueue
 	{
 		$error = $exception->getMessage().$exception->getTraceAsString();
 		logger(__("SEO Import Error").': '.$error);
-	}
+	 }
 }
