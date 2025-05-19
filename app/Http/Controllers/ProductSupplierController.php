@@ -14,7 +14,7 @@ use App\Repository\ExcelRepository;
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
-use App\Jobs\ImportSupplierJob;
+use App\Jobs\ImportProductSupplierJob;
 
 class ProductSupplierController extends BaseController
 {
@@ -414,8 +414,8 @@ class ProductSupplierController extends BaseController
 		}
 		/* Validate request data */
 		$request->validate([
-			'range_from' => 'required|integer|min:1',
-			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+			'range_from' => 'integer|min:1',
+			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
 		$query = ProductSupplier::with(['product:id,name,sku', 'vendor:id,name']);
@@ -439,17 +439,18 @@ class ProductSupplierController extends BaseController
 			'SKU',
 			'Vendor Name',
 			'Vendor SKU',
-			'Warranty Information',
-			'Refund',
-			'Delivery Days',
 			'Cost Per Item',
+			'Selling Type',
 			'Additional Cost',
 			'Price',
 			'Sale Price',
+			'Inventory',
+			'In Stock',
+			'Delivery Days',
+			'Warranty Information',
+			'Refund',
 			'Final Cost Price'
 			'Margin',
-			'In Stock',
-			'Inventory',
 		];
 
 		/* Initialize spreadsheet */
@@ -480,7 +481,7 @@ class ProductSupplierController extends BaseController
 			$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
 			$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
 			$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
-		$sheet->setCellValue($col++ . $row, $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No'));
+			$sheet->setCellValue($col++ . $row, $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No'));
 			$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
 			$row++;
 		}
@@ -501,247 +502,245 @@ class ProductSupplierController extends BaseController
 		return $response;
 	}
 
-	/**
-	 * @OA\Post(
-	 *     path="/api/product-suppliers/import",
-	 *     summary="Import product suppliers from a CSV file",
-	 *     tags={"Product Suppliers"},
-	 *     @OA\RequestBody(
-	 *         required=true,
-	 *         @OA\MediaType(
-	 *             mediaType="multipart/form-data",
-	 *             @OA\Schema(
-	 *                 required={"file"},
-	 *                 @OA\Property(
-	 *                     property="file",
-	 *                     type="string",
-	 *                     format="binary",
-	 *                     description="CSV file (.csv) max 10MB"
-	 *                 ),
-	 *                 @OA\Property(
-	 *                     property="chunk_size",
-	 *                     type="integer",
-	 *                     description="Optional chunk size (default is 100)"
-	 *                 )
-	 *             )
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="The import process has been scheduled successfully. Please track it under import log.")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="The uploaded CSV file does not contain any records.")
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=403,
-	 *         description="Forbidden",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=false),
-	 *             @OA\Property(property="message", type="string", example="You don't have permission to access this module.")
-	 *         )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function import(Request $request)
-	{
-		//  if (!auth()->user()->can('import supplier')) {
-		//      return response()->json([
-		//          'success' => false,
-		//          'message' => "You don't have permission to access this module.",
-		//      ]);
-		//  }
+	// /**
+	//  * @OA\Post(
+	//  *     path="/api/product-suppliers/import",
+	//  *     summary="Import product suppliers from an Excel file",
+	//  *     tags={"Product Suppliers"},
+	//  *     @OA\RequestBody(
+	//  *         required=true,
+	//  *         @OA\MediaType(
+	//  *             mediaType="multipart/form-data",
+	//  *             @OA\Schema(
+	//  *                 required={"upload_file"},
+	//  *                 @OA\Property(property="upload_file", type="string", format="binary", description="Excel file (.xlsx) max 2MB")
+	//  *             )
+	//  *         )
+	//  *     ),
+	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	//  *     security={{"bearerAuth":{}}}
+	//  * )
+	//  */
+	// public function import(Request $request)
+	// {
+	// 	if (!auth()->user()->can('import product suppliers')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+	// 	try {
+	// 		/* Validate request data */
+	// 		$request->validate([
+	// 			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+	// 		]);
 
-		try {
-			 // Validate request data
-			$request->validate([
-				'file' => 'required|file|mimes:csv,txt|max:10240',
-				'chunk_size' => 'nullable|integer|min:1|max:1000',
-			]);
+	// 		$requiredHeader = [
+	// 			'ID',
+	// 			'Product name',
+	// 			'SKU',
+	// 			'Vendor Name',
+	// 			'Vendor SKU',
+	// 			'Warranty Information',
+	// 			'Refund',
+	// 			'Delivery Days',
+	// 			'Cost Per Item',
+	// 			'Additional Cost',
+	// 			'Price',
+	// 			'Sale Price',
+	// 			'Final Cost Price'
+	// 			'Margin',
+	// 			'In Stock',
+	// 			'Inventory',
+	// 		];
 
-			$mandatoryHeaders = ['ID', 'SKU', 'Vendor Name'];
-			$chunkSize = $request->input('chunk_size', 100);
-			$file = $request->file('file');
+	// 		$file = $request->file('upload_file');
+	// 		$spreadsheet = $this->excel->loadFile($file->getRealPath());
+	// 		$sheet = $spreadsheet->getActiveSheet();
+	// 		$data = $sheet->toArray();
+	// 		$header = array_shift($data);
 
-			 // Parse CSV
-			$csv = Reader::createFromPath($file->getPathname(), 'r');
-			$csv->setHeaderOffset(0);
-			$header = $csv->getHeader();
-			$records = iterator_to_array($csv->getRecords());
-			$totalRows = count($records);
+	// 		/* Check required header */
+	// 		$missingHeaders = array_diff($requiredHeader, $header);
+	// 		if (!empty($missingHeaders)) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
+	// 			]);
+	// 		}
 
-			 // Check mandatory headers
-			$missingHeaders = array_diff($mandatoryHeaders, $header);
-			if (!empty($missingHeaders)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders),
-				]);
-			}
+	// 		$totalRecords = count($data);
+	// 		if ($totalRecords == 0) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
+	// 			]);
+	// 		}
 
-			if ($totalRows == 0) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again.',
-				]);
-			}
+	// 		/* Create batch */
+	// 		$batch = Bus::batch([])
+	// 		->before(function (Batch $batch) use ($totalRecords) {
+	// 			$descArray = [
+	// 				"Total Count" => $totalRecords,
+	// 				"Success Count" => 0,
+	// 				"Failed Count" => 0,
+	// 				"Errors" => []
+	// 			];
+	// 			/* Save transaction log */
+	// 			$log = new TransactionLog();
+	// 			$log->module = "Product Supplier";
+	// 			$log->action = "Import";
+	// 			$log->identifier = $batch->id;
+	// 			$log->status = 'In-progress';
+	// 			$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+	// 			$log->created_by = auth()->id() ?? null;
+	// 			$log->created_at = now();
+	// 			$log->save();
+	// 		})
+	// 		->finally(function (Batch $batch) {
+	// 			$log = TransactionLog::where('identifier', $batch->id)->first();
+	// 			TransactionLog::where('id', $log->id)->update([
+	// 				'status' => 'Completed',
+	// 			]);
+	// 		})
+	// 		->name("Import Product Supplier")
+	// 		->dispatch();
 
-			$fileFormatArray = [
-				'ID' => 'id',
-				'SKU' => 'sku',
-				'Vendor SKU' => 'vendor_sku',
-				'Vendor Name' => 'vendor_name',
-				'Warranty Information' => 'warranty_information',
-				'Refund' => 'refund',
-				'Delivery Days' => 'delivery_days',
-				'Cost Per Item' => 'cost_per_item',
-				'Sale Price' => 'sale_price',
-				'Price' => 'price',
-				'Margin' => 'margin',
-				'Inventory' => 'inventory',
-				'Additional Cost' => 'additional_cost',
-				'Final Cost Price' => 'final_cost_price',
-			];
+	// 		/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+	// 		$chunkSize = 50;
+	// 		$chunks = array_chunk($data, $chunkSize);
 
-			 // Prepare jobs
-			$chunkedJobs = [];
-			$chunks = array_chunk($records, $chunkSize);
-			foreach ($chunks as $chunk) {
-				$data = [
-					'header' => $header,
-					'chunk' => $chunk,
-					'userId' => auth()->id(),
-					'fileFormatArray' => $fileFormatArray,
-					 // batch_id will be injected later from Batch
-				];
-				$chunkedJobs[] = new ImportSupplierJob($data);
-			}
+	// 		foreach ($chunks as $chunk) {
+	// 			$data = [
+	// 				'header' => $header,
+	// 				'chunk' => $chunk
+	// 			];
+	// 			$batch->options['queue'] = 'JOB_SUPPLIERS';
+	// 			$batch->add(new ImportProductSupplierJob($data));
+	// 		}
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+	// 		]);
+	// 	} catch(\Exception $exception) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => $exception->getMessage()
+	// 		]);
+	// 	}
+	// }
 
-			 // Create and dispatch batch
-			$batch = Bus::batch($chunkedJobs)
-			->before(function (Batch $batch) use ($totalRows) {
-				$descArray = [
-					"Total Count" => $totalRows,
-					"Success Count" => 0,
-					"Failed Count" => 0,
-					"Errors" => [],
-				];
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/product-suppliers/template",
+	//  *     summary="Download import template",
+	//  *     description="Downloads an Excel template for product supplier imports",
+	//  *     tags={"Product Suppliers"},
+	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	//  *     security={{"bearerAuth":{}}}
+	//  * )
+	//  */
+	// public function downloadTemplate()
+	// {
+	// 	/* Initialize spreadsheet */
+	// 	$spreadsheet = $this->excel->newSpreadsheet();
+	// 	$spreadsheet->setActiveSheetIndex(0);
+	// 	$sheet = $spreadsheet->getActiveSheet();
 
-				dd("123");
-				$log = new TransactionLog();
-				$log->module = "Product Supplier";
-				$log->action = "Import";
-				$log->identifier = $batch->id;
-				$log->status = 'In-progress';
-				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-				$log->created_by = auth()->id() ?? null;
-				$log->created_at = now();
-				$log->save();
-			})
-			->finally(function (Batch $batch) {
-				$log = TransactionLog::where('identifier', $batch->id)->first();
-				if ($log) {
-					TransactionLog::where('id', $log->id)->update([
-						'status' => 'Completed',
-					]);
-				}
-			})
-			->name('Import Suppliers')
-			->onQueue('JOB6')
-			->dispatch();
+	// 	/* Set headers */
+	// 	$this->excel->setHeader($sheet, $header);
 
-			return response()->json([
-				'success' => true,
-				'message' => 'The import process has been scheduled successfully. Please track it under import log.',
-			]);
+	// 	/* Populate data */
+	// 	$row = 2;
+	// 	foreach ($suppliers as $supplier) {
+	// 		$col = 'A';
 
-		} catch (\Exception $e) {
-			return response()->json([
-				'success' => false,
-				'message' => $e->getMessage(),
-			]);
-		}
-	}
+	// 		/* Set product details */
+	// 		$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->product->name ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->product->sku ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->warranty_information ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->refund ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->delivery_days ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
+	// 		$sheet->setCellValue($col++ . $row, $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No'));
+	// 		$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
+	// 		$row++;
+	// 	}
 
-	/**
-	 * @OA\Get(
-	 *     path="/api/product-suppliers/template",
-	 *     operationId="downloadSupplierTemplate",
-	 *     tags={"Product Suppliers"},
-	 *     summary="Download import template",
-	 *     description="Downloads a CSV template for product supplier imports",
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="CSV template download",
-	 *         @OA\MediaType(mediaType="text/csv")
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function downloadTemplate()
-	{
-		// Create CSV
-		$csv = Writer::createFromFileObject(new SplTempFileObject());
+	// 	/* Generate response */
+	// 	$response = new StreamedResponse(function () use ($spreadsheet) {
+	// 		$writer = new Xlsx($spreadsheet);
+	// 		$writer->save('php://output');
+	// 	});
 
-		// Add headers
-		$csv->insertOne([
-			'ID',
-			'SKU',
-			'Vendor SKU',
-			'Vendor ID',
-			'Warranty Information',
-			'Refund',
-			'Delivery Days',
-			'Cost Per Item',
-			'Sale Price',
-			'Price',
-			'Margin',
-			'Inventory',
-			'Additional Cost',
-			'Final Cost Price'
-		]);
+	// 	$fileName = strtolower(str_replace(' ', '_', trim("products_suppliers_{$request->range_from}-{$request->range_to} ".date('Y-m-d').".xlsx")));
 
-		// Add sample row
-		$csv->insertOne([
-			'', // Leave ID blank for new entries
-			'PROD001',
-			'V-001',
-			'1',
-			'12 months warranty',
-			'30 days refund policy',
-			'3-5',
-			'10.50',
-			'15.75',
-			'19.99',
-			'25',
-			'100',
-			'1.50',
-			'12.00'
-		]);
+	// 	$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+	// 	$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+	// 		ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
+	// 	));
 
-		// Generate filename
-		$filename = 'supplier_import_template.csv';
+	// 	return $response;
+	// 	// Create CSV
+	// 	$csv = Writer::createFromFileObject(new SplTempFileObject());
 
-		// Set headers for download
-		$headers = [
-			'Content-Type' => 'text/csv',
-			'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-			'Cache-Control' => 'no-cache, no-store, must-revalidate',
-			'Pragma' => 'no-cache',
-			'Expires' => '0'
-		];
+	// 	// Add headers
+	// 	$csv->insertOne([
+	// 		'ID',
+	// 		'SKU',
+	// 		'Vendor SKU',
+	// 		'Vendor ID',
+	// 		'Warranty Information',
+	// 		'Refund',
+	// 		'Delivery Days',
+	// 		'Cost Per Item',
+	// 		'Sale Price',
+	// 		'Price',
+	// 		'Margin',
+	// 		'Inventory',
+	// 		'Additional Cost',
+	// 		'Final Cost Price'
+	// 	]);
 
-		// Return the CSV file as a download
-		return response($csv->getContent(), 200, $headers);
-	}
+	// 	// Add sample row
+	// 	$csv->insertOne([
+	// 		'', // Leave ID blank for new entries
+	// 		'PROD001',
+	// 		'V-001',
+	// 		'1',
+	// 		'12 months warranty',
+	// 		'30 days refund policy',
+	// 		'3-5',
+	// 		'10.50',
+	// 		'15.75',
+	// 		'19.99',
+	// 		'25',
+	// 		'100',
+	// 		'1.50',
+	// 		'12.00'
+	// 	]);
+
+	// 	// Generate filename
+	// 	$filename = 'supplier_import_template.csv';
+
+	// 	// Set headers for download
+	// 	$headers = [
+	// 		'Content-Type' => 'text/csv',
+	// 		'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+	// 		'Cache-Control' => 'no-cache, no-store, must-revalidate',
+	// 		'Pragma' => 'no-cache',
+	// 		'Expires' => '0'
+	// 	];
+
+	// 	// Return the CSV file as a download
+	// 	return response($csv->getContent(), 200, $headers);
+	// }
 }
