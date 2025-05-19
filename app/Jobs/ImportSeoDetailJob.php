@@ -232,7 +232,7 @@ class ImportSeoDetailJob implements ShouldQueue
 					$pythonScriptPath = base_path('app/Script/main_us_2.py');
 					$pythonCmd = base_path('venv/bin/python');
 				} else {
-					$pythonScriptPath = base_path('app/Script/main_us.py');
+					$pythonScriptPath = base_path('app/Script/main_us_2.py');
 					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
 				}
 
