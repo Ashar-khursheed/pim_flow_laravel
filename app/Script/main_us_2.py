@@ -27,9 +27,9 @@ class DBConfig:
         }
 
 
-# Configuration
+# Configuration - FIXED API KEY USAGE
 client = anthropic.Anthropic(
-    api_key=os.getenv["CLAUDE_API_KEY"]
+    api_key=os.getenv('CLAUDE_API_KEY')  # Fixed: changed [] to () for getenv
 )
 
 def generate_seo_fields(name, keyword, page_type):
@@ -213,9 +213,11 @@ def generate_seo_fields(name, keyword, page_type):
             timeout=30.0
         )
         if not response.content or not isinstance(response.content, list) or not response.content[0].text:
+            print("Error: Empty response from Claude API", file=sys.stderr)
             return default_seo_fields(name, keyword)
         return parse_response(response.content[0].text)
     except Exception as e:
+        print(f"Claude API Error: {str(e)}", file=sys.stderr)
         return default_seo_fields(name, keyword)
 
 def parse_response(text):
@@ -260,6 +262,9 @@ def default_seo_fields(name, keyword):
 
 def main():
     try:
+        # For debugging
+        print("Script started", file=sys.stderr)
+        
         data = json.load(sys.stdin)
         required_keys = ["relational_id", "relational_name", "relational_type", "primary_keyword"]
         missing_keys = [k for k in required_keys if k not in data]
@@ -267,6 +272,9 @@ def main():
             raise ValueError(f"Missing required keys in input JSON: {missing_keys}")
 
         keyword = data.get("primary_keyword") or data["relational_name"]
+
+        # For debugging
+        print(f"Processing: {data['relational_name']} with keyword: {keyword}", file=sys.stderr)
 
         seo_fields = generate_seo_fields(
             data["relational_name"],
@@ -283,6 +291,9 @@ def main():
         if not data.get("url"):
             result["url"] = slugify(data["relational_name"])
 
+        # For debugging
+        print("Script completed successfully", file=sys.stderr)
+            
         print(json.dumps(result, indent=2, ensure_ascii=False))
 
     except json.JSONDecodeError as e:
