@@ -32,6 +32,7 @@ client = anthropic.Anthropic(
     api_key=os.getenv('CLAUDE_API_KEY')  # Fixed: changed [] to () for getenv
 )
 
+
 def generate_seo_fields(name, keyword, page_type):
     prompt = f"""
     Generate SEO fields for a {page_type} page about {name} (Keyword: {keyword}) for the US market, branded as Horeca Store. Follow these rules strictly:
