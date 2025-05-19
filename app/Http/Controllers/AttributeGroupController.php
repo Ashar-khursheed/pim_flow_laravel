@@ -222,7 +222,7 @@ class AttributeGroupController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$record = AttributeGroup::with('categories:id,name', 'groupsAttributes:id,name,attribute_group_id')->find($id);
+		$record = AttributeGroup::with('categories:id,name', 'groupsAttributes:id,name,code,attribute_group_id')->find($id);
 
 		if (!$record) {
 			return response()->json([
