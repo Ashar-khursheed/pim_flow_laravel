@@ -1,22 +1,36 @@
 <?php
-// app/Http/Controllers/Api/ProductSupplierController.php
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\ProductSupplier;
 use Illuminate\Http\Request;
-use App\Models\TransactionLog;
-use App\Jobs\ImportSupplierJob;
 use Illuminate\Support\Facades\Bus;
-use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
-use League\Csv\Reader;
-use League\Csv\Writer;
-use SplTempFileObject;
+use Illuminate\Bus\Batch;
 
-class ProductSupplierController extends Controller
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use Symfony\Component\HttpFoundation\ResponseHeaderBag;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Repository\ExcelRepository;
+
+use App\Models\ProductSupplier;
+use App\Models\TransactionLog;
+
+use App\Jobs\ImportSupplierJob;
+
+class ProductSupplierController extends BaseController
 {
+	/**
+	 * The excel repository instance.
+	 */
+	protected $excel;
+
+	/**
+	 * Create a new job instance.
+	 */
+	public function __construct(ExcelRepository $excel)
+	{
+		$this->excel = $excel;
+	}
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/product-suppliers",
@@ -47,10 +61,10 @@ class ProductSupplierController extends Controller
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"sku", "vendor_id", "product_id"},
-	 *             @OA\Property(property="sku", type="string"),
-	 *             @OA\Property(property="vendor_sku", type="string"),
+	 *             required={"vendor_id", "product_id"},
+	 *             @OA\Property(property="product_id", type="integer"),
 	 *             @OA\Property(property="vendor_id", type="integer"),
+	 *             @OA\Property(property="vendor_sku", type="string"),
 	 *             @OA\Property(property="warranty_information", type="string"),
 	 *             @OA\Property(property="refund", type="string"),
 	 *             @OA\Property(property="delivery_days", type="string"),
@@ -58,9 +72,10 @@ class ProductSupplierController extends Controller
 	 *             @OA\Property(property="sale_price", type="number", format="float"),
 	 *             @OA\Property(property="price", type="number", format="float"),
 	 *             @OA\Property(property="margin", type="number", format="float"),
-	 *             @OA\Property(property="inventory", type="integer"),
 	 *             @OA\Property(property="additional_cost", type="number", format="float"),
-	 *             @OA\Property(property="final_cost_price", type="number", format="float")
+	 *             @OA\Property(property="final_cost_price", type="number", format="float"),
+	 *             @OA\Property(property="in_stock", type="integer"),
+	 *             @OA\Property(property="inventory", type="integer")
 	 *         )
 	 *     ),
 	 *     @OA\Response(
@@ -74,10 +89,9 @@ class ProductSupplierController extends Controller
 	public function store(Request $request)
 	{
 		$data = $request->validate([
-			'sku' => 'required|string',
-			'vendor_sku' => 'required|string',
+			'product_id' => 'required|integer',
 			'vendor_id' => 'required|integer',
-			'product_id' => 'nullable|integer', // changed to nullable
+			'vendor_sku' => 'required|string',
 			'warranty_information' => 'nullable|string',
 			'refund' => 'nullable|string',
 			'delivery_days' => 'nullable|string',
@@ -85,33 +99,21 @@ class ProductSupplierController extends Controller
 			'sale_price' => 'nullable|numeric',
 			'price' => 'nullable|numeric',
 			'margin' => 'nullable|numeric',
-			'inventory' => 'nullable|integer',
 			'additional_cost' => 'nullable|numeric',
 			'final_cost_price' => 'nullable|numeric',
+			'in_stock' => 'nullable|integer',
+			'inventory' => 'nullable|integer',
 		]);
 
 		// Check if a record with the same sku and vendor_id already exists
-		$existingEntry = ProductSupplier::where('sku', $data['sku'])
+		$existingEntry = ProductSupplier::where('product_id', $data['product_id'])
 		->where('vendor_id', $data['vendor_id'])
 		->first();
 
 		if ($existingEntry) {
 			return response()->json([
-				'message' => 'A product supplier with the same SKU and Vendor ID already exists.',
+				'message' => 'A product supplier with the Vendor ID already exists.',
 			], 422);
-		}
-
-		// Automatically fetch product_id if not provided
-		if (empty($data['product_id']) && !empty($data['sku'])) {
-			$product = \DB::table('ec_products')->where('sku', $data['sku'])->first();
-
-			if (!$product) {
-				return response()->json([
-					'message' => 'No product found with the given SKU.',
-				], 422);
-			}
-
-			$data['product_id'] = $product->id;
 		}
 
 		// Validate price logic
@@ -123,6 +125,8 @@ class ProductSupplierController extends Controller
 				'message' => 'Price cannot be less than sale price.',
 			], 422);
 		}
+
+		$data['created_by'] = auth()->id();
 
 		return ProductSupplier::create($data);
 	}
@@ -167,9 +171,8 @@ class ProductSupplierController extends Controller
    		return [
    			'id' => $supplier->id,
    			'product_id' => $supplier->product_id,
-   			'sku' => $supplier->sku,
-   			'vendor_sku' => $supplier->vendor_sku,
    			'vendor_id' => $supplier->vendor_id,
+   			'vendor_sku' => $supplier->vendor_sku,
    			'vendor_name' => $supplier->vendor ? $supplier->vendor->name : null,
    			'warranty_information' => $supplier->warranty_information,
    			'refund' => $supplier->refund,
@@ -298,8 +301,36 @@ class ProductSupplierController extends Controller
 			return response()->json(['message' => 'Product supplier not found'], 404);
 		}
 
+		$data = $request->validate([
+			'vendor_sku' => 'required|string',
+			'warranty_information' => 'nullable|string',
+			'refund' => 'nullable|string',
+			'delivery_days' => 'nullable|string',
+			'cost_per_item' => 'nullable|numeric',
+			'sale_price' => 'nullable|numeric',
+			'price' => 'nullable|numeric',
+			'margin' => 'nullable|numeric',
+			'additional_cost' => 'nullable|numeric',
+			'final_cost_price' => 'nullable|numeric',
+			'in_stock' => 'nullable|integer',
+			'inventory' => 'nullable|integer',
+		]);
+
+		// Validate price logic
+		if (
+			isset($data['price'], $data['sale_price']) &&
+			$data['price'] < $data['sale_price']
+		) {
+			return response()->json([
+				'message' => 'Price cannot be less than sale price.',
+			], 422);
+		}
+
+		$data['updated_by'] = auth()->id();
+
+
 		// Update the supplier with new data
-		$supplier->update($request->all());
+		$supplier->update($data);
 
 		return response()->json($supplier);
 	}
@@ -353,6 +384,121 @@ class ProductSupplierController extends Controller
 		$supplier->delete();
 
 		return response()->json(['message' => 'Deleted successfully']);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/product-suppliers/export",
+	 *     summary="Export product suppliers data to Excel",
+	 *     tags={"Product Suppliers"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"range_from", "range_to"},
+	 *             @OA\Property(property="product_id", type="integer", example=1, description="Filter by product ID"),
+	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function export(Request $request)
+	{
+		if (!auth()->user()->can('export product suppliers')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+		/* Validate request data */
+		$request->validate([
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
+		]);
+
+		$query = ProductSupplier::with(['product:id,name,sku', 'vendor:id,name']);
+
+		if ($request->has('product_id')) {
+			$query->where('product_id', $request->product_id);
+		}
+
+		$suppliers = $query->get();
+
+		if ($suppliers->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No supplier exist for product.'
+			]);
+		}
+
+		$header = [
+			'ID',
+			'Product name',
+			'SKU',
+			'Vendor Name',
+			'Vendor SKU',
+			'Warranty Information',
+			'Refund',
+			'Delivery Days',
+			'Cost Per Item',
+			'Additional Cost',
+			'Price',
+			'Sale Price',
+			'Final Cost Price'
+			'Margin',
+			'In Stock',
+			'Inventory',
+		];
+
+		/* Initialize spreadsheet */
+		$spreadsheet = $this->excel->newSpreadsheet();
+		$spreadsheet->setActiveSheetIndex(0);
+		$sheet = $spreadsheet->getActiveSheet();
+
+		/* Set headers */
+		$this->excel->setHeader($sheet, $header);
+
+		/* Populate data */
+		$row = 2;
+		foreach ($suppliers as $supplier) {
+			$col = 'A';
+
+			/* Set product details */
+			$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->product->name ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->product->sku ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->warranty_information ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->refund ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->delivery_days ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
+		$sheet->setCellValue($col++ . $row, $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No'));
+			$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
+			$row++;
+		}
+
+		/* Generate response */
+		$response = new StreamedResponse(function () use ($spreadsheet) {
+			$writer = new Xlsx($spreadsheet);
+			$writer->save('php://output');
+		});
+
+		$fileName = strtolower(str_replace(' ', '_', trim("products_suppliers_{$request->range_from}-{$request->range_to} ".date('Y-m-d').".xlsx")));
+
+		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
+			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
+		));
+
+		return $response;
 	}
 
 	/**
@@ -525,112 +671,6 @@ class ProductSupplierController extends Controller
 				'message' => $e->getMessage(),
 			]);
 		}
-	}
-
-	/**
-	 * @OA\Get(
-	 *     path="/api/product-suppliers/export",
-	 *     operationId="exportProductSuppliers",
-	 *     tags={"Product Suppliers"},
-	 *     summary="Export product suppliers to CSV",
-	 *     description="Exports all product suppliers to a CSV file",
-	 *     @OA\Parameter(
-	 *         name="vendor_id",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Filter by vendor ID",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="product_id",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Filter by product ID",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="CSV file download",
-	 *         @OA\MediaType(mediaType="text/csv")
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function export(Request $request)
-	{
-		// Create query with filters
-		$query = ProductSupplier::query();
-
-		if ($request->has('vendor_id')) {
-			$query->where('vendor_id', $request->vendor_id);
-		}
-
-		if ($request->has('product_id')) {
-			$query->where('product_id', $request->product_id);
-		}
-
-		// Load relationships
-		$suppliers = $query->with('vendor')->get();
-
-		// Create CSV
-		$csv = Writer::createFromFileObject(new SplTempFileObject());
-
-		// Add headers
-		$csv->insertOne([
-			'ID',
-			'SKU',
-			'Vendor SKU',
-			'Vendor ID',
-			'Vendor Name',
-			'Product ID',
-			'Warranty Information',
-			'Refund',
-			'Delivery Days',
-			'Cost Per Item',
-			'Sale Price',
-			'Price',
-			'Margin',
-			'Inventory',
-			'Additional Cost',
-			'Final Cost Price'
-		]);
-
-		// Add rows
-		foreach ($suppliers as $supplier) {
-			$csv->insertOne([
-				$supplier->id,
-				$supplier->sku,
-				$supplier->vendor_sku,
-				$supplier->vendor_id,
-				$supplier->vendor ? $supplier->vendor->name : '',
-				$supplier->product_id,
-				$supplier->warranty_information,
-				$supplier->refund,
-				$supplier->delivery_days,
-				$supplier->cost_per_item,
-				$supplier->sale_price,
-				$supplier->price,
-				$supplier->margin,
-				$supplier->inventory,
-				$supplier->additional_cost,
-				$supplier->final_cost_price
-			]);
-		}
-
-		// Generate filename with date
-		$filename = 'product_suppliers_' . date('Y-m-d') . '.csv';
-
-		// Set headers for download
-		$headers = [
-			'Content-Type' => 'text/csv',
-			'Content-Disposition' => 'attachment; filename="' . $filename . '"',
-			'Cache-Control' => 'no-cache, no-store, must-revalidate',
-			'Pragma' => 'no-cache',
-			'Expires' => '0'
-		];
-
-		// Return the CSV file as a download
-		return response($csv->getContent(), 200, $headers);
 	}
 
 	/**
