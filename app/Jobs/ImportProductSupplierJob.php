@@ -54,9 +54,9 @@ class ImportProductSupplierJob implements ShouldQueue
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
 
-		$deliveryTimeOptions = app_constants('DELIVERY_DAYS')
-		$warrantyOptions = app_constants('WARRANTY_OPTIONS')
-		$refundPeriods = app_constants('REFUND_PERIODS')
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
+		$refundPeriods = app_constants('REFUND_PERIODS');
 
 		$errorArray = [];
 		$success = 0;

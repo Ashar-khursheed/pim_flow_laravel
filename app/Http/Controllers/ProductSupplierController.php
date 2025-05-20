@@ -121,7 +121,13 @@ class ProductSupplierController extends BaseController
 
 		$data['created_by'] = auth()->id();
 
-		return ProductSupplier::create($data);
+		$record = ProductSupplier::create($data);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_create"),
+			'data' => $record
+		]);
 	}
 
 	/**
@@ -174,7 +180,11 @@ class ProductSupplierController extends BaseController
 			];
 		});
 
-		return response()->json($response);
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_dtl"),
+			'data' => $response
+		]);
 	}
 
 	/**
@@ -295,11 +305,15 @@ class ProductSupplierController extends BaseController
 
 		$data['updated_by'] = auth()->id();
 
-
 		// Update the supplier with new data
 		$supplier->update($data);
 
-		return response()->json($supplier);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_update"),
+			'data' => $supplier
+		]);
 	}
 
 	/**
@@ -339,7 +353,10 @@ class ProductSupplierController extends BaseController
 
 		$supplier->delete();
 
-		return response()->json(['message' => 'Deleted successfully']);
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_dlt")
+		], 200);
 	}
 
 	/**
@@ -377,9 +394,9 @@ class ProductSupplierController extends BaseController
 			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		$deliveryTimeOptions = app_constants('DELIVERY_DAYS')
-		$warrantyOptions = app_constants('WARRANTY_OPTIONS')
-		$refundPeriods = app_constants('REFUND_PERIODS')
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
+		$refundPeriods = app_constants('REFUND_PERIODS');
 
 		$query = Product::with([
 			'unitOfMeasurement:id,name',
