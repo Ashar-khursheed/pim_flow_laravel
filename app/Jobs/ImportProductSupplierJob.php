@@ -54,6 +54,34 @@ class ImportProductSupplierJob implements ShouldQueue
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
 
+		$deliveryTimeOptions = [
+			'2 to 3 Days',
+			'5 to 7 Days',
+			'10 to 12 Days',
+			'3 to 4 Weeks',
+			'6 Weeks',
+			'8 to 10 Weeks',
+			'12 Weeks'
+		];
+
+
+		$warrantyOptions = [
+			'1 Month',
+			'2 Months',
+			'3 Months',
+			'6 Months',
+			'1 Year',
+			'2 Years',
+			'3 Years',
+			'5 Years',
+			'10 Years',
+			'Lifetime Warranty'
+		];
+
+		$refundPeriods = [
+			'7 Days', '14 Days', '30 Days', '60 Days', '90 Days'
+		];
+
 		$errorArray = [];
 		$success = 0;
 		$failed = 0;
@@ -130,13 +158,24 @@ class ImportProductSupplierJob implements ShouldQueue
 				$existingSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)->first();
 			}
 
+			if (!in_array($delivery_days, $deliveryTimeOptions)) {
+				$rowErrors[] = "Invalid Delivery Days: '$delivery_days'.";
+			}
+
+			if (!in_array($warranty_information, $warrantyOptions)) {
+				$rowErrors[] = "Invalid Warranty Information: '$warranty_information'.";
+			}
+
+			if (!in_array($refund, $refundPeriods)) {
+				$rowErrors[] = "Invalid Refund Period: '$refund'.";
+			}
+
 			/* If errors exist, log and continue to next row */
 			if (!empty($rowErrors)) {
 				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;
 			}
-
 
 			/* Cast to float */
 			$cost_per_item = (float) $cost_per_item;
