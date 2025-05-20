@@ -6,18 +6,30 @@ from slugify import slugify
 import anthropic
 import os
 from dotenv import load_dotenv
-
+import pymysql
 # UTF-8 setup
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
 
-load_dotenv()
+load_dotenv(dotenv_path='.env')  # Adjust path if needed
 
-# Configuration
+class DBConfig:
+    @property
+    def connection(self):
+        return {
+            'host': os.getenv('DB_HOST'),
+            'user': os.getenv('DB_USERNAME'),
+            'password': os.getenv('DB_PASSWORD'),
+            'database': os.getenv('DB_DATABASE'),
+            'charset': 'utf8mb4',
+            'cursorclass': pymysql.cursors.DictCursor
+        }
+
+
+# Configuration - FIXED API KEY USAGE
 client = anthropic.Anthropic(
-    api_key=os.environ["CLAUDE_API_KEY"]
-    # Removed the explicit base_url
+    api_key=os.getenv('CLAUDE_API_KEY')  # Fixed: changed [] to () for getenv
 )
 
 def generate_seo_fields(name, keyword, page_type):

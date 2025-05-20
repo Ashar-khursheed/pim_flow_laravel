@@ -682,7 +682,7 @@ class ImportSeoDetailJob implements ShouldQueue
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
 				if (env('APP_WEBSITE') == 'UAE') {
-					$pythonScriptPath = base_path('app/Script/main_uae.py');
+					$pythonScriptPath = base_path('app/Script/main_uae_2.py');
 					$pythonCmd = base_path('venv/bin/python');
 				} elseif (env('APP_WEBSITE') == 'US') {
 					$pythonScriptPath = base_path('app/Script/main_us_2.py');
