@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
@@ -84,9 +85,6 @@ class ProductSupplierController extends BaseController
 			'product_id' => 'required|integer',
 			'vendor_id' => 'required|integer',
 			'vendor_sku' => 'required|string',
-			'warranty_information' => 'nullable|string',
-			'refund' => 'nullable|string',
-			'delivery_days' => 'nullable|string',
 			'cost_per_item' => 'nullable|numeric',
 			'sale_price' => 'nullable|numeric',
 			'price' => 'nullable|numeric',
@@ -95,6 +93,9 @@ class ProductSupplierController extends BaseController
 			'final_cost_price' => 'nullable|numeric',
 			'in_stock' => 'nullable|integer',
 			'inventory' => 'nullable|integer',
+			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'refund' => ['nullable', Rule::in(app_constants('REFUND_PERIODS'))],
 		]);
 
 		// Check if a record with the same sku and vendor_id already exists
@@ -269,9 +270,6 @@ class ProductSupplierController extends BaseController
 
 		$data = $request->validate([
 			'vendor_sku' => 'required|string',
-			'warranty_information' => 'nullable|string',
-			'refund' => 'nullable|string',
-			'delivery_days' => 'nullable|string',
 			'cost_per_item' => 'nullable|numeric',
 			'sale_price' => 'nullable|numeric',
 			'price' => 'nullable|numeric',
@@ -280,6 +278,9 @@ class ProductSupplierController extends BaseController
 			'final_cost_price' => 'nullable|numeric',
 			'in_stock' => 'nullable|integer',
 			'inventory' => 'nullable|integer',
+			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'refund' => ['nullable', Rule::in(app_constants('REFUND_PERIODS'))],
 		]);
 
 		// Validate price logic
@@ -376,33 +377,9 @@ class ProductSupplierController extends BaseController
 			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		$deliveryTimeOptions = [
-			'2 to 3 Days',
-			'5 to 7 Days',
-			'10 to 12 Days',
-			'3 to 4 Weeks',
-			'6 Weeks',
-			'8 to 10 Weeks',
-			'12 Weeks'
-		];
-
-
-		$warrantyOptions = [
-			'1 Month',
-			'2 Months',
-			'3 Months',
-			'6 Months',
-			'1 Year',
-			'2 Years',
-			'3 Years',
-			'5 Years',
-			'10 Years',
-			'Lifetime Warranty'
-		];
-
-		$refundPeriods = [
-			'7 Days', '14 Days', '30 Days', '60 Days', '90 Days'
-		];
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS')
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS')
+		$refundPeriods = app_constants('REFUND_PERIODS')
 
 		$query = Product::with([
 			'unitOfMeasurement:id,name',

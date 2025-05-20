@@ -54,33 +54,9 @@ class ImportProductSupplierJob implements ShouldQueue
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
 
-		$deliveryTimeOptions = [
-			'2 to 3 Days',
-			'5 to 7 Days',
-			'10 to 12 Days',
-			'3 to 4 Weeks',
-			'6 Weeks',
-			'8 to 10 Weeks',
-			'12 Weeks'
-		];
-
-
-		$warrantyOptions = [
-			'1 Month',
-			'2 Months',
-			'3 Months',
-			'6 Months',
-			'1 Year',
-			'2 Years',
-			'3 Years',
-			'5 Years',
-			'10 Years',
-			'Lifetime Warranty'
-		];
-
-		$refundPeriods = [
-			'7 Days', '14 Days', '30 Days', '60 Days', '90 Days'
-		];
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS')
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS')
+		$refundPeriods = app_constants('REFUND_PERIODS')
 
 		$errorArray = [];
 		$success = 0;
