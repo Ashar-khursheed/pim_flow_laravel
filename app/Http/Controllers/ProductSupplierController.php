@@ -121,7 +121,13 @@ class ProductSupplierController extends BaseController
 
 		$data['created_by'] = auth()->id();
 
-		return ProductSupplier::create($data);
+		$record = ProductSupplier::create($data);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_create"),
+			'data' => $record
+		]);
 	}
 
 	/**
@@ -174,7 +180,11 @@ class ProductSupplierController extends BaseController
 			];
 		});
 
-		return response()->json($response);
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_dtl"),
+			'data' => $response
+		]);
 	}
 
 	/**
@@ -298,7 +308,12 @@ class ProductSupplierController extends BaseController
 		// Update the supplier with new data
 		$supplier->update($data);
 
-		return response()->json($supplier);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_update"),
+			'data' => $supplier
+		]);
 	}
 
 	/**
@@ -338,7 +353,10 @@ class ProductSupplierController extends BaseController
 
 		$supplier->delete();
 
-		return response()->json(['message' => 'Deleted successfully']);
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_dlt")
+		], 200);
 	}
 
 	/**
