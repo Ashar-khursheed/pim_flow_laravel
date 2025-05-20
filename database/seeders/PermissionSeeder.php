@@ -185,6 +185,9 @@ class PermissionSeeder extends Seeder
 
 			'import keywords',
 			'export keywords',
+
+			'import product suppliers',
+			'export product suppliers',
 		];
 
 		$validPermissionIds = [];

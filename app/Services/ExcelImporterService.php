@@ -18,7 +18,7 @@ class ExcelImporterService
 		$this->excelRepo = $excelRepo;
 	}
 
-	public function processExcelImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass, string $userRole = null)
+	public function processExcelImport($file, array $fileFormatArray, string $module, string $queue, string $batchName, string $jobClass)
 	{
 		$realPath = $file->getRealPath();
 
@@ -45,17 +45,26 @@ class ExcelImporterService
 		}
 
 		$rowsPerChunk = 100;
-		$totalDataRows = $totalRows - 1;
-		$chunkStarts = range(2, $totalRows, $rowsPerChunk);
+		$totalRecords = $totalRows - 1;
 
-		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalDataRows) {
+		if ($totalRecords == 0) {
+			throw new \Exception("Excel file does not contain any data rows.");
+		}
+
+		if ($totalRecords <= $rowsPerChunk) {
+			$chunkStarts = [2];
+		} else {
+			$chunkStarts = range(2, $totalRows, $rowsPerChunk);
+		}
+
+		$batch = Bus::batch([])->before(function (Batch $batch) use ($module, $totalRecords) {
 			TransactionLog::create([
 				'module' => $module,
 				'action' => "Import",
 				'identifier' => $batch->id,
 				'status' => 'In-progress',
 				'description' => json_encode([
-					"Total Count" => $totalDataRows,
+					"Total Count" => $totalRecords,
 					"Success Count" => 0,
 					"Failed Count" => 0,
 					"Errors" => []
@@ -92,7 +101,7 @@ class ExcelImporterService
 					'header' => $header,
 					'chunk' => $chunkData,
 					'userId' => auth()->id(),
-					'userRole' => $userRole,
+					'userRole' => auth()->user()->getRoleNames()->first() ?? null,
 				]));
 			}
 		}
