@@ -690,7 +690,9 @@ public function show($relation_id)
 						}
 
 						/* Remove invalid characters and trim spaces */
-						$value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
+						// $value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
+						$value = mb_convert_encoding($value, 'UTF-8', 'auto');
+
 						return trim($value);
 					}, $row);
 
