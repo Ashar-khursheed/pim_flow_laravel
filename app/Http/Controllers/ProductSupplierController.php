@@ -295,7 +295,6 @@ class ProductSupplierController extends BaseController
 
 		$data['updated_by'] = auth()->id();
 
-
 		// Update the supplier with new data
 		$supplier->update($data);
 
@@ -377,9 +376,9 @@ class ProductSupplierController extends BaseController
 			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		$deliveryTimeOptions = app_constants('DELIVERY_DAYS')
-		$warrantyOptions = app_constants('WARRANTY_OPTIONS')
-		$refundPeriods = app_constants('REFUND_PERIODS')
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
+		$refundPeriods = app_constants('REFUND_PERIODS');
 
 		$query = Product::with([
 			'unitOfMeasurement:id,name',
