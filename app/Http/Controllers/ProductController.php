@@ -24,6 +24,8 @@ use App\Models\UnitOfMeasurement;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\CsvImporterService;
+use App\Services\ExcelImporterService;
+
 
 class ProductController extends BaseController
 {
@@ -1919,7 +1921,7 @@ class ProductController extends BaseController
 		]);
 	}
 
-	/**
+		/**
 	 * @OA\Post(
 	 *     path="/api/products/import",
 	 *     summary="Import products from an Excel file",
@@ -2125,7 +2127,7 @@ class ProductController extends BaseController
 				);
 			}
 
-			$csvImporter->processCsvImport(
+			$csvImporter->processImport(
 				$request->file('upload_file')->getRealPath(),
 				$productFileFormatArray,
 				'Product',
@@ -2149,6 +2151,7 @@ class ProductController extends BaseController
 			]);
 		}
 	}
+
 
 	/**
 	 * @OA\Get(

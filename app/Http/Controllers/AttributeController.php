@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-use Botble\Base\Supports\Breadcrumb;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
@@ -229,9 +228,18 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name'])->find($attributeId);
+		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
-		$attribute->measurementUnits->each->makeHidden(['pivot']);
+		/* Append measurement_type from first unit if exists */
+		$firstUnit = $attribute->measurementUnits->first();
+		if ($firstUnit && $firstUnit->type) {
+			$attribute->measurement_type = [
+				'id' => $firstUnit->type->id,
+				'name' => $firstUnit->type->name
+			];
+		}
+
+		$attribute->measurementUnits->each->makeHidden(['pivot', 'measurement_type_id']);
 
 		if (!$attribute) {
 			return response()->json([
@@ -362,9 +370,7 @@ class AttributeController extends BaseController
 				'name', 'code', 'type', 'attribute_group_id'
 			];
 			foreach ($fillableFields as $field) {
-				if (isset($input[$field])) {
-					$attribute->$field = $input[$field];
-				}
+				$attribute->$field = $input[$field];
 			}
 
 			$attribute->updated_by = auth()->id();
@@ -480,6 +486,20 @@ class AttributeController extends BaseController
 		$leafCategories = Category::getLeafCategories($parentCategory);
 		$leafCategoryIds = $leafCategories->pluck('id')->toArray();
 
+		/* Fetch products within range */
+		$products = Product::whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get(['id', 'sku', 'name']);
+
+		if ($products->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No products exist in the associated leaf categories.'
+			]);
+		}
+
 		/* Fetch unique attributes */
 		$uniqueAttributes = $leafCategories
 		->flatMap->categoryAllAttributes()
@@ -521,20 +541,6 @@ class AttributeController extends BaseController
 
 		/* Set headers */
 		$this->excel->setHeader($sheet, $header);
-
-		/* Fetch products within range */
-		$products = Product::whereHas('categories', fn($query) => $query->whereIn('category_id', $leafCategoryIds))
-		->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
-		->get(['id', 'sku', 'name']);
-
-		if ($products->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No products exist in the associated leaf categories.'
-			]);
-		}
 
 		/* Populate data */
 		$measurementNameIds = MeasurementUnit::pluck('name', 'id')->toArray();
