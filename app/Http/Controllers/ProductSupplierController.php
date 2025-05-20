@@ -640,6 +640,7 @@ class ProductSupplierController extends BaseController
 	{
 		$header = [
 			'ID',
+			'Product ID',
 			'Product name',
 			'SKU',
 			'Vendor Name',
@@ -670,6 +671,8 @@ class ProductSupplierController extends BaseController
 		$col = 'A';
 
 		/* Set product details */
+		$sheet->setCellValue($col++ . $row, '');
+		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
