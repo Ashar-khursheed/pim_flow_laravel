@@ -11598,17 +11598,24 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "type",
+                                    "relational_id",
                                     "range_from",
                                     "range_to"
                                 ],
                                 "properties": {
-                                    "product_id": {
-                                        "description": "Filter by product ID",
+                                    "type": {
+                                        "description": "Type should be either 'Brand' or 'Category'",
+                                        "type": "string",
+                                        "example": "Category"
+                                    },
+                                    "relational_id": {
+                                        "description": "Relational ID",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "range_from": {
-                                        "description": "Starting range (must be >=1)",
+                                        "description": "Starting range (must be >= 1)",
                                         "type": "integer",
                                         "example": 1
                                     },

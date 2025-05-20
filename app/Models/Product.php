@@ -262,5 +262,8 @@ class Product extends Model
 		return $this->belongsTo(UnitOfMeasurement::class, 'unit_of_measurement_id');
 	}
 
-
+	public function productSuppliers()
+	{
+		return $this->hasMany(ProductSupplier::class, 'product_id');
+	}
 }

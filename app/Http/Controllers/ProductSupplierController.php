@@ -3,18 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Bus;
-use Illuminate\Bus\Batch;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Repository\ExcelRepository;
 
+use App\Models\Product;
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
 use App\Jobs\ImportProductSupplierJob;
+use App\Services\ExcelImporterService;
 
 class ProductSupplierController extends BaseController
 {
@@ -349,9 +349,10 @@ class ProductSupplierController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"range_from", "range_to"},
-	 *             @OA\Property(property="product_id", type="integer", example=1, description="Filter by product ID"),
-	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
+	 *             required={"type", "relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="type", type="string", example="Category", description="Type should be either 'Brand' or 'Category'"),
+	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
+	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >= 1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
 	 *         )
 	 *     ),
@@ -369,27 +370,75 @@ class ProductSupplierController extends BaseController
 		}
 		/* Validate request data */
 		$request->validate([
+			'type' => 'required|string|in:Brand,Category',
+			'relational_id' => 'required|integer',
 			'range_from' => 'integer|min:1',
 			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		$query = ProductSupplier::with(['product:id,name,sku', 'vendor:id,name']);
+		$deliveryTimeOptions = [
+			'2 to 3 Days',
+			'5 to 7 Days',
+			'10 to 12 Days',
+			'3 to 4 Weeks',
+			'6 Weeks',
+			'8 to 10 Weeks',
+			'12 Weeks'
+		];
 
-		if ($request->has('product_id')) {
-			$query->where('product_id', $request->product_id);
+
+		$warrantyOptions = [
+			'1 Month',
+			'2 Months',
+			'3 Months',
+			'6 Months',
+			'1 Year',
+			'2 Years',
+			'3 Years',
+			'5 Years',
+			'10 Years',
+			'Lifetime Warranty'
+		];
+
+		$refundPeriods = [
+			'7 Days', '14 Days', '30 Days', '60 Days', '90 Days'
+		];
+
+		$query = Product::with([
+			'unitOfMeasurement:id,name',
+			'productSuppliers.vendor'
+		]);
+
+		/* Apply relational filters */
+		if ($request->type === "Brand") {
+			$query->where('brand_id', $request->relational_id);
+		} elseif ($request->type === "Store") {
+			$query->where('store_id', $request->relational_id);
+		} elseif ($request->type === "Category") {
+			$category = Category::find($request->relational_id);
+			$leafCategories = Category::getLeafCategories($category);
+			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+
+			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
+				$q->whereIn('category_id', $leafCategoryIds);
+			});
 		}
 
-		$suppliers = $query->get();
+		$products = $query->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->orderBy('id', 'asc')
+		->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
 
-		if ($suppliers->isEmpty()) {
+		if ($products->isEmpty()) {
 			return response()->json([
 				'success' => false,
-				'message' => 'No supplier exist for product.'
+				'message' => 'No product exist.'
 			]);
 		}
 
 		$header = [
 			'ID',
+			'Product ID',
 			'Product name',
 			'SKU',
 			'Vendor Name',
@@ -418,28 +467,71 @@ class ProductSupplierController extends BaseController
 
 		/* Populate data */
 		$row = 2;
-		foreach ($suppliers as $supplier) {
+		foreach ($products as $product) {
 			$col = 'A';
+			if ($product->productSuppliers && $product->productSuppliers->count()) {
+				foreach ($product->productSuppliers as $supplier) {
+					$col = 'A';
+					/* Extract existing values if present in their respective options, else set empty string */
+					$inStockOptions = ['Yes', 'No'];
+					$selectedInStock = $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No');
+					$selectedDeliveryDays = in_array($supplier->delivery_days, $deliveryTimeOptions) ? $supplier->delivery_days : '';
+					$selectedWarranty = in_array($supplier->warranty_information, $warrantyOptions) ? $supplier->warranty_information : '';
+					$selectedRefund = in_array($supplier->refund, $refundPeriods) ? $supplier->refund : '';
 
-			/* Set product details */
-			$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->product->name ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->product->sku ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->warranty_information ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->refund ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->delivery_days ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
-			$sheet->setCellValue($col++ . $row, $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No'));
-			$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
-			$row++;
+					$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
+					$sheet->setCellValue($col++ . $row, $product->id ?? '');
+					$sheet->setCellValue($col++ . $row, $product->name ?? '');
+					$sheet->setCellValue($col++ . $row, $product->sku ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
+					$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
+
+					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
+					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
+					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
+					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+
+					$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
+					$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
+					$row++;
+				}
+			} else {
+				/* Extract existing values if present in their respective options, else set empty string */
+				$selectedDeliveryDays = in_array($product->delivery_days, $deliveryTimeOptions) ? $product->delivery_days : '';
+				$selectedWarranty = in_array($product->warranty_information, $warrantyOptions) ? $product->warranty_information : '';
+				$selectedRefund = in_array($product->refund, $refundPeriods) ? $product->refund : '';
+
+				/* Set product details only */
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, $product->id ?? '');
+				$sheet->setCellValue($col++ . $row, $product->name ?? '');
+				$sheet->setCellValue($col++ . $row, $product->sku ?? '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+
+				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', ['Yes', 'No'], '');
+				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
+				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
+				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+
+				$sheet->setCellValue($col++ . $row, '');
+				$sheet->setCellValue($col++ . $row, '');
+				$row++;
+			}
 		}
+
 
 		/* Generate response */
 		$response = new StreamedResponse(function () use ($spreadsheet) {
@@ -476,7 +568,7 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function import(Request $request)
+	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
 		if (!auth()->user()->can('import product suppliers')) {
 			return response()->json([
@@ -484,104 +576,52 @@ class ProductSupplierController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+		]);
 		try {
-			/* Validate request data */
-			$request->validate([
-				'upload_file' => 'required|file|mimes:xlsx|max:2048',
-			]);
-
-			$requiredHeader = [
-				'ID',
-				'Product name',
-				'SKU',
-				'Vendor Name',
-				'Vendor SKU',
-				'Cost Per Item',
-				'Selling Type',
-				'Additional Cost',
-				'Price',
-				'Sale Price',
-				'Inventory',
-				'In Stock',
-				'Delivery Days',
-				'Warranty Information',
-				'Refund',
-				'Final Cost Price',
-				'Margin',
+			$supplierFormatArray  = [
+				'ID' => 'id',
+				'Product ID' => 'product_id',
+				'Product name' => 'product_name',
+				'SKU' => 'sku',
+				'Vendor Name' => 'vendor_name',
+				'Vendor SKU' => 'vendor_sku',
+				'Cost Per Item' => 'cost_per_item',
+				'Selling Type' => 'selling_type',
+				'Additional Cost' => 'additional_cost',
+				'Price' => 'price',
+				'Sale Price' => 'sale_price',
+				'Inventory' => 'inventory',
+				'In Stock' => 'in_stock',
+				'Delivery Days' => 'delivery_days',
+				'Warranty Information' => 'warranty_information',
+				'Refund' => 'refund',
+				'Final Cost Price' => 'final_cost_price',
+				'Margin' => 'margin',
 			];
 
-			$file = $request->file('upload_file');
-			$spreadsheet = $this->excel->loadFile($file->getRealPath());
-			$sheet = $spreadsheet->getActiveSheet();
-			$data = $sheet->toArray();
-			$header = array_shift($data);
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
+				$supplierFormatArray,
+				'Product Supplier', /* Module name */
+				'JOB_SUPPLIERS', /* Job name */
+				'Import Product Supplier', /* Batch name */
+				ImportProductSupplierJob::class
+			);
 
-			/* Check required header */
-			$missingHeaders = array_diff($requiredHeader, $header);
-			if (!empty($missingHeaders)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
-				]);
-			}
-
-			$totalRecords = count($data);
-			if ($totalRecords == 0) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
-				]);
-			}
-
-			/* Create batch */
-			$batch = Bus::batch([])
-			->before(function (Batch $batch) use ($totalRecords) {
-				$descArray = [
-					"Total Count" => $totalRecords,
-					"Success Count" => 0,
-					"Failed Count" => 0,
-					"Errors" => []
-				];
-				/* Save transaction log */
-				$log = new TransactionLog();
-				$log->module = "Product Supplier";
-				$log->action = "Import";
-				$log->identifier = $batch->id;
-				$log->status = 'In-progress';
-				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-				$log->created_by = auth()->id() ?? null;
-				$log->created_at = now();
-				$log->save();
-			})
-			->finally(function (Batch $batch) {
-				$log = TransactionLog::where('identifier', $batch->id)->first();
-				TransactionLog::where('id', $log->id)->update([
-					'status' => 'Completed',
-				]);
-			})
-			->name("Import Product Supplier")
-			->dispatch();
-
-			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-			$chunkSize = 50;
-			$chunks = array_chunk($data, $chunkSize);
-
-			foreach ($chunks as $chunk) {
-				$data = [
-					'header' => $header,
-					'chunk' => $chunk
-				];
-				$batch->options['queue'] = 'JOB_SUPPLIERS';
-				$batch->add(new ImportProductSupplierJob($data));
-			}
 			return response()->json([
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch(\Exception $exception) {
+		} catch (\Exception $e) {
+			$error[] = 'Error: ' . $e->getMessage();
+			$error[] = 'File: ' . $e->getFile();
+			$error[] = 'Line: ' . $e->getLine();
 			return response()->json([
 				'success' => false,
-				'message' => $exception->getMessage()
+				'message' => $error
 			]);
 		}
 	}
