@@ -370,7 +370,9 @@ class AttributeController extends BaseController
 				'name', 'code', 'type', 'attribute_group_id'
 			];
 			foreach ($fillableFields as $field) {
-				$attribute->$field = $input[$field];
+				if (array_key_exists($field, $input)) {
+					$attribute->$field = $input[$field];
+				}
 			}
 
 			$attribute->updated_by = auth()->id();
@@ -591,7 +593,7 @@ class AttributeController extends BaseController
 			$writer = new Xlsx($spreadsheet);
 			$writer->save('php://output');
 		});
-		
+
 		$parentCategoryName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $parentCategory->name);
 		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategoryName}_products_{$request->range_from}-{$request->range_to}.xlsx")));
 
