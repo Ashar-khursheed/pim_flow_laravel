@@ -91,8 +91,8 @@ class ProductSupplierController extends BaseController
 	 *         @OA\Schema(type="integer", default=1)
 	 *     ),
 	 *     @OA\Response(
-	 *         response=200, 
-	 *         description="Success", 
+	 *         response=200,
+	 *         description="Success",
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="data", type="array", @OA\Items(
 	 *                 @OA\Property(property="id", type="integer"),
@@ -128,7 +128,7 @@ class ProductSupplierController extends BaseController
 			->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
 			->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
 			->select('product_suppliers.*', 'ec_products.sku as product_sku', 'vendors.name as vendor_name');
-		
+
 		// Apply global search if provided
 		if ($request->has('search') && !empty($request->search)) {
 			$searchTerm = $request->search;
@@ -141,18 +141,18 @@ class ProductSupplierController extends BaseController
 				->orWhere('product_suppliers.refund', 'like', "%{$searchTerm}%");
 			});
 		}
-		
+
 		// Apply sorting if provided
 		$sortBy = $request->input('sort_by');
 		$sortDirection = $request->input('sort_direction', 'desc');
-		
+
 		// Set a default sort column if none is provided or if it's empty
 		if (empty($sortBy)) {
 			$sortBy = 'created_at';
 		}
-		
+
 		// Handle table prefixing for sort column
-		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 
+		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item',
 							'additional_cost', 'price', 'sale_price', 'inventory', 'in_stock',
 							'delivery_days', 'warranty_information', 'refund', 'final_cost_price',
 							'margin', 'created_at', 'updated_at'])) {
@@ -165,20 +165,20 @@ class ProductSupplierController extends BaseController
 			// Default to a safe column if the provided sort column is invalid
 			$sortBy = "product_suppliers.created_at";
 		}
-		
+
 		// Validate sort direction
 		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
 			$sortDirection = 'desc';
 		}
-		
+
 		$query->orderBy($sortBy, $sortDirection);
-		
+
 		// Apply pagination
 		$perPage = $request->input('per_page', 15);
-		
+
 		// Get paginated results
 		$productSuppliers = $query->paginate($perPage);
-		
+
 		return response()->json($productSuppliers);
 	}
 	/**

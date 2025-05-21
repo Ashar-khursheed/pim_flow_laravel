@@ -125,6 +125,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
 	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
+
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
@@ -265,6 +266,9 @@ Route::middleware(['auth:api'])->group(function () {
 
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
+
+
+	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 });
