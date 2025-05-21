@@ -215,6 +215,15 @@ class Product extends Model
 		return $this->categories()->whereDoesntHave('children')->orderByDesc('ec_product_category_product.created_at')->orderByDesc('ec_product_category_product.category_id')->first();
 	}
 
+	public function latestChildCategoryRelation()
+{
+	return $this->belongsToMany(Category::class, 'ec_product_category_product', 'product_id', 'category_id')
+		->whereDoesntHave('children')
+		->orderByDesc('ec_product_category_product.created_at')
+		->orderByDesc('ec_product_category_product.category_id')
+		->limit(1); // This returns a relation, usable in `with()`
+}
+
 	/* Get unique attributes associated with the product's latest category */
 	public function productCategoryAttributes()
 	{

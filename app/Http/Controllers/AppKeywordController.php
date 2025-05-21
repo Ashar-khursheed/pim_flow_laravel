@@ -11,7 +11,7 @@ use App\Repository\ExcelRepository;
 use App\Jobs\ImportKeywordJob;
 use App\Services\ExcelImporterService;
 
-class AppKeywordController extends Controller
+class AppKeywordController extends BaseController
 {
 	/**
 	 * @OA\Post(
