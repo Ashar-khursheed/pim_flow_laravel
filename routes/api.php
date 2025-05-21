@@ -50,8 +50,6 @@ use App\Http\Controllers\AttributeRecommendationController;
 use App\Http\Controllers\ProductSupplierController;
 
 
-
-
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
 Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
@@ -68,20 +66,35 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
-	
+
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
 	Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
-    Route::apiResource('recommendations', AttributeRecommendationController::class);
+	Route::apiResource('recommendations', AttributeRecommendationController::class);
 
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
-    Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
-    Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
+	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
+	Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
+
+	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
+	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
+	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
+
+	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
+	// Bulk operations
+	Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
+	Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
+
+	// Import/Export operations
+	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
+	Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
+	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
+	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 
 	Route::apiResource('users', UserController::class);
@@ -102,7 +115,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
-	
+
 
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
@@ -210,44 +223,44 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/categories/{id}/move-up', [CategoryController::class ,'moveUp']);
 	Route::post('/categories/{id}/move-down', [CategoryController::class ,'moveDown']);
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
-    Route::apiResource('categories', CategoryController::class);
+	Route::apiResource('categories', CategoryController::class);
 
 
 	 // Order routes
-	 Route::get('/orders', [OrderController::class, 'index']);
-	 Route::post('/orders', [OrderController::class, 'store']);
-	 Route::get('/orders/{order}', [OrderController::class, 'show']);
-	 Route::put('/orders/{order}', [OrderController::class, 'update']);
-	 Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
-	 Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
-	 Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
+	Route::get('/orders', [OrderController::class, 'index']);
+	Route::post('/orders', [OrderController::class, 'store']);
+	Route::get('/orders/{order}', [OrderController::class, 'show']);
+	Route::put('/orders/{order}', [OrderController::class, 'update']);
+	Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
+	Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
+	Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
 
 	 // Order history routes
-	 Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
-	 Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
-	 Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
+	Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
+	Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
+	Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
 
 	 // Order return routes
-	 Route::get('/order-returns', [OrderReturnController::class, 'index']);
-	 Route::post('/order-returns', [OrderReturnController::class, 'store']);
-	 Route::get('/order-returns/{orderReturn}', [OrderReturnController::class, 'show']);
-	 Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
-	 Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
-	 Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
+	Route::get('/order-returns', [OrderReturnController::class, 'index']);
+	Route::post('/order-returns', [OrderReturnController::class, 'store']);
+	Route::get('/order-returns/{orderReturn}', [OrderReturnController::class, 'show']);
+	Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
+	Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
+	Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
 
 
-	 Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
-	 Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
-	 Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
+	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
+	Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
+	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
-	 Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
-	 Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
+	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
+	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
 
-	 Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
+	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
-	 Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 
 });
