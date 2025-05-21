@@ -187,3 +187,163 @@ if (!function_exists('product_constants')) {
 		return $key ? ($constants[$key] ?? []) : $constants;
 	}
 }
+
+
+if (!function_exists('product_import_constants')) {
+	function product_import_constants($key = null) {
+		$constants = [
+			'ID' => [
+				'Id' => 'id',
+			],
+
+			'URL' => [
+				'URL' => 'url',
+			],
+
+			'GENERAL_FIELDS' => [
+				'Name' => 'name',
+				'SKU' => 'sku',
+				'Brand' => 'brand',
+				'Categories' => 'category',
+			],
+
+			'DESCRIPTION_SECTION' => [
+				'Description1' => 'description1',
+				'Description2' => 'description2',
+				'Description3' => 'description3',
+				'Description4' => 'description4',
+			],
+
+			'BENEFIT_SECTION' => [
+				'Benefit1' => 'benefit1',
+				'Feature1' => 'feature1',
+				'Benefit2' => 'benefit2',
+				'Feature2' => 'feature2',
+				'Benefit3' => 'benefit3',
+				'Feature3' => 'feature3',
+				'Benefit4' => 'benefit4',
+				'Feature4' => 'feature4',
+				'Benefit5' => 'benefit5',
+				'Feature5' => 'feature5',
+				'Benefit6' => 'benefit6',
+				'Feature6' => 'feature6',
+				'Benefit7' => 'benefit7',
+				'Feature7' => 'FEATURE7',
+				'Benefit8' => 'benefit8',
+				'Feature8' => 'feature8',
+				'Benefit9' => 'benefit9',
+				'Feature9' => 'feature9',
+				'Benefit10' => 'benefit10',
+				'Feature10' => 'feature10',
+			],
+
+			'FAQ_SECTION' => [
+				"FAQ Question1" => "faq_question1",
+				"FAQ Answer1" => "faq_answer1",
+				"FAQ Question2" => "faq_question2",
+				"FAQ Answer2" => "faq_answer2",
+				"FAQ Question3" => "faq_question3",
+				"FAQ Answer3" => "faq_answer3",
+				"FAQ Question4" => "faq_question4",
+				"FAQ Answer4" => "faq_answer4",
+				"FAQ Question5" => "faq_question5",
+				"FAQ Answer5" => "faq_answer5",
+				"FAQ Question6" => "faq_question6",
+				"FAQ Answer6" => "faq_answer6",
+				"FAQ Question7" => "faq_question7",
+				"FAQ Answer7" => "faq_answer7",
+				"FAQ Question8" => "faq_question8",
+				"FAQ Answer8" => "faq_answer8",
+				"FAQ Question9" => "faq_question9",
+				"FAQ Answer9" => "faq_answer9",
+				"FAQ Question10" => "faq_question10",
+				"FAQ Answer10" => "faq_answer10",
+			],
+
+			'ADVANCED_FIELDS' => [
+				'Warranty Information' => 'warrantyInformation',
+				'Vendor' => 'vendor',
+				'Tags' => 'tags',
+				'Stock Status' => 'stockStatus',
+				'With Storehouse Management' => 'withStorehouseManagement',
+				'Quantity' => 'quantity',
+				'Cost Per Item' => 'costPerItem',
+				'Unit of Measurement' => 'unitOfMeasurement',
+				'Price' => 'price',
+				'Sale Price' => 'salePrice',
+				'Start Date Sale Price' => 'startDateSalePrice',
+				'End Date Sale Price' => 'endDateSalePrice',
+				'Minimum Order Quantity' => 'minimumOrderQuantity',
+				'Box Quantity' => 'boxQuantity',
+				'Delivery Days' => 'deliveryDays',
+				'Variant Requires Shipping' => 'variantRequiresShipping',
+				'Images' => 'images',
+				'Upload Video' => 'uploadVideo',
+				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
+				'Refund Policy' => 'refundPolicy',
+				'Status' => 'status',
+				'Google Shopping Category' => 'googleShoppingCategory',
+				'Google Shopping Mpn' => 'googleShoppingMpn',
+				'Is Featured' => 'isFeatured',
+				'Weight Option' => 'weightOption',
+				'Weight' => 'weight',
+				'Dimension Option' => 'dimensionOption',
+				'Length' => 'length',
+				'Width' => 'width',
+				'Height' => 'height',
+				'Depth' => 'depth',
+				'Shipping Weight Option' => 'shippingWeightOption',
+				'Shipping Weight' => 'shippingWeight',
+				'Shipping Dimension Option' => 'shippingDimensionOption',
+				'Shipping Width' => 'shippingWidth',
+				'Shipping Depth' => 'shippingDepth',
+				'Shipping Height' => 'shippingHeight',
+				'Shipping Length' => 'shippingLength',
+				'Frequently Bought Together' => 'frequentlyBoughtTogether',
+				'Compare Products' => 'compareProducts',
+				'Variant 1 Title' => 'variant1Title',
+				'Variant 1 Value' => 'variant1Value',
+				'Variant 1 Products' => 'variant1Products',
+				'Variant 2 Title' => 'variant2Title',
+				'Variant 2 Value' => 'variant2Value',
+				'Variant 2 Products' => 'variant2Products',
+				'Variant 3 Title' => 'variant3Title',
+				'Variant 3 Value' => 'variant3Value',
+				'Variant 3 Products' => 'variant3Products',
+				'Variant Color Title' => 'variantColorTitle',
+				'Variant Color Value' => 'variantColorValue',
+				'Variant Color Products' => 'variantColorProducts',
+			],
+
+			'SEO_SECTION' => [
+				"Meta Title" => "meta_title",
+				"Meta Description" => "meta_description",
+			],
+
+			'DISCOUNT_SECTION' => [
+				'Buying Quantity1' => 'buyingQuantity1',
+				'Discount1' => 'discount1',
+				'Start Date1' => 'startDate1',
+				'End Date1' => 'endDate1',
+				'Buying Quantity2' => 'buyingQuantity2',
+				'Discount2' => 'discount2',
+				'Start Date2' => 'startDate2',
+				'End Date2' => 'endDate2',
+				'Buying Quantity3' => 'buyingQuantity3',
+				'Discount3' => 'discount3',
+				'Start Date3' => 'startDate3',
+				'End Date3' => 'endDate3',
+			],
+
+			'TRANSLATION_SECTION' => [
+				'Name (AR)' => 'nameAr',
+				'Description (AR)' => 'descriptionAr',
+				'Content (AR)' => 'contentAr',
+				'Warranty Information (AR)' => 'warrantyInformationAr',
+			],
+		];
+
+		return $key ? ($constants[$key] ?? []) : $constants;
+	}
+}
+
