@@ -11,6 +11,7 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Repository\ExcelRepository;
 
 use App\Models\Product;
+use App\Models\Category;
 use App\Models\ProductSupplier;
 use App\Models\TransactionLog;
 
