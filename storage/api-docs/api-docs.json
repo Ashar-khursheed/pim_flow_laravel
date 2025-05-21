@@ -10262,50 +10262,40 @@
                 ],
                 "summary": "Export products to Excel",
                 "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
-                "parameters": [
-                    {
-                        "name": "type",
-                        "in": "query",
-                        "description": "Type of the relational entity",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "enum": [
-                                "Brand",
-                                "Category",
-                                "Store"
-                            ]
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "type",
                                     "relational_id",
                                     "range_from",
                                     "range_to"
                                 ],
                                 "properties": {
+                                    "type": {
+                                        "description": "Filter type (e.g., Category, Brand)",
+                                        "type": "string",
+                                        "example": "Category"
+                                    },
                                     "relational_id": {
-                                        "description": "Relational ID",
+                                        "description": "ID based on selected type (e.g., Category ID)",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "range_from": {
-                                        "description": "Starting range (must be >=1)",
+                                        "description": "Starting product index (must be >= 1)",
                                         "type": "integer",
                                         "example": 1
                                     },
                                     "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "description": "Ending product index (max range allowed: 1000 products)",
                                         "type": "integer",
-                                        "example": 50
+                                        "example": 1000
                                     },
                                     "selected_fields": {
-                                        "description": "Optional list of fields to export. If blank, all fields will be exported.",
+                                        "description": "Optional list of specific fields to export. If omitted, all fields will be exported.",
                                         "type": "array",
                                         "items": {
                                             "type": "string",
