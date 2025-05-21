@@ -189,16 +189,6 @@ class Product extends Model
 		return $this->hasOne(ProductTranslation::class, 'ec_products_id')->where('lang_code', 'ar');
 	}
 
-	// public function attributes()
-	// {
-	// 	return $this->belongsToMany(
-	// 		Attribute::class,
-	// 		'product_attributes',
-	// 		'product_id',
-	// 		'attribute_id'
-	// 	);
-	// }
-
 	public function productAttributes()
 	{
 		return $this->hasMany(ProductAttribute::class);
@@ -216,13 +206,13 @@ class Product extends Model
 	}
 
 	public function latestChildCategoryRelation()
-{
-	return $this->belongsToMany(Category::class, 'ec_product_category_product', 'product_id', 'category_id')
+	{
+		return $this->belongsToMany(Category::class, 'ec_product_category_product', 'product_id', 'category_id')
 		->whereDoesntHave('children')
 		->orderByDesc('ec_product_category_product.created_at')
 		->orderByDesc('ec_product_category_product.category_id')
 		->limit(1); // This returns a relation, usable in `with()`
-}
+	}
 
 	/* Get unique attributes associated with the product's latest category */
 	public function productCategoryAttributes()
@@ -237,12 +227,7 @@ class Product extends Model
 		return $categoryAttributes->unique('id')->values();
 	}
 
-	// public function seo()
-	// {
-	// 	return $this->hasOne(SeoSchema::class, 'type_id')->where('type', 'product');
-	// }
-
-		public function seo()
+	public function seo()
 	{
 		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
 	}
@@ -252,11 +237,11 @@ class Product extends Model
 		return $this->hasOne(SeoSchema::class, 'product_id', 'id');
 	}
 	public function tax()
-    {
-        return $this->belongsTo(Tax::class, 'tax_id');
-    }
+	{
+		return $this->belongsTo(Tax::class, 'tax_id');
+	}
 
-		public function reviews()
+	public function reviews()
 	{
 		return $this->hasMany(Review::class, 'product_id');
 	}
