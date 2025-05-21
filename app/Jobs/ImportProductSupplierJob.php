@@ -124,6 +124,13 @@ class ImportProductSupplierJob implements ShouldQueue
 				$rowErrors[] = 'Price cannot be less than sale price.';
 			}
 
+			/* If errors exist, log and continue to next row */
+			if (!empty($rowErrors)) {
+				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+				$failed++;
+				continue;
+			}
+
 			/* Existing supplier check */
 			if (!empty($id)) {
 				$existingSupplier = ProductSupplier::find($id);
