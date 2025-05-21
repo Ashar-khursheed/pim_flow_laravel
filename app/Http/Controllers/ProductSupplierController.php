@@ -32,22 +32,141 @@ class ProductSupplierController extends BaseController
 		$this->excel = $excel;
 	}
 
+	// /**
+	//  * @OA\Get(
+	//  *     path="/api/product-suppliers",
+	//  *     operationId="getProductSuppliers",
+	//  *     tags={"Product Suppliers"},
+	//  *     summary="Get all product suppliers",
+	//  *     description="Returns a list of all product suppliers",
+	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	//  *     security={{"bearerAuth":{}}}
+	//  * )
+	//  */
+	// public function index()
+	// {
+	// 	return ProductSupplier::all();
+	// }
 	/**
 	 * @OA\Get(
 	 *     path="/api/product-suppliers",
 	 *     operationId="getProductSuppliers",
 	 *     tags={"Product Suppliers"},
 	 *     summary="Get all product suppliers",
-	 *     description="Returns a list of all product suppliers",
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     description="Returns a list of all product suppliers with pagination, search, and sorting",
+	 *     @OA\Parameter(
+	 *         name="search",
+	 *         in="query",
+	 *         description="Search term for global search",
+	 *         required=false,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Column to sort by",
+	 *         required=false,
+	 *         @OA\Schema(type="string")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_direction",
+	 *         in="query",
+	 *         description="Sort direction (asc or desc)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"asc", "desc"})
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Number of items per page",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=15)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=1)
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200, 
+	 *         description="Success", 
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="data", type="array", @OA\Items(
+	 *                 @OA\Property(property="id", type="integer"),
+	 *                 @OA\Property(property="product_id", type="integer"),
+	 *                 @OA\Property(property="vendor_id", type="integer"),
+	 *                 @OA\Property(property="vendor_sku", type="string"),
+	 *                 @OA\Property(property="cost_per_item", type="string"),
+	 *                 @OA\Property(property="additional_cost", type="string"),
+	 *                 @OA\Property(property="price", type="string"),
+	 *                 @OA\Property(property="sale_price", type="string"),
+	 *                 @OA\Property(property="inventory", type="integer"),
+	 *                 @OA\Property(property="in_stock", type="integer"),
+	 *                 @OA\Property(property="delivery_days", type="string"),
+	 *                 @OA\Property(property="warranty_information", type="string"),
+	 *                 @OA\Property(property="refund", type="string"),
+	 *                 @OA\Property(property="final_cost_price", type="string"),
+	 *                 @OA\Property(property="margin", type="string"),
+	 *                 @OA\Property(property="created_at", type="string", format="date-time"),
+	 *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+	 *                 @OA\Property(property="product_sku", type="string"),
+	 *                 @OA\Property(property="vendor_name", type="string")
+	 *             )),
+	 *             @OA\Property(property="meta", type="object")
+	 *         )
+	 *     ),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function index()
+	public function index(Request $request)
 	{
-		return ProductSupplier::all();
+		// Start with a query builder to allow for filtering, sorting and pagination
+		$query = ProductSupplier::query()
+			->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+			->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+			->select('product_suppliers.*', 'ec_products.sku as product_sku', 'vendors.name as vendor_name');
+		
+		// Apply global search if provided
+		if ($request->has('search') && !empty($request->search)) {
+			$searchTerm = $request->search;
+			$query->where(function($q) use ($searchTerm) {
+				$q->where('product_suppliers.vendor_sku', 'like', "%{$searchTerm}%")
+				->orWhere('ec_products.sku', 'like', "%{$searchTerm}%")
+				->orWhere('vendors.name', 'like', "%{$searchTerm}%")
+				->orWhere('product_suppliers.delivery_days', 'like', "%{$searchTerm}%")
+				->orWhere('product_suppliers.warranty_information', 'like', "%{$searchTerm}%")
+				->orWhere('product_suppliers.refund', 'like', "%{$searchTerm}%");
+			});
+		}
+		
+		// Apply sorting if provided
+		$sortBy = $request->input('sort_by', 'created_at');
+		$sortDirection = $request->input('sort_direction', 'desc');
+		
+		// Handle table prefixing for sort column
+		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 
+							'additional_cost', 'price', 'sale_price', 'inventory', 'in_stock',
+							'delivery_days', 'warranty_information', 'refund', 'final_cost_price',
+							'margin', 'created_at', 'updated_at'])) {
+			$sortBy = "product_suppliers.{$sortBy}";
+		} elseif ($sortBy === 'product_sku') {
+			$sortBy = "ec_products.sku";
+		} elseif ($sortBy === 'vendor_name') {
+			$sortBy = "vendors.name";
+		}
+		
+		$query->orderBy($sortBy, $sortDirection);
+		
+		// Apply pagination
+		$perPage = $request->input('per_page', 15);
+		
+		// Get paginated results
+		$productSuppliers = $query->paginate($perPage);
+		
+		return response()->json($productSuppliers);
 	}
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/product-suppliers",

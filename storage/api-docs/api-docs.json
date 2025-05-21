@@ -11270,13 +11270,142 @@
                     "Product Suppliers"
                 ],
                 "summary": "Get all product suppliers",
-                "description": "Returns a list of all product suppliers",
+                "description": "Returns a list of all product suppliers with pagination, search, and sorting",
                 "operationId": "getProductSuppliers",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term for global search",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_direction",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Success",
                         "content": {
-                            "application/json": {}
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "product_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "vendor_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "vendor_sku": {
+                                                        "type": "string"
+                                                    },
+                                                    "cost_per_item": {
+                                                        "type": "string"
+                                                    },
+                                                    "additional_cost": {
+                                                        "type": "string"
+                                                    },
+                                                    "price": {
+                                                        "type": "string"
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "string"
+                                                    },
+                                                    "inventory": {
+                                                        "type": "integer"
+                                                    },
+                                                    "in_stock": {
+                                                        "type": "integer"
+                                                    },
+                                                    "delivery_days": {
+                                                        "type": "string"
+                                                    },
+                                                    "warranty_information": {
+                                                        "type": "string"
+                                                    },
+                                                    "refund": {
+                                                        "type": "string"
+                                                    },
+                                                    "final_cost_price": {
+                                                        "type": "string"
+                                                    },
+                                                    "margin": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "product_sku": {
+                                                        "type": "string"
+                                                    },
+                                                    "vendor_name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
                         }
                     }
                 },
