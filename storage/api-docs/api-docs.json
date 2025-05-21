@@ -9216,6 +9216,105 @@
                 ]
             }
         },
+        "/api/products/{id}/categories": {
+            "put": {
+                "tags": [
+                    "Products Category Update"
+                ],
+                "summary": "Update categories for a specific product",
+                "description": "This endpoint updates the categories associated with a specific product by detaching old categories and attaching new ones.",
+                "operationId": "5352dd52bafd9575be583831b54679e2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product to update categories for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_ids"
+                                ],
+                                "properties": {
+                                    "category_ids": {
+                                        "description": "Array of category IDs to attach to the product",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product categories updated successfully.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product categories updated successfully."
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "new_categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer",
+                                                "example": 2
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to update product categories.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to update product categories."
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "SQLSTATE[23000]: Integrity constraint violation: ..."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/products": {
             "get": {
                 "tags": [
@@ -16644,6 +16743,10 @@
         {
             "name": "Pre Onboarding Vendors",
             "description": "Pre Onboarding Vendors"
+        },
+        {
+            "name": "Products Category Update",
+            "description": "Products Category Update"
         },
         {
             "name": "Product Groups",

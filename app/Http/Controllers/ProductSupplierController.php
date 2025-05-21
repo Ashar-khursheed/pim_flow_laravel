@@ -143,8 +143,13 @@ class ProductSupplierController extends BaseController
 		}
 		
 		// Apply sorting if provided
-		$sortBy = $request->input('sort_by', 'created_at');
+		$sortBy = $request->input('sort_by');
 		$sortDirection = $request->input('sort_direction', 'desc');
+		
+		// Set a default sort column if none is provided or if it's empty
+		if (empty($sortBy)) {
+			$sortBy = 'created_at';
+		}
 		
 		// Handle table prefixing for sort column
 		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item', 
@@ -156,6 +161,14 @@ class ProductSupplierController extends BaseController
 			$sortBy = "ec_products.sku";
 		} elseif ($sortBy === 'vendor_name') {
 			$sortBy = "vendors.name";
+		} else {
+			// Default to a safe column if the provided sort column is invalid
+			$sortBy = "product_suppliers.created_at";
+		}
+		
+		// Validate sort direction
+		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+			$sortDirection = 'desc';
 		}
 		
 		$query->orderBy($sortBy, $sortDirection);

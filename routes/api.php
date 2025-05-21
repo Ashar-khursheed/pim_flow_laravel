@@ -50,6 +50,8 @@ use App\Http\Controllers\AttributeRecommendationController;
 use App\Http\Controllers\ProductSupplierController;
 use App\Http\Controllers\AppKeywordController;
 use App\Http\Controllers\MeasurementController;
+use App\Http\Controllers\ProductCategoryController;
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -67,6 +69,8 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
+
+	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
 
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
