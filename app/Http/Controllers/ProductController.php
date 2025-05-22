@@ -2445,4 +2445,24 @@ class ProductController extends BaseController
 			'data' => $formattedProducts
 		]);
 	}
+
+	protected function buildCategoryTree($categories)
+{
+    $grouped = $categories->groupBy('parent_id');
+
+    $buildTree = function ($parentId) use (&$buildTree, $grouped) {
+        return ($grouped[$parentId] ?? collect())->map(function ($category) use (&$buildTree, $grouped) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'parent_id' => $category->parent_id,
+                'children' => $buildTree($category->id),
+            ];
+        })->values();
+    };
+
+    return $buildTree(null); // start from root
+}
+
 }
