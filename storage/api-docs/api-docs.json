@@ -9217,6 +9217,71 @@
             }
         },
         "/api/products/{id}/categories": {
+            "get": {
+                "tags": [
+                    "Products Category Get"
+                ],
+                "summary": "Get hierarchical categories of a specific product",
+                "description": "This endpoint retrieves the categories associated with a product, including child categories.",
+                "operationId": "26a09722b164455bcbaf101e6207dc6b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product to retrieve categories for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hierarchical list of categories for the product.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CategoryHierarchy"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Products Category Update"
@@ -15606,6 +15671,25 @@
                 },
                 "type": "object"
             },
+            "CategoryHierarchy": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 3
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Electronics"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryHierarchy"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "Review": {
                 "title": "Review",
                 "description": "Review Model",
@@ -16737,6 +16821,10 @@
         {
             "name": "Products Category Update",
             "description": "Products Category Update"
+        },
+        {
+            "name": "Products Category Get",
+            "description": "Products Category Get"
         },
         {
             "name": "Product Groups",

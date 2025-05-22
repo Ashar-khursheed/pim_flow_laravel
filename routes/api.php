@@ -71,7 +71,8 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 
 	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
-
+	Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
+	
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 

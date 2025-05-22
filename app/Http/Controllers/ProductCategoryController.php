@@ -92,5 +92,114 @@ class ProductCategoryController extends Controller
         }
     }
 
+
+
+     /**
+     * @OA\Get(
+     *     path="/api/products/{id}/categories",
+     *     summary="Get hierarchical categories of a specific product",
+     *     description="This endpoint retrieves the categories associated with a product, including child categories.",
+     *     tags={"Products Category Get"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the product to retrieve categories for",
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Hierarchical list of categories for the product.",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="product_id", type="integer", example=1),
+     *             @OA\Property(
+     *                 property="categories",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/CategoryHierarchy")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found.",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product not found.")
+     *         )
+     *     ),
+     *     security={{"bearerAuth":{}}}
+     * )
+     *
+     * @OA\Schema(
+     *     schema="CategoryHierarchy",
+     *     type="object",
+     *     @OA\Property(property="id", type="integer", example=3),
+     *     @OA\Property(property="name", type="string", example="Electronics"),
+     *     @OA\Property(
+     *         property="children",
+     *         type="array",
+     *         @OA\Items(ref="#/components/schemas/CategoryHierarchy")
+     *     )
+     * )
+     */
+
+     public function getCategories($id)
+     {
+         $product = Product::with(['categories.parent'])->find($id);
+     
+         if (!$product) {
+             return response()->json([
+                 'message' => 'Product not found.',
+             ], 404);
+         }
+     
+         $formattedCategories = [];
+     
+         foreach ($product->categories as $category) {
+             $chain = [];
+     
+             // Step 1: Traverse from child to root
+             $current = $category;
+             while ($current) {
+                 $chain[] = $current;
+                 $current = $current->parent;
+             }
+     
+             // Step 2: Reverse to go from root to leaf
+             $chain = array_reverse($chain);
+     
+             // Step 3: Build merged hierarchical structure
+             $ref = &$formattedCategories;
+     
+             foreach ($chain as $cat) {
+                 $found = false;
+     
+                 foreach ($ref as &$item) {
+                     if ($item['id'] == $cat->id) {
+                         $ref = &$item['children'];
+                         $found = true;
+                         break;
+                     }
+                 }
+     
+                 if (! $found) {
+                     $new = [
+                         'id' => $cat->id,
+                         'name' => $cat->name,
+                         'children' => []
+                     ];
+                     $ref[] = $new;
+                     $ref = &$ref[array_key_last($ref)]['children'];
+                 }
+             }
+     
+             unset($ref); // Clean up reference
+         }
+     
+         return response()->json([
+             'product_id' => $product->id,
+             'categories' => $formattedCategories,
+         ], 200);
+     }
+     
     
 }
