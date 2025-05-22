@@ -9321,7 +9321,7 @@
                     "Products"
                 ],
                 "summary": "Get paginated list of products",
-                "description": "Retrieves a paginated list of products with brand, store, categories, category hierarchy, and slug details. Can search across product name, SKU, brand, store, and categories.",
+                "description": "Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
                 "operationId": "1bfaa78d1c2c3848ab8165c5dadcad3e",
                 "parameters": [
                     {
@@ -9441,66 +9441,6 @@
                                                         "items": {
                                                             "type": "string",
                                                             "example": "Category Name"
-                                                        }
-                                                    },
-                                                    "category_hierarchy": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "properties": {
-                                                                "id": {
-                                                                    "type": "integer",
-                                                                    "example": 1
-                                                                },
-                                                                "name": {
-                                                                    "type": "string",
-                                                                    "example": "Electronics"
-                                                                },
-                                                                "slug": {
-                                                                    "type": "string",
-                                                                    "example": "electronics"
-                                                                },
-                                                                "children_recursive": {
-                                                                    "type": "array",
-                                                                    "items": {
-                                                                        "properties": {
-                                                                            "id": {
-                                                                                "type": "integer",
-                                                                                "example": 2
-                                                                            },
-                                                                            "name": {
-                                                                                "type": "string",
-                                                                                "example": "Mobile Phones"
-                                                                            },
-                                                                            "slug": {
-                                                                                "type": "string",
-                                                                                "example": "mobile-phones"
-                                                                            },
-                                                                            "children_recursive": {
-                                                                                "type": "array",
-                                                                                "items": {
-                                                                                    "properties": {
-                                                                                        "id": {
-                                                                                            "type": "integer",
-                                                                                            "example": 3
-                                                                                        },
-                                                                                        "name": {
-                                                                                            "type": "string",
-                                                                                            "example": "Smartphones"
-                                                                                        },
-                                                                                        "slug": {
-                                                                                            "type": "string",
-                                                                                            "example": "smartphones"
-                                                                                        }
-                                                                                    },
-                                                                                    "type": "object"
-                                                                                }
-                                                                            }
-                                                                        },
-                                                                        "type": "object"
-                                                                    }
-                                                                }
-                                                            },
-                                                            "type": "object"
                                                         }
                                                     },
                                                     "taxonomy_path": {

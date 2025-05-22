@@ -28,312 +28,177 @@ use App\Services\ExcelImporterService;
 
 class ProductController extends BaseController
 {
-/**
- * @OA\Get(
- *     path="/api/products",
- *     summary="Get paginated list of products",
- *     description="Retrieves a paginated list of products with brand, store, categories, category hierarchy, and slug details. Can search across product name, SKU, brand, store, and categories.",
- *     tags={"Products"},
- *     @OA\Parameter(
- *         name="page",
- *         in="query",
- *         description="Page number for pagination",
- *         required=false,
- *         @OA\Schema(type="integer", example=1)
- *     ),
- *     @OA\Parameter(
- *         name="per_page",
- *         in="query",
- *         description="Number of products per page (default: 50)",
- *         required=false,
- *         @OA\Schema(type="integer", example=50)
- *     ),
- *     @OA\Parameter(
- *         name="search",
- *         in="query",
- *         description="Search term for filtering products by name, SKU, brand, store, or category",
- *         required=false,
- *         @OA\Schema(type="string", example="samsung")
- *     ),
- *     @OA\Parameter(
- *         name="status",
- *         in="query",
- *         description="Filter products by status (e.g., active, inactive)",
- *         required=false,
- *         @OA\Schema(type="string", example="active")
- *     ),
- *     @OA\Parameter(
- *         name="sort_by",
- *         in="query",
- *         description="Column to sort by (id, name, sku, brand_id, store_id, status)",
- *         required=false,
- *         @OA\Schema(type="string", example="id")
- *     ),
- *     @OA\Parameter(
- *         name="sort_direction",
- *         in="query",
- *         description="Sort direction (asc or desc)",
- *         required=false,
- *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Successful response",
- *         @OA\JsonContent(
- *             @OA\Property(property="success", type="boolean", example=true),
- *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     @OA\Property(property="id", type="integer", example=1),
- *                     @OA\Property(property="name", type="string", example="Sample Product"),
- *                     @OA\Property(property="sku", type="string", example="PROD-123"),
- *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg"),
- *                     @OA\Property(property="brand", type="string", example="Brand Name"),
- *                     @OA\Property(property="store", type="string", example="Store Name"),
- *                     @OA\Property(property="status", type="string", example="active"),
- *                     @OA\Property(
- *                         property="product_family",
- *                         type="array",
- *                         @OA\Items(type="string", example="Category Name")
- *                     ),
- *                     @OA\Property(
- *                         property="category_hierarchy",
- *                         type="array",
- *                         @OA\Items(
- *                             type="object",
- *                             @OA\Property(property="id", type="integer", example=1),
- *                             @OA\Property(property="name", type="string", example="Electronics"),
- *                             @OA\Property(property="slug", type="string", example="electronics"),
- *                             @OA\Property(
- *                                 property="children_recursive",
- *                                 type="array",
- *                                 @OA\Items(
- *                                     type="object",
- *                                     @OA\Property(property="id", type="integer", example=2),
- *                                     @OA\Property(property="name", type="string", example="Mobile Phones"),
- *                                     @OA\Property(property="slug", type="string", example="mobile-phones"),
- *                                     @OA\Property(
- *                                         property="children_recursive",
- *                                         type="array",
- *                                         @OA\Items(
- *                                             type="object",
- *                                             @OA\Property(property="id", type="integer", example=3),
- *                                             @OA\Property(property="name", type="string", example="Smartphones"),
- *                                             @OA\Property(property="slug", type="string", example="smartphones")
- *                                         )
- *                                     )
- *                                 )
- *                             )
- *                         )
- *                     ),
- *                     @OA\Property(property="taxonomy_path", type="string", example="category/product-name")
- *                 )
- *             ),
- *             @OA\Property(
- *                 property="pagination",
- *                 type="object",
- *                 @OA\Property(property="total", type="integer", example=100),
- *                 @OA\Property(property="per_page", type="integer", example=50),
- *                 @OA\Property(property="current_page", type="integer", example=1),
- *                 @OA\Property(property="last_page", type="integer", example=5),
- *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://example.com/api/products?page=2"),
- *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null)
- *             )
- *         )
- *     ),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function index(Request $request)
-{
-    $perPage = $request->input('per_page', 50);
-    $search = $request->input('search');
-    $status = $request->input('status');
-    $sortBy = $request->input('sort_by', 'id');
-    $sortDirection = $request->input('sort_direction', 'desc');
+	/**
+	 * @OA\Get(
+	 *     path="/api/products",
+	 *     summary="Get paginated list of products",
+	 *     description="Retrieves a paginated list of products with brand, store, categories, and slug details. Can search across product name, SKU, brand, store, and categories.",
+	 *     tags={"Products"},
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number for pagination",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Number of products per page (default: 50)",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", example=50)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="search",
+	 *         in="query",
+	 *         description="Search term for filtering products by name, SKU, brand, store, or category",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="samsung")
+	 *     ),
+	 *		@OA\Parameter(
+	 * 				name="status",
+	 *				in="query",
+	 *				description="Filter products by status (e.g., active, inactive)",
+	 *				required=false,
+	 *				@OA\Schema(type="string", example="active")
+	 *				),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Column to sort by (id, name, sku, brand_id, store_id, status)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="id")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_direction",
+	 *         in="query",
+	 *         description="Sort direction (asc or desc)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", enum={"asc", "desc"}, example="desc")
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Successful response",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Products retrieved successfully"),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     @OA\Property(property="id", type="integer", example=1),
+	 *                     @OA\Property(property="name", type="string", example="Sample Product"),
+	 *                     @OA\Property(property="sku", type="string", example="PROD-123"),
+	 *                     @OA\Property(property="image", type="string", example="http://example.com/storage/products/sample.jpg"),
+	 *                     @OA\Property(property="brand", type="string", example="Brand Name"),
+	 *                     @OA\Property(property="store", type="string", example="Store Name"),
+	 *                     @OA\Property(property="status", type="string", example="active"),
+	 *                     @OA\Property(
+	 *                         property="product_family",
+	 *                         type="array",
+	 *                         @OA\Items(type="string", example="Category Name")
+	 *                     ),
+	 *                     @OA\Property(property="taxonomy_path", type="string", example="category/product-name")
+	 *                 )
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="pagination",
+	 *                 type="object",
+	 *                 @OA\Property(property="total", type="integer", example=100),
+	 *                 @OA\Property(property="per_page", type="integer", example=50),
+	 *                 @OA\Property(property="current_page", type="integer", example=1),
+	 *                 @OA\Property(property="last_page", type="integer", example=5),
+	 *                 @OA\Property(property="next_page_url", type="string", nullable=true, example="http://example.com/api/products?page=2"),
+	 *                 @OA\Property(property="prev_page_url", type="string", nullable=true, example=null)
+	 *             )
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$perPage = $request->input('per_page', 50);
+		$search = $request->input('search');
+		$status = $request->input('status');
+		$sortBy = $request->input('sort_by', 'id');
+		$sortDirection = $request->input('sort_direction', 'desc');
 
-    // Validate sort columns to prevent SQL injection
-    $allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'store_id', 'status'];
-    if (!in_array($sortBy, $allowedSortColumns)) {
-        $sortBy = 'id'; // Default to id if invalid column
-    }
+		// Validate sort columns to prevent SQL injection
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'store_id', 'status'];
+		if (!in_array($sortBy, $allowedSortColumns)) {
+			$sortBy = 'id'; // Default to id if invalid column
+		}
 
-    // Validate sort direction
-    if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-        $sortDirection = 'desc'; // Default to descending if invalid direction
-    }
+		// Validate sort direction
+		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+			$sortDirection = 'desc'; // Default to descending if invalid direction
+		}
 
-    $query = Product::with([
-        'brand:id,name',
-        'store:id,name',
-        'categories:id,name,parent_id,slug',
-        'slug:id,key,reference_id'
-    ])
-    ->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
+		$query = Product::with([
+			'brand:id,name',
+			'store:id,name',
+			'categories:id,name',
+			'slug:id,key,reference_id'
+		])
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
 
-    // Apply status filter
-    if ($status !== null) {
-        $query->where('status', $status);
-    }
+		/* Apply search if provided */
 
-    if ($search) {
-        $query->where(function($q) use ($search) {
-            $q->where('name', 'like', "%{$search}%")
-            ->orWhere('sku', 'like', "%{$search}%")
-            ->orWhereHas('brand', function($brandQuery) use ($search) {
-                $brandQuery->where('name', 'like', "%{$search}%");
-            })
-            ->orWhereHas('store', function($storeQuery) use ($search) {
-                $storeQuery->where('name', 'like', "%{$search}%");
-            })
-            ->orWhereHas('categories', function($categoryQuery) use ($search) {
-                $categoryQuery->where('name', 'like', "%{$search}%");
-            });
-        });
-    }
+		// Apply status filter
+		if ($status !== null) {
+			$query->where('status', $status);
+		}
 
-    $products = $query->orderBy($sortBy, $sortDirection)
-    ->paginate($perPage);
+		if ($search) {
+			$query->where(function($q) use ($search) {
+				$q->where('name', 'like', "%{$search}%")
+				->orWhere('sku', 'like', "%{$search}%")
+				->orWhereHas('brand', function($brandQuery) use ($search) {
+					$brandQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('store', function($storeQuery) use ($search) {
+					$storeQuery->where('name', 'like', "%{$search}%");
+				})
+				->orWhereHas('categories', function($categoryQuery) use ($search) {
+					$categoryQuery->where('name', 'like', "%{$search}%");
+				});
+			});
+		}
 
-    /* Formatting response */
-    $formattedProducts = $products->map(function ($product) {
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
-            'brand' => optional($product->brand)->name,
-            'store' => optional($product->store)->name,
-            'status' => $product->status,
-            'product_family' => $product->categories->pluck('name')->toArray(),
-            'category_hierarchy' => $this->buildCategoryHierarchyPaths($product->categories),
-            'taxonomy_path' => optional($product->slug)->key ?? '',
-        ];
-    });
+		$products = $query->orderBy($sortBy, $sortDirection)
+		->paginate($perPage);
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Products retrieved successfully',
-        'data' => $formattedProducts,
-        'pagination' => [
-            'total' => $products->total(),
-            'per_page' => $products->perPage(),
-            'current_page' => $products->currentPage(),
-            'last_page' => $products->lastPage(),
-            'next_page_url' => $products->nextPageUrl(),
-            'prev_page_url' => $products->previousPageUrl(),
-        ],
-    ]);
-}
+		/* Formatting response */
+		$formattedProducts = $products->map(function ($product) {
+			return [
+				'id' => $product->id,
+				'name' => $product->name,
+				'sku' => $product->sku,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+				'brand' => optional($product->brand)->name,
+				'store' => optional($product->store)->name,
+				'status' => $product->status,
+				'product_family' => $product->categories->pluck('name')->toArray(),
+				'taxonomy_path' => optional($product->slug)->key ?? '',
+			];
+		});
 
-/**
- * Build category hierarchy paths for product categories only (no extra children)
- *
- * @param \Illuminate\Database\Eloquent\Collection $productCategories
- * @return array
- */
-private function buildCategoryHierarchyPaths($productCategories)
-{
-    if ($productCategories->isEmpty()) {
-        return [];
-    }
+		return response()->json([
+			'success' => true,
+			'message' => 'Products retrieved successfully',
+			'data' => $formattedProducts,
+			'pagination' => [
+				'total' => $products->total(),
+				'per_page' => $products->perPage(),
+				'current_page' => $products->currentPage(),
+				'last_page' => $products->lastPage(),
+				'next_page_url' => $products->nextPageUrl(),
+				'prev_page_url' => $products->previousPageUrl(),
+			],
+		]);
+	}
 
-    $hierarchyPaths = [];
-    
-    foreach ($productCategories as $category) {
-        $path = $this->buildSingleCategoryPath($category);
-        if (!empty($path)) {
-            $hierarchyPaths[] = $path;
-        }
-    }
-    
-    return $hierarchyPaths;
-}
-
-/**
- * Build single category path from root to the given category
- *
- * @param \App\Models\Category $category
- * @return array|null
- */
-private function buildSingleCategoryPath($category)
-{
-    // Get the full path from root to this category
-    $pathCategories = $this->getCategoryPath($category);
-    
-    if (empty($pathCategories)) {
-        return null;
-    }
-    
-    // Build nested structure
-    return $this->buildNestedPath($pathCategories);
-}
-
-/**
- * Get category path from root to given category
- *
- * @param \App\Models\Category $category
- * @return array
- */
-private function getCategoryPath($category)
-{
-    $path = [];
-    $current = $category;
-    
-    // Build path from child to parent
-    while ($current) {
-        array_unshift($path, [
-            'id' => $current->id,
-            'name' => $current->name,
-            'slug' => $current->slug,
-            'parent_id' => $current->parent_id
-        ]);
-        
-        // Get parent if exists
-        if ($current->parent_id && $current->parent_id != 0) {
-            $current = Category::select('id', 'name', 'slug', 'parent_id')
-                ->find($current->parent_id);
-        } else {
-            $current = null;
-        }
-    }
-    
-    return $path;
-}
-
-/**
- * Build nested path structure
- *
- * @param array $pathCategories
- * @return array
- */
-private function buildNestedPath($pathCategories)
-{
-    if (empty($pathCategories)) {
-        return [];
-    }
-    
-    $root = [
-        'id' => $pathCategories[0]['id'],
-        'name' => $pathCategories[0]['name'],
-        'slug' => $pathCategories[0]['slug']
-    ];
-    
-    // Build nested children
-    $current = &$root;
-    for ($i = 1; $i < count($pathCategories); $i++) {
-        $current['children_recursive'] = [[
-            'id' => $pathCategories[$i]['id'],
-            'name' => $pathCategories[$i]['name'],
-            'slug' => $pathCategories[$i]['slug']
-        ]];
-        $current = &$current['children_recursive'][0];
-    }
-    
-    return $root;
-}
 	/**
 	 * @OA\Post(
 	 *     path="/api/products",
