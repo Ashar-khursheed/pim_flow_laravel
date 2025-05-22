@@ -171,6 +171,8 @@ class ProductController extends BaseController
 
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+			$flatCategories = $product->categories;
+		
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -179,10 +181,17 @@ class ProductController extends BaseController
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
-				'product_family' => $product->categories->pluck('name')->toArray(),
+		
+				// Flat category names
+				'product_family' => $flatCategories->pluck('name')->toArray(),
+		
+				// Nested parent-child tree
+				'categories_hierarchy' => $this->buildCategoryTree($flatCategories),
+		
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
+		
 
 		return response()->json([
 			'success' => true,
