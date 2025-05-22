@@ -198,10 +198,7 @@ class ProductController extends BaseController
 		
 				'product_family' => $flatCategories->pluck('name')->toArray(),
 		
-				'categories_hierarchy' => $rootCategories->map(function ($category) use ($formatCategoryTree) {
-					return $formatCategoryTree($category);
-				})->values(),
-		
+	
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
