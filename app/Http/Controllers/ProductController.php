@@ -25,6 +25,7 @@ use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
 
+
 class ProductController extends BaseController
 {
 	/**
@@ -168,41 +169,34 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
+		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
-			$flatCategories = $product->categories;
-		
-			// Build hierarchy from top-level categories only
-			// Filter to only root categories (parent_id == null) so you don't get duplicates
-			$rootCategories = $flatCategories->filter(fn($cat) => $cat->parent_id === null);
-		
-			$formatCategoryTree = function ($category) use (&$formatCategoryTree) {
-				return [
-					'id' => $category->id,
-					'name' => $category->name,
-					'slug' => $category->slug,
-					'parent_id' => $category->parent_id,
-					'children' => $category->childrenRecursive->map(function ($child) use (&$formatCategoryTree) {
-						return $formatCategoryTree($child);
-					})->values(),
-				];
-			};
-		
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
-				'image' => ($images = json_decode($product->images, true)) && isset($images[0]) ? $images[0] : null,
+				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
-		
-				'product_family' => $flatCategories->pluck('name')->toArray(),
-		
-	
+				'product_family' => $product->categories->pluck('name')->toArray(),
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
-		
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Products retrieved successfully',
+			'data' => $formattedProducts,
+			'pagination' => [
+				'total' => $products->total(),
+				'per_page' => $products->perPage(),
+				'current_page' => $products->currentPage(),
+				'last_page' => $products->lastPage(),
+				'next_page_url' => $products->nextPageUrl(),
+				'prev_page_url' => $products->previousPageUrl(),
+			],
+		]);
 	}
 
 	/**
@@ -607,7 +601,6 @@ class ProductController extends BaseController
 				preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
 				$formattedProduct[$attribute] = $matches[1] ?? [];
 				break;
-
 
 				case 'description':
 					$decodedDescription = json_decode($value, true); // Decode JSON string to array
@@ -2443,24 +2436,4 @@ class ProductController extends BaseController
 			'data' => $formattedProducts
 		]);
 	}
-
-	protected function buildCategoryTree($categories)
-{
-    $grouped = $categories->groupBy('parent_id');
-
-    $buildTree = function ($parentId) use (&$buildTree, $grouped) {
-        return ($grouped[$parentId] ?? collect())->map(function ($category) use (&$buildTree, $grouped) {
-            return [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'parent_id' => $category->parent_id,
-                'children' => $buildTree($category->id),
-            ];
-        })->values();
-    };
-
-    return $buildTree(null); // start from root
-}
-
 }
