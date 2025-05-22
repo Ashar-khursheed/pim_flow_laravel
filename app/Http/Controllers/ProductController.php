@@ -28,7 +28,7 @@ use App\Services\ExcelImporterService;
 
 class ProductController extends BaseController
 {
-	/**
+/**
  * @OA\Get(
  *     path="/api/products",
  *     summary="Get paginated list of products",
@@ -103,17 +103,27 @@ class ProductController extends BaseController
  *                         type="array",
  *                         @OA\Items(
  *                             type="object",
- *                             @OA\Property(property="category_id", type="integer", example=5),
- *                             @OA\Property(property="category_name", type="string", example="Smartphones"),
- *                             @OA\Property(property="hierarchy_path", type="string", example="Electronics > Mobile Phones > Smartphones"),
+ *                             @OA\Property(property="id", type="integer", example=1),
+ *                             @OA\Property(property="name", type="string", example="Electronics"),
+ *                             @OA\Property(property="slug", type="string", example="electronics"),
  *                             @OA\Property(
- *                                 property="breadcrumb",
+ *                                 property="children_recursive",
  *                                 type="array",
  *                                 @OA\Items(
  *                                     type="object",
- *                                     @OA\Property(property="id", type="integer", example=1),
- *                                     @OA\Property(property="name", type="string", example="Electronics"),
- *                                     @OA\Property(property="slug", type="string", example="electronics")
+ *                                     @OA\Property(property="id", type="integer", example=2),
+ *                                     @OA\Property(property="name", type="string", example="Mobile Phones"),
+ *                                     @OA\Property(property="slug", type="string", example="mobile-phones"),
+ *                                     @OA\Property(
+ *                                         property="children_recursive",
+ *                                         type="array",
+ *                                         @OA\Items(
+ *                                             type="object",
+ *                                             @OA\Property(property="id", type="integer", example=3),
+ *                                             @OA\Property(property="name", type="string", example="Smartphones"),
+ *                                             @OA\Property(property="slug", type="string", example="smartphones")
+ *                                         )
+ *                                     )
  *                                 )
  *                             )
  *                         )
@@ -198,7 +208,7 @@ public function index(Request $request)
             'store' => optional($product->store)->name,
             'status' => $product->status,
             'product_family' => $product->categories->pluck('name')->toArray(),
-            'category_hierarchy' => $this->buildCategoryTree($product->categories),
+            'category_hierarchy' => $this->buildCategoryHierarchyPaths($product->categories),
             'taxonomy_path' => optional($product->slug)->key ?? '',
         ];
     });
@@ -219,98 +229,110 @@ public function index(Request $request)
 }
 
 /**
- * Build category tree structure starting from root categories
+ * Build category hierarchy paths for product categories only (no extra children)
  *
  * @param \Illuminate\Database\Eloquent\Collection $productCategories
  * @return array
  */
-private function buildCategoryTree($productCategories)
+private function buildCategoryHierarchyPaths($productCategories)
 {
     if ($productCategories->isEmpty()) {
         return [];
     }
 
-    // Get all category IDs that are associated with this product
-    $categoryIds = $productCategories->pluck('id')->toArray();
-    
-    // Find all root categories (categories that are either direct product categories or ancestors)
-    $allRelatedCategoryIds = [];
+    $hierarchyPaths = [];
     
     foreach ($productCategories as $category) {
-        $allRelatedCategoryIds = array_merge($allRelatedCategoryIds, $this->getAllAncestorIds($category));
+        $path = $this->buildSingleCategoryPath($category);
+        if (!empty($path)) {
+            $hierarchyPaths[] = $path;
+        }
     }
     
-    $allRelatedCategoryIds = array_unique(array_merge($allRelatedCategoryIds, $categoryIds));
-    
-    // Get all categories with their children recursively
-    $rootCategories = Category::whereIn('id', $allRelatedCategoryIds)
-        ->whereNull('parent_id')
-        ->orWhere('parent_id', 0)
-        ->with(['childrenRecursive' => function($query) use ($allRelatedCategoryIds) {
-            $query->whereIn('id', $allRelatedCategoryIds);
-        }])
-        ->get();
-
-    return $this->formatCategoryTree($rootCategories, $categoryIds);
+    return $hierarchyPaths;
 }
 
 /**
- * Get all ancestor IDs for a category
+ * Build single category path from root to the given category
+ *
+ * @param \App\Models\Category $category
+ * @return array|null
+ */
+private function buildSingleCategoryPath($category)
+{
+    // Get the full path from root to this category
+    $pathCategories = $this->getCategoryPath($category);
+    
+    if (empty($pathCategories)) {
+        return null;
+    }
+    
+    // Build nested structure
+    return $this->buildNestedPath($pathCategories);
+}
+
+/**
+ * Get category path from root to given category
  *
  * @param \App\Models\Category $category
  * @return array
  */
-private function getAllAncestorIds($category)
+private function getCategoryPath($category)
 {
-    $ancestorIds = [];
+    $path = [];
+    $current = $category;
     
-    // Load the category with all its parent relationships
-    $categoryWithParents = Category::where('id', $category->id)
-        ->with(['parent.parent.parent.parent.parent']) // Load enough levels
-        ->first();
-    
-    $current = $categoryWithParents;
-    
-    while ($current && $current->parent_id && $current->parent_id != 0) {
-        $parent = $current->parent;
-        if ($parent) {
-            $ancestorIds[] = $parent->id;
-            $current = $parent;
+    // Build path from child to parent
+    while ($current) {
+        array_unshift($path, [
+            'id' => $current->id,
+            'name' => $current->name,
+            'slug' => $current->slug,
+            'parent_id' => $current->parent_id
+        ]);
+        
+        // Get parent if exists
+        if ($current->parent_id && $current->parent_id != 0) {
+            $current = Category::select('id', 'name', 'slug', 'parent_id')
+                ->find($current->parent_id);
         } else {
-            break;
+            $current = null;
         }
     }
     
-    return $ancestorIds;
+    return $path;
 }
 
 /**
- * Format category tree and mark product categories
+ * Build nested path structure
  *
- * @param \Illuminate\Database\Eloquent\Collection $categories
- * @param array $productCategoryIds
+ * @param array $pathCategories
  * @return array
  */
-private function formatCategoryTree($categories, $productCategoryIds)
+private function buildNestedPath($pathCategories)
 {
-    $tree = [];
-    
-    foreach ($categories as $category) {
-        $node = [
-            'id' => $category->id,
-            'name' => $category->name,
-            'slug' => $category->slug,
-            'is_product_category' => in_array($category->id, $productCategoryIds)
-        ];
-        
-        if ($category->childrenRecursive && $category->childrenRecursive->isNotEmpty()) {
-            $node['children_recursive'] = $this->formatCategoryTree($category->childrenRecursive, $productCategoryIds);
-        }
-        
-        $tree[] = $node;
+    if (empty($pathCategories)) {
+        return [];
     }
     
-    return $tree;
+    $root = [
+        'id' => $pathCategories[0]['id'],
+        'name' => $pathCategories[0]['name'],
+        'slug' => $pathCategories[0]['slug']
+    ];
+    
+    // Build nested children
+    $current = &$root;
+    for ($i = 1; $i < count($pathCategories); $i++) {
+        $current['children_recursive'] = [[
+            'id' => $pathCategories[$i]['id'],
+            'name' => $pathCategories[$i]['name'],
+            'slug' => $pathCategories[$i]['slug']
+        ]];
+        $current = &$current['children_recursive'][0];
+    }
+    
+    return $root;
 }
 	/**
 	 * @OA\Post(

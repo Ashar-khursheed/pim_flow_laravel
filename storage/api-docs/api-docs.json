@@ -9447,33 +9447,53 @@
                                                         "type": "array",
                                                         "items": {
                                                             "properties": {
-                                                                "category_id": {
+                                                                "id": {
                                                                     "type": "integer",
-                                                                    "example": 5
+                                                                    "example": 1
                                                                 },
-                                                                "category_name": {
+                                                                "name": {
                                                                     "type": "string",
-                                                                    "example": "Smartphones"
+                                                                    "example": "Electronics"
                                                                 },
-                                                                "hierarchy_path": {
+                                                                "slug": {
                                                                     "type": "string",
-                                                                    "example": "Electronics > Mobile Phones > Smartphones"
+                                                                    "example": "electronics"
                                                                 },
-                                                                "breadcrumb": {
+                                                                "children_recursive": {
                                                                     "type": "array",
                                                                     "items": {
                                                                         "properties": {
                                                                             "id": {
                                                                                 "type": "integer",
-                                                                                "example": 1
+                                                                                "example": 2
                                                                             },
                                                                             "name": {
                                                                                 "type": "string",
-                                                                                "example": "Electronics"
+                                                                                "example": "Mobile Phones"
                                                                             },
                                                                             "slug": {
                                                                                 "type": "string",
-                                                                                "example": "electronics"
+                                                                                "example": "mobile-phones"
+                                                                            },
+                                                                            "children_recursive": {
+                                                                                "type": "array",
+                                                                                "items": {
+                                                                                    "properties": {
+                                                                                        "id": {
+                                                                                            "type": "integer",
+                                                                                            "example": 3
+                                                                                        },
+                                                                                        "name": {
+                                                                                            "type": "string",
+                                                                                            "example": "Smartphones"
+                                                                                        },
+                                                                                        "slug": {
+                                                                                            "type": "string",
+                                                                                            "example": "smartphones"
+                                                                                        }
+                                                                                    },
+                                                                                    "type": "object"
+                                                                                }
                                                                             }
                                                                         },
                                                                         "type": "object"
