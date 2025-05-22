@@ -19,27 +19,18 @@ class ProductExportController extends BaseController
 	 *     path="/api/products/export",
 	 *     summary="Export products to Excel",
 	 *     tags={"Products"},
-	 *     @OA\Parameter(
-	 *         name="type",
-	 *         in="query",
-	 *         description="Type of the relational entity",
-	 *         required=true,
-	 *         @OA\Schema(
-	 *             type="string",
-	 *             enum={"Brand", "Category", "Store"}
-	 *         )
-	 *     ),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"relational_id", "range_from", "range_to"},
-	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
-	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
-	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)"),
+	 *             required={"type", "relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="type", type="string", example="Category", description="Filter type (e.g., Category, Brand)"),
+	 *             @OA\Property(property="relational_id", type="integer", example=1, description="ID based on selected type (e.g., Category ID)"),
+	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
+	 *             @OA\Property(property="range_to", type="integer", example=1000, description="Ending product index (max range allowed: 1000 products)"),
 	 *             @OA\Property(
 	 *                 property="selected_fields",
 	 *                 type="array",
-	 *                 description="Optional list of fields to export. If blank, all fields will be exported.",
+	 *                 description="Optional list of specific fields to export. If omitted, all fields will be exported.",
 	 *                 @OA\Items(type="string", example="name")
 	 *             )
 	 *         )

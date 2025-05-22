@@ -25,7 +25,6 @@ use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
 
-
 class ProductController extends BaseController
 {
 	/**
@@ -610,6 +609,7 @@ class ProductController extends BaseController
 				preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
 				$formattedProduct[$attribute] = $matches[1] ?? [];
 				break;
+
 
 				case 'description':
 					$decodedDescription = json_decode($value, true); // Decode JSON string to array
