@@ -183,6 +183,9 @@ class PermissionSeeder extends Seeder
 			'delete flash sale',
 			'show flash sale',
 
+			'import keywords',
+			'export keywords',
+
 			'import product suppliers',
 			'export product suppliers',
 		];

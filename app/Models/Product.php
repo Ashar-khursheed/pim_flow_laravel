@@ -189,16 +189,6 @@ class Product extends Model
 		return $this->hasOne(ProductTranslation::class, 'ec_products_id')->where('lang_code', 'ar');
 	}
 
-	// public function attributes()
-	// {
-	// 	return $this->belongsToMany(
-	// 		Attribute::class,
-	// 		'product_attributes',
-	// 		'product_id',
-	// 		'attribute_id'
-	// 	);
-	// }
-
 	public function productAttributes()
 	{
 		return $this->hasMany(ProductAttribute::class);
@@ -232,23 +222,10 @@ class Product extends Model
 			return collect();
 		}
 
-		/* Fetch attributes from groups */
-		// $groupAttributes = $category->attributeGroups->flatMap->groupAttributes;
+		$categoryAttributes = $category->categoryAttributeGroups->flatMap->groupsAttributes ?? [];
 
-		// /* Fetch direct attributes */
-		// $directAttributes = $category->categoryAttributes;
-
-		// /* Merge and return unique attributes */
-		// return $groupAttributes->merge($directAttributes)->unique('id')->values();
-		$groupAttributes = $category->attributeGroups->flatMap->groupAttributes ?? [];
-
-		return $groupAttributes->unique('id')->values();
+		return $categoryAttributes->unique('id')->values();
 	}
-
-	// public function seo()
-	// {
-	// 	return $this->hasOne(SeoSchema::class, 'type_id')->where('type', 'product');
-	// }
 
 	public function seo()
 	{
@@ -283,6 +260,4 @@ class Product extends Model
 	{
 		return $this->hasMany(ProductSupplier::class, 'product_id');
 	}
-
-
 }

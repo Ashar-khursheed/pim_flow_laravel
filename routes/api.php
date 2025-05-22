@@ -48,6 +48,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductGroupController;
 use App\Http\Controllers\AttributeRecommendationController;
 use App\Http\Controllers\ProductSupplierController;
+use App\Http\Controllers\AppKeywordController;
+use App\Http\Controllers\MeasurementController;
+use App\Http\Controllers\ProductCategoryController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -67,6 +70,9 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 
+	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
+	Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
+	
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
@@ -96,17 +102,19 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
-
 	Route::apiResource('users', UserController::class);
 
 	Route::post('/attributes/import', [AttributeController::class, 'import']);
 	Route::post('/attributes/export', [AttributeController::class, 'export']);
 	Route::resource('attributes', AttributeController::class);
+	Route::delete('attribute-groups/{id}/remove-attribute/{attribute_id}', [AttributeGroupController::class, 'removeAttribute']);
 	Route::resource('attribute-groups', AttributeGroupController::class);
 	Route::get('category/getAttributesByCategory/{category_id}', [CategoryAttributeController::class, 'getAttributesByCategory']);
 
-	Route::post('category-attributes/{id}/add-attribute', [CategoryAttributeController::class, 'addAttributes']);
-	Route::delete('category-attributes/{id}/remove-attribute', [CategoryAttributeController::class, 'removeAttributes']);
+	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
+	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
+
+	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
 
 	Route::post('/brand-temp-2/{id}', [CategoryAttributeController::class, 'update']);
@@ -115,13 +123,13 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::apiResource('brand-temp-2', BrandTemp2Controller::class);
 	Route::apiResource('brand-temp-3', BrandTemp3Controller::class);
 
+	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
+	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
 
 
 	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
 	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
-
-
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -260,9 +268,10 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
 
+
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
-
+	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 });
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

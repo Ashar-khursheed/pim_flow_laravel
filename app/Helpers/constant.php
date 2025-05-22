@@ -1,5 +1,16 @@
 <?php
 
+use PhpUnitsOfMeasure\PhysicalQuantity\Length;
+use PhpUnitsOfMeasure\PhysicalQuantity\Mass;
+use PhpUnitsOfMeasure\PhysicalQuantity\Volume;
+use PhpUnitsOfMeasure\PhysicalQuantity\Temperature;
+use PhpUnitsOfMeasure\PhysicalQuantity\Time;
+use PhpUnitsOfMeasure\PhysicalQuantity\Speed;
+use PhpUnitsOfMeasure\PhysicalQuantity\Area;
+use PhpUnitsOfMeasure\PhysicalQuantity\Energy;
+use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
+use PhpUnitsOfMeasure\PhysicalQuantity\Force;
+
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
 		$constants = [
@@ -347,3 +358,34 @@ if (!function_exists('product_import_constants')) {
 	}
 }
 
+if (!function_exists('convert_unit')) {
+	function convert_unit(string $type, float $value, string $fromUnit, string $toUnit): float|string
+	{
+		try {
+			$quantityClassMap = [
+				'length' => Length::class,
+				'mass' => Mass::class,
+				'volume' => Volume::class,
+				'temperature' => Temperature::class,
+				'time' => Time::class,
+				'speed' => Speed::class,
+				'area' => Area::class,
+				'energy' => Energy::class,
+				'pressure' => Pressure::class,
+				'force' => Force::class,
+			];
+
+			$type = strtolower($type);
+			if (!isset($quantityClassMap[$type])) {
+				return "Unsupported type: $type";
+			}
+
+			$quantityClass = $quantityClassMap[$type];
+			$quantity = new $quantityClass($value, $fromUnit);
+
+			return $quantity->toUnit($toUnit);
+		} catch (\Exception $e) {
+			return "Conversion error: " . $e->getMessage();
+		}
+	}
+}
