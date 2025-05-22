@@ -168,43 +168,44 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
-		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 			$flatCategories = $product->categories;
+		
+			// Build hierarchy from top-level categories only
+			// Filter to only root categories (parent_id == null) so you don't get duplicates
+			$rootCategories = $flatCategories->filter(fn($cat) => $cat->parent_id === null);
+		
+			$formatCategoryTree = function ($category) use (&$formatCategoryTree) {
+				return [
+					'id' => $category->id,
+					'name' => $category->name,
+					'slug' => $category->slug,
+					'parent_id' => $category->parent_id,
+					'children' => $category->childrenRecursive->map(function ($child) use (&$formatCategoryTree) {
+						return $formatCategoryTree($child);
+					})->values(),
+				];
+			};
 		
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
-				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+				'image' => ($images = json_decode($product->images, true)) && isset($images[0]) ? $images[0] : null,
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
 		
-				// Flat category names
 				'product_family' => $flatCategories->pluck('name')->toArray(),
 		
-				// Nested parent-child tree
-				'categories_hierarchy' => $this->buildCategoryTree($flatCategories),
+				'categories_hierarchy' => $rootCategories->map(function ($category) use ($formatCategoryTree) {
+					return $formatCategoryTree($category);
+				})->values(),
 		
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
 		
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Products retrieved successfully',
-			'data' => $formattedProducts,
-			'pagination' => [
-				'total' => $products->total(),
-				'per_page' => $products->perPage(),
-				'current_page' => $products->currentPage(),
-				'last_page' => $products->lastPage(),
-				'next_page_url' => $products->nextPageUrl(),
-				'prev_page_url' => $products->previousPageUrl(),
-			],
-		]);
 	}
 
 	/**
