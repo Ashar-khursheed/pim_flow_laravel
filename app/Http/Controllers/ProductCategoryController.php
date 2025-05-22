@@ -95,51 +95,51 @@ class ProductCategoryController extends Controller
 
 
      /**
-     * @OA\Get(
-     *     path="/api/products/{id}/categories",
-     *     summary="Get hierarchical categories of a specific product",
-     *     description="This endpoint retrieves the categories associated with a product, including child categories.",
-     *     tags={"Products Category Get"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         description="ID of the product to retrieve categories for",
-     *         @OA\Schema(type="integer", example=1)
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Hierarchical list of categories for the product.",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="product_id", type="integer", example=1),
-     *             @OA\Property(
-     *                 property="categories",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/CategoryHierarchy")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Product not found.",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Product not found.")
-     *         )
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     *
-     * @OA\Schema(
-     *     schema="CategoryHierarchy",
-     *     type="object",
-     *     @OA\Property(property="id", type="integer", example=3),
-     *     @OA\Property(property="name", type="string", example="Electronics"),
-     *     @OA\Property(
-     *         property="children",
-     *         type="array",
-     *         @OA\Items(ref="#/components/schemas/CategoryHierarchy")
-     *     )
-     * )
+         * @OA\Get(
+         *     path="/api/products/{id}/categories",
+         *     summary="Get hierarchical categories of a specific product",
+         *     description="This endpoint retrieves the categories associated with a product, including child categories.",
+         *     tags={"Products Category Update"},
+         *     @OA\Parameter(
+         *         name="id",
+         *         in="path",
+         *         required=true,
+         *         description="ID of the product to retrieve categories for",
+         *         @OA\Schema(type="integer", example=1)
+         *     ),
+         *     @OA\Response(
+         *         response=200,
+         *         description="Hierarchical list of categories for the product.",
+         *         @OA\JsonContent(
+         *             @OA\Property(property="product_id", type="integer", example=1),
+         *             @OA\Property(
+         *                 property="categories",
+         *                 type="array",
+         *                 @OA\Items(ref="#/components/schemas/CategoryHierarchy")
+         *             )
+         *         )
+         *     ),
+         *     @OA\Response(
+         *         response=404,
+         *         description="Product not found.",
+         *         @OA\JsonContent(
+         *             @OA\Property(property="message", type="string", example="Product not found.")
+         *         )
+         *     ),
+         *     security={{"bearerAuth":{}}}
+         * )
+         *
+         * @OA\Schema(
+         *     schema="CategoryHierarchy",
+         *     type="object",
+         *     @OA\Property(property="id", type="integer", example=3),
+         *     @OA\Property(property="name", type="string", example="Electronics"),
+         *     @OA\Property(
+         *         property="children",
+         *         type="array",
+         *         @OA\Items(ref="#/components/schemas/CategoryHierarchy")
+         *     )
+         * )
      */
 
      public function getCategories($id)

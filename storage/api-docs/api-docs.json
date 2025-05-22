@@ -9219,7 +9219,7 @@
         "/api/products/{id}/categories": {
             "get": {
                 "tags": [
-                    "Products Category Get"
+                    "Products Category Update"
                 ],
                 "summary": "Get hierarchical categories of a specific product",
                 "description": "This endpoint retrieves the categories associated with a product, including child categories.",
@@ -16821,10 +16821,6 @@
         {
             "name": "Products Category Update",
             "description": "Products Category Update"
-        },
-        {
-            "name": "Products Category Get",
-            "description": "Products Category Get"
         },
         {
             "name": "Product Groups",
