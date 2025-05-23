@@ -1255,7 +1255,7 @@ class ProductController extends BaseController
 
 		// Save $input['images'] in your product model and persist
 		$product->images = $input['images'];
-
+         $product->save();
 		/* Handle video upload */
 		$existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
 		$existingVideos = is_array($existingVideos) ? $existingVideos : [];
