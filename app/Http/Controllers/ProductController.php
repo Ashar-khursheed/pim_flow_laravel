@@ -1203,12 +1203,12 @@ class ProductController extends BaseController
 		$reviewImagePath = 'production/reviews';
 
 		/* ✅ Handle Single Image Upload */
-		if ($request->hasFile('image')) {
-			$path = $request->file('image')->store($imagePath, 's3');
-			$input['image'] = Storage::disk('s3')->url($path); /* ✅ Full S3 URL */
-		}
-		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
-		$existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
+		// if ($request->hasFile('image')) {
+		// 	$path = $request->file('image')->store($imagePath, 's3');
+		// 	$input['image'] = Storage::disk('s3')->url($path); /* ✅ Full S3 URL */
+		// }
+		// $existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
+		// $existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
 
 		// if ($request->hasFile('images')) {
 		// 	$uploadedImages = [];
@@ -1223,43 +1223,51 @@ class ProductController extends BaseController
 		// 	/* Keep existing images if no new images are uploaded */
 		// 	$input['images'] = $existingImages;
 		// }
-		// if ($request->hasFile('images')) {
-		// 	$uploadedImages = [];
-		// 	foreach ($request->file('images') as $image) {
-		// 		$path = $image->store($imagePath, 's3');
-		// 		$uploadedImages[] = Storage::disk('s3')->url($path);
-		// 	}
-		
-		// 	/* Replace old images completely */
-		// 	$input['images'] = $uploadedImages;
-		// } else {
-		// 	/* Keep existing images if no new images are uploaded */
-		// 	$input['images'] = $existingImages;
-		// }
-		
+
 		// /* Convert to JSON with unescaped slashes before saving */
 		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
-		$inputImages = $request->input('images', []); // Might contain files and/or URLs
+		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
+		$existingImages = is_array($existingImages) ? $existingImages : [];
+
+		// Final images array
 		$finalImages = [];
 
-		// Check if it's a mixed array of Files + URLs
-		foreach ($inputImages as $image) {
-			if ($image instanceof \Illuminate\Http\UploadedFile) {
-				// New file upload
-				$path = $image->store($imagePath, 's3');
-				$finalImages[] = Storage::disk('s3')->url($path);
-			} elseif (is_string($image)) {
-				// Already existing image URL
-				$finalImages[] = $image;
+		// If payload has a specific 'images' key that contains order
+		if ($request->has('images')) {
+			$payloadImages = $request->input('images'); // Array of URLs or placeholder strings (e.g., 'new_image_1')
+			$uploadedFiles = $request->file('images'); // This is a file array indexed by numeric keys
+
+			$uploadIndex = 0;
+
+			foreach ($payloadImages as $img) {
+				if ($img === 'new_image') {
+					// Replace with uploaded image in current order
+					if (isset($uploadedFiles[$uploadIndex])) {
+						$path = $uploadedFiles[$uploadIndex]->store($imagePath, 's3');
+						$finalImages[] = Storage::disk('s3')->url($path);
+						$uploadIndex++;
+					}
+				} else {
+					// Keep existing image (assume it's already a valid URL)
+					$finalImages[] = $img;
+				}
+			}
+		} else {
+			// No payload ordering provided, just append uploaded files to existing ones
+			if ($request->hasFile('images')) {
+				$uploadedImages = [];
+				foreach ($request->file('images') as $image) {
+					$path = $image->store($imagePath, 's3');
+					$uploadedImages[] = Storage::disk('s3')->url($path);
+				}
+				$finalImages = array_merge($existingImages, $uploadedImages);
+			} else {
+				$finalImages = $existingImages;
 			}
 		}
 
-		// Fallback: if no images passed at all, retain old ones
-		if (empty($finalImages)) {
-			$finalImages = $existingImages;
-		}
-
+		// Save final image list
 		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
 
 
