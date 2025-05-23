@@ -1227,39 +1227,34 @@ class ProductController extends BaseController
 		// /* Convert to JSON with unescaped slashes before saving */
 		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
-		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
-		$existingImages = is_array($existingImages) ? $existingImages : [];
+		$imageOrder = $request->input('image_order', []);
+		$newFiles = $request->file('images', []);
 
 		$uploadedImages = [];
-		$newImageMap = [];
-
-		if ($request->hasFile('images')) {
-			foreach ($request->file('images') as $image) {
-				$originalName = $image->getClientOriginalName(); // Must match with frontend placeholder
-				$path = $image->store($imagePath, 's3');
-				$url = Storage::disk('s3')->url($path);
-				$newImageMap[$originalName] = $url;
-			}
-		}
+		$newFileIndex = 0;
 
 		$finalImages = [];
 
-		if ($request->has('final_images_order')) {
-			foreach ($request->input('final_images_order') as $imageKey) {
-				if (isset($newImageMap[$imageKey])) {
-					$finalImages[] = $newImageMap[$imageKey];
-				} else {
-					// Keep the existing URL
-					$finalImages[] = $imageKey;
+		foreach ($imageOrder as $image) {
+			if (str_starts_with($image, 'new_')) {
+				// This is a new image placeholder, upload the corresponding file
+				if (isset($newFiles[$newFileIndex])) {
+					$path = $newFiles[$newFileIndex]->store($imagePath, 's3');
+					$url = Storage::disk('s3')->url($path);
+					$finalImages[] = $url;
+					$newFileIndex++;
 				}
+			} else {
+				// Existing image URL, keep as is
+				$finalImages[] = $image;
 			}
-		} else {
-			// Fallback: just merge old + new
-			$finalImages = array_merge($existingImages, array_values($newImageMap));
 		}
 
+		// Now save final images as JSON
 		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
 
+		// Save $input['images'] in your product model and persist
+		$product->images = $input['images'];
 
 		/* Handle video upload */
 		$existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
