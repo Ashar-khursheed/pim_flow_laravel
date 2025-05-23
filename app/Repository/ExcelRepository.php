@@ -9,6 +9,8 @@ use PhpOffice\PhpSpreadsheet\Cell\DataValidation;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\NamedRange;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
 class ExcelRepository
 {
@@ -53,7 +55,7 @@ class ExcelRepository
 	public function setDropdown(Spreadsheet $spreadsheet, Worksheet $sheet, string $cell, string $attributeName, array $dropdownVals, string $existingVal = '')
 	{
 		if (empty($dropdownVals)) {
-			throw new \Exception('Dropdown values must be a non-empty array.');
+			// throw new \Exception('Dropdown values must be a non-empty array.');
 		}
 
 		/* Escape quotes ONLY for the formula */
@@ -169,23 +171,38 @@ class ExcelRepository
 	 * @param string $fileName
 	 * @param $excelObject
 	 */
-	public function downloadFile($fileName, $excelObject) {
+	// public function downloadFile($fileName, $excelObject) {
 
-		header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		header('Content-Disposition: attachment;filename=' . $fileName);
-		header('Cache-Control: max-age=0');
-		// If you're serving to IE 9, then the following may be needed
-		header('Cache-Control: max-age=1');
+	// 	header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+	// 	header('Content-Disposition: attachment;filename=' . $fileName);
+	// 	header('Cache-Control: max-age=0');
+	// 	// If you're serving to IE 9, then the following may be needed
+	// 	header('Cache-Control: max-age=1');
 
-		// If you're serving to IE over SSL, then the following may be needed
-		header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
-		header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
-		header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
-		header('Pragma: public'); // HTTP/1.0
-		$writer = IOFactory::createWriter($excelObject, 'Xlsx');
+	// 	// If you're serving to IE over SSL, then the following may be needed
+	// 	header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
+	// 	header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
+	// 	header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
+	// 	header('Pragma: public'); // HTTP/1.0
+	// 	$writer = IOFactory::createWriter($excelObject, 'Xlsx');
 
-		$writer->save('php://output');
-		exit;
+	// 	$writer->save('php://output');
+	// 	exit;
+	// }
+	public function downloadFile($fileName, $excelObject): StreamedResponse
+	{
+		return response()->streamDownload(function () use ($excelObject) {
+			$writer = new Xlsx($excelObject);
+			$writer->save('php://output');
+		}, $fileName, [
+			'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+			'Access-Control-Allow-Origin' => '*',
+			'Access-Control-Allow-Methods' => 'GET, POST, OPTIONS',
+			'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization',
+			'Cache-Control' => 'no-cache, must-revalidate',
+			'Pragma' => 'public',
+			'Expires' => '0',
+		]);
 	}
 
 	/**
