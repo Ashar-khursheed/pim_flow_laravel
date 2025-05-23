@@ -1271,8 +1271,11 @@ class ProductController extends BaseController
 		// $input['video_path'] = json_encode($input['video_path'], JSON_UNESCAPED_SLASHES);
 		$finalVideos = [];
 
-		if ($request->has('video_path')) {
-			foreach ($request->video_path as $key => $video) {
+		$videoPaths = $request->input('video_path');
+
+		// Ensure it's an array before looping
+		if (is_array($videoPaths)) {
+			foreach ($videoPaths as $key => $video) {
 				if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
 					// It's a URL, keep as is
 					$finalVideos[] = $video;
@@ -1282,7 +1285,7 @@ class ProductController extends BaseController
 					$path = $file->store($videoPath, 's3');
 					$finalVideos[] = Storage::disk('s3')->url($path);
 				}
-				// ignore invalid inputs
+				// Ignore invalid inputs
 			}
 		}
 
