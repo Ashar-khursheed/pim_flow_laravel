@@ -55,7 +55,7 @@ class ExcelRepository
 	public function setDropdown(Spreadsheet $spreadsheet, Worksheet $sheet, string $cell, string $attributeName, array $dropdownVals, string $existingVal = '')
 	{
 		if (empty($dropdownVals)) {
-			throw new \Exception('Dropdown values must be a non-empty array.');
+			// throw new \Exception('Dropdown values must be a non-empty array.');
 		}
 
 		/* Escape quotes ONLY for the formula */
