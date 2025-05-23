@@ -1289,67 +1289,39 @@ class ProductController extends BaseController
 		$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
 
 		// /* Handle document upload */
-		// $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
-		// $existingDocs = is_array($existingDocs) ? $existingDocs : [];
+		$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
+		$existingDocs = is_array($existingDocs) ? $existingDocs : [];
 
-		// if ($request->hasFile('documents')) {
-		// 	$uploadedDocs = [];
-		// 	foreach ($request->file('documents') as $doc) {
-		// 		$path = $doc->store($documentPath, 's3');
+		if ($request->hasFile('documents')) {
+			$uploadedDocs = [];
+			foreach ($request->file('documents') as $doc) {
+				$path = $doc->store($documentPath, 's3');
 
-		// 		/* Check if the title is provided, if not, use the document's name */
-		// 		$title = $request->input('title', $doc->getClientOriginalName()); /* default to original name if title is empty */
+				/* Check if the title is provided, if not, use the document's name */
+				$title = $request->input('title', $doc->getClientOriginalName()); /* default to original name if title is empty */
 
-		// 		/* If title is still empty, use the document name as title */
-		// 		if (empty($title)) {
-		// 			$title = basename($doc->getClientOriginalName());  /* Use document name if title is empty */
-		// 		}
-
-		// 		/* Create an array with title and path for each uploaded document */
-		// 		$uploadedDocs[] = [
-		// 			'title' => $title,
-		// 			'path' => Storage::disk('s3')->url($path)
-		// 		];
-		// 	}
-
-		// 	/* Merge with existing documents */
-		// 	$input['documents'] = array_merge($existingDocs, $uploadedDocs);
-		// } else {
-		// 	/* Retain existing documents if no new files are uploaded */
-		// 	$input['documents'] = $existingDocs;
-		// }
-
-		// /* Convert to JSON with unescaped slashes */
-		// $input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
-		$finalDocs = [];
-
-		if ($request->has('documents')) {
-			foreach ($request->documents as $key => $doc) {
-				if (is_array($doc) && isset($doc['title']) && isset($doc['path']) && filter_var($doc['path'], FILTER_VALIDATE_URL)) {
-					// If frontend sends an object with 'title' and 'path' keys and valid URL, keep it as is
-					$finalDocs[] = [
-						'title' => $doc['title'],
-						'path' => $doc['path'],
-					];
-				} elseif ($request->hasFile("documents.$key")) {
-					// It's an uploaded file, upload to S3
-					$file = $request->file("documents.$key");
-					$path = $file->store($documentPath, 's3');
-					// Try to get title from request input with fallback to original filename
-					$titleInput = $request->input("documents_titles.$key"); // assume titles come as a parallel array documents_titles[]
-					$title = $titleInput ?: $file->getClientOriginalName();
-		
-					$finalDocs[] = [
-						'title' => $title,
-						'path' => Storage::disk('s3')->url($path),
-					];
+				/* If title is still empty, use the document name as title */
+				if (empty($title)) {
+					$title = basename($doc->getClientOriginalName());  /* Use document name if title is empty */
 				}
-				// ignore invalid inputs
-			}
-		}
-		
-		$input['documents'] = json_encode($finalDocs, JSON_UNESCAPED_SLASHES);
 
+				/* Create an array with title and path for each uploaded document */
+				$uploadedDocs[] = [
+					'title' => $title,
+					'path' => Storage::disk('s3')->url($path)
+				];
+			}
+
+			/* Merge with existing documents */
+			$input['documents'] = array_merge($existingDocs, $uploadedDocs);
+		} else {
+			/* Retain existing documents if no new files are uploaded */
+			$input['documents'] = $existingDocs;
+		}
+
+		/* Convert to JSON with unescaped slashes */
+		$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
+		
 
 
 		$input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
