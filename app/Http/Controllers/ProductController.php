@@ -1202,30 +1202,64 @@ class ProductController extends BaseController
 		$documentPath = 'production/documents';
 		$reviewImagePath = 'production/reviews';
 
-		/* ✅ Handle Single Image Upload */
-		if ($request->hasFile('image')) {
-			$path = $request->file('image')->store($imagePath, 's3');
-			$input['image'] = Storage::disk('s3')->url($path); /* ✅ Full S3 URL */
-		}
+		// /* ✅ Handle Single Image Upload */
+		// if ($request->hasFile('image')) {
+		// 	$path = $request->file('image')->store($imagePath, 's3');
+		// 	$input['image'] = Storage::disk('s3')->url($path); /* ✅ Full S3 URL */
+		// }
+		// $existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
+		// $existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
+
+		// if ($request->hasFile('images')) {
+		// 	$uploadedImages = [];
+		// 	foreach ($request->file('images') as $image) {
+		// 		$path = $image->store($imagePath, 's3');
+		// 		$uploadedImages[] = Storage::disk('s3')->url($path);
+		// 	}
+
+		// 	/* Merge old and new images */
+		// 	$input['images'] = array_merge($existingImages, $uploadedImages);
+		// } else {
+		// 	/* Keep existing images if no new images are uploaded */
+		// 	$input['images'] = $existingImages;
+		// }
+
+		// /* Convert to JSON with unescaped slashes before saving */
+		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
+
 		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
-		$existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
+		$existingImages = is_array($existingImages) ? $existingImages : [];
+
+		$uploadedImages = [];
+		$newImageMap = [];
 
 		if ($request->hasFile('images')) {
-			$uploadedImages = [];
 			foreach ($request->file('images') as $image) {
+				$originalName = $image->getClientOriginalName(); // Must match with frontend placeholder
 				$path = $image->store($imagePath, 's3');
-				$uploadedImages[] = Storage::disk('s3')->url($path);
+				$url = Storage::disk('s3')->url($path);
+				$newImageMap[$originalName] = $url;
 			}
-
-			/* Merge old and new images */
-			$input['images'] = array_merge($existingImages, $uploadedImages);
-		} else {
-			/* Keep existing images if no new images are uploaded */
-			$input['images'] = $existingImages;
 		}
 
-		/* Convert to JSON with unescaped slashes before saving */
-		$input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
+		$finalImages = [];
+
+		if ($request->has('final_images_order')) {
+			foreach ($request->input('final_images_order') as $imageKey) {
+				if (isset($newImageMap[$imageKey])) {
+					$finalImages[] = $newImageMap[$imageKey];
+				} else {
+					// Keep the existing URL
+					$finalImages[] = $imageKey;
+				}
+			}
+		} else {
+			// Fallback: just merge old + new
+			$finalImages = array_merge($existingImages, array_values($newImageMap));
+		}
+
+		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+
 
 		/* Handle video upload */
 		$existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
