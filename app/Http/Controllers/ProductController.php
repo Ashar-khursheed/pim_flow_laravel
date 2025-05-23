@@ -1210,20 +1210,33 @@ class ProductController extends BaseController
 		$existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
 		$existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
 
+		// if ($request->hasFile('images')) {
+		// 	$uploadedImages = [];
+		// 	foreach ($request->file('images') as $image) {
+		// 		$path = $image->store($imagePath, 's3');
+		// 		$uploadedImages[] = Storage::disk('s3')->url($path);
+		// 	}
+
+		// 	/* Merge old and new images */
+		// 	$input['images'] = array_merge($existingImages, $uploadedImages);
+		// } else {
+		// 	/* Keep existing images if no new images are uploaded */
+		// 	$input['images'] = $existingImages;
+		// }
 		if ($request->hasFile('images')) {
 			$uploadedImages = [];
 			foreach ($request->file('images') as $image) {
 				$path = $image->store($imagePath, 's3');
 				$uploadedImages[] = Storage::disk('s3')->url($path);
 			}
-
-			/* Merge old and new images */
-			$input['images'] = array_merge($existingImages, $uploadedImages);
+		
+			/* Replace old images completely */
+			$input['images'] = $uploadedImages;
 		} else {
 			/* Keep existing images if no new images are uploaded */
 			$input['images'] = $existingImages;
 		}
-
+		
 		/* Convert to JSON with unescaped slashes before saving */
 		$input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
