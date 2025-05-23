@@ -1223,22 +1223,45 @@ class ProductController extends BaseController
 		// 	/* Keep existing images if no new images are uploaded */
 		// 	$input['images'] = $existingImages;
 		// }
-		if ($request->hasFile('images')) {
-			$uploadedImages = [];
-			foreach ($request->file('images') as $image) {
+		// if ($request->hasFile('images')) {
+		// 	$uploadedImages = [];
+		// 	foreach ($request->file('images') as $image) {
+		// 		$path = $image->store($imagePath, 's3');
+		// 		$uploadedImages[] = Storage::disk('s3')->url($path);
+		// 	}
+		
+		// 	/* Replace old images completely */
+		// 	$input['images'] = $uploadedImages;
+		// } else {
+		// 	/* Keep existing images if no new images are uploaded */
+		// 	$input['images'] = $existingImages;
+		// }
+		
+		// /* Convert to JSON with unescaped slashes before saving */
+		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
+
+		$inputImages = $request->input('images', []); // Might contain files and/or URLs
+		$finalImages = [];
+
+		// Check if it's a mixed array of Files + URLs
+		foreach ($inputImages as $image) {
+			if ($image instanceof \Illuminate\Http\UploadedFile) {
+				// New file upload
 				$path = $image->store($imagePath, 's3');
-				$uploadedImages[] = Storage::disk('s3')->url($path);
+				$finalImages[] = Storage::disk('s3')->url($path);
+			} elseif (is_string($image)) {
+				// Already existing image URL
+				$finalImages[] = $image;
 			}
-		
-			/* Replace old images completely */
-			$input['images'] = $uploadedImages;
-		} else {
-			/* Keep existing images if no new images are uploaded */
-			$input['images'] = $existingImages;
 		}
-		
-		/* Convert to JSON with unescaped slashes before saving */
-		$input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
+
+		// Fallback: if no images passed at all, retain old ones
+		if (empty($finalImages)) {
+			$finalImages = $existingImages;
+		}
+
+		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+
 
 		/* Handle video upload */
 		$existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
