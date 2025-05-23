@@ -1202,6 +1202,26 @@ class ProductController extends BaseController
 		$documentPath = 'production/documents';
 		$reviewImagePath = 'production/reviews';
 
+		$finalImages = [];
+
+		if ($request->has('images')) {
+			foreach ($request->images as $key => $image) {
+				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+					// It's a URL, keep it as is
+					$finalImages[] = $image;
+				} elseif ($request->hasFile("images.$key")) {
+					// It's an uploaded file, store it to S3
+					$file = $request->file("images.$key");
+					$path = $file->store($imagePath, 's3');
+					$finalImages[] = Storage::disk('s3')->url($path);
+				}
+				// else ignore invalid inputs
+			}
+		}
+		
+		// Save as JSON with unescaped slashes
+		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+
 		// /* ✅ Handle Single Image Upload */
 		// if ($request->hasFile('image')) {
 		// 	$path = $request->file('image')->store($imagePath, 's3');
@@ -1227,35 +1247,8 @@ class ProductController extends BaseController
 		// /* Convert to JSON with unescaped slashes before saving */
 		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
-		$imageOrder = $request->input('image_order', []);
-		$newFiles = $request->file('images', []);
+		
 
-		$uploadedImages = [];
-		$newFileIndex = 0;
-
-		$finalImages = [];
-
-		foreach ($imageOrder as $image) {
-			if (str_starts_with($image, 'new_')) {
-				// This is a new image placeholder, upload the corresponding file
-				if (isset($newFiles[$newFileIndex])) {
-					$path = $newFiles[$newFileIndex]->store($imagePath, 's3');
-					$url = Storage::disk('s3')->url($path);
-					$finalImages[] = $url;
-					$newFileIndex++;
-				}
-			} else {
-				// Existing image URL, keep as is
-				$finalImages[] = $image;
-			}
-		}
-
-		// Now save final images as JSON
-		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
-
-		// Save $input['images'] in your product model and persist
-		$product->images = $input['images'];
-         $product->save();
 		/* Handle video upload */
 		$existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
 		$existingVideos = is_array($existingVideos) ? $existingVideos : [];
