@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\Http;
 
 use App\Models\TransactionLog;
 use App\Models\Product;
+use App\Models\MeasurementUnit;
 
 class ImportProductAttributeJob implements ShouldQueue
 {
@@ -36,6 +37,7 @@ class ImportProductAttributeJob implements ShouldQueue
 	public function handle()
 	{
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
+		$measurementNameIds = MeasurementUnit::pluck('id', 'name')->toArray();
 		$descArray = json_decode($log->description, true) ?? ["Errors" => ''];
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
@@ -93,18 +95,30 @@ class ImportProductAttributeJob implements ShouldQueue
 
 					if (!empty($attributeValue)) {
 						if (in_array($categoryAttribute->type, ['text', 'number', 'select', 'price', 'measurement', 'toggle', 'date'])) {
-							/* Ensure attribute value exists */
-							if ($categoryAttribute->type != 'toggle') {
+
+							/* Ensure attribute value exists for select type */
+							if ($categoryAttribute->type == 'select') {
 								$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
 									'attribute_value' => $attributeValue
 								]);
+
+							}
+
+							/* Handle measurement unit */
+							if ($categoryAttribute->type == 'measurement') {
+								$columnName = $categoryAttribute->name . ' Measurement Unit';
+								$attributeMeasurement = trim($rowData[$columnName] ?? '');
+								$attributeMeasurementId = $measurementNameIds[$attributeMeasurement] ?? null;
+							} else {
+								$attributeMeasurementId = null;
 							}
 
 							/* Collect attribute data */
 							$attributeData[] = [
 								'product_id' => $product->id,
 								'attribute_id' => $categoryAttribute->id,
-								'attribute_value' => $attributeValue
+								'attribute_value' => $attributeValue,
+								'measurement_unit_id' => $attributeMeasurementId,
 							];
 
 							$attributeIds[] = $categoryAttribute->id;
@@ -174,8 +188,14 @@ class ImportProductAttributeJob implements ShouldQueue
 					/* Insert or update new attributes */
 					foreach ($attributeData as $data) {
 						$product->productAttributes()->updateOrCreate(
-							['product_id' => $data['product_id'], 'attribute_id' => $data['attribute_id']],
-							['attribute_value' => $data['attribute_value']]
+							[
+								'product_id' => $data['product_id'],
+								'attribute_id' => $data['attribute_id']
+							],
+							[
+								'attribute_value' => $data['attribute_value'],
+								'measurement_unit_id' => $data['measurement_unit_id'],
+							]
 						);
 					}
 

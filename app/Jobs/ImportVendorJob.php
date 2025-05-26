@@ -64,7 +64,9 @@ class ImportVendorJob implements ShouldQueue
 			if (count($this->header) === count($row)) {
 				$rowData = array_combine($this->header, $row);
 			} else {
-				$rowError[] = 'The data in this row is not compatible for import.';
+				$rowError[] = "The data in this row is not compatible for import.";
+				$rowError[] = "Column count: ".count($this->header);
+				$rowError[] = "Row data count: ".count($row);
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError)

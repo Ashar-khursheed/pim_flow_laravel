@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('brand_temp_1', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('brand_id')->nullable();
-            $table->text('category_id')->nullable(); // Using text instead of json
+            $table->text('category_id')->nullable();
 
             $table->text('page_top_banners_desktop')->nullable();
             $table->text('page_top_banners_desktop_file_name')->nullable();
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->text('page_top_banners_mobile_file_name')->nullable();
             $table->longText('page_top_banners_mobile_alt_text')->nullable();
 
-            $table->text('category_banners')->nullable(); // category_ids + product_ids
+            $table->text('category_banners')->nullable();
             $table->text('category_banners_file_name')->nullable();
             $table->longText('category_banners_alt_text')->nullable();
 

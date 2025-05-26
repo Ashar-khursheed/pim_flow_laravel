@@ -19,10 +19,10 @@ def main(category_id):
     try:
         # Database config (can replace with real values)
         db_config = {
-            "host": "horecadb.ch0qsm2uacmv.us-west-1.rds.amazonaws.com",
+             "host": "pim-flow-db.ch0qsm2uacmv.us-west-1.rds.amazonaws.com",
             "user": "admin",
-            "password": "12345678Hrc",
-            "database": "horecadb",
+            "password": "Y7Btx88Qe0BZg8ihk6Jc",
+            "database": "pim_flow_db",
             "cursorclass": pymysql.cursors.DictCursor
         }
 

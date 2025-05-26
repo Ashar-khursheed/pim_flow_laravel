@@ -14,7 +14,7 @@ class AddCategoryIdToBrandTemp2Table extends Migration
     public function up()
     {
         Schema::table('brand_temp_2', function (Blueprint $table) {
-            $table->text('category_id')->nullable()->after('website_banners_videos_mobile'); // Using text instead of json
+            $table->text('category_id')->nullable()->after('website_banners_videos_mobile');
         });
     }
 

@@ -20,11 +20,11 @@ return new class extends Migration
             $table->string('payment_mode')->nullable();
             $table->decimal('amount', 10, 2)->nullable();
             $table->string('currency')->default('INR');
-            $table->json('raw_response'); // full response
+            $table->longText('raw_response'); // full response
             $table->timestamps();
         });
     }
-    
+
 
     /**
      * Reverse the migrations.

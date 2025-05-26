@@ -632,7 +632,7 @@ class VendorController extends BaseController
 				'Business Licence URL' => 'business_licence_url'
 			];
 
-			$csvImporter->processImport(
+			$csvImporter->processCsvImport(
 				$request->file('upload_file')->getRealPath(),
 				$vendorFileFormatArray,
 				'Vendor',
