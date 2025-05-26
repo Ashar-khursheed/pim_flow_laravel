@@ -463,7 +463,7 @@ def main():
 if __name__ == "__main__":
     name = "Stainless Steel Double Door Freezer"
     keyword = "commercial freezer"
-    page_type = "product"
+    page_type = "Category"
 
     seo_result = generate_high_ctr_seo(name, keyword, page_type)
 
