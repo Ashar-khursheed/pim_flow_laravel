@@ -458,13 +458,13 @@ def main():
         print(json.dumps({"error": f"Unexpected error: {e}"}, indent=2), file=sys.stderr)
         sys.exit(1)
 
-# if __name__ == "__main__":
-#     main()
 if __name__ == "__main__":
-    name = "Stainless Steel Double Door Freezer"
-    keyword = "commercial freezer"
-    page_type = "Category"
+    main()
+# if __name__ == "__main__":
+#     name = "Stainless Steel Double Door Freezer"
+#     keyword = "commercial freezer"
+#     page_type = "Category"
 
-    seo_result = generate_high_ctr_seo(name, keyword, page_type)
+#     seo_result = generate_high_ctr_seo(name, keyword, page_type)
 
-    print(json.dumps(seo_result, indent=2, ensure_ascii=False))
+#     print(json.dumps(seo_result, indent=2, ensure_ascii=False))
