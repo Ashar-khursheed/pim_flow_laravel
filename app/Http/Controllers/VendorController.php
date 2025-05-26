@@ -15,6 +15,7 @@ use App\Models\Zipcode;
 use App\Models\Website;
 use App\Models\PreOnboardingVendor;
 use App\Models\TransactionLog;
+use App\Models\VendorContact;
 
 use App\Jobs\ImportVendorJob;
 use App\Services\CsvImporterService;
@@ -138,14 +139,24 @@ class VendorController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name", "country_id", "email", "contact_person"},
+	 *                 required={"name", "country_id"},
 	 *
 	 *                 @OA\Property(property="name", type="string", example="ABC Supplier"),
 	 *                 @OA\Property(property="country_id", type="integer", example=1),
-	 *                 @OA\Property(property="email", type="string", format="email", example="vendor@example.com"),
-	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
-	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
-	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
+	 *
+	 *                 @OA\Property(
+	 *                     property="contacts",
+	 *                     type="array",
+	 *                     @OA\Items(
+	 *                         type="object",
+	 *                         required={"type", "name"},
+	 *                         @OA\Property(property="type", type="string", example="Marketing"),
+	 *                         @OA\Property(property="name", type="string", example="John Doe"),
+	 *                         @OA\Property(property="mobile_number", type="string", example="9876543210"),
+	 *                         @OA\Property(property="email", type="string", format="email", example="contact@example.com")
+	 *                     ),
+	 *                     description="List of vendor contacts (type, name, mobile, email)"
+	 *                 ),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -194,13 +205,39 @@ class VendorController extends BaseController
 	public function store(Request $request)
 	{
 		$this->preprocessVendorRequest($request);
+
+		// $request->contacts = is_array($request->contacts) ? $request->contacts : json_decode($request->contacts, true);
+		if (!is_array($request->contacts)) {
+			$decoded = json_decode($request->contacts, true);
+
+			/* If the decoded array contains stringified JSON objects, decode them too */
+			if (is_array($decoded)) {
+				foreach ($decoded as &$item) {
+					if (is_string($item)) {
+						$maybeObject = json_decode($item, true);
+						if (json_last_error() === JSON_ERROR_NONE && is_array($maybeObject)) {
+							$item = $maybeObject;
+						}
+					}
+				}
+				$request->merge(['contacts' => $decoded]);
+			}
+		}
+
+		// dd($request->all());
 		$validated = $request->validate([
 			'name' => 'required|string|unique:vendors,name',
 			'country_id' => 'required|integer|exists:countries,id',
-			'email' => 'required|email|unique:vendors,email',
-			'contact_person' => 'required|string',
-			'landline_number' => 'nullable|string',
-			'mobile_number' => 'nullable|string',
+			// 'email' => 'required|email|unique:vendors,email',
+			// 'contact_person' => 'required|string',
+			// 'landline_number' => 'nullable|string',
+			// 'mobile_number' => 'nullable|string',
+
+			'contacts' => 'required|array|min:1',
+			'contacts.*.type' => 'required|string',
+			'contacts.*.name' => 'required|string',
+			'contacts.*.mobile_number' => 'nullable|string',
+			'contacts.*.email' => 'nullable|email',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -231,6 +268,8 @@ class VendorController extends BaseController
 		]);
 
 		$data = $validated;
+		unset($data['contacts']);
+
 		$preOnboardingVendorID = $validated['pre_onboarding_vendor_id'] ?? null;
 		unset($data['pre_onboarding_vendor_id']);
 
@@ -249,10 +288,26 @@ class VendorController extends BaseController
 		$data['created_by'] = auth()->id();
 
 		$vendor = Vendor::create($data);
-		if ($vendor && isset($preOnboardingVendorID)) {
-			$record = PreOnboardingVendor::find($preOnboardingVendorID);
-			if ($record) {
-				$record->delete();
+		if ($vendor) {
+			/* Save contacts (unique by type and name) */
+			foreach ($validated['contacts'] as $contact) {
+				$existingContact = VendorContact::where('vendor_id', $vendor->id)
+				->where('type', $contact['type'])
+				->where('name', $contact['name'])
+				->first();
+
+				if (!$existingContact) {
+					$contact['vendor_id'] = $vendor->id;
+					VendorContact::create($contact);
+				}
+			}
+
+			/* Clean up pre-onboarding */
+			if ($preOnboardingVendorID) {
+				$record = PreOnboardingVendor::find($preOnboardingVendorID);
+				if ($record) {
+					$record->delete();
+				}
 			}
 		}
 
@@ -390,6 +445,14 @@ class VendorController extends BaseController
 
 		$record->warehouse_locations = $record->warehouse_locations ? explode('|', $record->warehouse_locations) : [];
 
+		/* Contacts (new structure) */
+		$record->load(['vendorContacts' => function ($q) {
+			$q->select('vendor_id', 'type', 'name', 'email', 'mobile_number');
+		}]);
+
+		$record->contacts = $record->vendorContacts;
+		unset($record->vendorContacts, $record->email, $record->contact_person, $record->landline_number, $record->mobile_number);
+
 		return response()->json([
 			'success' => true,
 			'message' => __("msg_rec_dtl"),
@@ -415,15 +478,25 @@ class VendorController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"_method", "name", "country_id", "email", "contact_person"},
+	 *                 required={"_method", "name", "country_id"},
 	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *
 	 *                 @OA\Property(property="name", type="string", example="ABC Supplier"),
 	 *                 @OA\Property(property="country_id", type="integer", example=1),
-	 *                 @OA\Property(property="email", type="string", format="email", example="vendor@example.com"),
-	 *                 @OA\Property(property="contact_person", type="string", example="John Doe"),
-	 *                 @OA\Property(property="landline_number", type="string", example="0123456789"),
-	 *                 @OA\Property(property="mobile_number", type="string", example="9876543210"),
+	 *
+	 *                 @OA\Property(
+	 *                     property="contacts",
+	 *                     type="array",
+	 *                     @OA\Items(
+	 *                         type="object",
+	 *                         required={"type", "name"},
+	 *                         @OA\Property(property="type", type="string", example="Marketing"),
+	 *                         @OA\Property(property="name", type="string", example="John Doe"),
+	 *                         @OA\Property(property="mobile_number", type="string", example="9876543210"),
+	 *                         @OA\Property(property="email", type="string", format="email", example="contact@example.com")
+	 *                     ),
+	 *                     description="List of vendor contacts (type, name, mobile, email)"
+	 *                 ),
 	 *
 	 *                 @OA\Property(
 	 *                     property="website_ids",
@@ -480,17 +553,39 @@ class VendorController extends BaseController
 			]);
 		}
 
-		// dd($vendor->email, $request->email);
-
 		$this->preprocessVendorRequest($request);
+
+		if (!is_array($request->contacts)) {
+			$decoded = json_decode($request->contacts, true);
+
+			/* If the decoded array contains stringified JSON objects, decode them too */
+			if (is_array($decoded)) {
+				foreach ($decoded as &$item) {
+					if (is_string($item)) {
+						$maybeObject = json_decode($item, true);
+						if (json_last_error() === JSON_ERROR_NONE && is_array($maybeObject)) {
+							$item = $maybeObject;
+						}
+					}
+				}
+				$request->merge(['contacts' => $decoded]);
+			}
+		}
 
 		$validated = $request->validate([
 			'name' => 'required|string|unique:vendors,name,' . $id,
 			'country_id' => 'required|integer|exists:countries,id',
-			'email' => 'required|email|unique:vendors,email,' . $id,
-			'contact_person' => 'required|string',
-			'landline_number' => 'nullable|string',
-			'mobile_number' => 'nullable|string',
+
+			// 'email' => 'required|email|unique:vendors,email,' . $id,
+			// 'contact_person' => 'required|string',
+			// 'landline_number' => 'nullable|string',
+			// 'mobile_number' => 'nullable|string',
+
+			'contacts' => 'required|array|min:1',
+			'contacts.*.type' => 'required|string',
+			'contacts.*.name' => 'required|string',
+			'contacts.*.mobile_number' => 'nullable|string',
+			'contacts.*.email' => 'nullable|email',
 
 			'website_ids' => 'nullable|array',
 			'website_ids.*' => 'integer|exists:websites,id',
@@ -517,6 +612,7 @@ class VendorController extends BaseController
 		]);
 
 		$data = $validated;
+		unset($data['contacts']);
 
 		/* Handle File Uploads to S3 */
 		if ($request->hasFile('logo')) {
@@ -540,6 +636,17 @@ class VendorController extends BaseController
 		$data['updated_by'] = auth()->id();
 
 		$vendor->update($data);
+
+		$vendor->vendorContacts()->delete();
+
+		foreach ($validated['contacts'] as $contact) {
+			$vendor->vendorContacts()->create([
+				'type' => $contact['type'],
+				'name' => $contact['name'],
+				'mobile_number' => $contact['mobile_number'] ?? null,
+				'email' => $contact['email'] ?? null,
+			]);
+		}
 
 		return response()->json([
 			'success' => true,
@@ -577,7 +684,10 @@ class VendorController extends BaseController
 			], 404);
 		}
 
-		/* Proceed with deletion */
+		/* Delete vendor contacts first */
+		$record->vendorContacts()->delete();
+
+		/* Then delete the vendor */
 		$record->delete();
 
 		return response()->json([

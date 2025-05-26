@@ -14759,9 +14759,7 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "country_id",
-                                    "email",
-                                    "contact_person"
+                                    "country_id"
                                 ],
                                 "properties": {
                                     "name": {
@@ -14772,22 +14770,35 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "vendor@example.com"
-                                    },
-                                    "contact_person": {
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "landline_number": {
-                                        "type": "string",
-                                        "example": "0123456789"
-                                    },
-                                    "mobile_number": {
-                                        "type": "string",
-                                        "example": "9876543210"
+                                    "contacts": {
+                                        "description": "List of vendor contacts (type, name, mobile, email)",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "type",
+                                                "name"
+                                            ],
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Marketing"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "mobile_number": {
+                                                    "type": "string",
+                                                    "example": "9876543210"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "contact@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     },
                                     "website_ids": {
                                         "type": "array",
@@ -14963,9 +14974,7 @@
                                 "required": [
                                     "_method",
                                     "name",
-                                    "country_id",
-                                    "email",
-                                    "contact_person"
+                                    "country_id"
                                 ],
                                 "properties": {
                                     "_method": {
@@ -14980,22 +14989,35 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "vendor@example.com"
-                                    },
-                                    "contact_person": {
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "landline_number": {
-                                        "type": "string",
-                                        "example": "0123456789"
-                                    },
-                                    "mobile_number": {
-                                        "type": "string",
-                                        "example": "9876543210"
+                                    "contacts": {
+                                        "description": "List of vendor contacts (type, name, mobile, email)",
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "type",
+                                                "name"
+                                            ],
+                                            "properties": {
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Marketing"
+                                                },
+                                                "name": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "mobile_number": {
+                                                    "type": "string",
+                                                    "example": "9876543210"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "format": "email",
+                                                    "example": "contact@example.com"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     },
                                     "website_ids": {
                                         "type": "array",

@@ -23,6 +23,11 @@ class Vendor extends Model
 		return $this->belongsTo(Country::class);
 	}
 
+	public function vendorContacts()
+	{
+		return $this->hasMany(vendorContact::class);
+	}
+
 	/**
 	 * Prepare a date for array / JSON serialization.
 	 *
