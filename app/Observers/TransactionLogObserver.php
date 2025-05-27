@@ -15,7 +15,7 @@ class TransactionLogObserver
 
 	public function updating($model)
 	{
-		dd(request()->all(), $model->attributeValues->toArray(), $model->attributesGroups()->pluck('name')->toArray());
+		// dd(request()->all(), $model->attributeValues->toArray(), class_basename($model));
 	}
 
 	public function updated($model)
@@ -35,23 +35,35 @@ class TransactionLogObserver
 		$identifier = $model->id;
 		$changeObj = null;
 		$description = null;
+
 		if ($action == __('lbl_edit')) {
 			$changedField = Arr::except($model->getChanges(), ['updated_at']);
+
 			if (count($changedField)) {
 				$oldArray = [];
 				$newArray = [];
 				$oldData = $model->getOriginal();
+
 				foreach ($changedField as $key => $value) {
-					$oldArray[$key] = $oldData[$key];
-					$newArray[$key] = $value;
+					if ($module == 'Attribute' && $key == 'attribute_group_id') {
+						$oldGroupId = $oldData['attribute_group_id'] ?? null;
+						$oldArray['attribute_group'] = optional(\App\Models\AttributeGroup::find($oldGroupId))->name;
+						$newArray['attribute_group'] = optional($model->attributeGroup)->name;
+					} else {
+						$oldArray[$key] = $oldData[$key] ?? null;
+						$newArray[$key] = $value;
+					}
 				}
+
 				$changes = [
-					"old_value" => $oldArray,
-					"new_value" => $newArray,
+					'old_value' => $oldArray,
+					'new_value' => $newArray,
 				];
+
 				$changeObj = json_encode($changes);
 			}
 		}
+
 		if ($action == __('lbl_dlt')) {
 			$changes = [
 				"value" => Arr::except($model->getOriginal(), ['password', 'updated_at'])

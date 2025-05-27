@@ -192,6 +192,7 @@ class AttributeController extends BaseController
 		$attribute->code = $request->code;
 		$attribute->type = $request->type;
 		$attribute->created_by = auth()->id();
+		$attribute->updated_by = auth()->id();
 		$attribute->created_at = now();
 		$attribute->updated_at = now();
 		$attribute->save();
@@ -276,7 +277,7 @@ class AttributeController extends BaseController
 	 *             required={"name", "code", "type"},
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
-	 *             @OA\Property(property="type", type="string", example="dropdown"),
+	 *             @OA\Property(property="type", type="string", example="select"),
 	 *             @OA\Property(property="attribute_group_id", type="integer", example="1"),
 	 *             @OA\Property(property="measurement_units_ids", type="array", description="Required if type is 'measurement'", @OA\Items(type="integer", example="1")),
 	 *             @OA\Property(property="attribute_values", type="array", description="Array of attribute values", @OA\Items(type="string", example="value1")),

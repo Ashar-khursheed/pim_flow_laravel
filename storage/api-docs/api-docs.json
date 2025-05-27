@@ -365,7 +365,7 @@
                                     },
                                     "type": {
                                         "type": "string",
-                                        "example": "dropdown"
+                                        "example": "select"
                                     },
                                     "attribute_group_id": {
                                         "type": "integer",
@@ -14218,37 +14218,25 @@
                     {
                         "name": "module",
                         "in": "query",
-                        "description": "Filter transaction logs by module (All, Product, Product Attribute).",
-                        "required": false,
+                        "description": "Filter transaction logs by module.",
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "All",
-                                "Product",
-                                "Product Attribute"
-                            ]
+                            "type": "string"
                         },
                         "example": "Product"
                     },
                     {
                         "name": "action",
                         "in": "query",
-                        "description": "Filter transaction logs by action (All, Import).",
-                        "required": false,
+                        "description": "Filter transaction logs by action.",
                         "schema": {
-                            "type": "string",
-                            "enum": [
-                                "All",
-                                "Import"
-                            ]
+                            "type": "string"
                         },
                         "example": "Import"
                     },
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -14259,7 +14247,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -16725,6 +16712,10 @@
             "description": "API Endpoints for Attribute Management"
         },
         {
+            "name": "Transaction Logs",
+            "description": "API Endpoints for Transaction Logs Management"
+        },
+        {
             "name": "Attribute Group",
             "description": "API Endpoints for Attribute Group Management"
         },
@@ -16875,10 +16866,6 @@
         {
             "name": "Supplier Scores",
             "description": "Supplier Scores"
-        },
-        {
-            "name": "Transaction Logs",
-            "description": "Transaction Logs"
         },
         {
             "name": "Users",
