@@ -391,11 +391,11 @@ class CategoryController extends BaseController
 
 			// Transform image paths to full URLs
 			if ($category->image) {
-				$category->image = asset('storage/' . $category->image);
+				$category->image = asset( $category->image);
 			}
 
 			if ($category->icon_image) {
-				$category->icon_image = asset('storage/' . $category->icon_image);
+				$category->icon_image = asset( $category->icon_image);
 			}
 
 			return response()->json([
