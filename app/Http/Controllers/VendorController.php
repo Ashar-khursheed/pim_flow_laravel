@@ -451,7 +451,7 @@ class VendorController extends BaseController
 		}]);
 
 		$record->contacts = $record->vendorContacts;
-		unset($record->vendorContacts, $record->email, $record->contact_person, $record->landline_number, $record->mobile_number);
+		unset($record->vendorContacts);
 
 		return response()->json([
 			'success' => true,
