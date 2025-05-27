@@ -667,6 +667,12 @@ public function show($relation_id)
 				'Og Image Alt Text' => 'og_image_alt_text',
 				'Og Image Name' => 'og_image_name',
 				'Tags(Separated By |)' => 'tags',
+				'paragraph 1' => 'paragraph_1',
+				'paragraph 2' => 'paragraph_2',
+				'paragraph 3' => 'paragraph_3',
+				'paragraph 4' => 'paragraph_4',
+				'Popular Tags' => 'popular_tags',
+
 			];
 
 			$requiredRowCount = count($seoFileFormatArray);
@@ -862,6 +868,11 @@ public function show($relation_id)
 			'Og Image Alt Text',
 			'Og Image Name',
 			'Tags(Separated By |)',
+			'paragraph 1',
+			'paragraph 2',
+			'paragraph 3',
+			'paragraph 4',
+			'Popular Tags',
 		];
 
 		/* Create a StreamedResponse for efficient memory usage */
@@ -896,6 +907,11 @@ public function show($relation_id)
 							$record->og_image_alt_text,
 							$record->og_image_name,
 							$record->tags,
+							$record->paragraph_1,
+							$record->paragraph_2,
+							$record->paragraph_3,
+							$record->paragraph_4,
+							$record->popular_tags,
 						]);
 					}
 				} else {
@@ -920,6 +936,11 @@ public function show($relation_id)
 						$record->og_image_alt_text,
 						$record->og_image_name,
 						$record->tags,
+						$record->paragraph_1,
+						$record->paragraph_2,
+						$record->paragraph_3,
+						$record->paragraph_4,
+						$record->popular_tags,
 					]);
 				}
 			}
