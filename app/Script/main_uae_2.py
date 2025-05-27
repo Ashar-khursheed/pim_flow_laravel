@@ -98,9 +98,17 @@ OG Description: [description]
         return generate_fallback_seo(name, keyword)
 
 def parse_seo_response(text):
-    """Parse Claude's response into clean SEO fields with proper length limits"""
+    """Parse Claude's response into clean SEO fields with character limits"""
     fields = {}
     
+    limits = {
+        'meta_title': 60,
+        'title_tag': 70,  # Generally okay longer
+        'og_title': 70,
+        'meta_description': 160,
+        'og_description': 110
+    }
+
     patterns = {
         'meta_title': r'Meta Title:\s*(.+?)(?=\n|Title Tag:|$)',
         'title_tag': r'Title Tag:\s*(.+?)(?=\n|OG Title:|$)', 
@@ -108,39 +116,39 @@ def parse_seo_response(text):
         'meta_description': r'Meta Description:\s*(.+?)(?=\n|OG Description:|$)',
         'og_description': r'OG Description:\s*(.+?)(?=\n|$)'
     }
-    
-    # Define safe length limits for database
-    length_limits = {
-        'meta_title': 60,
-        'title_tag': 65,
-        'og_title': 60,
-        'meta_description': 160,
-        'og_description': 200  # Safe limit for most databases
-    }
-    
+
     for field, pattern in patterns.items():
         match = re.search(pattern, text, re.IGNORECASE | re.DOTALL)
         if match:
             value = match.group(1).strip()
-            # Clean up
-            value = re.sub(r'^["\']|["\']
+            value = re.sub(r'^["\']|["\']$', '', value).strip()
+            value = re.sub(r'\s+', ' ', value)
+            value = value.replace('&', 'and')
+
+            # Truncate if it exceeds the limit
+            limit = limits.get(field)
+            if limit and len(value) > limit:
+                value = value[:limit].rsplit(' ', 1)[0] + '...'
+
+            fields[field] = value
+
+    return fields
+
 
 def generate_content_paragraphs(keyword, name):
-    """Generate conversion-focused content paragraphs with proper length limits"""
+    """Generate conversion-focused content paragraphs"""
     
     content_prompt = f"""
 Create 4 compelling sales paragraphs for '{keyword}' that will convert visitors into customers.
 
 Requirements:
-- Paragraph 1: Focus on main benefit with '{keyword}' mentioned once (max 200 chars)
-- Paragraph 2: Highlight unique advantages (max 200 chars)
-- Paragraph 3: Build trust and mention UAE (max 200 chars)
-- Paragraph 4: Create urgency for action (max 200 chars)
+- Paragraph 1: Focus on main benefit with '{keyword}' mentioned once
+- Paragraph 2: Highlight unique advantages
+- Paragraph 3: Build trust and mention UAE
+- Paragraph 4: Create urgency for action
 
-Each paragraph should end with a strong call-to-action.
+Each paragraph should be around 200-250 characters and end with a strong call-to-action.
 Also create 6 trending hashtags for UAE market.
-
-Keep paragraphs concise and impactful.
 
 Format:
 Paragraph 1: [content]
@@ -161,21 +169,12 @@ Popular Tags: ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"]
         content = response.content[0].text
         paragraphs = {}
         
-        # Extract paragraphs with length limits
+        # Extract paragraphs
         for i in range(1, 5):
             pattern = f"Paragraph {i}:\\s*(.+?)(?=\\nParagraph {i+1}:|\\nPopular Tags:|$)"
             match = re.search(pattern, content, re.DOTALL)
             if match:
-                para_text = match.group(1).strip()
-                # Limit to 200 characters
-                if len(para_text) > 200:
-                    words = para_text[:200].split(' ')
-                    if len(words) > 1:
-                        words.pop()  # Remove last potentially incomplete word
-                    para_text = ' '.join(words)
-                    if not para_text.endswith(('.', '!', '?')):
-                        para_text += '.'
-                paragraphs[f"paragraph_{i}"] = para_text
+                paragraphs[f"paragraph_{i}"] = match.group(1).strip()
             else:
                 paragraphs[f"paragraph_{i}"] = f"Quality {keyword} for your business needs. Order now!"
         
@@ -203,22 +202,22 @@ Popular Tags: ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"]
         return generate_fallback_content(keyword)
 
 def generate_fallback_seo(name, keyword):
-    """Simple fallback SEO if API fails - with proper length limits"""
+    """Simple fallback SEO if API fails"""
     return {
-        'meta_title': f"Premium {keyword} UAE - Best Prices | Horeca Store"[:60],
-        'title_tag': f"Buy {keyword} Online UAE - Fast Delivery Available"[:65],
-        'og_title': f"Top Quality {keyword} UAE - Shop Now! 🔥"[:60],
-        'meta_description': f"Get the best {keyword} in UAE with fast delivery and warranty. Trusted by restaurants and hotels nationwide. Order today!"[:160],
-        'og_description': f"Discover premium {keyword} perfect for UAE businesses. Professional quality with full warranty and expert support. 🚀"[:200]
+        'meta_title': f"Premium {keyword} UAE - Best Prices | Horeca Store",
+        'title_tag': f"Buy {keyword} Online UAE - Fast Delivery Available",
+        'og_title': f"Top Quality {keyword} UAE - Shop Now! 🔥",
+        'meta_description': f"Get the best {keyword} in UAE with fast delivery and warranty. Trusted by restaurants and hotels nationwide. Order today for instant savings!",
+        'og_description': f"Discover premium {keyword} perfect for UAE businesses. Professional quality with full warranty and expert support. Limited stock available. 🚀"
     }
 
 def generate_fallback_content(keyword):
-    """Fallback content paragraphs with proper length limits"""
+    """Fallback content paragraphs"""
     return {
-        'paragraph_1': f"Transform your kitchen with premium {keyword} designed for UAE businesses. Professional quality meets great value. Shop now!"[:200],
-        'paragraph_2': f"Get exclusive features and robust performance that outlasts the competition. Limited time special pricing. Order today!"[:200],
-        'paragraph_3': f"Trusted by top restaurants across UAE with full warranty and expert support. Join satisfied customers nationwide. Buy now!"[:200],
-        'paragraph_4': f"Stock is moving fast! Secure your {keyword} before prices go up. Don't miss this opportunity. Get yours now!"[:200],
+        'paragraph_1': f"Transform your kitchen with premium {keyword} designed for UAE businesses. Professional quality meets great value. Shop now!",
+        'paragraph_2': f"Get exclusive features and robust performance that outlasts the competition. Limited time special pricing. Order today!",
+        'paragraph_3': f"Trusted by top restaurants across UAE with full warranty and expert support. Join satisfied customers nationwide. Buy now!",
+        'paragraph_4': f"Stock is moving fast! Secure your {keyword} before prices go up. Don't miss this opportunity. Get yours now!",
         'popular_tags': json.dumps([
             f"{keyword} UAE", f"commercial {keyword}", f"restaurant {keyword}",
             f"hotel {keyword}", f"professional {keyword}", f"kitchen {keyword}"
@@ -258,25 +257,4 @@ def main():
         sys.exit(1)
 
 if __name__ == "__main__":
-    main(), '', value).strip()
-            value = re.sub(r'\s+', ' ', value)
-            value = value.replace('&', 'and')
-            
-            # Apply length limit
-            max_length = length_limits.get(field, 255)
-            if len(value) > max_length:
-                # Trim to complete words
-                words = value[:max_length].split(' ')
-                if len(words) > 1:
-                    words.pop()  # Remove last potentially incomplete word
-                value = ' '.join(words)
-                
-                # Ensure proper ending
-                if field in ['meta_description', 'og_description']:
-                    if not value.endswith(('.', '!', '?')):
-                        value += '.'
-            
-            fields[field] = value
-    
-    return fields
-
+    main()
