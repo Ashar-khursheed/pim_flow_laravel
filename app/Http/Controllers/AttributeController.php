@@ -352,7 +352,13 @@ class AttributeController extends BaseController
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
 				if (!empty($valuesToDelete)) {
-					$attribute->attributeValues()->whereIn('attribute_value', $valuesToDelete)->delete();
+					$attributeValuesToDelete = $attribute->attributeValues()
+					->whereIn('attribute_value', $valuesToDelete)
+					->get();
+
+					foreach ($attributeValuesToDelete as $value) {
+						$value->delete();
+					}
 				}
 
 				foreach ($valuesToAdd as $newValue) {
@@ -362,7 +368,9 @@ class AttributeController extends BaseController
 
 			/* Delete attribute values if type changed from 'select' */
 			if ($request->type !== 'select' && $attribute->type === 'select') {
-				$attribute->attributeValues()->delete();
+				foreach ($attribute->attributeValues as $value) {
+					$value->delete();
+				}
 			}
 
 
@@ -396,7 +404,6 @@ class AttributeController extends BaseController
 			], 500);
 		}
 	}
-
 
 	/**
 	 * @OA\Delete(
@@ -433,12 +440,14 @@ class AttributeController extends BaseController
 			], 404);
 		}
 
-		/* Check if attribute is attached to any attribute group */
-		if ($attribute->attributeGroup()->exists()) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_attr_association")
-			], 400);
+		if ($attribute->type === 'measurement') {
+			$attribute->measurementUnits()->detach();
+		}
+
+		if ($attribute->type === 'select') {
+			foreach ($attribute->attributeValues as $value) {
+				$value->delete();
+			}
 		}
 
 		/* Proceed with deletion */

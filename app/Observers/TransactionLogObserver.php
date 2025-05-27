@@ -9,7 +9,6 @@ class TransactionLogObserver
 {
 	public function created($model)
 	{
-		// dd(__('lbl_add'));
 		$this->createLog($model, __('lbl_add'));
 	}
 
@@ -20,7 +19,6 @@ class TransactionLogObserver
 
 	public function updated($model)
 	{
-		// dd(__('lbl_edit'));
 		$this->createLog($model, __('lbl_edit'));
 	}
 
@@ -66,7 +64,14 @@ class TransactionLogObserver
 
 		if ($action == __('lbl_dlt')) {
 			$changes = [
-				"value" => Arr::except($model->getOriginal(), ['password', 'updated_at'])
+				"value" => Arr::except($model->getOriginal(), ['id', 'password', 'created_at', 'updated_at'])
+			];
+			$changeObj = json_encode($changes);
+		}
+
+		if ($action == __('lbl_add')) {
+			$changes = [
+				"value" => Arr::except($model->toArray(), ['id', 'password', 'created_at', 'updated_at'])
 			];
 			$changeObj = json_encode($changes);
 		}
