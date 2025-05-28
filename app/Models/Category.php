@@ -62,12 +62,13 @@ class Category extends Model
 
 	public function categoryAttributeGroups()
 	{
-		return $this->belongsToMany(
-			AttributeGroup::class,
-			'category_attribute_groups',
-			'category_id',
-			'attribute_group_id'
-		);
+		// return $this->belongsToMany(
+		// 	AttributeGroup::class,
+		// 	'category_attribute_groups',
+		// 	'category_id',
+		// 	'attribute_group_id'
+		// );
+		return $this->belongsToMany(AttributeGroup::class, 'category_attribute_groups')->using(CategoryAttributeGroup::class);
 	}
 
 	public static function getLeafCategories($category)
