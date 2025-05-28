@@ -9,6 +9,8 @@ use App\Observers\TransactionLogObserver;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
 use App\Models\AttributeMeasurement;
+use App\Models\AttributeGroup;
+use App\Models\CategoryAttributeGroup;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,6 +30,7 @@ class AppServiceProvider extends ServiceProvider
 		Attribute::observe(TransactionLogObserver::class);
 		AttributeValue::observe(TransactionLogObserver::class);
 		AttributeMeasurement::observe(TransactionLogObserver::class);
-		// Product::observe(TransactionLogObserver::class);
+		AttributeGroup::observe(TransactionLogObserver::class);
+		CategoryAttributeGroup::observe(TransactionLogObserver::class);
 	}
 }

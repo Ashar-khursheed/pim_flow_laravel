@@ -22,11 +22,12 @@ class AttributeGroup extends Model
 
 	public function categories()
 	{
-		return $this->belongsToMany(
-			Category::class,
-			'category_attribute_groups',
-			'attribute_group_id',
-			'category_id'
-		);
+		// return $this->belongsToMany(
+		// 	Category::class,
+		// 	'category_attribute_groups',
+		// 	'attribute_group_id',
+		// 	'category_id'
+		// );
+		return $this->belongsToMany(Category::class, 'attribute_measurements')->using(CategoryAttributeGroup::class);
 	}
 }

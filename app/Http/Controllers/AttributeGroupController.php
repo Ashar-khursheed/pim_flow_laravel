@@ -278,8 +278,6 @@ class AttributeGroupController extends BaseController
 			]);
 		}
 
-		// dd($request->all());
-
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name,'.$id,
 			'category_ids' => 'array',

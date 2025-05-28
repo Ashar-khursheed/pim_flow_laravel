@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\Pivot;
 
-class CategoryAttributeGroup extends Model
+class CategoryAttributeGroup extends Pivot
 {
 	protected $fillable = ['category_id', 'attribute_group_id', 'created_by'];
 }

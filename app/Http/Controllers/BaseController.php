@@ -34,13 +34,13 @@ use App\Http\Controllers\Controller;
  * )
  *
  * @OA\Tag(
- *     name="Transaction Logs",
- *     description="API Endpoints for Transaction Logs Management"
+ *     name="Attribute Group",
+ *     description="API Endpoints for Attribute Group Management"
  * )
  *
  * @OA\Tag(
- *     name="Attribute Group",
- *     description="API Endpoints for Attribute Group Management"
+ *     name="Transaction Logs",
+ *     description="API Endpoints for Transaction Logs Management"
  * )
  *
  * @OA\Tag(
