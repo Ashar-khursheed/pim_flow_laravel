@@ -45,7 +45,7 @@ class CategoryPageController extends Controller
      */
     public function index()
     {
-        
+
         // if (!auth()->user()->can('add category page')) {
         //     return response()->json([
         //         'success' => false,
@@ -54,7 +54,7 @@ class CategoryPageController extends Controller
         // }
 
         $pages = CategoryPage::all();
-    
+
         return response()->json([
             'success' => true,
             'message' => 'Pages retrieved successfully.',
@@ -90,14 +90,14 @@ class CategoryPageController extends Controller
         //     ], 403);
         // }
 
-        $category = \DB::table('ec_product_categories')->where('id', $category_id)->first();
+        $category = \DB::table('categories')->where('id', $category_id)->first();
         if (!$category) {
             return response()->json([
                 'success' => false,
                 'message' => 'Category not found'
             ], 404);
         }
-        
+
         $page = CategoryPage::where('category_id', $category_id)->first();
         if (!$page) {
             return response()->json([
@@ -105,7 +105,7 @@ class CategoryPageController extends Controller
                 'message' => 'Category page not found'
             ], 404);
         }
-        
+
         // Decode JSON fields before returning
         return response()->json([
             'success' => true,
@@ -196,7 +196,7 @@ public function store(Request $request)
     try {
         // Validate input
         $request->validate([
-            'category_id' => 'required|exists:ec_product_categories,id',
+            'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,,svg|max:2048',
@@ -204,7 +204,7 @@ public function store(Request $request)
         ]);
 
         $disk = 's3'; // Use S3 disk for storage
-        $category = \DB::table('ec_product_categories')->where('id', $request->category_id)->first();
+        $category = \DB::table('categories')->where('id', $request->category_id)->first();
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
         }
@@ -419,7 +419,7 @@ public function store(Request $request)
     try {
         // Validate input
         $request->validate([
-            'category_id' => 'required|exists:ec_product_categories,id',
+            'category_id' => 'required|exists:categories,id',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'banner_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,svg|max:2048',
@@ -446,7 +446,7 @@ public function store(Request $request)
         ]);
 
         $disk = 's3';
-        $category = \DB::table('ec_product_categories')->where('id', $request->category_id)->first();
+        $category = \DB::table('categories')->where('id', $request->category_id)->first();
         if (!$category) {
             return response()->json([
                 'success' => false,
@@ -657,19 +657,19 @@ public function destroy($id)
             'message' => "You don't have permission to access this module.",
         ], 403);
     }
-    
+
     $page = CategoryPage::find($id);
-    
+
     if (!$page) {
         return response()->json([
             'success' => false,
             'message' => 'Category page not found'
         ], 404);
     }
-    
+
     // Delete the page
     $page->delete();
-    
+
     return response()->json([
         'success' => true,
         'message' => 'Category page deleted successfully'

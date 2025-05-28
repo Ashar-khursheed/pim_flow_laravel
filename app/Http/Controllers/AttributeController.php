@@ -487,7 +487,7 @@ class AttributeController extends BaseController
 		}
 		/* Validate request data */
 		$request->validate([
-			'parent_category_id' => 'required|integer|exists:ec_product_categories,id',
+			'parent_category_id' => 'required|integer|exists:categories,id',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);

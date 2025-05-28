@@ -140,15 +140,15 @@ class DBConfig:
 #                     c.name AS product_family,
 #                     COALESCE((
 #                         SELECT GROUP_CONCAT(c2.name SEPARATOR ' > ')
-#                         FROM ec_product_categories c2
+#                         FROM categories c2
 #                         WHERE c2.id IN (
 #                             WITH RECURSIVE category_path AS (
 #                                 SELECT id, name, parent_id
-#                                 FROM ec_product_categories
+#                                 FROM categories
 #                                 WHERE id = cp.category_id
 #                                 UNION ALL
 #                                 SELECT c3.id, c3.name, c3.parent_id
-#                                 FROM ec_product_categories c3
+#                                 FROM categories c3
 #                                 INNER JOIN category_path cp2 ON c3.id = cp2.parent_id
 #                             )
 #                             SELECT id FROM category_path
@@ -156,7 +156,7 @@ class DBConfig:
 #                     ), 'Unknown') AS taxonomy_path
 #                 FROM ec_products p
 #                 INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
-#                 INNER JOIN ec_product_categories c ON cp.category_id = c.id
+#                 INNER JOIN categories c ON cp.category_id = c.id
 #                 LEFT JOIN ec_brands b ON p.brand_id = b.id
 #                 WHERE p.id IN %s AND p.status = 'published'
 #             """
@@ -480,15 +480,15 @@ def get_product_data(child_ids):
                     c.name AS product_family,
                     COALESCE((
                         SELECT GROUP_CONCAT(c2.name SEPARATOR ' > ')
-                        FROM ec_product_categories c2
+                        FROM categories c2
                         WHERE c2.id IN (
                             WITH RECURSIVE category_path AS (
                                 SELECT id, name, parent_id
-                                FROM ec_product_categories
+                                FROM categories
                                 WHERE id = cp.category_id
                                 UNION ALL
                                 SELECT c3.id, c3.name, c3.parent_id
-                                FROM ec_product_categories c3
+                                FROM categories c3
                                 INNER JOIN category_path cp2 ON c3.id = cp2.parent_id
                             )
                             SELECT id FROM category_path
@@ -496,7 +496,7 @@ def get_product_data(child_ids):
                     ), 'Unknown') AS taxonomy_path
                 FROM ec_products p
                 LEFT JOIN ec_product_category_product cp ON p.id = cp.product_id
-                LEFT JOIN ec_product_categories c ON cp.category_id = c.id
+                LEFT JOIN categories c ON cp.category_id = c.id
                 LEFT JOIN ec_brands b ON p.brand_id = b.id
                 WHERE p.id IN %s
                 GROUP BY p.id

@@ -199,7 +199,7 @@ public function store(Request $request)
 			'status' => 'required|string|in:published,draft',
 			'order' => 'required|integer|min:0',
 			 'is_featured' => 'required|boolean',  // Boolean validation will convert "0", "1", 0, 1, true, false
-			 'logo' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
+			 'logo' => 'nullable|file|image|mimes:webp,png|max:2048',
 			]);
 
 		 // Initialize brand data from validated data
@@ -384,7 +384,7 @@ public function store(Request $request)
   			'status' => 'sometimes|required|string|in:published,draft',
   			'order' => 'sometimes|required|integer|min:0',
   			'is_featured' => 'sometimes|required|boolean',
-  			'logo' => 'nullable|file|image|mimes:jpeg,png,jpg,gif|max:2048',
+  			'logo' => 'nullable|file|image|mimes:webp,png|max:2048',
   		]);
 
 		// Prepare data for update

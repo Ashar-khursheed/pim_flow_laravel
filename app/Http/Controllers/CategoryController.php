@@ -275,7 +275,7 @@ class CategoryController extends BaseController
 			'website_ids' => 'nullable|string|max:255',
 			'icon' => 'nullable|string|max:191',
 			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
-			'slug' => 'nullable|string|max:191|unique:ec_product_categories,slug'
+			'slug' => 'nullable|string|max:191|unique:categories,slug'
 		]);
 
 		$disk = 's3'; // or use config
@@ -391,11 +391,11 @@ class CategoryController extends BaseController
 
 			// Transform image paths to full URLs
 			if ($category->image) {
-				$category->image = asset('storage/' . $category->image);
+				$category->image = asset( $category->image);
 			}
 
 			if ($category->icon_image) {
-				$category->icon_image = asset('storage/' . $category->icon_image);
+				$category->icon_image = asset( $category->icon_image);
 			}
 
 			return response()->json([
@@ -496,7 +496,7 @@ class CategoryController extends BaseController
 			'website_ids' => 'nullable|string|max:255',
 			'icon' => 'nullable|string|max:191',
 			'icon_image' => 'nullable|file|image|mimes:webp,jpeg,png,jpg,gif|max:2048',
-			'slug' => 'nullable|string|max:191|unique:ec_product_categories,slug,' . $category->id,
+			'slug' => 'nullable|string|max:191|unique:categories,slug,' . $category->id,
 		]);
 
 		$disk = 's3';
@@ -729,7 +729,7 @@ class CategoryController extends BaseController
 	{
 		// Validate the entire array of categories
 		$validator = Validator::make($request->all(), [
-			'*.id' => 'required|integer|exists:ec_product_categories,id',
+			'*.id' => 'required|integer|exists:categories,id',
 			'*.position' => 'required|integer|min:0',
 			'*.parentId' => 'required|integer',
 			'*.title' => 'sometimes|string'

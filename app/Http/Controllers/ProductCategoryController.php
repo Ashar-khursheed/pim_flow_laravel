@@ -64,7 +64,7 @@ class ProductCategoryController extends Controller
     {
         $request->validate([
             'category_ids' => 'required|array',
-            'category_ids.*' => 'integer|exists:ec_product_categories,id',
+            'category_ids.*' => 'integer|exists:categories,id',
         ]);
 
         $product = Product::findOrFail($id);
@@ -145,34 +145,34 @@ class ProductCategoryController extends Controller
      public function getCategories($id)
      {
          $product = Product::with(['categories.parent'])->find($id);
-     
+
          if (!$product) {
              return response()->json([
                  'message' => 'Product not found.',
              ], 404);
          }
-     
+
          $formattedCategories = [];
-     
+
          foreach ($product->categories as $category) {
              $chain = [];
-     
+
              // Step 1: Traverse from child to root
              $current = $category;
              while ($current) {
                  $chain[] = $current;
                  $current = $current->parent;
              }
-     
+
              // Step 2: Reverse to go from root to leaf
              $chain = array_reverse($chain);
-     
+
              // Step 3: Build merged hierarchical structure
              $ref = &$formattedCategories;
-     
+
              foreach ($chain as $cat) {
                  $found = false;
-     
+
                  foreach ($ref as &$item) {
                      if ($item['id'] == $cat->id) {
                          $ref = &$item['children'];
@@ -180,7 +180,7 @@ class ProductCategoryController extends Controller
                          break;
                      }
                  }
-     
+
                  if (! $found) {
                      $new = [
                          'id' => $cat->id,
@@ -191,15 +191,15 @@ class ProductCategoryController extends Controller
                      $ref = &$ref[array_key_last($ref)]['children'];
                  }
              }
-     
+
              unset($ref); // Clean up reference
          }
-     
+
          return response()->json([
              'product_id' => $product->id,
              'categories' => $formattedCategories,
          ], 200);
      }
-     
-    
+
+
 }
