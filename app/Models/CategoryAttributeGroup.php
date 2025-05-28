@@ -6,5 +6,6 @@ use Illuminate\Database\Eloquent\Relations\Pivot;
 
 class CategoryAttributeGroup extends Pivot
 {
-	protected $fillable = ['category_id', 'attribute_group_id', 'created_by'];
+	protected $fillable = ['category_id', 'attribute_group_id'];
+
 }
