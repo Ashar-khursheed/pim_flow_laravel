@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class ProductGroupController extends Controller
 {
-      
+
     /**
      * @OA\Get(
      *     path="/api/product-groups-listing",
@@ -48,7 +48,7 @@ class ProductGroupController extends Controller
      * )
      */
 
-    
+
      public function index()
     {
         $groups = ProductGroup::select('id', 'name')->get();
@@ -107,44 +107,44 @@ class ProductGroupController extends Controller
      public function generateGroups(Request $request)
      {
          $categoryId = $request->input('category_id');
-     
+
          if (!$categoryId) {
              return response()->json(['error' => 'Category ID is required'], 400);
          }
-     
+
          // Path to the Python script
          $scriptPath = base_path('app/Script/main.py');
-     
+
          // Dynamically determine the Python command based on the environment
          $pythonCmd = base_path('venv/bin/python');
-         
+
          // Set the working directory where the script is located
          $workingDirectory = base_path('app/Script');
-         
+
          // Run the Python script with the category ID as an argument
          $process = new Process([$pythonCmd, $scriptPath, $categoryId], $workingDirectory);
          $process->run();
-     
+
          // Check if the process ran successfully
          if (!$process->isSuccessful()) {
              Log::error("Python script execution failed: " . $process->getErrorOutput());
              return response()->json(['error' => 'Python script execution failed', 'details' => $process->getErrorOutput()], 500);
          }
-     
+
          // Decode the output from the script
          $result = json_decode($process->getOutput(), true);
          if ($result === null) {
              return response()->json(['error' => 'Invalid JSON returned from Python script'], 500);
          }
-     
+
          // Check if the script returned an error
          if (!$result['success']) {
              return response()->json(['error' => $result['message']], 500);
          }
-     
+
          // Extract the grouped products data
          $data = $result['data'];
-     
+
                 // Process and save the grouped products
         $productGroupMap = [];
 
@@ -173,7 +173,7 @@ class ProductGroupController extends Controller
             'product_group_map' => $productGroupMap
         ]);
 
-    } 
+    }
 
 
 
@@ -227,7 +227,7 @@ class ProductGroupController extends Controller
 {
     // Get the category_id from the query string
     $categoryId = $request->query('category_id');
-    
+
     // If no category ID provided, return error response
     if (!$categoryId) {
         return response()->json([
@@ -235,13 +235,13 @@ class ProductGroupController extends Controller
             'status' => false
         ], 400);
     }
-    
+
     // First, find product IDs that belong to the requested category
     $productIdsInCategory = DB::table('ec_product_category_product')
         ->where('category_id', $categoryId)
         ->pluck('product_id')
         ->toArray();
-    
+
     if (empty($productIdsInCategory)) {
         return response()->json([
             'message' => 'No products found in this category',
@@ -249,7 +249,7 @@ class ProductGroupController extends Controller
             'data' => []
         ]);
     }
-    
+
     // Now get the groups that contain these products
     $groups = ProductGroup::with(['items' => function ($query) use ($productIdsInCategory) {
         $query->whereIn('product_id', $productIdsInCategory);
@@ -356,35 +356,35 @@ class ProductGroupController extends Controller
             'item_id' => $itemId,
             'new_group_id' => $request->new_group_id
         ]);
-    
+
         // Validate incoming request data
         $request->validate([
             'new_group_id' => 'required|integer|exists:product_groups,id',
         ]);
-    
+
         // Find the product group item
         $item = ProductGroupItem::where('group_id', $groupId) // Use group_id
                                 ->where('product_id', $itemId)
                                 ->first();
-    
+
         // Log the result to see if it's found
         \Log::info('Found ProductGroupItem:', ['item' => $item]);
-    
+
         if (!$item) {
             return response()->json(['message' => 'Product Group Item not found'], 404);
         }
-    
+
         // Find the new group
         $newGroup = ProductGroup::find($request->new_group_id);
-    
+
         if (!$newGroup) {
             return response()->json(['message' => 'New Product Group not found'], 404);
         }
-    
+
         // Update the parent group of the item
         $item->group_id = $newGroup->id;
         $item->save();
-    
+
         return response()->json([
             'message' => 'Parent updated successfully.',
             'new_parent_name' => $newGroup->name,
@@ -455,7 +455,7 @@ class ProductGroupController extends Controller
             'message' => 'Child removed from parent successfully.'
         ]);
     }
-        
+
            /**
      * @OA\Get(
      *     path="/api/product-groups/brands-with-categories",
@@ -557,8 +557,8 @@ class ProductGroupController extends Controller
         $query = DB::table('ec_products as p')
             ->join('ec_brands as b', 'p.brand_id', '=', 'b.id')
             ->join('ec_product_category_product as pcp', 'p.id', '=', 'pcp.product_id')
-            ->join('ec_product_categories as c', 'pcp.category_id', '=', 'c.id')
-            ->leftJoin('ec_product_categories as sub', 'c.id', '=', 'sub.parent_id')
+            ->join('categories as c', 'pcp.category_id', '=', 'c.id')
+            ->leftJoin('categories as sub', 'c.id', '=', 'sub.parent_id')
             ->whereNull('sub.id') // Only leaf categories
             ->when($search, function ($q) use ($search) {
                 $q->where(function ($query) use ($search) {
@@ -600,9 +600,9 @@ class ProductGroupController extends Controller
 
 
 
-         
 
-  
+
+
     /**
      * @OA\Schema(
      *     schema="BrandCategoryResponse",
