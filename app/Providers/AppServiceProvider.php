@@ -11,6 +11,8 @@ use App\Models\AttributeValue;
 use App\Models\AttributeMeasurement;
 use App\Models\AttributeGroup;
 use App\Models\CategoryAttributeGroup;
+use App\Models\Product;
+use App\Models\Category;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -32,5 +34,7 @@ class AppServiceProvider extends ServiceProvider
 		AttributeMeasurement::observe(TransactionLogObserver::class);
 		AttributeGroup::observe(TransactionLogObserver::class);
 		CategoryAttributeGroup::observe(TransactionLogObserver::class);
+		Product::observe(TransactionLogObserver::class);
+		Category::observe(TransactionLogObserver::class);
 	}
 }

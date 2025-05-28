@@ -16716,10 +16716,6 @@
             "description": "API Endpoints for Attribute Group Management"
         },
         {
-            "name": "Transaction Logs",
-            "description": "API Endpoints for Transaction Logs Management"
-        },
-        {
             "name": "Category Attribute Group",
             "description": "API Endpoints for Managing Category Attributes and Groups"
         },
@@ -16730,6 +16726,10 @@
         {
             "name": "Categories",
             "description": "API Endpoints for Category Management"
+        },
+        {
+            "name": "Transaction Logs",
+            "description": "API Endpoints for Transaction Logs Management"
         },
         {
             "name": "Discounts",
