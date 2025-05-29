@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Validator;
 class CategoryAttributeController extends BaseController
 {
 	/**
-	 * Display a listing of the resource.
-	 */
-	/**
 	 * @OA\Get(
 	 *     path="/api/category-attributes",
 	 *     summary="Get Categrory List with Atribute & Attribute Group",
@@ -206,24 +203,24 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$existingGroupIds = $record->categoryAttributeGroups()->pluck('attribute_group_id')->toArray();
-			$syncData = collect($request->attribute_group_ids)->mapWithKeys(function ($id) use ($existingGroupIds) {
-				if (in_array($id, $existingGroupIds)) {
-					/* Existing group, do not modify created_by, created_at */
-					return [
-						$id => []
-					];
-				} else {
-					/* New group, set created_by, created_at */
-					return [
-						$id => [
-							'created_by' => auth()->id() ?? 1,
-							'created_at' => now()
-						]
-					];
-				}
-			})->toArray();
-			$record->categoryAttributeGroups()->sync($syncData);
+			// $existingGroupIds = $record->categoryAttributeGroups()->pluck('attribute_group_id')->toArray();
+			// $syncData = collect($request->attribute_group_ids)->mapWithKeys(function ($id) use ($existingGroupIds) {
+			// 	if (in_array($id, $existingGroupIds)) {
+			// 		/* Existing group, do not modify created_by, created_at */
+			// 		return [
+			// 			$id => []
+			// 		];
+			// 	} else {
+			// 		/* New group, set created_by, created_at */
+			// 		return [
+			// 			$id => [
+			// 				'created_by' => auth()->id() ?? 1,
+			// 				'created_at' => now()
+			// 			]
+			// 		];
+			// 	}
+			// })->toArray();
+			$record->categoryAttributeGroups()->sync($request->attribute_group_ids);
 
 			/* Fetch updated data with only required fields */
 			$updatedRecord = Category::whereDoesntHave('children')

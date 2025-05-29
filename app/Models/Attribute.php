@@ -33,11 +33,12 @@ class Attribute extends Model
 
 	public function measurementUnits()
 	{
-		return $this->belongsToMany(
-			MeasurementUnit::class,
-			'attribute_measurements',
-			'attribute_id',
-			'measurement_unit_id'
-		);
+		// return $this->belongsToMany(
+		// 	MeasurementUnit::class,
+		// 	'attribute_measurements',
+		// 	'attribute_id',
+		// 	'measurement_unit_id'
+		// );
+		return $this->belongsToMany(MeasurementUnit::class, 'attribute_measurements')->using(AttributeMeasurement::class);
 	}
 }
