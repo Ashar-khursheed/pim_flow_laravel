@@ -1,109 +1,70 @@
 <?php
-// app/Models/Order.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Order extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
-    protected $table = 'ec_orders';
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'code',
-        'user_id',
-        'shipping_option',
-        'shipping_method',
-        'status',
-        'amount',
-        'tax_amount',
-        'shipping_amount',
-        'description',
-        'coupon_code',
-        'discount_amount',
-        'sub_total',
-        'is_confirmed',
-        'discount_description',
-        'is_finished',
-        'cancellation_reason',
-        'cancellation_reason_description',
-        'completed_at',
-        'token',
-        'payment_id',
-        'proof_file',
-        'store_id',
+        'order_number', 'order_date', 'order_time', 'customer_name', 
+        'customer_email', 'customer_phone', 'company', 'address', 
+        'city', 'country', 'status', 'total_amount', 'total_products',
+        'ship_all_at_once', 'separate_deliveries', 'is_paid', 
+        'paid_amount', 'pending_amount'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
-        'amount' => 'decimal:2',
-        'tax_amount' => 'decimal:2',
-        'shipping_amount' => 'decimal:2',
-        'discount_amount' => 'decimal:2',
-        'sub_total' => 'decimal:2',
-        'is_confirmed' => 'boolean',
-        'is_finished' => 'boolean',
-        'completed_at' => 'datetime',
-        'created_at' => 'datetime',
-        'updated_at' => 'datetime',
+        'order_date' => 'datetime',
+        'order_time' => 'datetime:H:i:s',
+        'ship_all_at_once' => 'boolean',
+        'separate_deliveries' => 'boolean',
+        'is_paid' => 'boolean',
+        'total_amount' => 'decimal:2',
+        'paid_amount' => 'decimal:2',
+        'pending_amount' => 'decimal:2',
     ];
 
-    /**
-     * Get the address record associated with the order.
-     */
-    public function address(): HasOne
+    public function items()
     {
-        return $this->hasOne(OrderAddress::class, 'order_id');
+        return $this->hasMany(OrderItem::class);
     }
 
-    /**
-     * Get the histories for the order.
-     */
-    public function histories(): HasMany
+    public function payments()
     {
-        return $this->hasMany(OrderHistory::class, 'order_id');
+        return $this->hasMany(Payment::class);
     }
 
-    /**
-     * Get the returns for the order.
-     */
-    public function returns(): HasMany
+    public function shipments()
     {
-        return $this->hasMany(OrderReturn::class, 'order_id');
+        return $this->hasMany(Shipment::class);
     }
 
-    /**
-     * Get the referral record associated with the order.
-     */
-    public function referral(): HasOne
+    public function tracking()
     {
-        return $this->hasOne(OrderReferral::class, 'order_id');
+        return $this->hasMany(OrderTracking::class);
     }
 
-    /**
-     * Get the user that owns the order.
-     */
-    public function user(): BelongsTo
+    // Calculate payment status
+    public function getPaymentStatusAttribute()
     {
-        return $this->belongsTo(User::class, 'user_id');
+        if ($this->paid_amount >= $this->total_amount) {
+            return 'Fully Paid';
+        } elseif ($this->paid_amount > 0) {
+            return 'Partially Paid';
+        }
+        return 'Unpaid';
+    }
+
+    // Check if all items are delivered
+    public function getIsFullyDeliveredAttribute()
+    {
+        return $this->items->every(function ($item) {
+            return $item->shipped_quantity >= $item->quantity;
+        });
     }
 }

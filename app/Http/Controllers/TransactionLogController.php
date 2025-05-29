@@ -13,50 +13,10 @@ class TransactionLogController extends BaseController
 	 *     summary="Get Transaction Log List",
 	 *     description="Fetches a list of all transaction logs.",
 	 *     tags={"Transaction Logs"},
-	 *     @OA\Parameter(
-	 *         name="module",
-	 *         in="query",
-	 *         description="Filter transaction logs by module (All, Product, Product Attribute).",
-	 *         required=false,
-	 *         example="Product",
-	 *         @OA\Schema(
-	 *             type="string",
-	 *             enum={"All", "Product", "Product Attribute"}
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="action",
-	 *         in="query",
-	 *         description="Filter transaction logs by action (All, Import).",
-	 *         required=false,
-	 *         example="Import",
-	 *         @OA\Schema(
-	 *             type="string",
-	 *             enum={"All", "Import"}
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="module", in="query", description="Filter transaction logs by module.", example="Product",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="action", in="query", description="Filter transaction logs by action.", example="Import",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -71,7 +31,6 @@ class TransactionLogController extends BaseController
 		// 	]);
 		// }
 
-		// dd(auth()->id());
 		$records = TransactionLog::with(['createdBy:id,first_name,last_name'])->orderBy('id', 'desc');
 
 		if ($request->filled('module')) {
@@ -177,11 +136,11 @@ class TransactionLogController extends BaseController
 		if ($record->change_obj && json_validate($record->change_obj)) {
 			$decoded = json_decode($record->change_obj, true);
 			/* Handle 'Error' field */
-			// array_walk_recursive($decoded, function (&$value, $key) {
-			// 	if ($key === 'Error') {
-			// 		$value = explode(' | ', $value);
-			// 	}
-			// });
+			array_walk_recursive($decoded, function (&$value, $key) {
+				if (is_string($value) && json_validate($value)) {
+					$value = json_decode($value, true);
+				}
+			});
 			$record->change_obj = $decoded;
 		}
 

@@ -15,8 +15,6 @@ use Illuminate\Validation\Rule;
 class CategoryController extends BaseController
 {
 	/**
-	 * Display a listing of the resource.
-	 *
 	 * @OA\Get(
 	 *     path="/api/categories",
 	 *     summary="Get Category List",
@@ -340,8 +338,6 @@ class CategoryController extends BaseController
 	}
 
 	/**
-	 * Display the specified category.
-	 *
 	 * @OA\Get(
 	 *     path="/api/categories/{id}",
 	 *     summary="Get category details",
