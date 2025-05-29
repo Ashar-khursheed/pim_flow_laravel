@@ -7304,10 +7304,18 @@
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Get list of orders",
-                "description": "Returns paginated list of orders with optional filters",
+                "summary": "Get all orders with pagination and filters",
                 "operationId": "2cd7e03021e72d9d799c12dfe179c865",
                 "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
                     {
                         "name": "status",
                         "in": "query",
@@ -7318,186 +7326,23 @@
                         }
                     },
                     {
-                        "name": "store_id",
+                        "name": "payment_status",
                         "in": "query",
-                        "description": "Filter by store ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "user_id",
-                        "in": "query",
-                        "description": "Filter by user ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "code",
-                        "in": "query",
-                        "description": "Search by order code",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "from_date",
-                        "in": "query",
-                        "description": "Filter by start date (Y-m-d)",
+                        "description": "Filter by payment status",
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "to_date",
-                        "in": "query",
-                        "description": "Filter by end date (Y-m-d)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "sort_field",
-                        "in": "query",
-                        "description": "Field to sort by (id, created_at, amount, status)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "created_at"
-                        }
-                    },
-                    {
-                        "name": "sort_order",
-                        "in": "query",
-                        "description": "Sort direction (asc, desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "desc"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
+                            "enum": [
+                                "Paid",
+                                "Unpaid",
+                                "Partially Paid"
+                            ]
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Order"
-                                            }
-                                        },
-                                        "pagination": {
-                                            "properties": {
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 50
-                                                },
-                                                "count": {
-                                                    "type": "integer",
-                                                    "example": 15
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 15
-                                                },
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "total_pages": {
-                                                    "type": "integer",
-                                                    "example": 4
-                                                },
-                                                "links": {
-                                                    "properties": {
-                                                        "previous": {
-                                                            "type": "string",
-                                                            "example": null
-                                                        },
-                                                        "next": {
-                                                            "type": "string",
-                                                            "example": "http://example.com/api/orders?page=2"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/orders/{order}": {
-            "get": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "Get order details",
-                "description": "Returns detailed information for a specific order",
-                "operationId": "f090f23952a43521af6f1d133826bc37",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Order"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                        "description": "Orders retrieved successfully"
                     }
                 },
                 "security": [
@@ -7506,127 +7351,80 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Update an existing order",
-                "description": "Updates an order's information",
-                "operationId": "9f326acfc8febad161872da8dc13508f",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Create a new order",
+                "operationId": "d690d6834318e9b064df441e854de8b9",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "customer_name",
+                                    "customer_email",
+                                    "customer_phone",
+                                    "address",
+                                    "city",
+                                    "country",
+                                    "items"
+                                ],
                                 "properties": {
-                                    "shipping_option": {
+                                    "customer_name": {
+                                        "type": "string"
+                                    },
+                                    "customer_email": {
                                         "type": "string",
-                                        "example": "express"
+                                        "format": "email"
                                     },
-                                    "shipping_method": {
-                                        "type": "string",
-                                        "example": "flat_rate"
+                                    "customer_phone": {
+                                        "type": "string"
                                     },
-                                    "status": {
-                                        "type": "string",
-                                        "example": "processing"
-                                    },
-                                    "amount": {
-                                        "type": "number",
-                                        "format": "decimal",
-                                        "example": 125.5
-                                    },
-                                    "tax_amount": {
-                                        "type": "number",
-                                        "format": "decimal",
-                                        "example": 10.5
-                                    },
-                                    "shipping_amount": {
-                                        "type": "number",
-                                        "format": "decimal",
-                                        "example": 5
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Updated order from website"
-                                    },
-                                    "coupon_code": {
-                                        "type": "string",
-                                        "example": "SUMMER10"
-                                    },
-                                    "discount_amount": {
-                                        "type": "number",
-                                        "format": "decimal",
-                                        "example": 10
-                                    },
-                                    "sub_total": {
-                                        "type": "number",
-                                        "format": "decimal",
-                                        "example": 130
-                                    },
-                                    "is_confirmed": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "discount_description": {
-                                        "type": "string",
-                                        "example": "10% off summer sale"
-                                    },
-                                    "payment_id": {
-                                        "type": "integer",
-                                        "example": 123
+                                    "company": {
+                                        "type": "string"
                                     },
                                     "address": {
-                                        "properties": {
-                                            "name": {
-                                                "type": "string",
-                                                "example": "John Doe"
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "ship_all_at_once": {
+                                        "type": "boolean"
+                                    },
+                                    "separate_deliveries": {
+                                        "type": "boolean"
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "item_id": {
+                                                    "type": "string"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "supplier": {
+                                                    "type": "string"
+                                                },
+                                                "unit_price": {
+                                                    "type": "number"
+                                                },
+                                                "image_url": {
+                                                    "type": "string"
+                                                }
                                             },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "1234567890"
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "example": "john@example.com"
-                                            },
-                                            "country": {
-                                                "type": "string",
-                                                "example": "USA"
-                                            },
-                                            "state": {
-                                                "type": "string",
-                                                "example": "New York"
-                                            },
-                                            "city": {
-                                                "type": "string",
-                                                "example": "New York City"
-                                            },
-                                            "address": {
-                                                "type": "string",
-                                                "example": "123 Main St"
-                                            },
-                                            "zip_code": {
-                                                "type": "string",
-                                                "example": "10001"
-                                            },
-                                            "type": {
-                                                "type": "string",
-                                                "example": "shipping_address"
-                                            }
-                                        },
-                                        "type": "object"
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -7635,62 +7433,8 @@
                     }
                 },
                 "responses": {
-                    "200": {
-                        "description": "Order updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Order"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Orders"
-                ],
-                "summary": "Delete an order",
-                "description": "Deletes an order and all related records",
-                "operationId": "173211a50d204e6c949d9b18baa95efb",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Order deleted successfully"
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Cannot delete an order that is in progress or completed"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                    "201": {
+                        "description": "Order created successfully"
                     }
                 },
                 "security": [
@@ -7700,17 +7444,46 @@
                 ]
             }
         },
-        "/api/orders/{order}/status": {
-            "patch": {
+        "/api/orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get order details",
+                "operationId": "c29621029e70f65247909d3e09031118",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order details retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/{id}/status": {
+            "put": {
                 "tags": [
                     "Orders"
                 ],
                 "summary": "Update order status",
-                "description": "Updates the status of an existing order",
-                "operationId": "10d59deb9a72789734f6fae0894fddee",
+                "operationId": "a6abe7e1fd2257d370bf832e8075f50c",
                 "parameters": [
                     {
-                        "name": "order",
+                        "name": "id",
                         "in": "path",
                         "description": "Order ID",
                         "required": true,
@@ -7729,12 +7502,10 @@
                                 ],
                                 "properties": {
                                     "status": {
-                                        "type": "string",
-                                        "example": "processing"
+                                        "type": "string"
                                     },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Order has been processed and is being prepared for shipping"
+                                    "notes": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -7744,23 +7515,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Status updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Order"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                        "description": "Order status updated successfully"
                     }
                 },
                 "security": [
@@ -7770,17 +7525,76 @@
                 ]
             }
         },
-        "/api/orders/{order}/cancel": {
+        "/api/orders/{id}/items/{item_id}/status": {
+            "put": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Update specific item status",
+                "operationId": "d2041e28b03d422af17f8050e7b0d49f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "item_id",
+                        "in": "path",
+                        "description": "Order Item ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Item status updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/orders/{id}/shipments": {
             "post": {
                 "tags": [
                     "Orders"
                 ],
-                "summary": "Cancel an order",
-                "description": "Cancels an existing order and records the cancellation reason",
-                "operationId": "9b34216ec2458ad3a1bb36f8a7ca630a",
+                "summary": "Create a shipment for an order (supports partial delivery)",
+                "operationId": "eb0f2292f364d3492d620b88538d9af0",
                 "parameters": [
                     {
-                        "name": "order",
+                        "name": "id",
                         "in": "path",
                         "description": "Order ID",
                         "required": true,
@@ -7795,475 +7609,35 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "cancellation_reason"
-                                ],
-                                "properties": {
-                                    "cancellation_reason": {
-                                        "type": "string",
-                                        "example": "Customer request"
-                                    },
-                                    "cancellation_reason_description": {
-                                        "type": "string",
-                                        "example": "Customer found a better price elsewhere"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Order cancelled successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Order"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/orders/{order}/histories": {
-            "get": {
-                "tags": [
-                    "Order Histories"
-                ],
-                "summary": "Get order history",
-                "description": "Returns history entries for a specific order",
-                "operationId": "81e6b45a376e1973fe10e499281484fa",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/OrderHistory"
-                                    }
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Order Histories"
-                ],
-                "summary": "Add history entry",
-                "description": "Creates a new history entry for a specific order",
-                "operationId": "f7e97b3caab3e61a4f8228e47a2da6e3",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "action"
-                                ],
-                                "properties": {
-                                    "action": {
-                                        "type": "string",
-                                        "example": "note"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Customer called about delivery date"
-                                    },
-                                    "extras": {
-                                        "type": "object",
-                                        "example": {
-                                            "phone": "1234567890",
-                                            "contact_name": "John Doe"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "History entry created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderHistory"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/orders/{order}/histories/{history}": {
-            "get": {
-                "tags": [
-                    "Order Histories"
-                ],
-                "summary": "Get history entry",
-                "description": "Returns a specific history entry for an order",
-                "operationId": "e24df0ea324b7bd3b9f26d2ed6601409",
-                "parameters": [
-                    {
-                        "name": "order",
-                        "in": "path",
-                        "description": "Order ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "history",
-                        "in": "path",
-                        "description": "History ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderHistory"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order or history not found"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/order-returns": {
-            "get": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Get list of order returns",
-                "description": "Returns paginated list of order returns with optional filters",
-                "operationId": "f11a2a0f8fdd7e455f604936ae700770",
-                "parameters": [
-                    {
-                        "name": "return_status",
-                        "in": "query",
-                        "description": "Filter by return status",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "order_id",
-                        "in": "query",
-                        "description": "Filter by order ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "user_id",
-                        "in": "query",
-                        "description": "Filter by user ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "store_id",
-                        "in": "query",
-                        "description": "Filter by store ID",
-                        "required": false,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "code",
-                        "in": "query",
-                        "description": "Search by return code",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "from_date",
-                        "in": "query",
-                        "description": "Filter by start date (Y-m-d)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "to_date",
-                        "in": "query",
-                        "description": "Filter by end date (Y-m-d)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "format": "date"
-                        }
-                    },
-                    {
-                        "name": "sort_field",
-                        "in": "query",
-                        "description": "Field to sort by",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "created_at"
-                        }
-                    },
-                    {
-                        "name": "sort_order",
-                        "in": "query",
-                        "description": "Sort direction (asc, desc)",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "default": "desc"
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/OrderReturn"
-                                            }
-                                        },
-                                        "pagination": {
-                                            "properties": {
-                                                "total": {
-                                                    "type": "integer",
-                                                    "example": 30
-                                                },
-                                                "count": {
-                                                    "type": "integer",
-                                                    "example": 15
-                                                },
-                                                "per_page": {
-                                                    "type": "integer",
-                                                    "example": 15
-                                                },
-                                                "current_page": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "total_pages": {
-                                                    "type": "integer",
-                                                    "example": 2
-                                                },
-                                                "links": {
-                                                    "properties": {
-                                                        "previous": {
-                                                            "type": "string",
-                                                            "example": null
-                                                        },
-                                                        "next": {
-                                                            "type": "string",
-                                                            "example": "http://example.com/api/order-returns?page=2"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Create a new order return",
-                "description": "Creates a new return request for an order",
-                "operationId": "2a3f710beb962dd5f571390a0d242599",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "order_id",
                                     "items"
                                 ],
                                 "properties": {
-                                    "order_id": {
-                                        "type": "integer",
-                                        "example": 123
-                                    },
-                                    "user_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "reason": {
-                                        "type": "string",
-                                        "example": "Received wrong items"
-                                    },
                                     "items": {
                                         "type": "array",
                                         "items": {
                                             "required": [
-                                                "order_product_id",
-                                                "product_id",
-                                                "product_name",
-                                                "qty",
-                                                "price"
+                                                "order_item_id",
+                                                "quantity"
                                             ],
                                             "properties": {
-                                                "order_product_id": {
-                                                    "type": "integer",
-                                                    "example": 456
+                                                "order_item_id": {
+                                                    "type": "integer"
                                                 },
-                                                "product_id": {
-                                                    "type": "integer",
-                                                    "example": 789
-                                                },
-                                                "product_name": {
-                                                    "type": "string",
-                                                    "example": "Blue T-Shirt"
-                                                },
-                                                "product_image": {
-                                                    "type": "string",
-                                                    "example": "products/tshirt.jpg"
-                                                },
-                                                "qty": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "price": {
-                                                    "type": "number",
-                                                    "format": "decimal",
-                                                    "example": 29.99
-                                                },
-                                                "reason": {
-                                                    "type": "string",
-                                                    "example": "Wrong size"
-                                                },
-                                                "refund_amount": {
-                                                    "type": "number",
-                                                    "format": "decimal",
-                                                    "example": 29.99
+                                                "quantity": {
+                                                    "type": "integer"
                                                 }
                                             },
                                             "type": "object"
                                         }
+                                    },
+                                    "tracking_number": {
+                                        "type": "string"
+                                    },
+                                    "carrier": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -8273,217 +7647,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Return request created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderReturn"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/order-returns/{orderReturn}": {
-            "get": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Get order return details",
-                "description": "Returns detailed information for a specific order return",
-                "operationId": "54861bb80580d01e5f33feff7649d2bd",
-                "parameters": [
-                    {
-                        "name": "orderReturn",
-                        "in": "path",
-                        "description": "Order Return ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Successful operation",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderReturn"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Order return not found"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Update a specific order return",
-                "description": "Updates the given order return with new data",
-                "operationId": "b9208d80eb0cfa74cf519fb1047a7ef1",
-                "parameters": [
-                    {
-                        "name": "orderReturn",
-                        "in": "path",
-                        "description": "Order Return ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/UpdateOrderReturnRequest"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Order return updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderReturn"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Delete a specific order return",
-                "description": "Deletes an order return if its status is pending",
-                "operationId": "d5913f5d6599379c80a601629bc56d54",
-                "parameters": [
-                    {
-                        "name": "orderReturn",
-                        "in": "path",
-                        "description": "Order Return ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "Order return deleted successfully"
-                    },
-                    "422": {
-                        "description": "Cannot delete a return that is already being processed"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/order-returns/{orderReturn}/status": {
-            "patch": {
-                "tags": [
-                    "Order Returns"
-                ],
-                "summary": "Update the status of an order return",
-                "description": "Updates only the return_status field of the order return",
-                "operationId": "b045e6a5a0d41e9341dfefc401db633b",
-                "parameters": [
-                    {
-                        "name": "orderReturn",
-                        "in": "path",
-                        "description": "Order Return ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "return_status"
-                                ],
-                                "properties": {
-                                    "return_status": {
-                                        "type": "string",
-                                        "maxLength": 191
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Order return status updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/OrderReturn"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error"
-                    },
-                    "401": {
-                        "description": "Unauthenticated"
+                        "description": "Shipment created successfully"
                     }
                 },
                 "security": [
@@ -15539,147 +14703,6 @@
                 },
                 "type": "object"
             },
-            "Order": {
-                "title": "Order",
-                "required": [
-                    "id",
-                    "code",
-                    "user_id",
-                    "store_id",
-                    "amount",
-                    "status"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "ORD-2024-0001"
-                    },
-                    "user_id": {
-                        "type": "integer",
-                        "example": 42
-                    },
-                    "store_id": {
-                        "type": "integer",
-                        "example": 5
-                    },
-                    "amount": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 150.75
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "pending"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-01T12:00:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-02T08:30:00Z"
-                    }
-                },
-                "type": "object"
-            },
-            "OrderHistory": {
-                "title": "OrderHistory",
-                "required": [
-                    "id",
-                    "order_id",
-                    "status",
-                    "changed_by"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "order_id": {
-                        "type": "integer",
-                        "example": 1001
-                    },
-                    "status": {
-                        "type": "string",
-                        "example": "shipped"
-                    },
-                    "comment": {
-                        "type": "string",
-                        "example": "Order shipped via FedEx"
-                    },
-                    "changed_by": {
-                        "type": "string",
-                        "example": "admin"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-15T12:00:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-16T08:30:00Z"
-                    }
-                },
-                "type": "object"
-            },
-            "OrderReturn": {
-                "title": "OrderReturn",
-                "required": [
-                    "id",
-                    "order_id",
-                    "user_id",
-                    "return_status"
-                ],
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "order_id": {
-                        "type": "integer",
-                        "example": 1001
-                    },
-                    "user_id": {
-                        "type": "integer",
-                        "example": 500
-                    },
-                    "store_id": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "RET-12345"
-                    },
-                    "return_status": {
-                        "type": "string",
-                        "example": "pending"
-                    },
-                    "reason": {
-                        "type": "string",
-                        "example": "Damaged item"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-15T12:00:00Z"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2024-04-16T08:30:00Z"
-                    }
-                },
-                "type": "object"
-            },
             "CategoryHierarchy": {
                 "properties": {
                     "id": {
@@ -16814,14 +15837,6 @@
         {
             "name": "Orders",
             "description": "Orders"
-        },
-        {
-            "name": "Order Histories",
-            "description": "Order Histories"
-        },
-        {
-            "name": "Order Returns",
-            "description": "Order Returns"
         },
         {
             "name": "Payments",
