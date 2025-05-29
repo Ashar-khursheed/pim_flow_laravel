@@ -51,7 +51,8 @@ use App\Http\Controllers\ProductSupplierController;
 use App\Http\Controllers\AppKeywordController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProductCategoryController;
-
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogCategoryController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -60,6 +61,9 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
+
+
+
 
 /* Protect routes with authentication */
 Route::middleware(['auth:api'])->group(function () {
@@ -78,6 +82,12 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
 	Route::apiResource('recommendations', AttributeRecommendationController::class);
+
+	
+	Route::apiResource('blog-categories', BlogCategoryController::class);
+	Route::post('/blogs/{id}', [BlogController::class, 'update']);
+	Route::apiResource('blogs', BlogController::class);
+
 
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
