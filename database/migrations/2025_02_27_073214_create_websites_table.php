@@ -22,7 +22,7 @@ return new class extends Migration
 			$table->string('website_ids')->nullable()->after('name');
 		});
 
-		Schema::table('ec_product_categories', function (Blueprint $table) {
+		Schema::table('categories', function (Blueprint $table) {
 			$table->string('website_ids')->nullable()->after('is_featured');
 		});
 	}
@@ -32,7 +32,7 @@ return new class extends Migration
 	 */
 	public function down(): void
 	{
-		Schema::table('ec_product_categories', function (Blueprint $table) {
+		Schema::table('categories', function (Blueprint $table) {
 			$table->dropColumn('website_ids');
 		});
 		Schema::table('ec_products', function (Blueprint $table) {

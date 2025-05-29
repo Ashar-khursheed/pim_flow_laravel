@@ -193,7 +193,7 @@ class PreOnboardingVendorController extends Controller
 			'zipcode_ids.*' => 'integer|exists:zipcodes,id',
 
 			'category_ids' => 'required|array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 
 			'type' => 'required',
 			'dropshipping' => 'nullable|boolean',
@@ -369,7 +369,7 @@ class PreOnboardingVendorController extends Controller
 			'zipcode_ids.*' => 'integer|exists:zipcodes,id',
 
 			'category_ids' => 'required|array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 
 			'type' => 'required',
 			'dropshipping' => 'nullable|boolean',

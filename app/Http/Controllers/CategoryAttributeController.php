@@ -52,10 +52,10 @@ class CategoryAttributeController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 
 			/* Add attribute_count via subquery */
-			$recordsQuery->select('ec_product_categories.id', 'ec_product_categories.name')->selectSub(function ($query) {
+			$recordsQuery->select('categories.id', 'categories.name')->selectSub(function ($query) {
 				$query->from('category_attribute_groups')
 				->join('attributes', 'attributes.attribute_group_id', '=', 'category_attribute_groups.attribute_group_id')
-				->whereColumn('category_attribute_groups.category_id', 'ec_product_categories.id')
+				->whereColumn('category_attribute_groups.category_id', 'categories.id')
 				->selectRaw('COUNT(DISTINCT attributes.id)');
 			}, 'attribute_count');
 

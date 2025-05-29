@@ -129,7 +129,7 @@ class AttributeGroupController extends BaseController
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name',
 			'category_ids' => 'array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 			'attribute_ids' => 'array',
 			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);
@@ -283,7 +283,7 @@ class AttributeGroupController extends BaseController
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name,'.$id,
 			'category_ids' => 'array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 			'attribute_ids' => 'array',
 			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);

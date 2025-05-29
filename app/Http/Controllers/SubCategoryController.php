@@ -194,7 +194,7 @@ public function index(Request $request)
      // Validate request
      $validated = $request->validate([
          'name' => 'required|string|max:255',
-         'category_id' => 'required|exists:ec_product_categories,id',
+         'category_id' => 'required|exists:categories,id',
          'products_ids' => 'nullable|array',
          'products_ids.*' => 'exists:ec_products,id',
          'attributes_ids' => 'nullable|array',
@@ -389,7 +389,7 @@ public function index(Request $request)
      // Validate request
      $validated = $request->validate([
          'name' => 'required|string|max:255',
-         'category_id' => 'required|exists:ec_product_categories,id',
+         'category_id' => 'required|exists:categories,id',
          'products_ids' => 'nullable|array',
          'products_ids.*' => 'exists:ec_products,id',
          'attributes_ids' => 'nullable|array',
