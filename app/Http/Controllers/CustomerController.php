@@ -268,6 +268,7 @@ public function index(Request $request)
     {
         $customers = Customer::select('id', 'name')->get();
         return response()->json($customers);
+        
     }
 
 }
