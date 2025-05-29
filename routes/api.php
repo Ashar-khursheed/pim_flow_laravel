@@ -52,6 +52,7 @@ use App\Http\Controllers\AppKeywordController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProductCategoryController;
 
+use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -60,9 +61,10 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
+Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 
 /* Protect routes with authentication */
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
@@ -72,7 +74,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
 	Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
-	
+
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
@@ -272,6 +274,12 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+	Route::post('/logout', [AuthController::class, 'logout']);
 });
+
+Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
+});
+
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
