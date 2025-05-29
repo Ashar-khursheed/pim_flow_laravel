@@ -66,7 +66,7 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
-	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
+	// Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 
