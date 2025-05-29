@@ -54,6 +54,10 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 
+use App\Http\Controllers\CustomerController;
+
+
+
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
 Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
@@ -70,20 +74,20 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
-	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
+	// Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 
 	Route::put('/products/{id}/categories', [ProductCategoryController::class, 'updateCategories']);
 	Route::get('/products/{id}/categories', [ProductCategoryController::class, 'getCategories']);
-	
+
 	Route::get('auth/permissions', [AuthController::class, 'getAllPermissions']);
 	Route::get('auth/has-permission', [AuthController::class, 'hasPermission']);
 
 	Route::post('/generate-recommendations', [AttributeRecommendationController::class, 'generate']);
 	Route::apiResource('recommendations', AttributeRecommendationController::class);
 
-	
+
 	Route::apiResource('blog-categories', BlogCategoryController::class);
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
@@ -96,6 +100,9 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
+
+	Route::get('/customers/list-names', [CustomerController::class, 'listNames']);
+	Route::apiResource('customers', CustomerController::class);
 
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
