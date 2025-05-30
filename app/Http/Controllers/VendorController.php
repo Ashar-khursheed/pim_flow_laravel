@@ -97,6 +97,19 @@ class VendorController extends BaseController
 			->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
+
+			/* Add country_name and created_by */
+			$records->transform(function ($record) {
+				$record->country_name = $record->country->name ;
+				unset($record->country_id, $record->country);
+
+				$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
+
+				$record->created_by = $record->creator->name;
+				unset($record->creator);
+
+				return $record;
+			});
 		} else {
 			$records = $recordsQuery->orderBy('name', 'asc')->get([
 				'id', 'name'
@@ -104,19 +117,6 @@ class VendorController extends BaseController
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
-
-		/* Add country_name and created_by */
-		$records->transform(function ($record) {
-			$record->country_name = $record->country->name ?? null;
-			unset($record->country_id, $record->country);
-
-			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
-
-			$record->created_by = $record->creator->name ?? null;
-			unset($record->creator);
-
-			return $record;
-		});
 
 		return response()->json([
 			'success' => true,
