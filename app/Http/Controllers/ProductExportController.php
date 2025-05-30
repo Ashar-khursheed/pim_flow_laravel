@@ -52,7 +52,7 @@ class ProductExportController extends BaseController
 
 		/* Validate request data */
 		$request->validate([
-			'type' => 'required|string|in:Brand,Category,Store',
+			'type' => 'required|string|in:Brand,Category,Vendor',
 			'relational_id' => 'required|integer',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 1000),
@@ -91,7 +91,7 @@ class ProductExportController extends BaseController
 		$query = Product::with([
 			'categories:id,name',
 			'brand:id,name',
-			'store:id,name',
+			'vendor:id,name',
 			'tags:id,name',
 			'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
@@ -105,8 +105,8 @@ class ProductExportController extends BaseController
 		/* Apply relational filters */
 		if ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
-		} elseif ($request->type == "Store") {
-			$query->where('store_id', $request->relational_id);
+		} elseif ($request->type == "Vendor") {
+			$query->where('vendor_id', $request->relational_id);
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
 			$leafCategories = Category::getLeafCategories($category);
@@ -290,7 +290,7 @@ class ProductExportController extends BaseController
 					break;
 
 					case 'vendor':
-					$row[] = $product->store->name ?? '';
+					$row[] = $product->vendor->name ?? '';
 					break;
 
 					case 'images':
