@@ -2331,30 +2331,78 @@ class ProductController extends BaseController
 			$product->unit_of_measurement_id = $input['unit_of_measurement_id']; /* Assign the valid ID */
 		}
 
-		/* Decode existing benefits_features if available */
-		$existingBenefits = json_decode($product->benefits_features, true);
+		// /* Decode existing benefits_features if available */
+		// $existingBenefits = json_decode($product->benefits_features, true);
 
-		/* Ensure existingBenefits is an array */
-		if (!is_array($existingBenefits)) {
-			$existingBenefits = [];
-		}
+		// /* Ensure existingBenefits is an array */
+		// if (!is_array($existingBenefits)) {
+		// 	$existingBenefits = [];
+		// }
 
-		/* Decode incoming request JSON */
-		$newBenefits = json_decode($request->input('benefits_features'), true);
+		// /* Decode incoming request JSON */
+		// $newBenefits = json_decode($request->input('benefits_features'), true);
 
-		/* Ensure newBenefits is an array */
-		if (!is_array($newBenefits)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Invalid benefits_features format.'
-			], 400);
-		}
+		// /* Ensure newBenefits is an array */
+		// if (!is_array($newBenefits)) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'Invalid benefits_features format.'
+		// 	], 400);
+		// }
 
-		/* Merge existing benefits with new ones */
-		$mergedBenefits = array_merge($existingBenefits, $newBenefits);
+		// /* Merge existing benefits with new ones */
+		// $mergedBenefits = array_merge($existingBenefits, $newBenefits);
 
-		/* Save back as JSON */
-		$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+		// /* Save back as JSON */
+		// $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+
+		/* Handle benefits_features field */
+if ($request->has('benefits_features')) {
+    /* Decode existing benefits_features if available */
+    $existingBenefits = json_decode($product->benefits_features, true);
+    
+    /* Ensure existingBenefits is an array */
+    if (!is_array($existingBenefits)) {
+        $existingBenefits = [];
+    }
+    
+    /* Get the incoming benefits_features */
+    $benefitsFeaturesInput = $request->input('benefits_features');
+    
+    /* Handle different input formats */
+    if (is_string($benefitsFeaturesInput)) {
+        /* Try to decode JSON string */
+        $newBenefits = json_decode($benefitsFeaturesInput, true);
+        
+        /* If JSON decode failed, treat as invalid */
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid benefits_features JSON format.'
+            ], 400);
+        }
+    } elseif (is_array($benefitsFeaturesInput)) {
+        /* Already an array */
+        $newBenefits = $benefitsFeaturesInput;
+    } else {
+        /* Invalid format */
+        return response()->json([
+            'success' => false,
+            'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+        ], 400);
+    }
+    
+    /* Ensure newBenefits is an array */
+    if (!is_array($newBenefits)) {
+        $newBenefits = [];
+    }
+    
+    /* Merge existing benefits with new ones */
+    $mergedBenefits = array_merge($existingBenefits, $newBenefits);
+    
+    /* Save back as JSON */
+    $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+}
 
 
 		/* Stock status validation */
