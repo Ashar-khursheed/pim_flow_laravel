@@ -1218,7 +1218,7 @@ class ProductController extends BaseController
 	// 			// else ignore invalid inputs
 	// 		}
 	// 	}
-		
+
 	// 	// Save as JSON with unescaped slashes
 	// 	$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
 
@@ -1247,7 +1247,7 @@ class ProductController extends BaseController
 	// 	// /* Convert to JSON with unescaped slashes before saving */
 	// 	// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
-		
+
 
 	// 	/* Handle video upload */
 	// 	// $existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
@@ -1324,7 +1324,7 @@ class ProductController extends BaseController
 
 	// 	/* Convert to JSON with unescaped slashes */
 	// 	$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
-		
+
 
 
 	// 	$input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -2141,7 +2141,7 @@ class ProductController extends BaseController
 				// else ignore invalid inputs
 			}
 		}
-		
+
 		// Save as JSON with unescaped slashes
 		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
 
@@ -2170,7 +2170,7 @@ class ProductController extends BaseController
 		// /* Convert to JSON with unescaped slashes before saving */
 		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
 
-		
+
 
 		/* Handle video upload */
 		// $existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
@@ -2197,7 +2197,7 @@ class ProductController extends BaseController
 		if ($request->has('video_path')) {
 			$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
 			foreach ($videoPaths as $key => $video) {
-		
+
 				if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
 					// It's a URL, keep as is
 					$finalVideos[] = $video;
@@ -2246,7 +2246,7 @@ class ProductController extends BaseController
 
 		/* Convert to JSON with unescaped slashes */
 		$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
-		
+
 
 
 		$input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
@@ -2362,20 +2362,20 @@ class ProductController extends BaseController
 if ($request->has('benefits_features')) {
     /* Decode existing benefits_features if available */
     $existingBenefits = json_decode($product->benefits_features, true);
-    
+
     /* Ensure existingBenefits is an array */
     if (!is_array($existingBenefits)) {
         $existingBenefits = [];
     }
-    
+
     /* Get the incoming benefits_features */
     $benefitsFeaturesInput = $request->input('benefits_features');
-    
+
     /* Handle different input formats */
     if (is_string($benefitsFeaturesInput)) {
         /* Try to decode JSON string */
         $newBenefits = json_decode($benefitsFeaturesInput, true);
-        
+
         /* If JSON decode failed, treat as invalid */
         if (json_last_error() !== JSON_ERROR_NONE) {
             return response()->json([
@@ -2393,15 +2393,15 @@ if ($request->has('benefits_features')) {
             'message' => 'Invalid benefits_features format. Must be JSON string or array.'
         ], 400);
     }
-    
+
     /* Ensure newBenefits is an array */
     if (!is_array($newBenefits)) {
         $newBenefits = [];
     }
-    
+
     /* Merge existing benefits with new ones */
     $mergedBenefits = array_merge($existingBenefits, $newBenefits);
-    
+
     /* Save back as JSON */
     $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 }
