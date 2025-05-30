@@ -52,7 +52,7 @@ class ProductExportController extends BaseController
 
 		/* Validate request data */
 		$request->validate([
-			'type' => 'required|string|in:Brand,Category,Store',
+			'type' => 'required|string|in:Brand,Category,Vendor',
 			'relational_id' => 'required|integer',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 1000),
@@ -91,7 +91,7 @@ class ProductExportController extends BaseController
 		$query = Product::with([
 			'categories:id,name',
 			'brand:id,name',
-			'store:id,name',
+			'vendor:id,name',
 			'tags:id,name',
 			'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
@@ -105,8 +105,8 @@ class ProductExportController extends BaseController
 		/* Apply relational filters */
 		if ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
-		} elseif ($request->type == "Store") {
-			$query->where('store_id', $request->relational_id);
+		} elseif ($request->type == "Vendor") {
+			$query->where('vendor_id', $request->relational_id);
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
 			$leafCategories = Category::getLeafCategories($category);
@@ -198,10 +198,10 @@ class ProductExportController extends BaseController
 
 		$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
 		$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-		$unitMap   = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
+		// $unitMap   = ['Each' => 1, 'Dozen' => 2, 'Box' => 3, 'Case' => 4];
 		$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
-		$weightValidOptions = ['lbs', 'kg', 'g'];
-		$dimensionValidOptions = ['inch', 'cm', 'mm'];
+		// $weightValidOptions = ['lbs', 'kg', 'g'];
+		// $dimensionValidOptions = ['inch', 'cm', 'mm'];
 		$skipFields = [
 			'discount1', 'start_date1', 'end_date1',
 			'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
@@ -255,11 +255,11 @@ class ProductExportController extends BaseController
 					$row[] = $statusMap[$product->status] ?? 2;
 					break;
 
-					case 'unit_of_measurement':
-					$row[] = $unitMap[$product->unit_of_measurement] ?? '';
-					break;
+					// case 'unit_of_measurement':
+					// $row[] = $unitMap[$product->unit_of_measurement] ?? '';
+					// break;
 
-					case 'with_storehouse_management':
+					// case 'with_storehouse_management':
 					case 'variant_requires_shipping':
 					case 'is_featured':
 					$row[] = $product->$field ? 1 : 0;
@@ -269,15 +269,15 @@ class ProductExportController extends BaseController
 					$row[] = $refundMap[$product->refund_policy] ?? '';
 					break;
 
-					case 'weight_option':
-					case 'shipping_weight_option':
-					$row[] = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
-					break;
+					// case 'weight_option':
+					// case 'shipping_weight_option':
+					// $row[] = in_array($product->$field, $weightValidOptions) ? $product->$field : '';
+					// break;
 
-					case 'dimension_option':
-					case 'shipping_dimension_option':
-					$row[] = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
-					break;
+					// case 'dimension_option':
+					// case 'shipping_dimension_option':
+					// $row[] = in_array($product->$field, $dimensionValidOptions) ? $product->$field : '';
+					// break;
 
 					case 'tags':
 					$row[] = $product->tags->pluck('name')->implode(',') ?? '';
@@ -290,7 +290,7 @@ class ProductExportController extends BaseController
 					break;
 
 					case 'vendor':
-					$row[] = $product->store->name ?? '';
+					$row[] = $product->vendor->name ?? '';
 					break;
 
 					case 'images':
@@ -306,10 +306,10 @@ class ProductExportController extends BaseController
 					$row[] = implode(',', array_column($fbtArray, 'value'));
 					break;
 
-					case 'compare_products':
-					$compareData = is_array($product->compare_products) ? $product->compare_products : json_decode($product->compare_products, true);
-					$row[] = is_array($compareData) ? implode(',', $compareData) : '';
-					break;
+					// case 'compare_products':
+					// $compareData = is_array($product->compare_products) ? $product->compare_products : json_decode($product->compare_products, true);
+					// $row[] = is_array($compareData) ? implode(',', $compareData) : '';
+					// break;
 
 					case 'url':
 					$row[] = $product->slug->key ? "https://thehorecastore.co/products/{$product->slug->key}" : '';
