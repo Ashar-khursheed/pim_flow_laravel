@@ -201,6 +201,14 @@ class Product extends Model
 		return $this->hasMany(ProductAttribute::class);
 	}
 
+	public function sellingUnitAttribute()
+	{
+		return $this->hasOne(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->where('name', 'Selling Unit');
+		});
+	}
+
 	public function discounts(): BelongsToMany
 	{
 		return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
