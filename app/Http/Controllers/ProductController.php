@@ -2195,7 +2195,9 @@ class ProductController extends BaseController
 		$finalVideos = [];
 
 		if ($request->has('video_path')) {
-			foreach ($request->video_path as $key => $video) {
+			$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+			foreach ($videoPaths as $key => $video) {
+		
 				if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
 					// It's a URL, keep as is
 					$finalVideos[] = $video;
