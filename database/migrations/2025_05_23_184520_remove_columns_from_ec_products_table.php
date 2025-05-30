@@ -55,8 +55,12 @@ return new class extends Migration
 				'variant_barcode',
 				'gift_card',
 				'video_url',
+				'shipping_weight_option',
+				'shipping_weight',
+				'shipping_dimension_option',
 				'shipping_width',
 				'shipping_depth',
+				'shipping_height',
 				'shipping_length',
 				'shipping_length_id',
 				'compare_type',
@@ -242,8 +246,12 @@ return new class extends Migration
 			$table->string('variant_barcode', 191)->nullable();
 			$table->boolean('gift_card')->nullable();
 			$table->string('video_url', 191)->nullable();
+			$table->string('shipping_weight_option')->nullable();
+			$table->decimal('shipping_weight', 8, 2)->nullable();
+			$table->string('shipping_dimension_option')->nullable();
 			$table->decimal('shipping_width', 8, 2)->nullable();
 			$table->decimal('shipping_depth', 8, 2)->nullable();
+			$table->decimal('shipping_height', 8, 2)->nullable();
 			$table->decimal('shipping_length', 8, 2)->nullable();
 			$table->bigInteger('shipping_length_id')->nullable();
 			$table->longText('compare_type')->nullable();
