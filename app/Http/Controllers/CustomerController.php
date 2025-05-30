@@ -54,30 +54,75 @@ class CustomerController extends Controller
      *     @OA\Response(response=200, description="Paginated list of customers")
      * )
     */
-public function index(Request $request)
-{
-    $query = Customer::query();
+        // public function index(Request $request)
+        // {
+        //     $query = Customer::query();
 
-    // Search by name or email
-    if ($request->filled('search')) {
-        $search = $request->input('search');
-        $query->where(function ($q) use ($search) {
-            $q->where('name', 'like', "%$search%")
-              ->orWhere('email', 'like', "%$search%");
-        });
-    }
+        //     // Search by name or email
+        //     if ($request->filled('search')) {
+        //         $search = $request->input('search');
+        //         $query->where(function ($q) use ($search) {
+        //             $q->where('name', 'like', "%$search%")
+        //             ->orWhere('email', 'like', "%$search%");
+        //         });
+        //     }
 
-    // Sorting
-    $sortBy = $request->input('sort_by', 'created_at');
-    $sortOrder = $request->input('sort_order', 'desc');
-    $query->orderBy($sortBy, $sortOrder);
+        //     // Sorting
+        //     $sortBy = $request->input('sort_by', 'created_at');
+        //     $sortOrder = $request->input('sort_order', 'desc');
+        //     $query->orderBy($sortBy, $sortOrder);
 
-    // Pagination
-    $perPage = $request->input('per_page', 10);
-    $customers = $query->paginate($perPage);
+        //     // Pagination
+        //     $perPage = $request->input('per_page', 10);
+        //     $customers = $query->paginate($perPage);
 
-    return response()->json($customers);
-}
+        //     return response()->json($customers);
+        // }
+
+        public function index(Request $request)
+        {
+            $query = Customer::query();
+
+            // Search by name or email
+            if ($request->filled('search')) {
+                $search = $request->input('search');
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%$search%")
+                    ->orWhere('email', 'like', "%$search%");
+                });
+            }
+
+            // Valid sort columns
+            $allowedSortColumns = ['id', 'name', 'email', 'created_at', 'updated_at'];
+            $sortBy = $request->input('sort_by', 'created_at');
+            $sortOrder = $request->input('sort_order', 'desc');
+
+            // Validate sortBy
+            if (!in_array($sortBy, $allowedSortColumns)) {
+                $sortBy = 'created_at'; // fallback to default
+            }
+
+            // Validate sortOrder
+            $sortOrder = strtolower($sortOrder) === 'asc' ? 'asc' : 'desc';
+
+            $query->orderBy($sortBy, $sortOrder);
+
+            // Pagination
+            $perPage = $request->input('per_page', 10);
+            $customers = $query->paginate($perPage);
+
+            // Optional: Handle no results found
+            if ($customers->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No customers found.',
+                    'data' => [],
+                ], 200);
+            }
+
+            return response()->json($customers);
+        }
+
 
     /**
      * @OA\Post(
@@ -121,6 +166,7 @@ public function index(Request $request)
         $customer = Customer::create($data);
 
         return response()->json([
+            'success' => true,
             'message' => 'Customer created successfully',
             'data' => $customer
         ], 201);
@@ -147,7 +193,10 @@ public function index(Request $request)
         $customer = Customer::find($id);
 
         if (!$customer) {
-            return response()->json(['message' => 'Customer not found'], 404);
+            return response()->json([
+                    'success' => false,
+                    'message' => 'Customer not found'
+                ], 404);
         }
 
         return response()->json($customer);
@@ -210,6 +259,7 @@ public function index(Request $request)
         $customer->update($data);
 
         return response()->json([
+                    'success' => true,
             'message' => 'Customer updated successfully',
             'data' => $customer
         ]);
@@ -236,12 +286,14 @@ public function index(Request $request)
         $customer = Customer::find($id);
 
         if (!$customer) {
-            return response()->json(['message' => 'Customer not found'], 404);
+            return response()->json([
+                    'success' => false,'message' => 'Customer not found'], 404);
         }
 
         $customer->delete();
 
-        return response()->json(['message' => 'Customer deleted successfully']);
+        return response()->json([
+                    'success' => true,'message' => 'Customer deleted successfully']);
     }
 
     /**
