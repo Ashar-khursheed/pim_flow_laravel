@@ -100,12 +100,12 @@ class VendorController extends BaseController
 
 			/* Add country_name and created_by */
 			$records->transform(function ($record) {
-				$record->country_name = $record->country->name ;
+				$record->country_name = $record->country->name ?? null;
 				unset($record->country_id, $record->country);
 
 				$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
 
-				$record->created_by = $record->creator->name;
+				$record->created_by = $record->creator->name ?? null;
 				unset($record->creator);
 
 				return $record;
