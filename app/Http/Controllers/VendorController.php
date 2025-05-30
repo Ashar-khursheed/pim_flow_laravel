@@ -50,51 +50,45 @@ class VendorController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$recordsQuery = Vendor::with(['country:id,name', 'creator:id,first_name,last_name']);
-
 		/* Dynamic search filters */
 		$searchableColumns = [
 			'id', 'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
 			'website_link', 'type', 'business_licence_number'
 		];
-
-		if ($request->filled('global')) {
-			$globalSearch = $request->input('global');
-			$recordsQuery->where(function ($query) use ($searchableColumns, $globalSearch) {
-				foreach ($searchableColumns as $column) {
-					$query->orWhere($column, 'LIKE', '%' . $globalSearch . '%');
-				}
-			});
-		} else {
-			/* Apply individual column filters */
-			foreach ($searchableColumns as $column) {
-				if ($request->filled($column)) {
-					$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
-				}
-			}
-		}
-
-		/* Sorting */
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'credit_limit', 'net_terms']);
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDir = $request->input('sort_dir', 'desc');
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		if (!in_array($sortBy, $sortableColumns)) {
-			$sortBy = 'id';
-		}
-		$sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+		$recordsQuery = Vendor::query();
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
+			$recordsQuery->with(['country:id,name', 'creator:id,first_name,last_name']);
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
 			$page = (int) $request->input('page');
 			$length = (int) $request->input('length');
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $recordsQuery->orderBy($sortBy, $sortDir)
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get([
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
 				'id', 'name', 'country_id', 'email', 'contact_person', 'mobile_number', 'landline_number', 'dropshipping', 'website_link', 'type', 'warehouse_locations', 'credit_limit', 'net_terms', 'logo_url', 'business_licence_number', 'created_by', 'created_at'
 			]);
 
@@ -126,7 +120,6 @@ class VendorController extends BaseController
 			'total_records' => $totalRecords,
 		]);
 	}
-
 
 	/**
 	 * @OA\Post(
