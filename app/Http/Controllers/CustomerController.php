@@ -114,6 +114,7 @@ class CustomerController extends Controller
             // Optional: Handle no results found
             if ($customers->isEmpty()) {
                 return response()->json([
+                    'success' => true,
                     'message' => 'No customers found.',
                     'data' => [],
                 ], 200);
@@ -165,6 +166,7 @@ class CustomerController extends Controller
         $customer = Customer::create($data);
 
         return response()->json([
+            'success' => true,
             'message' => 'Customer created successfully',
             'data' => $customer
         ], 201);
@@ -191,7 +193,10 @@ class CustomerController extends Controller
         $customer = Customer::find($id);
 
         if (!$customer) {
-            return response()->json(['message' => 'Customer not found'], 404);
+            return response()->json([
+                    'success' => false,
+                    'message' => 'Customer not found'
+                ], 404);
         }
 
         return response()->json($customer);
@@ -254,6 +259,7 @@ class CustomerController extends Controller
         $customer->update($data);
 
         return response()->json([
+                    'success' => true,
             'message' => 'Customer updated successfully',
             'data' => $customer
         ]);
@@ -280,12 +286,14 @@ class CustomerController extends Controller
         $customer = Customer::find($id);
 
         if (!$customer) {
-            return response()->json(['message' => 'Customer not found'], 404);
+            return response()->json([
+                    'success' => false,'message' => 'Customer not found'], 404);
         }
 
         $customer->delete();
 
-        return response()->json(['message' => 'Customer deleted successfully']);
+        return response()->json([
+                    'success' => true,'message' => 'Customer deleted successfully']);
     }
 
     /**
