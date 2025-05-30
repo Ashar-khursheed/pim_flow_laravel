@@ -38,7 +38,7 @@ def main(category_id):
         try:
             with connection.cursor() as cursor:
                 sql = """
-                    SELECT 
+                    SELECT
                         p.id,
                         p.name,
                         p.sku,
@@ -48,7 +48,7 @@ def main(category_id):
                         c.name AS product_family
                     FROM ec_products p
                     INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
-                    INNER JOIN ec_product_categories c ON cp.category_id = c.id
+                    INNER JOIN categories c ON cp.category_id = c.id
                     LEFT JOIN ec_brands b ON p.brand_id = b.id
                     LEFT JOIN mp_stores s_store ON p.store_id = s_store.id
                     WHERE c.id = %s AND p.status = 'published'

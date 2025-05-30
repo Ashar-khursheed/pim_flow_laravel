@@ -12,9 +12,6 @@ use Illuminate\Support\Facades\Validator;
 class CategoryAttributeController extends BaseController
 {
 	/**
-	 * Display a listing of the resource.
-	 */
-	/**
 	 * @OA\Get(
 	 *     path="/api/category-attributes",
 	 *     summary="Get Categrory List with Atribute & Attribute Group",
@@ -52,10 +49,10 @@ class CategoryAttributeController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 
 			/* Add attribute_count via subquery */
-			$recordsQuery->select('ec_product_categories.id', 'ec_product_categories.name')->selectSub(function ($query) {
+			$recordsQuery->select('categories.id', 'categories.name')->selectSub(function ($query) {
 				$query->from('category_attribute_groups')
 				->join('attributes', 'attributes.attribute_group_id', '=', 'category_attribute_groups.attribute_group_id')
-				->whereColumn('category_attribute_groups.category_id', 'ec_product_categories.id')
+				->whereColumn('category_attribute_groups.category_id', 'categories.id')
 				->selectRaw('COUNT(DISTINCT attributes.id)');
 			}, 'attribute_count');
 
@@ -206,24 +203,24 @@ class CategoryAttributeController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$existingGroupIds = $record->categoryAttributeGroups()->pluck('attribute_group_id')->toArray();
-			$syncData = collect($request->attribute_group_ids)->mapWithKeys(function ($id) use ($existingGroupIds) {
-				if (in_array($id, $existingGroupIds)) {
-					/* Existing group, do not modify created_by, created_at */
-					return [
-						$id => []
-					];
-				} else {
-					/* New group, set created_by, created_at */
-					return [
-						$id => [
-							'created_by' => auth()->id() ?? 1,
-							'created_at' => now()
-						]
-					];
-				}
-			})->toArray();
-			$record->categoryAttributeGroups()->sync($syncData);
+			// $existingGroupIds = $record->categoryAttributeGroups()->pluck('attribute_group_id')->toArray();
+			// $syncData = collect($request->attribute_group_ids)->mapWithKeys(function ($id) use ($existingGroupIds) {
+			// 	if (in_array($id, $existingGroupIds)) {
+			// 		/* Existing group, do not modify created_by, created_at */
+			// 		return [
+			// 			$id => []
+			// 		];
+			// 	} else {
+			// 		/* New group, set created_by, created_at */
+			// 		return [
+			// 			$id => [
+			// 				'created_by' => auth()->id() ?? 1,
+			// 				'created_at' => now()
+			// 			]
+			// 		];
+			// 	}
+			// })->toArray();
+			$record->categoryAttributeGroups()->sync($request->attribute_group_ids);
 
 			/* Fetch updated data with only required fields */
 			$updatedRecord = Category::whereDoesntHave('children')

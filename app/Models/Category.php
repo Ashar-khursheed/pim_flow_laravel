@@ -25,7 +25,7 @@ use OpenApi\Annotations as OA;
  */
 class Category extends Model
 {
-	protected $table = 'ec_product_categories';
+	protected $table = 'categories';
 
 	protected $fillable = [
 		'name', 'parent_id', 'description', 'status', 'order',
@@ -42,7 +42,7 @@ class Category extends Model
 		return $query->where('parent_id', '!=', 0)
 		->whereNotIn('id', function ($subQuery) {
 			$subQuery->select('parent_id')
-			->from('ec_product_categories')
+			->from('categories')
 			->whereNotNull('parent_id');
 		})
 		->whereHas('parent', function ($parentQuery) use ($parentId) {
@@ -62,12 +62,13 @@ class Category extends Model
 
 	public function categoryAttributeGroups()
 	{
-		return $this->belongsToMany(
-			AttributeGroup::class,
-			'category_attribute_groups',
-			'category_id',
-			'attribute_group_id'
-		);
+		// return $this->belongsToMany(
+		// 	AttributeGroup::class,
+		// 	'category_attribute_groups',
+		// 	'category_id',
+		// 	'attribute_group_id'
+		// );
+		return $this->belongsToMany(AttributeGroup::class, 'category_attribute_groups')->using(CategoryAttributeGroup::class);
 	}
 
 	public static function getLeafCategories($category)

@@ -192,6 +192,7 @@ class AttributeController extends BaseController
 		$attribute->code = $request->code;
 		$attribute->type = $request->type;
 		$attribute->created_by = auth()->id();
+		$attribute->updated_by = auth()->id();
 		$attribute->created_at = now();
 		$attribute->updated_at = now();
 		$attribute->save();
@@ -276,7 +277,7 @@ class AttributeController extends BaseController
 	 *             required={"name", "code", "type"},
 	 *             @OA\Property(property="name", type="string", example="Size"),
 	 *             @OA\Property(property="code", type="string", example="size"),
-	 *             @OA\Property(property="type", type="string", example="dropdown"),
+	 *             @OA\Property(property="type", type="string", example="select"),
 	 *             @OA\Property(property="attribute_group_id", type="integer", example="1"),
 	 *             @OA\Property(property="measurement_units_ids", type="array", description="Required if type is 'measurement'", @OA\Items(type="integer", example="1")),
 	 *             @OA\Property(property="attribute_values", type="array", description="Array of attribute values", @OA\Items(type="string", example="value1")),
@@ -351,7 +352,13 @@ class AttributeController extends BaseController
 				$valuesToAdd = array_diff($providedValues, $existingValues);
 
 				if (!empty($valuesToDelete)) {
-					$attribute->attributeValues()->whereIn('attribute_value', $valuesToDelete)->delete();
+					$attributeValuesToDelete = $attribute->attributeValues()
+					->whereIn('attribute_value', $valuesToDelete)
+					->get();
+
+					foreach ($attributeValuesToDelete as $value) {
+						$value->delete();
+					}
 				}
 
 				foreach ($valuesToAdd as $newValue) {
@@ -361,7 +368,9 @@ class AttributeController extends BaseController
 
 			/* Delete attribute values if type changed from 'select' */
 			if ($request->type !== 'select' && $attribute->type === 'select') {
-				$attribute->attributeValues()->delete();
+				foreach ($attribute->attributeValues as $value) {
+					$value->delete();
+				}
 			}
 
 
@@ -395,7 +404,6 @@ class AttributeController extends BaseController
 			], 500);
 		}
 	}
-
 
 	/**
 	 * @OA\Delete(
@@ -432,12 +440,14 @@ class AttributeController extends BaseController
 			], 404);
 		}
 
-		/* Check if attribute is attached to any attribute group */
-		if ($attribute->attributeGroup()->exists()) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_attr_association")
-			], 400);
+		if ($attribute->type === 'measurement') {
+			$attribute->measurementUnits()->detach();
+		}
+
+		if ($attribute->type === 'select') {
+			foreach ($attribute->attributeValues as $value) {
+				$value->delete();
+			}
 		}
 
 		/* Proceed with deletion */
@@ -477,7 +487,7 @@ class AttributeController extends BaseController
 		}
 		/* Validate request data */
 		$request->validate([
-			'parent_category_id' => 'required|integer|exists:ec_product_categories,id',
+			'parent_category_id' => 'required|integer|exists:categories,id',
 			'range_from' => 'required|integer|min:1',
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);

@@ -25,7 +25,7 @@ return new class extends Migration {
 			$table->longText('related_products')->nullable();
 			$table->timestamps();
 
-			$table->foreign('category_id')->references('id')->on('ec_product_categories')->onDelete('cascade');
+			$table->foreign('category_id')->references('id')->on('categories')->onDelete('cascade');
 		});
 	}
 

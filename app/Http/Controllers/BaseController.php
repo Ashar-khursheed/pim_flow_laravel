@@ -52,18 +52,21 @@ use App\Http\Controllers\Controller;
  *     name="Categories",
  *     description="API Endpoints for Category Management"
  * )
-
-
-*
-* @OA\SecurityScheme(
-*    securityScheme="bearerAuth",
-*    in="header",
-*    name="bearerAuth",
-*    type="http",
-*    scheme="bearer",
-*    bearerFormat="JWT",
-* )
-*/
+ *
+ * @OA\Tag(
+ *     name="Transaction Logs",
+ *     description="API Endpoints for Transaction Logs Management"
+ * )
+ *
+ * @OA\SecurityScheme(
+ *     securityScheme="bearerAuth",
+ *     in="header",
+ *     name="bearerAuth",
+ *     type="http",
+ *     scheme="bearer",
+ *     bearerFormat="JWT",
+ * )
+ */
 
 class BaseController extends Controller
 {

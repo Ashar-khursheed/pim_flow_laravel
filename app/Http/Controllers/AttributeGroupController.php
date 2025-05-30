@@ -129,7 +129,7 @@ class AttributeGroupController extends BaseController
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name',
 			'category_ids' => 'array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 			'attribute_ids' => 'array',
 			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);
@@ -168,13 +168,16 @@ class AttributeGroupController extends BaseController
 				'name' => $request->name
 			]);
 
-			if (!empty($request->category_ids)) {
+			if (isset($request->category_ids)) {
 				$attributeGroup->categories()->sync($request->category_ids);
 			}
 
-			if (!empty($request->attribute_ids)) {
-				Attribute::whereIn('id', $request->attribute_ids)
-				->update(['attribute_group_id' => $attributeGroup->id]);
+			if (isset($request->attribute_ids)) {
+				$grpAttributes = Attribute::whereIn('id', $request->attribute_ids)->get();
+
+				foreach ($grpAttributes as $attribute) {
+					$attribute->update(['attribute_group_id' => $attributeGroup->id]);
+				}
 			}
 
 			DB::commit();
@@ -278,12 +281,10 @@ class AttributeGroupController extends BaseController
 			]);
 		}
 
-		// dd($request->all());
-
 		$request->validate([
 			'name' => 'required|unique:attribute_groups,name,'.$id,
 			'category_ids' => 'array',
-			'category_ids.*' => 'integer|exists:ec_product_categories,id',
+			'category_ids.*' => 'integer|exists:categories,id',
 			'attribute_ids' => 'array',
 			'attribute_ids.*' => 'integer|exists:attributes,id',
 		]);
@@ -322,19 +323,28 @@ class AttributeGroupController extends BaseController
 			$attributeGroup->name = $request->name;
 			$attributeGroup->save();
 
-			if (!empty($request->category_ids)) {
+			if (isset($request->category_ids)) {
 				$attributeGroup->categories()->sync($request->category_ids);
 			}
 
-			if (!empty($request->attribute_ids)) {
+			if (isset($request->attribute_ids)) {
 				/* Detach attributes that were previously in this group but are not in the new list */
-				Attribute::where('attribute_group_id', $attributeGroup->id)
+				$oldAttributes = Attribute::where('attribute_group_id', $attributeGroup->id)
 				->whereNotIn('id', $request->attribute_ids)
-				->update(['attribute_group_id' => null]);
+				->get();
+
+				foreach ($oldAttributes as $attribute) {
+					$attribute->attribute_group_id = null;
+					$attribute->save();
+				}
 
 				/* Assign submitted attributes to this group */
-				Attribute::whereIn('id', $request->attribute_ids)
-				->update(['attribute_group_id' => $attributeGroup->id]);
+				$newAttributes = Attribute::whereIn('id', $request->attribute_ids)->get();
+
+				foreach ($newAttributes as $attribute) {
+					$attribute->attribute_group_id = $attributeGroup->id;
+					$attribute->save();
+				}
 			}
 
 			DB::commit();
@@ -390,7 +400,12 @@ class AttributeGroupController extends BaseController
 		try {
 			/* Delete related records in related tables */
 			$attributeGroup->categories()->detach();
-			Attribute::where('attribute_group_id', $attributeGroup->id)->update(['attribute_group_id' => null]);
+
+			$grpAttributes = Attribute::where('attribute_group_id', $attributeGroup->id)->get();
+
+			foreach ($grpAttributes as $attribute) {
+				$attribute->update(['attribute_group_id' => null]);
+			}
 
 			/* Delete the attribute group */
 			$attributeGroup->delete();
