@@ -361,22 +361,57 @@ public function index(Request $request)
 
 
 
-    /**
+   /**
      * @OA\Delete(
      *     path="/api/blogs/{id}",
      *     tags={"Blogs"},
-     *      security={{"bearerAuth":{}}},
-     *     summary="Delete blog",
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
-     *     @OA\Response(response=204, description="Deleted"),
-     *     @OA\Response(response=404, description="Not found")
+     *     security={{"bearerAuth":{}}},
+     *     summary="Delete blog by ID",
+     *     description="Deletes a specific blog post by its ID.",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="ID of the blog to delete",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Blog deleted successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Blog deleted successfully.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Blog not found",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Blog not found.")
+     *         )
+     *     )
      * )
      */
     public function destroy($id)
     {
-        $blog = Blog::findOrFail($id);
+        $blog = Blog::find($id);
+
+        if (!$blog) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Blog not found.'
+            ], 404);
+        }
+
         $blog->delete();
 
-        return response()->json(null, 204);
+        return response()->json([
+            'success' => true,
+            'message' => 'Blog deleted successfully.'
+        ], 200);
     }
+
 }
