@@ -1671,7 +1671,6 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="stock_status", type="string", example="1"),
 	*                 @OA\Property(property="price", type="number", format="float", example=199.99),
 	*                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
-	*                 @OA\Property(property="unit_of_measurement_id", type="integer", example=1, description="ID of the unit of measurement from the UnitOfMeasurement table"),
 	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
 	*                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
 	*                 @OA\Property(property="tax_id", type="integer", example=3),

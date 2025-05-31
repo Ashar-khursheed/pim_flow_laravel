@@ -10017,11 +10017,6 @@
                                         "format": "float",
                                         "example": 149.99
                                     },
-                                    "unit_of_measurement_id": {
-                                        "description": "ID of the unit of measurement from the UnitOfMeasurement table",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "cost_per_item": {
                                         "type": "number",
                                         "format": "float",
