@@ -1,542 +1,385 @@
 <?php
-// app/Http/Controllers/API/OrderController.php
+
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
-use App\Http\Requests\Order\StoreOrderRequest;
-use App\Http\Requests\Order\UpdateOrderRequest;
-use App\Http\Resources\OrderResource;
-use App\Http\Resources\OrderCollection;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use App\Models\Shipment;
+use App\Models\ShipmentItem;
+use App\Models\OrderTracking;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
-
-/**
- * @OA\Schema(
- *     schema="Order",
- *     type="object",
- *     title="Order",
- *     required={"id", "code", "user_id", "store_id", "amount", "status"},
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="code", type="string", example="ORD-2024-0001"),
- *     @OA\Property(property="user_id", type="integer", example=42),
- *     @OA\Property(property="store_id", type="integer", example=5),
- *     @OA\Property(property="amount", type="number", format="float", example=150.75),
- *     @OA\Property(property="status", type="string", example="pending"),
- *     @OA\Property(property="created_at", type="string", format="date-time", example="2024-04-01T12:00:00Z"),
- *     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-04-02T08:30:00Z")
- * )
- */
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
     /**
-     * Display a listing of orders.
-     *
-     * @param Request $request
-     * @return OrderCollection
-     */
-
-     /**
      * @OA\Get(
      *     path="/api/orders",
-     *     summary="Get list of orders",
-     *     description="Returns paginated list of orders with optional filters",
+     *     summary="Get all orders with pagination and filters",
      *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         description="Page number",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\Parameter(
      *         name="status",
      *         in="query",
-     *         required=false,
      *         description="Filter by order status",
+     *         required=false,
      *         @OA\Schema(type="string")
      *     ),
      *     @OA\Parameter(
-     *         name="store_id",
+     *         name="payment_status",
      *         in="query",
+     *         description="Filter by payment status",
      *         required=false,
-     *         description="Filter by store ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="user_id",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by user ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Parameter(
-     *         name="code",
-     *         in="query",
-     *         required=false,
-     *         description="Search by order code",
-     *         @OA\Schema(type="string")
-     *     ),
-     *     @OA\Parameter(
-     *         name="from_date",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by start date (Y-m-d)",
-     *         @OA\Schema(type="string", format="date")
-     *     ),
-     *     @OA\Parameter(
-     *         name="to_date",
-     *         in="query",
-     *         required=false,
-     *         description="Filter by end date (Y-m-d)",
-     *         @OA\Schema(type="string", format="date")
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_field",
-     *         in="query",
-     *         required=false,
-     *         description="Field to sort by (id, created_at, amount, status)",
-     *         @OA\Schema(type="string", default="created_at")
-     *     ),
-     *     @OA\Parameter(
-     *         name="sort_order",
-     *         in="query",
-     *         required=false,
-     *         description="Sort direction (asc, desc)",
-     *         @OA\Schema(type="string", default="desc")
-     *     ),
-     *     @OA\Parameter(
-     *         name="per_page",
-     *         in="query",
-     *         required=false,
-     *         description="Items per page",
-     *         @OA\Schema(type="integer", default=15)
+     *         @OA\Schema(type="string", enum={"Paid", "Unpaid", "Partially Paid"})
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="array",
-     *                 @OA\Items(ref="#/components/schemas/Order")
-     *             ),
-     *             @OA\Property(
-     *                 property="pagination",
-     *                 type="object",
-     *                 @OA\Property(property="total", type="integer", example=50),
-     *                 @OA\Property(property="count", type="integer", example=15),
-     *                 @OA\Property(property="per_page", type="integer", example=15),
-     *                 @OA\Property(property="current_page", type="integer", example=1),
-     *                 @OA\Property(property="total_pages", type="integer", example=4),
-     *                 @OA\Property(
-     *                     property="links",
-     *                     type="object",
-     *                     @OA\Property(property="previous", type="string", example=null),
-     *                     @OA\Property(property="next", type="string", example="http://example.com/api/orders?page=2")
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *         description="Orders retrieved successfully"
+     *     )
      * )
      */
     public function index(Request $request)
     {
-        $query = Order::with(['address', 'histories', 'returns', 'referral']);
-        
-        // Filter by status
+        $query = Order::with(['items', 'payments', 'shipments']);
+
+        // Apply filters
         if ($request->has('status')) {
             $query->where('status', $request->status);
         }
-        
-        // Filter by store
-        if ($request->has('store_id')) {
-            $query->where('store_id', $request->store_id);
-        }
-        
-        // Filter by user
-        if ($request->has('user_id')) {
-            $query->where('user_id', $request->user_id);
-        }
-        
-        // Search by code
-        if ($request->has('code')) {
-            $query->where('code', 'like', '%' . $request->code . '%');
-        }
-        
-        // Date range filter
-        if ($request->has('from_date')) {
-            $query->whereDate('created_at', '>=', $request->from_date);
-        }
-        
-        if ($request->has('to_date')) {
-            $query->whereDate('created_at', '<=', $request->to_date);
-        }
-        
-        // Sort options
-        $sortField = $request->input('sort_field', 'created_at');
-        $sortOrder = $request->input('sort_order', 'desc');
-        
-        // Ensure the sort field is valid
-        $allowedSortFields = ['id', 'created_at', 'amount', 'status'];
-        if (!in_array($sortField, $allowedSortFields)) {
-            $sortField = 'created_at';
-        }
-        
-        $query->orderBy($sortField, $sortOrder);
-        
-        // Paginate results
-        $perPage = $request->input('per_page', 15);
-        $orders = $query->paginate($perPage);
-        
-        return new OrderCollection($orders);
-    }
 
+        if ($request->has('payment_status')) {
+            switch ($request->payment_status) {
+                case 'Paid':
+                    $query->whereColumn('paid_amount', '>=', 'total_amount');
+                    break;
+                case 'Unpaid':
+                    $query->where('paid_amount', 0);
+                    break;
+                case 'Partially Paid':
+                    $query->where('paid_amount', '>', 0)
+                          ->whereColumn('paid_amount', '<', 'total_amount');
+                    break;
+            }
+        }
+
+        $orders = $query->latest()->paginate(15);
+
+        return response()->json([
+            'success' => true,
+            'data' => $orders->items(),
+            'pagination' => [
+                'current_page' => $orders->currentPage(),
+                'total_pages' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ]
+        ]);
+    }
 
     /**
      * @OA\Post(
      *     path="/api/orders",
      *     summary="Create a new order",
-     *     description="Creates a new order with optional address and referral data",
      *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"user_id", "shipping_method", "status", "amount", "sub_total"},
-     *             @OA\Property(property="user_id", type="integer", example=1),
-     *             @OA\Property(property="shipping_option", type="string", example="standard"),
-     *             @OA\Property(property="shipping_method", type="string", example="flat_rate"),
-     *             @OA\Property(property="status", type="string", example="pending"),
-     *             @OA\Property(property="amount", type="number", format="decimal", example=125.50),
-     *             @OA\Property(property="tax_amount", type="number", format="decimal", example=10.50),
-     *             @OA\Property(property="shipping_amount", type="number", format="decimal", example=5.00),
-     *             @OA\Property(property="description", type="string", example="Order from website"),
-     *             @OA\Property(property="coupon_code", type="string", example="SUMMER10"),
-     *             @OA\Property(property="discount_amount", type="number", format="decimal", example=10.00),
-     *             @OA\Property(property="sub_total", type="number", format="decimal", example=130.00),
-     *             @OA\Property(property="is_confirmed", type="boolean", example=false),
-     *             @OA\Property(property="discount_description", type="string", example="10% off summer sale"),
-     *             @OA\Property(property="store_id", type="integer", example=1),
-     *             @OA\Property(property="payment_id", type="integer", example=null),
+     *             required={"customer_name", "customer_email", "customer_phone", "address", "city", "country", "items"},
+     *             @OA\Property(property="customer_name", type="string"),
+     *             @OA\Property(property="customer_email", type="string", format="email"),
+     *             @OA\Property(property="customer_phone", type="string"),
+     *             @OA\Property(property="company", type="string"),
+     *             @OA\Property(property="address", type="string"),
+     *             @OA\Property(property="city", type="string"),
+     *             @OA\Property(property="country", type="string"),
+     *             @OA\Property(property="ship_all_at_once", type="boolean"),
+     *             @OA\Property(property="separate_deliveries", type="boolean"),
      *             @OA\Property(
-     *                 property="address",
-     *                 type="object",
-     *                 @OA\Property(property="name", type="string", example="John Doe"),
-     *                 @OA\Property(property="phone", type="string", example="1234567890"),
-     *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="country", type="string", example="USA"),
-     *                 @OA\Property(property="state", type="string", example="New York"),
-     *                 @OA\Property(property="city", type="string", example="New York City"),
-     *                 @OA\Property(property="address", type="string", example="123 Main St"),
-     *                 @OA\Property(property="zip_code", type="string", example="10001"),
-     *                 @OA\Property(property="type", type="string", example="shipping_address")
-     *             ),
-     *             @OA\Property(
-     *                 property="referral",
-     *                 type="object",
-     *                 @OA\Property(property="ip", type="string", example="192.168.1.1"),
-     *                 @OA\Property(property="landing_domain", type="string", example="example.com"),
-     *                 @OA\Property(property="landing_page", type="string", example="/products"),
-     *                 @OA\Property(property="landing_params", type="string", example="source=google"),
-     *                 @OA\Property(property="referral", type="string", example="affiliate123"),
-     *                 @OA\Property(property="utm_source", type="string", example="google"),
-     *                 @OA\Property(property="utm_medium", type="string", example="cpc"),
-     *                 @OA\Property(property="utm_campaign", type="string", example="summer_sale")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Order created successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Order")
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-     *             @OA\Property(
-     *                 property="errors",
-     *                 type="object",
-     *                 @OA\Property(
-     *                     property="user_id",
-     *                     type="array",
-     *                     @OA\Items(type="string", example="The user id field is required.")
+     *                 property="items",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="item_id", type="string"),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="quantity", type="integer"),
+     *                     @OA\Property(property="supplier", type="string"),
+     *                     @OA\Property(property="unit_price", type="number"),
+     *                     @OA\Property(property="image_url", type="string")
      *                 )
      *             )
      *         )
      *     ),
      *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *         response=201,
+     *         description="Order created successfully"
+     *     )
      * )
      */
 
-
-    /**
-     * Store a newly created order in storage.
-     *
-     * @param StoreOrderRequest $request
-     * @return OrderResource
-     */
-    public function store(StoreOrderRequest $request)
+    public function store(Request $request)
     {
-        $order = Order::create($request->validated());
-        
-        // Create address if provided
-        if ($request->has('address')) {
-            $order->address()->create($request->address);
-        }
-        
-        // Create history entry for order creation
-        $order->histories()->create([
-            'action' => 'create',
-            'description' => 'Order was created',
-            'user_id' => auth()->id(),
+        Log::info('Order store method called.');
+        Log::info('Request data:', $request->all());
+    
+        $request->validate([
+            // your validation rules...
         ]);
-        
-        // Create referral if provided
-        if ($request->has('referral')) {
-            $order->referral()->create($request->referral);
+    
+        DB::beginTransaction();
+    
+        try {
+            Log::info('Validation passed.');
+    
+            $totalAmount = 0;
+            $totalProducts = count($request->items);
+    
+            foreach ($request->items as $item) {
+                $totalAmount += $item['quantity'] * $item['unit_price'];
+            }
+    
+            Log::info("Calculated totalAmount: $totalAmount, totalProducts: $totalProducts");
+    
+            $order = Order::create([
+                'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+                'order_date' => now(),
+                'order_time' => now()->format('H:i:s'),
+                'customer_name' => $request->customer_name,
+                'customer_email' => $request->customer_email,
+                'customer_phone' => $request->customer_phone,
+                'company' => $request->company,
+                'address' => $request->address,
+                'city' => $request->city,
+                'country' => $request->country,
+                'total_amount' => $totalAmount,
+                'total_products' => $totalProducts,
+                'pending_amount' => $totalAmount,
+                'ship_all_at_once' => $request->get('ship_all_at_once', true),
+                'separate_deliveries' => $request->get('separate_deliveries', false),
+            ]);
+    
+            Log::info('Order created:', ['order_id' => $order->id]);
+    
+            // Create order items
+            foreach ($request->items as $item) {
+                $itemTotal = $item['quantity'] * $item['unit_price'];
+                OrderItem::create([
+                    'order_id' => $order->id,
+                    'item_id' => $item['item_id'],
+                    'name' => $item['name'],
+                    'quantity' => $item['quantity'],
+                    'remaining_quantity' => $item['quantity'],
+                    'supplier' => $item['supplier'],
+                    'unit_price' => $item['unit_price'],
+                    'total_amount' => $itemTotal,
+                    'image_url' => $item['image_url'] ?? null,
+                ]);
+            }
+            Log::info('Order items created.');
+    
+            OrderTracking::create([
+                'order_id' => $order->id,
+                'status' => 'Order Created',
+                'description' => 'Order has been successfully created',
+                'tracked_at' => now(),
+            ]);
+    
+            Log::info('Order tracking created.');
+    
+            DB::commit();
+    
+            Log::info('Transaction committed.');
+    
+            return response()->json([
+                'success' => true,
+                'message' => 'Order created successfully',
+                'data' => $order->load(['items', 'payments', 'tracking'])
+            ], 201);
+    
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to create order:', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create order: ' . $e->getMessage()
+            ], 500);
         }
-        
-        return new OrderResource($order->load(['address', 'histories', 'referral']));
     }
-
-
+    
 
     /**
-     * Display the specified order.
-     *
-     * @param Order $order
-     * @return OrderResource
-     */
-
-     /**
      * @OA\Get(
-     *     path="/api/orders/{order}",
+     *     path="/api/orders/{id}",
      *     summary="Get order details",
-     *     description="Returns detailed information for a specific order",
      *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
-     *         name="order",
+     *         name="id",
      *         in="path",
-     *         required=true,
      *         description="Order ID",
+     *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successful operation",
-     *         @OA\JsonContent(ref="#/components/schemas/Order")
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *         description="Order details retrieved successfully"
+     *     )
      * )
      */
-    public function show(Order $order)
+    public function show($id)
     {
-        return new OrderResource($order->load(['address', 'histories', 'returns.items', 'referral']));
-    }
+        $order = Order::with([
+            'items',
+            'payments',
+            'shipments.items.orderItem',
+            'tracking'
+        ])->findOrFail($id);
 
-    /**
-     * Update the specified order in storage.
-     *
-     * @param UpdateOrderRequest $request
-     * @param Order $order
-     * @return OrderResource
-     */
-
-     /**
-     * @OA\Put(
-     *     path="/api/orders/{order}",
-     *     summary="Update an existing order",
-     *     description="Updates an order's information",
-     *     tags={"Orders"},
-     *     @OA\Parameter(
-     *         name="order",
-     *         in="path",
-     *         required=true,
-     *         description="Order ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="shipping_option", type="string", example="express"),
-     *             @OA\Property(property="shipping_method", type="string", example="flat_rate"),
-     *             @OA\Property(property="status", type="string", example="processing"),
-     *             @OA\Property(property="amount", type="number", format="decimal", example=125.50),
-     *             @OA\Property(property="tax_amount", type="number", format="decimal", example=10.50),
-     *             @OA\Property(property="shipping_amount", type="number", format="decimal", example=5.00),
-     *             @OA\Property(property="description", type="string", example="Updated order from website"),
-     *             @OA\Property(property="coupon_code", type="string", example="SUMMER10"),
-     *             @OA\Property(property="discount_amount", type="number", format="decimal", example=10.00),
-     *             @OA\Property(property="sub_total", type="number", format="decimal", example=130.00),
-     *             @OA\Property(property="is_confirmed", type="boolean", example=true),
-     *             @OA\Property(property="discount_description", type="string", example="10% off summer sale"),
-     *             @OA\Property(property="payment_id", type="integer", example=123),
-     *             @OA\Property(
-     *                 property="address",
-     *                 type="object",
-     *                 @OA\Property(property="name", type="string", example="John Doe"),
-     *                 @OA\Property(property="phone", type="string", example="1234567890"),
-     *                 @OA\Property(property="email", type="string", example="john@example.com"),
-     *                 @OA\Property(property="country", type="string", example="USA"),
-     *                 @OA\Property(property="state", type="string", example="New York"),
-     *                 @OA\Property(property="city", type="string", example="New York City"),
-     *                 @OA\Property(property="address", type="string", example="123 Main St"),
-     *                 @OA\Property(property="zip_code", type="string", example="10001"),
-     *                 @OA\Property(property="type", type="string", example="shipping_address")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Order updated successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Order")
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function update(UpdateOrderRequest $request, Order $order)
-    {
-        $order->update($request->validated());
-        
-        // Update address if provided
-        if ($request->has('address') && $order->address) {
-            $order->address->update($request->address);
-        } elseif ($request->has('address')) {
-            $order->address()->create($request->address);
-        }
-        
-        // Create history entry for order update
-        $order->histories()->create([
-            'action' => 'update',
-            'description' => 'Order was updated',
-            'user_id' => auth()->id(),
+        return response()->json([
+            'success' => true,
+            'data' => $order
         ]);
-        
-        return new OrderResource($order->load(['address', 'histories', 'returns.items', 'referral']));
     }
 
     /**
-     * Update the order status.
-     *
-     * @param Request $request
-     * @param Order $order
-     * @return OrderResource
-     */
-    /**
-     * @OA\Patch(
-     *     path="/api/orders/{order}/status",
+     * @OA\Put(
+     *     path="/api/orders/{id}/status",
      *     summary="Update order status",
-     *     description="Updates the status of an existing order",
      *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
-     *         name="order",
+     *         name="id",
      *         in="path",
-     *         required=true,
      *         description="Order ID",
+     *         required=true,
      *         @OA\Schema(type="integer")
      *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"status"},
-     *             @OA\Property(property="status", type="string", example="processing"),
-     *             @OA\Property(property="description", type="string", example="Order has been processed and is being prepared for shipping")
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="notes", type="string")
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Status updated successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Order")
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *         description="Order status updated successfully"
+     *     )
      * )
      */
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, $id)
     {
         $request->validate([
-            'status' => 'required|string|max:120',
-            'description' => 'nullable|string|max:400',
+            'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
+            'notes' => 'nullable|string'
         ]);
-        
+
+        $order = Order::findOrFail($id);
         $oldStatus = $order->status;
-        $order->status = $request->status;
         
-        // Mark as completed if the status is "completed"
-        if ($request->status === 'completed' && !$order->completed_at) {
-            $order->completed_at = now();
-            $order->is_finished = true;
-        }
-        
-        $order->save();
-        
-        // Create history entry for status change
-        $order->histories()->create([
-            'action' => 'status_update',
-            'description' => $request->description ?? "Order status changed from {$oldStatus} to {$request->status}",
-            'user_id' => auth()->id(),
-            'extras' => [
-                'old_status' => $oldStatus,
-                'new_status' => $request->status,
-            ],
+        $order->update(['status' => $request->status]);
+
+        // Add tracking entry
+        OrderTracking::create([
+            'order_id' => $order->id,
+            'status' => $request->status,
+            'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+            'tracked_at' => now(),
         ]);
-        
-        return new OrderResource($order->load(['address', 'histories', 'returns.items', 'referral']));
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Order status updated successfully',
+            'data' => $order->fresh(['tracking'])
+        ]);
     }
 
     /**
-     * Cancel the specified order.
-     *
-     * @param Request $request
-     * @param Order $order
-     * @return OrderResource
-     */
-
-     /**
-     * @OA\Post(
-     *     path="/api/orders/{order}/cancel",
-     *     summary="Cancel an order",
-     *     description="Cancels an existing order and records the cancellation reason",
+     * @OA\Put(
+     *     path="/api/orders/{id}/items/{item_id}/status",
+     *     summary="Update specific item status",
      *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
-     *         name="order",
+     *         name="id",
+     *         in="path",
+     *         description="Order ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Parameter(
+     *         name="item_id",
+     *         in="path",
+     *         description="Order Item ID",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"status"},
+     *             @OA\Property(property="status", type="string"),
+     *             @OA\Property(property="notes", type="string")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Item status updated successfully"
+     *     )
+     * )
+     */
+    public function updateItemStatus(Request $request, $id, $itemId)
+    {
+        $request->validate([
+            'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
+            'notes' => 'nullable|string'
+        ]);
+
+        $order = Order::findOrFail($id);
+        $item = $order->items()->findOrFail($itemId);
+        
+        $oldStatus = $item->status;
+        $item->update(['status' => $request->status]);
+
+        // Add tracking entry
+        OrderTracking::create([
+            'order_id' => $order->id,
+            'status' => "Item Status Updated",
+            'description' => $request->notes ?? "Item '{$item->name}' status changed from {$oldStatus} to {$request->status}",
+            'tracked_at' => now(),
+            'metadata' => [
+                'item_id' => $item->id,
+                'item_name' => $item->name,
+                'old_status' => $oldStatus,
+                'new_status' => $request->status
+            ]
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Item status updated successfully',
+            'data' => $item->fresh()
+        ]);
+    }
+    /**
+     * @OA\Post(
+     *     path="/api/orders/{id}/shipments",
+     *     summary="Create a shipment for an order (supports partial delivery)",
+     *     tags={"Orders"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
      *         in="path",
      *         required=true,
      *         description="Order ID",
@@ -545,118 +388,103 @@ class OrderController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"cancellation_reason"},
-     *             @OA\Property(property="cancellation_reason", type="string", example="Customer request"),
-     *             @OA\Property(property="cancellation_reason_description", type="string", example="Customer found a better price elsewhere")
+     *             required={"items"},
+     *             @OA\Property(
+     *                 property="items",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     required={"order_item_id", "quantity"},
+     *                     @OA\Property(property="order_item_id", type="integer"),
+     *                     @OA\Property(property="quantity", type="integer")
+     *                 )
+     *             ),
+     *             @OA\Property(property="tracking_number", type="string"),
+     *             @OA\Property(property="carrier", type="string"),
+     *             @OA\Property(property="notes", type="string")
      *         )
      *     ),
      *     @OA\Response(
-     *         response=200,
-     *         description="Order cancelled successfully",
-     *         @OA\JsonContent(ref="#/components/schemas/Order")
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
+     *         response=201,
+     *         description="Shipment created successfully"
+     *     )
      * )
      */
-    public function cancel(Request $request, Order $order)
+    public function createShipment(Request $request, $id)
     {
         $request->validate([
-            'cancellation_reason' => 'required|string|max:191',
-            'cancellation_reason_description' => 'nullable|string|max:191',
+            'items' => 'required|array|min:1',
+            'items.*.order_item_id' => 'required|integer|exists:order_items,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'tracking_number' => 'nullable|string|max:255',
+            'carrier' => 'nullable|string|max:255',
+            'notes' => 'nullable|string|max:500',
         ]);
-        
-        $order->status = 'canceled';
-        $order->cancellation_reason = $request->cancellation_reason;
-        $order->cancellation_reason_description = $request->cancellation_reason_description;
-        $order->save();
-        
-        // Create history entry for cancellation
-        $order->histories()->create([
-            'action' => 'cancel',
-            'description' => "Order was canceled. Reason: {$request->cancellation_reason}",
-            'user_id' => auth()->id(),
-            'extras' => [
-                'cancellation_reason' => $request->cancellation_reason,
-                'cancellation_reason_description' => $request->cancellation_reason_description,
-            ],
-        ]);
-        
-        return new OrderResource($order->load(['address', 'histories', 'returns.items', 'referral']));
-    }
 
-    /**
-     * Remove the specified order from storage.
-     *
-     * @param Order $order
-     * @return Response
-     */
+        $order = Order::with('items')->findOrFail($id);
 
-     /**
-     * @OA\Delete(
-     *     path="/api/orders/{order}",
-     *     summary="Delete an order",
-     *     description="Deletes an order and all related records",
-     *     tags={"Orders"},
-     *     @OA\Parameter(
-     *         name="order",
-     *         in="path",
-     *         required=true,
-     *         description="Order ID",
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(
-     *         response=204,
-     *         description="Order deleted successfully"
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Order not found"
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Cannot delete an order that is in progress or completed"
-     *     ),
-     *     @OA\Response(
-     *         response=401,
-     *         description="Unauthenticated"
-     *     ),
-     *     security={{"bearerAuth":{}}}
-     * )
-     */
-    public function destroy(Order $order)
-    {
-        // Optional: Check if the order can be deleted (e.g., not completed or in progress)
-        if (in_array($order->status, ['completed', 'processing', 'shipping'])) {
+        DB::beginTransaction();
+
+        try {
+            // Create the shipment
+            $shipment = Shipment::create([
+                'order_id' => $order->id,
+                'shipment_date' => now(),
+                'tracking_number' => $request->tracking_number,
+                'carrier' => $request->carrier,
+                'notes' => $request->notes,
+            ]);
+
+            foreach ($request->items as $item) {
+                $orderItem = OrderItem::where('id', $item['order_item_id'])
+                                    ->where('order_id', $order->id)
+                                    ->firstOrFail();
+
+                if ($item['quantity'] > $orderItem->remaining_quantity) {
+                    throw new \Exception("Cannot ship more than remaining quantity for item ID {$orderItem->id}");
+                }
+
+                // Create shipment item
+                ShipmentItem::create([
+                    'shipment_id' => $shipment->id,
+                    'order_item_id' => $orderItem->id,
+                    'quantity' => $item['quantity'],
+                ]);
+
+                // Update remaining quantity
+                $orderItem->remaining_quantity -= $item['quantity'];
+                $orderItem->save();
+            }
+
+            // Check if all items are shipped
+            $allShipped = $order->items->every(fn($item) => $item->remaining_quantity <= 0);
+            if ($allShipped) {
+                $order->status = 'Delivered';
+            } else {
+                $order->status = 'Partially Delivered';
+            }
+            $order->save();
+
+            // Add tracking record
+            OrderTracking::create([
+                'order_id' => $order->id,
+                'status' => $order->status,
+                'description' => $request->notes ?? 'Shipment created with tracking number: ' . $request->tracking_number,
+                'tracked_at' => now(),
+            ]);
+
+            DB::commit();
+
             return response()->json([
-                'message' => 'Cannot delete an order that is in progress or completed',
-            ], 422);
+                'success' => true,
+                'message' => 'Shipment created successfully',
+                'data' => $shipment->load('items.orderItem')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to create shipment: ' . $e->getMessage()
+            ], 500);
         }
-        
-        // Delete related records
-        $order->address()->delete();
-        $order->histories()->delete();
-        $order->referral()->delete();
-        
-        // Delete returns and return items
-        foreach ($order->returns as $return) {
-            $return->items()->delete();
-            $return->delete();
-        }
-        
-        $order->delete();
-        
-        return response()->json(null, 204);
     }
 }

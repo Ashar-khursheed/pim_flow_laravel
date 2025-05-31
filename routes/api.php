@@ -51,6 +51,11 @@ use App\Http\Controllers\ProductSupplierController;
 use App\Http\Controllers\AppKeywordController;
 use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\BlogController;
+use App\Http\Controllers\BlogCategoryController;
+
+use App\Http\Controllers\CustomerController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 
@@ -63,12 +68,15 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 
+
+
+
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
-	Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
+	// Route::get('/brands/{brand_id}/categories', [ProductGroupController::class, 'getBrandCategories']);
 	Route::get('/product-groups/brands-with-categories', [ProductGroupController::class, 'getBrandsWithCategories']);
 	Route::get('/product-groups-listing', [ProductGroupController::class, 'index']);
 
@@ -82,12 +90,21 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('recommendations', AttributeRecommendationController::class);
 
 
+	Route::apiResource('blog-categories', BlogCategoryController::class);
+	Route::post('/blogs/{id}', [BlogController::class, 'update']);
+	Route::apiResource('blogs', BlogController::class);
+
+
+
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
 	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
 	Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
+
+	Route::get('/customers/list-names', [CustomerController::class, 'listNames']);
+	Route::apiResource('customers', CustomerController::class);
 
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
@@ -236,27 +253,16 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('categories', CategoryController::class);
 
 
-	 // Order routes
-	Route::get('/orders', [OrderController::class, 'index']);
-	Route::post('/orders', [OrderController::class, 'store']);
-	Route::get('/orders/{order}', [OrderController::class, 'show']);
-	Route::put('/orders/{order}', [OrderController::class, 'update']);
-	Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus']);
-	Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel']);
-	Route::delete('/orders/{order}', [OrderController::class, 'destroy']);
-
-	 // Order history routes
-	Route::get('/orders/{order}/histories', [OrderHistoryController::class, 'index']);
-	Route::post('/orders/{order}/histories', [OrderHistoryController::class, 'store']);
-	Route::get('/orders/{order}/histories/{history}', [OrderHistoryController::class, 'show']);
-
-	 // Order return routes
-	Route::get('/order-returns', [OrderReturnController::class, 'index']);
-	Route::post('/order-returns', [OrderReturnController::class, 'store']);
-	Route::get('/order-returns/{orderReturn}', [OrderReturnController::class, 'show']);
-	Route::put('/order-returns/{orderReturn}', [OrderReturnController::class, 'update']);
-	Route::patch('/order-returns/{orderReturn}/status', [OrderReturnController::class, 'updateStatus']);
-	Route::delete('/order-returns/{orderReturn}', [OrderReturnController::class, 'destroy']);
+	Route::prefix('orders')->group(function () {
+		Route::get('/', [OrderController::class, 'index']);
+		Route::post('/', [OrderController::class, 'store']);
+		Route::get('/statistics', [OrderController::class, 'statistics']);
+		Route::get('/{id}', [OrderController::class, 'show']);
+		Route::put('/{id}/status', [OrderController::class, 'updateStatus']);
+		Route::put('/{id}/payment', [OrderController::class, 'updatePayment']);
+		Route::put('/{orderId}/items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+		Route::post('/{id}/shipments', [OrderController::class, 'createShipment']);
+	});
 
 
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
