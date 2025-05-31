@@ -1667,9 +1667,7 @@ class ProductController extends BaseController
 	*					description="Array of category IDs (can include parent and child)"
 	*					),
 	*                 @OA\Property(property="quantity", type="integer", example=100),
-	*                 @OA\Property(property="allow_checkout_when_out_of_stock", type="boolean", example=false),
 	*                 @OA\Property(property="status", type="string", example="draft"),
-	*                 @OA\Property(property="with_storehouse_management", type="boolean", example=true),
 	*                 @OA\Property(property="stock_status", type="string", example="1"),
 	*                 @OA\Property(property="variant_inventory_tracker", type="string", example="shopify"),
 	*                 @OA\Property(property="variant_inventory_quantity", type="integer", example=50),
@@ -1681,22 +1679,9 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="sale_type", type="string", example="percentage"),
 	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
 	*                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
-	*                 @OA\Property(
-	*                     property="cost_type",
-	*                     type="string",
-	*                     enum={"percentage", "value"},
-	*                     example="percentage",
-	*                     description="Defines how additional cost is calculated"
-	*                 ),
-	*                 @OA\Property(property="additional_cost_percentage", type="number", format="float", example=10.0, description="Percentage to add to the base cost_per_item"),
-	*                 @OA\Property(property="additional_cost_value", type="number", format="float", example=5.0, description="Fixed value to add to cost_per_item"),
-	*                 @OA\Property(property="total_cost_per_item", type="number", format="float", example=55.0, description="Automatically calculated total cost per item"),
 	*                 @OA\Property(property="tax_id", type="integer", example=3),
 	*                 @OA\Property(property="currency_id", type="integer", example=1),
-	*                 @OA\Property(property="minimum_order_quantity", type="integer", example=1),
-	*                 @OA\Property(property="maximum_order_quantity", type="integer", example=10),
 	*                 @OA\Property(property="name", type="string", example="Sample Product"),
-	*                 @OA\Property(property="content", type="string", example="Detailed content about the product."),
 	*                 @OA\Property(property="description", type="string", example="Short description."),
 	*                    @OA\Property(
 	*                 property="benefits_features",
@@ -1708,29 +1693,11 @@ class ProductController extends BaseController
 	*            			  )
 	* 					),
 	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
-	*                 @OA\Property(property="image", type="string", format="binary"),
-	*                 @OA\Property(property="video_url", type="string", example="https://www.youtube.com/watch?v=xyz"),
 	*                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
 	*                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
-	*                 @OA\Property(property="length", type="number", format="float", example=10.5),
-	*                 @OA\Property(property="length_unit_id", type="integer", example=1),
-	*                 @OA\Property(property="width", type="number", format="float", example=5.0),
-	*                 @OA\Property(property="height", type="number", format="float", example=3.0),
-	*                 @OA\Property(property="depth", type="number", format="float", example=2.0),
-	*                 @OA\Property(property="weight", type="number", format="float", example=1.5),
-	*                 @OA\Property(property="weight_unit_id", type="integer", example=5),
-	*                 @OA\Property(property="shipping_weight_option", type="string", example="lbs"),
-	*                 @OA\Property(property="shipping_weight", type="number", format="float", example=2.0),
-	*                 @OA\Property(property="shipping_dimension_option", type="string", example="inch"),
-	*                 @OA\Property(property="shipping_width", type="number", format="float", example=6.0),
-	*                 @OA\Property(property="shipping_depth", type="number", format="float", example=4.0),
-	*                 @OA\Property(property="shipping_height", type="number", format="float", example=3.5),
-	*                 @OA\Property(property="shipping_length", type="number", format="float", example=11.0),
-	*                 @OA\Property(property="shipping_length_id", type="integer", example=1),
 	*                 @OA\Property(property="is_variation", type="boolean", example=false),
 	*                 @OA\Property(property="variant_grams", type="number", format="float", example=500),
 	*                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
-	*                 @OA\Property(property="variant_barcode", type="string", example="123456789012"),
 	*                 @OA\Property(property="variant_color_title", type="string", example="Red"),
 	*                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
 	*                 @OA\Property(property="store_id", type="integer", example=7),
@@ -1738,54 +1705,11 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="views", type="integer", example=200),
 	*                 @OA\Property(property="units_sold", type="integer", example=50),
 	*                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
-	*                 @OA\Property(property="compare_type", type="string", example=""),
-	*                 @OA\Property(property="compare_products[]", type="array", @OA\Items(type="integer", example=102)),
 	*                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
 	*                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
 	*                 @OA\Property(property="order", type="integer", example=1),
 	*                 @OA\Property(property="box_quantity", type="integer", example=5),
 	*                 @OA\Property(property="delivery_days", type="integer", example=3),
-	*
-	*                  @OA\Property(
-	*                     property="review_customer_name",
-	*                     type="string",
-	*                     example="John Doe",
-	*                     description="Name of the customer leaving the review"
-	*                 ),
-	*                 @OA\Property(
-	*                     property="review_customer_email",
-	*                     type="string",
-	*                     format="email",
-	*                     example="john.doe@example.com",
-	*                     description="Email of the customer leaving the review"
-	*                 ),
-	*                 @OA\Property(
-	*                     property="review_star",
-	*                     type="integer",
-	*                     minimum=1,
-	*                     maximum=5,
-	*                     example=5,
-	*                     description="Star rating given by the customer"
-	*                 ),
-	*                 @OA\Property(
-	*                     property="review_comment",
-	*                     type="string",
-	*                     example="Great product, highly recommended!",
-	*                     description="Review comment provided by the customer"
-	*                 ),
-	*                 @OA\Property(
-	*                     property="review_status",
-	*                     type="string",
-	*                     enum={"pending", "published", "rejected"},
-	*                     example="pending",
-	*                     description="Status of the review"
-	*                 ),
-	*                 @OA\Property(
-	*                     property="review_images[]",
-	*                     type="array",
-	*                     @OA\Items(type="string", format="binary"),
-	*                     description="Review images to upload"
-	*                 ),
 	* 				  @OA\Property(
 	*                     property="faqs",
 	*                     type="array",
@@ -2039,39 +1963,39 @@ class ProductController extends BaseController
 			}
 		}
 
-		if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
+		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
-			/* ✅ Check if a review already exists for this customer & product */
-			$review = Review::where('product_id', $product->id)
-			->where('customer_email', $request->input('review_customer_email'))
-			->first();
+		// 	/* ✅ Check if a review already exists for this customer & product */
+		// 	$review = Review::where('product_id', $product->id)
+		// 	->where('customer_email', $request->input('review_customer_email'))
+		// 	->first();
 
-			if (!$review) {
-				/* ✅ No existing review, create a new one */
-				$review = new Review();
-				$review->product_id = $product->id;
-				$review->customer_id = $request->input('customer_id');
-				$review->customer_email = $request->input('review_customer_email');
-				$review->customer_name = $request->input('review_customer_name');
-			}
+		// 	if (!$review) {
+		// 		/* ✅ No existing review, create a new one */
+		// 		$review = new Review();
+		// 		$review->product_id = $product->id;
+		// 		$review->customer_id = $request->input('customer_id');
+		// 		$review->customer_email = $request->input('review_customer_email');
+		// 		$review->customer_name = $request->input('review_customer_name');
+		// 	}
 
-			/* ✅ Update fields (applies to both new & existing reviews) */
-			$review->comment = $request->input('review_comment');
-			$review->status = $request->input('review_status', 'pending');
-			$review->star = $request->input('review_star', null);
+		// 	/* ✅ Update fields (applies to both new & existing reviews) */
+		// 	$review->comment = $request->input('review_comment');
+		// 	$review->status = $request->input('review_status', 'pending');
+		// 	$review->star = $request->input('review_star', null);
 
-			/* ✅ Handle review images upload */
-			if ($request->hasFile('review_images')) {
-				$uploadedReviewImages = [];
-				foreach ($request->file('review_images') as $image) {
-					$path = $image->store('production/reviews', 's3');
-					$uploadedReviewImages[] = Storage::disk('s3')->url($path);
-				}
-				$review->images = $uploadedReviewImages; /* Store as an array */
-			}
+		// 	/* ✅ Handle review images upload */
+		// 	if ($request->hasFile('review_images')) {
+		// 		$uploadedReviewImages = [];
+		// 		foreach ($request->file('review_images') as $image) {
+		// 			$path = $image->store('production/reviews', 's3');
+		// 			$uploadedReviewImages[] = Storage::disk('s3')->url($path);
+		// 		}
+		// 		$review->images = $uploadedReviewImages; /* Store as an array */
+		// 	}
 
-			$review->save(); /* ✅ Save either as new or updated review */
-		}
+		// 	$review->save(); /* ✅ Save either as new or updated review */
+		// }
 
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
@@ -2568,7 +2492,7 @@ class ProductController extends BaseController
 			'message' => 'Product updated successfully.',
 			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
 			'unitOfMeasurements' => $unitOfMeasurements ,
-			'review' => $review ?? null,
+			// 'review' => $review ?? null,
 			'faq' => $faqs ?? null,
 		]);
 	}
