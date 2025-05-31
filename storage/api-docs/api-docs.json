@@ -10007,22 +10007,6 @@
                                         "type": "string",
                                         "example": "1"
                                     },
-                                    "variant_inventory_tracker": {
-                                        "type": "string",
-                                        "example": "shopify"
-                                    },
-                                    "variant_inventory_quantity": {
-                                        "type": "integer",
-                                        "example": 50
-                                    },
-                                    "variant_inventory_policy": {
-                                        "type": "string",
-                                        "example": "deny"
-                                    },
-                                    "variant_fulfillment_service": {
-                                        "type": "string",
-                                        "example": "manual"
-                                    },
                                     "price": {
                                         "type": "number",
                                         "format": "float",
@@ -10037,10 +10021,6 @@
                                         "description": "ID of the unit of measurement from the UnitOfMeasurement table",
                                         "type": "integer",
                                         "example": 1
-                                    },
-                                    "sale_type": {
-                                        "type": "string",
-                                        "example": "percentage"
                                     },
                                     "cost_per_item": {
                                         "type": "number",
@@ -10108,11 +10088,6 @@
                                     "is_variation": {
                                         "type": "boolean",
                                         "example": false
-                                    },
-                                    "variant_grams": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 500
                                     },
                                     "variant_requires_shipping": {
                                         "type": "boolean",
