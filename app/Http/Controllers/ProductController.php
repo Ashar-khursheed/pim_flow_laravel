@@ -13,7 +13,7 @@ use App\Models\Category;
 use App\Models\Tax;
 use App\Models\Currency;
 use App\Models\Unit;
-use App\Models\Store;
+use App\Models\Vendor;
 use App\Models\Review;
 use App\Models\Brand;
 use App\Models\Slug;
