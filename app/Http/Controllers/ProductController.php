@@ -317,15 +317,13 @@ class ProductController extends BaseController
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 
-			'Inventory & Stock Management' => ['quantity', 'allow_checkout_when_out_of_stock', 'with_storehouse_management', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
-			'Pricing & Sales' => ['price', 'sale_price', 'sale_type', 'unit_of_measurement_id', 'cost_per_item', 'tax_id', 'currency_id', 'minimum_order_quantity', 'maximum_order_quantity', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
-			'Marketing' => ['name', 'content', 'description'],
-			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents' , 'benefits_features'],
-			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
+			'Inventory & Stock Management' => ['quantity', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
+			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
+			'Marketing' => ['name', 'description'],
+			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
-			'Comparison & Bundling' => ['compare_type', 'compare_products'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'box_quantity', 'delivery_days' , 'website_ids'],
 			'All' => []
@@ -456,8 +454,8 @@ class ProductController extends BaseController
 				$formattedProduct[$attribute] = [['value' => $value]];
 
 				break;
-				case 'allow_checkout_when_out_of_stock':
-				case 'with_storehouse_management':
+				// case 'allow_checkout_when_out_of_stock':
+				// case 'with_storehouse_management':
 				case 'variant_requires_shipping':
 				case 'is_variation':
 				$formattedProduct[$attribute] = [
@@ -470,28 +468,28 @@ class ProductController extends BaseController
 				];
 				break;
 
-				case 'shipping_weight_option':
-				$formattedProduct[$attribute] = [
-					'type' => 'Dropdown',
-					'selected' => $value,
-					'values' => [
-						'lbs' => 'LBS',
-						'kg' => 'KG',
-						'g' => 'Grams'
-					]
-				];
-				break;
+				// case 'shipping_weight_option':
+				// $formattedProduct[$attribute] = [
+				// 	'type' => 'Dropdown',
+				// 	'selected' => $value,
+				// 	'values' => [
+				// 		'lbs' => 'LBS',
+				// 		'kg' => 'KG',
+				// 		'g' => 'Grams'
+				// 	]
+				// ];
+				// break;
 
-				case 'shipping_dimension_option':
-				$formattedProduct[$attribute] = [
-					'type' => 'Dropdown',
-					'selected' => $value,
-					'values' => [
-						'inch' => 'Inch',
-						'cm' => 'CM',
-						'mm' => 'MM'
-					]
-				];
+				// case 'shipping_dimension_option':
+				// $formattedProduct[$attribute] = [
+				// 	'type' => 'Dropdown',
+				// 	'selected' => $value,
+				// 	'values' => [
+				// 		'inch' => 'Inch',
+				// 		'cm' => 'CM',
+				// 		'mm' => 'MM'
+				// 	]
+				// ];
 				break;
 				case 'benefits_features':
 				$formattedProduct['benefits_features'] = json_decode($value, true);
@@ -541,48 +539,48 @@ class ProductController extends BaseController
 				]] : null;
 				break;
 
-				case 'shipping_length_id':
-				$formattedProduct['shipping_length'] = [
-					'selected' => optional($product->shippingLengthUnit)->symbol, /* Selected unit symbol */
-					'values' => [
-						'cm' => 'cm',
-						'in' => 'in',
-						'mm' => 'mm'
-					]
-				];
-				break;
+				// case 'shipping_length_id':
+				// $formattedProduct['shipping_length'] = [
+				// 	'selected' => optional($product->shippingLengthUnit)->symbol, /* Selected unit symbol */
+				// 	'values' => [
+				// 		'cm' => 'cm',
+				// 		'in' => 'in',
+				// 		'mm' => 'mm'
+				// 	]
+				// ];
+				// break;
 
 
-				case 'weight_unit_id':
-				$formattedProduct['weight_unit'] = [
-					'selected' => optional($product->weightUnit)->symbol,
-					'values' => [
-						'kg' => 'Kilograms',
-						'lbs' => 'Pounds',
-						'grams' => 'Grams'
-					]
-				];
-				break;
-				case 'weight_unit_id':
-				$formattedProduct['weight_unit'] = [
-					'selected' => optional($product->weightUnit)->symbol,
-					'values' => [
-						'kg' => 'Kilograms',
-						'lbs' => 'Pounds',
-						'grams' => 'Grams'
-					]
-				];
-				break;
-				case 'length_unit_id':
-				$formattedProduct['length_unit'] = [
-					'selected' => optional($product->lengthUnit)->symbol,
-					'values' => [
-						'mm' => 'mm',
-						'cm' => 'cm',
-						'inch' => 'inch'
-					]
-				];
-				break;
+				// case 'weight_unit_id':
+				// $formattedProduct['weight_unit'] = [
+				// 	'selected' => optional($product->weightUnit)->symbol,
+				// 	'values' => [
+				// 		'kg' => 'Kilograms',
+				// 		'lbs' => 'Pounds',
+				// 		'grams' => 'Grams'
+				// 	]
+				// ];
+				// break;
+				// case 'weight_unit_id':
+				// $formattedProduct['weight_unit'] = [
+				// 	'selected' => optional($product->weightUnit)->symbol,
+				// 	'values' => [
+				// 		'kg' => 'Kilograms',
+				// 		'lbs' => 'Pounds',
+				// 		'grams' => 'Grams'
+				// 	]
+				// ];
+				// break;
+				// case 'length_unit_id':
+				// $formattedProduct['length_unit'] = [
+				// 	'selected' => optional($product->lengthUnit)->symbol,
+				// 	'values' => [
+				// 		'mm' => 'mm',
+				// 		'cm' => 'cm',
+				// 		'inch' => 'inch'
+				// 	]
+				// ];
+				// break;
 				break;
 				case 'categories':
 				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
@@ -596,11 +594,11 @@ class ProductController extends BaseController
 
 
 				break;
-				case 'content':
-				/* Extract <li> items from the content and remove HTML tags */
-				preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
-				$formattedProduct[$attribute] = $matches[1] ?? [];
-				break;
+				// case 'content':
+				// /* Extract <li> items from the content and remove HTML tags */
+				// preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
+				// $formattedProduct[$attribute] = $matches[1] ?? [];
+				// break;
 
 				case 'description':
 					$decodedDescription = json_decode($value, true); // Decode JSON string to array
@@ -667,17 +665,17 @@ class ProductController extends BaseController
 				break;
 
 
-				case 'compare_type':
-				$decoded = json_decode($value, true);
-				$decoded = is_array($decoded) ? $decoded : []; /* Ensure it's an array */
-				$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-				break;
+				// case 'compare_type':
+				// $decoded = json_decode($value, true);
+				// $decoded = is_array($decoded) ? $decoded : []; /* Ensure it's an array */
+				// $formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+				// break;
 
-				case 'compare_products':
-				$decoded = json_decode($value, true);
-				$decoded = is_array($decoded) ? $decoded : []; /* Ensure it's an array */
-				$formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
-				break;
+				// case 'compare_products':
+				// $decoded = json_decode($value, true);
+				// $decoded = is_array($decoded) ? $decoded : []; /* Ensure it's an array */
+				// $formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
+				// break;
 
 				case 'images':
 				case 'video_path':
@@ -689,12 +687,12 @@ class ProductController extends BaseController
 				$formattedProduct[$attribute] = [['value' => $value]];
 				break;
 
-				case 'unit_of_measurement_id':
-				$formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
-					'id' => $product->unitOfMeasurement->id,
-					'name' => $product->unitOfMeasurement->name
-				] : null;
-				break;
+				// case 'unit_of_measurement_id':
+				// $formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
+				// 	'id' => $product->unitOfMeasurement->id,
+				// 	'name' => $product->unitOfMeasurement->name
+				// ] : null;
+				// break;
 
 
 
@@ -2249,31 +2247,23 @@ class ProductController extends BaseController
 
 
 
-		$input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		$input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		// $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		// $input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		$input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
+		// $input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
 
 
 		/* List of valid fields allowed for updating */
 		$validArray = [
 			"sku", "status", "barcode", "warranty_information", "refund", "quantity",
-			"allow_checkout_when_out_of_stock", "with_storehouse_management",
-			"stock_status", "variant_inventory_tracker", "variant_inventory_quantity",
-			"variant_inventory_policy", "variant_fulfillment_service", "price",
-			"sale_price", "sale_type", "cost_per_item", "cost_per_item_currency",
+			"stock_status", "price",
+			"sale_price", "cost_per_item", "cost_per_item_currency",
 			"cost_type", "additional_cost_percentage", "additional_cost_value",
-			"total_cost_per_item", "tax_id", "currency_id", "minimum_order_quantity",
-			"maximum_order_quantity", "name", "content", "description", "images",
-			"image", "video_url", "video_path", "videos", "documents", "length",
-			"length_unit_id", "width", "height", "depth", "weight", "weight_unit_id",
-			"shipping_weight_option", "shipping_weight", "shipping_dimension_option",
-			"shipping_width", "shipping_depth", "shipping_height", "shipping_length",
-			"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping",
+			"total_cost_per_item", "tax_id", "currency_id", "name", "description", "images",
+			"image", "video_path", "videos", "documents", "is_variation", "variant_grams", "variant_requires_shipping",
 			"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
-			"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type",
-			"compare_products", "google_shopping_category", "google_shopping_mpn", "order",
+			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
 			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
 		];
 
@@ -2319,19 +2309,19 @@ class ProductController extends BaseController
 			$product->status = $input['status']; /* Assign status */
 		}
 
-		if (isset($input['unit_of_measurement_id'])) {
-			/* Fetch all valid unit IDs from the database */
-			$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
+		// if (isset($input['unit_of_measurement_id'])) {
+		// 	/* Fetch all valid unit IDs from the database */
+		// 	$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
 
-			if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
-				]);
-			}
+		// 	if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
+		// 		]);
+		// 	}
 
-			$product->unit_of_measurement_id = $input['unit_of_measurement_id']; /* Assign the valid ID */
-		}
+		// 	$product->unit_of_measurement_id = $input['unit_of_measurement_id']; /* Assign the valid ID */
+		// }
 
 		// /* Decode existing benefits_features if available */
 		// $existingBenefits = json_decode($product->benefits_features, true);
@@ -2359,52 +2349,52 @@ class ProductController extends BaseController
 		// $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 
 		/* Handle benefits_features field */
-if ($request->has('benefits_features')) {
-    /* Decode existing benefits_features if available */
-    $existingBenefits = json_decode($product->benefits_features, true);
+		if ($request->has('benefits_features')) {
+			/* Decode existing benefits_features if available */
+			$existingBenefits = json_decode($product->benefits_features, true);
 
-    /* Ensure existingBenefits is an array */
-    if (!is_array($existingBenefits)) {
-        $existingBenefits = [];
-    }
+			/* Ensure existingBenefits is an array */
+			if (!is_array($existingBenefits)) {
+				$existingBenefits = [];
+			}
 
-    /* Get the incoming benefits_features */
-    $benefitsFeaturesInput = $request->input('benefits_features');
+			/* Get the incoming benefits_features */
+			$benefitsFeaturesInput = $request->input('benefits_features');
 
-    /* Handle different input formats */
-    if (is_string($benefitsFeaturesInput)) {
-        /* Try to decode JSON string */
-        $newBenefits = json_decode($benefitsFeaturesInput, true);
+			/* Handle different input formats */
+			if (is_string($benefitsFeaturesInput)) {
+				/* Try to decode JSON string */
+				$newBenefits = json_decode($benefitsFeaturesInput, true);
 
-        /* If JSON decode failed, treat as invalid */
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Invalid benefits_features JSON format.'
-            ], 400);
-        }
-    } elseif (is_array($benefitsFeaturesInput)) {
-        /* Already an array */
-        $newBenefits = $benefitsFeaturesInput;
-    } else {
-        /* Invalid format */
-        return response()->json([
-            'success' => false,
-            'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-        ], 400);
-    }
+				/* If JSON decode failed, treat as invalid */
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid benefits_features JSON format.'
+					], 400);
+				}
+			} elseif (is_array($benefitsFeaturesInput)) {
+				/* Already an array */
+				$newBenefits = $benefitsFeaturesInput;
+			} else {
+				/* Invalid format */
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+				], 400);
+			}
 
-    /* Ensure newBenefits is an array */
-    if (!is_array($newBenefits)) {
-        $newBenefits = [];
-    }
+			/* Ensure newBenefits is an array */
+			if (!is_array($newBenefits)) {
+				$newBenefits = [];
+			}
 
-    /* Merge existing benefits with new ones */
-    $mergedBenefits = array_merge($existingBenefits, $newBenefits);
+			/* Merge existing benefits with new ones */
+			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
 
-    /* Save back as JSON */
-    $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
-}
+			/* Save back as JSON */
+			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+		}
 
 
 		/* Stock status validation */
@@ -2456,32 +2446,6 @@ if ($request->has('benefits_features')) {
 			9 => "lbs",
 		];
 
-		if (isset($input['length_unit_id'])) {
-			if (!is_numeric($input['length_unit_id']) || !array_key_exists((int) $input['length_unit_id'], $lengthUnitArray)) {
-				$rowError[] = "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
-			} else {
-				$product->length_unit_id = (int) $input['length_unit_id'];
-				unset($input['length_unit_id']); /* Remove processed field */
-			}
-		}
-
-		if (isset($input['weight_unit_id'])) {
-			if (!is_numeric($input['weight_unit_id']) || !array_key_exists((int) $input['weight_unit_id'], $weightUnitArray)) {
-				$rowError[] = "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).";
-			} else {
-				$product->weight_unit_id = (int) $input['weight_unit_id'];
-				unset($input['weight_unit_id']); /* Remove processed field */
-			}
-		}
-
-		if (isset($input['shipping_length_id'])) {
-			if (!is_numeric($input['shipping_length_id']) || !array_key_exists((int) $input['shipping_length_id'], $lengthUnitArray)) {
-				$rowError[] = "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).";
-			} else {
-				$product->shipping_length_id = (int) $input['shipping_length_id'];
-				unset($input['shipping_length_id']); /* Remove processed field */
-			}
-		}
 
 		if (isset($input['google_shopping_category'])) {
 			$product->google_shopping_category = $input['google_shopping_category'];
