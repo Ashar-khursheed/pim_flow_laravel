@@ -317,7 +317,7 @@ class ProductController extends BaseController
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 
-			'Inventory & Stock Management' => ['quantity', 'stock_status', 'variant_inventory_tracker', 'variant_inventory_quantity', 'variant_inventory_policy', 'variant_fulfillment_service'],
+			'Inventory & Stock Management' => ['quantity', 'stock_status'],
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
 			'Marketing' => ['name', 'description'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
