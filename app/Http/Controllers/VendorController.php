@@ -30,7 +30,7 @@ class VendorController extends BaseController
 	 *     summary="Get Vendor List",
 	 *     description="Fetches a list of vendors. Supports search by each field.",
 	 *     tags={"Vendors"},
-	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination. Starts from 1.", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", example="ABC", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="id", in="query", description="Search by vendor id", example="1", @OA\Schema(type="integer")),
@@ -52,8 +52,7 @@ class VendorController extends BaseController
 	{
 		/* Dynamic search filters */
 		$searchableColumns = [
-			'id', 'name', 'email', 'contact_person', 'mobile_number', 'landline_number',
-			'website_link', 'type', 'business_licence_number'
+			'id', 'name', 'email', 'contact_person', 'mobile_number', 'landline_number', 'website_link', 'type', 'business_licence_number'
 		];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'credit_limit', 'net_terms']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
