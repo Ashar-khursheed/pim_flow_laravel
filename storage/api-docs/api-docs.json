@@ -9690,7 +9690,7 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column to sort by (id, name, sku, brand_id, store_id, status)",
+                        "description": "Column to sort by (id, name, sku, brand_id, vendor_id, status)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -10096,7 +10096,7 @@
                                         "type": "string",
                                         "example": "#FF0000"
                                     },
-                                    "store_id": {
+                                    "vendor_id": {
                                         "type": "integer",
                                         "example": 7
                                     },

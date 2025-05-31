@@ -65,7 +65,7 @@ class ProductController extends BaseController
 	 *     @OA\Parameter(
 	 *         name="sort_by",
 	 *         in="query",
-	 *         description="Column to sort by (id, name, sku, brand_id, store_id, status)",
+	 *         description="Column to sort by (id, name, sku, brand_id, vendor_id, status)",
 	 *         required=false,
 	 *         @OA\Schema(type="string", example="id")
 	 *     ),
@@ -125,7 +125,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'store_id', 'status'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -141,7 +141,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'store_id', 'status']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status']);
 
 		/* Apply search if provided */
 
@@ -322,7 +322,7 @@ class ProductController extends BaseController
 			'Marketing' => ['name', 'description'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
-			'Store & Vendor Information' => ['store_id', 'brand_id'],
+			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'box_quantity', 'delivery_days' , 'website_ids'],
@@ -532,8 +532,8 @@ class ProductController extends BaseController
 					'name' => $product->brand->name
 				]] : null;
 				break;
-				case 'store_id':
-				$formattedProduct['store'] = $product->store ? [[
+				case 'vendor_id':
+				$formattedProduct['vendor'] = $product->store ? [[
 					'id' => $product->store->id,
 					'name' => $product->store->name
 				]] : null;
@@ -1693,7 +1693,7 @@ class ProductController extends BaseController
 	*                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
 	*                 @OA\Property(property="variant_color_title", type="string", example="Red"),
 	*                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
-	*                 @OA\Property(property="store_id", type="integer", example=7),
+	*                 @OA\Property(property="vendor_id", type="integer", example=7),
 	*                 @OA\Property(property="brand_id", type="integer", example=13),
 	*                 @OA\Property(property="views", type="integer", example=200),
 	*                 @OA\Property(property="units_sold", type="integer", example=50),
@@ -2179,7 +2179,7 @@ class ProductController extends BaseController
 			"cost_type", "additional_cost_percentage", "additional_cost_value",
 			"total_cost_per_item", "tax_id", "currency_id", "name", "description", "images",
 			"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
-			"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
+			"variant_barcode", "variant_color_title", "variant_color_value", "vendor_id",
 			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
 			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
 		];
@@ -2381,14 +2381,14 @@ class ProductController extends BaseController
 		}
 
 		/* Store ID validation */
-		if (isset($input['store_id'])) {
-			$storeArray = Store::pluck("id")->toArray();
-			if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
+		if (isset($input['vendor_id'])) {
+			$storeArray = Vendor::pluck("id")->toArray();
+			if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
 				$storeList = implode(', ', $storeArray);
 				$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
 			} else {
-				$product->store_id = (int) $input['store_id'];
-				unset($input['store_id']); /* Remove processed field */
+				$product->vendor_id = (int) $input['vendor_id'];
+				unset($input['vendor_id']); /* Remove processed field */
 			}
 		}
 
