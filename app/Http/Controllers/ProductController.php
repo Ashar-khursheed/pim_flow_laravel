@@ -318,7 +318,7 @@ class ProductController extends BaseController
 			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
-			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency', 'cost_type', 'additional_cost_percentage', 'additional_cost_value', 'total_cost_per_item'],
+			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
 			'Marketing' => ['name', 'description'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
