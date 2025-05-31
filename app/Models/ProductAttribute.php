@@ -7,4 +7,9 @@ use Illuminate\Database\Eloquent\Model;
 class ProductAttribute extends Model
 {
 	protected $fillable = ['product_id', 'attribute_id', 'attribute_value', 'measurement_unit_id'];
+
+	public function attributeDetails()
+	{
+		return $this->belongsTo(Attribute::class, 'attribute_id');
+	}
 }
