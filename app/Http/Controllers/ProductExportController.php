@@ -312,7 +312,7 @@ class ProductExportController extends BaseController
 					// break;
 
 					case 'url':
-					$row[] = $product->slug->key ? "https://thehorecastore.co/products/{$product->slug->key}" : '';
+					$row[] = $product->slug && $product->slug->key ? "https://thehorecastore.co/products/{$product->slug->key}" : '';
 					break;
 
 					case 'buying_quantity1':
