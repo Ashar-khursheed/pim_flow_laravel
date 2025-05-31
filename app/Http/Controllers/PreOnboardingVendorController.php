@@ -31,63 +31,85 @@ class PreOnboardingVendorController extends Controller
 	 *     @OA\Parameter(name="credit_terms", in="query", description="Search by credit terms", example="Net 30", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="grade", in="query", description="Search by grade", example="A", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "email", "contact_person", "phone_number", "type", "shipping_days", "credit_limit", "credit_terms", "grade", "created_at"})),
- 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
-		$recordsQuery = PreOnboardingVendor::with(['country:id,name']);
-
 		/* Apply search filters */
 		$searchableColumns = [
 			'id', 'name', 'contact_person', 'email', 'phone_number',
 			'type', 'shipping_days', 'credit_limit', 'credit_terms', 'grade'
 		];
-
-		if ($request->filled('global')) {
-			$globalSearch = $request->input('global');
-			$recordsQuery->where(function ($query) use ($searchableColumns, $globalSearch) {
-				foreach ($searchableColumns as $column) {
-					$query->orWhere($column, 'LIKE', '%' . $globalSearch . '%');
-				}
-			});
-		} else {
-			/* Apply individual column filters */
-			foreach ($searchableColumns as $column) {
-				if ($request->filled($column)) {
-					$recordsQuery->where($column, 'LIKE', '%' . $request->input($column) . '%');
-				}
-			}
-		}
-
-		/* Sorting */
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'credit_limit', 'net_terms']);
-		$sortBy = $request->input('sort_by', 'id');
-		$sortDir = $request->input('sort_dir', 'desc');
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		if (!in_array($sortBy, $sortableColumns)) {
-			$sortBy = 'id';
-		}
-		$sortDir = strtolower($sortDir) === 'asc' ? 'asc' : 'desc';
+		$recordsQuery = PreOnboardingVendor::query();
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
-			$page = (int) $request->input('page');
+			$recordsQuery->with(['country:id,name', 'creator:id,first_name,last_name']);
+
+			/* Apply global or column-specific filters */
+			$searchApplied = false;
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+				$searchApplied = true;
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+						$searchApplied = true;
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
+			$page = $searchApplied ? 1 : (int) $request->input('page');
 			$length = (int) $request->input('length');
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $recordsQuery->orderBy($sortBy, $sortDir)
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get([
-				'id', 'name', 'contact_person', 'email', 'phone_number',
-				'country_id', 'category_ids', 'type',
-				'dropshipping', 'shipping_days', 'credit_limit',
-				'credit_terms', 'grade', 'product_demand_level'
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
+				'id', 'name', 'contact_person', 'email', 'phone_number', 'country_id', 'category_ids', 'type', 'dropshipping', 'shipping_days', 'credit_limit', 'credit_terms', 'grade', 'product_demand_level', 'created_by', 'created_at'
 			]);
+
+			/* Transform records */
+			$records->transform(function ($record) {
+				/* product_demand_level count */
+				$decoded = json_decode($record->product_demand_level, true);
+				$record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
+				unset($record->product_demand_level);
+
+				/* categories from category_ids */
+				$categoryIds = array_filter(explode(',', $record->category_ids));
+				$categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
+				$record->categories = implode(' | ', $categories);
+				unset($record->category_ids);
+
+				/* country name */
+				$record->country_name = $record->country->name ?? null;
+				unset($record->country_id, $record->country);
+
+				/* dropshipping label */
+				$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
+
+				$record->created_by = $record->creator->name ?? null;
+				unset($record->creator);
+
+				return $record;
+			});
+
 		} else {
 			$records = $recordsQuery->orderBy('name', 'asc')->get([
 				'id', 'name'
@@ -95,29 +117,6 @@ class PreOnboardingVendorController extends Controller
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
-
-		/* Transform records */
-		$records->transform(function ($record) {
-			/* product_demand_level count */
-			$decoded = json_decode($record->product_demand_level, true);
-			$record->product_demand_level_count = is_array($decoded) ? count($decoded) : 0;
-			unset($record->product_demand_level);
-
-			/* categories from category_ids */
-			$categoryIds = array_filter(explode(',', $record->category_ids));
-			$categories = Category::whereIn('id', $categoryIds)->pluck('name')->toArray();
-			$record->categories = implode(' | ', $categories);
-			unset($record->category_ids);
-
-			/* country name */
-			$record->country_name = $record->country->name ?? null;
-			unset($record->country_id, $record->country);
-
-			/* dropshipping label */
-			$record->dropshipping = $record->dropshipping == 1 ? 'Yes' : 'No';
-
-			return $record;
-		});
 
 		return response()->json([
 			'success' => true,
