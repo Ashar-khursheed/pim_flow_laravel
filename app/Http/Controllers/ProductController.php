@@ -321,7 +321,7 @@ class ProductController extends BaseController
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
 			'Marketing' => ['name', 'description'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
-			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
+			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
@@ -2261,7 +2261,7 @@ class ProductController extends BaseController
 			"sale_price", "cost_per_item", "cost_per_item_currency",
 			"cost_type", "additional_cost_percentage", "additional_cost_value",
 			"total_cost_per_item", "tax_id", "currency_id", "name", "description", "images",
-			"image", "video_path", "videos", "documents", "is_variation", "variant_grams", "variant_requires_shipping",
+			"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
 			"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
 			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
 			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
