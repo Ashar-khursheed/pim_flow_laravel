@@ -9999,17 +9999,9 @@
                                         "type": "integer",
                                         "example": 100
                                     },
-                                    "allow_checkout_when_out_of_stock": {
-                                        "type": "boolean",
-                                        "example": false
-                                    },
                                     "status": {
                                         "type": "string",
                                         "example": "draft"
-                                    },
-                                    "with_storehouse_management": {
-                                        "type": "boolean",
-                                        "example": true
                                     },
                                     "stock_status": {
                                         "type": "string",
@@ -10060,33 +10052,6 @@
                                         "type": "string",
                                         "example": "USD"
                                     },
-                                    "cost_type": {
-                                        "description": "Defines how additional cost is calculated",
-                                        "type": "string",
-                                        "enum": [
-                                            "percentage",
-                                            "value"
-                                        ],
-                                        "example": "percentage"
-                                    },
-                                    "additional_cost_percentage": {
-                                        "description": "Percentage to add to the base cost_per_item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10
-                                    },
-                                    "additional_cost_value": {
-                                        "description": "Fixed value to add to cost_per_item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5
-                                    },
-                                    "total_cost_per_item": {
-                                        "description": "Automatically calculated total cost per item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 55
-                                    },
                                     "tax_id": {
                                         "type": "integer",
                                         "example": 3
@@ -10095,21 +10060,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "minimum_order_quantity": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "maximum_order_quantity": {
-                                        "type": "integer",
-                                        "example": 10
-                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "Sample Product"
-                                    },
-                                    "content": {
-                                        "type": "string",
-                                        "example": "Detailed content about the product."
                                     },
                                     "description": {
                                         "type": "string",
@@ -10138,14 +10091,6 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "image": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "video_url": {
-                                        "type": "string",
-                                        "example": "https://www.youtube.com/watch?v=xyz"
-                                    },
                                     "video_path[]": {
                                         "type": "array",
                                         "items": {
@@ -10160,76 +10105,6 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "length": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10.5
-                                    },
-                                    "length_unit_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "width": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5
-                                    },
-                                    "height": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 3
-                                    },
-                                    "depth": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2
-                                    },
-                                    "weight": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 1.5
-                                    },
-                                    "weight_unit_id": {
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "shipping_weight_option": {
-                                        "type": "string",
-                                        "example": "lbs"
-                                    },
-                                    "shipping_weight": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2
-                                    },
-                                    "shipping_dimension_option": {
-                                        "type": "string",
-                                        "example": "inch"
-                                    },
-                                    "shipping_width": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 6
-                                    },
-                                    "shipping_depth": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4
-                                    },
-                                    "shipping_height": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 3.5
-                                    },
-                                    "shipping_length": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 11
-                                    },
-                                    "shipping_length_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "is_variation": {
                                         "type": "boolean",
                                         "example": false
@@ -10242,10 +10117,6 @@
                                     "variant_requires_shipping": {
                                         "type": "boolean",
                                         "example": true
-                                    },
-                                    "variant_barcode": {
-                                        "type": "string",
-                                        "example": "123456789012"
                                     },
                                     "variant_color_title": {
                                         "type": "string",
@@ -10278,17 +10149,6 @@
                                             "example": 101
                                         }
                                     },
-                                    "compare_type": {
-                                        "type": "string",
-                                        "example": ""
-                                    },
-                                    "compare_products[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 102
-                                        }
-                                    },
                                     "google_shopping_category": {
                                         "type": "string",
                                         "example": "Electronics"
@@ -10308,47 +10168,6 @@
                                     "delivery_days": {
                                         "type": "integer",
                                         "example": 3
-                                    },
-                                    "review_customer_name": {
-                                        "description": "Name of the customer leaving the review",
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "review_customer_email": {
-                                        "description": "Email of the customer leaving the review",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "john.doe@example.com"
-                                    },
-                                    "review_star": {
-                                        "description": "Star rating given by the customer",
-                                        "type": "integer",
-                                        "maximum": 5,
-                                        "minimum": 1,
-                                        "example": 5
-                                    },
-                                    "review_comment": {
-                                        "description": "Review comment provided by the customer",
-                                        "type": "string",
-                                        "example": "Great product, highly recommended!"
-                                    },
-                                    "review_status": {
-                                        "description": "Status of the review",
-                                        "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "published",
-                                            "rejected"
-                                        ],
-                                        "example": "pending"
-                                    },
-                                    "review_images[]": {
-                                        "description": "Review images to upload",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "format": "binary"
-                                        }
                                     },
                                     "faqs": {
                                         "type": "array",

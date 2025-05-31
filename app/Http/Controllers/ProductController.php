@@ -1636,7 +1636,7 @@ class ProductController extends BaseController
 	// 		'faq' => $faqs ?? null,
 	// 	]);
 	// }
-/**
+	/**
 	 * @OA\Post(
 	 *     path="/api/products/{product}",
 	 *     summary="Update a product using POST with _method=PUT",
