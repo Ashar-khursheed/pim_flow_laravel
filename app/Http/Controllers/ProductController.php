@@ -247,8 +247,8 @@ class ProductController extends BaseController
 		$product->status = 'draft';
 		$product->created_at = now();
 		$product->updated_at = now();
-		$product->created_by_id = auth()->id();
-		$product->created_by_type = User::class;
+		// $product->created_by_id = auth()->id();
+		// $product->created_by_type = User::class;
 		$product->save();
 		$this->saveProductCategory($product, $request->product_family);
 
