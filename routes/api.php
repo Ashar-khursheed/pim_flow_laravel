@@ -56,8 +56,10 @@ use App\Http\Controllers\BlogCategoryController;
 
 use App\Http\Controllers\CustomerController;
 
-
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
+use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -66,10 +68,6 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
-Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
-
-
-
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -283,6 +281,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/logout', [AuthController::class, 'logout']);
 });
 
+
+
+
+Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
+Route::post('frontend/register', [F_CustomerController::class, 'register']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);

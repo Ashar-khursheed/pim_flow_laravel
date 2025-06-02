@@ -7683,6 +7683,67 @@
                 ]
             }
         },
+        "/api/frontend/register": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Register a new customer",
+                "operationId": "5f305fb75a25505aec389922e622775b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "example": "secret123"
+                                    },
+                                    "dob": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "1990-01-01"
+                                    },
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
+                                    },
+                                    "profile_img": {
+                                        "description": "Profile image (jpeg, png, webp only, max 200kb)",
+                                        "type": "file"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Customer registered successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/calculate-grade": {
             "post": {
                 "tags": [
@@ -17203,6 +17264,10 @@
         {
             "name": "Flash Sales",
             "description": "Flash Sales"
+        },
+        {
+            "name": "FrontEnd-Customer",
+            "description": "FrontEnd-Customer"
         },
         {
             "name": "Grading",

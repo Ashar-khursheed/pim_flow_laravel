@@ -14,68 +14,73 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasApiTokens, HasFactory, Notifiable, HasRoles;
+	/** @use HasFactory<\Database\Factories\UserFactory> */
+	use HasApiTokens, HasFactory, Notifiable, HasRoles;
 
-    protected $guard_name = 'api';
+	protected $guard_name = 'api';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+	/**
+	 * The attributes that are mass assignable.
+	 *
+	 * @var list<string>
+	 */
 
-    protected $fillable = [
-        'username',
-        'email',
-        'first_name',
-        'last_name',
-        'password',
-        'profile_img'
-    ];
+	protected $fillable = [
+		'username',
+		'email',
+		'first_name',
+		'last_name',
+		'password',
+		'profile_img'
+	];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+	/**
+	 * The attributes that should be hidden for serialization.
+	 *
+	 * @var list<string>
+	 */
+	protected $hidden = [
+		'password',
+		'remember_token',
+	];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+	/**
+	 * Get the attributes that should be cast.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function casts(): array
+	{
+		return [
+			'email_verified_at' => 'datetime',
+			'password' => 'hashed',
+		];
+	}
 
-  /**
-     * Relationship: User has many roles.
-     *
-     * @return BelongsToMany
-     */
-    // public function roles(): BelongsToMany
-    // {
-    //     return $this->belongsToMany(Role::class, 'role_users');
-    // }
+	/**
+	 * Relationship: User has many roles.
+	 *
+	 * @return BelongsToMany
+	 */
+	// public function roles(): BelongsToMany
+	// {
+	//     return $this->belongsToMany(Role::class, 'role_users');
+	// }
 
 
-    // Relationship: User has many media files
-    public function mediaFiles()
-    {
-        return $this->hasMany(MediaFile::class, 'user_id');
-    }
+	// Relationship: User has many media files
+	public function mediaFiles()
+	{
+		return $this->hasMany(MediaFile::class, 'user_id');
+	}
 
-    protected function getNameAttribute()
-    {
-        return ucfirst($this->first_name) . ' ' . ucfirst($this->last_name);
-    }
+	protected function getNameAttribute()
+	{
+		return ucfirst($this->first_name) . ' ' . ucfirst($this->last_name);
+	}
+
+	public function passwordResetTokens()
+	{
+		return $this->morphMany(PasswordResetToken::class, 'resettable');
+	}
 }
