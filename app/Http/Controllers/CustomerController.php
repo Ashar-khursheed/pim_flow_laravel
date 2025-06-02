@@ -320,6 +320,7 @@ class CustomerController extends Controller
     {
         $customers = Customer::select('id', 'name')->get();
         return response()->json($customers);
+        
     }
 
 }
