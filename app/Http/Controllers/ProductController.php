@@ -335,7 +335,7 @@ class ProductController extends BaseController
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title' ,'unitOfMeasurement:id,name'],
 			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
-			'Store & Vendor Information' => ['store:id,name', 'brand:id,name', 'creator:id,name'],
+			'Store & Vendor Information' => ['vendor:id,name', 'brand:id,name', 'creator:id,name'],
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
 		];
@@ -533,9 +533,9 @@ class ProductController extends BaseController
 				]] : null;
 				break;
 				case 'vendor_id':
-				$formattedProduct['vendor'] = $product->store ? [[
-					'id' => $product->store->id,
-					'name' => $product->store->name
+				$formattedProduct['vendor'] = $product->vendor ? [[
+					'id' => $product->vendor->id,
+					'name' => $product->vendor->name
 				]] : null;
 				break;
 
@@ -810,7 +810,7 @@ class ProductController extends BaseController
 	// *                 @OA\Property(property="variant_barcode", type="string", example="123456789012"),
 	// *                 @OA\Property(property="variant_color_title", type="string", example="Red"),
 	// *                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
-	// *                 @OA\Property(property="store_id", type="integer", example=7),
+	// *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	// *                 @OA\Property(property="brand_id", type="integer", example=13),
 	// *                 @OA\Property(property="views", type="integer", example=200),
 	// *                 @OA\Property(property="units_sold", type="integer", example=50),
@@ -1347,7 +1347,7 @@ class ProductController extends BaseController
 	// 		"shipping_weight_option", "shipping_weight", "shipping_dimension_option",
 	// 		"shipping_width", "shipping_depth", "shipping_height", "shipping_length",
 	// 		"shipping_length_id", "is_variation", "variant_grams", "variant_requires_shipping",
-	// 		"variant_barcode", "variant_color_title", "variant_color_value", "store_id",
+	// 		"variant_barcode", "variant_color_title", "variant_color_value", "vendor_id",
 	// 		"brand_id", "views", "units_sold", "frequently_bought_together", "compare_type",
 	// 		"compare_products", "google_shopping_category", "google_shopping_mpn", "order",
 	// 		"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
@@ -1528,14 +1528,14 @@ class ProductController extends BaseController
 	// 	}
 
 	// 	/* Store ID validation */
-	// 	if (isset($input['store_id'])) {
+	// 	if (isset($input['vendor_id'])) {
 	// 		$storeArray = Store::pluck("id")->toArray();
-	// 		if (!is_numeric($input['store_id']) || !in_array((int) $input['store_id'], $storeArray)) {
+	// 		if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
 	// 			$storeList = implode(', ', $storeArray);
 	// 			$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
 	// 		} else {
-	// 			$product->store_id = (int) $input['store_id'];
-	// 			unset($input['store_id']); /* Remove processed field */
+	// 			$product->vendor_id = (int) $input['vendor_id'];
+	// 			unset($input['vendor_id']); /* Remove processed field */
 	// 		}
 	// 	}
 
@@ -2643,7 +2643,7 @@ class ProductController extends BaseController
 			"variant_barcode",
 			"variant_color_title",
 			"variant_color_value",
-			"store_id",
+			"vendor_id",
 			"brand_id",
 			"views",
 			"units_sold",
