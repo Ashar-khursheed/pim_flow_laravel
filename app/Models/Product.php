@@ -6,6 +6,7 @@ use App\Models\ProductCategory;
 use Illuminate\Database\Eloquent\Model;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
 
 /**
  * @OA\Schema(
@@ -275,4 +276,18 @@ class Product extends Model
 	{
 		return $this->hasMany(ProductSupplier::class, 'product_id');
 	}
+
+
+	public function wishlist()
+    {
+        return $this->hasMany(Wishlist::class, 'product_id'); // Adjust 'product_id' if your foreign key is different
+    }
+	public function isInWishlist()
+    {
+        if (Auth::check()) {
+            return $this->wishlist()->where('user_id', Auth::id())->exists();
+        }
+        return false; // Or return null if you want to differentiate between guest and no wishlist
+    }
+
 }

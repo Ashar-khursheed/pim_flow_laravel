@@ -7683,6 +7683,304 @@
                 ]
             }
         },
+        "/wishlist/add": {
+            "post": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Add a product to the wishlist",
+                "description": "Adds a product to the authenticated user's wishlist.",
+                "operationId": "addToWishlist",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "description": "ID of the product to add",
+                                        "type": "integer",
+                                        "example": 123
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product added to wishlist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product added to wishlist"
+                                        },
+                                        "wishlist": {
+                                            "properties": {
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "in_wishlist": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist": {
+            "get": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Get all products in wishlist",
+                "description": "Returns wishlist products for authenticated user.",
+                "operationId": "getWishlist",
+                "responses": {
+                    "200": {
+                        "description": "List of wishlist items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "wishlist": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "product": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 123
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Product name"
+                                                            },
+                                                            "images": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string",
+                                                                    "format": "url"
+                                                                }
+                                                            },
+                                                            "in_wishlist": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist/remove": {
+            "delete": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Remove a product from wishlist",
+                "description": "Removes a product from the authenticated user's wishlist.",
+                "operationId": "removeFromWishlist",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "ID of the product to remove",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product removed from wishlist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product removed from wishlist"
+                                        },
+                                        "in_wishlist": {
+                                            "type": "integer",
+                                            "example": 0
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found in wishlist"
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist/check/{product_id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Check if product is in wishlist",
+                "description": "Check if a specific product is in the authenticated user's wishlist.",
+                "operationId": "checkWishlist",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product to check",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Wishlist check result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "in_wishlist": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "product_id": {
+                                            "type": "integer",
+                                            "example": 123
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/wishlist/count": {
+            "get": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Get wishlist items count",
+                "description": "Returns the total number of items in the authenticated user's wishlist.",
+                "operationId": "getWishlistCount",
+                "responses": {
+                    "200": {
+                        "description": "Wishlist count",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/calculate-grade": {
             "post": {
                 "tags": [
@@ -17203,6 +17501,10 @@
         {
             "name": "Flash Sales",
             "description": "Flash Sales"
+        },
+        {
+            "name": "Frontend-Wishlist",
+            "description": "Frontend-Wishlist"
         },
         {
             "name": "Grading",

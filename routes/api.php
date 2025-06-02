@@ -58,6 +58,9 @@ use App\Http\Controllers\CustomerController;
 
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
+use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
+
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -286,7 +289,16 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
+	
+	Route::post('/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
+    Route::get('/wishlist', [F_WishlistController::class, 'getWishlist']);
+    Route::delete('/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
+    
+    // Additional wishlist routes
+    Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+    Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 });
+
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

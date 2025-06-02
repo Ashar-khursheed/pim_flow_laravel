@@ -323,7 +323,7 @@ class ProductController extends BaseController
 			'Media' => ['images', 'image', 'video_url', 'video_path', 'documents' , 'benefits_features'],
 			'Shipping & Dimensions' => ['length', 'length_unit_id', 'width', 'height', 'depth', 'weight', 'weight_unit_id', 'shipping_weight_option', 'shipping_weight', 'shipping_dimension_option', 'shipping_width', 'shipping_depth', 'shipping_height', 'shipping_length', 'shipping_length_id'],
 			'Product Variations' => ['is_variation', 'variant_grams', 'variant_requires_shipping', 'variant_barcode', 'variant_color_title', 'variant_color_value'],
-			'Store & Vendor Information' => ['store_id', 'brand_id', 'created_by_id', 'created_by_type'],
+			'Store & Vendor Information' => ['vendor_id', 'brand_id', 'created_by_id', 'created_by_type'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'Comparison & Bundling' => ['compare_type', 'compare_products'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
