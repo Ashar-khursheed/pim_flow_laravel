@@ -59,6 +59,13 @@ use App\Http\Controllers\CustomerController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
+use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
+use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
+use App\Http\Controllers\FrontEnd\CategoryMenuController as F_CategoryMenuController;
+use App\Http\Controllers\FrontEnd\FaqController as F_FaqController;
+use App\Http\Controllers\FrontEnd\ProductYouMayLikeController as F_ProductYouMayLikeController;
+use App\Http\Controllers\FrontEnd\ProductAttributeController as F_ProductAttributeController;
+use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
 
 
 
@@ -297,8 +304,40 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     // Additional wishlist routes
     Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
     Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+
+		
+	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
+	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
+	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
+
+	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+    Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+
+	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
+    Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
+
+
 });
 
+Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
+
+Route::get('/frontend/faqs/product/{product_id}', [F_FaqController::class, 'getFaqsByProduct']);
+
+Route::get('/frontend/product-reviews', [F_UserReviewController::class, 'getProductReviews']);
+
+Route::get('/frontend/products/{product_id}/you-may-like-guest', [F_ProductYouMayLikeController::class, 'getProductsYouMayLikeGuest']);
+
+Route::get('/frontend/product/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProduct']);
+Route::get('/product/{id}/nutrition-facts', [F_ProductAttributeController::class, 'getNutritionFactsByProduct']);
+Route::get('/frontend/product/{productId}/nutrition-facts1', [F_ProductAttributeController::class, 'getNutritionFactsByProduct1']);
+Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProductWithGroup']);
+
+Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index']);
+Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
+Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
+
+Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
