@@ -79,8 +79,8 @@ class User extends Authenticatable
 		return ucfirst($this->first_name) . ' ' . ucfirst($this->last_name);
 	}
 
-	public function passwordResetTokens()
+	public function passwordResetToken()
 	{
-		return $this->morphMany(PasswordResetToken::class, 'resettable');
+		return $this->morphOne(PasswordResetToken::class, 'resettable');
 	}
 }
