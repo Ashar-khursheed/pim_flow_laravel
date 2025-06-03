@@ -167,7 +167,7 @@ class AuthController extends BaseController
 	 *             @OA\Property(property="type", type="string", enum={"user", "customer"})
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Reset link sent")
+	 *     @OA\Response(response=200, description="Reset link sent", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function sendResetLinkEmail(Request $request)
@@ -258,6 +258,8 @@ class AuthController extends BaseController
 		$user->save();
 
 		$user->passwordResetToken()->delete();
+
+        $user->tokens()->delete();
 
 		return response()->json([
 			'success' => true,

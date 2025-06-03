@@ -37,14 +37,17 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
-		$url = url("/api/{$this->type}/reset-password?token={$this->token}&email={$this->email}");
+		$name = $notifiable->name ?? 'User';
+		$resetUrl = url("/reset-password?token={$this->token}&email={$this->email}&type={$this->type}");
 
 		return (new MailMessage)
-		->subject('Reset Password Notification')
-		->line('You requested a password reset.')
-		->action('Reset Password', $url)
-		->line('If you did not request a password reset, no further action is required.');
+		->subject('Reset Your Password')
+		->markdown('emails.reset-password', [
+			'name' => $name,
+			'resetUrl' => $resetUrl,
+		]);
 	}
+
 
 	/**
 	 * Get the array representation of the notification.
