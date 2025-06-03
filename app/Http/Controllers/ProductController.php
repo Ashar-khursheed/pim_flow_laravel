@@ -137,7 +137,7 @@ class ProductController extends BaseController
 
 		$query = Product::with([
 			'brand:id,name',
-			'store:id,name',
+			'vendor:id,name',
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
@@ -157,7 +157,7 @@ class ProductController extends BaseController
 				->orWhereHas('brand', function($brandQuery) use ($search) {
 					$brandQuery->where('name', 'like', "%{$search}%");
 				})
-				->orWhereHas('store', function($storeQuery) use ($search) {
+				->orWhereHas('vendor', function($storeQuery) use ($search) {
 					$storeQuery->where('name', 'like', "%{$search}%");
 				})
 				->orWhereHas('categories', function($categoryQuery) use ($search) {
@@ -182,7 +182,7 @@ class ProductController extends BaseController
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
-				'store' => optional($product->store)->name,
+				'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
 				'price'=> $product->price, 
 				'sale_price'=> $product->sale_price,
