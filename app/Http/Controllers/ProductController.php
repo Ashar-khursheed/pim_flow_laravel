@@ -125,7 +125,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -141,7 +141,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price']);
 
 		/* Apply search if provided */
 
@@ -169,8 +169,13 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
+	
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+			$margin = $product->sale_price - $product->price;
+			$marginPercent = $product->sale_price > 0
+				? (($product->sale_price - $product->price) / $product->sale_price) * 100
+				: 0;
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -179,6 +184,10 @@ class ProductController extends BaseController
 				'brand' => optional($product->brand)->name,
 				'store' => optional($product->store)->name,
 				'status' => $product->status,
+				'price'=> $product->price, 
+				'sale_price'=> $product->sale_price,
+				'margin' => $margin,
+				'margin_percent' => round($marginPercent, 2), // round to 2 decimals
 				'product_family' => $product->categories->pluck('name')->toArray(),
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
