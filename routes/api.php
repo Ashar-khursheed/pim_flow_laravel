@@ -68,7 +68,7 @@ use App\Http\Controllers\FrontEnd\ProductAttributeController as F_ProductAttribu
 use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
 use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
 use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
-
+use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -320,7 +320,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/product-discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
-
+	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
+	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
 
 });
 
@@ -349,6 +350,14 @@ Route::post('/frontend/blogs/{id}/share', [F_BlogController::class, 'incrementSh
 Route::get('/frontend/blogs/latest', [F_BlogController::class, 'latest']);
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
+
+//  Route::get('/products', [ProductApiController::class, 'getAllProducts']);
+Route::get('/frontend/brandguestproducts', [F_BrandController::class, 'getAllBrandGuestProducts']);
+Route::get('/frontend/products/brand/{brandId}/category/{categoryId?}', [F_BrandController::class, 'getProductsByBrandAndCategory']);
+Route::get('/frontend/brand/{id}/categories', [F_BrandController::class, 'getCategories']);
+Route::get('/frontend/brands-by-category/{id}', [F_BrandController::class, 'brandsByCategory']);
+Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBrandsAlphabetically']);
+
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

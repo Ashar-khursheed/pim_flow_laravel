@@ -7837,6 +7837,823 @@
                 }
             }
         },
+        "/api/frontend/homebrandproducts": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get all home brand products for authenticated users",
+                "description": "Retrieves the latest 5 brands with at least 10 products each, limited to 10 products per brand. Includes wishlist status for authenticated users.",
+                "operationId": "0d0bfeeeacf4b19ecba86e824b89c0d6",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "iPhone"
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 100
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 1000
+                        }
+                    },
+                    {
+                        "name": "rating",
+                        "in": "query",
+                        "description": "Minimum rating filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "maximum": 5,
+                            "minimum": 1,
+                            "example": 4
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "brand_name": {
+                                                        "type": "string",
+                                                        "example": "Apple"
+                                                    },
+                                                    "products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "iPhone 14"
+                                                                },
+                                                                "sku": {
+                                                                    "type": "string",
+                                                                    "example": "IPH14-001"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899.99
+                                                                },
+                                                                "best_delivery_date": {
+                                                                    "type": "string",
+                                                                    "example": "2024-01-15"
+                                                                },
+                                                                "total_reviews": {
+                                                                    "type": "integer",
+                                                                    "example": 150
+                                                                },
+                                                                "avg_rating": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 4.5
+                                                                },
+                                                                "left_stock": {
+                                                                    "type": "integer",
+                                                                    "example": 25
+                                                                },
+                                                                "currency": {
+                                                                    "type": "string",
+                                                                    "example": "USD"
+                                                                },
+                                                                "in_wishlist": {
+                                                                    "type": "boolean",
+                                                                    "example": false
+                                                                },
+                                                                "images": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "example": "https://example.com/storage/products/iphone14.jpg"
+                                                                    }
+                                                                },
+                                                                "original_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                },
+                                                                "front_sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                },
+                                                                "best_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/brandguestproducts": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get all brand products for guest users",
+                "description": "Retrieves the latest 5 brands with at least 10 products each, optimized for guest users without wishlist functionality.",
+                "operationId": "7cedbc023098eca4e0115391e8d7e00e",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search products by name",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "Samsung"
+                        }
+                    },
+                    {
+                        "name": "price_min",
+                        "in": "query",
+                        "description": "Minimum price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 50
+                        }
+                    },
+                    {
+                        "name": "price_max",
+                        "in": "query",
+                        "description": "Maximum price filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "example": 2000
+                        }
+                    },
+                    {
+                        "name": "rating",
+                        "in": "query",
+                        "description": "Minimum rating filter",
+                        "required": false,
+                        "schema": {
+                            "type": "number",
+                            "format": "float",
+                            "maximum": 5,
+                            "minimum": 1,
+                            "example": 3.5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "brand_name": {
+                                                        "type": "string",
+                                                        "example": "Samsung"
+                                                    },
+                                                    "products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 2
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Galaxy S23"
+                                                                },
+                                                                "sku": {
+                                                                    "type": "string",
+                                                                    "example": "GAL-S23-001"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "original_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899.99
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "best_delivery_date": {
+                                                                    "type": "string",
+                                                                    "example": "2024-01-10"
+                                                                },
+                                                                "total_reviews": {
+                                                                    "type": "integer",
+                                                                    "example": 89
+                                                                },
+                                                                "avg_rating": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 4.2
+                                                                },
+                                                                "left_stock": {
+                                                                    "type": "integer",
+                                                                    "example": 15
+                                                                },
+                                                                "currency": {
+                                                                    "type": "string",
+                                                                    "example": "USD"
+                                                                },
+                                                                "images": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "example": "https://example.com/storage/galaxy-s23.jpg"
+                                                                    }
+                                                                },
+                                                                "front_sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "best_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/brands-by-category/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get brands by category",
+                "description": "Retrieves all published brands that have products in the specified category.",
+                "operationId": "e926e37f79a6392620f816dea02b99ae",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brands retrieved successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Apple"
+                                                    },
+                                                    "logo": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/storage/brands/apple-logo.png"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No brands found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No brands found for this category."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {}
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/brand/{id}/categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get categories by brand",
+                "description": "Retrieves all unique categories associated with products of the specified brand.",
+                "operationId": "0653162819ef7c568d18601455b7826c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Brand ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucess": {
+                                            "type": "string",
+                                            "example": "true"
+                                        },
+                                        "brand_id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Smartphones"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/storage/categories/smartphones.jpg"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products/brand/{brandId}/category/{categoryId?}": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get products by brand and optional category",
+                "description": "Retrieves published products for a specific brand, optionally filtered by category with search functionality and pagination.",
+                "operationId": "e3247c41ac227955ba03f5bdc23fab49",
+                "parameters": [
+                    {
+                        "name": "brandId",
+                        "in": "path",
+                        "description": "Brand ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "categoryId",
+                        "in": "path",
+                        "description": "Category ID (optional)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by product name or SKU",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "iPhone"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Products retrieved successfully"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "iPhone 14 Pro"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/storage/products/iphone14pro.jpg"
+                                                        }
+                                                    },
+                                                    "video_url": {
+                                                        "type": "string",
+                                                        "example": "https://youtube.com/watch?v=xyz"
+                                                    },
+                                                    "video_path": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/storage/videos/iphone14pro.mp4"
+                                                        }
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "IPH14PRO-001"
+                                                    },
+                                                    "original_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1099.99
+                                                    },
+                                                    "front_sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1099.99
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 999.99
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 1099.99
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-01-01"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-12-31"
+                                                    },
+                                                    "warranty_information": {
+                                                        "type": "string",
+                                                        "example": "1 year limited warranty"
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "USD"
+                                                    },
+                                                    "total_reviews": {
+                                                        "type": "integer",
+                                                        "example": 245
+                                                    },
+                                                    "avg_rating": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 4.7
+                                                    },
+                                                    "best_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 999.99
+                                                    },
+                                                    "best_delivery_date": {
+                                                        "type": "string",
+                                                        "example": null,
+                                                        "nullable": true
+                                                    },
+                                                    "leftStock": {
+                                                        "type": "integer",
+                                                        "example": 42
+                                                    },
+                                                    "currency_title": {
+                                                        "type": "string",
+                                                        "example": "$1099.99"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "pagination": {
+                                            "properties": {
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 150
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                },
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "An error occurred while fetching products"
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Database connection failed"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/brands/alphabetical": {
+            "get": {
+                "tags": [
+                    "Frontend-Brands"
+                ],
+                "summary": "Get all brands alphabetically",
+                "description": "Retrieves all published brands either grouped alphabetically or filtered by starting letter.",
+                "operationId": "11e11f26f75c431906e0d215c3b05627",
+                "parameters": [
+                    {
+                        "name": "letter",
+                        "in": "query",
+                        "description": "Filter brands by starting letter (A-Z)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "pattern": "^[A-Z]$",
+                            "example": "A"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation - Filtered by letter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brands starting with letter 'A'."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Apple"
+                                                    },
+                                                    "logo": {
+                                                        "type": "string",
+                                                        "example": "https://example.com/storage/brands/apple-logo.png"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/brand-page/{id}": {
             "get": {
                 "tags": [
@@ -8096,7 +8913,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/faqs/product/{product_id}": {
@@ -19522,6 +20344,10 @@
         {
             "name": "Frontend-Blogs",
             "description": "Frontend-Blogs"
+        },
+        {
+            "name": "Frontend-Brands",
+            "description": "Frontend-Brands"
         },
         {
             "name": "Frontend-Brand Pages",
