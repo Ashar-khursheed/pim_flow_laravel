@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\Category;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryMenuController extends Controller
 {
@@ -133,4 +134,117 @@ class CategoryMenuController extends Controller
         // Return the default URL if no file is found
         return $baseUrl . $storagePath . $imagePath;
     }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/categories-with-children",
+     *     summary="Get categories with children",
+     *     tags={"Frontend-Menu Categories"},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="query",
+     *         description="Filter categories by parent or category ID",
+     *         required=false,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of categories in hierarchical structure",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="name", type="string"),
+     *                 @OA\Property(property="slug", type="string"),
+     *                 @OA\Property(property="parent_id", type="integer", nullable=true),
+     *                 @OA\Property(property="productCount", type="integer"),
+     *                 @OA\Property(property="image", type="string", format="url"),
+     *                 @OA\Property(
+     *                     property="children",
+     *                     type="array",
+     *                     @OA\Items(ref="#/components/schemas/Category")
+     *                 )
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function getCategoriesWithChildren(Request $request)
+    {
+        $filterId = $request->get('id');
+
+        $query = Category::select(['id', 'name', 'slug', 'parent_id', 'image'])
+            ->withCount('products')
+            ->where('status', 'published');
+
+        if ($filterId) {
+            $query->where(function ($q) use ($filterId) {
+                $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+            });
+        }
+
+        $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+        $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+            $categories = $query->get();
+            return $this->buildCategoryTree($categories);
+        });
+
+        return response()->json($categoriesTree);
+    }
+
+
+    /**
+     * Build a hierarchical category tree efficiently.
+     */
+    private function buildCategoryTree($categories)
+    {
+        $tree = [];
+        $categoryMap = [];
+
+        // Create a lookup table for fast access
+        foreach ($categories as $category) {
+            $categoryMap[$category->id] = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'parent_id' => $category->parent_id,
+                'productCount' => $category->products_count, // Eager-loaded product count
+                'image' => asset('storage/' . $category->image),
+                'children' => [],
+            ];
+        }
+
+        // Build the tree using the lookup table
+        foreach ($categoryMap as &$category) {
+            if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
+                $categoryMap[$category['parent_id']]['children'][] = &$category;
+            } else {
+                $tree[] = &$category;
+            }
+        }
+
+        return $tree;
+    }
+
+    /**
+ * @OA\Schema(
+ *     schema="Category",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer"),
+ *     @OA\Property(property="name", type="string"),
+ *     @OA\Property(property="slug", type="string"),
+ *     @OA\Property(property="parent_id", type="integer", nullable=true),
+ *     @OA\Property(property="productCount", type="integer"),
+ *     @OA\Property(property="image", type="string", format="url"),
+ *     @OA\Property(
+ *         property="children",
+ *         type="array",
+ *         @OA\Items(ref="#/components/schemas/Category")
+ *     )
+ * )
+ */
+
 }

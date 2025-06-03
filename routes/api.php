@@ -70,6 +70,8 @@ use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
 use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
 use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
 use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
+use App\Http\Controllers\FrontEnd\CartController as F_CartController;
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -327,9 +329,23 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
 	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
 
+	Route::post('/frontend/cart/add', [F_CartController::class, 'addToCart']);
+	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
+	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
+    Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
+	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
+	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
+	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
+
+	
+
 });
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
+Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
+
+Route::get('/frontend//cart/guest', [F_CartController::class, 'viewCartGuest']);
+Route::delete('/frontend/cart/guest/clear', [F_CartController::class, 'clearCartGuest']);
 
 Route::get('/frontend/faqs/product/{product_id}', [F_FaqController::class, 'getFaqsByProduct']);
 
