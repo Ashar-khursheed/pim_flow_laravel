@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class SeoManagement extends Model
 {
+	
+
 	protected $fillable = [
 		'relational_id',
 		'relational_type',
@@ -42,6 +44,9 @@ class SeoManagement extends Model
 	
 	protected $casts = [
 		'popular_tags' => 'array', // Ensures it's handled as array in Laravel
+		'tags' => 'array',
+        'schema' => 'array',
+        'popular_tags' => 'array',
 
 	];
 
@@ -49,4 +54,9 @@ class SeoManagement extends Model
 	{
 		return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id');
 	}
+	public function seo_secondary_keywords()
+    {
+        return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id', 'id');
+    }
+
 }

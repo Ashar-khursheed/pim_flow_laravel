@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use OpenApi\Annotations as OA;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @OA\Schema(
@@ -99,6 +100,20 @@ class Category extends Model
 	{
 		return $this->hasMany(SubCategory::class);
 	}
+
+	public function products(): BelongsToMany
+	{
+		return $this
+		->belongsToMany(
+			Product::class,
+			'ec_product_category_product',
+			'category_id',
+			'product_id'
+		)
+		->where('is_variation', 0);
+	}
+
+	
 
 
 }
