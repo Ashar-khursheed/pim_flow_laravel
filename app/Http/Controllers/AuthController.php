@@ -5,7 +5,12 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Illuminate\Notifications\Notification;
+
 use App\Models\User;
+use App\Models\FrontEnd\Customer;
+use App\Notifications\ResetPasswordNotification;
 
 class AuthController extends BaseController
 {
@@ -38,7 +43,6 @@ class AuthController extends BaseController
 			'email' => 'required|email',
 			'password' => 'required',
 		]);
-		// dd('called1');
 
 		$user = User::where('email', $request->email)->first();
 
@@ -46,9 +50,6 @@ class AuthController extends BaseController
 			return response()->json(['error' => 'The provided credentials are incorrect.'], 401);
 		}
 
-		// Auth::login($user);
-
-		// $user = Auth::user();
 		$token = $user->createToken('auth_token')->plainTextToken;
 
 		return response()->json([
@@ -87,15 +88,14 @@ class AuthController extends BaseController
 		}
 
 		$user = Auth::user();
-
 		$hasPermission = $user->can($permission);
 
 		return response()->json([
 			'success' => true,
 			'has_permission' => $hasPermission,
 			'message' => $hasPermission
-			? "User has the '{$permission}' permission."
-			: "User does not have the '{$permission}' permission.",
+				? "User has the '{$permission}' permission."
+				: "User does not have the '{$permission}' permission.",
 		]);
 	}
 
@@ -150,7 +150,120 @@ class AuthController extends BaseController
 		}
 
 		return response()->json([
+			'success' => true,
 			'message' => 'Logout successful'
+		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/auth/forgot-password",
+	 *     summary="Send password reset link",
+	 *     tags={"Auth"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="email", type="string"),
+	 *             @OA\Property(property="type", type="string", enum={"user", "customer"})
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Reset link sent", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function sendResetLinkEmail(Request $request)
+	{
+		$request->validate([
+			'email' => 'required|email',
+			'type' => 'required|in:user,customer'
+		]);
+
+		$model = $request->type === 'customer' ? Customer::class : User::class;
+
+		$user = $model::where('email', $request->email)->first();
+
+		if (!$user) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Email not found.'
+			]);
+		}
+
+		$token = Str::random(60);
+		$user->passwordResetToken()->updateOrCreate([], [
+			'token' => Hash::make($token),
+			'created_at' => now()
+		]);
+
+		$user->notify(new ResetPasswordNotification($token, $request->email, $request->type));
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Reset link sent to your email.'
+		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/auth/reset-password",
+	 *     summary="Reset password using token",
+	 *     tags={"Auth"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="email", type="string"),
+	 *             @OA\Property(property="password", type="string"),
+	 *             @OA\Property(property="password_confirmation", type="string"),
+	 *             @OA\Property(property="token", type="string"),
+	 *             @OA\Property(property="type", type="string", enum={"user", "customer"})
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Password has been reset")
+	 * )
+	 */
+	public function resetPassword(Request $request)
+	{
+		$request->validate([
+			'email' => 'required|email',
+			'password' => 'required|confirmed|min:6',
+			'token' => 'required',
+			'type' => 'required|in:user,customer',
+		]);
+
+		$model = $request->type === 'customer' ? Customer::class : User::class;
+
+		$user = $model::where('email', $request->email)->first();
+
+		if (!$user || !$user->passwordResetToken) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid token or email.'
+			]);
+		}
+
+		if (!Hash::check($request->token, $user->passwordResetToken->token)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid token.'
+			]);
+		}
+
+		if (now()->diffInMinutes($user->passwordResetToken->created_at) > 60) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Token expired.'
+			]);
+		}
+
+		$user->password = Hash::make($request->password);
+		$user->save();
+
+		$user->passwordResetToken()->delete();
+
+        $user->tokens()->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Password has been reset.'
 		]);
 	}
 }

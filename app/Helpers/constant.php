@@ -10,6 +10,8 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Area;
 use PhpUnitsOfMeasure\PhysicalQuantity\Energy;
 use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
 use PhpUnitsOfMeasure\PhysicalQuantity\Force;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
@@ -387,5 +389,41 @@ if (!function_exists('convert_unit')) {
 		} catch (\Exception $e) {
 			return "Conversion error: " . $e->getMessage();
 		}
+	}
+}
+
+function uploadImageToWebpS3FromFile(Request $request, string $key, string $pathPrefix)
+{
+	if (!$request->hasFile($key) || !$request->file($key)->isValid()) {
+		return null;
+	}
+
+	try {
+		$file = $request->file($key);
+		$image = imagecreatefromstring(file_get_contents($file->getRealPath()));
+		if (!$image) {
+			Log::error('Failed to create image from file.');
+			return null;
+		}
+
+		if (!imageistruecolor($image)) {
+			imagepalettetotruecolor($image);
+		}
+
+		ob_start();
+		imagewebp($image);
+		$webpData = ob_get_clean();
+		imagedestroy($image);
+
+		$filename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
+		$uniqueName = $filename . '_' . time() . '.webp';
+		$path = "{$pathPrefix}/{$uniqueName}";
+
+		Storage::disk('s3')->put($path, $webpData);
+
+		return Storage::disk('s3')->url($path);
+	} catch (\Exception $e) {
+		Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
+		return null;
 	}
 }

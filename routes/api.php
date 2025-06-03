@@ -56,8 +56,9 @@ use App\Http\Controllers\BlogCategoryController;
 
 use App\Http\Controllers\CustomerController;
 
-
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
+use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -77,10 +78,6 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
-Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
-
-
-
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -295,18 +292,25 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 });
 
 
+
+
+Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
+Route::post('frontend/register', [F_CustomerController::class, 'register']);
+Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
-	
+
 	Route::post('/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
     Route::get('/wishlist', [F_WishlistController::class, 'getWishlist']);
     Route::delete('/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
-    
+
     // Additional wishlist routes
     Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
     Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 
-		
+
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
 	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
