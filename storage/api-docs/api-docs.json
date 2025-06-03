@@ -1799,6 +1799,7 @@
                     "Blog Categories"
                 ],
                 "summary": "Delete a blog category",
+                "description": "Deletes a specific blog category by its ID.",
                 "operationId": "a969e7cca9c0cd42ef7b1281a611f3b0",
                 "parameters": [
                     {
@@ -1812,14 +1813,69 @@
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "Deleted"
+                    "200": {
+                        "description": "Category deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Not found"
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "500": {
-                        "description": "Server error"
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to delete category."
+                                        },
+                                        "details": {
+                                            "type": "string",
+                                            "example": "Error details here."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -2177,12 +2233,14 @@
                 "tags": [
                     "Blogs"
                 ],
-                "summary": "Delete blog",
+                "summary": "Delete blog by ID",
+                "description": "Deletes a specific blog post by its ID.",
                 "operationId": "9fb0bb3fc65e987a03d2b5ecdda4489d",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "ID of the blog to delete",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -2190,11 +2248,45 @@
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "Deleted"
+                    "200": {
+                        "description": "Blog deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Blog deleted successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
-                        "description": "Not found"
+                        "description": "Blog not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Blog not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -9598,7 +9690,7 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column to sort by (id, name, sku, brand_id, store_id, status)",
+                        "description": "Column to sort by (id, name, sku, brand_id, vendor_id, status)",
                         "required": false,
                         "schema": {
                             "type": "string",
@@ -9907,37 +9999,13 @@
                                         "type": "integer",
                                         "example": 100
                                     },
-                                    "allow_checkout_when_out_of_stock": {
-                                        "type": "boolean",
-                                        "example": false
-                                    },
                                     "status": {
                                         "type": "string",
                                         "example": "draft"
                                     },
-                                    "with_storehouse_management": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
                                     "stock_status": {
                                         "type": "string",
                                         "example": "1"
-                                    },
-                                    "variant_inventory_tracker": {
-                                        "type": "string",
-                                        "example": "shopify"
-                                    },
-                                    "variant_inventory_quantity": {
-                                        "type": "integer",
-                                        "example": 50
-                                    },
-                                    "variant_inventory_policy": {
-                                        "type": "string",
-                                        "example": "deny"
-                                    },
-                                    "variant_fulfillment_service": {
-                                        "type": "string",
-                                        "example": "manual"
                                     },
                                     "price": {
                                         "type": "number",
@@ -9949,15 +10017,6 @@
                                         "format": "float",
                                         "example": 149.99
                                     },
-                                    "unit_of_measurement_id": {
-                                        "description": "ID of the unit of measurement from the UnitOfMeasurement table",
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "sale_type": {
-                                        "type": "string",
-                                        "example": "percentage"
-                                    },
                                     "cost_per_item": {
                                         "type": "number",
                                         "format": "float",
@@ -9968,33 +10027,6 @@
                                         "type": "string",
                                         "example": "USD"
                                     },
-                                    "cost_type": {
-                                        "description": "Defines how additional cost is calculated",
-                                        "type": "string",
-                                        "enum": [
-                                            "percentage",
-                                            "value"
-                                        ],
-                                        "example": "percentage"
-                                    },
-                                    "additional_cost_percentage": {
-                                        "description": "Percentage to add to the base cost_per_item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10
-                                    },
-                                    "additional_cost_value": {
-                                        "description": "Fixed value to add to cost_per_item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5
-                                    },
-                                    "total_cost_per_item": {
-                                        "description": "Automatically calculated total cost per item",
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 55
-                                    },
                                     "tax_id": {
                                         "type": "integer",
                                         "example": 3
@@ -10003,21 +10035,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "minimum_order_quantity": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "maximum_order_quantity": {
-                                        "type": "integer",
-                                        "example": 10
-                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "Sample Product"
-                                    },
-                                    "content": {
-                                        "type": "string",
-                                        "example": "Detailed content about the product."
                                     },
                                     "description": {
                                         "type": "string",
@@ -10046,14 +10066,6 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "image": {
-                                        "type": "string",
-                                        "format": "binary"
-                                    },
-                                    "video_url": {
-                                        "type": "string",
-                                        "example": "https://www.youtube.com/watch?v=xyz"
-                                    },
                                     "video_path[]": {
                                         "type": "array",
                                         "items": {
@@ -10068,92 +10080,13 @@
                                             "format": "binary"
                                         }
                                     },
-                                    "length": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10.5
-                                    },
-                                    "length_unit_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
-                                    "width": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5
-                                    },
-                                    "height": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 3
-                                    },
-                                    "depth": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2
-                                    },
-                                    "weight": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 1.5
-                                    },
-                                    "weight_unit_id": {
-                                        "type": "integer",
-                                        "example": 5
-                                    },
-                                    "shipping_weight_option": {
-                                        "type": "string",
-                                        "example": "lbs"
-                                    },
-                                    "shipping_weight": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 2
-                                    },
-                                    "shipping_dimension_option": {
-                                        "type": "string",
-                                        "example": "inch"
-                                    },
-                                    "shipping_width": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 6
-                                    },
-                                    "shipping_depth": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4
-                                    },
-                                    "shipping_height": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 3.5
-                                    },
-                                    "shipping_length": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 11
-                                    },
-                                    "shipping_length_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "is_variation": {
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "variant_grams": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 500
-                                    },
                                     "variant_requires_shipping": {
                                         "type": "boolean",
                                         "example": true
-                                    },
-                                    "variant_barcode": {
-                                        "type": "string",
-                                        "example": "123456789012"
                                     },
                                     "variant_color_title": {
                                         "type": "string",
@@ -10163,7 +10096,7 @@
                                         "type": "string",
                                         "example": "#FF0000"
                                     },
-                                    "store_id": {
+                                    "vendor_id": {
                                         "type": "integer",
                                         "example": 7
                                     },
@@ -10186,17 +10119,6 @@
                                             "example": 101
                                         }
                                     },
-                                    "compare_type": {
-                                        "type": "string",
-                                        "example": ""
-                                    },
-                                    "compare_products[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 102
-                                        }
-                                    },
                                     "google_shopping_category": {
                                         "type": "string",
                                         "example": "Electronics"
@@ -10216,47 +10138,6 @@
                                     "delivery_days": {
                                         "type": "integer",
                                         "example": 3
-                                    },
-                                    "review_customer_name": {
-                                        "description": "Name of the customer leaving the review",
-                                        "type": "string",
-                                        "example": "John Doe"
-                                    },
-                                    "review_customer_email": {
-                                        "description": "Email of the customer leaving the review",
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "john.doe@example.com"
-                                    },
-                                    "review_star": {
-                                        "description": "Star rating given by the customer",
-                                        "type": "integer",
-                                        "maximum": 5,
-                                        "minimum": 1,
-                                        "example": 5
-                                    },
-                                    "review_comment": {
-                                        "description": "Review comment provided by the customer",
-                                        "type": "string",
-                                        "example": "Great product, highly recommended!"
-                                    },
-                                    "review_status": {
-                                        "description": "Status of the review",
-                                        "type": "string",
-                                        "enum": [
-                                            "pending",
-                                            "published",
-                                            "rejected"
-                                        ],
-                                        "example": "pending"
-                                    },
-                                    "review_images[]": {
-                                        "description": "Review images to upload",
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string",
-                                            "format": "binary"
-                                        }
                                     },
                                     "faqs": {
                                         "type": "array",
@@ -14382,24 +14263,6 @@
                 "operationId": "83addc73b5adab6c0ca229d3e5994a23",
                 "parameters": [
                     {
-                        "name": "module",
-                        "in": "query",
-                        "description": "Filter transaction logs by module.",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "example": "Product"
-                    },
-                    {
-                        "name": "action",
-                        "in": "query",
-                        "description": "Filter transaction logs by action.",
-                        "schema": {
-                            "type": "string"
-                        },
-                        "example": "Import"
-                    },
-                    {
                         "name": "page",
                         "in": "query",
                         "description": "Page number for pagination",
@@ -14418,6 +14281,70 @@
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by log id",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
+                    },
+                    {
+                        "name": "module",
+                        "in": "query",
+                        "description": "Filter transaction logs by module.",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Product"
+                    },
+                    {
+                        "name": "action",
+                        "in": "query",
+                        "description": "Filter transaction logs by action.",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "example": "Import"
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "code",
+                                "type",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -14742,7 +14669,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1

@@ -261,38 +261,72 @@ public function index(Request $request)
             ], 500);
         }
     }
+/**
+ * @OA\Delete(
+ *     path="/api/blog-categories/{id}",
+ *     tags={"Blog Categories"},
+ *     summary="Delete a blog category",
+ *     description="Deletes a specific blog category by its ID.",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         description="Category ID",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Category deleted successfully",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Category deleted successfully.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Category not found",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Category not found.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Server error",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Failed to delete category."),
+ *             @OA\Property(property="details", type="string", example="Error details here.")
+ *         )
+ *     )
+ * )
+ */
+public function destroy($id)
+{
+    try {
+        $category = BlogCategory::findOrFail($id);
+        $category->delete();
 
-    /**
-     * @OA\Delete(
-     *     path="/api/blog-categories/{id}",
-     *     tags={"Blog Categories"},
-     *     summary="Delete a blog category",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         description="Category ID",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=204, description="Deleted"),
-     *     @OA\Response(response=404, description="Not found"),
-     *     @OA\Response(response=500, description="Server error")
-     * )
-     */
-    public function destroy($id)
-    {
-        try {
-            $category = BlogCategory::findOrFail($id);
-            $category->delete();
-            return response()->json(null, 204);
-        } catch (ModelNotFoundException $e) {
-            return response()->json(['error' => 'Category not found'], 404);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to delete category',
-                'details' => $e->getMessage()
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Category deleted successfully.'
+        ], 200);
+    } catch (ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Category not found.'
+        ], 404);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to delete category.',
+            'details' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

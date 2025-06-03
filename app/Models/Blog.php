@@ -32,13 +32,13 @@ class Blog extends Model
         'status', 'is_featured',
     ];
 
-    protected $casts = [
-        'description' => 'array',
-        'faqs' => 'array',
-        'tags' => 'array',
-        'status' => 'boolean',
-        'is_featured' => 'boolean',
-    ];
+        protected $casts = [
+            'description' => 'array',
+            'faqs' => 'array',
+            'tags' => 'array',
+            'status' => 'string', // ✅ FIXED
+            'is_featured' => 'boolean',
+        ];
 
     public function category()
     {

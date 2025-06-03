@@ -47,7 +47,9 @@ class AttributeGroupController extends BaseController
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
 			$recordsQuery->withCount('groupsAttributes')->with(['creator:id,first_name,last_name']);
+
 			/* Apply global or column-specific filters */
+			$searchApplied = false;
 			if ($request->filled('global')) {
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
@@ -55,10 +57,12 @@ class AttributeGroupController extends BaseController
 						$q->orWhere($col, 'LIKE', '%' . $search . '%');
 					}
 				});
+				$searchApplied = true;
 			} else {
 				foreach ($searchableColumns as $col) {
 					if ($request->filled($col)) {
 						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+						$searchApplied = true;
 					}
 				}
 			}
@@ -66,7 +70,7 @@ class AttributeGroupController extends BaseController
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
 
-			$page = (int) $request->input('page');
+			$page = $searchApplied ? 1 : (int) $request->input('page');
 			$length = (int) $request->input('length');
 			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
