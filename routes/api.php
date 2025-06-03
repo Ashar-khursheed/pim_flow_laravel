@@ -66,7 +66,8 @@ use App\Http\Controllers\FrontEnd\FaqController as F_FaqController;
 use App\Http\Controllers\FrontEnd\ProductYouMayLikeController as F_ProductYouMayLikeController;
 use App\Http\Controllers\FrontEnd\ProductAttributeController as F_ProductAttributeController;
 use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
-
+use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
+use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -317,6 +318,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
     Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
+	Route::get('/frontend/product-discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+
+
 
 });
 
@@ -336,6 +340,13 @@ Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttribute
 Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index']);
 Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
 Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
+
+Route::get('/frontend/blogs', [F_BlogController::class, 'index']);         // Get all blogs
+Route::get('/frontend/blogs/{slug}', [F_BlogController::class, 'show']);     // Get blog by slug
+Route::post('/frontend/blogs/{id}/view', [F_BlogController::class, 'incrementView']);
+Route::post('/frontend/blogs/{id}/like', [F_BlogController::class, 'incrementLike']);
+Route::post('/frontend/blogs/{id}/share', [F_BlogController::class, 'incrementShare']);
+Route::get('/frontend/blogs/latest', [F_BlogController::class, 'latest']);
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 

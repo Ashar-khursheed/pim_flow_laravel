@@ -7683,6 +7683,160 @@
                 ]
             }
         },
+        "/api/frontend/blogs": {
+            "get": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Get all blogs with pagination and search",
+                "operationId": "b7add13d861138c3372698690df7a727",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by blog name",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of blogs"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{slug}": {
+            "get": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Get single blog",
+                "operationId": "3ac27350b80deb4645c0341cc7c45a43",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blog data"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{id}/view": {
+            "post": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Increment blog view count",
+                "operationId": "ea039a4c9fe87a6cc213e51d85fa7868",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "View incremented"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{id}/like": {
+            "post": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Increment blog like count",
+                "operationId": "d4f3e5992a7ffb466ac866135c248ece",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Like incremented"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{id}/share": {
+            "post": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Increment blog share count",
+                "operationId": "61eb3de5b53ccafdb0ee7d8b154070f7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Share incremented"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/latest": {
+            "get": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Get latest 5 published blogs",
+                "operationId": "fc143d74870d78b88f500b78314cf174",
+                "responses": {
+                    "200": {
+                        "description": "Latest blogs retrieved successfully"
+                    }
+                }
+            }
+        },
         "/api/frontend/brand-page/{id}": {
             "get": {
                 "tags": [
@@ -7839,6 +7993,102 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/discounts": {
+            "get": {
+                "tags": [
+                    "Frontend-Discounts"
+                ],
+                "summary": "Get applicable discounts for a specific product",
+                "description": "Fetches active and available discounts for a given product based on product ID and its categories.",
+                "operationId": "4af08e705939209d8c7c110869b35fd2",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "ID of the product to fetch discounts for",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success response with applicable discounts or no discounts found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Summer Sale"
+                                                    },
+                                                    "type": {
+                                                        "type": "string",
+                                                        "example": "percentage"
+                                                    },
+                                                    "value": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 10
+                                                    },
+                                                    "start_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "end_date": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No discounts available for this product or its categories."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
                                         }
                                     },
                                     "type": "object"
@@ -19270,12 +19520,20 @@
             "description": "Flash Sales"
         },
         {
+            "name": "Frontend-Blogs",
+            "description": "Frontend-Blogs"
+        },
+        {
             "name": "Frontend-Brand Pages",
             "description": "Frontend-Brand Pages"
         },
         {
             "name": "Frontend-Menu Categories",
             "description": "Frontend-Menu Categories"
+        },
+        {
+            "name": "Frontend-Discounts",
+            "description": "Frontend-Discounts"
         },
         {
             "name": "Frontend - FAQs",
