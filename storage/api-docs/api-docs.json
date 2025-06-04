@@ -7679,6 +7679,262 @@
                 ]
             }
         },
+        "/api/frontend/addresses": {
+            "get": {
+                "tags": [
+                    "Frontend-Address"
+                ],
+                "summary": "Get all addresses of the authenticated user",
+                "operationId": "6ff12f46175f6b15c9345cfa14bd708b",
+                "responses": {
+                    "200": {
+                        "description": "List of user addresses",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Address"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend-Address"
+                ],
+                "summary": "Add a new address",
+                "operationId": "577cb481e74ecaecd81f0f77431bf1cb",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "phone",
+                                    "country",
+                                    "state",
+                                    "city",
+                                    "address",
+                                    "zip_code"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "zip_code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address added successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/addresses/default": {
+            "post": {
+                "tags": [
+                    "Frontend-Address"
+                ],
+                "summary": "Set default address",
+                "operationId": "285c67dbb64a337373cd377874efbea5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "address_id"
+                                ],
+                                "properties": {
+                                    "address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default address updated successfully"
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/addresses/{id}": {
+            "put": {
+                "tags": [
+                    "Frontend-Address"
+                ],
+                "summary": "Update an address by ID",
+                "operationId": "8b7b3851dcd6b22167e5aa0b3d536e85",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "phone": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string"
+                                    },
+                                    "country": {
+                                        "type": "string"
+                                    },
+                                    "state": {
+                                        "type": "string"
+                                    },
+                                    "city": {
+                                        "type": "string"
+                                    },
+                                    "address": {
+                                        "type": "string"
+                                    },
+                                    "zip_code": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address updated successfully"
+                    },
+                    "404": {
+                        "description": "Address not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend-Address"
+                ],
+                "summary": "Delete an address by ID",
+                "operationId": "7d7ee412b405489d813df055a43a306c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Address deleted successfully"
+                    },
+                    "404": {
+                        "description": "Address not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/login": {
             "post": {
                 "tags": [
@@ -9748,6 +10004,467 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend/cart-summary": {
+            "get": {
+                "tags": [
+                    "Frontend-Cart"
+                ],
+                "summary": "Get cart summary for the authenticated user or guest session",
+                "description": "Returns subtotal, tax, total, shipping rate, and other summary details for the cart.",
+                "operationId": "c1e212d80e6ffa4eff20d2a31660e108",
+                "responses": {
+                    "200": {
+                        "description": "Cart summary returned successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "subtotal": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 150
+                                        },
+                                        "tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 15
+                                        },
+                                        "total_with_tax": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 165
+                                        },
+                                        "savings": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 20
+                                        },
+                                        "item_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "currency_title": {
+                                            "type": "string",
+                                            "example": "USD"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/cart/total-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Cart"
+                ],
+                "summary": "Get total quantity of products in cart for authenticated user",
+                "description": "Returns the total number of items in the cart for a logged-in user.",
+                "operationId": "e80b47574fae58a50f2cc361fff89fe5",
+                "responses": {
+                    "200": {
+                        "description": "Total products returned successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 5
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/cart/total-products-guest": {
+            "get": {
+                "tags": [
+                    "Frontend-Cart"
+                ],
+                "summary": "Get total quantity of products in cart for guest user",
+                "description": "Returns the total number of items in the cart for a guest session using session ID.",
+                "operationId": "5d5bcea8e6c15bf3a727b89c164f11af",
+                "responses": {
+                    "200": {
+                        "description": "Total products for guest returned successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/home-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Fetch a limited set of parent and child categories",
+                "description": "Returns up to 14 categories including parent and child, with product count and image URL.",
+                "operationId": "481a9763f7e53d755913e267a684eed7",
+                "responses": {
+                    "200": {
+                        "description": "Categories fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Electronics"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "electronics"
+                                            },
+                                            "parent_id": {
+                                                "type": "integer",
+                                                "example": 0
+                                            },
+                                            "image": {
+                                                "type": "string",
+                                                "example": "http://example.com/storage/categories/electronics.jpg"
+                                            },
+                                            "productCount": {
+                                                "type": "integer",
+                                                "example": 42
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/all-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Fetch all parent and child categories",
+                "description": "Returns all parent and child categories with product count and image URL.",
+                "operationId": "fe71652d71e9ecdc8a4ee3e88053aa16",
+                "responses": {
+                    "200": {
+                        "description": "All categories fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 2
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Laptops"
+                                            },
+                                            "slug": {
+                                                "type": "string",
+                                                "example": "laptops"
+                                            },
+                                            "parent_id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "image": {
+                                                "type": "string",
+                                                "example": "http://example.com/storage/categories/laptops.jpg"
+                                            },
+                                            "productCount": {
+                                                "type": "integer",
+                                                "example": 15
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/categoryproducts": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get all featured products grouped by third-level categories",
+                "description": "Returns featured products grouped under third-level categories. Includes wishlist status, best price, delivery date, reviews, stock, and images.",
+                "operationId": "a8ab00f373ca847a6e4b1433c3f7cfa5",
+                "responses": {
+                    "200": {
+                        "description": "Featured products grouped by category fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "category_name": {
+                                                        "type": "string",
+                                                        "example": "Smartphones"
+                                                    },
+                                                    "featured_products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 101
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "iPhone 14"
+                                                                },
+                                                                "sku": {
+                                                                    "type": "string",
+                                                                    "example": "IP14-256GB"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899.99
+                                                                },
+                                                                "original_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999.99
+                                                                },
+                                                                "front_sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899.99
+                                                                },
+                                                                "best_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899.99
+                                                                },
+                                                                "best_delivery_date": {
+                                                                    "type": "integer",
+                                                                    "example": 3
+                                                                },
+                                                                "total_reviews": {
+                                                                    "type": "integer",
+                                                                    "example": 120
+                                                                },
+                                                                "avg_rating": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 4.5
+                                                                },
+                                                                "left_stock": {
+                                                                    "type": "integer",
+                                                                    "example": 20
+                                                                },
+                                                                "currency": {
+                                                                    "type": "string",
+                                                                    "example": "USD"
+                                                                },
+                                                                "in_wishlist": {
+                                                                    "type": "boolean",
+                                                                    "example": true
+                                                                },
+                                                                "images": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "example": "http://example.com/storage/products/image1.jpg"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/categoryguestproducts": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get all featured products by category for guest users",
+                "description": "Returns featured products grouped under third-level categories for guest users. Includes best price, delivery days, stock, reviews, and images.",
+                "operationId": "28bbded0d4d1f0cf6ef105d55bc5eb81",
+                "responses": {
+                    "200": {
+                        "description": "Featured products grouped by category fetched successfully for guests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "category_name": {
+                                                        "type": "string",
+                                                        "example": "Electronics"
+                                                    },
+                                                    "featured_products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 202
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Samsung Galaxy S22"
+                                                                },
+                                                                "sku": {
+                                                                    "type": "string",
+                                                                    "example": "SG-S22-128GB"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 849.99
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "original_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 849.99
+                                                                },
+                                                                "front_sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "best_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 799.99
+                                                                },
+                                                                "best_delivery_date": {
+                                                                    "type": "integer",
+                                                                    "example": 5
+                                                                },
+                                                                "total_reviews": {
+                                                                    "type": "integer",
+                                                                    "example": 85
+                                                                },
+                                                                "avg_rating": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 4.2
+                                                                },
+                                                                "left_stock": {
+                                                                    "type": "integer",
+                                                                    "example": 50
+                                                                },
+                                                                "currency": {
+                                                                    "type": "string",
+                                                                    "example": "USD"
+                                                                },
+                                                                "images": {
+                                                                    "type": "array",
+                                                                    "items": {
+                                                                        "type": "string",
+                                                                        "example": "http://example.com/storage/products/samsung.jpg"
+                                                                    }
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/frontend/category-with-slug/{slug}": {
@@ -21089,6 +21806,44 @@
                 },
                 "type": "object"
             },
+            "Address": {
+                "properties": {
+                    "id": {
+                        "type": "integer"
+                    },
+                    "customer_id": {
+                        "type": "integer"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "phone": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "country": {
+                        "type": "string"
+                    },
+                    "state": {
+                        "type": "string"
+                    },
+                    "city": {
+                        "type": "string"
+                    },
+                    "address": {
+                        "type": "string"
+                    },
+                    "zip_code": {
+                        "type": "string"
+                    },
+                    "is_default": {
+                        "type": "boolean"
+                    }
+                },
+                "type": "object"
+            },
             "Newsletter": {
                 "title": "Newsletter",
                 "required": [
@@ -21474,6 +22229,10 @@
             "description": "Flash Sales"
         },
         {
+            "name": "Frontend-Address",
+            "description": "Frontend-Address"
+        },
+        {
             "name": "Frontend-Blogs",
             "description": "Frontend-Blogs"
         },
@@ -21488,6 +22247,10 @@
         {
             "name": "Frontend-Cart",
             "description": "Frontend-Cart"
+        },
+        {
+            "name": "Frontend-Categories",
+            "description": "Frontend-Categories"
         },
         {
             "name": "Frontend-Menu Categories",

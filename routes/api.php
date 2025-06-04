@@ -71,6 +71,8 @@ use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
 use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
 use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 use App\Http\Controllers\FrontEnd\CartController as F_CartController;
+use App\Http\Controllers\FrontEnd\AddressController as F_AddressController;
+use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -336,15 +338,30 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
 	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
 	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
+	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
+	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
 
-	
+
+	Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
+    Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
+    Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
+    Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
+    Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
+
+	Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
+
 
 });
+
+Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
+Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
+Route::get('/frontend/categoryguestproducts', [F_CategoryController::class, 'getAllGuestFeaturedProductsByCategory']);
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
 
-Route::get('/frontend//cart/guest', [F_CartController::class, 'viewCartGuest']);
+Route::get('/frontend/cart/total-products-guest', [F_CartController::class, 'totalProductsInCartGuest']);
+Route::get('/frontend/cart/guest', [F_CartController::class, 'viewCartGuest']);
 Route::delete('/frontend/cart/guest/clear', [F_CartController::class, 'clearCartGuest']);
 
 Route::get('/frontend/faqs/product/{product_id}', [F_FaqController::class, 'getFaqsByProduct']);
@@ -371,13 +388,11 @@ Route::get('/frontend/blogs/latest', [F_BlogController::class, 'latest']);
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 
-//  Route::get('/products', [ProductApiController::class, 'getAllProducts']);
 Route::get('/frontend/brandguestproducts', [F_BrandController::class, 'getAllBrandGuestProducts']);
 Route::get('/frontend/products/brand/{brandId}/category/{categoryId?}', [F_BrandController::class, 'getProductsByBrandAndCategory']);
 Route::get('/frontend/brand/{id}/categories', [F_BrandController::class, 'getCategories']);
 Route::get('/frontend/brands-by-category/{id}', [F_BrandController::class, 'brandsByCategory']);
 Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBrandsAlphabetically']);
-
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

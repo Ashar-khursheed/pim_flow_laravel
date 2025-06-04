@@ -787,4 +787,138 @@ class CartController extends Controller
     }
 
 
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/cart-summary",
+     *     tags={"Frontend-Cart"},
+     *     summary="Get cart summary for the authenticated user or guest session",
+     *     description="Returns subtotal, tax, total, shipping rate, and other summary details for the cart.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Cart summary returned successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="subtotal", type="number", format="float", example=150.00),
+     *             @OA\Property(property="tax", type="number", format="float", example=15.00),
+     *             @OA\Property(property="total_with_tax", type="number", format="float", example=165.00),
+     *             @OA\Property(property="savings", type="number", format="float", example=20.00),
+     *             @OA\Property(property="item_count", type="integer", example=3),
+     *             @OA\Property(property="currency_title", type="string", example="USD")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+    public function cartSummary(Request $request)
+    {
+        // Determine if the user is logged in
+        $userId = Auth::id();
+        $sessionId = $userId ? null : $request->session()->getId();
+
+        // Fetch cart items with product details and currency information
+        $cartItems = Cart::where(function ($query) use ($userId, $sessionId) {
+            if ($userId) {
+                $query->where('user_id', $userId);
+            } else {
+                $query->where('session_id', $sessionId);
+            }
+        })->with('product.currency')->get();
+
+        // Initialize summary variables
+        $subtotal = 0;
+        $total = 0;
+        $savings = 0;
+        $currencyTitle = $cartItems->first()->product->currency->symbol; // Default to 'USD' if no currency found
+
+        foreach ($cartItems as $item) {
+            // Use sale_price if available, otherwise use price
+            $itemPrice = ($item->product->sale_price && $item->product->sale_price > 0)
+                ? $item->product->sale_price
+                : $item->product->price;
+
+            $subtotal += $item->quantity * $itemPrice;
+            $total += $item->quantity * $item->product->price;
+        }
+
+        $savings = $total - $subtotal;
+
+        // Calculate tax and total including tax
+        $tax = $subtotal * 0.10;
+        $totalWithTax = $subtotal + $tax;
+
+
+     
+        // Return the cart summary with currency title
+        return response()->json([
+            'subtotal' => $subtotal,
+            'tax' => $tax,
+            'total_with_tax' => $totalWithTax,
+            'savings' => $savings,
+            'item_count' => $cartItems->count(),
+            'currency_title' => $currencyTitle,
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/cart/total-products",
+     *     tags={"Frontend-Cart"},
+     *     summary="Get total quantity of products in cart for authenticated user",
+     *     description="Returns the total number of items in the cart for a logged-in user.",
+     *     security={{"bearerAuth": {}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="Total products returned successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="total", type="integer", example=5)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthenticated"
+     *     )
+     * )
+     */
+
+    public function totalProductsInCart(Request $request)
+    {
+        $userId = Auth::id();
+
+        $totalQuantity = Cart::where('user_id', $userId)->sum('quantity');
+
+        return response()->json(['total' => $totalQuantity]);
+    }
+
+
+   /**
+     * @OA\Get(
+     *     path="/api/frontend/cart/total-products-guest",
+     *     tags={"Frontend-Cart"},
+     *     summary="Get total quantity of products in cart for guest user",
+     *     description="Returns the total number of items in the cart for a guest session using session ID.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Total products for guest returned successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="total", type="integer", example=3)
+     *         )
+     *     )
+     * )
+     */
+    public function totalProductsInCartGuest(Request $request)
+    {
+        // Get the session ID from the current request
+        $sessionId = $request->session()->getId();
+    
+        // Get the total quantity of items for the guest session
+        $totalQuantity = Cart::where('session_id', $sessionId)->sum('quantity');
+    
+        return response()->json(['total' => $totalQuantity]);
+    }
+
+
+
 }
