@@ -503,29 +503,35 @@ class BrandController extends Controller
      * )
      */
     public function getCategories($id)
-	{
-		 $brand = Brand::with(['products.categories:id,name,image'])->findOrFail($id);
-
-		 // Flatten and get unique categories, only with id and name
-		 $categories = $brand->products
-			 ->flatMap(function ($product) {
-				 return $product->categories->map(function ($category) {
-					 return [
-						 'id' => $category->id,
-						 'name' => $category->name,
-                         'image' => asset('storage/' . $category->image), // full URL
-					 ];
-				 });
-			 })
-			 ->unique('id')
-			 ->values();
-
-		 return response()->json([
-			 'sucess' => 'true',
-			 'brand_id' => $id,
-			 'categories' => $categories
-		 ]);
-	}
+    {
+        $brand = Brand::with(['products.categories'])->findOrFail($id);
+    
+        // Count the number of products per category for this brand
+        $categoryCounts = [];
+    
+        foreach ($brand->products as $product) {
+            foreach ($product->categories as $category) {
+                if (!isset($categoryCounts[$category->id])) {
+                    $categoryCounts[$category->id] = [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'image' => asset('storage/' . $category->image),
+                        'product_count' => 0
+                    ];
+                }
+                $categoryCounts[$category->id]['product_count']++;
+            }
+        }
+    
+        // Reindex array and return as values
+        $categories = array_values($categoryCounts);
+    
+        return response()->json([
+            'success' => true,
+            'brand_id' => $id,
+            'categories' => $categories
+        ]);
+    }
 
     
     

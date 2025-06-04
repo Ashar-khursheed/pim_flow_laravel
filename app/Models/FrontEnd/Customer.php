@@ -11,6 +11,20 @@ use App\Models\PasswordResetToken;
 
 class Customer extends Authenticatable
 {
+	/**
+ * @OA\Schema(
+ *     schema="Coupon",
+ *     type="object",
+ *     @OA\Property(property="id", type="integer", example=1),
+ *     @OA\Property(property="code", type="string", example="SAVE10"),
+ *     @OA\Property(property="value", type="number", format="float", example=10.00),
+ *     @OA\Property(property="type", type="string", example="fixed"),
+ *     @OA\Property(property="min_order_price", type="number", format="float", example=50.00),
+ *     @OA\Property(property="start_date", type="string", format="date-time", example="2025-01-01T00:00:00Z"),
+ *     @OA\Property(property="end_date", type="string", format="date-time", example="2025-12-31T23:59:59Z")
+ * )
+ */
+
 	use HasApiTokens, Notifiable;
 
 	protected $guard_name = 'api';

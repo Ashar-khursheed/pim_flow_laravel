@@ -10130,6 +10130,486 @@
                 }
             }
         },
+        "/api/frontend/categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get all product categories (with optional filter)",
+                "description": "Returns a parent-child tree of product categories. You can optionally filter by parent category ID and limit the number of child categories.",
+                "operationId": "72bbfad6b21908892bd11071a65b475c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Parent category ID to filter by",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit the number of child categories returned per parent (default is 12)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Categories tree fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Electronics"
+                                            },
+                                            "image": {
+                                                "type": "string",
+                                                "example": "http://example.com/storage/categories/electronics.jpg"
+                                            },
+                                            "parent_id": {
+                                                "type": "integer",
+                                                "example": null,
+                                                "nullable": true
+                                            },
+                                            "children": {
+                                                "type": "array",
+                                                "items": {
+                                                    "$ref": "#/components/schemas/Category"
+                                                }
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/categories/{slug}": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get a category and its children by slug",
+                "description": "Returns a tree of product categories for a given category slug, including its direct children. Optionally limit the number of child categories.",
+                "operationId": "11b221eae4760da67cfce4fb779b52ad",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug of the parent category",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "electronics"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limit the number of child categories returned per parent (default is 12)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category tree fetched successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Category"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/categories/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get a category by ID",
+                "description": "Retrieve the details of a single category using its ID.",
+                "operationId": "9ac1833d6c897ba5eab9041468a19c9f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "The ID of the category to retrieve",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Category details retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "category": {
+                                            "$ref": "#/components/schemas/Category"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/categories/{categoryId}/products": {
+            "get": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Get products by category ID",
+                "description": "Retrieve a paginated list of products that belong to a specific category, including related data like brand, tags, and product types.",
+                "operationId": "d1bc116c8b65a750a5d60c66d409e3e1",
+                "parameters": [
+                    {
+                        "name": "categoryId",
+                        "in": "path",
+                        "description": "The ID of the category to fetch products from",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of products per page (pagination)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of products for the category",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "category": {
+                                            "$ref": "#/components/schemas/Category"
+                                        },
+                                        "products": {
+                                            "properties": {
+                                                "current_page": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "data": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/Product"
+                                                    }
+                                                },
+                                                "last_page": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "per_page": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "total": {
+                                                    "type": "integer",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Category not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products/specification-filters": {
+            "post": {
+                "tags": [
+                    "Frontend-Categories"
+                ],
+                "summary": "Fetch products with dynamic specification filters",
+                "description": "Retrieve filtered products based on category, specifications, price, brand, and rating. Also returns filter options.",
+                "operationId": "getSpecificationFilters",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "description": "ID of the product category",
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "filters": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "specification_name": {
+                                                    "type": "string",
+                                                    "example": "Color"
+                                                },
+                                                "specification_value": {
+                                                    "oneOf": [
+                                                        {
+                                                            "type": "string",
+                                                            "example": "Red"
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "string",
+                                                                "example": "Red"
+                                                            }
+                                                        },
+                                                        {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "min": {
+                                                                        "type": "number",
+                                                                        "example": 10
+                                                                    },
+                                                                    "max": {
+                                                                        "type": "number",
+                                                                        "example": 100
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "price_min": {
+                                        "description": "Minimum price",
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "price_max": {
+                                        "description": "Maximum price",
+                                        "type": "number",
+                                        "example": 1000
+                                    },
+                                    "price_order": {
+                                        "type": "string",
+                                        "enum": [
+                                            "high_to_low",
+                                            "low_to_high"
+                                        ],
+                                        "example": "low_to_high"
+                                    },
+                                    "brand_id": {
+                                        "description": "Filter by brand IDs",
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 2
+                                        }
+                                    },
+                                    "rating": {
+                                        "description": "Minimum average rating",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 4
+                                    },
+                                    "per_page": {
+                                        "description": "Pagination count per page",
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "sort_by": {
+                                        "description": "Sort field (price or created_at)",
+                                        "type": "string",
+                                        "example": "price"
+                                    },
+                                    "sort_by_type": {
+                                        "description": "Sort direction (asc or desc)",
+                                        "type": "string",
+                                        "example": "asc"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "List of filtered products and available filters",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "filters": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "products": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "brands": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "rating_filter": {
+                                            "properties": {
+                                                "filter_name": {
+                                                    "type": "string",
+                                                    "example": "Rating"
+                                                },
+                                                "filter_type": {
+                                                    "type": "string",
+                                                    "example": "rating"
+                                                },
+                                                "filter_values": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "debug_info": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error or category not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/home-categories": {
             "get": {
                 "tags": [
@@ -10608,6 +11088,142 @@
                 }
             }
         },
+        "/api/frontend/countries": {
+            "get": {
+                "tags": [
+                    "Frontend-Countries"
+                ],
+                "summary": "Get all countries",
+                "description": "Returns a list of all countries",
+                "operationId": "getAllCountries",
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/Country"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/countries/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Countries"
+                ],
+                "summary": "Get a country by ID",
+                "description": "Returns a single country",
+                "operationId": "getCountryById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of country to return",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful operation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Country"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Country not found"
+                    }
+                }
+            }
+        },
+        "/api/frontend/coupons/apply": {
+            "post": {
+                "tags": [
+                    "Coupons"
+                ],
+                "summary": "Apply a coupon to an order",
+                "description": "Validates a coupon code and returns the discount and final price if valid.",
+                "operationId": "applyCoupon",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "coupon_code",
+                                    "total_order_price"
+                                ],
+                                "properties": {
+                                    "coupon_code": {
+                                        "type": "string",
+                                        "example": "WELCOME10"
+                                    },
+                                    "total_order_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 150
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Coupon applied successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "discount_amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 10
+                                        },
+                                        "final_price": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 140
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid coupon or usage conditions not met",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coupon has expired."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/register": {
             "post": {
                 "tags": [
@@ -10667,6 +11283,112 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/coupons/customer": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Get customer coupons",
+                "description": "Returns all coupons related to the authenticated customer, grouped as all, available, used, and expired.",
+                "operationId": "getCustomerCoupons",
+                "responses": {
+                    "200": {
+                        "description": "List of customer coupons",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "all_coupons": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        },
+                                        "available_coupons": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        },
+                                        "used_coupons": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        },
+                                        "expired_coupons": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/coupons/search": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Search customer coupons",
+                "description": "Search through the customer's coupons using a query term.",
+                "operationId": "searchCustomerCoupons",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "Search term (coupon code, type, or value)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "coupons": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/discounts": {
@@ -21844,6 +22566,61 @@
                 },
                 "type": "object"
             },
+            "Country": {
+                "title": "Country",
+                "required": [
+                    "id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "United States"
+                    }
+                },
+                "type": "object"
+            },
+            "Coupon": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "SAVE10"
+                    },
+                    "value": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 10
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "fixed"
+                    },
+                    "min_order_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 50
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-01-01T00:00:00Z"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2025-12-31T23:59:59Z"
+                    }
+                },
+                "type": "object"
+            },
             "Newsletter": {
                 "title": "Newsletter",
                 "required": [
@@ -22255,6 +23032,14 @@
         {
             "name": "Frontend-Menu Categories",
             "description": "Frontend-Menu Categories"
+        },
+        {
+            "name": "Frontend-Countries",
+            "description": "Frontend-Countries"
+        },
+        {
+            "name": "Coupons",
+            "description": "Coupons"
         },
         {
             "name": "FrontEnd-Customer",

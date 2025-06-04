@@ -73,4 +73,192 @@ class CustomerController extends BaseController
 			return response()->json(['error' => 'Failed to register user'], 500);
 		}
 	}
+
+
+	/**
+     * Get all coupons related to the authenticated customer.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/coupons/customer",
+     *     tags={"FrontEnd-Customer"},
+     *     summary="Get customer coupons",
+     *     description="Returns all coupons related to the authenticated customer, grouped as all, available, used, and expired.",
+     *     operationId="getCustomerCoupons",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of customer coupons",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="all_coupons", type="array", @OA\Items(ref="#/components/schemas/Coupon")),
+     *             @OA\Property(property="available_coupons", type="array", @OA\Items(ref="#/components/schemas/Coupon")),
+     *             @OA\Property(property="used_coupons", type="array", @OA\Items(ref="#/components/schemas/Coupon")),
+     *             @OA\Property(property="expired_coupons", type="array", @OA\Items(ref="#/components/schemas/Coupon"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized"
+     *     )
+     * )
+     */
+
+
+	public function getCustomerCoupons(Request $request)
+	{
+		$userId = Auth::id();
+	
+		if (!$userId) {
+			return response()->json(['message' => 'User not authenticated.'], 401);
+		}
+	
+		// Get all coupons related to the customer
+		$allCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+				$query->where('customer_id', $userId);
+			})
+			->get()
+			->map(function ($discount) {
+				return [
+					'id' => $discount->id,
+					'code' => $discount->code,
+					'value' => $discount->value,
+					'type' => $discount->type,
+					'min_order_price' => $discount->min_order_price,
+					'start_date' => $discount->start_date,
+					'end_date' => $discount->end_date,
+				];
+			});
+	
+		// Get used coupons from ec_customer_used_coupons table
+		$usedCoupons = DB::table('ec_customer_used_coupons')
+			->join('ec_discounts', 'ec_customer_used_coupons.discount_id', '=', 'ec_discounts.id')
+			->where('ec_customer_used_coupons.customer_id', $userId)
+			->get(['ec_discounts.id', 'ec_discounts.code', 'ec_discounts.value', 'ec_discounts.type', 'ec_discounts.min_order_price', 'ec_discounts.start_date', 'ec_discounts.end_date']);
+	
+		// Get expired coupons (past end_date)
+		$expiredCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+				$query->where('customer_id', $userId);
+			})
+			->where('end_date', '<', Carbon::now()) // Coupons that have expired
+			->get()
+			->map(function ($discount) {
+				return [
+					'id' => $discount->id,
+					'code' => $discount->code,
+					'value' => $discount->value,
+					'type' => $discount->type,
+					'min_order_price' => $discount->min_order_price,
+					'start_date' => $discount->start_date,
+					'end_date' => $discount->end_date,
+				];
+			});
+	
+		// Get available (valid) coupons
+		$availableCoupons = Discount::whereHas('customers', function ($query) use ($userId) {
+				$query->where('customer_id', $userId);
+			})
+			->where(function ($query) {
+				$query->where('end_date', '>=', Carbon::now())
+					  ->orWhereNull('end_date');
+			})
+			->get()
+			->map(function ($discount) {
+				return [
+					'id' => $discount->id,
+					'code' => $discount->code,
+					'value' => $discount->value,
+					'type' => $discount->type,
+					'min_order_price' => $discount->min_order_price,
+					'start_date' => $discount->start_date,
+					'end_date' => $discount->end_date,
+				];
+			});
+	
+		return response()->json([
+			'all_coupons' => $allCoupons, // This includes all coupons linked to the customer
+			'available_coupons' => $availableCoupons,
+			'used_coupons' => $usedCoupons,
+			'expired_coupons' => $expiredCoupons
+		]);
+	}
+	
+	
+	/**
+     * Search coupons belonging to the authenticated customer.
+     *
+     * @OA\Get(
+     *     path="/api/frontend/coupons/search",
+     *     tags={"FrontEnd-Customer"},
+     *     summary="Search customer coupons",
+     *     description="Search through the customer's coupons using a query term.",
+     *     operationId="searchCustomerCoupons",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="query",
+     *         in="query",
+     *         required=true,
+     *         description="Search term (coupon code, type, or value)",
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Search results",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="coupons", type="array", @OA\Items(ref="#/components/schemas/Coupon"))
+     *         )
+     *     )
+     * )
+     */
+
+	public function searchCustomerCoupons(Request $request)
+	{
+		$userId = Auth::id();
+	
+		if (!$userId) {
+			return response()->json([
+				'success' => false,
+				'message' => 'User not authenticated.'
+			], 200);
+		}
+	
+		$searchTerm = $request->input('query');
+	
+		$discounts = Discount::whereHas('customers', function ($query) use ($userId) {
+			$query->where('customer_id', $userId);
+		})
+		->where(function ($query) use ($searchTerm) {
+			$query->where('code', 'LIKE', "%{$searchTerm}%")
+				  ->orWhere('type', 'LIKE', "%{$searchTerm}%")
+				  ->orWhere('value', 'LIKE', "%{$searchTerm}%");
+		})
+		->where(function ($query) {
+			$query->where('end_date', '>=', Carbon::now())
+				  ->orWhereNull('end_date');
+		})
+		->get();
+	
+		if ($discounts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No matching coupons found.'
+			], 200);
+		}
+	
+		$coupons = $discounts->map(function ($discount) {
+			return [
+				'id' => $discount->id,
+				'code' => $discount->code,
+				'value' => $discount->value,
+				'type' => $discount->type,
+				'min_order_price' => $discount->min_order_price,
+				'start_date' => $discount->start_date,
+				'end_date' => $discount->end_date,
+			];
+		});
+	
+		return response()->json([
+			'success' => true,
+			'coupons' => $coupons
+		], 200);
+	}
 }

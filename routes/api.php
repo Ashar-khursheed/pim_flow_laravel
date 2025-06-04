@@ -73,7 +73,8 @@ use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 use App\Http\Controllers\FrontEnd\CartController as F_CartController;
 use App\Http\Controllers\FrontEnd\AddressController as F_AddressController;
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
-
+use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
+use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -350,12 +351,21 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
 
+	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
+	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
+		
 
 });
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
 Route::get('/frontend/categoryguestproducts', [F_CategoryController::class, 'getAllGuestFeaturedProductsByCategory']);
+Route::get('/frontend/categories', [F_CategoryController::class, 'index']);
+Route::get('/frontend/categories/{slug}', [F_CategoryController::class, 'categoryslug']);
+Route::get('/frontend/categories/{id}', [F_CategoryController::class, 'show']);
+Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::class, 'getProductsByCategory']);
+Route::post('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
+
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
 Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
@@ -393,6 +403,11 @@ Route::get('/frontend/products/brand/{brandId}/category/{categoryId?}', [F_Brand
 Route::get('/frontend/brand/{id}/categories', [F_BrandController::class, 'getCategories']);
 Route::get('/frontend/brands-by-category/{id}', [F_BrandController::class, 'brandsByCategory']);
 Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBrandsAlphabetically']);
+
+Route::get('/frontend/countries', [F_CountryController::class, 'index']);
+Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
+
+Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
