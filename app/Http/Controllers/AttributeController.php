@@ -678,6 +678,13 @@ class AttributeController extends BaseController
 				]);
 			}
 
+			if ($totalRecords > 2000) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The uploaded Excel file contains more than 2000 records. Please reduce the number of rows and try again.'
+				]);
+			}
+
 			/* Create batch */
 			$batch = Bus::batch([])
 			->before(function (Batch $batch) use ($totalRecords) {
