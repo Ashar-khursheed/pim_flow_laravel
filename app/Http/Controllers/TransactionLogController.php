@@ -146,7 +146,7 @@ class TransactionLogController extends BaseController
 		// 		'message' => "You don't have permission to access this module.",
 		// 	]);
 		// }
-		$record = TransactionLog::with(['createdBy:id,first_name,last_name'])->find($id);
+		$record = TransactionLog::with(['creator:id,first_name,last_name'])->find($id);
 
 		/* Check if record exists */
 		if (!$record) {
