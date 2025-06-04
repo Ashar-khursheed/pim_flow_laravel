@@ -31,7 +31,7 @@ class TransactionLogController extends BaseController
 		// 	]);
 		// }
 
-		$records = TransactionLog::with(['createdBy:id,first_name,last_name'])->orderBy('id', 'desc');
+		$records = TransactionLog::with(['creator:id,first_name,last_name'])->orderBy('id', 'desc');
 
 		if ($request->filled('module')) {
 			$records->where('module', $request->module);
