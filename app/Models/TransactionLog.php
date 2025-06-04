@@ -19,7 +19,7 @@ class TransactionLog extends Model
 	public $timestamps = ["created_at"]; //only want to used created_at column
 	const UPDATED_AT = null;
 
-	public function createdBy()
+	public function creator()
 	{
 		return $this->belongsTo(User::class, 'created_by');
 	}

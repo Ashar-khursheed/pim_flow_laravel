@@ -13,10 +13,14 @@ class TransactionLogController extends BaseController
 	 *     summary="Get Transaction Log List",
 	 *     description="Fetches a list of all transaction logs.",
 	 *     tags={"Transaction Logs"},
-	 *     @OA\Parameter(name="module", in="query", description="Filter transaction logs by module.", example="Product",  @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="action", in="query", description="Filter transaction logs by action.", example="Import",  @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by log id", example="1", @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="module", in="query", description="Filter transaction logs by module.", example="Product",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="action", in="query", description="Filter transaction logs by action.", example="Import",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "code", "type", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -31,31 +35,63 @@ class TransactionLogController extends BaseController
 		// 	]);
 		// }
 
-		$records = TransactionLog::with(['creator:id,first_name,last_name'])->orderBy('id', 'desc');
+		/* Dynamic search filters */
+		$searchableColumns = ['id', 'module', 'action', 'identifier'];
+		$sortableColumns = array_merge($searchableColumns, ['created_at']);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		if ($request->filled('module')) {
-			$records->where('module', $request->module);
-		}
-
-		if ($request->filled('action')) {
-			$records->where('action', $request->action);
-		}
+		$recordsQuery = TransactionLog::query();
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
-			$page = (int) $request->input('page');
+			$recordsQuery->with(['creator:id,first_name,last_name']);
+
+			/* Apply global or column-specific filters */
+			$searchApplied = false;
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+				$searchApplied = true;
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+						$searchApplied = true;
+					}
+				}
+			}
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
+			$page = $searchApplied ? 1 : (int) $request->input('page');
 			$length = (int) $request->input('length');
-			$totalRecords = $records->count();
+			$totalRecords = $recordsQuery->count();
 			$totalPages = ceil($totalRecords / $length);
 
-			$records = $records->offset(($page - 1) * $length)->limit($length);
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
+				'id', 'module', 'action', 'identifier', 'status', 'created_at', 'created_by'
+			]);
+
+			/* Add country_name and created_by */
+			$records->transform(function ($record) {
+				$record->created_by = $record->creator->name ?? null;
+				unset($record->creator);
+
+				return $record;
+			});
 		} else {
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name'
+			]);
 			$totalRecords = $records->count();
+			$totalPages = 1;
 		}
-
-		$records = $records->get(['id', 'module', 'action', 'identifier', 'status', 'created_at', 'created_by']);
-
-
 
 		return response()->json([
 			'success' => true,
@@ -110,7 +146,7 @@ class TransactionLogController extends BaseController
 		// 		'message' => "You don't have permission to access this module.",
 		// 	]);
 		// }
-		$record = TransactionLog::with(['createdBy:id,first_name,last_name'])->find($id);
+		$record = TransactionLog::with(['creator:id,first_name,last_name'])->find($id);
 
 		/* Check if record exists */
 		if (!$record) {
