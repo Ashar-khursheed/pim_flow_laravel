@@ -18,7 +18,7 @@ class CouponController extends Controller
      * @OA\Post(
      *     path="/api/frontend/coupons/apply",
      *     operationId="applyCoupon",
-     *     tags={"Coupons"},
+     *     tags={"FrontEnd-Customer"},
      *     summary="Apply a coupon to an order",
      *     description="Validates a coupon code and returns the discount and final price if valid.",
      *     @OA\RequestBody(
