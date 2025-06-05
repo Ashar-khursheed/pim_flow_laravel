@@ -55,7 +55,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 
 use App\Http\Controllers\CustomerController;
-
+use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -130,6 +130,9 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
 	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
+	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
+
+	Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
