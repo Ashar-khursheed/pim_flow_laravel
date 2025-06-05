@@ -5388,6 +5388,162 @@
                 ]
             }
         },
+        "/api/measurement-unit-priorities": {
+            "get": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Get all category measurement unit priorities",
+                "operationId": "2fa5f554a373ffa6d6376b23527148ea",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of priorities",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Create a new category measurement unit priority",
+                "operationId": "ce49e172ed30f8e2ab10466f4ceab089",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "measurement_type_id",
+                                    "category_id",
+                                    "measurement_unit_primary_id"
+                                ],
+                                "properties": {
+                                    "measurement_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_primary_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_secondary_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-unit-priorities/{id}": {
+            "put": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Update an existing priority",
+                "operationId": "e17016f12acebdd169aec29ebe99d617",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "measurement_type_id",
+                                    "category_id",
+                                    "measurement_unit_primary_id"
+                                ],
+                                "properties": {
+                                    "measurement_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_primary_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_secondary_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages": {
             "get": {
                 "tags": [
@@ -8034,6 +8190,41 @@
                 "summary": "Get measurement units by type",
                 "description": "Returns a list of measurement units grouped or filtered by type",
                 "operationId": "c2cd0de9103d875821bde685f98bed0e",
+                "parameters": [
+                    {
+                        "name": "type_id",
+                        "in": "query",
+                        "description": "ID of the measurement type",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-type-categories": {
+            "get": {
+                "tags": [
+                    "Measurement"
+                ],
+                "summary": "Get categories by measurement type",
+                "description": "Returns a list of categories by measurement type",
+                "operationId": "ade9d7ded7e0860d14eda5be695adde7",
                 "parameters": [
                     {
                         "name": "type_id",
@@ -16837,6 +17028,10 @@
         {
             "name": "Reorder",
             "description": "Reorder"
+        },
+        {
+            "name": "Measurement Unit Priorities",
+            "description": "Measurement Unit Priorities"
         },
         {
             "name": "Category Pages",

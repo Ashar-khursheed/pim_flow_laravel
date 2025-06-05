@@ -236,6 +236,13 @@ class AttributeController extends BaseController
 		}
 		$attribute = Attribute::with(['attributeValues:id,attribute_id,attribute_value', 'attributeGroup:id,name', 'measurementUnits:id,name,measurement_type_id'])->find($attributeId);
 
+		if (!$attribute) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
+
 		/* Append measurement_type from first unit if exists */
 		$firstUnit = $attribute->measurementUnits->first();
 		if ($firstUnit && $firstUnit->type) {
@@ -247,12 +254,6 @@ class AttributeController extends BaseController
 
 		$attribute->measurementUnits->each->makeHidden(['pivot', 'measurement_type_id']);
 
-		if (!$attribute) {
-			return response()->json([
-				'success' => false,
-				'message' => __("err_exist")
-			]);
-		}
 
 		$attribute->validations = json_decode($attribute->validations);
 
