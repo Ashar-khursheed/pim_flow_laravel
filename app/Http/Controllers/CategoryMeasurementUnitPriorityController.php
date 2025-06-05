@@ -1,0 +1,275 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\CategoryMeasurementUnitPriority;
+use App\Models\Category;
+use App\Models\MeasurementUnit;
+
+class CategoryMeasurementUnitPriorityController extends BaseController
+{
+	/**
+	 * @OA\Get(
+	 *     path="/api/measurement-unit-priorities",
+	 *     summary="Get all category measurement unit priorities",
+	 *     tags={"Measurement Unit Priorities"},
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Response(response=200, description="List of priorities", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function index(Request $request)
+	{
+		$data = CategoryMeasurementUnitPriority::all();
+
+		$searchableColumns = [];
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = CategoryMeasurementUnitPriority::query();
+
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			$recordsQuery->with(['measurementType', 'category', 'primaryMeasurementUnit', 'secondaryMeasurementUnit','creator:id,first_name,last_name']);
+
+			/* Apply global or column-specific filters */
+			$searchApplied = false;
+
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
+			$page = $searchApplied ? 1 : (int) $request->input('page');
+			$length = (int) $request->input('length');
+			$totalRecords = $recordsQuery->count();
+			$totalPages = ceil($totalRecords / $length);
+
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
+				'id', 'measurement_type_id', 'category_id', 'measurement_unit_primary_id', 'measurement_unit_secondary_id', 'created_by', 'created_at', 'updated_at'
+			]);
+			$records->transform(function ($record) {
+				$record->measurement_type = $record->measurementType->name ?? '';
+				$record->category_name = $record->category->name ?? '';
+				$record->primary_measurement_unit = $record->primaryMeasurementUnit->name ?? '';
+				$record->secondary_measurement_unit = $record->secondaryMeasurementUnit->name ?? '';
+				$record->created_by = $record->creator->name;
+
+				unset($record->measurementType, $record->category, $record->primaryMeasurementUnit, $record->secondaryMeasurementUnit, $record->creator, $record->measurement_type_id, $record->category_id, $record->measurement_unit_primary_id, $record->measurement_unit_secondary_id);
+				return $record;
+			});
+		} else {
+			// $records = $recordsQuery->orderBy('name', 'asc')->get([
+			// 	'id', 'name'
+			// ]);
+			// $totalRecords = $records->count();
+			// $totalPages = 1;
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_list"),
+			'data' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
+		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/measurement-unit-priorities",
+	 *     summary="Create a new category measurement unit priority",
+	 *     tags={"Measurement Unit Priorities"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"measurement_type_id","category_id","measurement_unit_primary_id"},
+	 *             @OA\Property(property="measurement_type_id", type="integer"),
+	 *             @OA\Property(property="category_id", type="integer"),
+	 *             @OA\Property(property="measurement_unit_primary_id", type="integer"),
+	 *             @OA\Property(property="measurement_unit_secondary_id", type="integer", nullable=true)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request)
+	{
+		$request->validate([
+			'measurement_type_id' => 'required|integer|exists:measurement_types,id',
+			'category_id' => 'required|integer|exists:categories,id',
+			'measurement_unit_primary_id' => 'required|integer|exists:measurement_units,id',
+			'measurement_unit_secondary_id' => 'nullable|integer|exists:measurement_units,id',
+		]);
+
+		/* Ensure only leaf (last-level) categories are used */
+		$validLeafCategory = Category::whereDoesntHave('children')->where('id', $request->category_id)->first();
+
+		if (!$validLeafCategory) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf-level category (categories without children) can be selected.',
+			], 422);
+		}
+
+		/* Check that the primary unit belongs to the specified type */
+		$primaryValid = MeasurementUnit::where('id', $request->measurement_unit_primary_id)
+		->where('measurement_type_id', $request->measurement_type_id)
+		->exists();
+
+		if (!$primaryValid) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The primary measurement unit does not belong to the selected measurement type.'
+			], 422);
+		}
+
+		/* If secondary is present, check that it belongs to the same type */
+		if ($request->filled('measurement_unit_secondary_id')) {
+			$secondaryValid = MeasurementUnit::where('id', $request->measurement_unit_secondary_id)
+			->where('measurement_type_id', $request->measurement_type_id)
+			->exists();
+
+			if (!$secondaryValid) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The secondary measurement unit does not belong to the selected measurement type.'
+				], 422);
+			}
+		}
+
+		if ($request->measurement_unit_primary_id === $request->measurement_unit_secondary_id) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Primary and secondary measurement units cannot be the same.'
+			], 422);
+		}
+
+		$exists = CategoryMeasurementUnitPriority::where('measurement_type_id', $request->measurement_type_id)
+		->where('category_id', $request->category_id)
+		->exists();
+
+		if ($exists) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This combination already exists.'
+			], 409);
+		}
+
+		$data = $request->all();
+		$data['created_by'] = auth()->id();
+
+		$priority = CategoryMeasurementUnitPriority::create($data);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_create"),
+			'data' => $priority
+		], 201);
+	}
+
+	/**
+	 * @OA\Put(
+	 *     path="/api/measurement-unit-priorities/{id}",
+	 *     summary="Update an existing priority",
+	 *     tags={"Measurement Unit Priorities"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"measurement_type_id","category_id","measurement_unit_primary_id"},
+	 *             @OA\Property(property="measurement_type_id", type="integer"),
+	 *             @OA\Property(property="category_id", type="integer"),
+	 *             @OA\Property(property="measurement_unit_primary_id", type="integer"),
+	 *             @OA\Property(property="measurement_unit_secondary_id", type="integer", nullable=true)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function update(Request $request, $id)
+	{
+		$request->validate([
+			'measurement_type_id' => 'required|integer|exists:measurement_types,id',
+			'category_id' => 'required|integer|exists:categories,id',
+			'measurement_unit_primary_id' => 'required|integer|exists:measurement_units,id',
+			'measurement_unit_secondary_id' => 'nullable|integer|exists:measurement_units,id',
+		]);
+
+		/* Ensure only leaf (last-level) categories are used */
+		$validLeafCategory = Category::whereDoesntHave('children')->where('id', $request->category_id)->first();
+
+		if (!$validLeafCategory) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf-level category (categories without children) can be selected.',
+			], 422);
+		}
+
+		/* Check that the primary unit belongs to the specified type */
+		$primaryValid = MeasurementUnit::where('id', $request->measurement_unit_primary_id)
+		->where('measurement_type_id', $request->measurement_type_id)
+		->exists();
+
+		if (!$primaryValid) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The primary measurement unit does not belong to the selected measurement type.'
+			], 422);
+		}
+
+		/* If secondary is present, check that it belongs to the same type */
+		if ($request->filled('measurement_unit_secondary_id')) {
+			$secondaryValid = MeasurementUnit::where('id', $request->measurement_unit_secondary_id)
+			->where('measurement_type_id', $request->measurement_type_id)
+			->exists();
+
+			if (!$secondaryValid) {
+				return response()->json([
+					'success' => false,
+					'message' => 'The secondary measurement unit does not belong to the selected measurement type.'
+				], 422);
+			}
+		}
+
+		if ($request->measurement_unit_primary_id === $request->measurement_unit_secondary_id) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Primary and secondary measurement units cannot be the same.'
+			], 422);
+		}
+
+		$priority = CategoryMeasurementUnitPriority::findOrFail($id);
+
+		$exists = CategoryMeasurementUnitPriority::where('measurement_type_id', $request->measurement_type_id)
+		->where('category_id', $request->category_id)
+		->where('id', '!=', $id)
+		->exists();
+
+		if ($exists) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This combination already exists.'
+			], 409);
+		}
+
+		$data = $request->all();
+		$data['updated_by'] = auth()->id();
+
+		$priority->update($data);
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_update"),
+			'data' => $priority
+		]);
+	}
+}
