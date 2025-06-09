@@ -478,7 +478,7 @@ class ImportSeoDetailJob implements ShouldQueue
 		$this->header = $data['header'];
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
-		$this->seoFileFormatArray = $data['seoFileFormatArray'];
+		$this->seoFileFormatArray = $data['fileFormatArray'];
 	}
 
 	public function handle()
@@ -493,10 +493,10 @@ class ImportSeoDetailJob implements ShouldQueue
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
 
-        // Ensure Errors key exists and is an array
-        if (!isset($descArray["Errors"]) || !is_array($descArray["Errors"])) {
-            $descArray["Errors"] = [];
-        }
+		// Ensure Errors key exists and is an array
+		if (!isset($descArray["Errors"]) || !is_array($descArray["Errors"])) {
+			$descArray["Errors"] = [];
+		}
 
 		$errorArray = [];
 		$success = 0;
@@ -524,8 +524,8 @@ class ImportSeoDetailJob implements ShouldQueue
 				if (array_key_exists($headerKey, $rowData)) {
 					${$variableName} = trim($rowData[$headerKey]);
 				} else {
-                    ${$variableName} = null; // Initialize undefined variables
-                }
+					${$variableName} = null; // Initialize undefined variables
+				}
 			}
 
 			// Required data validation
@@ -608,7 +608,7 @@ class ImportSeoDetailJob implements ShouldQueue
 				'Og Image Alt Text' => $og_image_alt_text ?? null,
 				'Og Image Name' => $og_image_name ?? null,
 			];
-            
+
 			$ogFilledCount = count(array_filter($ogFields));
 			if ($ogFilledCount > 0 && $ogFilledCount < 3) {
 				foreach ($ogFields as $label => $value) {
@@ -621,10 +621,10 @@ class ImportSeoDetailJob implements ShouldQueue
 				$failed++;
 				continue;
 			}
-            
-            // Initialize ogFieldsStorage if needed
-            $ogFieldsStorage = [];
-            
+
+			// Initialize ogFieldsStorage if needed
+			$ogFieldsStorage = [];
+
 			$uploadedUrl = ($ogFilledCount === 3) ? $this->uploadImageFromURL($og_image_url, $og_image_name) : null;
 			$ogFieldsProvided = !empty($og_image_url) && !empty($og_image_alt_text) && !empty($og_image_name);
 			if ($ogFieldsProvided) {
@@ -681,48 +681,48 @@ class ImportSeoDetailJob implements ShouldQueue
 		try {
 			foreach ($groupedPrimary as $group) {
 				$primaryData = $group['primary'];
-				if (env('APP_WEBSITE') == 'UAE') {
-					$pythonScriptPath = base_path('app/Script/main_uae_2.py');
-					$pythonCmd = base_path('venv/bin/python');
-				} elseif (env('APP_WEBSITE') == 'US') {
-					$pythonScriptPath = base_path('app/Script/main_us_2.py');
-					$pythonCmd = base_path('venv/bin/python');
-				} else {
-					$pythonScriptPath = base_path('app/Script/main_us_2.py');
-					$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
-				}
+				// if (env('APP_WEBSITE') == 'UAE') {
+				// 	$pythonScriptPath = base_path('app/Script/main_uae_2.py');
+				// 	$pythonCmd = base_path('venv/bin/python');
+				// } elseif (env('APP_WEBSITE') == 'US') {
+				// 	$pythonScriptPath = base_path('app/Script/main_us_2.py');
+				// 	$pythonCmd = base_path('venv/bin/python');
+				// } else {
+				// 	$pythonScriptPath = base_path('app/Script/main_us_2.py');
+				// 	$pythonCmd = (env('STORAGE_ENV') == 'tanuj_system') ? 'python' : base_path('venv/bin/python');
+				// }
 
-				$tempInputPath = storage_path('app/temp_input.json');
-				file_put_contents($tempInputPath, json_encode($primaryData));
+				// $tempInputPath = storage_path('app/temp_input.json');
+				// file_put_contents($tempInputPath, json_encode($primaryData));
 
-				// Add debugging output before running the script
-				Log::info('Executing Python script', [
-				    'pythonCmd' => $pythonCmd,
-				    'scriptPath' => $pythonScriptPath,
-				    'inputPath' => $tempInputPath
-				]);
+				// // Add debugging output before running the script
+				// Log::info('Executing Python script', [
+				// 	'pythonCmd' => $pythonCmd,
+				// 	'scriptPath' => $pythonScriptPath,
+				// 	'inputPath' => $tempInputPath
+				// ]);
 
-				$command = "{$pythonCmd} \"{$pythonScriptPath}\" < \"{$tempInputPath}\" 2>> " . storage_path('logs/python_errors.log');
-				$outputJson = shell_exec($command);
-				
-				// Log the output for debugging
-				Log::info('Python script output', ['output' => $outputJson]);
+				// $command = "{$pythonCmd} \"{$pythonScriptPath}\" < \"{$tempInputPath}\" 2>> " . storage_path('logs/python_errors.log');
+				// $outputJson = shell_exec($command);
 
-				if (file_exists($tempInputPath)) {
-				    unlink($tempInputPath);
-				}
+				// // Log the output for debugging
+				// Log::info('Python script output', ['output' => $outputJson]);
 
-				// Check for valid JSON in the response
-				$decodedOutput = json_decode($outputJson, true);
-				if (json_last_error() !== JSON_ERROR_NONE) {
-				    Log::error('Invalid JSON response from Python script', [
-				        'output' => $outputJson,
-				        'error' => json_last_error_msg()
-				    ]);
-				    throw new \Exception('Invalid JSON response from Python script: ' . json_last_error_msg());
-				}
+				// if (file_exists($tempInputPath)) {
+				// 	unlink($tempInputPath);
+				// }
 
-				$primaryData = $decodedOutput;
+				// // Check for valid JSON in the response
+				// $decodedOutput = json_decode($outputJson, true);
+				// if (json_last_error() !== JSON_ERROR_NONE) {
+				// 	Log::error('Invalid JSON response from Python script', [
+				// 		'output' => $outputJson,
+				// 		'error' => json_last_error_msg()
+				// 	]);
+				// 	throw new \Exception('Invalid JSON response from Python script: ' . json_last_error_msg());
+				// }
+
+				// $primaryData = $decodedOutput;
 
 				unset($primaryData['relational_name']);
 
@@ -775,10 +775,10 @@ class ImportSeoDetailJob implements ShouldQueue
 
 			DB::commit();
 			Log::info('SEO Import Job completed successfully', [
-			    'successCount' => $success,
-			    'failedCount' => $failed
+				'successCount' => $success,
+				'failedCount' => $failed
 			]);
-			
+
 		} catch (\Throwable $e) {
 			DB::rollBack();
 			Log::error('Exception in ImportSeoDetailJob', [
@@ -787,21 +787,21 @@ class ImportSeoDetailJob implements ShouldQueue
 				'message' => $e->getMessage(),
 				'trace' => $e->getTraceAsString(),
 			]);
-			
+
 			// Update the transaction log with the error
 			if ($log) {
-			    $errorMessage = "Job execution failed: " . $e->getMessage();
-			    $descArray["Errors"][] = [
-			        "General Error" => $errorMessage
-			    ];
-			    $descArray["Failed Count"] += 1;
-			    
-			    $log->update([
-			        'description' => json_encode($descArray),
-			        'status' => 'failed'
-			    ]);
+				$errorMessage = "Job execution failed: " . $e->getMessage();
+				$descArray["Errors"][] = [
+					"General Error" => $errorMessage
+				];
+				$descArray["Failed Count"] += 1;
+
+				$log->update([
+					'description' => json_encode($descArray),
+					'status' => 'failed'
+				]);
 			}
-			
+
 			// Rethrow to let Laravel handle the job failure
 			throw $e;
 		}
@@ -810,9 +810,9 @@ class ImportSeoDetailJob implements ShouldQueue
 	private function uploadImageFromURL(?string $url, ?string $fileBaseName): ?string
 	{
 		if (empty($url) || empty($fileBaseName)) {
-		    return null;
+			return null;
 		}
-		
+
 		$s3Disk = Storage::disk('s3');
 
 		/* Validate URL */
@@ -823,17 +823,17 @@ class ImportSeoDetailJob implements ShouldQueue
 
 		/* Fetch image content */
 		try {
-		    $imageContents = file_get_contents($url);
-		    if ($imageContents === false || empty($imageContents)) {
-			    Log::error('Failed to download image from URL or content is empty: ' . $url);
-			    return null;
-		    }
+			$imageContents = file_get_contents($url);
+			if ($imageContents === false || empty($imageContents)) {
+				Log::error('Failed to download image from URL or content is empty: ' . $url);
+				return null;
+			}
 		} catch (\Exception $e) {
-		    Log::error('Error downloading image', [
-		        'url' => $url,
-		        'error' => $e->getMessage()
-		    ]);
-		    return null;
+			Log::error('Error downloading image', [
+				'url' => $url,
+				'error' => $e->getMessage()
+			]);
+			return null;
 		}
 
 		$fileExtension = 'webp';
@@ -950,34 +950,34 @@ class ImportSeoDetailJob implements ShouldQueue
 	{
 		$error = $exception->getMessage() . "\n" . $exception->getTraceAsString();
 		Log::error(__("SEO Import Job failed"), [
-		    'error' => $error,
-		    'file' => $exception->getFile(),
-		    'line' => $exception->getLine()
+			'error' => $error,
+			'file' => $exception->getFile(),
+			'line' => $exception->getLine()
 		]);
-		
+
 		// Update the transaction log if possible
 		try {
-		    $log = TransactionLog::where('identifier', $this->batch()->id)->first();
-		    if ($log) {
-		        $descArray = json_decode($log->description, true) ?? ["Errors" => [], "Success Count" => 0, "Failed Count" => 0];
-		        if (!isset($descArray["Errors"]) || !is_array($descArray["Errors"])) {
-                    $descArray["Errors"] = [];
-                }
-                
-		        $descArray["Errors"][] = [
-		            "Job Failure" => $exception->getMessage()
-		        ];
-		        
-		        $log->update([
-		            'description' => json_encode($descArray),
-		            'status' => 'failed'
-		        ]);
-		    }
+			$log = TransactionLog::where('identifier', $this->batch()->id)->first();
+			if ($log) {
+				$descArray = json_decode($log->description, true) ?? ["Errors" => [], "Success Count" => 0, "Failed Count" => 0];
+				if (!isset($descArray["Errors"]) || !is_array($descArray["Errors"])) {
+					$descArray["Errors"] = [];
+				}
+
+				$descArray["Errors"][] = [
+					"Job Failure" => $exception->getMessage()
+				];
+
+				$log->update([
+					'description' => json_encode($descArray),
+					'status' => 'failed'
+				]);
+			}
 		} catch (\Exception $e) {
-		    Log::error('Failed to update transaction log after job failure', [
-		        'original_error' => $exception->getMessage(),
-		        'log_error' => $e->getMessage()
-		    ]);
+			Log::error('Failed to update transaction log after job failure', [
+				'original_error' => $exception->getMessage(),
+				'log_error' => $e->getMessage()
+			]);
 		}
 	}
 }

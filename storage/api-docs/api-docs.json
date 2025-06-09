@@ -10725,7 +10725,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -13336,7 +13336,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -13366,7 +13366,7 @@
                 "tags": [
                     "SEO Management"
                 ],
-                "summary": "Export SEO data to CSV",
+                "summary": "Export SEO data to Excel",
                 "operationId": "d065aa090a0c960d8b0178d02ac6e986",
                 "requestBody": {
                     "required": true,

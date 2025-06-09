@@ -51,7 +51,7 @@ class ExcelImporterService
 			throw new \Exception("Excel file does not contain any data rows.");
 		}
 
-		if ($totalRecords > 2000) {
+		if ($totalRecords > 2000 && $module == 'Product') {
 			throw new \Exception("The uploaded Excel file contains more than 2000 records.");
 		}
 
