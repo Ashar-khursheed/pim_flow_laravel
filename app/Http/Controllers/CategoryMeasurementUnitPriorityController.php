@@ -35,16 +35,19 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 			$recordsQuery->with(['measurementType', 'category', 'primaryMeasurementUnit', 'secondaryMeasurementUnit','creator:id,first_name,last_name']);
 
-			/* Apply global or column-specific filters */
-			$searchApplied = false;
-
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
 
-			$page = $searchApplied ? 1 : (int) $request->input('page');
+			/* Clone query for counting */
+			$totalRecords = (clone $recordsQuery)->count();
 			$length = (int) $request->input('length');
-			$totalRecords = $recordsQuery->count();
-			$totalPages = ceil($totalRecords / $length);
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			$page = (int) $request->input('page');
+			/* If requested page exceeds total pages (after search), fallback to page 1 */
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
 				'id', 'measurement_type_id', 'category_id', 'measurement_unit_primary_id', 'measurement_unit_secondary_id', 'created_by', 'created_at', 'updated_at'

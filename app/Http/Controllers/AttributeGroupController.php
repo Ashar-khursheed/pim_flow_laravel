@@ -48,7 +48,6 @@ class AttributeGroupController extends BaseController
 			$recordsQuery->withCount('groupsAttributes')->with(['creator:id,first_name,last_name']);
 
 			/* Apply global or column-specific filters */
-			$searchApplied = false;
 			if ($request->filled('global')) {
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
@@ -56,12 +55,10 @@ class AttributeGroupController extends BaseController
 						$q->orWhere($col, 'LIKE', '%' . $search . '%');
 					}
 				});
-				$searchApplied = true;
 			} else {
 				foreach ($searchableColumns as $col) {
 					if ($request->filled($col)) {
 						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
-						$searchApplied = true;
 					}
 				}
 			}
@@ -69,10 +66,16 @@ class AttributeGroupController extends BaseController
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
 
-			$page = $searchApplied ? 1 : (int) $request->input('page');
+			/* Clone query for counting */
+			$totalRecords = (clone $recordsQuery)->count();
 			$length = (int) $request->input('length');
-			$totalRecords = $recordsQuery->count();
-			$totalPages = ceil($totalRecords / $length);
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			$page = (int) $request->input('page');
+			/* If requested page exceeds total pages (after search), fallback to page 1 */
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
 				'id', 'name', 'created_by', 'created_at', 'updated_at'
