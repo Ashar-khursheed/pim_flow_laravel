@@ -169,7 +169,7 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
-	
+
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 			$margin = $product->sale_price - $product->price;
@@ -184,7 +184,7 @@ class ProductController extends BaseController
 				'brand' => optional($product->brand)->name,
 				'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
-				'price'=> $product->price, 
+				'price'=> $product->price,
 				'sale_price'=> $product->sale_price,
 				'margin' => $margin,
 				'margin_percent' => round($marginPercent, 2), // round to 2 decimals
@@ -2821,7 +2821,7 @@ class ProductController extends BaseController
 		]);
 	}
 
-		/**
+	/**
 	 * @OA\Post(
 	 *     path="/api/products/import",
 	 *     summary="Import products from an Excel file",
@@ -2832,7 +2832,7 @@ class ProductController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB"),
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
 	 *             )
 	 *         )
 	 *     ),
