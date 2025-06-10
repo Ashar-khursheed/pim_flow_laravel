@@ -16,7 +16,11 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	 *     tags={"Measurement Unit Priorities"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="id", in="query", description="Search by id", @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="List of priorities", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -24,7 +28,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	{
 		$data = CategoryMeasurementUnitPriority::all();
 
-		$searchableColumns = [];
+		$searchableColumns = ['id'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -34,6 +38,22 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
 			$recordsQuery->with(['measurementType', 'category', 'primaryMeasurementUnit', 'secondaryMeasurementUnit','creator:id,first_name,last_name']);
+
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+					}
+				}
+			}
 
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
