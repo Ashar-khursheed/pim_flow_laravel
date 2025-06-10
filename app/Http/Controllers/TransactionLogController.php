@@ -56,9 +56,14 @@ class TransactionLogController extends BaseController
 					}
 				});
 			} else {
-				foreach ($searchableColumns as $col) {
-					if ($request->filled($col)) {
-						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+				if ($request->filled('module') && $request->filled('action')) {
+					$recordsQuery->where('module', $request->input('module'));
+					$recordsQuery->where('action', $request->input('action'));
+				} else {
+					foreach ($searchableColumns as $col) {
+						if ($request->filled($col)) {
+							$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+						}
 					}
 				}
 			}
