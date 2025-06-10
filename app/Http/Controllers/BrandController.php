@@ -801,6 +801,7 @@ public function store(Request $request)
 					: asset('storage/' . $brand->ar_thumbnail); // skip S3 exists check
 				}
 
+
 				return [
 					'id' => $brand->id,
 					'name' => $brand->name,
