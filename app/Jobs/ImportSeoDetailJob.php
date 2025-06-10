@@ -528,9 +528,44 @@ class ImportSeoDetailJob implements ShouldQueue
 				}
 			}
 
-			// Required data validation
-			if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume)) {
-				$rowError[] = 'Required fields are missing.';
+			// // Required data validation
+			// if ((empty($relational_id) && empty($relational_name)) || empty($relational_type) || empty($primary_keyword) || empty($primary_monthly_search_volume) || empty($secondary_keyword) || empty($secondary_monthly_search_volume)) {
+			// 	$rowError[] = 'Required fields are missing.';
+			// 	$errorArray[] = [
+			// 		"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
+			// 		"Error" => implode(' | ', $rowError),
+			// 	];
+			// 	$failed++;
+			// 	continue;
+			// }
+
+			/* Required data validation */
+			if (empty($relational_id) && empty($relational_name)) {
+				$rowError[] = 'Relational ID or Relational Name is missing.';
+			}
+
+			if (empty($relational_type)) {
+				$rowError[] = 'Relational Type is missing.';
+			}
+
+			if (empty($primary_keyword)) {
+				$rowError[] = 'Primary Keyword is missing.';
+			}
+
+			if (empty($primary_monthly_search_volume)) {
+				$rowError[] = 'Primary Monthly Search Volume is missing.';
+			}
+
+			if (empty($secondary_keyword)) {
+				$rowError[] = 'Secondary Keyword is missing.';
+			}
+
+			if (empty($secondary_monthly_search_volume)) {
+				$rowError[] = 'Secondary Monthly Search Volume is missing.';
+			}
+
+			/* If any errors were found, log them */
+			if (!empty($rowError)) {
 				$errorArray[] = [
 					"Row Number" => $rowIndex + 2 + $previousSuccessCount + $previousFailedCount,
 					"Error" => implode(' | ', $rowError),
