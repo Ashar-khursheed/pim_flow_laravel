@@ -24,7 +24,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	{
 		$data = CategoryMeasurementUnitPriority::all();
 
-		$searchableColumns = [];
+		$searchableColumns = ['id'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
