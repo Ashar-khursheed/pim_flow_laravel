@@ -35,7 +35,7 @@
                                         "example": 1
                                     },
                                     "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
                                         "type": "integer",
                                         "example": 50
                                     }
@@ -65,7 +65,7 @@
                 "tags": [
                     "Keywords"
                 ],
-                "summary": "Import keywords from a csv file",
+                "summary": "Import keywords from an excel file",
                 "operationId": "339faf5df666be1af0938896622020bc",
                 "requestBody": {
                     "required": true,
@@ -77,7 +77,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -89,7 +89,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -529,7 +529,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "Excel file (.xlsx) max 2MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -541,7 +541,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -10775,7 +10775,7 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Import products from an Excel file",
+                "summary": "Import products from an excel file",
                 "operationId": "9385548716bbfe802e074592297d7e4a",
                 "requestBody": {
                     "required": true,
@@ -10799,7 +10799,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -13451,12 +13451,6 @@
                                             "Blog"
                                         ],
                                         "example": "Product"
-                                    },
-                                    "relational_id": {
-                                        "description": "ID of the related entity (optional)",
-                                        "type": "integer",
-                                        "example": 5,
-                                        "nullable": true
                                     },
                                     "range_from": {
                                         "description": "Starting range (must be >= 1)",

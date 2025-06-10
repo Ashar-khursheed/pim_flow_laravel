@@ -87,7 +87,7 @@ class AppKeywordController extends BaseController
 			$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
 		}
 
-		$fileName = 'keywords_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d-H-i-s') . '.xlsx';
+		$fileName = 'keywords_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
