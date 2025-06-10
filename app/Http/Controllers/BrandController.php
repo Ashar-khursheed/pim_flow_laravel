@@ -737,7 +737,7 @@ public function store(Request $request)
 					'message' => "You don't have permission to access this module.",
 				]);
 			}
-			$query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+			$query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at' , 'thumbnail' , 'ar_thumbnail')
 			->withCount('products')
 			->with([
 				'products' => function ($query) {
