@@ -762,7 +762,7 @@ public function store(Request $request)
 
 			$brands = $query->paginate($request->input('per_page', 10));
 
-		// Cache all categories and stores in a single query to avoid N+1
+			// Cache all categories and stores in a single query to avoid N+1
 			$categories = Category::pluck('name', 'id');
 			$stores = Store::pluck('name', 'id');
 
@@ -790,13 +790,13 @@ public function store(Request $request)
 				}
 				$thumbnailUrl = null;
 				if ($brand->thumbnail) {
-					$logoUrl = filter_var($brand->thumbnail, FILTER_VALIDATE_URL)
+					$thumbnailUrl = filter_var($brand->thumbnail, FILTER_VALIDATE_URL)
 					? $brand->thumbnail
 					: asset('storage/' . $brand->thumbnail); // skip S3 exists check
 				}
 				$ar_thumbnailUrl = null;
 				if ($brand->ar_thumbnail) {
-					$logoUrl = filter_var($brand->ar_thumbnail, FILTER_VALIDATE_URL)
+					$ar_thumbnailUrl = filter_var($brand->ar_thumbnail, FILTER_VALIDATE_URL)
 					? $brand->ar_thumbnail
 					: asset('storage/' . $brand->ar_thumbnail); // skip S3 exists check
 				}
