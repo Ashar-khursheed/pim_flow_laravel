@@ -2,12 +2,11 @@
 
 namespace App\Models\FrontEnd;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+// use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Models\Customer; // Add this at the top of your Product model
 
-class SaveForLater extends BaseModel
+class SaveForLater extends Model
 {
-    use HasFactory;
 
     protected $table = 'save_for_later';
 

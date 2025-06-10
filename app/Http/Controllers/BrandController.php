@@ -170,6 +170,18 @@ public function index(Request $request)
  *                     format="binary",
  *                     description="Logo file upload"
  *                 ),
+ *                 @OA\Property(
+ *                     property="thumbnail",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="thumbnail file upload"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="ar_thumbnail",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="ar_thumbnail file upload"
+ *                 ),
  *                 @OA\Property(property="status", type="string", enum={"published", "draft"}, example="published"),
  *                 @OA\Property(property="order", type="integer", example=1),
  *                 @OA\Property(property="is_featured", type="integer", enum={0, 1}, example=1, description="Use 1 for true, 0 for false")
@@ -200,6 +212,8 @@ public function store(Request $request)
 			'order' => 'required|integer|min:0',
 			 'is_featured' => 'required|boolean',  // Boolean validation will convert "0", "1", 0, 1, true, false
 			 'logo' => 'nullable|file|image|mimes:webp,png|max:2048',
+			 'thumbnail' => 'nullable|file|image|mimes:webp,png|max:2048',
+			 'ar_thumbnail' => 'nullable|file|image|mimes:webp,png|max:2048',
 			]);
 
 		 // Initialize brand data from validated data
@@ -221,6 +235,26 @@ public function store(Request $request)
 			 $folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
 			 $logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
 			 $brandData['logo'] = $storage::disk('s3')->url($logoPath);
+			}
+
+			if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
+				// Import Storage facade
+				   $storage = app('Illuminate\Support\Facades\Storage');
+   
+				// Process file upload
+				$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+				$logoPath = $request->file('thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+				$brandData['thumbnail'] = $storage::disk('s3')->url($logoPath);
+			}
+
+			if ($request->hasFile('ar_thumbnail') && $request->file('ar_thumbnail')->isValid()) {
+			// Import Storage facade
+				$storage = app('Illuminate\Support\Facades\Storage');
+
+			// Process file upload
+			$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+			$logoPath = $request->file('ar_thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+			$brandData['ar_thumbnail'] = $storage::disk('s3')->url($logoPath);
 			}
 
 		 // Create the brand record in the database
@@ -345,6 +379,18 @@ public function store(Request $request)
  *                     format="binary",
  *                     description="Logo file upload"
  *                 ),
+ *                 @OA\Property(
+ *                     property="thumbnail",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="thumbnail file upload"
+ *                 ),
+ *                 @OA\Property(
+ *                     property="ar_thumbnail",
+ *                     type="string",
+ *                     format="binary",
+ *                     description="ar_thumbnail file upload"
+ *                 ),
  *                 @OA\Property(property="status", type="string", enum={"published", "draft"}, example="published"),
  *                 @OA\Property(property="order", type="integer", example=2),
  *                 @OA\Property(property="is_featured", type="integer", enum={0, 1}, example=0, description="Use 1 for true, 0 for false")
@@ -385,6 +431,8 @@ public function store(Request $request)
   			'order' => 'sometimes|required|integer|min:0',
   			'is_featured' => 'sometimes|required|boolean',
   			'logo' => 'nullable|file|image|mimes:webp,png|max:2048',
+			'thumbnail' => 'nullable|file|image|mimes:webp,png|max:2048',
+			'ar_thumbnail' => 'nullable|file|image|mimes:webp,png|max:2048',
   		]);
 
 		// Prepare data for update
@@ -403,6 +451,8 @@ public function store(Request $request)
   		}
 
 		// Handle logo as file upload
+
+		
   		if ($request->hasFile('logo') && $request->file('logo')->isValid()) {
 			// Import Storage facade
   			$storage = app('Illuminate\Support\Facades\Storage');
@@ -423,6 +473,50 @@ public function store(Request $request)
 			$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
 			$logoPath = $request->file('logo')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
 			$updateData['logo'] = $storage::disk('s3')->url($logoPath);
+		}
+
+		if ($request->hasFile('thumbnail') && $request->file('thumbnail')->isValid()) {
+			// Import Storage facade
+  			$storage = app('Illuminate\Support\Facades\Storage');
+
+			// If there's an existing logo stored in S3, attempt to delete it
+  			if ($brand->thumbnail && strpos($brand->thumbnail, env('AWS_URL')) !== false) {
+				// Extract the path from the full URL
+  				$existingPath = str_replace(env('AWS_URL').'/', '', $brand->thumbnail);
+  				try {
+  					$storage::disk('s3')->delete($existingPath);
+  				} catch (\Exception $e) {
+					// Log error but continue with the update
+  					\Log::warning("Failed to delete old thumbnail: {$e->getMessage()}");
+  				}
+  			}
+
+			// Process file upload
+			$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+			$logoPath = $request->file('thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+			$updateData['thumbnail'] = $storage::disk('s3')->url($logoPath);
+		}
+
+		if ($request->hasFile('ar_thumbnail') && $request->file('ar_thumbnail')->isValid()) {
+			// Import Storage facade
+  			$storage = app('Illuminate\Support\Facades\Storage');
+
+			// If there's an existing logo stored in S3, attempt to delete it
+  			if ($brand->ar_thumbnail && strpos($brand->ar_thumbnail, env('AWS_URL')) !== false) {
+				// Extract the path from the full URL
+  				$existingPath = str_replace(env('AWS_URL').'/', '', $brand->ar_thumbnail);
+  				try {
+  					$storage::disk('s3')->delete($existingPath);
+  				} catch (\Exception $e) {
+					// Log error but continue with the update
+  					\Log::warning("Failed to delete old arabic thumbnail: {$e->getMessage()}");
+  				}
+  			}
+
+			// Process file upload
+			$folderPath = env('STORAGE_ENV', 'default') . "/brands"; // Example: 'production/brands'
+			$logoPath = $request->file('ar_thumbnail')->store($folderPath, 's3'); // 's3' disk defined in config/filesystems.php
+			$updateData['ar_thumbnail'] = $storage::disk('s3')->url($logoPath);
 		}
 
 		// Update the brand
@@ -694,11 +788,25 @@ public function store(Request $request)
 					? $brand->logo
 					: asset('storage/' . $brand->logo); // skip S3 exists check
 				}
+				$thumbnailUrl = null;
+				if ($brand->thumbnail) {
+					$logoUrl = filter_var($brand->thumbnail, FILTER_VALIDATE_URL)
+					? $brand->thumbnail
+					: asset('storage/' . $brand->thumbnail); // skip S3 exists check
+				}
+				$ar_thumbnailUrl = null;
+				if ($brand->ar_thumbnail) {
+					$logoUrl = filter_var($brand->ar_thumbnail, FILTER_VALIDATE_URL)
+					? $brand->ar_thumbnail
+					: asset('storage/' . $brand->ar_thumbnail); // skip S3 exists check
+				}
 
 				return [
 					'id' => $brand->id,
 					'name' => $brand->name,
 					'logo' => $logoUrl,
+					'thumbnail' => $thumbnailUrl,
+					'ar_thumbnail' => $ar_thumbnailUrl,
 					'slug' => $brand->website,
 					'is_featured' => $brand->is_featured,
 					'description' => $brand->description,

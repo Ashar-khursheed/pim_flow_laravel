@@ -2454,6 +2454,16 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "thumbnail": {
+                                        "description": "thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "ar_thumbnail": {
+                                        "description": "ar_thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "status": {
                                         "type": "string",
                                         "enum": [
@@ -2587,6 +2597,16 @@
                                     },
                                     "logo": {
                                         "description": "Logo file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "thumbnail": {
+                                        "description": "thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "ar_thumbnail": {
+                                        "description": "ar_thumbnail file upload",
                                         "type": "string",
                                         "format": "binary"
                                     },
