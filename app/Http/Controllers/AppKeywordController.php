@@ -16,7 +16,7 @@ class AppKeywordController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/keywords/export",
-	 *     summary="Api to export the keyword file",
+	 *     summary="Export app keyword data to Excel",
 	 *     tags={"Keywords"},
 	 *     @OA\RequestBody(
 	 *         required=true,

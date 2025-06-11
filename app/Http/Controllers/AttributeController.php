@@ -459,7 +459,7 @@ class AttributeController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/export",
-	 *     summary="Export product attributes data to Excel",
+	 *     summary="Export product attribute data to Excel",
 	 *     tags={"Attributes"},
 	 *     @OA\RequestBody(
 	 *         required=true,

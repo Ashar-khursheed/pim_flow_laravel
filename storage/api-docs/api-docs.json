@@ -21,7 +21,7 @@
                 "tags": [
                     "Keywords"
                 ],
-                "summary": "Api to export the keyword file",
+                "summary": "Export app keyword data to Excel",
                 "operationId": "07bbb4330e4cd54744e665b8f3e3a88e",
                 "requestBody": {
                     "required": true,
@@ -463,7 +463,7 @@
                 "tags": [
                     "Attributes"
                 ],
-                "summary": "Export product attributes data to Excel",
+                "summary": "Export product attribute data to Excel",
                 "operationId": "2dbb4b40158242a96fa2dcd1efb85f74",
                 "requestBody": {
                     "required": true,
@@ -11019,7 +11019,7 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Export products to Excel",
+                "summary": "Export product data to Excel",
                 "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
                 "requestBody": {
                     "required": true,
@@ -15532,7 +15532,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Import vendors from a csv file",
+                "summary": "Import vendors from an excel file",
                 "operationId": "588a3a46a9a21058de6f0bf0ffc724d3",
                 "requestBody": {
                     "required": true,
@@ -15544,7 +15544,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -15556,7 +15556,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -15574,7 +15574,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Export vendors to CSV",
+                "summary": "Export vendor data to Excel",
                 "operationId": "372f96c86b2fdc93ba94d7af9692493d",
                 "requestBody": {
                     "required": true,

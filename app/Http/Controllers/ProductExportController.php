@@ -17,7 +17,7 @@ class ProductExportController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/export",
-	 *     summary="Export products to Excel",
+	 *     summary="Export product data to Excel",
 	 *     tags={"Products"},
 	 *     @OA\RequestBody(
 	 *         required=true,
