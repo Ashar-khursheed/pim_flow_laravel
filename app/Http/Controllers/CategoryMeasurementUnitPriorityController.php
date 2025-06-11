@@ -194,6 +194,40 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	}
 
 	/**
+	 * @OA\Get(
+	 *     path="/api/measurement-unit-priorities/{id}",
+	 *     summary="Get category measurement unit priority details",
+	 *     description="Fetches category measurement unit priority details based on the given ID.",
+	 *     tags={"Measurement Unit Priorities"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Details retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($id)
+	{
+		$record = CategoryMeasurementUnitPriority::with(['measurementType:id,name', 'category:id,name', 'primaryMeasurementUnit:id,name', 'secondaryMeasurementUnit:id,name'])->find($id);
+
+		if (!$record) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => __("msg_rec_dtl"),
+			'data' => $record
+		]);
+	}
+
+	/**
 	 * @OA\Put(
 	 *     path="/api/measurement-unit-priorities/{id}",
 	 *     summary="Update an existing priority",
