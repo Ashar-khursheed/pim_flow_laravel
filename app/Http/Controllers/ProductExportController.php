@@ -17,7 +17,7 @@ class ProductExportController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/export",
-	 *     summary="Export products to Excel",
+	 *     summary="Export product data to Excel",
 	 *     tags={"Products"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -362,16 +362,11 @@ class ProductExportController extends BaseController
 					$row[] = $product->$field ?? '';
 				}
 			}
-
-			$colIndex = 'A';
-			foreach ($row as $cell) {
-				$sheet->setCellValue($colIndex . $rowIndex, $cell);
-				$colIndex++;
-			}
-			$rowIndex++;
+			$excelRepo->writeRow($sheet, $row, $rowIndex++);
 		}
 
-		$fileName = 'products_' . date('Y-m-d-H-i-s') . '.xlsx';
+		$fileName = 'products_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 }

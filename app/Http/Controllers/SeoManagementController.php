@@ -679,7 +679,6 @@ class SeoManagementController extends Controller
 	 *         @OA\JsonContent(
 	 *             required={"relational_type", "range_from", "range_to"},
 	 *             @OA\Property(property="relational_type", type="string", enum={"Product", "Category", "Brand", "Blog"}, example="Product", description="Type of relational entity"),
-	 *             @OA\Property(property="relational_id", type="integer", nullable=true, example=5, description="ID of the related entity (optional)"),
 	 *             @OA\Property(property="range_from", type="integer", minimum=1, example=1, description="Starting range (must be >= 1)"),
 	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and at most 2000 more)")
 	 *         )
@@ -778,11 +777,11 @@ class SeoManagementController extends Controller
 						$record->og_image_alt_text,
 						$record->og_image_name,
 						$record->tags,
-						$record->paragraph_1,
-						$record->paragraph_2,
-						$record->paragraph_3,
-						$record->paragraph_4,
-						$record->popular_tags,
+						// $record->paragraph_1,
+						// $record->paragraph_2,
+						// $record->paragraph_3,
+						// $record->paragraph_4,
+						// $record->popular_tags,
 					];
 					$excelRepo->writeRow($sheet, $row, $rowIndex++);
 				}
@@ -808,17 +807,17 @@ class SeoManagementController extends Controller
 					$record->og_image_alt_text,
 					$record->og_image_name,
 					$record->tags,
-					$record->paragraph_1,
-					$record->paragraph_2,
-					$record->paragraph_3,
-					$record->paragraph_4,
-					$record->popular_tags,
+					// $record->paragraph_1,
+					// $record->paragraph_2,
+					// $record->paragraph_3,
+					// $record->paragraph_4,
+					// $record->popular_tags,
 				];
 				$excelRepo->writeRow($sheet, $row, $rowIndex++);
 			}
 		}
 
-		$fileName = 'seo_management_' . $request->relational_type . '_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d') . '.xlsx';
+		$fileName = 'seo_management_' . $request->relational_type . '_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
