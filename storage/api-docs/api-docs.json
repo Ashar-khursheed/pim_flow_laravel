@@ -2573,6 +2573,16 @@
                                         "type": "string",
                                         "format": "binary"
                                     },
+                                    "thumbnail": {
+                                        "description": "thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "ar_thumbnail": {
+                                        "description": "ar_thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
                                     "status": {
                                         "type": "string",
                                         "enum": [
@@ -2706,6 +2716,16 @@
                                     },
                                     "logo": {
                                         "description": "Logo file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "thumbnail": {
+                                        "description": "thumbnail file upload",
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "ar_thumbnail": {
+                                        "description": "ar_thumbnail file upload",
                                         "type": "string",
                                         "format": "binary"
                                     },
@@ -4725,14 +4745,13 @@
                     "Categories"
                 ],
                 "summary": "Get Category List",
-                "description": "Fetches a list of categories. If 'type' is set to 'Parent', only parent categories (parent_id = 0) will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
+                "description": "Fetches a list of categories. If 'type' is set to 'Parent', only parent categories will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
                 "operationId": "3f5817a34833d0a1f4af4548dd3aeaba",
                 "parameters": [
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "Filter categories by type. Options: 'All' (default), 'Parent'",
-                        "required": false,
+                        "description": "Filter categories by type.",
                         "schema": {
                             "type": "string",
                             "default": "All",
@@ -4747,17 +4766,27 @@
                         "name": "parent_id",
                         "in": "query",
                         "description": "Fetch all child categories of a given parent_id",
-                        "required": false,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "published",
+                                "draft",
+                                "pending"
+                            ]
                         }
                     },
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -4768,12 +4797,46 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
@@ -5497,6 +5560,236 @@
                                     "type": "object"
                                 }
                             }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-unit-priorities": {
+            "get": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Get all category measurement unit priorities",
+                "operationId": "2fa5f554a373ffa6d6376b23527148ea",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "id",
+                        "in": "query",
+                        "description": "Search by id",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of priorities",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Create a new category measurement unit priority",
+                "operationId": "ce49e172ed30f8e2ab10466f4ceab089",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "measurement_type_id",
+                                    "category_id",
+                                    "measurement_unit_primary_id"
+                                ],
+                                "properties": {
+                                    "measurement_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_primary_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_secondary_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/measurement-unit-priorities/{id}": {
+            "get": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Get category measurement unit priority details",
+                "description": "Fetches category measurement unit priority details based on the given ID.",
+                "operationId": "dc74b15e90e3524e2c2d8e04f651a8c8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Update an existing priority",
+                "operationId": "e17016f12acebdd169aec29ebe99d617",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "measurement_type_id",
+                                    "category_id",
+                                    "measurement_unit_primary_id"
+                                ],
+                                "properties": {
+                                    "measurement_type_id": {
+                                        "type": "integer"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_primary_id": {
+                                        "type": "integer"
+                                    },
+                                    "measurement_unit_secondary_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
                         }
                     }
                 },
@@ -13892,6 +14185,41 @@
                 ]
             }
         },
+        "/api/measurement-type-categories": {
+            "get": {
+                "tags": [
+                    "Measurement"
+                ],
+                "summary": "Get categories by measurement type",
+                "description": "Returns a list of categories by measurement type",
+                "operationId": "ade9d7ded7e0860d14eda5be695adde7",
+                "parameters": [
+                    {
+                        "name": "type_id",
+                        "in": "query",
+                        "description": "ID of the measurement type",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/media": {
             "get": {
                 "summary": "Fetch all folders inside the 'production' directory from S3",
@@ -16365,7 +16693,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -18976,7 +19304,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -19006,7 +19334,7 @@
                 "tags": [
                     "SEO Management"
                 ],
-                "summary": "Export SEO data to CSV",
+                "summary": "Export SEO data to Excel",
                 "operationId": "d065aa090a0c960d8b0178d02ac6e986",
                 "requestBody": {
                     "required": true,
@@ -22761,6 +23089,10 @@
         {
             "name": "Reorder",
             "description": "Reorder"
+        },
+        {
+            "name": "Measurement Unit Priorities",
+            "description": "Measurement Unit Priorities"
         },
         {
             "name": "Category Pages",

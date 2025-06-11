@@ -27,7 +27,7 @@ class Brand extends Model
     protected $table = 'ec_brands';
 
     protected $fillable = [
-        'name', 'description', 'website', 'logo', 'status', 'order', 'is_featured'
+        'name', 'description', 'website', 'logo', 'status', 'order', 'is_featured' , 'thumbnail' , 'ar_thumbnail'
     ];
 
     public function products()

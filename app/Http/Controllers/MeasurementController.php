@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 
 use App\Models\MeasurementType;
 use App\Models\MeasurementUnit;
+use App\Models\Category;
 
 class MeasurementController extends BaseController
 {
@@ -61,6 +62,46 @@ class MeasurementController extends BaseController
 			'success' => true,
 			'message' => __("msg_rec_list"),
 			'data' => $records
+		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/measurement-type-categories",
+	 *     summary="Get categories by measurement type",
+	 *     description="Returns a list of categories by measurement type",
+	 *     tags={"Measurement"},
+	 *     @OA\Parameter(
+	 *         name="type_id",
+	 *         in="query",
+	 *         description="ID of the measurement type",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1)
+	 *     ),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function getCategoriesByMeasurementType(Request $request)
+	{
+		$request->validate([
+			'type_id' => 'required|exists:measurement_types,id',
+		]);
+
+		$typeId = $request->type_id;
+
+		$categories = Category::whereHas('categoryAttributeGroups.groupsAttributes.measurementUnits.type', function ($query) use ($typeId) {
+			$query->where('id', $typeId);
+		})
+		->doesntHave('children')
+		->select('id', 'name')
+		->distinct()
+		->orderBy('name', 'asc')
+		->get();
+
+		return response()->json([
+			'success' => true,
+			'data' => $categories
 		]);
 	}
 }

@@ -360,6 +360,41 @@ if (!function_exists('product_import_constants')) {
 	}
 }
 
+if (!function_exists('seo_import_constants')) {
+	function seo_import_constants($key = null) {
+		$constants = [
+			'ALL_FIELDS' => [
+				'Relational Name' => 'relational_name',
+				'Relational ID' => 'relational_id',
+				'Relational Type' => 'relational_type',
+				'URL' => 'url',
+				'Primary Keyword' => 'primary_keyword',
+				'Primary Monthly Search Volume' => 'primary_monthly_search_volume',
+				'Secondary Keyword' => 'secondary_keyword',
+				'Secondary Monthly Search Volume' => 'secondary_monthly_search_volume',
+				'Title Tag' => 'title_tag',
+				'Meta Title' => 'meta_title',
+				'Meta Description' => 'meta_description',
+				'Internal Links(Separated By |)' => 'internal_links',
+				'Indexing' => 'indexing',
+				'Og Title' => 'og_title',
+				'Og Description' => 'og_description',
+				'Og Image URL' => 'og_image_url',
+				'Og Image Alt Text' => 'og_image_alt_text',
+				'Og Image Name' => 'og_image_name',
+				'Tags(Separated By |)' => 'tags',
+				// 'paragraph 1' => 'paragraph_1',
+				// 'paragraph 2' => 'paragraph_2',
+				// 'paragraph 3' => 'paragraph_3',
+				// 'paragraph 4' => 'paragraph_4',
+				// 'Popular Tags' => 'popular_tags',
+			],
+		];
+
+		return $key ? ($constants[$key] ?? []) : $constants;
+	}
+}
+
 if (!function_exists('convert_unit')) {
 	function convert_unit(string $type, float $value, string $fromUnit, string $toUnit): float|string
 	{

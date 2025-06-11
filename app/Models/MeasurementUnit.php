@@ -10,4 +10,9 @@ class MeasurementUnit extends Model
 	{
 		return $this->belongsTo(MeasurementType::class, 'measurement_type_id');
 	}
+
+	public function measurementUnitAttributes()
+	{
+		return $this->belongsToMany(Attribute::class, 'attribute_measurements')->using(AttributeMeasurement::class);
+	}
 }

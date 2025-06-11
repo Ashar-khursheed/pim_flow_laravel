@@ -12,6 +12,8 @@ use App\Models\SeoManagement;
 use App\Models\TransactionLog;
 use App\Models\SeoSecondaryKeyword;
 use App\Jobs\ImportSeoDetailJob;
+use App\Services\ExcelImporterService;
+use App\Repository\ExcelRepository;
 
 class SeoManagementController extends Controller
 {
@@ -26,78 +28,77 @@ class SeoManagementController extends Controller
 	 */
 	public function index()
 	{
-        if (!auth()->user()->can('list seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+		if (!auth()->user()->can('list seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		return SeoManagement::with('secondaryKeywordDetails')->get();
 	}
 
-/**
- * @OA\Post(
- *     path="/api/seo-management",
- *     summary="Create a new SEO record",
- *     tags={"SEO Management"},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\MediaType(
- *             mediaType="multipart/form-data",
- *             @OA\Schema(
- *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
- *                 @OA\Property(property="relational_id", type="integer", example=1),
- *                 @OA\Property(property="relational_type", type="string", example="Product"),
- *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
- *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
- *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
- *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
- *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
- *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
- *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
- *                 @OA\Property(property="indexing", type="boolean", example=true, description="Whether the page should be indexed (accepts boolean or integer 0/1)"),
- *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
- *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
- *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
- *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
- *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
- *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
- *                 @OA\Property(property="schema_rating", type="integer", example=5),
- *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
- *                 @OA\Property(property="created_by", type="integer", example=1),
- *                 @OA\Property(property="updated_by", type="integer", example=2),
- *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
- *                 @OA\Property(property="secondary_keywords", type="string",  description="JSON string containing array of secondary keywords with search volumes"),
- * 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
- *					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
- *					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
- *					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
- *					@OA\Property(
- *						property="popular_tags",
- *						type="array",
- *						@OA\Items(type="string", example="tag1"),
- *						example={"tag1", "tag2", "tag3"},
- *						description="List of popular tags (stored as JSON array)"
- *					),
- *             )
- *         )
- *     ),
- *     @OA\Response(response=201, description="SEO Record Created"),
- *     @OA\Response(response=422, description="Validation error"),
- *     security={{"bearerAuth":{}}}
- * )
- */
-
+	/**
+	 * @OA\Post(
+	 *     path="/api/seo-management",
+	 *     summary="Create a new SEO record",
+	 *     tags={"SEO Management"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
+	 *                 @OA\Property(property="relational_id", type="integer", example=1),
+	 *                 @OA\Property(property="relational_type", type="string", example="Product"),
+	 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
+	 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
+	 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
+	 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
+	 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
+	 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
+	 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
+	 *                 @OA\Property(property="indexing", type="boolean", example=true, description="Whether the page should be indexed (accepts boolean or integer 0/1)"),
+	 *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
+	 *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
+	 *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
+	 *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
+	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
+	 *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
+	 *                 @OA\Property(property="schema_rating", type="integer", example=5),
+	 *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
+	 *                 @OA\Property(property="created_by", type="integer", example=1),
+	 *                 @OA\Property(property="updated_by", type="integer", example=2),
+	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
+	 *                 @OA\Property(property="secondary_keywords", type="string",  description="JSON string containing array of secondary keywords with search volumes"),
+	 * 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
+	 *					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
+	 *					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
+	 *					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
+	 *					@OA\Property(
+	 *						property="popular_tags",
+	 *						type="array",
+	 *						@OA\Items(type="string", example="tag1"),
+	 *						example={"tag1", "tag2", "tag3"},
+	 *						description="List of popular tags (stored as JSON array)"
+	 *					),
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="SEO Record Created"),
+	 *     @OA\Response(response=422, description="Validation error"),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 	public function store(Request $request)
 	{
-        if (!auth()->user()->can('add seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+		if (!auth()->user()->can('add seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		try {
-		 // Update the validation rules
+			/* Update the validation rules */
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				'relational_type' => 'required|string',
@@ -109,111 +110,111 @@ class SeoManagementController extends Controller
 				'meta_description' => 'required|string',
 				'internal_links' => 'nullable|string',
 				'indexing' => 'required|in:0,1,true,false',
-			 'og_title' => 'nullable|string',
-			 'og_description' => 'nullable|string',
-			 'og_image_url' => 'nullable|string',
-			 'og_image_alt_text' => 'nullable|string',
-			 'og_image_name' => 'nullable|string',
-			 'tags' => 'nullable|string',
-			 'schema_rating' => 'nullable|integer',
-			 'schema_reviews_count' => 'nullable|integer',
-			 'created_by' => 'required|integer',
-			 'updated_by' => 'nullable|integer',
-			 'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif',
-			'secondary_keywords' => 'nullable|json',  // Accepts a JSON string that will be decoded
-			'paragraph_1' => 'nullable|string',
-			'paragraph_2' => 'nullable|string',
-			'paragraph_3' => 'nullable|string',
-			'paragraph_4' => 'nullable|string',
-			'popular_tags' => 'nullable', // Can accept string or array input
+				'og_title' => 'nullable|string',
+				'og_description' => 'nullable|string',
+				'og_image_url' => 'nullable|string',
+				'og_image_alt_text' => 'nullable|string',
+				'og_image_name' => 'nullable|string',
+				'tags' => 'nullable|string',
+				'schema_rating' => 'nullable|integer',
+				'schema_reviews_count' => 'nullable|integer',
+				'created_by' => 'required|integer',
+				'updated_by' => 'nullable|integer',
+				'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif',
+				'secondary_keywords' => 'nullable|json',
+				'paragraph_1' => 'nullable|string',
+				'paragraph_2' => 'nullable|string',
+				'paragraph_3' => 'nullable|string',
+				'paragraph_4' => 'nullable|string',
+				'popular_tags' => 'nullable',
 			]);
 
-		 // Prepare the data for creating the SEO management record
+			/* Prepare the data for creating the SEO management record */
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
-		 // Convert indexing boolean
-		 $seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
-		 // In your store method
-		if (!empty($validated['popular_tags'])) {
-			if (is_string($validated['popular_tags'])) {
-				// Try to decode if it's a JSON string
-				$decoded = json_decode($validated['popular_tags'], true);
+			/* Convert indexing boolean */
+			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+			/* In your store method */
+			if (!empty($validated['popular_tags'])) {
+				if (is_string($validated['popular_tags'])) {
+					/* Try to decode if it's a JSON string */
+					$decoded = json_decode($validated['popular_tags'], true);
 
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-					$seoData['popular_tags'] = $decoded;
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$seoData['popular_tags'] = $decoded;
+					} else {
+						/* Fallback: treat it as a plain comma-separated string */
+						$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+					}
 				} else {
-					// Fallback: treat it as a plain comma-separated string
-					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+					$seoData['popular_tags'] = $validated['popular_tags'];
 				}
-			} else {
-				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
-		}
-		 // Handle OG image file upload if provided
+			/* Handle OG image file upload if provided */
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
 
-			 // Define folder path for upload
+				/* Define folder path for upload */
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
 
-			 // Store the file
+				/* Store the file */
 				$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
 
-			 // Generate URL for the stored file
+				/* Generate URL for the stored file */
 				$imageUrl = $storage::disk('s3')->url($imagePath);
 
-			 // Update the og_image_url in the data
+				/* Update the og_image_url in the data */
 				$seoData['og_image_url'] = $imageUrl;
 
-			 // Update the og_image_name if not provided
+				/* Update the og_image_name if not provided */
 				if (empty($seoData['og_image_name'])) {
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
-		 $seoData['schema'] = '{}'; // or null if the DB allows
-		  // Generate schema and add it to the data (as an array)
-		 $schemaArray = $this->generateSchema(new SeoManagement($seoData));
+			$seoData['schema'] = '{}'; /* or null if the DB allows */
+			/* Generate schema and add it to the data (as an array) */
+			$schemaArray = $this->generateSchema(new SeoManagement($seoData));
 
-		  // Convert the schema array to a JSON string
-		 $seoData['schema'] = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+			/* Convert the schema array to a JSON string */
+			$seoData['schema'] = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 
-		 // Create the SEO record
-		 $seo = SeoManagement::create($seoData);
+			/* Create the SEO record */
+			$seo = SeoManagement::create($seoData);
 
-		 // Process secondary keywords
-		 if (!empty($validated['secondary_keywords'])) {
-			 // Decode the JSON string to array
-		 	$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+			/* Process secondary keywords */
+			if (!empty($validated['secondary_keywords'])) {
+				/* Decode the JSON string to array */
+				$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
 
-		 	if (is_array($secondaryKeywords)) {
-		 		foreach ($secondaryKeywords as $keyword) {
-		 			if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
-		 				SeoSecondaryKeyword::create([
-		 					'primary_keyword_id' => $seo->id,
-		 					'secondary_keyword' => $keyword['secondary_keyword'],
-		 					'monthly_search_volume' => $keyword['monthly_search_volume'],
-		 				]);
-		 			}
-		 		}
-		 	}
-		 }
+				if (is_array($secondaryKeywords)) {
+					foreach ($secondaryKeywords as $keyword) {
+						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
+							SeoSecondaryKeyword::create([
+								'primary_keyword_id' => $seo->id,
+								'secondary_keyword' => $keyword['secondary_keyword'],
+								'monthly_search_volume' => $keyword['monthly_search_volume'],
+							]);
+						}
+					}
+				}
+			}
 
-		 // Generate schema and save
-		 $seo->schema = $this->generateSchema($seo);
-		 $seo->save();
+			/* Generate schema and save */
+			$seo->schema = $this->generateSchema($seo);
+			$seo->save();
 
-		 // Return response with loaded secondary keywords
-		 return response()->json([
-		 	'success' => true,
-		 	'message' => 'SEO record created successfully',
-		 	'data' => $seo->load('secondaryKeywordDetails')
-		 ], 201);
+			/* Return response with loaded secondary keywords */
+			return response()->json([
+				'success' => true,
+				'message' => 'SEO record created successfully',
+				'data' => $seo->load('secondaryKeywordDetails')
+			], 201);
 		} catch (\Exception $e) {
-		 // Log the error
+			/* Log the error */
 			\Log::error('SEO Management creation error: ' . $e->getMessage());
 
-		 // Return a proper JSON error response
+			/* Return a proper JSON error response */
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to create SEO record',
@@ -223,160 +224,158 @@ class SeoManagementController extends Controller
 	}
 
 	/**
- * @OA\Get(
- *     path="/api/seo-management/{relation_id}",
- *     summary="Get a specific SEO record by product relation ID",
- *     tags={"SEO Management"},
- *     @OA\Parameter(
- *         name="relation_id",
- *         in="path",
- *         required=true,
- *         @OA\Schema(type="integer")
- *     ),
- *     @OA\Response(response=200, description="Single SEO Record"),
- *     @OA\Response(response=404, description="Not found"),
- *     security={{"bearerAuth":{}}}
- * )
- */
-public function show($relation_id)
-{
-        if (!auth()->user()->can('show seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
-    $seoRecord = SeoManagement::with('secondaryKeywordDetails')
-        ->where('relational_id', $relation_id)
-        ->first();
+	 * @OA\Get(
+	 *     path="/api/seo-management/{relation_id}",
+	 *     summary="Get a specific SEO record by product relation ID",
+	 *     tags={"SEO Management"},
+	 *     @OA\Parameter(
+	 *         name="relation_id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Single SEO Record"),
+	 *     @OA\Response(response=404, description="Not found"),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function show($relation_id)
+	{
+		if (!auth()->user()->can('show seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
+		->where('relational_id', $relation_id)
+		->first();
 
-    if (!$seoRecord) {
-        return response()->json([
-            'success' => false,
-            'message' => 'SEO record not found for the given relation ID.'
-        ], 404);
-    }
+		if (!$seoRecord) {
+			return response()->json([
+				'success' => false,
+				'message' => 'SEO record not found for the given relation ID.'
+			], 404);
+		}
 
-    $schema = [
-        "@context" => "https://schema.org",
-        "@type" => "Product",
-        "url" => "my-product",
-        "name" => "meta title",
-        "description" => "This is a description",
-        "keywords" => "Danish|Rishi",
-        "image" => [
-            "@type" => "ImageObject",
-            "url" => "",
-            "name" => "",
-            "description" => ""
-        ],
-        "aggregateRating" => [
-            "@type" => "AggregateRating",
-            "ratingValue" => 5,
-            "reviewCount" => 0
-        ],
-        "offers" => [
-            "@type" => "Offer",
-            "priceCurrency" => "USD",
-            "price" => 0,
-            "url" => "my-product"
-        ],
-        "sku" => "Fridge 346",
-        "brand" => [
-            "@type" => "Brand",
-            "name" => "Default Brand"
-        ],
-        "availability" => "https://schema.org/InStock"
-    ];
+		$schema = [
+			"@context" => "https://schema.org",
+			"@type" => "Product",
+			"url" => "my-product",
+			"name" => "meta title",
+			"description" => "This is a description",
+			"keywords" => "Danish|Rishi",
+			"image" => [
+				"@type" => "ImageObject",
+				"url" => "",
+				"name" => "",
+				"description" => ""
+			],
+			"aggregateRating" => [
+				"@type" => "AggregateRating",
+				"ratingValue" => 5,
+				"reviewCount" => 0
+			],
+			"offers" => [
+				"@type" => "Offer",
+				"priceCurrency" => "USD",
+				"price" => 0,
+				"url" => "my-product"
+			],
+			"sku" => "Fridge 346",
+			"brand" => [
+				"@type" => "Brand",
+				"name" => "Default Brand"
+			],
+			"availability" => "https://schema.org/InStock"
+		];
 
-    // Convert the schema array to a JSON string (clean format)
-    $cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+		
+		$cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
-    return response()->json([
-        'success' => true,
-        'data' => $seoRecord,
-        'schema' => $cleanedSchema
-    ], 200);
-}
-
+		return response()->json([
+			'success' => true,
+			'data' => $seoRecord,
+			'schema' => $cleanedSchema
+		], 200); 
+	}
 
 	/**
-		 * @OA\Post(
-		 *     path="/api/seo-management/{id}",
-		 *     summary="Update an existing SEO record",
-		 *     tags={"SEO Management"},
-		 *     @OA\Parameter(
-		 *         name="id",
-		 *         in="path",
-		 *         required=true,
-		 *         @OA\Schema(type="integer", example=1),
-		 *         description="The ID of the SEO record to update"
-		 *     ),
-		 *     @OA\RequestBody(
-		 *         required=true,
-		 *         @OA\MediaType(
-		 *             mediaType="multipart/form-data",
-		 *             @OA\Schema(
-		 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
-		 *                 @OA\Property(property="relational_id", type="integer", example=1),
-		 *                 @OA\Property(property="relational_type", type="string", example="Product"),
-		 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
-		 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
-		 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
-		 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
-		 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
-		 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
-		 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
-		*                     @OA\Property(
-		*                    property="indexing",
-		*                      type="boolean",
-		*                     example=true,
-		*                        description="Whether the page should be indexed (accepts boolean or integer 0/1)"
-		* 						),
-		*                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
-		*                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
-		*                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
-		*                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
-		*                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
-		*                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
-		*                 @OA\Property(property="schema_rating", type="integer", example=5),
-		*                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
-		*                 @OA\Property(property="created_by", type="integer", example=1),
-		*                 @OA\Property(property="updated_by", type="integer", example=2),
-		*                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
-		*                 @OA\Property(property="secondary_keywords",
-		*                          type="string",
-		*                            description="JSON string containing array of secondary keywords with search volumes" ),
-		* 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
-		*					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
-		*					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
-		*					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
-		*					@OA\Property(
-		*						property="popular_tags",
-		*						type="array",
-		*						@OA\Items(type="string", example="tag1"),
-		*						example={"tag1", "tag2", "tag3"},
-		*						description="List of popular tags"
-		*					),
-		*             ),
-		*         )
-		*     ),
-		*     @OA\Response(response=200, description="SEO Record Updated"),
-		*     @OA\Response(response=422, description="Validation error"),
-		*     security={{"bearerAuth":{}}}
-		* )
+	 * @OA\Post(
+	 *     path="/api/seo-management/{id}",
+	 *     summary="Update an existing SEO record",
+	 *     tags={"SEO Management"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         required=true,
+	 *         @OA\Schema(type="integer", example=1),
+	 *         description="The ID of the SEO record to update"
+	 *     ),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"relational_id", "relational_type", "url", "primary_keyword", "monthly_search_volume", "title_tag", "meta_title", "meta_description", "indexing", "created_by"},
+	 *                 @OA\Property(property="relational_id", type="integer", example=1),
+	 *                 @OA\Property(property="relational_type", type="string", example="Product"),
+	 *                 @OA\Property(property="url", type="string", example="https://example.com/page"),
+	 *                 @OA\Property(property="primary_keyword", type="string", example="best product"),
+	 *                 @OA\Property(property="monthly_search_volume", type="integer", example=1000),
+	 *                 @OA\Property(property="title_tag", type="string", example="Awesome Product Title Tag"),
+	 *                 @OA\Property(property="meta_title", type="string", example="Meta Title Example"),
+	 *                 @OA\Property(property="meta_description", type="string", example="This is a meta description."),
+	 *                 @OA\Property(property="internal_links", type="string", example="https://example.com/internal1,https://example.com/internal2"),
+	 *                     @OA\Property(
+	 *                    property="indexing",
+	 *                      type="boolean",
+	 *                     example=true,
+	 *                        description="Whether the page should be indexed (accepts boolean or integer 0/1)"
+	 * 						),
+	 *                 @OA\Property(property="og_title", type="string", example="Open Graph Title"),
+	 *                 @OA\Property(property="og_description", type="string", example="Open Graph Description"),
+	 *                 @OA\Property(property="og_image_url", type="string", example="https://example.com/image.jpg"),
+	 *                 @OA\Property(property="og_image_name", type="string", example="image.jpg"),
+	 *                 @OA\Property(property="og_image_alt_text", type="string", example="Image alt text"),
+	 *                 @OA\Property(property="tags", type="string", example="tag1, tag2, tag3"),
+	 *                 @OA\Property(property="schema_rating", type="integer", example=5),
+	 *                 @OA\Property(property="schema_reviews_count", type="integer", example=42),
+	 *                 @OA\Property(property="created_by", type="integer", example=1),
+	 *                 @OA\Property(property="updated_by", type="integer", example=2),
+	 *                 @OA\Property(property="og_image_file", type="string", format="binary", description="OG Image File"),
+	 *                 @OA\Property(property="secondary_keywords",
+	 *                          type="string",
+	 *                            description="JSON string containing array of secondary keywords with search volumes" ),
+	 * 					@OA\Property(property="paragraph_1", type="string", example="This is the first paragraph."),
+	 *					@OA\Property(property="paragraph_2", type="string", example="Second paragraph content."),
+	 *					@OA\Property(property="paragraph_3", type="string", example="Another paragraph here."),
+	 *					@OA\Property(property="paragraph_4", type="string", example="Final paragraph text."),
+	 *					@OA\Property(
+	 *						property="popular_tags",
+	 *						type="array",
+	 *						@OA\Items(type="string", example="tag1"),
+	 *						example={"tag1", "tag2", "tag3"},
+	 *						description="List of popular tags"
+	 *					),
+	 *             ),
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="SEO Record Updated"),
+	 *     @OA\Response(response=422, description="Validation error"),
+	 *     security={{"bearerAuth":{}}}
+	 * )
 	 */
-
 	public function update(Request $request, $id)
 	{
-        if (!auth()->user()->can('update seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+		if (!auth()->user()->can('update seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		try {
-		 // Validate the incoming data
+			/* Validate the incoming data */
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				'relational_type' => 'required|string',
@@ -404,79 +403,79 @@ public function show($relation_id)
 				'paragraph_2' => 'nullable|string',
 				'paragraph_3' => 'nullable|string',
 				'paragraph_4' => 'nullable|string',
-				'popular_tags' => 'nullable|string', // Expecting array like ["tag1", "tag2"]
+				'popular_tags' => 'nullable|string', /* Expecting array like ["tag1", "tag2"] */
 			]);
 
-		 // Find the existing SEO record by ID
+			/* Find the existing SEO record by ID */
 			$seo = SeoManagement::findOrFail($id);
 
-		 // Prepare the data for updating the SEO management record
+			/* Prepare the data for updating the SEO management record */
 			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
 
-		 // Convert indexing boolean
-		 $seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
-		 if (!empty($validated['popular_tags'])) {
-			if (is_string($validated['popular_tags'])) {
-				// Try to decode if it's a JSON string
-				$decoded = json_decode($validated['popular_tags'], true);
+			/* Convert indexing boolean */
+			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+			if (!empty($validated['popular_tags'])) {
+				if (is_string($validated['popular_tags'])) {
+					/* Try to decode if it's a JSON string */
+					$decoded = json_decode($validated['popular_tags'], true);
 
-				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-					$seoData['popular_tags'] = $decoded;
+					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+						$seoData['popular_tags'] = $decoded;
+					} else {
+						/* Fallback: treat it as a plain comma-separated string */
+						$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+					}
 				} else {
-					// Fallback: treat it as a plain comma-separated string
-					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+					$seoData['popular_tags'] = $validated['popular_tags'];
 				}
-			} else {
-				$seoData['popular_tags'] = $validated['popular_tags'];
 			}
-		}
 
-		 // Handle OG image file upload if provided
+			/* Handle OG image file upload if provided */
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
 
-			 // Define folder path for upload
+				/* Define folder path for upload */
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
 
-			 // Store the file
+				/* Store the file */
 				$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
 
-			 // Generate URL for the stored file
+				/* Generate URL for the stored file */
 				$imageUrl = $storage::disk('s3')->url($imagePath);
 
-			 // Update the og_image_url in the data if provided
+				/* Update the og_image_url in the data if provided */
 				$seoData['og_image_url'] = $imageUrl;
 
-			 // Update the og_image_name if not provided
+				/* Update the og_image_name if not provided */
 				if (empty($seoData['og_image_name'])) {
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
 
-		 // Update the SEO record if there is any change
+			/* Update the SEO record if there is any change */
 			foreach ($seoData as $key => $value) {
 				if (!empty($value)) {
 					$seo->$key = $value;
 				}
 			}
 
-		 // Generate schema and add it to the data (as an array)
+			/* Generate schema and add it to the data (as an array) */
 			$schemaArray = $this->generateSchema($seo);
 			$seo->schema = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-		 // Save the updated SEO record
+			/* Save the updated SEO record */
 			$seo->save();
 
-		 // Process secondary keywords if provided
-			// In the update function, replace the secondary keywords section with:
+			/* Process secondary keywords if provided */
+			/* In the update function, replace the secondary keywords section with: */
 			if (!empty($validated['secondary_keywords'])) {
-				// First delete existing secondary keywords
+				/* First delete existing secondary keywords */
 				SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
 
-				// Parse the secondary keywords - handle both string and array inputs
+				/* Parse the secondary keywords - handle both string and array inputs */
 				$secondaryKeywords = is_string($validated['secondary_keywords'])
-					? json_decode($validated['secondary_keywords'], true)
-					: $validated['secondary_keywords'];
+				? json_decode($validated['secondary_keywords'], true)
+				: $validated['secondary_keywords'];
 
 				if (is_array($secondaryKeywords)) {
 					foreach ($secondaryKeywords as $keyword) {
@@ -491,7 +490,7 @@ public function show($relation_id)
 				}
 			}
 
-		 // Return response with updated SEO record
+			/* Return response with updated SEO record */
 			return response()->json([
 				'success' => true,
 				'message' => 'SEO record updated successfully',
@@ -499,10 +498,10 @@ public function show($relation_id)
 			], 200);
 
 		} catch (\Exception $e) {
-		 // Log the error
+			/* Log the error */
 			\Log::error('SEO Management update error: ' . $e->getMessage());
 
-		 // Return a proper JSON error response
+			/* Return a proper JSON error response */
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to update SEO record',
@@ -527,15 +526,14 @@ public function show($relation_id)
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function destroy($id)
 	{
-        if (!auth()->user()->can('delete seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+		if (!auth()->user()->can('delete seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
 		$seo = SeoManagement::findOrFail($id);
 		$seo->secondaryKeywordDetails()->delete();
 		$seo->delete();
@@ -545,17 +543,17 @@ public function show($relation_id)
 
 	private function generateSchema(SeoManagement $seo)
 	{
-		// Check if the type is 'Product' and relational_id is available
+		/* Check if the type is 'Product' and relational_id is available */
 		if ($seo->relational_type === 'Product' && $seo->relational_id) {
-			// Fetch product data from 'ec_products' table
+			/* Fetch product data from 'ec_products' table */
 			$product = Product::find($seo->relational_id);
 
 			if ($product) {
-				// Fetch currency and brand names using relationships
-				$currencyName = $product->currency ? $product->currency->title : 'USD'; // Default to 'USD' if no currency found
-				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; // Default to 'Default Brand' if no brand found
+				/* Fetch currency and brand names using relationships */
+				$currencyName = $product->currency ? $product->currency->title : 'USD'; /* Default to 'USD' if no currency found */
+				$brandName = $product->brand ? $product->brand->name : 'Default Brand'; /* Default to 'Default Brand' if no brand found */
 
-				// Generate schema with product-specific details
+				/* Generate schema with product-specific details */
 				return [
 					"@context" => "https://schema.org",
 					"@type" => "Product",
@@ -577,20 +575,20 @@ public function show($relation_id)
 					"offers" => [
 						"@type" => "Offer",
 						"priceCurrency" => $currencyName,
-						"price" => $product->price ?? 0, // Default to 0 if no price found
+						"price" => $product->price ?? 0, /* Default to 0 if no price found */
 						"url" => $seo->url,
 					],
-					"sku" => $product->sku ?? null, // SKU if available
+					"sku" => $product->sku ?? null, /* SKU if available */
 					"brand" => [
 						"@type" => "Brand",
 						"name" => $brandName
 					],
-					"availability" => "https://schema.org/" . ($product->availability ?? 'InStock'), // Default to 'InStock' if no availability found
+					"availability" => "https://schema.org/" . ($product->availability ?? 'InStock'), /* Default to 'InStock' if no availability found */
 				];
 			}
 		}
 
-		// If not a product, return the generic WebPage schema
+		/* If not a product, return the generic WebPage schema */
 		return [
 			"@context" => "https://schema.org",
 			"@type" => $seo->relational_type ?? 'WebPage',
@@ -623,7 +621,7 @@ public function show($relation_id)
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
 	 *             )
 	 *         )
 	 *     ),
@@ -631,169 +629,42 @@ public function show($relation_id)
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function import(Request $request)
+	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
-        if (!auth()->user()->can('import seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
-		try {
-			/* Validate request data */
-			$request->validate([
-				'upload_file' => 'required|file|mimes:csv,txt|max:5120',
+		if (!auth()->user()->can('import seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
 			]);
+		}
 
-			$file = $request->file('upload_file');
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+		]);
+		try {
+			$seoFileFormatArray = seo_import_constants('ALL_FIELDS');
 
-			$seoFileFormatArray = [
-				'Relational Name' => 'relational_name',
-				'Relational ID' => 'relational_id',
-				'Relational Type' => 'relational_type',
-				'URL' => 'url',
-				'Primary Keyword' => 'primary_keyword',
-				'Primary Monthly Search Volume' => 'primary_monthly_search_volume',
-				'Secondary Keyword' => 'secondary_keyword',
-				'Secondary Monthly Search Volume' => 'secondary_monthly_search_volume',
-				'Title Tag' => 'title_tag',
-				'Meta Title' => 'meta_title',
-				'Meta Description' => 'meta_description',
-				'Internal Links(Separated By |)' => 'internal_links',
-				'Indexing' => 'indexing',
-				'Og Title' => 'og_title',
-				'Og Description' => 'og_description',
-				'Og Image URL' => 'og_image_url',
-				'Og Image Alt Text' => 'og_image_alt_text',
-				'Og Image Name' => 'og_image_name',
-				'Tags(Separated By |)' => 'tags',
-				'paragraph 1' => 'paragraph_1',
-				'paragraph 2' => 'paragraph_2',
-				'paragraph 3' => 'paragraph_3',
-				'paragraph 4' => 'paragraph_4',
-				'Popular Tags' => 'popular_tags',
-
-			];
-
-			$requiredRowCount = count($seoFileFormatArray);
-
-			$data = [];
-			/* Open the CSV file and read its content */
-			$rowIndex = 1;
-			if (($handle = fopen($file, "r")) !== false) {
-				while (($row = fgetcsv($handle, 0, ",", '"', "\\")) !== false) {
-					/* Fix unquoted fields and escape special characters */
-					$row = array_map(function ($value) {
-						/* Add quotes around multiline fields */
-						if (strpos($value, "\n") !== false || strpos($value, "\r") !== false) {
-							$value = '"' . str_replace('"', '""', $value) . '"';
-						}
-
-						/* Check if the value is UTF-8 encoded */
-						if (!mb_check_encoding($value, 'UTF-8')) {
-							/* Attempt to convert to UTF-8, fallback to ISO-8859-1 if detection fails */
-							$value = @mb_convert_encoding($value, 'UTF-8', 'auto') ?: utf8_encode($value);
-						}
-
-						/* Remove invalid characters and trim spaces */
-						// $value = preg_replace('/[^\x20-\x7E\xA0-\xFF]/u', '', $value);
-						$value = mb_convert_encoding($value, 'UTF-8', 'auto');
-
-						return trim($value);
-					}, $row);
-
-					/* Skip blank rows */
-					if (array_filter($row)) {
-						if (count($row) != $requiredRowCount) {
-							$message = "The data in row $rowIndex is not compatible for import.";
-
-							session()->put('error', $message);
-							return back();
-						}
-						$data[] = $row;
-					}
-					$rowIndex++;
-				}
-				fclose($handle);
-			}
-
-			/* Remove the header row */
-			$header = array_shift($data);
-
-			$requiredHeaderArray = array_keys($seoFileFormatArray);
-
-			if ($missingColumns = array_diff($requiredHeaderArray, $header)) {
-				$columns = implode(', ', array_values($missingColumns));
-				$missingCount = count($missingColumns);
-				return response()->json([
-					'success' => true,
-					'message' => $missingCount > 1 ? "The uploaded file has an incorrect header. $columns columns are missing." : "The uploaded file has an incorrect header. $columns column is missing."
-				]);
-			}
-
-			/* Get the total record count */
-			$totalRecords = count($data);
-			if ($totalRecords == 0) {
-				return response()->json([
-					'success' => true,
-					'message' => "The uploaded CSV file does not contain any records. Please ensure the file has valid data and try again."
-				]);
-			}
-
-			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-			$chunkSize = 100;
-			$chunks = array_chunk($data, $chunkSize);
-
-			/* Start import process */
-			$batch = Bus::batch([])
-			->before(function (Batch $batch) use ($totalRecords) {
-				$descArray = [
-					"Total Count" => $totalRecords,
-					"Success Count" => 0,
-					"Failed Count" => 0,
-					"Errors" => []
-				];
-				/* Save transaction log */
-				$log = new TransactionLog();
-				$log->module = "SEO Management";
-				$log->action = "Import";
-				$log->identifier = $batch->id;
-				$log->status = 'In-progress';
-				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-				$log->created_by = auth()->id() ?? null;
-				$log->created_at = now();
-				$log->save();
-			})
-			->finally(function (Batch $batch) {
-				$log = TransactionLog::where('identifier', $batch->id)->first();
-				TransactionLog::where('id', $log->id)->update([
-					'status' => 'Completed',
-				]);
-			})
-			->name("SEO Management Import")
-			->dispatch();
-
-			/* Add jobs to the batch for processing chunks */
-			foreach ($chunks as $chunk) {
-				$data = [
-					'seoFileFormatArray' => $seoFileFormatArray,
-					'header' => $header,
-					'chunk' => $chunk,
-					'userId' => auth()->id()
-				];
-
-				$batch->options['queue'] = 'JOB3';
-				$batch->add(new ImportSeoDetailJob($data));
-			}
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
+				$seoFileFormatArray,
+				'SEO Management', /* Module name */
+				'JOB_SEO_MGMT', /* Job name */
+				'Import SEO Management', /* Batch name */
+				ImportSeoDetailJob::class
+			);
 
 			return response()->json([
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
 		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
-				'message' => $exception->getMessage()
+				'message' => $error
 			]);
 		}
 	}
@@ -801,7 +672,7 @@ public function show($relation_id)
 	/**
 	 * @OA\Post(
 	 *     path="/api/seo-management/export",
-	 *     summary="Export SEO data to CSV",
+	 *     summary="Export SEO data to Excel",
 	 *     tags={"SEO Management"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -821,14 +692,15 @@ public function show($relation_id)
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request)
+	public function export(Request $request, ExcelRepository $excelRepo)
 	{
-        if (!auth()->user()->can('export seo mgmt')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
+		if (!auth()->user()->can('export seo mgmt')) {
+			return response()->json([
+				'success' => false,
+				'message' => "You don't have permission to access this module.",
+			]);
+		}
+
 		/* Validate request data */
 		$request->validate([
 			'relational_type' => 'required|in:Product,Category,Brand,Blog',
@@ -847,8 +719,12 @@ public function show($relation_id)
 		->orderBy('id', 'asc')
 		->get();
 
-		/* Define CSV headers */
-		$csvHeaders = [
+		$spreadsheet = $excelRepo->newSpreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('SEO Data');
+
+		/* Define headers */
+		$headers = [
 			'Relational Name',
 			'Relational ID',
 			'Relational Type',
@@ -868,63 +744,29 @@ public function show($relation_id)
 			'Og Image Alt Text',
 			'Og Image Name',
 			'Tags(Separated By |)',
-			'paragraph 1',
-			'paragraph 2',
-			'paragraph 3',
-			'paragraph 4',
-			'Popular Tags',
 		];
+		$excelRepo->setHeader($sheet, $headers);
 
-		/* Create a StreamedResponse for efficient memory usage */
-		$response = new StreamedResponse(function () use ($records, $csvHeaders, $modelClass) {
-			$handle = fopen('php://output', 'w');
-			fputcsv($handle, $csvHeaders);
+		$rowIndex = 2;
+		foreach ($records as $record) {
+			/* Convert full model class to base name (e.g., App\Models\Category → Category) */
+			$relationalTypeName = class_basename($record->relational_type);
 
-			foreach ($records as $record) {
-				/* Fetch the relational name based on relational_type and relational_id */
-				$relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
+			/* Fetch the relational name based on relational_type and relational_id */
+			$relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
 
-				/* Process secondary keywords */
-				if ($record->secondaryKeywordDetails->isNotEmpty()) {
-					foreach ($record->secondaryKeywordDetails as $secondaryKeyword) {
-						fputcsv($handle, [
-							$relationalName,
-							$record->relational_id,
-							$record->relational_type,
-							$record->url,
-							$record->primary_keyword,
-							$record->monthly_search_volume,
-							$secondaryKeyword->keyword,
-							$secondaryKeyword->monthly_search_volume,
-							$record->title_tag,
-							$record->meta_title,
-							$record->meta_description,
-							$record->internal_links,
-							$record->indexing,
-							$record->og_title,
-							$record->og_description,
-							$record->og_image_url,
-							$record->og_image_alt_text,
-							$record->og_image_name,
-							$record->tags,
-							$record->paragraph_1,
-							$record->paragraph_2,
-							$record->paragraph_3,
-							$record->paragraph_4,
-							$record->popular_tags,
-						]);
-					}
-				} else {
-					/* If no secondary keywords, write a single line with primary data */
-					fputcsv($handle, [
+			/* Process secondary keywords */
+			if ($record->secondaryKeywordDetails->isNotEmpty()) {
+				foreach ($record->secondaryKeywordDetails as $secondary) {
+					$row = [
 						$relationalName,
 						$record->relational_id,
-						$record->relational_type,
+						$relationalTypeName,
 						$record->url,
 						$record->primary_keyword,
 						$record->monthly_search_volume,
-						'',
-						'',
+						$secondary->secondary_keyword,
+						$secondary->monthly_search_volume,
 						$record->title_tag,
 						$record->meta_title,
 						$record->meta_description,
@@ -941,23 +783,44 @@ public function show($relation_id)
 						$record->paragraph_3,
 						$record->paragraph_4,
 						$record->popular_tags,
-					]);
+					];
+					$excelRepo->writeRow($sheet, $row, $rowIndex++);
 				}
+			} else {
+				/* If no secondary keywords, write a single line with primary data */
+				$row = [
+					$relationalName,
+					$record->relational_id,
+					$record->relational_type,
+					$record->url,
+					$record->primary_keyword,
+					$record->monthly_search_volume,
+					'',
+					'',
+					$record->title_tag,
+					$record->meta_title,
+					$record->meta_description,
+					$record->internal_links,
+					$record->indexing,
+					$record->og_title,
+					$record->og_description,
+					$record->og_image_url,
+					$record->og_image_alt_text,
+					$record->og_image_name,
+					$record->tags,
+					$record->paragraph_1,
+					$record->paragraph_2,
+					$record->paragraph_3,
+					$record->paragraph_4,
+					$record->popular_tags,
+				];
+				$excelRepo->writeRow($sheet, $row, $rowIndex++);
 			}
+		}
 
-			fclose($handle);
-		});
+		$fileName = 'seo_management_' . $request->relational_type . '_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d') . '.xlsx';
 
-		$fileName = sprintf(
-			'%s_%d-%d_%s.csv',
-			$request->relational_type,
-			$request->range_from,
-			$request->range_to,
-			now()->format('Y-m-d')
-		);
-		$response->headers->set('Content-Type', 'text/csv');
-		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
-
-		return $response;
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
+
 }

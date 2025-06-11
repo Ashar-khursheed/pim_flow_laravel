@@ -24,7 +24,6 @@ class AttributeGroupController extends BaseController
 	 *     @OA\Parameter(name="name", in="query", description="Search by attribute group name", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "groups_attributes_count", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
-	 *
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -49,7 +48,6 @@ class AttributeGroupController extends BaseController
 			$recordsQuery->withCount('groupsAttributes')->with(['creator:id,first_name,last_name']);
 
 			/* Apply global or column-specific filters */
-			$searchApplied = false;
 			if ($request->filled('global')) {
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
@@ -57,12 +55,10 @@ class AttributeGroupController extends BaseController
 						$q->orWhere($col, 'LIKE', '%' . $search . '%');
 					}
 				});
-				$searchApplied = true;
 			} else {
 				foreach ($searchableColumns as $col) {
 					if ($request->filled($col)) {
 						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
-						$searchApplied = true;
 					}
 				}
 			}
@@ -70,10 +66,16 @@ class AttributeGroupController extends BaseController
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);
 
-			$page = $searchApplied ? 1 : (int) $request->input('page');
+			/* Clone query for counting */
+			$totalRecords = (clone $recordsQuery)->count();
 			$length = (int) $request->input('length');
-			$totalRecords = $recordsQuery->count();
-			$totalPages = ceil($totalRecords / $length);
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			$page = (int) $request->input('page');
+			/* If requested page exceeds total pages (after search), fallback to page 1 */
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
 				'id', 'name', 'created_by', 'created_at', 'updated_at'

@@ -15,23 +15,25 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 class ExcelRepository
 {
 	/**
-	 * To create new spreadsheet
+	 * Create and return a new spreadsheet instance
+	 *
 	 * @return Spreadsheet
 	 */
-	public function newSpreadsheet()
+	public function newSpreadsheet(): Spreadsheet
 	{
-		$spreadsheet = new Spreadsheet;
-		return $spreadsheet;
+		return new Spreadsheet;
 	}
 
 	/**
-	 * To Set header of excel export file
-	 * @return Spreadsheet
+	 * Set the header row of a worksheet
+	 *
+	 * @param Worksheet $activeSheet
+	 * @param array $headerArray
+	 * @return void
 	 */
-	public function setHeader($activeSheet, $headerArray)
+	public function setHeader(Worksheet $activeSheet, array $headerArray): void
 	{
-		$styleArray =
-		[
+		$styleArray = [
 			'alignment' => [
 				'horizontal' => \PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_CENTER,
 				'vertical' => \PhpOffice\PhpSpreadsheet\Style\Alignment::VERTICAL_CENTER,
@@ -45,14 +47,37 @@ class ExcelRepository
 			$activeSheet->getStyle($col . $row)->applyFromArray($styleArray);
 			$col++;
 		}
-		$row++;
 	}
 
 	/**
-	 * To Set dropdown in excel export file
-	 * @return Spreadsheet
+	 * Write a single row of data to the worksheet
+	 *
+	 * @param Worksheet $sheet
+	 * @param array $data
+	 * @param int $rowIndex
+	 * @return void
 	 */
-	public function setDropdown(Spreadsheet $spreadsheet, Worksheet $sheet, string $cell, string $attributeName, array $dropdownVals, string $existingVal = '')
+	public function writeRow(Worksheet $sheet, array $data, int $rowIndex): void
+	{
+		$colIndex = 'A';
+		foreach ($data as $cell) {
+			$sheet->setCellValue($colIndex . $rowIndex, $cell);
+			$colIndex++;
+		}
+	}
+
+	/**
+	 * Set a dropdown (data validation) in a specific cell with fallback for long lists using a hidden sheet
+	 *
+	 * @param Spreadsheet $spreadsheet
+	 * @param Worksheet $sheet
+	 * @param string $cell
+	 * @param string $attributeName
+	 * @param array $dropdownVals
+	 * @param string $existingVal
+	 * @return void
+	 */
+	public function setDropdown(Spreadsheet $spreadsheet, Worksheet $sheet, string $cell, string $attributeName, array $dropdownVals, string $existingVal = ''): void
 	{
 		if (empty($dropdownVals)) {
 			// throw new \Exception('Dropdown values must be a non-empty array.');
@@ -140,10 +165,13 @@ class ExcelRepository
 	}
 
 	/**
-	 * To Set the border in excel file
-	 * @return Spreadsheet
+	 * Apply thin border around a range in the active worksheet
+	 *
+	 * @param Spreadsheet $spreadsheet
+	 * @param string $range
+	 * @return void
 	 */
-	public function setBorder($spreadsheet, $range)
+	public function setBorder(Spreadsheet $spreadsheet, string $range): void
 	{
 		$spreadsheet->getActiveSheet()->getStyle($range)->applyFromArray([
 			'borders' => [
@@ -156,40 +184,24 @@ class ExcelRepository
 	}
 
 	/**
-	 * Excel function to load a excel file and return reader object
-	 * @param $fileName
+	 * Load and return a Spreadsheet object from a file
+	 *
+	 * @param string $fileName
 	 * @return Spreadsheet
 	 */
-	public function loadFile($fileName) {
-		// $reader =IOFactory::createReaderForFile($fileName);
-		// return $reader->load($fileName);
+	public function loadFile(string $fileName): Spreadsheet
+	{
 		return IOFactory::load($fileName);
 	}
 
 	/**
-	 * Function to download excel file based on given filename and excelObject
+	 * Download an Excel file via streamed response
+	 *
 	 * @param string $fileName
-	 * @param $excelObject
+	 * @param Spreadsheet $excelObject
+	 * @return StreamedResponse
 	 */
-	// public function downloadFile($fileName, $excelObject) {
-
-	// 	header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-	// 	header('Content-Disposition: attachment;filename=' . $fileName);
-	// 	header('Cache-Control: max-age=0');
-	// 	// If you're serving to IE 9, then the following may be needed
-	// 	header('Cache-Control: max-age=1');
-
-	// 	// If you're serving to IE over SSL, then the following may be needed
-	// 	header('Expires: Mon, 26 Jul 1997 05:00:00 GMT'); // Date in the past
-	// 	header('Last-Modified: ' . gmdate('D, d M Y H:i:s') . ' GMT'); // always modified
-	// 	header('Cache-Control: cache, must-revalidate'); // HTTP/1.1
-	// 	header('Pragma: public'); // HTTP/1.0
-	// 	$writer = IOFactory::createWriter($excelObject, 'Xlsx');
-
-	// 	$writer->save('php://output');
-	// 	exit;
-	// }
-	public function downloadFile($fileName, $excelObject): StreamedResponse
+	public function downloadFile(string $fileName, Spreadsheet $excelObject): StreamedResponse
 	{
 		return response()->streamDownload(function () use ($excelObject) {
 			$writer = new Xlsx($excelObject);
@@ -206,39 +218,54 @@ class ExcelRepository
 	}
 
 	/**
-	 * To save the excel file at the given folder
+	 * Save the Excel file to a specified path
+	 *
+	 * @param string $fileNameWithPath
+	 * @param Spreadsheet $excelObject
+	 * @return void
 	 */
-	public function saveFile($fileNameWithPath, $excelObject) {
+	public function saveFile(string $fileNameWithPath, Spreadsheet $excelObject): void
+	{
 		$writer = IOFactory::createWriter($excelObject, "Xlsx");
 		$writer->save($fileNameWithPath);
-		// return;
 	}
 
 	/**
-	 * To save the excel file at the given folder
+	 * Save the spreadsheet as a CSV file
+	 *
+	 * @param string $fileNameWithPath
+	 * @param Spreadsheet $csvObject
+	 * @return void
 	 */
-	public function saveCsvFile($fileNameWithPath, $csvObject) {
+	public function saveCsvFile(string $fileNameWithPath, Spreadsheet $csvObject): void
+	{
 		$writer = new \PhpOffice\PhpSpreadsheet\Writer\Csv($csvObject);
 		$writer->save($fileNameWithPath);
-		// return;
 	}
 
 	/**
-	 * Get all worksheet details
+	 * Return metadata about all worksheets in an Excel file
+	 *
+	 * @param string $fileName
+	 * @return array
 	 */
-	public function getAllWorksheetInfo($fileName)
+	public function getAllWorksheetInfo(string $fileName): array
 	{
 		$reader = new Reader();
-		$worksheetInfo = $reader->listWorksheetInfo($fileName);
-		return $worksheetInfo;
+		return $reader->listWorksheetInfo($fileName);
 	}
 
 	/**
-	 * Excel function to load a excel file and return reader object
-	 * @param $fileName
-	 * @return Spreadsheet
+	 * Load specific rows and columns from a named worksheet in an Excel file
+	 *
+	 * @param string $fileName
+	 * @param string $worksheetName
+	 * @param int $startRow
+	 * @param int $endRow
+	 * @param string $lastColumnLetter
+	 * @return array
 	 */
-	public function loadExcelFileData($fileName, $worksheetName, $startRow, $endRow, $lastColumnLetter)
+	public function loadExcelFileData(string $fileName, string $worksheetName, int $startRow, int $endRow, string $lastColumnLetter): array
 	{
 		$reader = new Reader();
 		$worksheetList = $reader->listWorksheetNames($fileName);
@@ -246,43 +273,46 @@ class ExcelRepository
 		$reader->setReadEmptyCells(false);
 		$reader->setLoadSheetsOnly([$worksheetName]);
 		$chunkFilter = new ChunkReadFilter();
-
-		// Tell the Reader that we want to use the Read Filter that we've Instantiated
+		$chunkFilter->setRows($startRow, $endRow);
 		$reader->setReadFilter($chunkFilter);
 
-		// Tell the Read Filter, the limits on which rows we want to read this iteration
-		$chunkFilter->setRows($startRow, $endRow);
-
-		// Load only the rows that match our filter from $inputFileName to a PhpSpreadsheet Object
 		$spreadsheet = $reader->load($fileName);
-
 		$sheet = $spreadsheet->getSheetByName($worksheetName);
-
-		// $maxDataRow = $sheet->getHighestDataRow();
-		// return $sheet->rangeToArray("A{$startRow}:{$lastColumnLetter}{$maxDataRow}");
 		return $sheet->rangeToArray("A{$startRow}:{$lastColumnLetter}{$endRow}");
 	}
 }
 
 /**
- * Define a Read Filter class implementing \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
+ * Custom chunk filter to load only specific rows from an Excel file
  */
 class ChunkReadFilter implements \PhpOffice\PhpSpreadsheet\Reader\IReadFilter
 {
-	private $startRow = 0;
-	private $endRow   = 0;
+	private int $startRow = 0;
+	private int $endRow = 0;
 
-	/**  Set the list of rows that we want to read  */
-	public function setRows($startRow, $endRow) {
+	/**
+	 * Define the row range to read
+	 *
+	 * @param int $startRow
+	 * @param int $endRow
+	 * @return void
+	 */
+	public function setRows(int $startRow, int $endRow): void
+	{
 		$this->startRow = $startRow;
 		$this->endRow = $endRow;
 	}
 
-	public function readCell(string $column, int $row, string $worksheetName = ''):bool {
-		# Only read the heading row, and the configured rows
-		if ($row >= $this->startRow && $row <= $this->endRow) {
-			return true;
-		}
-		return false;
+	/**
+	 * Determine whether a given cell should be read
+	 *
+	 * @param string $column
+	 * @param int $row
+	 * @param string $worksheetName
+	 * @return bool
+	 */
+	public function readCell(string $column, int $row, string $worksheetName = ''): bool
+	{
+		return $row >= $this->startRow && $row <= $this->endRow;
 	}
 }

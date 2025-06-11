@@ -53,12 +53,11 @@ use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
-
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
-
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
 use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
 use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
@@ -145,6 +144,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/measurement-types', [MeasurementController::class, 'getMeasurementTypes']);
 	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
+	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
+
+	Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
 	Route::resource('category-attributes', CategoryAttributeController::class);
@@ -353,7 +355,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
 	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
-		
+
 
 });
 

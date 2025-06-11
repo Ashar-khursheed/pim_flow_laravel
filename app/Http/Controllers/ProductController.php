@@ -2822,7 +2822,7 @@ class ProductController extends BaseController
 		]);
 	}
 
-		/**
+	/**
 	 * @OA\Post(
 	 *     path="/api/products/import",
 	 *     summary="Import products from an Excel file",
@@ -2833,7 +2833,7 @@ class ProductController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB"),
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
 	 *             )
 	 *         )
 	 *     ),

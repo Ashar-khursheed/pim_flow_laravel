@@ -13,6 +13,8 @@ class MeasurementSeeder extends Seeder
 		$types = [
 			'Length', 'Mass', 'Volume', 'Temperature',
 			'Time', 'Speed', 'Area', 'Energy', 'Pressure', 'Force',
+			'Power', 'Energy Consumption', 'Electrical Potential',
+            'Electric Current', 'Frequency', 'Battery Capacity', 'Rotational Speed',
 		];
 
 		foreach ($types as $type) {
@@ -108,6 +110,34 @@ class MeasurementSeeder extends Seeder
 				['dyne', 'dyn'],
 				['pound-force', 'lbf'],
 			],
+			'Power' => [
+				['watt', 'W'],
+				['kilowatt', 'kW'],
+				['milliwatt', 'mW'],
+				['horsepower', 'HP'],
+			],
+			'Energy Consumption' => [
+				['kilowatt-hour', 'kWh'],
+				['watt-hour', 'Wh'],
+				['british thermal unit', 'BTU'],
+			],
+			'Electrical Potential' => [
+				['volt', 'V'],
+			],
+			'Electric Current' => [
+				['ampere', 'A'],
+			],
+			'Frequency' => [
+				['hertz', 'Hz'],
+			],
+			'Battery Capacity' => [
+				['ampere-hour', 'Ah'],
+				['milliampere-hour', 'mAh'],
+			],
+			'Rotational Speed' => [
+				['revolutions per minute', 'RPM'],
+			],
+
 		];
 
 		foreach ($units as $typeName => $unitList) {
