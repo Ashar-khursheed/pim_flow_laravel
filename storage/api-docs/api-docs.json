@@ -4701,7 +4701,6 @@
                             "enum": [
                                 "id",
                                 "name",
-                                "groups_attributes_count",
                                 "created_at",
                                 "updated_at"
                             ]
