@@ -762,7 +762,7 @@ public function store(Request $request)
 
 			$brands = $query->paginate($request->input('per_page', 10));
 
-		// Cache all categories and stores in a single query to avoid N+1
+			// Cache all categories and stores in a single query to avoid N+1
 			$categories = Category::pluck('name', 'id');
 			$stores = Store::pluck('name', 'id');
 
