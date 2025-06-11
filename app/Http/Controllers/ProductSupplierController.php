@@ -532,7 +532,7 @@ class ProductSupplierController extends BaseController
 		$refundPeriods = app_constants('REFUND_PERIODS');
 
 		$query = Product::with([
-			'unitOfMeasurement:id,name',
+			// 'unitOfMeasurement:id,name',
 			'productSuppliers.vendor'
 		]);
 
@@ -554,7 +554,8 @@ class ProductSupplierController extends BaseController
 		$products = $query->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
-		->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
+		// ->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
+		->get(['id', 'name', 'sku', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
 
 		if ($products->isEmpty()) {
 			return response()->json([
@@ -613,7 +614,8 @@ class ProductSupplierController extends BaseController
 					$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
-					$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+					// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+					$sheet->setCellValue($col++ . $row, '');
 					$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
@@ -642,7 +644,8 @@ class ProductSupplierController extends BaseController
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+				$sheet->setCellValue($col++ . $row, '');
+				// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
