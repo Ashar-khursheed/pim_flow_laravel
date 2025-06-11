@@ -87,12 +87,12 @@ class ImportKeywordJob implements ShouldQueue
 					$rowErrors[] = "Keyword with ID $id not found.";
 				} elseif ($appKeyword->code !== $code && in_array($code, $existingCodes)) {
 					$existingId = array_search($code, $existingCodes);
-					$rowErrors[] = "Code already used by ID $existingId.";
+					$rowErrors[] = "Code $code already used by ID $existingId.";
 				}
 			} else {
 				if (in_array($code, $existingCodes)) {
 					$existingId = array_search($code, $existingCodes);
-					$rowErrors[] = "Code already used by ID $existingId.";
+					$rowErrors[] = "Code $code already used by ID $existingId.";
 				}
 			}
 

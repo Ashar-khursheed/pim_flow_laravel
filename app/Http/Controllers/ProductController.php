@@ -2824,7 +2824,7 @@ class ProductController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/import",
-	 *     summary="Import products from an Excel file",
+	 *     summary="Import products from an excel file",
 	 *     tags={"Products"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -2836,7 +2836,7 @@ class ProductController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -2844,7 +2844,7 @@ class ProductController extends BaseController
 	{
 		/* Validate request data */
 		$request->validate([
-			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
 		]);
 
 		try {
@@ -2891,7 +2891,7 @@ class ProductController extends BaseController
 				$request->file('upload_file'),
 				$productFileFormatArray,
 				'Product', /* Module name */
-				'JOB_PRODUCTS', /* Job name */
+				'JOB_PRODUCT', /* Job name */
 				'Import Products', /* Batch name */
 				ImportProductJob::class
 			);

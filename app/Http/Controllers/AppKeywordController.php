@@ -16,13 +16,13 @@ class AppKeywordController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/keywords/export",
-	 *     summary="Api to export the keyword file",
+	 *     summary="Export app keyword data to Excel",
 	 *     tags={"Keywords"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >=1)"),
-	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 2000 more)")
+	 *             @OA\Property(property="range_to", type="integer", example=50, description="Ending range (must be >= range_from and max 5000 more)")
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
@@ -41,8 +41,8 @@ class AppKeywordController extends BaseController
 
 		/* Validate the request data */
 		$request->validate([
-			'range_from' => 'integer|min:1',
-			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 10000),
+			'range_from' => 'required|integer|min:1',
+			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 5000),
 		]);
 
 		/* Get available language codes */
@@ -84,23 +84,11 @@ class AppKeywordController extends BaseController
 		/* Fill data rows */
 		$rowIndex = 2;
 		foreach ($records as $recordRow) {
-			$colIndex = 'A';
-			foreach ($recordRow as $cell) {
-				$sheet->setCellValue($colIndex . $rowIndex, $cell);
-				$colIndex++;
-			}
-			$rowIndex++;
+			$excelRepo->writeRow($sheet, $recordRow, $rowIndex++);
 		}
 
-		/* Prepare file name */
-		$fileName = sprintf(
-			'keywords_%d-%d_%s.xlsx',
-			$request->range_from,
-			$request->range_to,
-			now()->format('Y-m-d-H-i-s')
-		);
+		$fileName = 'app_keywords_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-		/* Download the file */
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
@@ -108,7 +96,7 @@ class AppKeywordController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/keywords/import",
-	 *     summary="Import keywords from a csv file",
+	 *     summary="Import keywords from an excel file",
 	 *     tags={"Keywords"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -116,11 +104,11 @@ class AppKeywordController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -134,8 +122,9 @@ class AppKeywordController extends BaseController
 			]);
 		}
 
+		/* Validate request data */
 		$request->validate([
-			'upload_file' => 'required|file|mimes:xlsx,xls|max:5120',
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
 		]);
 
 		try {
@@ -155,9 +144,9 @@ class AppKeywordController extends BaseController
 			$excelImporter->processExcelImport(
 				$request->file('upload_file'),
 				$keywordFileFormatArray,
-				'Keyword',
-				'JOB5',
-				'Keyword Import',
+				'Keyword', /* Module name */
+				'JOB_KEYWORD', /* Job name */
+				'Import Keywords', /* Batch name */
 				ImportKeywordJob::class
 			);
 
@@ -165,10 +154,10 @@ class AppKeywordController extends BaseController
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch (\Exception $e) {
-			$error[] = 'Error: ' . $e->getMessage();
-			$error[] = 'File: ' . $e->getFile();
-			$error[] = 'Line: ' . $e->getLine();
+		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
 				'message' => $error

@@ -20,19 +20,6 @@ use App\Services\ExcelImporterService;
 
 class ProductSupplierController extends BaseController
 {
-	/**
-	 * The excel repository instance.
-	 */
-	protected $excel;
-
-	/**
-	 * Create a new job instance.
-	 */
-	public function __construct(ExcelRepository $excel)
-	{
-		$this->excel = $excel;
-	}
-
 	// /**
 	//  * @OA\Get(
 	//  *     path="/api/product-suppliers",
@@ -495,7 +482,7 @@ class ProductSupplierController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/product-suppliers/export",
-	 *     summary="Export product suppliers data to Excel",
+	 *     summary="Export product supplier data to Excel",
 	 *     tags={"Product Suppliers"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -511,7 +498,7 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request)
+	public function export(Request $request, ExcelRepository $excelRepo)
 	{
 		if (!auth()->user()->can('export product suppliers')) {
 			return response()->json([
@@ -532,7 +519,7 @@ class ProductSupplierController extends BaseController
 		$refundPeriods = app_constants('REFUND_PERIODS');
 
 		$query = Product::with([
-			'unitOfMeasurement:id,name',
+			// 'unitOfMeasurement:id,name',
 			'productSuppliers.vendor'
 		]);
 
@@ -554,7 +541,8 @@ class ProductSupplierController extends BaseController
 		$products = $query->offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
-		->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
+		// ->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
+		->get(['id', 'name', 'sku', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
 
 		if ($products->isEmpty()) {
 			return response()->json([
@@ -585,12 +573,12 @@ class ProductSupplierController extends BaseController
 		];
 
 		/* Initialize spreadsheet */
-		$spreadsheet = $this->excel->newSpreadsheet();
+		$spreadsheet = $excelRepo->newSpreadsheet();
 		$spreadsheet->setActiveSheetIndex(0);
 		$sheet = $spreadsheet->getActiveSheet();
 
 		/* Set headers */
-		$this->excel->setHeader($sheet, $header);
+		$excelRepo->setHeader($sheet, $header);
 
 		/* Populate data */
 		$row = 2;
@@ -613,16 +601,17 @@ class ProductSupplierController extends BaseController
 					$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
-					$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+					// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+					$sheet->setCellValue($col++ . $row, '');
 					$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
 
-					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
-					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
-					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
-					$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
+					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
+					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
+					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
 
 					$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
 					$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
@@ -642,16 +631,17 @@ class ProductSupplierController extends BaseController
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
+				$sheet->setCellValue($col++ . $row, '');
+				// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
 
-				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', ['Yes', 'No'], '');
-				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
-				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
-				$this->excel->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', ['Yes', 'No'], '');
+				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
+				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
+				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
 
 				$sheet->setCellValue($col++ . $row, '');
 				$sheet->setCellValue($col++ . $row, '');
@@ -659,21 +649,9 @@ class ProductSupplierController extends BaseController
 			}
 		}
 
+		$fileName = 'products_suppliers_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-		/* Generate response */
-		$response = new StreamedResponse(function () use ($spreadsheet) {
-			$writer = new Xlsx($spreadsheet);
-			$writer->save('php://output');
-		});
-
-		$fileName = strtolower(str_replace(' ', '_', trim("products_suppliers_{$request->range_from}-{$request->range_to} ".date('Y-m-d').".xlsx")));
-
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
-			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
-		));
-
-		return $response;
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
 	/**
@@ -703,10 +681,12 @@ class ProductSupplierController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+
 		/* Validate request data */
 		$request->validate([
-			'upload_file' => 'required|file|mimes:xlsx|max:2048',
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
 		]);
+
 		try {
 			$supplierFormatArray  = [
 				'ID' => 'id',
@@ -733,8 +713,8 @@ class ProductSupplierController extends BaseController
 				$request->file('upload_file'),
 				$supplierFormatArray,
 				'Product Supplier', /* Module name */
-				'JOB_SUPPLIERS', /* Job name */
-				'Import Product Supplier', /* Batch name */
+				'JOB_PROD_SUPPLIER', /* Job name */
+				'Import Product Suppliers', /* Batch name */
 				ImportProductSupplierJob::class
 			);
 
@@ -742,10 +722,10 @@ class ProductSupplierController extends BaseController
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch (\Exception $e) {
-			$error[] = 'Error: ' . $e->getMessage();
-			$error[] = 'File: ' . $e->getFile();
-			$error[] = 'Line: ' . $e->getLine();
+		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
 				'message' => $error
@@ -763,7 +743,7 @@ class ProductSupplierController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function downloadTemplate()
+	public function downloadTemplate(ExcelRepository $excelRepo)
 	{
 		$header = [
 			'ID',
@@ -787,12 +767,12 @@ class ProductSupplierController extends BaseController
 		];
 
 		/* Initialize spreadsheet */
-		$spreadsheet = $this->excel->newSpreadsheet();
+		$spreadsheet = $excelRepo->newSpreadsheet();
 		$spreadsheet->setActiveSheetIndex(0);
 		$sheet = $spreadsheet->getActiveSheet();
 
 		/* Set headers */
-		$this->excel->setHeader($sheet, $header);
+		$excelRepo->setHeader($sheet, $header);
 
 		$row = 2;
 		$col = 'A';
@@ -817,19 +797,8 @@ class ProductSupplierController extends BaseController
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 
-		/* Generate response */
-		$response = new StreamedResponse(function () use ($spreadsheet) {
-			$writer = new Xlsx($spreadsheet);
-			$writer->save('php://output');
-		});
+		$fileName = 'products_suppliers_import_template' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-		$fileName = strtolower(str_replace(' ', '_', trim("products_suppliers_import_template.xlsx")));
-
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
-			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
-		));
-
-		return $response;
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 }
