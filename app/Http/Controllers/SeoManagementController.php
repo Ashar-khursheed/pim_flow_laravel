@@ -290,14 +290,14 @@ class SeoManagementController extends Controller
 			"availability" => "https://schema.org/InStock"
 		];
 
-		/* Convert the schema array to a JSON string (clean format)
+		
 		$cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 
 		return response()->json([
 			'success' => true,
 			'data' => $seoRecord,
 			'schema' => $cleanedSchema
-		], 200); */
+		], 200); 
 	}
 
 	/**
