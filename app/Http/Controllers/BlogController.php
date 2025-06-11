@@ -91,13 +91,13 @@ public function index(Request $request)
 
         // Search filter by title
         if ($search = $request->query('search')) {
-            $query->where('title', 'like', "%{$search}%");
+            $query->where('name', 'like', "%{$search}%");
         }
 
         // Sorting
         $sortBy = $request->query('sort_by', 'created_at');
         $sortOrder = $request->query('sort_order', 'desc');
-        $allowedSorts = ['id', 'title', 'created_at', 'updated_at'];
+        $allowedSorts = ['id', 'name', 'created_at', 'updated_at'];
         if (!in_array($sortBy, $allowedSorts)) {
             $sortBy = 'created_at';
         }
