@@ -18,58 +18,19 @@ class CategoryController extends BaseController
 	 * @OA\Get(
 	 *     path="/api/categories",
 	 *     summary="Get Category List",
-	 *     description="Fetches a list of categories. If 'type' is set to 'Parent', only parent categories (parent_id = 0) will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
+	 *     description="Fetches a list of categories. If 'type' is set to 'Parent', only parent categories will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
 	 *     tags={"Categories"},
-	 *     @OA\Parameter(
-	 *         name="type",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Filter categories by type. Options: 'All' (default), 'Parent'",
-	 *         @OA\Schema(
-	 *             type="string",
-	 *             enum={"All", "Super Parent", "Leaf Child"},
-	 *             default="All"
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="parent_id",
-	 *         in="query",
-	 *         required=false,
-	 *         description="Fetch all child categories of a given parent_id",
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             example=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number for pagination. Starts from 1.",
-	 *         required=true,
-	 *         example=1,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="length",
-	 *         in="query",
-	 *         description="Number of records per page.",
-	 *         required=true,
-	 *         example=20,
-	 *         @OA\Schema(
-	 *             type="integer",
-	 *             minimum=1
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
+	 *     @OA\Parameter(name="type", in="query", description="Filter categories by type.", @OA\Schema(type="string", enum={"All", "Super Parent", "Leaf Child"}, default="All")),
+	 *     @OA\Parameter(name="parent_id", in="query", description="Fetch all child categories of a given parent_id", example=1, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="status", in="query", @OA\Schema(type="string", enum={"published", "draft", "pending"})),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "groups_attributes_count", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -81,52 +42,81 @@ class CategoryController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-		$categories = Category::query();
+		$searchableColumns = ['id', 'name'];
+		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		// Filter by type
+		$recordsQuery = Category::query();
+
+		/* Filter by type */
 		if ($request->type == 'Super Parent') {
-			$categories = $categories->where('parent_id', 0);
+			$recordsQuery = $recordsQuery->where('parent_id', 0);
 		} elseif ($request->type == 'Leaf Child') {
-			$categories = $categories->whereDoesntHave('children');
+			$recordsQuery = $recordsQuery->whereDoesntHave('children');
 		} elseif ($request->has('parent_id') && is_numeric($request->parent_id)) {
-			$categories = $categories->where('parent_id', (int) $request->parent_id);
+			$recordsQuery = $recordsQuery->where('parent_id', (int) $request->parent_id);
 		}
 
-		// Check for status filter
+		/* Filter by status */
 		if ($request->has('status') && in_array($request->status, ['published', 'draft', 'pending'])) {
-			$categories = $categories->where('status', $request->status);
+			$recordsQuery = $recordsQuery->where('status', $request->status);
 		}
 
-		// Apply ordering
-		$categories = $categories->orderBy('order', 'asc');
+		/* Pagination */
+		if ($request->filled('page') && $request->filled('length')) {
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+					}
+				});
+			}
 
-		// Handle pagination
-		if($request->filled('page') && $request->filled('length')){
-			$page = $request->input('page');
-			$length = $request->input('length');
-			$categories = $categories->offset(($page - 1)*$length)->limit($length);
+			/* Apply sorting */
+			$recordsQuery->orderBy($sortBy, $sortDir);
+
+			/* Clone query for counting */
+			$totalRecords = (clone $recordsQuery)->count();
+			$length = (int) $request->input('length');
+			$totalPages = (int) ceil($totalRecords / $length);
+
+			$page = (int) $request->input('page');
+
+			/* If requested page exceeds total pages (after search), fallback to page 1 */
+			if ($page > $totalPages && $totalPages > 0) {
+				$page = 1;
+			}
+
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
+				'id', 'name', 'parent_id', 'description', 'status', 'order', 'image', 'is_featured', 'icon', 'icon_image', 'slug'
+			]);
+			$records->transform(function ($record) {
+
+			if ($record->image) {
+				$record->image = asset('storage/' . $record->image);
+			}
+			if ($record->icon_image) {
+				$record->icon_image = asset('storage/' . $record->icon_image);
+			}
+			return $record;
+			});
+		} else {
+			$records = $recordsQuery->orderBy('name', 'asc')->get([
+				'id', 'name', 'parent_id', 'order'
+			]);
+			$totalRecords = $records->count();
+			$totalPages = 1;
 		}
-
-		$categoriesList = $categories->get([
-			'id', 'name', 'parent_id', 'description', 'status',
-			'order', 'image', 'is_featured', 'icon', 'icon_image', 'slug'
-		]);
-
-		// Append full image URL
-		$categoriesList->transform(function ($category) {
-			if ($category->image) {
-				$category->image = asset('storage/' . $category->image);
-			}
-			if ($category->icon_image) {
-				$category->icon_image = asset('storage/' . $category->icon_image);
-			}
-			return $category;
-		});
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Category List',
-			'categories' => $categoriesList
+			'categories' => $records,
+			'total_pages' => $totalPages ?? 1,
+			'total_records' => $totalRecords,
 		]);
 	}
 
