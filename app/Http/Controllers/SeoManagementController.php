@@ -817,7 +817,7 @@ class SeoManagementController extends Controller
 			}
 		}
 
-		$fileName = 'seo_management_' . $request->relational_type . '_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d') . '.xlsx';
+		$fileName = 'seo_management_' . $request->relational_type . '_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
