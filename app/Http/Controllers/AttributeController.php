@@ -596,7 +596,7 @@ class AttributeController extends BaseController
 		}
 
 		$parentCategoryName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $parentCategory->name);
-		$fileName = $parentCategoryName.'_products_attributes_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+		$fileName = 'attributes_'.$parentCategoryName.'_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}

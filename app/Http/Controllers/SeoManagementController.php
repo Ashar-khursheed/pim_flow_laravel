@@ -777,11 +777,11 @@ class SeoManagementController extends Controller
 						$record->og_image_alt_text,
 						$record->og_image_name,
 						$record->tags,
-						$record->paragraph_1,
-						$record->paragraph_2,
-						$record->paragraph_3,
-						$record->paragraph_4,
-						$record->popular_tags,
+						// $record->paragraph_1,
+						// $record->paragraph_2,
+						// $record->paragraph_3,
+						// $record->paragraph_4,
+						// $record->popular_tags,
 					];
 					$excelRepo->writeRow($sheet, $row, $rowIndex++);
 				}
@@ -807,11 +807,11 @@ class SeoManagementController extends Controller
 					$record->og_image_alt_text,
 					$record->og_image_name,
 					$record->tags,
-					$record->paragraph_1,
-					$record->paragraph_2,
-					$record->paragraph_3,
-					$record->paragraph_4,
-					$record->popular_tags,
+					// $record->paragraph_1,
+					// $record->paragraph_2,
+					// $record->paragraph_3,
+					// $record->paragraph_4,
+					// $record->popular_tags,
 				];
 				$excelRepo->writeRow($sheet, $row, $rowIndex++);
 			}
