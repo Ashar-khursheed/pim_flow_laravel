@@ -12205,7 +12205,7 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Export product suppliers data to Excel",
+                "summary": "Export product supplier data to Excel",
                 "operationId": "e877d766ed6caaf1bdeeb2a4ee74dd6c",
                 "requestBody": {
                     "required": true,
