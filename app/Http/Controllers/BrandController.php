@@ -737,7 +737,7 @@ public function store(Request $request)
 					'message' => "You don't have permission to access this module.",
 				]);
 			}
-			$query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at')
+			$query = Brand::select('id', 'name', 'logo', 'website', 'is_featured', 'description', 'status', 'created_at', 'updated_at' , 'thumbnail' , 'ar_thumbnail')
 			->withCount('products')
 			->with([
 				'products' => function ($query) {
@@ -790,16 +790,17 @@ public function store(Request $request)
 				}
 				$thumbnailUrl = null;
 				if ($brand->thumbnail) {
-					$logoUrl = filter_var($brand->thumbnail, FILTER_VALIDATE_URL)
+					$thumbnailUrl = filter_var($brand->thumbnail, FILTER_VALIDATE_URL)
 					? $brand->thumbnail
 					: asset('storage/' . $brand->thumbnail); // skip S3 exists check
 				}
 				$ar_thumbnailUrl = null;
 				if ($brand->ar_thumbnail) {
-					$logoUrl = filter_var($brand->ar_thumbnail, FILTER_VALIDATE_URL)
+					$ar_thumbnailUrl = filter_var($brand->ar_thumbnail, FILTER_VALIDATE_URL)
 					? $brand->ar_thumbnail
 					: asset('storage/' . $brand->ar_thumbnail); // skip S3 exists check
 				}
+
 
 				return [
 					'id' => $brand->id,

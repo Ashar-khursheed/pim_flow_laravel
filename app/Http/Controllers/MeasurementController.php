@@ -93,6 +93,7 @@ class MeasurementController extends BaseController
 		$categories = Category::whereHas('categoryAttributeGroups.groupsAttributes.measurementUnits.type', function ($query) use ($typeId) {
 			$query->where('id', $typeId);
 		})
+		->doesntHave('children')
 		->select('id', 'name')
 		->distinct()
 		->orderBy('name', 'asc')

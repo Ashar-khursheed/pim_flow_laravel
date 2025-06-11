@@ -5545,6 +5545,38 @@
             }
         },
         "/api/measurement-unit-priorities/{id}": {
+            "get": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Get category measurement unit priority details",
+                "description": "Fetches category measurement unit priority details based on the given ID.",
+                "operationId": "dc74b15e90e3524e2c2d8e04f651a8c8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "put": {
                 "tags": [
                     "Measurement Unit Priorities"
