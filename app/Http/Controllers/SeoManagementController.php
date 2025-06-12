@@ -120,7 +120,7 @@ class SeoManagementController extends Controller
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'nullable|file|image|mimes:jpeg,png,jpg,gif,webp',
+				'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
 				'secondary_keywords' => 'nullable|json',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',
@@ -396,7 +396,7 @@ class SeoManagementController extends Controller
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'exclude_if:og_image_file,'.$request->og_image_file.'|file|image|mimes:jpeg,png,jpg,gif,webp',
+				'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp', // ✅ fixed here
 				'secondary_keywords' => 'nullable|string',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',
