@@ -229,8 +229,8 @@ class GradingController extends Controller
     {
         // Validate input
         $request->validate([
-            'total_attributes' => 'required|integer|min:1',
-            'filled_attributes' => 'required|integer|min:0|max:' . $request->input('total_attributes'),
+            'total' => 'required|integer|min:1',
+            'obtained' => 'required|integer|min:0|max:' . $request->input('total'),
         ]);
 
         // Find the grading rule for the product
@@ -241,8 +241,8 @@ class GradingController extends Controller
         }
 
         // Update the grading rule for the product
-        $totalAttributes = $request->input('total_attributes');
-        $filledAttributes = $request->input('filled_attributes');
+        $totalAttributes = $request->input('total');
+        $filledAttributes = $request->input('obtained');
 
         // Calculate percentage
         $percentage = ($filledAttributes / $totalAttributes) * 100;
@@ -257,8 +257,8 @@ class GradingController extends Controller
 
         return response()->json([
             'product_id' => $product_id,
-            'total_attributes' => $totalAttributes,
-            'filled_attributes' => $filledAttributes,
+            'total' => $totalAttributes,
+            'obtained' => $filledAttributes,
             'grade' => $grade,
             'message' => 'Grading rule updated successfully.'
         ]);
