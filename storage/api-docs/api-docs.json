@@ -8035,35 +8035,28 @@
                 ]
             }
         },
-        "/api/grading/update/{product_id}": {
+        "/api/update-grade": {
             "put": {
                 "tags": [
                     "Grading"
                 ],
-                "summary": "Update grade for a specific grading rule",
-                "description": "Recalculates the grade and updates the grading rule identified by ID.",
-                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Grading Rule ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer",
-                            "example": 5
-                        }
-                    }
-                ],
+                "summary": "Update grade for a specific product_id",
+                "description": "Recalculates the grade and updates the grading rule identified by product_id.",
+                "operationId": "dc73cf3245ee3bd05d7a3ac29dd3d405",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "product_id",
                                     "attributes"
                                 ],
                                 "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1683
+                                    },
                                     "attributes": {
                                         "type": "array",
                                         "items": {
@@ -8093,9 +8086,9 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "grading_rule_id": {
+                                        "product_id": {
                                             "type": "integer",
-                                            "example": 5
+                                            "example": 1683
                                         },
                                         "total_obtained": {
                                             "type": "number",
