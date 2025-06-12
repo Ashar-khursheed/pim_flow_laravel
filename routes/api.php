@@ -74,6 +74,7 @@ use App\Http\Controllers\FrontEnd\AddressController as F_AddressController;
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
+use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -299,12 +300,13 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 });
 
 
-
-
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+
+
+Route::post('frontend/orders', [F_OrderController::class, 'store']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
@@ -358,6 +360,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 });
+
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);

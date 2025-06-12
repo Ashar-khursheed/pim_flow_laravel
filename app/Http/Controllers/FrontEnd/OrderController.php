@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\BaseController;
-use App\Models\Order;
-use App\Models\OrderProduct;
-use App\Models\OrderTracking;
+use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\OrderProduct;
+use App\Models\FrontEnd\OrderTracking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -45,13 +45,14 @@ class OrderController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'customer_id' => 'required|integer|exists:customers,id',
+			// 'customer_id' => 'required|integer|exists:customers,id',
+			'customer_id' => 'required|integer',
 			'customer_address' => 'required|string|max:1000',
 			'shipping_charge' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:products,id',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.unit_price' => 'required|numeric|min:0',
@@ -61,12 +62,12 @@ class OrderController extends BaseController
 
 		try {
 			$totalProducts = 0;
-$totalAmount = 0;
+			$totalAmount = 0;
 
-foreach ($request->products as $product) {
-	$totalProducts += $product['quantity'];
-	$totalAmount += $product['quantity'] * $product['unit_price'];
-}
+			foreach ($request->products as $product) {
+				$totalProducts += $product['quantity'];
+				$totalAmount += $product['quantity'] * $product['unit_price'];
+			}
 
 
 			$order = Order::create([
@@ -82,7 +83,7 @@ foreach ($request->products as $product) {
 				'paid_amount' => 0,
 				'pending_amount' => $totalAmount,
 				'status' => 'Pending',
-				'created_by' => auth()->id() ?? null,
+				'created_by' => 0,
 				'updated_by' => null,
 			]);
 
@@ -113,7 +114,7 @@ foreach ($request->products as $product) {
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order->load(['products', 'payments', 'tracking'])
+				'data' => $order->load(['products', 'tracking'])
 			], 201);
 
 		} catch (\Exception $e) {
