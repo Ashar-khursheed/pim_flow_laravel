@@ -233,7 +233,7 @@ class GradingController extends Controller
      *     )
      * )
      */
-    public function update(Request $request)
+    public function updateGradingRule(Request $request)
     {
         // Validate input
         $request->validate([
