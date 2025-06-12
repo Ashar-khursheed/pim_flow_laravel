@@ -815,8 +815,6 @@ class ImportProductJob implements ShouldQueue
 			array_map('trim', preg_split('/\s*,\s*/', implode(',', $images)))
 		));
 
-		Log::info('Image URLs before processing: ' . json_encode($images));
-
 		foreach ($images as $key => $image) {
 			if (Str::startsWith($image, env('AWS_URL'))) {
 				$images[$key] = $image;
@@ -824,6 +822,7 @@ class ImportProductJob implements ShouldQueue
 				if (Str::startsWith($image, ['http://', 'https://'])) {
 					$uploadedImage = $this->uploadImageFromURL($image);
 					$images[$key] = $uploadedImage;
+					Log::info("Uploaded image " . $uploadedImage);
 				} else {
 					Log::warning("Invalid image URL at index $key: " . $image);
 					unset($images[$key]);
@@ -831,7 +830,6 @@ class ImportProductJob implements ShouldQueue
 			}
 		}
 
-		Log::info('Final Processed Images: ' . json_encode(array_values($images)));
 		return array_values($images);
 	}
 
@@ -909,7 +907,6 @@ class ImportProductJob implements ShouldQueue
 			}
 
 			imagedestroy($image);
-			Log::info('Uploaded Images: ' . $imageUrl);
 			return $imageUrl;
 		} catch (\Exception $e) {
 			Log::error('S3 Upload Error: ' . $e->getMessage());

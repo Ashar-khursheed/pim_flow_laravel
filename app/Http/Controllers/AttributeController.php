@@ -18,25 +18,13 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+use App\Services\ExcelImporterService;
 use App\Repository\ExcelRepository;
 
 use App\Jobs\ImportProductAttributeJob;
 
 class AttributeController extends BaseController
 {
-	/**
-	 * The excel repository instance.
-	 */
-	protected $excel;
-
-	/**
-	 * Create a new job instance.
-	 */
-	public function __construct(ExcelRepository $excel)
-	{
-		$this->excel = $excel;
-	}
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/attributes",
@@ -471,7 +459,7 @@ class AttributeController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/attributes/export",
-	 *     summary="Export product attributes data to Excel",
+	 *     summary="Export product attribute data to Excel",
 	 *     tags={"Attributes"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -486,7 +474,7 @@ class AttributeController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request)
+	public function export(Request $request, ExcelRepository $excelRepo)
 	{
 		if (!auth()->user()->can('export attribute')) {
 			return response()->json([
@@ -555,13 +543,13 @@ class AttributeController extends BaseController
 
 		$header = array_merge(['ID', 'SKU', 'Name'], $attributeNames);
 
-		/* Initialize spreadsheet */
-		$spreadsheet = $this->excel->newSpreadsheet();
-		$spreadsheet->setActiveSheetIndex(0);
+		/* Prepare spreadsheet */
+		$spreadsheet = $excelRepo->newSpreadsheet();
 		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Attributes');
 
 		/* Set headers */
-		$this->excel->setHeader($sheet, $header);
+		$excelRepo->setHeader($sheet, $header);
 
 		/* Populate data */
 		$measurementNameIds = MeasurementUnit::pluck('name', 'id')->toArray();
@@ -581,7 +569,7 @@ class AttributeController extends BaseController
 				$cell = $col++ . $row;
 
 				if (!empty($attributeDetail['attribute_value']) && in_array($attributeDetail['type'], ['select', 'toggle'])) {
-					$this->excel->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
+					$excelRepo->setDropdown($spreadsheet, $sheet, $cell, $attributeDetail['name'], $attributeDetail['attribute_value'], $existingVal);
 
 				} else if ($attributeDetail['type'] === 'measurement') {
 					$sheet->setCellValue($cell, $existingVal);
@@ -590,7 +578,7 @@ class AttributeController extends BaseController
 					$existingMeasurementValue = $measurementNameIds[$existingMeasurementUnitID] ?? '';
 
 					$unitCell = $col++ . $row;
-					$this->excel->setDropdown(
+					$excelRepo->setDropdown(
 						$spreadsheet,
 						$sheet,
 						$unitCell,
@@ -607,21 +595,10 @@ class AttributeController extends BaseController
 			$row++;
 		}
 
-		/* Generate response */
-		$response = new StreamedResponse(function () use ($spreadsheet) {
-			$writer = new Xlsx($spreadsheet);
-			$writer->save('php://output');
-		});
-
 		$parentCategoryName = preg_replace('/[^a-zA-Z0-9_\.-]/', '_', $parentCategory->name);
-		$fileName = strtolower(str_replace(' ', '_', trim("{$parentCategoryName}_products_{$request->range_from}-{$request->range_to}.xlsx")));
+		$fileName = 'attributes_'.$parentCategoryName.'_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
-		$response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-		$response->headers->set('Content-Disposition', $response->headers->makeDisposition(
-			ResponseHeaderBag::DISPOSITION_ATTACHMENT, $fileName
-		));
-
-		return $response;
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
 	/**
@@ -635,15 +612,15 @@ class AttributeController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="Excel file (.xlsx) max 2MB")
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function import(Request $request)
+	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
 		if (!auth()->user()->can('import attribute')) {
 			return response()->json([
@@ -651,94 +628,127 @@ class AttributeController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
+		]);
+
 		try {
-			/* Validate request data */
-			$request->validate([
-				'upload_file' => 'required|file|mimes:xlsx|max:2048',
-			]);
+			$attributeFileFormatArray = [
+				'ID'   => 'id',
+				'SKU' => 'sku',
+				'Name' => 'name',
+			];
 
-			$mandatoryHeaders = ['ID', 'SKU', 'Name'];
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
+				$attributeFileFormatArray,
+				'Product Attribute', /* Module name */
+				'JOB_ATTRIBUTE', /* Job name */
+				'Import Product Attributes', /* Batch name */
+				ImportProductAttributeJob::class
+			);
 
-			$file = $request->file('upload_file');
-			$spreadsheet = $this->excel->loadFile($file->getRealPath());
-			$sheet = $spreadsheet->getActiveSheet();
-			$data = $sheet->toArray();
-			$header = array_shift($data);
-
-			/* Check required header */
-			$missingHeaders = array_diff($mandatoryHeaders, $header);
-			if (!empty($missingHeaders)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
-				]);
-			}
-
-			$totalRecords = count($data);
-			if ($totalRecords == 0) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
-				]);
-			}
-
-			if ($totalRecords > 2000) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The uploaded Excel file contains more than 2000 records. Please reduce the number of rows and try again.'
-				]);
-			}
-
-			/* Create batch */
-			$batch = Bus::batch([])
-			->before(function (Batch $batch) use ($totalRecords) {
-				$descArray = [
-					"Total Count" => $totalRecords,
-					"Success Count" => 0,
-					"Failed Count" => 0,
-					"Errors" => []
-				];
-				/* Save transaction log */
-				$log = new TransactionLog();
-				$log->module = "Product Attribute";
-				$log->action = "Import";
-				$log->identifier = $batch->id;
-				$log->status = 'In-progress';
-				$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
-				$log->created_by = auth()->id() ?? null;
-				$log->created_at = now();
-				$log->save();
-			})
-			->finally(function (Batch $batch) {
-				$log = TransactionLog::where('identifier', $batch->id)->first();
-				TransactionLog::where('id', $log->id)->update([
-					'status' => 'Completed',
-				]);
-			})
-			->name("Import Product Attributes")
-			->dispatch();
-
-			/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
-			$chunkSize = 50;
-			$chunks = array_chunk($data, $chunkSize);
-
-			foreach ($chunks as $chunk) {
-				$data = [
-					'header' => $header,
-					'chunk' => $chunk
-				];
-				$batch->options['queue'] = 'JOB2';
-				$batch->add(new ImportProductAttributeJob($data));
-			}
 			return response()->json([
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
 		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
-				'message' => $exception->getMessage()
+				'message' => $error
 			]);
 		}
 	}
+
+
+
+	// 		$mandatoryHeaders = ['ID', 'SKU', 'Name'];
+
+	// 		$file = $request->file('upload_file');
+	// 		$spreadsheet = $this->excel->loadFile($file->getRealPath());
+	// 		$sheet = $spreadsheet->getActiveSheet();
+	// 		$data = $sheet->toArray();
+	// 		$header = array_shift($data);
+
+	// 		/* Check required header */
+	// 		$missingHeaders = array_diff($mandatoryHeaders, $header);
+	// 		if (!empty($missingHeaders)) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'Missing mandatory columns: ' . implode(', ', $missingHeaders)
+	// 			]);
+	// 		}
+
+	// 		$totalRecords = count($data);
+	// 		if ($totalRecords == 0) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'The uploaded Excel file does not contain any records. Please ensure the file has valid data and try again.'
+	// 			]);
+	// 		}
+
+	// 		if ($totalRecords > 2000) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'The uploaded Excel file contains more than 2000 records. Please reduce the number of rows and try again.'
+	// 			]);
+	// 		}
+
+	// 		/* Create batch */
+	// 		$batch = Bus::batch([])
+	// 		->before(function (Batch $batch) use ($totalRecords) {
+	// 			$descArray = [
+	// 				"Total Count" => $totalRecords,
+	// 				"Success Count" => 0,
+	// 				"Failed Count" => 0,
+	// 				"Errors" => []
+	// 			];
+	// 			/* Save transaction log */
+	// 			$log = new TransactionLog();
+	// 			$log->module = "Product Attribute";
+	// 			$log->action = "Import";
+	// 			$log->identifier = $batch->id;
+	// 			$log->status = 'In-progress';
+	// 			$log->description = json_encode($descArray, JSON_UNESCAPED_UNICODE);
+	// 			$log->created_by = auth()->id() ?? null;
+	// 			$log->created_at = now();
+	// 			$log->save();
+	// 		})
+	// 		->finally(function (Batch $batch) {
+	// 			$log = TransactionLog::where('identifier', $batch->id)->first();
+	// 			TransactionLog::where('id', $log->id)->update([
+	// 				'status' => 'Completed',
+	// 			]);
+	// 		})
+	// 		->name("Import Product Attributes")
+	// 		->dispatch();
+
+	// 		/* Chunk the data into manageable portions (e.g., 100 rows per chunk) */
+	// 		$chunkSize = 50;
+	// 		$chunks = array_chunk($data, $chunkSize);
+
+	// 		foreach ($chunks as $chunk) {
+	// 			$data = [
+	// 				'header' => $header,
+	// 				'chunk' => $chunk
+	// 			];
+	// 			$batch->options['queue'] = 'JOB2';
+	// 			$batch->add(new ImportProductAttributeJob($data));
+	// 		}
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+	// 		]);
+	// 	} catch(\Exception $exception) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => $exception->getMessage()
+	// 		]);
+	// 	}
+	// }
 }

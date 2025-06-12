@@ -21,7 +21,7 @@
                 "tags": [
                     "Keywords"
                 ],
-                "summary": "Api to export the keyword file",
+                "summary": "Export app keyword data to Excel",
                 "operationId": "07bbb4330e4cd54744e665b8f3e3a88e",
                 "requestBody": {
                     "required": true,
@@ -35,7 +35,7 @@
                                         "example": 1
                                     },
                                     "range_to": {
-                                        "description": "Ending range (must be >= range_from and max 2000 more)",
+                                        "description": "Ending range (must be >= range_from and max 5000 more)",
                                         "type": "integer",
                                         "example": 50
                                     }
@@ -65,7 +65,7 @@
                 "tags": [
                     "Keywords"
                 ],
-                "summary": "Import keywords from a csv file",
+                "summary": "Import keywords from an excel file",
                 "operationId": "339faf5df666be1af0938896622020bc",
                 "requestBody": {
                     "required": true,
@@ -77,7 +77,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -89,7 +89,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -463,7 +463,7 @@
                 "tags": [
                     "Attributes"
                 ],
-                "summary": "Export product attributes data to Excel",
+                "summary": "Export product attribute data to Excel",
                 "operationId": "2dbb4b40158242a96fa2dcd1efb85f74",
                 "requestBody": {
                     "required": true,
@@ -529,7 +529,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "Excel file (.xlsx) max 2MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -541,7 +541,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -8035,42 +8035,43 @@
                 ]
             }
         },
-        "/api/grading/update/{product_id}": {
+        "/api/update-grade": {
             "put": {
                 "tags": [
                     "Grading"
                 ],
-                "summary": "Update Grading Rule for a Product",
-                "description": "Update the min_percentage and max_percentage for a product's grading rule.",
-                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
-                "parameters": [
-                    {
-                        "name": "product_id",
-                        "in": "path",
-                        "description": "Product ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Update grade for a specific product_id",
+                "description": "Recalculates the grade and updates the grading rule identified by product_id.",
+                "operationId": "dc73cf3245ee3bd05d7a3ac29dd3d405",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "total_attributes",
-                                    "filled_attributes"
+                                    "product_id",
+                                    "attributes"
                                 ],
                                 "properties": {
-                                    "total_attributes": {
+                                    "product_id": {
                                         "type": "integer",
-                                        "example": 10
+                                        "example": 1683
                                     },
-                                    "filled_attributes": {
-                                        "type": "integer",
-                                        "example": 8
+                                    "attributes": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "obtained": {
+                                                    "type": "number",
+                                                    "example": 80
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
@@ -8080,7 +8081,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successfully updated grading rule for the product",
+                        "description": "Grade updated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8089,21 +8090,21 @@
                                             "type": "integer",
                                             "example": 1683
                                         },
-                                        "total_attributes": {
-                                            "type": "integer",
-                                            "example": 10
+                                        "total_obtained": {
+                                            "type": "number",
+                                            "example": 400
                                         },
-                                        "filled_attributes": {
-                                            "type": "integer",
-                                            "example": 8
+                                        "total_possible": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "percentage": {
+                                            "type": "number",
+                                            "example": 80
                                         },
                                         "grade": {
                                             "type": "string",
                                             "example": "B"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Grading rule updated successfully"
                                         }
                                     },
                                     "type": "object"
@@ -8112,14 +8113,14 @@
                         }
                     },
                     "404": {
-                        "description": "Product not found",
+                        "description": "Grading rule not found",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Product not found."
+                                            "example": "Grading rule not found."
                                         }
                                     },
                                     "type": "object"
@@ -10850,7 +10851,7 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Import products from an Excel file",
+                "summary": "Import products from an excel file",
                 "operationId": "9385548716bbfe802e074592297d7e4a",
                 "requestBody": {
                     "required": true,
@@ -10874,7 +10875,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -11062,7 +11063,7 @@
                 "tags": [
                     "Products"
                 ],
-                "summary": "Export products to Excel",
+                "summary": "Export product data to Excel",
                 "operationId": "d0fea69d0c166a2a6ebea27b5466660f",
                 "requestBody": {
                     "required": true,
@@ -12248,7 +12249,7 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Export product suppliers data to Excel",
+                "summary": "Export product supplier data to Excel",
                 "operationId": "e877d766ed6caaf1bdeeb2a4ee74dd6c",
                 "requestBody": {
                     "required": true,
@@ -13526,12 +13527,6 @@
                                             "Blog"
                                         ],
                                         "example": "Product"
-                                    },
-                                    "relational_id": {
-                                        "description": "ID of the related entity (optional)",
-                                        "type": "integer",
-                                        "example": 5,
-                                        "nullable": true
                                     },
                                     "range_from": {
                                         "description": "Starting range (must be >= 1)",
@@ -15581,7 +15576,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Import vendors from a csv file",
+                "summary": "Import vendors from an excel file",
                 "operationId": "588a3a46a9a21058de6f0bf0ffc724d3",
                 "requestBody": {
                     "required": true,
@@ -15593,7 +15588,7 @@
                                 ],
                                 "properties": {
                                     "upload_file": {
-                                        "description": "CSV file (.csv) max 5MB",
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -15605,7 +15600,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Imported successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -15623,7 +15618,7 @@
                 "tags": [
                     "Vendors"
                 ],
-                "summary": "Export vendors to CSV",
+                "summary": "Export vendor data to Excel",
                 "operationId": "372f96c86b2fdc93ba94d7af9692493d",
                 "requestBody": {
                     "required": true,
