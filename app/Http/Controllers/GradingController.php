@@ -251,8 +251,8 @@ class GradingController extends Controller
         $grade = $this->calculateGrade($percentage);
 
         // Update grading rule in DB (you can store this percentage in DB if required)
-        $gradingRule->total_attributes = $totalAttributes;
-        $gradingRule->filled_attributes = $filledAttributes;
+        $gradingRule->total = $totalAttributes;
+        $gradingRule->obtained = $filledAttributes;
         $gradingRule->save();
 
         return response()->json([
