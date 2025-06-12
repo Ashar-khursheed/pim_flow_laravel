@@ -4626,14 +4626,13 @@
                     "Categories"
                 ],
                 "summary": "Get Category List",
-                "description": "Fetches a list of categories. If 'type' is set to 'Parent', only parent categories (parent_id = 0) will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
+                "description": "Fetches a list of categories. If 'type' is set to 'Parent', only parent categories will be returned. If 'parent_id' is provided, it fetches all child categories of the given parent.",
                 "operationId": "3f5817a34833d0a1f4af4548dd3aeaba",
                 "parameters": [
                     {
                         "name": "type",
                         "in": "query",
-                        "description": "Filter categories by type. Options: 'All' (default), 'Parent'",
-                        "required": false,
+                        "description": "Filter categories by type.",
                         "schema": {
                             "type": "string",
                             "default": "All",
@@ -4648,17 +4647,27 @@
                         "name": "parent_id",
                         "in": "query",
                         "description": "Fetch all child categories of a given parent_id",
-                        "required": false,
                         "schema": {
-                            "type": "integer",
-                            "example": 1
+                            "type": "integer"
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "published",
+                                "draft",
+                                "pending"
+                            ]
                         }
                     },
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -4669,12 +4678,46 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
                         },
                         "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
