@@ -332,6 +332,7 @@ class ProductController extends BaseController
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
+
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'box_quantity', 'delivery_days' , 'website_ids'],
