@@ -11851,6 +11851,93 @@
                 }
             }
         },
+        "/api/frontend/orders": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Order"
+                ],
+                "summary": "Create a new order",
+                "operationId": "9832a1c7fe8aa070445454ed87e0d7ba",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "customer_address",
+                                    "shipping_charge",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "customer_address": {
+                                        "type": "string",
+                                        "example": "123 Main St, City, Country"
+                                    },
+                                    "shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    },
+                                    "ship_all_at_once": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "separate_deliveries": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 199.99
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Order created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/product/{id}/nutrition-facts1": {
             "get": {
                 "tags": [
@@ -23173,6 +23260,10 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
+        },
+        {
+            "name": "FrontEnd-Order",
+            "description": "FrontEnd-Order"
         },
         {
             "name": "Frontend-Attribute Products",
