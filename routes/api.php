@@ -96,7 +96,7 @@ Route::middleware(['auth:api'])->group(function () {
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
 	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
-	Route::put('/grading/update/{product_id}/{grade}', [GradingController::class, 'updateGradingRule']);
+	Route::put('/grading/update/{product_id}', [GradingController::class, 'updateGradingRule']);
 
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
