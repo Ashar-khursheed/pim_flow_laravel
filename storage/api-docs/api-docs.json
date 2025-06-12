@@ -8040,17 +8040,28 @@
                 "tags": [
                     "Grading"
                 ],
-                "summary": "Update Grade based on attributes and update in database",
-                "description": "Accepts a list of attributes with obtained and total values, recalculates the grade and percentage, and updates the existing grading rule in the database.",
-                "operationId": "196c019f708378c6a46ef3947578c6b5",
+                "summary": "Update grade for a specific grading rule",
+                "description": "Recalculates the grade and updates the grading rule identified by ID.",
+                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Grading Rule ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 5
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "attributes",
-                                    "grading_rule_id"
+                                    "attributes"
                                 ],
                                 "properties": {
                                     "attributes": {
@@ -8059,7 +8070,7 @@
                                             "properties": {
                                                 "obtained": {
                                                     "type": "number",
-                                                    "example": 90
+                                                    "example": 80
                                                 },
                                                 "total": {
                                                     "type": "number",
@@ -8068,10 +8079,6 @@
                                             },
                                             "type": "object"
                                         }
-                                    },
-                                    "grading_rule_id": {
-                                        "type": "integer",
-                                        "example": 5
                                     }
                                 },
                                 "type": "object"
@@ -8081,7 +8088,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successful grade update",
+                        "description": "Grade updated successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -8092,7 +8099,7 @@
                                         },
                                         "total_obtained": {
                                             "type": "number",
-                                            "example": 450
+                                            "example": 400
                                         },
                                         "total_possible": {
                                             "type": "number",
@@ -8100,11 +8107,11 @@
                                         },
                                         "percentage": {
                                             "type": "number",
-                                            "example": 90
+                                            "example": 80
                                         },
                                         "grade": {
                                             "type": "string",
-                                            "example": "A"
+                                            "example": "B"
                                         }
                                     },
                                     "type": "object"
@@ -8121,22 +8128,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Grading rule not found."
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid input",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The attributes field is required."
                                         }
                                     },
                                     "type": "object"
