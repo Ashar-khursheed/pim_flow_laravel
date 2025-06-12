@@ -8040,37 +8040,38 @@
                 "tags": [
                     "Grading"
                 ],
-                "summary": "Update Grading Rule for a Product",
-                "description": "Update the min_percentage and max_percentage for a product's grading rule.",
-                "operationId": "563c5f9e490b1b32790f6252dc7113a2",
-                "parameters": [
-                    {
-                        "name": "product_id",
-                        "in": "path",
-                        "description": "Product ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
+                "summary": "Update Grade based on attributes and update in database",
+                "description": "Accepts a list of attributes with obtained and total values, recalculates the grade and percentage, and updates the existing grading rule in the database.",
+                "operationId": "196c019f708378c6a46ef3947578c6b5",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "total_attributes",
-                                    "filled_attributes"
+                                    "attributes",
+                                    "grading_rule_id"
                                 ],
                                 "properties": {
-                                    "total_attributes": {
-                                        "type": "integer",
-                                        "example": 10
+                                    "attributes": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "obtained": {
+                                                    "type": "number",
+                                                    "example": 90
+                                                },
+                                                "total": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     },
-                                    "filled_attributes": {
+                                    "grading_rule_id": {
                                         "type": "integer",
-                                        "example": 8
+                                        "example": 5
                                     }
                                 },
                                 "type": "object"
@@ -8080,30 +8081,30 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Successfully updated grading rule for the product",
+                        "description": "Successful grade update",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "product_id": {
+                                        "grading_rule_id": {
                                             "type": "integer",
-                                            "example": 1683
+                                            "example": 5
                                         },
-                                        "total_attributes": {
-                                            "type": "integer",
-                                            "example": 10
+                                        "total_obtained": {
+                                            "type": "number",
+                                            "example": 450
                                         },
-                                        "filled_attributes": {
-                                            "type": "integer",
-                                            "example": 8
+                                        "total_possible": {
+                                            "type": "number",
+                                            "example": 500
+                                        },
+                                        "percentage": {
+                                            "type": "number",
+                                            "example": 90
                                         },
                                         "grade": {
                                             "type": "string",
-                                            "example": "B"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Grading rule updated successfully"
+                                            "example": "A"
                                         }
                                     },
                                     "type": "object"
@@ -8112,14 +8113,30 @@
                         }
                     },
                     "404": {
-                        "description": "Product not found",
+                        "description": "Grading rule not found",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "message": {
                                             "type": "string",
-                                            "example": "Product not found."
+                                            "example": "Grading rule not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The attributes field is required."
                                         }
                                     },
                                     "type": "object"

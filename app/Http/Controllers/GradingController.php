@@ -178,91 +178,106 @@ class GradingController extends Controller
 
 
 
-      /**
+    /**
      * @OA\Put(
      *     path="/api/grading/update/{product_id}",
-     *     summary="Update Grading Rule for a Product",
-     *     description="Update the min_percentage and max_percentage for a product's grading rule.",
+     *     summary="Update Grade based on attributes and update in database",
+     *     description="Accepts a list of attributes with obtained and total values, recalculates the grade and percentage, and updates the existing grading rule in the database.",
      *     tags={"Grading"},
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="product_id",
-     *         in="path",
-     *         required=true,
-     *         description="Product ID",
-     *         @OA\Schema(type="integer")
-     *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\MediaType(
      *             mediaType="application/json",
      *             @OA\Schema(
      *                 type="object",
-     *                 required={"total_attributes", "filled_attributes"},
-     *                 @OA\Property(property="total_attributes", type="integer", example=10),
-     *                 @OA\Property(property="filled_attributes", type="integer", example=8)
+     *                 required={"attributes", "grading_rule_id"},
+     *                 @OA\Property(
+     *                     property="attributes",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="obtained", type="number", example=90),
+     *                         @OA\Property(property="total", type="number", example=100)
+     *                     )
+     *                 ),
+     *                 @OA\Property(property="grading_rule_id", type="integer", example=5)
      *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Successfully updated grading rule for the product",
+     *         description="Successful grade update",
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="product_id", type="integer", example=1683),
-     *             @OA\Property(property="total_attributes", type="integer", example=10),
-     *             @OA\Property(property="filled_attributes", type="integer", example=8),
-     *             @OA\Property(property="grade", type="string", example="B"),
-     *             @OA\Property(property="message", type="string", example="Grading rule updated successfully")
+     *             @OA\Property(property="grading_rule_id", type="integer", example=5),
+     *             @OA\Property(property="total_obtained", type="number", example=450),
+     *             @OA\Property(property="total_possible", type="number", example=500),
+     *             @OA\Property(property="percentage", type="number", example=90),
+     *             @OA\Property(property="grade", type="string", example="A")
      *         )
      *     ),
      *     @OA\Response(
      *         response=404,
-     *         description="Product not found",
+     *         description="Grading rule not found",
      *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="Product not found.")
+     *             @OA\Property(property="message", type="string", example="Grading rule not found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid input",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The attributes field is required.")
      *         )
      *     )
      * )
      */
-    public function updateGradingRule(Request $request, $product_id)
+    public function update(Request $request)
     {
         // Validate input
         $request->validate([
-            'total' => 'required|integer|min:1',
-            'obtained' => 'required|integer|min:0|max:' . $request->input('total'),
+            'attributes' => 'required|array|min:1',
+            'attributes.*.obtained' => 'required|numeric|min:0',
+            'attributes.*.total' => 'required|numeric|min:1',
+            'grading_rule_id' => 'required|exists:grading_rules,id',
         ]);
 
-        // Find the grading rule for the product
-        $gradingRule = GradingRule::where('product_id', $product_id)->first();
+        $attributes = $request->input('attributes');
+        $totalObtained = 0;
+        $totalPossible = 0;
 
-        if (!$gradingRule) {
-            return response()->json(['message' => 'Product not found.'], 404);
+        foreach ($attributes as $attr) {
+            $totalObtained += $attr['obtained'];
+            $totalPossible += $attr['total'];
         }
 
-        // Update the grading rule for the product
-        $totalAttributes = $request->input('total');
-        $filledAttributes = $request->input('obtained');
+        $percentage = $totalPossible > 0 ? ($totalObtained / $totalPossible) * 100 : 0;
+        $grade = $this->getGradeFromPercentage($percentage);
 
-        // Calculate percentage
-        $percentage = ($filledAttributes / $totalAttributes) * 100;
+        // Find existing record
+        $gradingRule = GradingRule::find($request->input('grading_rule_id'));
 
-        // Calculate grade based on percentage
-        $grade = $this->calculateGrade($percentage);
+        if (!$gradingRule) {
+            return response()->json(['message' => 'Grading rule not found.'], 404);
+        }
 
-        // Update grading rule in DB (you can store this percentage in DB if required)
-        $gradingRule->total = $totalAttributes;
-        $gradingRule->obtained = $filledAttributes;
-        $gradingRule->save();
+        // Update record
+        $gradingRule->update([
+            'grade' => $grade,
+            'min_percentage' => $percentage - 10,
+            'max_percentage' => $percentage + 10,
+        ]);
 
         return response()->json([
-            'product_id' => $product_id,
-            'total' => $totalAttributes,
-            'obtained' => $filledAttributes,
-            'grade' => $grade,
-            'message' => 'Grading rule updated successfully.'
+            'grading_rule_id' => $gradingRule->id,
+            'total_obtained' => $totalObtained,
+            'total_possible' => $totalPossible,
+            'percentage' => round($percentage, 2),
+            'grade' => $grade
         ]);
     }
+
 
     // Function to calculate the grade based on percentage of filled attributes
     private function calculateGrade($percentage)
