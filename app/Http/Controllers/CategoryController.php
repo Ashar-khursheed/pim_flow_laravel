@@ -95,13 +95,13 @@ class CategoryController extends BaseController
 			]);
 			$records->transform(function ($record) {
 
-			if ($record->image) {
-				$record->image = asset('storage/' . $record->image);
-			}
-			if ($record->icon_image) {
-				$record->icon_image = asset('storage/' . $record->icon_image);
-			}
-			return $record;
+				if ($record->image) {
+					$record->image = asset('storage/' . $record->image);
+				}
+				if ($record->icon_image) {
+					$record->icon_image = asset('storage/' . $record->icon_image);
+				}
+				return $record;
 			});
 		} else {
 			$records = $recordsQuery->orderBy('name', 'asc')->get([
@@ -301,6 +301,13 @@ class CategoryController extends BaseController
 				$parentId = $data['parent_id'] ?? 0;
 				$lastOrder = Category::where('parent_id', $parentId)->max('order');
 				$data['order'] = $lastOrder ? $lastOrder + 1 : 1;
+			}
+
+			if ($data['status'] == 'published') {
+				return response()->json([
+					'success' => false,
+					'message' => 'At least 3 products must be assigned to the product family before it can be published.'
+				]);
 			}
 
 			// Create the category
@@ -516,6 +523,17 @@ class CategoryController extends BaseController
 				$parentId = $data['parent_id'] ?? 0;
 				$lastOrder = Category::where('parent_id', $parentId)->where('id', '!=', $category->id)->max('order');
 				$data['order'] = $lastOrder ? $lastOrder + 1 : 1;
+			}
+
+			if (
+				$data['status'] === 'published' &&
+				$category->children->isEmpty() &&
+				$category->products()->take(3)->count() < 3
+			) {
+				return response()->json([
+					'success' => false,
+					'message' => 'At least 3 products must be assigned to the product family before it can be published.'
+				]);
 			}
 
 			$category->update($data);

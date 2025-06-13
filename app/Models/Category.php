@@ -106,19 +106,13 @@ class Category extends Model
 		return $this->hasMany(SubCategory::class);
 	}
 
-	public function products(): BelongsToMany
+	public function products()
 	{
-		return $this
-		->belongsToMany(
+		return $this->belongsToMany(
 			Product::class,
 			'ec_product_category_product',
 			'category_id',
 			'product_id'
-		)
-		->where('is_variation', 0);
+		);
 	}
-
-	
-
-
 }
