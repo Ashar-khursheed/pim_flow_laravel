@@ -2225,12 +2225,12 @@ class ProductController extends BaseController
 		if (isset($input['status'])) {
 			$validStatuses = ['draft', 'published', 'pending']; /* Define allowed statuses */
 
-			if (!in_array($input['status'], $validStatuses)) {
+		if($product->productAttributes->count()<5 ) {
 				return response()->json([
 					'success' => false,
-					'message' => 'Invalid status value. Allowed values: draft, published, archived.'
+					'message' => 'You must assign at least 5 attributes to the product before it can be published'
 				]);
-			}
+		}	
 
 			$product->status = $input['status']; /* Assign status */
 		}
