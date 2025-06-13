@@ -11854,7 +11854,7 @@
         "/api/frontend/orders": {
             "post": {
                 "tags": [
-                    "FrontEnd-Order"
+                    "FrontEnd-Orders"
                 ],
                 "summary": "Create a new order",
                 "operationId": "9832a1c7fe8aa070445454ed87e0d7ba",
@@ -14651,17 +14651,27 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number",
-                        "required": false,
+                        "description": "Page number for pagination",
                         "schema": {
-                            "type": "integer"
-                        }
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
                     },
                     {
                         "name": "status",
                         "in": "query",
-                        "description": "Filter by order status",
-                        "required": false,
+                        "description": "Filter by order status.",
                         "schema": {
                             "type": "string"
                         }
@@ -14669,8 +14679,7 @@
                     {
                         "name": "payment_status",
                         "in": "query",
-                        "description": "Filter by payment status",
-                        "required": false,
+                        "description": "Filter by payment status.",
                         "schema": {
                             "type": "string",
                             "enum": [
@@ -14679,11 +14688,53 @@
                                 "Partially Paid"
                             ]
                         }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_number",
+                                "customer_name",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Orders retrieved successfully"
+                        "description": "Orders retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -14704,64 +14755,59 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "customer_name",
-                                    "customer_email",
-                                    "customer_phone",
-                                    "address",
-                                    "city",
-                                    "country",
-                                    "items"
+                                    "customer_id",
+                                    "customer_address",
+                                    "shipping_charge",
+                                    "products"
                                 ],
                                 "properties": {
-                                    "customer_name": {
-                                        "type": "string"
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
                                     },
-                                    "customer_email": {
+                                    "customer_address": {
                                         "type": "string",
-                                        "format": "email"
+                                        "example": "123 Main St, City, Country"
                                     },
-                                    "customer_phone": {
-                                        "type": "string"
-                                    },
-                                    "company": {
-                                        "type": "string"
-                                    },
-                                    "address": {
-                                        "type": "string"
-                                    },
-                                    "city": {
-                                        "type": "string"
-                                    },
-                                    "country": {
-                                        "type": "string"
+                                    "shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
                                     },
                                     "ship_all_at_once": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "separate_deliveries": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "example": false
                                     },
-                                    "items": {
+                                    "products": {
                                         "type": "array",
                                         "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price"
+                                            ],
                                             "properties": {
-                                                "item_id": {
-                                                    "type": "string"
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
                                                 },
-                                                "name": {
-                                                    "type": "string"
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
                                                 },
                                                 "quantity": {
-                                                    "type": "integer"
-                                                },
-                                                "supplier": {
-                                                    "type": "string"
+                                                    "type": "integer",
+                                                    "example": 5
                                                 },
                                                 "unit_price": {
-                                                    "type": "number"
-                                                },
-                                                "image_url": {
-                                                    "type": "string"
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 199.99
                                                 }
                                             },
                                             "type": "object"
@@ -14775,7 +14821,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Order created successfully"
+                        "description": "Order created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -14866,16 +14915,16 @@
                 ]
             }
         },
-        "/api/orders/{id}/items/{item_id}/status": {
+        "/api/orders/{orderId}/products/{orderProductId}/status": {
             "put": {
                 "tags": [
                     "Orders"
                 ],
                 "summary": "Update specific item status",
-                "operationId": "d2041e28b03d422af17f8050e7b0d49f",
+                "operationId": "e8b6ffbff12881d917bfb387655bf97f",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "orderId",
                         "in": "path",
                         "description": "Order ID",
                         "required": true,
@@ -14884,9 +14933,9 @@
                         }
                     },
                     {
-                        "name": "item_id",
+                        "name": "orderProductId",
                         "in": "path",
-                        "description": "Order Item ID",
+                        "description": "Order product ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -14916,7 +14965,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Item status updated successfully"
+                        "description": "Product status updated successfully"
                     }
                 },
                 "security": [
@@ -14950,18 +14999,18 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "items"
+                                    "products"
                                 ],
                                 "properties": {
-                                    "items": {
+                                    "products": {
                                         "type": "array",
                                         "items": {
                                             "required": [
-                                                "order_item_id",
+                                                "order_product_id",
                                                 "quantity"
                                             ],
                                             "properties": {
-                                                "order_item_id": {
+                                                "order_product_id": {
                                                     "type": "integer"
                                                 },
                                                 "quantity": {
@@ -23257,8 +23306,8 @@
             "description": "Frontend - FAQs"
         },
         {
-            "name": "FrontEnd-Order",
-            "description": "FrontEnd-Order"
+            "name": "FrontEnd-Orders",
+            "description": "FrontEnd-Orders"
         },
         {
             "name": "Frontend-Attribute Products",

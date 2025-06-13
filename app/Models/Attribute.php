@@ -8,7 +8,7 @@ class Attribute extends Model
 {
 	// protected $guarded = [];
 	// protected $fillable = ['name', 'code', 'type', 'is_required', 'validations'];
-	protected $fillable = ['name', 'code', 'type', 'attribute_group_id','validations'];
+	protected $fillable = ['name', 'code', 'type', 'attribute_group_id', 'validations', 'created_by', 'updated_by'];
 
 	public function creator()
 	{

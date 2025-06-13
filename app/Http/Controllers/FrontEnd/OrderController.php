@@ -16,7 +16,7 @@ class OrderController extends BaseController
 	 * @OA\Post(
 	 *     path="/api/frontend/orders",
 	 *     summary="Create a new order",
-	 *     tags={"FrontEnd-Order"},
+	 *     tags={"FrontEnd-Orders"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
@@ -45,8 +45,7 @@ class OrderController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			// 'customer_id' => 'required|integer|exists:customers,id',
-			'customer_id' => 'required|integer',
+			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address' => 'required|string|max:1000',
 			'shipping_charge' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
