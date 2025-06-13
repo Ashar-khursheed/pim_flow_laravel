@@ -19,6 +19,8 @@ use App\Models\VendorContact;
 
 use App\Jobs\ImportVendorJob;
 use App\Services\CsvImporterService;
+use App\Repository\ExcelRepository;
+use App\Services\ExcelImporterService;
 
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -698,7 +700,7 @@ class VendorController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/vendors/import",
-	 *     summary="Import vendors from a csv file",
+	 *     summary="Import vendors from an excel file",
 	 *     tags={"Vendors"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -706,18 +708,20 @@ class VendorController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"upload_file"},
-	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="CSV file (.csv) max 5MB")
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB")
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
-	public function import(Request $request, CsvImporterService $csvImporter)
+	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
-		$request->validate(['upload_file' => 'required|file|mimes:csv,txt|max:5120']);
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
+		]);
 
 		try {
 			$vendorFileFormatArray = [
@@ -741,23 +745,23 @@ class VendorController extends BaseController
 				'Business Licence URL' => 'business_licence_url'
 			];
 
-			$csvImporter->processCsvImport(
-				$request->file('upload_file')->getRealPath(),
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
 				$vendorFileFormatArray,
-				'Vendor',
-				'JOB4',
-				'Vendor Import',
-				\App\Jobs\ImportVendorJob::class
+				'Vendor', /* Module name */
+				'JOB_VENDOR', /* Job name */
+				'Import Vendors', /* Batch name */
+				ImportVendorJob::class
 			);
 
 			return response()->json([
 				'success' => true,
 				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 			]);
-		} catch (\Exception $e) {
-			$error[] = 'Error: ' . $e->getMessage();
-			$error[] = 'File: ' . $e->getFile();
-			$error[] = 'Line: ' . $e->getLine();
+		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
 			return response()->json([
 				'success' => false,
 				'message' => $error
@@ -768,7 +772,7 @@ class VendorController extends BaseController
 	/**
 	 * @OA\Post(
 	 *     path="/api/vendors/export",
-	 *     summary="Export vendors to CSV",
+	 *     summary="Export vendor data to Excel",
 	 *     tags={"Vendors"},
 	 *     @OA\RequestBody(
 	 *         required=true,
@@ -786,7 +790,7 @@ class VendorController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function export(Request $request)
+	public function export(Request $request, ExcelRepository $excelRepo)
 	{
 		/* Validate request data */
 		$request->validate([
@@ -794,7 +798,7 @@ class VendorController extends BaseController
 			'range_to' => 'required|integer|gte:range_from|max:' . ($request->range_from + 2000),
 		]);
 
-		/* Fetch records with related secondary keywords */
+		/* Fetch records with related data */
 		$records = Vendor::offset($request->range_from - 1)
 		->limit($request->range_to - $request->range_from + 1)
 		->orderBy('id', 'asc')
@@ -807,8 +811,8 @@ class VendorController extends BaseController
 			]);
 		}
 
-		/* Define CSV headers */
-		$csvHeaders = [
+		/* Define Excel headers */
+		$excelHeaders = [
 			'Id',
 			'Name',
 			'Country',
@@ -829,51 +833,46 @@ class VendorController extends BaseController
 			'Business Licence URL',
 		];
 
-		/* Create a StreamedResponse for efficient memory usage */
-		$response = new StreamedResponse(function () use ($records, $csvHeaders) {
-			$handle = fopen('php://output', 'w');
-			fputcsv($handle, $csvHeaders);
+		/* Prepare spreadsheet */
+		$spreadsheet = $excelRepo->newSpreadsheet();
+		$sheet = $spreadsheet->getActiveSheet();
+		$sheet->setTitle('Vendors');
 
-			foreach ($records as $record) {
-				/* Process city names from comma-separated IDs */
-				$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
-				$cities = City::whereIn('id', $record->city_ids)->pluck('name')->toArray();
-				$cityNames = implode('|', $cities);
+		/* Set headers */
+		$excelRepo->setHeader($sheet, $excelHeaders);
 
-				fputcsv($handle, [
-					$record->id,
-					$record->name,
-					$record->country->name ?? '',
-					$record->email,
-					$record->contact_person,
-					$record->landline_number,
-					$record->mobile_number,
-					$cityNames,
-					$record->dropshipping,
-					$record->website_link,
-					$record->domain ? ($record->domain === 'Horeca' ? 1 : 2) : null,
-					$record->type ? ($record->type === 'direct' ? 1 : 2) : null,
-					$record->credit_limit,
-					$record->net_terms,
-					$record->logo_url,
-					$record->tax_certificate_url,
-					$record->business_licence_number,
-					$record->business_licence_url
-				]);
-			}
+		/* Fill data rows */
+		$rowIndex = 2;
+		foreach ($records as $record) {
+			/* Process city names from comma-separated IDs */
+			$record->city_ids = $record->city_ids ? explode(',', $record->city_ids) : [];
+			$cities = City::whereIn('id', $record->city_ids)->pluck('name')->toArray();
+			$cityNames = implode('|', $cities);
 
-			fclose($handle);
-		});
-		$fileName = sprintf(
-			'%s_%d-%d_%s.csv',
-			'vendors',
-			$request->range_from,
-			$request->range_to,
-			now()->format('Y-m-d')
-		);
-		$response->headers->set('Content-Type', 'text/csv');
-		$response->headers->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+			$excelRepo->writeRow($sheet, [
+				$record->id,
+				$record->name,
+				$record->country->name ?? '',
+				$record->email,
+				$record->contact_person,
+				$record->landline_number,
+				$record->mobile_number,
+				$cityNames,
+				$record->dropshipping,
+				$record->website_link,
+				$record->domain ? ($record->domain === 'Horeca' ? 1 : 2) : null,
+				$record->type ? ($record->type === 'direct' ? 1 : 2) : null,
+				$record->credit_limit,
+				$record->net_terms,
+				$record->logo_url,
+				$record->tax_certificate_url,
+				$record->business_licence_number,
+				$record->business_licence_url,
+			], $rowIndex++);
+		}
 
-		return $response;
+		$fileName = 'vendors_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+
+		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 }
