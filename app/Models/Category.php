@@ -61,6 +61,11 @@ class Category extends Model
 		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
 	}
 
+	public function slug()
+	{
+		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'category');
+	}
+
 	public function categoryAttributeGroups()
 	{
 		// return $this->belongsToMany(

@@ -8321,41 +8321,31 @@
                 "tags": [
                     "Frontend-Blogs"
                 ],
-                "summary": "Get all blogs with pagination and search",
+                "summary": "Get list of blogs",
                 "operationId": "b7add13d861138c3372698690df7a727",
                 "parameters": [
                     {
-                        "name": "search",
+                        "name": "per_page",
                         "in": "query",
-                        "description": "Search by blog name",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
+                        "description": "Number of blogs per page",
                         "required": false,
                         "schema": {
                             "type": "integer"
                         }
                     },
                     {
-                        "name": "per_page",
+                        "name": "is_featured",
                         "in": "query",
-                        "description": "Number of items per page",
+                        "description": "Filter by featured blogs",
                         "required": false,
                         "schema": {
-                            "type": "integer",
-                            "default": 10
+                            "type": "boolean"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated list of blogs"
+                        "description": "List of blogs"
                     }
                 }
             }
@@ -8365,12 +8355,13 @@
                 "tags": [
                     "Frontend-Blogs"
                 ],
-                "summary": "Get single blog",
+                "summary": "Get blog details by slug",
                 "operationId": "3ac27350b80deb4645c0341cc7c45a43",
                 "parameters": [
                     {
                         "name": "slug",
                         "in": "path",
+                        "description": "Slug of the blog",
                         "required": true,
                         "schema": {
                             "type": "string"
@@ -8379,31 +8370,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Blog data"
-                    }
-                }
-            }
-        },
-        "/api/frontend/blogs/{id}/view": {
-            "post": {
-                "tags": [
-                    "Frontend-Blogs"
-                ],
-                "summary": "Increment blog view count",
-                "operationId": "ea039a4c9fe87a6cc213e51d85fa7868",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "View incremented"
+                        "description": "Blog details"
                     }
                 }
             }
@@ -8413,12 +8380,13 @@
                 "tags": [
                     "Frontend-Blogs"
                 ],
-                "summary": "Increment blog like count",
-                "operationId": "d4f3e5992a7ffb466ac866135c248ece",
+                "summary": "Like a blog post",
+                "operationId": "e652eb59fdf1614815d0165d790b46ee",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Blog ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -8427,7 +8395,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Like incremented"
+                        "description": "Blog liked"
                     }
                 }
             }
@@ -8437,12 +8405,13 @@
                 "tags": [
                     "Frontend-Blogs"
                 ],
-                "summary": "Increment blog share count",
-                "operationId": "61eb3de5b53ccafdb0ee7d8b154070f7",
+                "summary": "Share a blog post",
+                "operationId": "4dcdca820159499d075d4023a7833872",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "Blog ID",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -8451,21 +8420,100 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Share incremented"
+                        "description": "Blog shared"
                     }
                 }
             }
         },
-        "/api/frontend/blogs/latest": {
+        "/api/frontend/blogs/{id}/view": {
+            "post": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "View a blog post",
+                "operationId": "669c0dcd4a6e68255294b9f12542283c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Blog ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Blog viewed"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blog-categories": {
             "get": {
                 "tags": [
                     "Frontend-Blogs"
                 ],
-                "summary": "Get latest 5 published blogs",
-                "operationId": "fc143d74870d78b88f500b78314cf174",
+                "summary": "Get list of blog categories",
+                "operationId": "30e37d063a1c95438cfbdf2a5404c4ed",
                 "responses": {
                     "200": {
-                        "description": "Latest blogs retrieved successfully"
+                        "description": "List of blog categories"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{id}/comment": {
+            "post": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Post a comment or reply on a blog",
+                "operationId": "24a58ecc2325b97a8c6fdff0dfc6eccb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Blog ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "comment",
+                                    "created_by"
+                                ],
+                                "properties": {
+                                    "comment": {
+                                        "type": "string"
+                                    },
+                                    "parent_id": {
+                                        "type": "integer",
+                                        "nullable": true
+                                    },
+                                    "created_by": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Comment added"
+                    },
+                    "422": {
+                        "description": "Validation error"
                     }
                 }
             }
@@ -12155,6 +12203,493 @@
                 }
             }
         },
+        "/api/frontend/products": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get all products with filters and pagination (for authenticated and guest users)",
+                "operationId": "ab47768b1c6409dad7a7a8870ee94dea",
+                "parameters": [
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort products by 'created_at', 'price', or 'name'",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Get details of a specific product by ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of products with filters, brand/category info, wishlist status, and pagination details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "pagination": {
+                                            "type": "object"
+                                        },
+                                        "brands": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "price_min": {
+                                            "type": "number",
+                                            "format": "float"
+                                        },
+                                        "price_max": {
+                                            "type": "number",
+                                            "format": "float"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/public-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get all public products with filters and price range (for guests)",
+                "operationId": "d383c645033de81d2c88ed787ff495dd",
+                "parameters": [
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort products by 'created_at', 'price', or 'name'",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Get details of a specific product by ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of public products with min/max price and delivery details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        },
+                                        "price_min": {
+                                            "type": "number",
+                                            "format": "float"
+                                        },
+                                        "price_max": {
+                                            "type": "number",
+                                            "format": "float"
+                                        },
+                                        "delivery_min": {
+                                            "type": "integer"
+                                        },
+                                        "delivery_max": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/products/{id}/related": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get related products by category",
+                "description": "Returns a list of related products based on the same categories as the given product.",
+                "operationId": "323feeae16a0f5ab60ab78132f732384",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the product to find related items",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of related products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found or no related categories found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/brands/{id}/products": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get products by brand",
+                "description": "Returns paginated list of products for the specified brand.",
+                "operationId": "e7c7d24f142dc9a0a40a18cb1a71d4d3",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Brand ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated products list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Products fetched successfully"
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/brands/{id}/sale-products": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get sale products by brand",
+                "description": "Returns paginated list of products on sale for a specific brand.",
+                "operationId": "51e6a8c6aa7eface41c2fc569d324898",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Brand ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of sale products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Products fetched successfully"
+                                        },
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 20
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/brands/{id}/summary": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get brand summary statistics",
+                "description": "Returns summary stats like total units sold and total reviews for a given brand.",
+                "operationId": "getBrandSummaryStats",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID of the brand",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand summary fetched successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "brand_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "brand_name": {
+                                                    "type": "string",
+                                                    "example": "Apple"
+                                                },
+                                                "total_units_sold": {
+                                                    "type": "integer",
+                                                    "example": 2500
+                                                },
+                                                "total_reviews": {
+                                                    "type": "integer",
+                                                    "example": 320
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Brand not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Brand not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/products/{product_id}/you-may-like": {
             "get": {
                 "tags": [
@@ -12786,6 +13321,277 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/frontend/search": {
+            "get": {
+                "tags": [
+                    "Frontend-Search"
+                ],
+                "summary": "Search for products, categories, and brands",
+                "description": "Returns a list of products, categories, and brands matching the search query. If no query is provided, random popular items are returned.",
+                "operationId": "searchContent",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "Search term for products, categories, and brands",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with search results",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "products": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Sample Product"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "format": "url",
+                                                        "example": "https://example.com/storage/product.jpg"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "sample-product"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 100
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 80
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electronics"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "electronics"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "format": "url",
+                                                        "example": "https://example.com/categories/electronics"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "format": "url",
+                                                        "example": "https://example.com/storage/category.jpg"
+                                                    },
+                                                    "parent_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "parent_slug": {
+                                                        "type": "string",
+                                                        "example": "gadgets"
+                                                    },
+                                                    "parent_parent_slug": {
+                                                        "type": "string",
+                                                        "example": "tech"
+                                                    },
+                                                    "products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 2
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "Tablet"
+                                                                },
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "example": "tablet"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "format": "url",
+                                                                    "example": "https://example.com/storage/tablet.jpg"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 150
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 120
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "brands": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 5
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Apple"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "apple"
+                                                    },
+                                                    "url": {
+                                                        "type": "string",
+                                                        "format": "url",
+                                                        "example": "https://example.com/brands/apple"
+                                                    },
+                                                    "image": {
+                                                        "type": "string",
+                                                        "format": "url",
+                                                        "example": "https://example.com/storage/logo.png"
+                                                    },
+                                                    "products": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 7
+                                                                },
+                                                                "name": {
+                                                                    "type": "string",
+                                                                    "example": "iPhone 13"
+                                                                },
+                                                                "slug": {
+                                                                    "type": "string",
+                                                                    "example": "iphone-13"
+                                                                },
+                                                                "image": {
+                                                                    "type": "string",
+                                                                    "format": "url",
+                                                                    "example": "https://example.com/storage/iphone13.jpg"
+                                                                },
+                                                                "price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 999
+                                                                },
+                                                                "sale_price": {
+                                                                    "type": "number",
+                                                                    "format": "float",
+                                                                    "example": 899
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        }
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/search-categories": {
+            "get": {
+                "tags": [
+                    "Frontend-Search"
+                ],
+                "summary": "Search published categories by query",
+                "description": "Returns a list of up to 10 categories that match the search query by name or slug. Results are cached for performance.",
+                "operationId": "searchCategories",
+                "parameters": [
+                    {
+                        "name": "query",
+                        "in": "query",
+                        "description": "The search query string",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful search",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "categories": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electronics"
+                                                    },
+                                                    "slug": {
+                                                        "type": "string",
+                                                        "example": "electronics"
+                                                    },
+                                                    "slug_path": {
+                                                        "type": "string",
+                                                        "example": "parent-category/electronics"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
             }
         },
         "/api/frontend/seo-management": {
@@ -22879,6 +23685,21 @@
                         "format": "float",
                         "example": 999.99
                     },
+                    "original_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 100
+                    },
+                    "sale_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 80
+                    },
+                    "front_sale_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 80
+                    },
                     "sku": {
                         "type": "string",
                         "example": "IPH14-256GB-BLK"
@@ -22887,9 +23708,73 @@
                         "type": "integer",
                         "example": 100
                     },
+                    "leftStock": {
+                        "type": "integer",
+                        "example": 50
+                    },
                     "image": {
                         "type": "string",
                         "example": "https://example.com/product.jpg"
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "video_url": {
+                        "type": "string",
+                        "example": "https://example.com/video.mp4"
+                    },
+                    "video_path": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "start_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-01-01T00:00:00Z"
+                    },
+                    "end_date": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2024-12-31T23:59:59Z"
+                    },
+                    "warranty_information": {
+                        "type": "string",
+                        "example": "1 Year Warranty"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "USD"
+                    },
+                    "currency_title": {
+                        "type": "string",
+                        "example": "$"
+                    },
+                    "total_reviews": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "avg_rating": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 4.5
+                    },
+                    "best_price": {
+                        "type": "number",
+                        "format": "float",
+                        "example": 80
+                    },
+                    "best_delivery_date": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "in_wishlist": {
+                        "type": "boolean",
+                        "example": true
                     },
                     "categories": {
                         "type": "array",
@@ -23265,12 +24150,20 @@
             "description": "Frontend-Attribute Products"
         },
         {
+            "name": "Frontend-Product",
+            "description": "Frontend-Product"
+        },
+        {
             "name": "Frontend-Product You May Like",
             "description": "Frontend-Product You May Like"
         },
         {
             "name": "Frontend-Recently Viewed Products",
             "description": "Frontend-Recently Viewed Products"
+        },
+        {
+            "name": "Frontend-Search",
+            "description": "Frontend-Search"
         },
         {
             "name": "Frontend-SEO Management",

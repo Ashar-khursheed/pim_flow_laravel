@@ -8,6 +8,7 @@ use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
 
+
 /**
  * @OA\Schema(
  *     schema="Product",
@@ -15,17 +16,36 @@ use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
  *     description="Product model",
  *     type="object",
  *     required={"id", "name", "price"},
+ *     
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="name", type="string", example="iPhone 14"),
  *     @OA\Property(property="description", type="string", example="Latest iPhone with A16 chip"),
  *     @OA\Property(property="price", type="number", format="float", example=999.99),
+ *     @OA\Property(property="original_price", type="number", format="float", example=100.00),
+ *     @OA\Property(property="sale_price", type="number", format="float", example=80.00),
+ *     @OA\Property(property="front_sale_price", type="number", format="float", example=80.00),
  *     @OA\Property(property="sku", type="string", example="IPH14-256GB-BLK"),
  *     @OA\Property(property="quantity", type="integer", example=100),
+ *     @OA\Property(property="leftStock", type="integer", example=50),
  *     @OA\Property(property="image", type="string", example="https://example.com/product.jpg"),
+ *     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+ *     @OA\Property(property="video_url", type="string", example="https://example.com/video.mp4"),
+ *     @OA\Property(property="video_path", type="array", @OA\Items(type="string")),
+ *     @OA\Property(property="start_date", type="string", format="date-time", example="2024-01-01T00:00:00Z"),
+ *     @OA\Property(property="end_date", type="string", format="date-time", example="2024-12-31T23:59:59Z"),
+ *     @OA\Property(property="warranty_information", type="string", example="1 Year Warranty"),
+ *     @OA\Property(property="currency", type="string", example="USD"),
+ *     @OA\Property(property="currency_title", type="string", example="$"),
+ *     @OA\Property(property="total_reviews", type="integer", example=10),
+ *     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
+ *     @OA\Property(property="best_price", type="number", format="float", example=80.00),
+ *     @OA\Property(property="best_delivery_date", type="string", nullable=true),
+ *     @OA\Property(property="in_wishlist", type="boolean", example=true),
  *     @OA\Property(property="categories", type="array", @OA\Items(ref="#/components/schemas/Category")),
  *     @OA\Property(property="brand", ref="#/components/schemas/Brand")
  * )
  */
+
 class Product extends Model
 {
 	protected $table = 'ec_products';
@@ -289,5 +309,10 @@ class Product extends Model
         }
         return false; // Or return null if you want to differentiate between guest and no wishlist
     }
+	public function slugData()
+    {
+        return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
+    }
+
 
 }

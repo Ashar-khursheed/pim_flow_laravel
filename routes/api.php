@@ -75,6 +75,10 @@ use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
 use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
+use App\Http\Controllers\FrontEnd\RecentlyViewedProductController as F_RecentlyViewedProductController;
+use App\Http\Controllers\FrontEnd\ProductController as F_ProductController;
+use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
+
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -358,6 +362,11 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
 	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
 
+	Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
+	Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
+	Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
+	Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
+
 
 });
 
@@ -394,12 +403,6 @@ Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index
 Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
 Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
 
-Route::get('/frontend/blogs', [F_BlogController::class, 'index']);         // Get all blogs
-Route::get('/frontend/blogs/{slug}', [F_BlogController::class, 'show']);     // Get blog by slug
-Route::post('/frontend/blogs/{id}/view', [F_BlogController::class, 'incrementView']);
-Route::post('/frontend/blogs/{id}/like', [F_BlogController::class, 'incrementLike']);
-Route::post('/frontend/blogs/{id}/share', [F_BlogController::class, 'incrementShare']);
-Route::get('/frontend/blogs/latest', [F_BlogController::class, 'latest']);
 
 Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
 
@@ -413,6 +416,22 @@ Route::get('/frontend/countries', [F_CountryController::class, 'index']);
 Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 
 Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
+Route::prefix('/frontend/blogs')->group(function () {
+	Route::get('/', [F_BlogController::class, 'index']);
+	Route::get('/{slug}', [F_BlogController::class, 'show']);
+	Route::post('/{id}/like', [F_BlogController::class, 'like']);
+	Route::post('/{id}/share', [F_BlogController::class, 'share']);
+	Route::post('/{id}/view', [F_BlogController::class, 'view']);
+});
+Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
+
+
+Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
+Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);
+
+Route::get('/frontend/search', [F_SearchController::class, 'search']);
+Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

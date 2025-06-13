@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use Botble\Ecommerce\Models\Product;
+use App\Models\Product;
 use App\Models\FrontEnd\RecentlyViewedProduct;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;

@@ -515,7 +515,7 @@ class BrandController extends Controller
                     $categoryCounts[$category->id] = [
                         'id' => $category->id,
                         'name' => $category->name,
-                        'image' => asset('storage/' . $category->image),
+                        'image' => $category->image,
                         'product_count' => 0
                     ];
                 }
@@ -532,6 +532,7 @@ class BrandController extends Controller
             'categories' => $categories
         ]);
     }
+
 
     
     
@@ -639,45 +640,36 @@ class BrandController extends Controller
      * )
      */
     
-    public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
+     public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
      {
-            try {
-                // Load only published products with published categories
-                $brand = Brand::with(['products' => function ($query) {
-                    $query->where('status', 'published')
-                          ->whereHas('categories', function ($q) {
-                              $q->where('status', 'published');
-                          });
-                }, 'products.categories' => function ($query) {
-                    $query->where('status', 'published');
-                }])->findOrFail($brandId);
-        
-                // Filter by category if provided
-                $filteredProducts = is_null($categoryId)
-                    ? $brand->products
-                    : $brand->products->filter(function ($product) use ($categoryId) {
-                        return $product->categories->contains(function ($category) use ($categoryId) {
-                            return $category->id == $categoryId && $category->status === 'published';
-                        });
-                    })->values();
-        
-                // Apply search if provided
-                if ($search = $request->input('search')) {
-                    $filteredProducts = $filteredProducts->filter(function ($product) use ($search) {
-                        return str_contains(strtolower($product->name), strtolower($search)) ||
-                               str_contains(strtolower($product->sku), strtolower($search));
-                    })->values();
-                }
-        
-                if ($filteredProducts->isEmpty()) {
-                    return response()->json([
-                        'success' => true,
-                        'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($search ? ' matching search' : ''),
-                        'data' => [],
-                        'pagination' => $this->emptyPagination(),
-                    ]);
-                }
-        
+         try {
+             $searchTerm = strtolower($request->input('search'));
+     
+             $brand = Brand::with(['products.categories'])->findOrFail($brandId);
+     
+             // Filter by category
+             $filteredProducts = is_null($categoryId)
+                 ? $brand->products
+                 : $brand->products->filter(function ($product) use ($categoryId) {
+                     return $product->categories->contains('id', $categoryId);
+                 })->values();
+     
+             // Filter by search term if provided
+             if (!empty($searchTerm)) {
+                 $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
+                     return stripos($product->name, $searchTerm) !== false;
+                 })->values();
+             }
+     
+             if ($filteredProducts->isEmpty()) {
+                 return response()->json([
+                     'success' => true,
+                     'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($searchTerm ? ' with search term' : ''),
+                     'data' => [],
+                     'pagination' => $this->emptyPagination(),
+                 ]);
+             }
+     
              $productIds = $filteredProducts->pluck('id')->toArray();
      
              $productsWithRelations = Product::whereIn('id', $productIds)
@@ -822,43 +814,45 @@ class BrandController extends Controller
      * )
      */
     
-    public function getAllBrandsAlphabetically(Request $request): JsonResponse
-    {
-        $letter = strtoupper($request->query('letter')); // e.g. ?letter=B
-
-        $brandsQuery = Brand::where('status', 'published')
-            ->select('id', 'name', 'logo')
-            ->orderBy('name');
-
-        if ($letter) {
-            $brandsQuery->where('name', 'LIKE', $letter . '%');
-        }
-
-        $brands = $brandsQuery->get()->map(function ($brand) {
-            $brand->logo = $brand->logo ? asset($brand->logo) : null;
-            return $brand;
-        });
-
-        if ($letter) {
-            // Return filtered brands only
-            return response()->json([
-                'success' => true,
-                'message' => "Brands starting with letter '$letter'.",
-                'data' => $brands
-            ]);
-        } else {
-            // Return grouped by A-Z
-            $grouped = $brands->groupBy(function ($brand) {
-                return strtoupper(substr($brand->name, 0, 1));
-            })->sortKeys();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Brands grouped alphabetically.',
-                'data' => $grouped
-            ]);
-        }
-    }
+     public function getAllBrandsAlphabetically(Request $request): JsonResponse
+     {
+         $letter = strtoupper($request->query('letter')); // e.g. ?letter=B
+ 
+         $brandsQuery = Brand::where('status', 'published')
+             ->whereNotNull('thumbnail') // Only include brands with a thumbnail
+             ->select('id', 'name', 'logo', 'thumbnail', 'ar_thumbnail')
+             ->orderBy('name');
+ 
+         if ($letter) {
+             $brandsQuery->where('name', 'LIKE', $letter . '%');
+         }
+ 
+         $brands = $brandsQuery->get()->map(function ($brand) {
+             $brand->logo = $brand->logo ? asset($brand->logo) : null;
+             $brand->thumbnail = $brand->thumbnail ? asset($brand->thumbnail) : null;
+             $brand->ar_thumbnail = $brand->ar_thumbnail ? asset($brand->ar_thumbnail) : null;
+             return $brand;
+         });
+ 
+         if ($letter) {
+             return response()->json([
+                 'success' => true,
+                 'message' => "Brands starting with letter '$letter'.",
+                 'data' => $brands
+             ]);
+         } else {
+             $grouped = $brands->groupBy(function ($brand) {
+                 return strtoupper(substr($brand->name, 0, 1));
+             })->sortKeys();
+ 
+             return response()->json([
+                 'success' => true,
+                 'message' => 'Brands grouped alphabetically.',
+                 'data' => $grouped
+             ]);
+         }
+     }
+ 
 
 
     
