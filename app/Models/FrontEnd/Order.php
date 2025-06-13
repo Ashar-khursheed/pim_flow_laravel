@@ -4,6 +4,11 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\FrontEnd\Customer;
+use App\Models\FrontEnd\OrderProduct;
+use App\Models\FrontEnd\OrderTracking;
+use App\Models\FrontEnd\Payment;
+use App\Models\User;
 
 class Order extends Model
 {
@@ -26,6 +31,21 @@ class Order extends Model
 		'updated_by',
 	];
 
+	public function creator()
+	{
+		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function updator()
+	{
+		return $this->belongsTo(User::class, 'updated_by');
+	}
+
+	public function customer()
+	{
+		return $this->belongsTo(Customer::class);
+	}
+
 	public function products()
 	{
 		return $this->hasMany(OrderProduct::class);
@@ -34,6 +54,16 @@ class Order extends Model
 	public function tracking()
 	{
 		return $this->hasMany(OrderTracking::class);
+	}
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+	public function shipments()
+	{
+		return $this->hasMany(Shipment::class);
 	}
 
 	/* Accessor: Payment Status */
@@ -53,5 +83,16 @@ class Order extends Model
 		return $this->products->every(function ($item) {
 			return $item->shipped_quantity >= $item->quantity;
 		});
+	}
+
+	/**
+	 * Prepare a date for array / JSON serialization.
+	 *
+	 * @param  \DateTimeInterface  $date
+	 * @return string
+	 */
+	protected function serializeDate(\DateTimeInterface $date)
+	{
+		return $date->format('Y-m-d H:i:s');
 	}
 }

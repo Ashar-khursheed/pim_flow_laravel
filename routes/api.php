@@ -280,7 +280,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 		Route::get('/{id}', [OrderController::class, 'show']);
 		Route::put('/{id}/status', [OrderController::class, 'updateStatus']);
 		Route::put('/{id}/payment', [OrderController::class, 'updatePayment']);
-		Route::put('/{orderId}/items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+		Route::put('/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
 		Route::post('/{id}/shipments', [OrderController::class, 'createShipment']);
 	});
 
