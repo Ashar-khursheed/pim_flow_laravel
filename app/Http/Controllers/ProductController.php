@@ -174,8 +174,8 @@ class ProductController extends BaseController
 		$formattedProducts = $products->map(function ($product) {
 			$margin = $product->sale_price - $product->price;
 			$marginPercent = $product->sale_price > 0
-				? (($product->sale_price - $product->price) / $product->sale_price) * 100
-				: 0;
+			? (($product->sale_price - $product->price) / $product->sale_price) * 100
+			: 0;
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -616,63 +616,63 @@ class ProductController extends BaseController
 					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
 					break;
 
-				case 'frequently_bought_together':
-				/* Ensure $value is a valid JSON string */
-				$decoded = json_decode($value, true);
+					case 'frequently_bought_together':
+					/* Ensure $value is a valid JSON string */
+					$decoded = json_decode($value, true);
 
-				if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
-					$formattedProduct[$attribute] = []; /* Default to an empty array if decoding fails */
-				} else {
-					/* Get all product IDs from the frequently bought together items */
-					$productIds = array_map(function($item) {
-						/* Check if the item is an array and contains 'value' or it's a comma-separated string */
-						return is_array($item) ? ($item['value'] ?? null) : $item;
-					}, $decoded);
+					if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+						$formattedProduct[$attribute] = []; /* Default to an empty array if decoding fails */
+					} else {
+						/* Get all product IDs from the frequently bought together items */
+						$productIds = array_map(function($item) {
+							/* Check if the item is an array and contains 'value' or it's a comma-separated string */
+							return is_array($item) ? ($item['value'] ?? null) : $item;
+						}, $decoded);
 
-					/* Flatten any possible comma-separated IDs into an array of individual IDs */
-					$productIds = array_merge(...array_map(function($id) {
-						return explode(',', $id);  /* Split comma-separated values */
-					}, $productIds));
+						/* Flatten any possible comma-separated IDs into an array of individual IDs */
+						$productIds = array_merge(...array_map(function($id) {
+							return explode(',', $id);  /* Split comma-separated values */
+						}, $productIds));
 
-					/* Filter out null or empty values */
-					$productIds = array_filter($productIds, function($id) {
-						return !empty($id); /* Ensure we only have non-empty IDs */
-					});
+						/* Filter out null or empty values */
+						$productIds = array_filter($productIds, function($id) {
+							return !empty($id); /* Ensure we only have non-empty IDs */
+						});
 
-					/* If we have product IDs, fetch their SKUs from the Product model */
-					$productSkus = [];
-					if (!empty($productIds)) {
-						/* Query the Product model to get SKUs for these product IDs */
-						$products = \App\Models\Product::whereIn('id', $productIds)
-						->select('id', 'sku')
-						->get()
-						->keyBy('id');
+						/* If we have product IDs, fetch their SKUs from the Product model */
+						$productSkus = [];
+						if (!empty($productIds)) {
+							/* Query the Product model to get SKUs for these product IDs */
+							$products = \App\Models\Product::whereIn('id', $productIds)
+							->select('id', 'sku')
+							->get()
+							->keyBy('id');
 
-						/* Create a mapping of product ID to SKU */
-						foreach ($products as $product) {
-							$productSkus[$product->id] = $product->sku;
+							/* Create a mapping of product ID to SKU */
+							foreach ($products as $product) {
+								$productSkus[$product->id] = $product->sku;
+							}
 						}
+
+						/* Now map the original items, but include SKUs as key-value pairs (ID => SKU) */
+						$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
+							$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
+							/* Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU) */
+							$ids = explode(',', $productIds);
+							$skus = array_map(function($id) use ($productSkus) {
+								return $productSkus[$id] ?? null;
+							}, $ids);
+
+							/* Return a flat array with 'id' => ID and 'sku' => SKU */
+							return array_map(function($id, $sku) {
+								return ['id' => $id, 'sku' => $sku]; /* Pair each ID with its SKU */
+							}, $ids, $skus);
+						}, $decoded);
+
+						/* Flatten the nested arrays (if any) and merge them into one array */
+						$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
 					}
-
-					/* Now map the original items, but include SKUs as key-value pairs (ID => SKU) */
-					$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
-						$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
-						/* Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU) */
-						$ids = explode(',', $productIds);
-						$skus = array_map(function($id) use ($productSkus) {
-							return $productSkus[$id] ?? null;
-						}, $ids);
-
-						/* Return a flat array with 'id' => ID and 'sku' => SKU */
-						return array_map(function($id, $sku) {
-							return ['id' => $id, 'sku' => $sku]; /* Pair each ID with its SKU */
-						}, $ids, $skus);
-					}, $decoded);
-
-					/* Flatten the nested arrays (if any) and merge them into one array */
-					$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
-				}
-				break;
+					break;
 
 
 				// case 'compare_type':
@@ -687,15 +687,15 @@ class ProductController extends BaseController
 				// $formattedProduct[$attribute] = array_map(fn($item) => ['value' => trim($item)], $decoded);
 				// break;
 
-				case 'images':
-				case 'video_path':
-				case 'documents':
-				$formattedProduct[$attribute] = is_array($value) ? $value : [];
-				break;
+					case 'images':
+					case 'video_path':
+					case 'documents':
+					$formattedProduct[$attribute] = is_array($value) ? $value : [];
+					break;
 
-				case 'status':
-				$formattedProduct[$attribute] = [['value' => $value]];
-				break;
+					case 'status':
+					$formattedProduct[$attribute] = [['value' => $value]];
+					break;
 
 				// case 'unit_of_measurement_id':
 				// $formattedProduct['unit_of_measurement'] = $product->unitOfMeasurement ? [
@@ -706,22 +706,22 @@ class ProductController extends BaseController
 
 
 
-				default:
-				$formattedProduct[$attribute] = $value;
-				break;
+					default:
+					$formattedProduct[$attribute] = $value;
+					break;
+				}
 			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Product detail',
+				'product' => $formattedProduct,
+				'categories_hierarchy' => $formattedCategories,
+				'admin_reviews' => $adminReviews,
+				'faq' => $faqs ?? [],
+
+			]);
 		}
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Product detail',
-			'product' => $formattedProduct,
-			'categories_hierarchy' => $formattedCategories,
-			'admin_reviews' => $adminReviews,
-			'faq' => $faqs ?? [],
-
-		]);
-	}
 
 	// /**
 	//  * @OA\Post(
@@ -2225,11 +2225,17 @@ class ProductController extends BaseController
 
 		if (isset($input['status'])) {
 			$validStatuses = ['draft', 'published', 'pending']; /* Define allowed statuses */
-
 			if (!in_array($input['status'], $validStatuses)) {
 				return response()->json([
 					'success' => false,
 					'message' => 'Invalid status value. Allowed values: draft, published, archived.'
+				]);
+			}
+
+			if($input['status'] == 'published' && $product->productAttributes->count() < 5) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You must assign at least 5 attributes to the product before it can be published'
 				]);
 			}
 
@@ -2784,35 +2790,35 @@ class ProductController extends BaseController
 		$productAttributeMeasurement = $product->productAttributes->pluck('measurement_unit_id', 'attribute_id');
 
 		$attributeGroup = $category->categoryAttributeGroups()
-			->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
-			->get()
-			->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
-				return [
-					'id' => $group->id,
-					'name' => $group->name,
-					'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
-						$data = [
-							'id' => $attribute->id,
-							'name' => $attribute->name,
-							'code' => $attribute->code,
-							'type' => $attribute->type,
-							'validations' => json_decode($attribute->validations, true),
-							'currentValue' => $productAttributes[$attribute->id] ?? null,
-						];
+		->with(['groupsAttributes.attributeValues', 'groupsAttributes.measurementUnits'])
+		->get()
+		->map(function ($group) use ($productAttributes, $productAttributeMeasurement) {
+			return [
+				'id' => $group->id,
+				'name' => $group->name,
+				'group_attributes' => $group->groupsAttributes->map(function ($attribute) use ($productAttributes, $productAttributeMeasurement) {
+					$data = [
+						'id' => $attribute->id,
+						'name' => $attribute->name,
+						'code' => $attribute->code,
+						'type' => $attribute->type,
+						'validations' => json_decode($attribute->validations, true),
+						'currentValue' => $productAttributes[$attribute->id] ?? null,
+					];
 
-						if ($attribute->type === 'select') {
-							$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
-						}
+					if ($attribute->type === 'select') {
+						$data['attributeValues'] = $attribute->attributeValues->pluck('attribute_value')->values()->all();
+					}
 
-						if ($attribute->type === 'measurement') {
-							$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
-							$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
-						}
+					if ($attribute->type === 'measurement') {
+						$data['attributeMeasurement'] = $attribute->measurementUnits->pluck('name', 'id')->all();
+						$data['currentMeasurementId'] = $productAttributeMeasurement[$attribute->id] ?? null;
+					}
 
-						return $data;
-					})->toArray(),
-				];
-			});
+					return $data;
+				})->toArray(),
+			];
+		});
 
 
 		return response()->json([
