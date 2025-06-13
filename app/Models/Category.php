@@ -110,5 +110,4 @@ class Category extends Model
 			'product_id'
 		);
 	}
-
 }
