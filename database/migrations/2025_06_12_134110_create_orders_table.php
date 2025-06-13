@@ -18,7 +18,7 @@ return new class extends Migration
 			$table->integer('customer_id');
 			$table->text('customer_address');
 			$table->enum('status', [
-				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
+				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
 
 			$table->decimal('shipping_charge', 10, 2);
@@ -56,6 +56,64 @@ return new class extends Migration
 			])->default('Pending');
 			$table->timestamps();
 		});
+
+		Schema::dropIfExists('order_tracking');
+		Schema::create('order_tracking', function (Blueprint $table) {
+			$table->id();
+			$table->integer('order_id');
+			$table->integer('shipment_id')->nullable();
+			$table->string('status');
+			$table->text('description');
+			$table->text('location')->nullable();
+			$table->text('metadata')->nullable();
+			$table->integer('created_by')->nullable();
+			$table->timestamps();
+		});
+
+		Schema::dropIfExists('shipments');
+		Schema::create('shipments', function (Blueprint $table) {
+			$table->id();
+			$table->integer('order_id');
+			$table->string('shipment_number')->unique();
+			$table->string('tracking_number')->nullable();
+			$table->string('carrier')->nullable();
+			$table->enum('status', [
+				'Preparing', 'Shipped', 'In Transit', 'Out for Delivery',
+				'Delivered', 'Failed Delivery', 'Returned'
+			])->default('Preparing');
+			$table->decimal('shipping_cost', 10, 2)->default(0);
+			$table->date('estimated_delivery_date')->nullable();
+			$table->date('actual_delivery_date')->nullable();
+			$table->text('notes')->nullable();
+			$table->timestamps();
+		});
+
+		Schema::dropIfExists('shipments');
+		Schema::create('shipments', function (Blueprint $table) {
+			$table->id();
+			$table->integer('order_id');
+			$table->string('shipment_number')->unique();
+			$table->string('tracking_number')->nullable();
+			$table->string('carrier')->nullable();
+			$table->enum('status', [
+				'Preparing', 'Shipped', 'In Transit', 'Out for Delivery',
+				'Delivered', 'Failed Delivery', 'Returned'
+			])->default('Preparing');
+			$table->decimal('shipping_cost', 10, 2)->default(0);
+			$table->date('estimated_delivery_date')->nullable();
+			$table->date('actual_delivery_date')->nullable();
+			$table->text('notes')->nullable();
+			$table->timestamps();
+		});
+
+		Schema::dropIfExists('shipment_products');
+		Schema::create('shipment_products', function (Blueprint $table) {
+			$table->id();
+			$table->integer('shipment_id')->nullable();
+			$table->integer('order_product_id');
+			$table->integer('quantity');
+			$table->timestamps();
+		});
 	}
 
 	/**
@@ -65,5 +123,8 @@ return new class extends Migration
 	{
 		Schema::dropIfExists('orders');
 		Schema::dropIfExists('order_products');
+		Schema::dropIfExists('order_tracking');
+		Schema::dropIfExists('shipments');
+		Schema::dropIfExists('shipment_products');
 	}
 };
