@@ -9,7 +9,8 @@ use App\Models\FrontEnd\OrderTracking;
 
 use App\Models\FrontEnd\Payment;
 use App\Models\FrontEnd\Shipment;
-use App\Models\ShipmentItem;
+use App\Models\FrontEnd\ShipmentProduct;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;

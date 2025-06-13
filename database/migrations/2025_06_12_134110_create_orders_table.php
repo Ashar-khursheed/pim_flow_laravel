@@ -18,7 +18,7 @@ return new class extends Migration
 			$table->integer('customer_id');
 			$table->text('customer_address');
 			$table->enum('status', [
-				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
+				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
 
 			$table->decimal('shipping_charge', 10, 2);
