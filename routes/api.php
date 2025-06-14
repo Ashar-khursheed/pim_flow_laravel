@@ -339,7 +339,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
     Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
-	Route::get('/frontend/product-discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
 	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
