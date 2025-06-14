@@ -1203,7 +1203,7 @@ class ProductController extends Controller
             return response()->json(['message' => 'No products found in this category or its children'], 404);
         }
 
-        $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
+        $transformed = $products->map(function ($product) use ($wishlistProductIds) {
             // $product->images = collect($product->images)->map(function ($image) {
             //     return filter_var($image, FILTER_VALIDATE_URL) ? $image : url('storage/' . ltrim($image, '/'));
             // });
