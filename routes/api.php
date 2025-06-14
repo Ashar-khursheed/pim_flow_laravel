@@ -321,13 +321,13 @@ Route::post('frontend/orders', [F_OrderController::class, 'store']);
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
-	Route::post('/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
-    Route::get('/wishlist', [F_WishlistController::class, 'getWishlist']);
-    Route::delete('/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
+	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
+    Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
+    Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
 
     // Additional wishlist routes
-    Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
-    Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+    Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+    Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
@@ -341,7 +341,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
     Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
-	Route::get('/frontend/product-discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
 	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
@@ -384,7 +384,7 @@ Route::get('/frontend/categories', [F_CategoryController::class, 'index']);
 Route::get('/frontend/categories/{slug}', [F_CategoryController::class, 'categoryslug']);
 Route::get('/frontend/categories/{id}', [F_CategoryController::class, 'show']);
 Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::class, 'getProductsByCategory']);
-Route::post('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
+Route::get('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
 
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
@@ -431,9 +431,11 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
+Route::get('/frontend/category/{slug}/blogs', [F_BlogController::class, 'blogsByCategorySlug']);
+Route::get('/frontend/categories-with-blogs', [F_BlogController::class, 'categoryWiseBlogs']);
 
-Route::get('/api/frontend/sliders', [F_SliderController::class, 'index']);
-Route::get('/api/frontend/sliders/{id}', [F_SliderController::class, 'show']);
+Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
+Route::get('/frontend/sliders/{id}', [F_SliderController::class, 'show']);
 
 Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
 Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);

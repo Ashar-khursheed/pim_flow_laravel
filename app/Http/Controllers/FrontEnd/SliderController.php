@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontEnd\SimpleSlider;
+use App\Models\FrontEnd\Slider;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
-
-
+use App\Models\Simple;
+use App\Models\SimpleSlider;
+use App\Models\SimpleSliderItem;
 class SliderController extends Controller
 {
     /**
@@ -27,9 +28,7 @@ class SliderController extends Controller
      */
     public function index()
     {
-        // Eager load slider items
-        $sliders = SimpleSlider::with('sliderItems')->get();
-        return response()->json($sliders);
+        return response()->json(SimpleSlider::with('items')->get());
     }
 
     /**
@@ -57,8 +56,8 @@ class SliderController extends Controller
      */
     public function show($id)
     {
-        // Eager load slider items
-        $slider = SimpleSlider::with('sliderItems')->findOrFail($id);
+        $slider = SimpleSlider::with('items')->findOrFail($id);
         return response()->json($slider);
     }
+
 }

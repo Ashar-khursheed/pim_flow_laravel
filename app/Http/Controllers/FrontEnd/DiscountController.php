@@ -6,7 +6,7 @@ use OpenApi\Annotations as OA;
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\Discount;
 use App\Models\Category;
-
+use App\Models\Product;
 class DiscountController extends Controller
 {
     /**

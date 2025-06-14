@@ -11,7 +11,7 @@ class WishlistController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/api/wishlist/add",
+     *     path="/api/frontend/wishlist/add",
      *     tags={"Frontend-Wishlist"},
      *     summary="Add a product to the wishlist",
      *     description="Adds a product to the authenticated user's wishlist.",
@@ -91,7 +91,7 @@ class WishlistController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/wishlist",
+     *     path="/api/frontend/wishlist",
      *     tags={"Frontend-Wishlist"},
      *     summary="Get all products in wishlist",
      *     description="Returns wishlist products for authenticated user.",
@@ -154,7 +154,7 @@ class WishlistController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/wishlist/remove",
+     *     path="/api/frontend/wishlist/remove",
      *     tags={"Frontend-Wishlist"},
      *     summary="Remove a product from wishlist",
      *     description="Removes a product from the authenticated user's wishlist.",
@@ -207,7 +207,7 @@ class WishlistController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/wishlist/check/{product_id}",
+     *     path="/api/frontend/wishlist/check/{product_id}",
      *     tags={"Frontend-Wishlist"},
      *     summary="Check if product is in wishlist",
      *     description="Check if a specific product is in the authenticated user's wishlist.",
@@ -247,7 +247,7 @@ class WishlistController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/wishlist/count",
+     *     path="/api/frontend/wishlist/count",
      *     tags={"Frontend-Wishlist"},
      *     summary="Get wishlist items count",
      *     description="Returns the total number of items in the authenticated user's wishlist.",

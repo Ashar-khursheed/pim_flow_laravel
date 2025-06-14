@@ -172,7 +172,7 @@ class ProductYouMayLikeController extends Controller
             }
 
             // Step 3: Get published products matching recommended IDs
-            $productsQuery = Product::with(['categories', 'brand', 'tags', 'producttypes'])
+            $productsQuery = Product::with(['categories', 'brand'])
                 ->where('status', 'published')
                 ->whereIn('id', $relatedProductIds);
 
@@ -503,7 +503,7 @@ class ProductYouMayLikeController extends Controller
                 ]);
             }
     
-            $productsQuery = Product::with(['categories', 'brand', 'tags', 'producttypes'])
+            $productsQuery = Product::with(['categories', 'brand'])
                 ->where('status', 'published')
                 ->whereIn('id', $relatedProductIds);
     

@@ -14857,7 +14857,7 @@
                 }
             }
         },
-        "/api/wishlist/add": {
+        "/api/frontend/wishlist/add": {
             "post": {
                 "tags": [
                     "Frontend-Wishlist"
@@ -14941,7 +14941,7 @@
                 ]
             }
         },
-        "/api/wishlist": {
+        "/api/frontend/wishlist": {
             "get": {
                 "tags": [
                     "Frontend-Wishlist"
@@ -15009,7 +15009,7 @@
                 ]
             }
         },
-        "/api/wishlist/remove": {
+        "/api/frontend/wishlist/remove": {
             "delete": {
                 "tags": [
                     "Frontend-Wishlist"
@@ -15067,7 +15067,7 @@
                 ]
             }
         },
-        "/api/wishlist/check/{product_id}": {
+        "/api/frontend/wishlist/check/{product_id}": {
             "get": {
                 "tags": [
                     "Frontend-Wishlist"
@@ -15119,7 +15119,7 @@
                 ]
             }
         },
-        "/api/wishlist/count": {
+        "/api/frontend/wishlist/count": {
             "get": {
                 "tags": [
                     "Frontend-Wishlist"

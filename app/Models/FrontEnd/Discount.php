@@ -6,6 +6,8 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Attribute;
+use App\Models\Product;
+use App\Models\Category;
 
 class Discount extends Model
 {

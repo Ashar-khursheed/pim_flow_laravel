@@ -214,10 +214,10 @@ class ProductController extends Controller
                             $product->brand_avg_rating = $brandAvgRating;
                             $product->brand_review_count = $brandReviewCount;
                         }
-                        
-                        $product->images = collect($product->images)->map(function ($image) {
-                            return $image; // Already a full URL, just return it
+                        $product->images = collect(json_decode($product->images, true))->map(function ($image) {
+                            return  $image;
                         });
+                        
 
                         // Handle videos
                         $videoPaths = json_decode($product->video_path, true);
@@ -448,8 +448,8 @@ class ProductController extends Controller
                             $product->brand_review_count = $brandReviewCount;
                         }
                         
-                        $product->images = collect($product->images)->map(function ($image) {
-                            return $image;
+                        $product->images = collect(json_decode($product->images, true))->map(function ($image) {
+                            return  $image;
                         });
                     
                         $videoPaths = json_decode($product->video_path, true);
