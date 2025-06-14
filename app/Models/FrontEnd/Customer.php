@@ -8,6 +8,7 @@ use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetToken;
+use App\Models\User;
 
 class Customer extends Authenticatable
 {
