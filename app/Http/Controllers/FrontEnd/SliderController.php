@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontEnd\SimpleSlider;
+use App\Models\FrontEnd\Slider;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
