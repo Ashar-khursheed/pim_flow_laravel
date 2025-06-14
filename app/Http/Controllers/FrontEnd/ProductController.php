@@ -991,208 +991,277 @@ class ProductController extends Controller
         ]);
     }
 
-    public function getRandomProducts($category_id)
+    /**
+     * @OA\Get(
+     *     path="/api/category-random-products/{categoryId}",
+     *     operationId="getCategoryWiseRandomProducts",
+     *     tags={"Frontend-Product"},
+     *     summary="Get 15 random products by category ID (including child categories)",
+     *     description="Returns up to 15 random products from the specified category. If not enough products are found, it searches in child and descendant categories recursively.",
+     *     
+     *     @OA\Parameter(
+     *         name="categoryId",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the category to fetch products from",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success response with product data",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=123),
+     *                     @OA\Property(property="name", type="string", example="Product Name"),
+     *                     @OA\Property(property="sku", type="string", example="SKU123"),
+     *                     @OA\Property(property="price", type="number", format="float", example=100.00),
+     *                     @OA\Property(property="sale_price", type="number", format="float", example=90.00),
+     *                     @OA\Property(property="best_delivery_date", type="string", format="date", example="2024-06-20"),
+     *                     @OA\Property(property="total_reviews", type="integer", example=12),
+     *                     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
+     *                     @OA\Property(property="left_stock", type="integer", example=20),
+     *                     @OA\Property(property="currency", type="string", example="USD"),
+     *                     @OA\Property(
+     *                         property="images",
+     *                         type="array",
+     *                         @OA\Items(type="string", example="https://example.com/image.jpg")
+     *                     ),
+     *                     @OA\Property(property="original_price", type="number", example=100.00),
+     *                     @OA\Property(property="front_sale_price", type="number", example=90.00),
+     *                     @OA\Property(property="best_price", type="number", example=90.00)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=400,
+     *         description="Bad Request - category ID not provided",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="error", type="string", example="category_id is required")
+     *         )
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not Found - No products found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No products found in this category or its children")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getCategoryWiseRandomProducts(Request $request, $categoryId)
     {
-        if (!$category_id) {
+        if (!$categoryId) {
             return response()->json(['error' => 'category_id is required'], 400);
         }
 
-        $userId = Auth::id();
-        $isUserLoggedIn = $userId !== null;
+        $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
 
-        $wishlistProductIds = [];
-
-        if ($isUserLoggedIn) {
-            $wishlistProductIds = DB::table('ec_wish_lists')
-                ->where('customer_id', $userId)
-                ->pluck('product_id')
-                ->map(fn($id) => (int) $id)
-                ->toArray();
-        } else {
-            $wishlistProductIds = session()->get('guest_wishlist', []);
-        }
-
-        $categoryIds = $this->getAllChildCategoryIds($category_id);
-        $categoryIds[] = $category_id;
-
-        $products = Product::with(['categories', 'brand', 'brand.products.reviews', 'reviews', 'currency', 'sellingUnitAttribute'])
-            ->where('status', 'published')
-            ->whereHas('categories')
-            ->inRandomOrder()
-            ->limit(20)
-            ->get();
-
-        $products->transform(function ($product) use ($wishlistProductIds) {
-            $product->benefits_features = json_decode($product->benefits_features, true);
-
-            if (is_string($product->description)) {
-                $product->description = json_decode($product->description, true);
-            }
-
-            if ($product->brand) {
-                $product->brand_id = $product->brand->id;
-                $product->brand_name = $product->brand->name;
-                $product->brand_logo = $product->brand->logo;
-
-                $brandProductIds = DB::table('ec_products')
-                    ->where('brand_id', $product->brand->id)
-                    ->pluck('id');
-
-                $brandReviewsQuery = DB::table('ec_reviews')
-                    ->whereIn('product_id', $brandProductIds);
-
-                $product->brand_avg_rating = $brandReviewsQuery->count() > 0
-                    ? round($brandReviewsQuery->avg('star'), 1)
-                    : null;
-                $product->brand_review_count = $brandReviewsQuery->count();
-            }
-
-            $product->images = collect(json_decode($product->images, true))->map(fn($image) => $image);
-
-            $videoPaths = json_decode($product->video_path, true);
-            $product->video_path = collect($videoPaths)->map(fn($video) => $video);
-
-            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                $fullValue = $product->sellingUnitAttribute->attribute_value;
-                if (strpos($fullValue, '/') !== false) {
-                    $parts = explode('/', $fullValue);
-                    $product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
-                } else {
-                    $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
-                }
-            }
-
-            $product->total_reviews = $product->reviews->count();
-            $product->avg_rating = $product->reviews->count() > 0 ? $product->reviews->avg('star') : null;
-
-            $quantity = $product->quantity ?? 0;
-            $unitsSold = $product->units_sold ?? 0;
-            $product->leftStock = $quantity - $unitsSold;
-            $product->in_wishlist = in_array($product->id, $wishlistProductIds);
-
-            $product->currency_title = $product->currency
-                ? ($product->currency->is_prefix_symbol
-                    ? $product->currency->title
-                    : $product->price . ' ' . $product->currency->title)
-                : $product->price;
-
-            $product->category_list = $product->categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => optional($category->slugable)->key,
-                ];
-            });
-
-            return $product;
-        });
-
-        return response()->json([
-            'success' => true,
-            'data' => $products
-        ]);
-    }
-   
-    public function getRandomGuestProducts($category_id)
-    {
-        if (!$category_id) {
-            return response()->json(['error' => 'category_id is required'], 400);
-        }
-
-
-        $categoryIds = $this->getAllChildCategoryIds($category_id);
-        $categoryIds[] = $category_id;
-
-        $products = Product::with(['categories', 'brand', 'brand.products.reviews', 'reviews', 'currency', 'sellingUnitAttribute'])
-            ->where('status', 'published')
-            ->whereHas('categories', function ($query) use ($categoryIds) {
-                $query->whereIn('categories.id', $categoryIds);
+        $products = Product::whereHas('categories', function ($query) use ($allCategoryIds) {
+                $query->whereIn('categories.id', $allCategoryIds);
             })
             ->inRandomOrder()
-            ->limit(20)
+            ->take(15)
             ->get();
 
-        $products->transform(function ($product) {
-            $product->benefits_features = json_decode($product->benefits_features, true);
+        if ($products->isEmpty()) {
+            return response()->json(['message' => 'No products found in this category or its children'], 404);
+        }
 
-            if (is_string($product->description)) {
-                $product->description = json_decode($product->description, true);
-            }
-
-            if ($product->brand) {
-                $product->brand_id = $product->brand->id;
-                $product->brand_name = $product->brand->name;
-                $product->brand_logo = $product->brand->logo;
-
-                $brandProductIds = DB::table('ec_products')
-                    ->where('brand_id', $product->brand->id)
-                    ->pluck('id');
-
-                $brandReviewsQuery = DB::table('ec_reviews')
-                    ->whereIn('product_id', $brandProductIds);
-
-                $product->brand_avg_rating = $brandReviewsQuery->count() > 0
-                    ? round($brandReviewsQuery->avg('star'), 1)
-                    : null;
-                $product->brand_review_count = $brandReviewsQuery->count();
-            }
-
-            $product->images = collect(json_decode($product->images, true))->map(fn($image) => $image);
-
-            $videoPaths = json_decode($product->video_path, true);
-            $product->video_path = collect($videoPaths)->map(fn($video) => $video);
-
-            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                $fullValue = $product->sellingUnitAttribute->attribute_value;
-                if (strpos($fullValue, '/') !== false) {
-                    $parts = explode('/', $fullValue);
-                    $product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
-                } else {
-                    $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+        $data = $products->map(function ($product) {
+            $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+            $cleanedImages = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
                 }
-            }
+                return [$item];
+            })->flatten()->filter()->values();
 
-            $product->total_reviews = $product->reviews->count();
-            $product->avg_rating = $product->reviews->count() > 0 ? $product->reviews->avg('star') : null;
-
-            $quantity = $product->quantity ?? 0;
-            $unitsSold = $product->units_sold ?? 0;
-            $product->leftStock = $quantity - $unitsSold;
-            $product->currency_title = $product->currency
-                ? ($product->currency->is_prefix_symbol
-                    ? $product->currency->title
-                    : $product->price . ' ' . $product->currency->title)
-                : $product->price;
-
-            $product->category_list = $product->categories->map(function ($category) {
-                return [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'slug' => optional($category->slugable)->key,
-                ];
-            });
-
-            return $product;
+            return [
+                "id" => $product->id,
+                "name" => $product->name,
+                "sku" => $product->sku,
+                "price" => $product->price,
+                "sale_price" => $product->sale_price,
+                "best_delivery_date" => $product->best_delivery_date,
+                "total_reviews" => $product->reviews->count(),
+                "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+                "left_stock" => $product->left_stock ?? 0,
+                "currency" => $product->currency->symbol ?? 'USD',
+                "images" => $cleanedImages,
+                "original_price" => $product->price,
+                "front_sale_price" => $product->price,
+                "best_price" => $product->price,
+            ];
         });
 
         return response()->json([
             'success' => true,
-            'data' => $products
+            'data' => $data,
         ]);
     }
 
 
-    
-    private function getAllChildCategoryIds($parentId)
+    /**
+     * @OA\Get(
+     *     path="/api/category-random-products-guest/{categoryId}",
+     *     operationId="getCategoryWiseRandomProductsForUser",
+     *     tags={"Frontend-Product"},
+     *     summary="Get 15 random products by category ID for logged-in users (with wishlist info)",
+     *     description="Returns up to 15 random products from the specified category and child categories, along with wishlist info for logged-in users.",
+     *     
+     *     @OA\Parameter(
+     *         name="categoryId",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the category to fetch products from",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success response with product and wishlist data",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=123),
+     *                     @OA\Property(property="name", type="string", example="Product Name"),
+     *                     @OA\Property(property="sku", type="string", example="SKU123"),
+     *                     @OA\Property(property="price", type="number", example=100.00),
+     *                     @OA\Property(property="sale_price", type="number", example=90.00),
+     *                     @OA\Property(property="best_delivery_date", type="string", format="date", example="2024-06-20"),
+     *                     @OA\Property(property="total_reviews", type="integer", example=12),
+     *                     @OA\Property(property="avg_rating", type="number", example=4.5),
+     *                     @OA\Property(property="left_stock", type="integer", example=20),
+     *                     @OA\Property(property="currency", type="string", example="USD"),
+     *                     @OA\Property(property="images", type="array", @OA\Items(type="string")),
+     *                     @OA\Property(property="original_price", type="number", example=100.00),
+     *                     @OA\Property(property="front_sale_price", type="number", example=90.00),
+     *                     @OA\Property(property="best_price", type="number", example=90.00),
+     *                     @OA\Property(property="is_in_wishlist", type="boolean", example=true)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized - Login required"
+     *     ),
+     *     
+     *     @OA\Response(
+     *         response=404,
+     *         description="Not Found - No products found"
+     *     )
+     * )
+     */
+    public function getCategoryWiseRandomProductsForUser(Request $request, $categoryId)
     {
-        $childIds = Category::where('parent_id', $parentId)->pluck('id')->toArray();
+        $user = auth('api')->user();
 
-        foreach ($childIds as $childId) {
-            $childIds = array_merge($childIds, $this->getAllChildCategoryIds($childId));
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        return $childIds;
+        if (!$categoryId) {
+            return response()->json(['error' => 'category_id is required'], 400);
+        }
+
+        $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+
+        $wishlistProductIds = $user->wishlist()->pluck('product_id')->toArray();
+
+        $products = Product::whereHas('categories', function ($query) use ($allCategoryIds) {
+                $query->whereIn('categories.id', $allCategoryIds);
+            })
+            ->inRandomOrder()
+            ->take(15)
+            ->get();
+
+        if ($products->isEmpty()) {
+            return response()->json(['message' => 'No products found in this category or its children'], 404);
+        }
+
+        $data = $products->map(function ($product) use ($wishlistProductIds) {
+            $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+            $cleanedImages = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
+
+            return [
+                "id" => $product->id,
+                "name" => $product->name,
+                "sku" => $product->sku,
+                "price" => $product->price,
+                "sale_price" => $product->sale_price,
+                "best_delivery_date" => $product->best_delivery_date,
+                "total_reviews" => $product->reviews->count(),
+                "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
+                "left_stock" => $product->left_stock ?? 0,
+                "currency" => $product->currency->symbol ?? 'USD',
+                "images" => $cleanedImages,
+                "original_price" => $product->price,
+                "front_sale_price" => $product->price,
+                "best_price" => $product->price,
+                "is_in_wishlist" => in_array($product->id, $wishlistProductIds),
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $data,
+        ]);
     }
+
+    private function getAllChildCategoryIds($categoryId)
+    {
+        // Get all categories
+        $allCategories = Category::select('id', 'parent_id')->get();
+    
+        // Build a lookup table
+        $childrenMap = [];
+        foreach ($allCategories as $cat) {
+            $childrenMap[$cat->parent_id][] = $cat->id;
+        }
+    
+        // Recursively gather all children
+        $stack = [$categoryId];
+        $result = [];
+    
+        while (!empty($stack)) {
+            $current = array_pop($stack);
+            $result[] = $current;
+            if (isset($childrenMap[$current])) {
+                foreach ($childrenMap[$current] as $childId) {
+                    $stack[] = $childId;
+                }
+            }
+        }
+    
+        return $result;
+    }
+    
+
 
 
     private function applyFilters(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Http\Request $request)
