@@ -58,7 +58,7 @@ class SliderController extends Controller
     public function show($id)
     {
         // Eager load slider items
-        $slider = SimpleSlider::with('sliderItems')->findOrFail($id);
+        $slider = Slider::with('sliderItems')->findOrFail($id);
         return response()->json($slider);
     }
 }
