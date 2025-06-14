@@ -135,8 +135,8 @@ class SearchController extends Controller
     
                 $categories = Category::with([
                         'slug',
-                        'parentCategory.slug',
-                        'parentCategory.parentCategory.slug',
+                        'parent.slug',
+                        'parent.parent.slug',
                         'products.slug'
                     ])
                     ->inRandomOrder()->take(4)
@@ -149,8 +149,8 @@ class SearchController extends Controller
                             'url' => $cat->url,
                             'image' =>$cat->image,
                             'parent_id' => $cat->parent_id,
-                            'parent_slug' => optional($cat->parentCategory?->slug)->key,
-                            'parent_parent_slug' => optional($cat->parentCategory?->parentCategory?->slug)->key,
+                            'parent_slug' => optional($cat->parent?->slug)->key,
+                            'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
                             'products' => $cat->products->map(fn($p) => [
                                 'id' => $p->id,
                                 'name' => $p->name,
@@ -211,8 +211,8 @@ class SearchController extends Controller
     
         $categories = Category::with([
                 'slug',
-                'parentCategory.slug',
-                'parentCategory.parentCategory.slug',
+                'parent.slug',
+                'parent.parent.slug',
                 'products.slug'
             ])
             ->where(function ($q) use ($query) {
@@ -228,8 +228,8 @@ class SearchController extends Controller
                     'url' => $cat->url,
                     'image' => $imageUrl($cat->image),
                     'parent_id' => $cat->parent_id,
-                    'parent_slug' => optional($cat->parentCategory?->slug)->key,
-                    'parent_parent_slug' => optional($cat->parentCategory?->parentCategory?->slug)->key,
+                    'parent_slug' => optional($cat->parent?->slug)->key,
+                    'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
                     'products' => $cat->products->map(fn($p) => [
                         'id' => $p->id,
                         'name' => $p->name,
@@ -329,7 +329,7 @@ class SearchController extends Controller
                         $subQ->where('key', 'LIKE', "%{$query}%");
                     });
                 })
-                ->with(['slug', 'parentCategory.slug'])
+                ->with(['slug', 'parent.slug'])
                 ->take(10)
                 ->get()
                 ->map(function ($category) {
@@ -354,7 +354,7 @@ class SearchController extends Controller
 
         // Collect parent categories slugs efficiently
         while ($current->parent_id) {
-            $parent = $current->parentCategory; // Lazy load parent category
+            $parent = $current->parent; // Lazy load parent category
             if ($parent && $parent->slug) {
                 array_unshift($slugPath, $parent->slug->key);
             }
