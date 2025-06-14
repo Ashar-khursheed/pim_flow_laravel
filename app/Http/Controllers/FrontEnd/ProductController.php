@@ -587,9 +587,18 @@ class ProductController extends Controller
             // $product->video_path = collect($videoPaths)->map(function ($video) {
             //     return filter_var($video, FILTER_VALIDATE_URL) ? $video : url('storage/' . ltrim($video, '/'));
             // });
-            $product->images = collect($product->images)->map(function ($image) {
-                        return $image;
-                    });
+            // $product->images = collect($product->images)->map(function ($image) {
+            //             return $image;
+            //         });
+
+            $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+            $cleanedImages = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
 
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
@@ -606,7 +615,7 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'images' => $product->images,
+                'images' => $cleanedImages,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1212,9 +1221,14 @@ class ProductController extends Controller
             // $product->video_path = collect($videoPaths)->map(function ($video) {
             //     return filter_var($video, FILTER_VALIDATE_URL) ? $video : url('storage/' . ltrim($video, '/'));
             // });
-            $product->images = collect($product->images)->map(function ($image) {
-                        return $image;
-                    });
+            $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+            $cleanedImages = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
 
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
@@ -1231,7 +1245,7 @@ class ProductController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-                'images' => $product->images,
+                "images" => $cleanedImages,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
