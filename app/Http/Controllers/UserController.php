@@ -251,7 +251,14 @@ class UserController extends BaseController
 
 		DB::beginTransaction();
 		try {
-			$validatedData['password'] = $validatedData['password'] ? Hash::make($validatedData['password']) : $user->password;
+			/* Check if password is being updated */
+			if (!empty($validatedData['password'])) {
+				/* Revoke all existing tokens */
+				$user->tokens()->delete();
+				$validatedData['password'] = Hash::make($validatedData['password']);
+			} else {
+				$validatedData['password'] = $user->password;
+			}
 			/* Save the user */
 			$user->syncRoles($validatedData['role'])->update([
 				'username' => $validatedData['username'],

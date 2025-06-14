@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use OpenApi\Annotations as OA;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * @OA\Schema(
@@ -60,6 +61,11 @@ class Category extends Model
 		return $this->hasMany(Category::class, 'parent_id')->with('childrenRecursive')->select(['id', 'name', 'slug', 'parent_id']);
 	}
 
+	public function slug()
+	{
+		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'category');
+	}
+
 	public function categoryAttributeGroups()
 	{
 		// return $this->belongsToMany(
@@ -109,6 +115,4 @@ class Category extends Model
 			'product_id'
 		);
 	}
-
-
 }

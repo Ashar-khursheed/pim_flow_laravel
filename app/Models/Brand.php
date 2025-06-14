@@ -34,4 +34,9 @@ class Brand extends Model
     {
         return $this->hasMany(Product::class, 'brand_id'); // Ensure 'brand_id' is the foreign key in products table
     }
+
+    public function slug()
+	{
+		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'brands');
+	}
 }
