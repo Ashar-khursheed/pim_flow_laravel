@@ -382,7 +382,7 @@ Route::get('/frontend/categories', [F_CategoryController::class, 'index']);
 Route::get('/frontend/categories/{slug}', [F_CategoryController::class, 'categoryslug']);
 Route::get('/frontend/categories/{id}', [F_CategoryController::class, 'show']);
 Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::class, 'getProductsByCategory']);
-Route::post('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
+Route::get('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
 
 
 Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
