@@ -403,4 +403,59 @@ class BlogController extends Controller
 			],
 		], Response::HTTP_OK);
 	}
+
+    
+    public function categoryWiseBlogs()
+    {
+        $categories = BlogCategory::where('status', 'published')
+            ->orderBy('order', 'asc')
+            ->get(['id', 'name', 'slug']);
+    
+        $data = [];
+    
+        foreach ($categories as $category) {
+            $blogs = Blog::where('status', 'published')
+                ->where('blog_category_id', $category->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+    
+            $data[] = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'description' => $category->description,
+                'blogs' => $blogs
+            ];
+        }
+    
+        return response()->json($data);
+    }
+    
+
+    public function blogsByCategorySlug(Request $request, $slug)
+    {
+        $category = BlogCategory::where('slug', $slug)
+            ->where('status', 'published')
+            ->first();
+
+        if (!$category) {
+            return response()->json(['message' => 'Category not found'], 404);
+        }
+
+        $blogs = Blog::where('blog_category_id', $category->id)
+            ->where('status', 'published')
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return response()->json([
+            'category' => [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => $category->slug,
+                'description' => $category->description,
+            ],
+            'blogs' => $blogs,
+        ]);
+    }
+
 }
