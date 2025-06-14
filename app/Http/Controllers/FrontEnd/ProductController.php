@@ -1172,19 +1172,25 @@ class ProductController extends Controller
      */
     public function getCategoryWiseRandomProductsForUser(Request $request, $categoryId)
     {
-        $user = auth('api')->user();
-
-        if (!$user) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
+          // Auth and wishlist logic
+          $userId = Auth::id();
+          $wishlistProductIds = [];
+  
+          if ($userId) {
+              $wishlistProductIds = DB::table('ec_wish_lists')
+                  ->where('customer_id', $userId)
+                  ->pluck('product_id')
+                  ->map(fn($id) => (int) $id)
+                  ->toArray();
+          } else {
+              $wishlistProductIds = session()->get('guest_wishlist', []);
+          }
 
         if (!$categoryId) {
             return response()->json(['error' => 'category_id is required'], 400);
         }
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
-
-        $wishlistProductIds = $user->wishlist()->pluck('product_id')->toArray();
 
         $products = Product::whereHas('categories', function ($query) use ($allCategoryIds) {
                 $query->whereIn('categories.id', $allCategoryIds);
@@ -1197,40 +1203,66 @@ class ProductController extends Controller
             return response()->json(['message' => 'No products found in this category or its children'], 404);
         }
 
-        $data = $products->map(function ($product) use ($wishlistProductIds) {
-            $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
-            $cleanedImages = collect($imageArray)->map(function ($item) {
-                if (is_string($item) && str_starts_with($item, '[')) {
-                    $decoded = json_decode($item, true);
-                    return is_array($decoded) ? $decoded : [$item];
-                }
-                return [$item];
-            })->flatten()->filter()->values();
+        $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
+            // $product->images = collect($product->images)->map(function ($image) {
+            //     return filter_var($image, FILTER_VALIDATE_URL) ? $image : url('storage/' . ltrim($image, '/'));
+            // });
+
+            // $videoPaths = json_decode($product->video_path, true) ?? [];
+            // $product->video_path = collect($videoPaths)->map(function ($video) {
+            //     return filter_var($video, FILTER_VALIDATE_URL) ? $video : url('storage/' . ltrim($video, '/'));
+            // });
+            $product->images = collect($product->images)->map(function ($image) {
+                        return $image;
+                    });
+
+                    $videoPaths = json_decode($product->video_path, true);
+                    $product->video_path = collect($videoPaths)->map(function ($video) {
+                        return $video;
+                    });
+
+
+            $totalReviews = $product->reviews->count();
+            $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+            $quantity = $product->quantity ?? 0;
+            $unitsSold = $product->units_sold ?? 0;
+            $leftStock = $quantity - $unitsSold;
 
             return [
-                "id" => $product->id,
-                "name" => $product->name,
-                "sku" => $product->sku,
-                "price" => $product->price,
-                "sale_price" => $product->sale_price,
-                "best_delivery_date" => $product->best_delivery_date,
-                "total_reviews" => $product->reviews->count(),
-                "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
-                "left_stock" => $product->left_stock ?? 0,
-                "currency" => $product->currency->symbol ?? 'USD',
-                "images" => $cleanedImages,
-                "original_price" => $product->price,
-                "front_sale_price" => $product->price,
-                "best_price" => $product->price,
-                "is_in_wishlist" => in_array($product->id, $wishlistProductIds),
+                'id' => $product->id,
+                'name' => $product->name,
+                'images' => $product->images,
+                'video_url' => $product->video_url,
+                'video_path' => $product->video_path,
+                'sku' => $product->sku,
+                'original_price' => $product->price,
+                'sale_price' => $product->sale_price,
+                'front_sale_price' => $product->sale_price ?? $product->price,
+                'price' => $product->price,
+                'start_date' => $product->start_date,
+                'end_date' => $product->end_date,
+                'warranty_information' => $product->warranty_information,
+                'currency' => $product->currency?->title,
+                'total_reviews' => $totalReviews,
+                'avg_rating' => $avgRating,
+                'best_price' => $product->sale_price ?? $product->price,
+                'best_delivery_date' => null, // optional to calculate
+                'leftStock' => $leftStock,
+                'currency_title' => $product->currency
+                    ? ($product->currency->is_prefix_symbol
+                        ? $product->currency->title
+                        : ($product->price . ' ' . $product->currency->title))
+                    : $product->price,
+                'in_wishlist' => in_array($product->id, $wishlistProductIds),
             ];
         });
 
         return response()->json([
             'success' => true,
-            'data' => $data,
+            'data' => $transformed
         ]);
     }
+    
 
     private function getAllChildCategoryIds($categoryId)
     {
