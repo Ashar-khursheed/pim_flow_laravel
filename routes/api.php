@@ -319,13 +319,13 @@ Route::post('frontend/orders', [F_OrderController::class, 'store']);
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
-	Route::post('/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
-    Route::get('/wishlist', [F_WishlistController::class, 'getWishlist']);
-    Route::delete('/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
+	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
+    Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
+    Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
 
     // Additional wishlist routes
-    Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
-    Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+    Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+    Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
