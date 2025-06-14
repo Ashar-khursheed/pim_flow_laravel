@@ -54,6 +54,7 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
@@ -124,8 +125,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seo-schema', [SeoSchemaController::class, 'store']); // Create or Update SEO Schema
 	Route::get('/seo-schema/{type}/{id}', [SeoSchemaController::class, 'show']); // Get SEO Schema
 
-	Route::get('/customers/list-names', [CustomerController::class, 'listNames']);
+	Route::get('/customers/{customer_id}/addresses', [CustomerAddressController::class, 'indexByCustomer']);
 	Route::apiResource('customers', CustomerController::class);
+	Route::apiResource('customer-address', CustomerAddressController::class);
 
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
 	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);

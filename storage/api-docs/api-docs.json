@@ -6430,6 +6430,255 @@
                 ]
             }
         },
+        "/api/customers/{customer_id}/addresses": {
+            "get": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Get all addresses of a specific customer",
+                "operationId": "843b848eb05b3890fb110089dfa9c7f8",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "description": "ID of the customer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-address": {
+            "post": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Create a new customer address",
+                "operationId": "71d2755ba1d354ee1e090d1b8320d7fa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-address/{id}": {
+            "get": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Get customer address details",
+                "description": "Fetches customer address details based on the given ID.",
+                "operationId": "f49c7e0f5425c908024da4ef2a7390bf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customer Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Update a specific customer address",
+                "operationId": "72ead6bdc0c2586920be9d5aa215e294",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "456 New Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 102
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 15
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123123"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Delete a specific customer address",
+                "operationId": "48c54df4623abb99f2e43314bb3a524d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers": {
             "get": {
                 "tags": [
@@ -6669,7 +6918,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Updated successfully",
                         "content": {
                             "application/json": {}
@@ -24422,6 +24671,10 @@
         {
             "name": "Benefits & Features",
             "description": "Benefits & Features"
+        },
+        {
+            "name": "Customer-Address",
+            "description": "Customer-Address"
         },
         {
             "name": "Customers",

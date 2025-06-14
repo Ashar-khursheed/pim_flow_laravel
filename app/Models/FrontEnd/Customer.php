@@ -29,7 +29,8 @@ class Customer extends Authenticatable
 		'password',
 		'dob',
 		'mobile_number',
-		'profile_img'
+		'profile_img',
+		'created_by',
 	];
 
 	/**
@@ -58,6 +59,11 @@ class Customer extends Authenticatable
 	public function creator()
 	{
 		return $this->belongsTo(User::class, 'created_by');
+	}
+
+	public function customerAddress()
+	{
+		return $this->hasMany(CustomerAddress::class);
 	}
 
 	public function passwordResetToken()

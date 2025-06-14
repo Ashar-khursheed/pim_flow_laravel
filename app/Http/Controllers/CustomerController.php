@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\FrontEnd\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -134,6 +133,7 @@ class CustomerController extends Controller
 			'dob' => $validatedData['dob'] ?? null,
 			'mobile_number' => $validatedData['mobile_number'] ?? null,
 			'profile_img' => $validatedData['profile_img'] ?? null,
+			'created_by' => auth()->id(),
 		]);
 
 		$customer->save();
@@ -158,7 +158,12 @@ class CustomerController extends Controller
 	 */
 	public function show($id)
 	{
-		$customer = Customer::find($id);
+		$customer = Customer::with([
+			'customerAddress',
+			'customerAddress.country:id,name',
+			'customerAddress.state:id,name',
+			'customerAddress.city:id,name'
+		])->find($id);
 
 		if (!$customer) {
 			return response()->json([
@@ -195,7 +200,7 @@ class CustomerController extends Controller
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
