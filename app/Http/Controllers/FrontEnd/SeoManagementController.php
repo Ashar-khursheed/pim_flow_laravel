@@ -158,7 +158,7 @@ class SeoManagementController extends Controller
      */
     public function getParagraphData($relational_id)
     {
-        $seoData = SeoManagement::where('relational_id', $relational_id)
+        $seoData = SEOManagement::where('relational_id', $relational_id)
             ->get()
             ->map(function ($item) {
                 return [
@@ -170,15 +170,18 @@ class SeoManagementController extends Controller
                     'paragraph_2' => $item->paragraph_2,
                     'paragraph_3' => $item->paragraph_3,
                     'paragraph_4' => $item->paragraph_4,
-                    'popular_tags' => json_decode($item->popular_tags, true) ?? [],
+                    'popular_tags' => is_string($item->popular_tags)
+                        ? json_decode($item->popular_tags, true)
+                        : ($item->popular_tags ?? []),
                 ];
             });
-
+    
         return response()->json([
             'status' => true,
             'data' => $seoData
         ]);
     }
+    
 
     private function filterFields($item)
     {
