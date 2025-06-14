@@ -86,13 +86,13 @@ use Illuminate\Support\Facades\Auth;
 		// Transform categories into a parent-child structure
 		$categoriesTree = $this->buildTree($categories, $filterId, $limit);
 
-		// Add full URLs for images (both parent and child categories)
-		foreach ($categoriesTree as $category) {
-			$category->image = $this->getImageUrl($category->image); // Modify image for parent category
+		// // Add full URLs for images (both parent and child categories)
+		// foreach ($categoriesTree as $category) {
+		// 	// $category->image = $this->getImageUrl($category->image); // Modify image for parent category
 
-			// Recursively modify images for children and children's children
-			$this->addImageUrlsRecursively($category);
-		}
+		// 	// Recursively modify images for children and children's children
+		// 	// $this->addImageUrlsRecursively($category);
+		// }
 
 		return response()->json($categoriesTree);
 	}
@@ -153,12 +153,12 @@ use Illuminate\Support\Facades\Auth;
 		$categoriesTree = $this->buildTree($categories, null, $limit);
 
 		// Add full URLs for images (both parent and child categories)
-		foreach ($categoriesTree as $category) {
-			$category->image = $this->getImageUrl($category->image); // Modify image for parent category
+		// foreach ($categoriesTree as $category) {
+		// 	$category->image = $this->getImageUrl($category->image); // Modify image for parent category
 
-			// Recursively modify images for children and children's children
-			$this->addImageUrlsRecursively($category);
-		}
+		// 	// Recursively modify images for children and children's children
+		// 	$this->addImageUrlsRecursively($category);
+		// }
 
 		return response()->json($categoriesTree);
 	}
@@ -233,8 +233,8 @@ use Illuminate\Support\Facades\Auth;
             ], 404);
         }
 
-        // Add image URL if image exists
-        $category->image = $this->getImageUrl($category->image);
+        // // Add image URL if image exists
+        // $category->image = $this->getImageUrl($category->image);
 
         return response()->json([
             'category' => $category,
@@ -297,7 +297,7 @@ use Illuminate\Support\Facades\Auth;
 		}
 
 		// Update category image URL to include the full path
-		$category->image = $this->getCategoryImageUrl($category->image); // Convert the image name to the full URL
+		// $category->image = $this->getCategoryImageUrl($category->image); // Convert the image name to the full URL
 
 		$perPage = request()->get('per_page', 10);
 		$perPage = is_numeric($perPage) && $perPage > 0 ? (int)$perPage : 10;
@@ -319,23 +319,23 @@ use Illuminate\Support\Facades\Auth;
 				$product->currency_title = $product->price;
 			}
 
-			// Update product images URLs
-			$product->images = collect($product->images)->map(function ($image) {
-				// Check if image exists in 'storage/products/' directory
-				$imagePath = public_path('storage/products/' . $image);
-				if (file_exists($imagePath)) {
-					return asset('storage/products/' . $image);
-				}
+			// // Update product images URLs
+			// $product->images = collect($product->images)->map(function ($image) {
+			// 	// Check if image exists in 'storage/products/' directory
+			// 	$imagePath = public_path('storage/products/' . $image);
+			// 	if (file_exists($imagePath)) {
+			// 		return asset('storage/products/' . $image);
+			// 	}
 
-				// Check if image exists in the general 'storage/' directory
-				$imagePath = public_path('storage/' . $image);
-				if (file_exists($imagePath)) {
-					return asset('storage/' . $image);
-				}
+			// 	// Check if image exists in the general 'storage/' directory
+			// 	$imagePath = public_path('storage/' . $image);
+			// 	if (file_exists($imagePath)) {
+			// 		return asset('storage/' . $image);
+			// 	}
 
-				// If image doesn't exist in either directory, return a default placeholder or null
-				return asset('storage/default-placeholder.jpg'); // Replace with a valid placeholder image
-			});
+			// 	// If image doesn't exist in either directory, return a default placeholder or null
+			// 	return asset('storage/default-placeholder.jpg'); // Replace with a valid placeholder image
+			// });
 
 			return $product;
 		});
@@ -666,9 +666,9 @@ use Illuminate\Support\Facades\Auth;
             $product->avg_rating = $product->reviews->count() > 0 ? round($product->reviews->avg('star')) : null;
             $product->brand_name = optional($product->brand)->name;
 
-            $product->images = collect(is_array($product->images) ? $product->images : [])->map(function ($img) {
-                return preg_match('/^(http|https):\/\//', $img) ? $img : asset('storage/' . $img);
-            })->toArray();
+            // $product->images = collect(is_array($product->images) ? $product->images : [])->map(function ($img) {
+            //     return preg_match('/^(http|https):\/\//', $img) ? $img : asset('storage/' . $img);
+            // })->toArray();
 
             $product->video_path = is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []);
 
@@ -900,7 +900,7 @@ use Illuminate\Support\Facades\Auth;
         // Add product count and adjust image URLs
         foreach ($limitedCategories as $category) {
             $category->productCount = $category->products()->count(); // Count related products
-            $category->image = $this->getImageUrl($category->image); // Adjust image URL
+            $category->image; // Adjust image URL
         }
 
         // Return categories with their details
@@ -947,7 +947,7 @@ use Illuminate\Support\Facades\Auth;
         // Add product count and adjust image URLs
         foreach ($allCategories as $category) {
             $category->productCount = $category->products()->count(); // Count related products
-            $category->image = $this->getImageUrl($category->image); // Adjust image URL
+            $category->image ; // Adjust image URL
         }
 
         // Return all categories with their details
@@ -1069,12 +1069,6 @@ use Illuminate\Support\Facades\Auth;
                     $imageUrls = is_string($details->images)
                     ? json_decode($details->images, true)
                     : (array) $details->images;
-                
-                $imageUrls = collect($imageUrls)->map(function ($image) {
-                    return Str::startsWith($image, ['http://', 'https://'])
-                        ? $image
-                        : asset('storage/' . ltrim($image, '/'));
-                })->toArray();
                 
                     return [
                         'id' => $details->id,
@@ -1205,12 +1199,6 @@ use Illuminate\Support\Facades\Auth;
                     ? json_decode($details->images, true)
                     : (array) $details->images;
 
-                    $imageUrls = collect($imageUrls)->map(function ($image) {
-                        return Str::startsWith($image, ['http://', 'https://'])
-                            ? $image
-                            : asset('storage/' . ltrim($image, '/'));
-                    })->toArray();
-
 
                     return [
                         'id' => $details->id,
@@ -1238,44 +1226,16 @@ use Illuminate\Support\Facades\Auth;
         ]);
     }
 
-    // Function to get the full image URL for category images
-	private function getCategoryImageUrl($image)
-	{
-		// Check if category image exists in 'storage/categories/' directory
-		$imagePath = public_path('storage/categories/' . $image);
-		if (file_exists($imagePath)) {
-			return asset('storage/categories/' . $image);
-		}
 
-		// Check if image exists in the general 'storage/' directory
-		$imagePath = public_path('storage/' . $image);
-		if (file_exists($imagePath)) {
-			return asset('storage/' . $image);
-		}
 
-		// If image doesn't exist in either directory, return a default placeholder or null
-		return asset('storage/default-placeholder.jpg'); // Replace with a valid placeholder image
-	}
-
-    private function getImageUrl($imagePath)
-    {
-        // Check if the image is inside 'categories' or general 'storage'
-        if (strpos($imagePath, 'storage/categories') === 0) {
-            return asset('storage/' . $imagePath); // If inside storage/categories, use the asset helper
-        } elseif (strpos($imagePath, 'storage') === 0) {
-            return asset('storage/' . $imagePath); // If inside any storage folder, use the asset helper
-        }
-
-        // Return default if not found
-        return asset('storage/' . $imagePath); 
-    }
+    
     // Recursive function to modify images for children and all sub-level categories
     private function addImageUrlsRecursively($category)
     {
         // If the category has children, modify their images as well
         if (isset($category->children) && !empty($category->children)) {
             foreach ($category->children as $childCategory) {
-                $childCategory->image = $this->getImageUrl($childCategory->image); // Modify image for child category
+                $childCategory->image ; // Modify image for child category
                 // Recursively handle children of children (grandchildren, etc.)
                 $this->addImageUrlsRecursively($childCategory);
             }
