@@ -429,6 +429,8 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
+Route::get('/frontend/category/{slug}/blogs', [BlogController::class, 'blogsByCategorySlug']);
+Route::get('/frontend/categories-with-blogs', [BlogController::class, 'categoryWiseBlogs']);
 
 Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
 Route::get('/frontend/sliders/{id}', [F_SliderController::class, 'show']);
