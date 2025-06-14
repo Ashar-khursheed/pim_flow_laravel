@@ -212,7 +212,7 @@ class CategoryMenuController extends Controller
                 'slug' => $category->slug,
                 'parent_id' => $category->parent_id,
                 'productCount' => $category->products_count, // Eager-loaded product count
-                'image' => asset('storage/' . $category->image),
+                'image' =>  $category->image,
                 'children' => [],
             ];
         }
