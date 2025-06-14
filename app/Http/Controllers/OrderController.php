@@ -242,10 +242,35 @@ class OrderController extends Controller
 
 			DB::commit();
 
+			/* Load relationships */
+			$order->load([
+				'orderProducts:id,order_id,product_id,vendor_id',
+				'orderProducts.product:id,name,images,sku,quantity,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product.brand:id,name',
+				'tracking'
+			]);
+
+			/* Mutate the data for each order product */
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+
+				if ($product) {
+					/* Decode images JSON string */
+					$product->images = json_decode($product->images);
+
+					/* Replace brand relation with brand_name */
+					if ($product->brand) {
+						$product->brand_name = $product->brand->name;
+					}
+
+					unset($product->brand); /* Remove full brand object */
+				}
+			}
+
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order->load(['orderProducts', 'orderProducts.product', 'tracking'])
+				'data' => $order
 			], 201);
 
 		} catch (\Exception $e) {
@@ -279,16 +304,38 @@ class OrderController extends Controller
 	 */
 	public function show($id)
 	{
-		$order = Order::with([
-			'orderProducts',
-			'tracking'
-		])->find($id);
+		$order = Order::find($id);
 
 		if (!$order) {
 			return response()->json([
 				'success' => false,
 				'message' => "Order not found."
 			]);
+		}
+
+		/* Load relationships */
+		$order->load([
+			'orderProducts:id,order_id,product_id,vendor_id',
+			'orderProducts.product:id,name,images,sku,quantity,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+			'orderProducts.product.brand:id,name',
+			'tracking'
+		]);
+
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+
+			if ($product) {
+				/* Decode images JSON string */
+				$product->images = json_decode($product->images);
+
+				/* Replace brand relation with brand_name */
+				if ($product->brand) {
+					$product->brand_name = $product->brand->name;
+				}
+
+				unset($product->brand); /* Remove full brand object */
+			}
 		}
 
 		return response()->json([
@@ -481,8 +528,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-					->where('order_id', $order->id)
-					->firstOrFail();
+				->where('order_id', $order->id)
+				->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");
