@@ -23,6 +23,7 @@ class ProductExportController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"type", "relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="status", type="string", example="All", description="Status (e.g., Category, Brand)"),
 	 *             @OA\Property(property="type", type="string", example="Category", description="Filter type (e.g., Category, Brand)"),
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="ID based on selected type (e.g., Category ID)"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
@@ -52,6 +53,7 @@ class ProductExportController extends BaseController
 
 		/* Validate request data */
 		$request->validate([
+			'status' => 'required|string|in:all,draft,published',
 			'type' => 'required|string|in:Brand,Category,Vendor',
 			'relational_id' => 'required|integer',
 			'range_from' => 'required|integer|min:1',
@@ -103,7 +105,9 @@ class ProductExportController extends BaseController
 		;
 
 		/* Apply relational filters */
-		if ($request->type == "Brand") {
+		if ($request->status != "all") {
+			$query->where('status', $request->status);
+		} elseif ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
 		} elseif ($request->type == "Vendor") {
 			$query->where('vendor_id', $request->relational_id);
