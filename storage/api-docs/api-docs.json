@@ -476,6 +476,11 @@
                                     "range_to"
                                 ],
                                 "properties": {
+                                    "status": {
+                                        "description": "Status (e.g., draft, published)",
+                                        "type": "string",
+                                        "example": "all"
+                                    },
                                     "parent_category_id": {
                                         "description": "Parent category ID",
                                         "type": "integer",
@@ -18246,6 +18251,11 @@
                                     "range_to"
                                 ],
                                 "properties": {
+                                    "status": {
+                                        "description": "Status (e.g., Category, Brand)",
+                                        "type": "string",
+                                        "example": "all"
+                                    },
                                     "type": {
                                         "description": "Filter type (e.g., Category, Brand)",
                                         "type": "string",
