@@ -11899,6 +11899,228 @@
                 }
             }
         },
+        "/frontend/location": {
+            "get": {
+                "tags": [
+                    "Frontend-Location"
+                ],
+                "summary": "Get location information based on IP address",
+                "operationId": "d6631a864ce354c29319e18c1497e56d",
+                "parameters": [
+                    {
+                        "name": "ip",
+                        "in": "query",
+                        "description": "IP address to lookup (optional). If omitted, uses client IP.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "8.8.8.8"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Location information",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "country": {
+                                            "type": "string"
+                                        },
+                                        "city": {
+                                            "type": "string"
+                                        },
+                                        "region": {
+                                            "type": "string"
+                                        },
+                                        "lat": {
+                                            "type": "number"
+                                        },
+                                        "lon": {
+                                            "type": "number"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/frontend/get-coordinates": {
+            "get": {
+                "tags": [
+                    "Frontend-Location"
+                ],
+                "summary": "Get geographic coordinates for a given address",
+                "operationId": "c7f9e62b43af0a69a5824825a8ee83de",
+                "parameters": [
+                    {
+                        "name": "address",
+                        "in": "query",
+                        "description": "The full address to convert to coordinates",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "1600 Amphitheatre Parkway, Mountain View, CA"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coordinates found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "location": {
+                                            "properties": {
+                                                "lat": {
+                                                    "type": "number",
+                                                    "example": 37.422
+                                                },
+                                                "lng": {
+                                                    "type": "number",
+                                                    "example": -122.084
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Location not found"
+                    }
+                }
+            }
+        },
+        "/frontend/realtime-location": {
+            "post": {
+                "tags": [
+                    "Frontend-Location"
+                ],
+                "summary": "Get address from real-time coordinates using Google Maps",
+                "operationId": "a1627ebee912d7771de5e826283036d9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "latitude",
+                                    "longitude"
+                                ],
+                                "properties": {
+                                    "latitude": {
+                                        "type": "number",
+                                        "example": 37.422
+                                    },
+                                    "longitude": {
+                                        "type": "number",
+                                        "example": -122.084
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "address": {
+                                            "type": "string",
+                                            "example": "1600 Amphitheatre Parkway, Mountain View, CA"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Address not found"
+                    }
+                }
+            }
+        },
+        "/frontend/get-location": {
+            "post": {
+                "tags": [
+                    "Frontend-Location"
+                ],
+                "summary": "Get address from latitude and longitude using HERE API",
+                "operationId": "ab3d2e03826f7e730bfc08c95878c75e",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "lat",
+                                    "lon"
+                                ],
+                                "properties": {
+                                    "lat": {
+                                        "type": "number",
+                                        "example": 52.52
+                                    },
+                                    "lon": {
+                                        "type": "number",
+                                        "example": 13.405
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Address found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "address": {
+                                            "properties": {
+                                                "label": {
+                                                    "type": "string",
+                                                    "example": "Invalidenstraße 116, 10115 Berlin, Germany"
+                                                },
+                                                "countryName": {
+                                                    "type": "string",
+                                                    "example": "Germany"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Address not found or API failed"
+                    }
+                }
+            }
+        },
         "/api/frontend/orders": {
             "post": {
                 "tags": [
@@ -13893,6 +14115,180 @@
                                 }
                             }
                         }
+                    }
+                }
+            }
+        },
+        "/api/frontend/sliders": {
+            "get": {
+                "tags": [
+                    "Frontend-Sliders"
+                ],
+                "summary": "Get list of sliders",
+                "operationId": "5439d2a01c4ecc0062a4328a34dcd218",
+                "responses": {
+                    "200": {
+                        "description": "List of sliders with slider items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "$ref": "#/components/schemas/SimpleSlider"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/sliders/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Sliders"
+                ],
+                "summary": "Get a specific slider by ID",
+                "operationId": "fbf2023a36f711f1d459c5c4e59b4dda",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Slider ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Slider with slider items",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SimpleSlider"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Slider not found"
+                    }
+                }
+            }
+        },
+        "/frontend/payment-square": {
+            "post": {
+                "tags": [
+                    "Frontend-Payment"
+                ],
+                "summary": "Create a payment using Square API",
+                "operationId": "createSquarePayment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "nonce",
+                                    "amount",
+                                    "currency",
+                                    "customer_id",
+                                    "location_id",
+                                    "team_member_id",
+                                    "buyer_email_address"
+                                ],
+                                "properties": {
+                                    "nonce": {
+                                        "type": "string",
+                                        "example": "card_nonce_value"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 10.5
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "USD"
+                                    },
+                                    "customer_id": {
+                                        "type": "string"
+                                    },
+                                    "location_id": {
+                                        "type": "string"
+                                    },
+                                    "team_member_id": {
+                                        "type": "string"
+                                    },
+                                    "buyer_email_address": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "customer@example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment successfully created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "payment": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation or payment error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "errors": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error"
+                    }
+                }
+            }
+        },
+        "/frontend/payment-form": {
+            "get": {
+                "tags": [
+                    "Frontend-Payment"
+                ],
+                "summary": "Get payment form view",
+                "operationId": "paymentFormView",
+                "responses": {
+                    "200": {
+                        "description": "Blade view with Square form"
                     }
                 }
             }
@@ -24191,6 +24587,10 @@
             "description": "Frontend - FAQs"
         },
         {
+            "name": "Frontend-Location",
+            "description": "Frontend-Location"
+        },
+        {
             "name": "FrontEnd-Orders",
             "description": "FrontEnd-Orders"
         },
@@ -24217,6 +24617,14 @@
         {
             "name": "Frontend-SEO Management",
             "description": "Frontend-SEO Management"
+        },
+        {
+            "name": "Frontend-Sliders",
+            "description": "Frontend-Sliders"
+        },
+        {
+            "name": "Frontend-Payment",
+            "description": "Frontend-Payment"
         },
         {
             "name": "Frontend-User Reviews",

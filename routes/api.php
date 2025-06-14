@@ -78,6 +78,10 @@ use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
 use App\Http\Controllers\FrontEnd\RecentlyViewedProductController as F_RecentlyViewedProductController;
 use App\Http\Controllers\FrontEnd\ProductController as F_ProductController;
 use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
+use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
+use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
+use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -426,12 +430,20 @@ Route::prefix('/frontend/blogs')->group(function () {
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
 
+Route::get('/api/frontend/sliders', [F_SliderController::class, 'index']);
+Route::get('/api/frontend/sliders/{id}', [F_SliderController::class, 'show']);
 
 Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
 Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);
 
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
+
+Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
+
+Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
+Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
+Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
