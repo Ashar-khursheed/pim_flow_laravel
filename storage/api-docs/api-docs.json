@@ -479,7 +479,7 @@
                                     "status": {
                                         "description": "Status (e.g., draft, published)",
                                         "type": "string",
-                                        "example": "All"
+                                        "example": "all"
                                     },
                                     "parent_category_id": {
                                         "description": "Parent category ID",
@@ -18254,7 +18254,7 @@
                                     "status": {
                                         "description": "Status (e.g., Category, Brand)",
                                         "type": "string",
-                                        "example": "All"
+                                        "example": "all"
                                     },
                                     "type": {
                                         "description": "Filter type (e.g., Category, Brand)",
