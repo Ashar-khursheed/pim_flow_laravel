@@ -666,9 +666,10 @@ use Illuminate\Support\Facades\Auth;
             $product->avg_rating = $product->reviews->count() > 0 ? round($product->reviews->avg('star')) : null;
             $product->brand_name = optional($product->brand)->name;
 
-            // $product->images = collect(is_array($product->images) ? $product->images : [])->map(function ($img) {
-            //     return preg_match('/^(http|https):\/\//', $img) ? $img : asset('storage/' . $img);
-            // })->toArray();
+            $product->images = is_string($product->images)
+            ? json_decode($product->images, true)
+            : (array) $product->images;
+        
 
             $product->video_path = is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []);
 
@@ -1069,6 +1070,7 @@ use Illuminate\Support\Facades\Auth;
                     $imageUrls = is_string($details->images)
                     ? json_decode($details->images, true)
                     : (array) $details->images;
+        
                 
                     return [
                         'id' => $details->id,
