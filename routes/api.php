@@ -373,6 +373,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
 	Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
 	Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
+	Route::get('/frontend/products-guest/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
 
 
 });

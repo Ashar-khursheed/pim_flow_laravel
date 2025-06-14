@@ -1094,6 +1094,95 @@ class ProductController extends Controller
             'data' => $products
         ]);
     }
+   
+    public function getRandomGuestProducts($category_id)
+    {
+        if (!$category_id) {
+            return response()->json(['error' => 'category_id is required'], 400);
+        }
+
+
+        $categoryIds = $this->getAllChildCategoryIds($category_id);
+        $categoryIds[] = $category_id;
+
+        $products = Product::with(['categories', 'brand', 'brand.products.reviews', 'reviews', 'currency', 'sellingUnitAttribute'])
+            ->where('status', 'published')
+            ->whereHas('categories', function ($query) use ($categoryIds) {
+                $query->whereIn('categories.id', $categoryIds);
+            })
+            ->inRandomOrder()
+            ->limit(20)
+            ->get();
+
+        $products->transform(function ($product) {
+            $product->benefits_features = json_decode($product->benefits_features, true);
+
+            if (is_string($product->description)) {
+                $product->description = json_decode($product->description, true);
+            }
+
+            if ($product->brand) {
+                $product->brand_id = $product->brand->id;
+                $product->brand_name = $product->brand->name;
+                $product->brand_logo = $product->brand->logo;
+
+                $brandProductIds = DB::table('ec_products')
+                    ->where('brand_id', $product->brand->id)
+                    ->pluck('id');
+
+                $brandReviewsQuery = DB::table('ec_reviews')
+                    ->whereIn('product_id', $brandProductIds);
+
+                $product->brand_avg_rating = $brandReviewsQuery->count() > 0
+                    ? round($brandReviewsQuery->avg('star'), 1)
+                    : null;
+                $product->brand_review_count = $brandReviewsQuery->count();
+            }
+
+            $product->images = collect(json_decode($product->images, true))->map(fn($image) => $image);
+
+            $videoPaths = json_decode($product->video_path, true);
+            $product->video_path = collect($videoPaths)->map(fn($video) => $video);
+
+            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $product->sellingUnitAttribute->attribute_value;
+                if (strpos($fullValue, '/') !== false) {
+                    $parts = explode('/', $fullValue);
+                    $product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
+                } else {
+                    $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+                }
+            }
+
+            $product->total_reviews = $product->reviews->count();
+            $product->avg_rating = $product->reviews->count() > 0 ? $product->reviews->avg('star') : null;
+
+            $quantity = $product->quantity ?? 0;
+            $unitsSold = $product->units_sold ?? 0;
+            $product->leftStock = $quantity - $unitsSold;
+            $product->currency_title = $product->currency
+                ? ($product->currency->is_prefix_symbol
+                    ? $product->currency->title
+                    : $product->price . ' ' . $product->currency->title)
+                : $product->price;
+
+            $product->category_list = $product->categories->map(function ($category) {
+                return [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => optional($category->slugable)->key,
+                ];
+            });
+
+            return $product;
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $products
+        ]);
+    }
+
 
     
     private function getAllChildCategoryIds($parentId)
