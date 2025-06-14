@@ -245,7 +245,7 @@ class OrderController extends Controller
 			/* Load relationships */
 			$order->load([
 				'orderProducts:id,order_id,product_id,vendor_id,quantity',
-				'orderProducts.product:id,name,images,sku,quantity,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name',
 				'tracking'
 			]);
@@ -316,7 +316,7 @@ class OrderController extends Controller
 		/* Load relationships */
 		$order->load([
 			'orderProducts:id,order_id,product_id,vendor_id,quantity',
-			'orderProducts.product:id,name,images,sku,quantity,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 			'orderProducts.product.brand:id,name',
 			'tracking'
 		]);
