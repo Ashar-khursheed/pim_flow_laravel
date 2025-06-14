@@ -28,7 +28,7 @@ class SliderController extends Controller
     public function index()
     {
         // Eager load slider items
-        $sliders = SimpleSlider::with('sliderItems')->get();
+        $sliders = Slider::with('sliderItems')->get();
         return response()->json($sliders);
     }
 
