@@ -1112,7 +1112,6 @@ class ProductController extends Controller
         ]);
     }
 
-
     /**
      * @OA\Get(
      *     path="/api/category-random-products-guest/{categoryId}",
