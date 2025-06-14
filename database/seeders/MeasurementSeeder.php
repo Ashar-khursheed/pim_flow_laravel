@@ -15,6 +15,7 @@ class MeasurementSeeder extends Seeder
 			'Time', 'Speed', 'Area', 'Energy', 'Pressure', 'Force',
 			'Power', 'Energy Consumption', 'Electrical Potential',
             'Electric Current', 'Frequency', 'Battery Capacity', 'Rotational Speed',
+			'Noise Level', 'Humidity', 'Density', 'Nutrition Facts',
 		];
 
 		foreach ($types as $type) {
@@ -136,6 +137,33 @@ class MeasurementSeeder extends Seeder
 			],
 			'Rotational Speed' => [
 				['revolutions per minute', 'RPM'],
+			],
+			'Noise Level' => [
+				['decibel', 'dB'],
+				['A-weighted decibel', 'dB(A)'],
+				['C-weighted decibel', 'dB(C)'],
+				['sound pressure level', 'dB SPL'],
+			],
+			'Humidity' => [
+				['relative humidity', '% RH'],
+			],
+			'Density' => [
+				['gram per cubic centimeter', 'g/cm³'],
+				['kilogram per cubic meter', 'kg/m³'],
+			],
+			'Nutrition Facts' => [
+				['kilocalorie', 'kcal'],
+				['calorie', 'cal'],
+				['kilojoule', 'kJ'],
+				['gram', 'g'],
+				['milligram', 'mg'],
+				['microgram', 'µg'],
+				['kilogram', 'kg'],
+				['ounce', 'oz'],
+				['pound', 'lb'],
+				['millilitre', 'mL'],
+				['litre', 'L'],
+				['percent', '%'],
 			],
 
 		];
