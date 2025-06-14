@@ -130,7 +130,7 @@ class SearchController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'url' => $product->url,
-                       'image' => json_decode($p->images)[0] ?? null,
+                       'image' => json_decode($product->images)[0] ?? null,
                     ]);
     
                 $categories = Category::with([
