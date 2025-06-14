@@ -1017,9 +1017,7 @@ class ProductController extends Controller
 
         $products = Product::with(['categories', 'brand', 'brand.products.reviews', 'reviews', 'currency', 'sellingUnitAttribute'])
             ->where('status', 'published')
-            ->whereHas('categories', function ($query) use ($categoryIds) {
-                $query->whereIn('categories.id', $categoryIds);
-            })
+            ->whereHas('categories')
             ->inRandomOrder()
             ->limit(20)
             ->get();
