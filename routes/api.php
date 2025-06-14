@@ -53,9 +53,35 @@ use App\Http\Controllers\MeasurementController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
-
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
+
+use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
+use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
+use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
+use App\Http\Controllers\FrontEnd\UserReviewController as F_UserReviewController;
+use App\Http\Controllers\FrontEnd\SeoManagementController as F_SeoManagementController;
+use App\Http\Controllers\FrontEnd\CategoryMenuController as F_CategoryMenuController;
+use App\Http\Controllers\FrontEnd\FaqController as F_FaqController;
+use App\Http\Controllers\FrontEnd\ProductYouMayLikeController as F_ProductYouMayLikeController;
+use App\Http\Controllers\FrontEnd\ProductAttributeController as F_ProductAttributeController;
+use App\Http\Controllers\FrontEnd\BrandPageController as F_BrandPageController;
+use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
+use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
+use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
+use App\Http\Controllers\FrontEnd\CartController as F_CartController;
+use App\Http\Controllers\FrontEnd\AddressController as F_AddressController;
+use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
+use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
+use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
+use App\Http\Controllers\FrontEnd\OrderController as F_OrderController;
+use App\Http\Controllers\FrontEnd\RecentlyViewedProductController as F_RecentlyViewedProductController;
+use App\Http\Controllers\FrontEnd\ProductController as F_ProductController;
+use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
+use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
+use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
+use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -66,11 +92,8 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
 
-
-
-
 /* Protect routes with authentication */
-Route::middleware(['auth:api'])->group(function () {
+Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
@@ -261,7 +284,7 @@ Route::middleware(['auth:api'])->group(function () {
 		Route::get('/{id}', [OrderController::class, 'show']);
 		Route::put('/{id}/status', [OrderController::class, 'updateStatus']);
 		Route::put('/{id}/payment', [OrderController::class, 'updatePayment']);
-		Route::put('/{orderId}/items/{itemId}/status', [OrderController::class, 'updateItemStatus']);
+		Route::put('/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
 		Route::post('/{id}/shipments', [OrderController::class, 'createShipment']);
 	});
 
@@ -281,6 +304,146 @@ Route::middleware(['auth:api'])->group(function () {
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
+	Route::post('/logout', [AuthController::class, 'logout']);
 });
+
+
+Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
+Route::post('frontend/register', [F_CustomerController::class, 'register']);
+Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+
+
+Route::post('frontend/orders', [F_OrderController::class, 'store']);
+
+Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
+
+	Route::post('/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
+    Route::get('/wishlist', [F_WishlistController::class, 'getWishlist']);
+    Route::delete('/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
+
+    // Additional wishlist routes
+    Route::get('/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+    Route::get('/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+
+
+	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
+	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
+	Route::put('/customer-reviews-update/{id}', [F_UserReviewController::class, 'updateReview']);
+	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
+
+	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+    Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+
+	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
+    Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
+
+	Route::get('/frontend/product-discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
+
+	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
+	Route::get('/frontend/homebrandproducts', [F_BrandController::class, 'getAllHomeBrandProducts']);
+
+	Route::post('/frontend/cart/add', [F_CartController::class, 'addToCart']);
+	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
+	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
+    Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
+	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
+	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
+	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
+	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
+	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
+
+
+	Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
+    Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
+    Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
+    Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
+    Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
+
+	Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
+
+	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
+	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
+
+	Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
+	Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
+	Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
+	Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
+
+
+});
+
+
+Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
+Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
+Route::get('/frontend/categoryguestproducts', [F_CategoryController::class, 'getAllGuestFeaturedProductsByCategory']);
+Route::get('/frontend/categories', [F_CategoryController::class, 'index']);
+Route::get('/frontend/categories/{slug}', [F_CategoryController::class, 'categoryslug']);
+Route::get('/frontend/categories/{id}', [F_CategoryController::class, 'show']);
+Route::get('/frontend/categories/{categoryId}/products', [F_CategoryController::class, 'getProductsByCategory']);
+Route::post('/frontend/products/specification-filters', [F_CategoryController::class, 'getSpecificationFilters']);
+
+
+Route::get('/frontend/category-with-slug/{slug}', [F_CategoryMenuController::class, 'showCategoryBySlug']);
+Route::get('/frontend/categories-with-children', [F_CategoryMenuController::class, 'getCategoriesWithChildren']);
+
+Route::get('/frontend/cart/total-products-guest', [F_CartController::class, 'totalProductsInCartGuest']);
+Route::get('/frontend/cart/guest', [F_CartController::class, 'viewCartGuest']);
+Route::delete('/frontend/cart/guest/clear', [F_CartController::class, 'clearCartGuest']);
+
+Route::get('/frontend/faqs/product/{product_id}', [F_FaqController::class, 'getFaqsByProduct']);
+
+Route::get('/frontend/product-reviews', [F_UserReviewController::class, 'getProductReviews']);
+
+Route::get('/frontend/products/{product_id}/you-may-like-guest', [F_ProductYouMayLikeController::class, 'getProductsYouMayLikeGuest']);
+
+Route::get('/frontend/product/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProduct']);
+Route::get('/product/{id}/nutrition-facts', [F_ProductAttributeController::class, 'getNutritionFactsByProduct']);
+Route::get('/frontend/product/{productId}/nutrition-facts1', [F_ProductAttributeController::class, 'getNutritionFactsByProduct1']);
+Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProductWithGroup']);
+
+Route::get('/frontend/seo-management', [F_SeoManagementController::class, 'index']);
+Route::get('/frontend/seo-management/relational/{relational_id}', [F_SeoManagementController::class, 'getByRelationalId']);
+Route::get('/frontend/seo/paragraphs/{relational_id}', [F_SeoManagementController::class, 'getParagraphData']);
+
+
+Route::get('/frontend/brand-page/{id}', [F_BrandPageController::class, 'show']);
+
+Route::get('/frontend/brandguestproducts', [F_BrandController::class, 'getAllBrandGuestProducts']);
+Route::get('/frontend/products/brand/{brandId}/category/{categoryId?}', [F_BrandController::class, 'getProductsByBrandAndCategory']);
+Route::get('/frontend/brand/{id}/categories', [F_BrandController::class, 'getCategories']);
+Route::get('/frontend/brands-by-category/{id}', [F_BrandController::class, 'brandsByCategory']);
+Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBrandsAlphabetically']);
+
+Route::get('/frontend/countries', [F_CountryController::class, 'index']);
+Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
+
+Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+
+Route::prefix('/frontend/blogs')->group(function () {
+	Route::get('/', [F_BlogController::class, 'index']);
+	Route::get('/{slug}', [F_BlogController::class, 'show']);
+	Route::post('/{id}/like', [F_BlogController::class, 'like']);
+	Route::post('/{id}/share', [F_BlogController::class, 'share']);
+	Route::post('/{id}/view', [F_BlogController::class, 'view']);
+});
+Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
+
+Route::get('/api/frontend/sliders', [F_SliderController::class, 'index']);
+Route::get('/api/frontend/sliders/{id}', [F_SliderController::class, 'show']);
+
+Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
+Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);
+
+Route::get('/frontend/search', [F_SearchController::class, 'search']);
+Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
+
+Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
+
+Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
+Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
+Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
+
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

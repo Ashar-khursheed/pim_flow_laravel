@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Models;
+namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +11,7 @@ class OrderTracking extends Model
     protected $table = 'order_tracking';
 
     protected $fillable = [
-        'order_id', 'shipment_id', 'status', 'description', 
+        'order_id', 'shipment_id', 'status', 'description',
         'location', 'tracked_at', 'metadata'
     ];
 
@@ -28,5 +28,16 @@ class OrderTracking extends Model
     public function shipment()
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    /**
+     * Prepare a date for array / JSON serialization.
+     *
+     * @param  \DateTimeInterface  $date
+     * @return string
+     */
+    protected function serializeDate(\DateTimeInterface $date)
+    {
+        return $date->format('Y-m-d H:i:s');
     }
 }

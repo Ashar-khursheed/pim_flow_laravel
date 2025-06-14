@@ -8,35 +8,37 @@ class Customer extends Authenticatable
 {
     use Notifiable;
 
-    protected $table = 'ec_customers';
+    protected $table = 'customers';
 
     protected $fillable = [
         'name',
-        'email',
-        'password',
-        'avatar',
-        'dob',
-        'phone',
-        'remember_token',
-        'confirmed_at',
-        'email_verify_token',
-        'status',
-        'private_notes',
-        'is_vendor',
-        'vendor_verified_at',
+		'email',
+		'password',
+		'dob',
+		'mobile_number',
+		'profile_img'
     ];
 
     protected $hidden = [
         'password',
-        'remember_token',
-        'email_verify_token',
-        'private_notes',
+		'remember_token',
     ];
 
-    protected $casts = [
-        'dob' => 'date',
-        'confirmed_at' => 'datetime',
-        'vendor_verified_at' => 'datetime',
-        'is_vendor' => 'boolean',
-    ];
+  /**
+	 * Get the attributes that should be cast.
+	 *
+	 * @return array<string, string>
+	 */
+	protected function casts(): array
+	{
+		return [
+			'email_verified_at' => 'datetime',
+			'password' => 'hashed',
+		];
+	}
+
+	public function passwordResetToken()
+	{
+		return $this->morphOne(PasswordResetToken::class, 'resettable');
+	}
 }
