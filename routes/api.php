@@ -430,8 +430,8 @@ Route::prefix('/frontend/blogs')->group(function () {
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
 
-Route::get('/api/frontend/sliders', [F_SliderController::class, 'index']);
-Route::get('/api/frontend/sliders/{id}', [F_SliderController::class, 'show']);
+Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
+Route::get('/frontend/sliders/{id}', [F_SliderController::class, 'show']);
 
 Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
 Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);
