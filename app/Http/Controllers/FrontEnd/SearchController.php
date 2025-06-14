@@ -123,7 +123,7 @@ class SearchController extends Controller
     
         if (empty($query)) {
             return Cache::remember('search_default_data', 60, function () use ($imageUrl) {
-                $products = Product::with('slugslug')
+                $products = Product::with('slug')
                     ->where('status', 'published')
                     ->inRandomOrder()->take(4)->get()
                     ->map(fn($product) => [

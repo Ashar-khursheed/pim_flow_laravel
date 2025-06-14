@@ -19,7 +19,7 @@ class Slider extends Model
 
     protected static function booted(): void
     {
-        static::deleted(function (SimpleSlider $slider) {
+        static::deleted(function (Slider $slider) {
             $slider->sliderItems()->each(fn (SliderItem $item) => $item->delete());
         });
     }
