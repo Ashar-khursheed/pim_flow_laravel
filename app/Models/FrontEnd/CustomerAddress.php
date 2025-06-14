@@ -22,6 +22,11 @@ class CustomerAddress extends Model
         'is_default',
     ];
 
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
     public function country()
     {
         return $this->belongsTo(Country::class, 'country_id');

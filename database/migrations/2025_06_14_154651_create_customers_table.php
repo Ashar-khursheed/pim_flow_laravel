@@ -22,6 +22,7 @@ return new class extends Migration
 			$table->date('dob')->nullable();
 			$table->string('mobile_number')->nullable();
 			$table->text('profile_img')->nullable();
+			$table->integer('created_by')->nullable();
 			$table->timestamps();
 		});
 
