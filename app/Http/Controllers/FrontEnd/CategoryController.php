@@ -18,6 +18,7 @@ use App\Models\Attribute;
 use App\Models\AttributeGroup;
 use App\Models\ProductAttribute;
 use App\Models\Models\Specification;
+use Illuminate\Support\Facades\Auth;
 
  class CategoryController extends Controller
 {
