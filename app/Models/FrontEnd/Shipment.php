@@ -28,7 +28,7 @@ class Shipment extends Model
 	}
 
 	/* Relationship: Has many shipment products */
-	public function products()
+	public function shipmentProducts()
 	{
 		return $this->hasMany(ShipmentProduct::class);
 	}

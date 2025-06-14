@@ -53,7 +53,7 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer', 'products', 'payments', 'shipments', 'creator', 'updator']);
+			$recordsQuery->with(['customer', 'orderProducts', 'payments', 'shipments', 'creator', 'updator']);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -245,7 +245,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order->load(['products', 'tracking'])
+				'data' => $order->load(['orderProducts', 'orderProducts.product', 'tracking'])
 			], 201);
 
 		} catch (\Exception $e) {
@@ -280,7 +280,7 @@ class OrderController extends Controller
 	public function show($id)
 	{
 		$order = Order::with([
-			'products',
+			'orderProducts',
 			'tracking'
 		])->find($id);
 
@@ -384,7 +384,7 @@ class OrderController extends Controller
 			]);
 		}
 
-		$orderProduct = $order->products()->find($orderProductId);
+		$orderProduct = $order->orderProducts()->find($orderProductId);
 
 		if (!$orderProduct) {
 			return response()->json([
@@ -457,7 +457,7 @@ class OrderController extends Controller
 		]);
 
 		/* Fetch order with related products */
-		$order = Order::with('products')->find($id);
+		$order = Order::with('orderProducts')->find($id);
 
 		if (!$order) {
 			return response()->json([
@@ -501,7 +501,7 @@ class OrderController extends Controller
 			}
 
 			/* Update order delivery status */
-			$allShipped = $order->products->every(fn($product) => $product->remaining_quantity <= 0);
+			$allShipped = $order->orderProducts->every(fn($product) => $product->remaining_quantity <= 0);
 			$order->status = $allShipped ? 'Delivered' : 'Partially Delivered';
 			$order->save();
 
@@ -517,7 +517,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Shipment created successfully',
-				'data' => $shipment->load('products.orderProduct')
+				'data' => $shipment->load('shipmentProducts.orderProduct')
 			], 201);
 		} catch (\Exception $e) {
 			DB::rollBack();
