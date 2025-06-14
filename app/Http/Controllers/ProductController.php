@@ -182,6 +182,7 @@ class ProductController extends BaseController
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
+				'vendor_id' => $product->vendor_id,
 				'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
 				'price'=> $product->price,
@@ -722,7 +723,7 @@ class ProductController extends BaseController
 			]);
 		}
 
-	
+
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/{product}",
