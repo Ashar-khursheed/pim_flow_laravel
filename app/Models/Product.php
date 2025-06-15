@@ -16,7 +16,7 @@ use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
  *     description="Product model",
  *     type="object",
  *     required={"id", "name", "price"},
- *     
+ *
  *     @OA\Property(property="id", type="integer", example=1),
  *     @OA\Property(property="name", type="string", example="iPhone 14"),
  *     @OA\Property(property="description", type="string", example="Latest iPhone with A16 chip"),
@@ -48,6 +48,7 @@ use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
 
 class Product extends Model
 {
+	public static $observerUserId = null;
 	protected $table = 'ec_products';
 
 	protected $fillable = [
@@ -297,22 +298,21 @@ class Product extends Model
 		return $this->hasMany(ProductSupplier::class, 'product_id');
 	}
 
-
 	public function wishlist()
-    {
-        return $this->hasMany(Wishlist::class, 'product_id'); // Adjust 'product_id' if your foreign key is different
-    }
-	public function isInWishlist()
-    {
-        if (Auth::check()) {
-            return $this->wishlist()->where('user_id', Auth::id())->exists();
-        }
-        return false; // Or return null if you want to differentiate between guest and no wishlist
-    }
+	{
+		return $this->hasMany(Wishlist::class, 'product_id');
+	}
+
+	// public function isInWishlist()
+	// {
+	//     if (Auth::check()) {
+	//         return $this->wishlist()->where('user_id', Auth::id())->exists();
+	//     }
+	//     return false; // Or return null if you want to differentiate between guest and no wishlist
+	// }
+
 	public function slugData()
-    {
-        return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
-    }
-
-
+	{
+		return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
+	}
 }

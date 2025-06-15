@@ -341,6 +341,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
     Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
+
+
 	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
@@ -372,9 +374,14 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
 	Route::get('/frontend/brands/{id}/products', [F_ProductController::class, 'productsByBrand']);
 	Route::get('/frontend/brands/{id}/sale-products', [F_ProductController::class, 'saleProductsByBrand']);
+	Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
+	Route::get('/auth/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProductsForUser']);
 
 
 });
+
+Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
+
 
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);

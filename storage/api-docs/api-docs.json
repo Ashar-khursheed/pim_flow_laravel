@@ -13094,6 +13094,264 @@
                 ]
             }
         },
+        "/api/category-random-products/{categoryId}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get 15 random products by category ID (including child categories)",
+                "description": "Returns up to 15 random products from the specified category. If not enough products are found, it searches in child and descendant categories recursively.",
+                "operationId": "getCategoryWiseRandomProducts",
+                "parameters": [
+                    {
+                        "name": "categoryId",
+                        "in": "path",
+                        "description": "The ID of the category to fetch products from",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success response with product data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Product Name"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU123"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 100
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 90
+                                                    },
+                                                    "best_delivery_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-06-20"
+                                                    },
+                                                    "total_reviews": {
+                                                        "type": "integer",
+                                                        "example": 12
+                                                    },
+                                                    "avg_rating": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 4.5
+                                                    },
+                                                    "left_stock": {
+                                                        "type": "integer",
+                                                        "example": 20
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "USD"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/image.jpg"
+                                                        }
+                                                    },
+                                                    "original_price": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    },
+                                                    "front_sale_price": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "best_price": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - category ID not provided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "category_id is required"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found - No products found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No products found in this category or its children"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/category-random-products-guest/{categoryId}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get 15 random products by category ID for logged-in users (with wishlist info)",
+                "description": "Returns up to 15 random products from the specified category and child categories, along with wishlist info for logged-in users.",
+                "operationId": "getCategoryWiseRandomProductsForUser",
+                "parameters": [
+                    {
+                        "name": "categoryId",
+                        "in": "path",
+                        "description": "The ID of the category to fetch products from",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success response with product and wishlist data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Product Name"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU123"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "best_delivery_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2024-06-20"
+                                                    },
+                                                    "total_reviews": {
+                                                        "type": "integer",
+                                                        "example": 12
+                                                    },
+                                                    "avg_rating": {
+                                                        "type": "number",
+                                                        "example": 4.5
+                                                    },
+                                                    "left_stock": {
+                                                        "type": "integer",
+                                                        "example": 20
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "USD"
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "original_price": {
+                                                        "type": "number",
+                                                        "example": 100
+                                                    },
+                                                    "front_sale_price": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "best_price": {
+                                                        "type": "number",
+                                                        "example": 90
+                                                    },
+                                                    "is_in_wishlist": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Login required"
+                    },
+                    "404": {
+                        "description": "Not Found - No products found"
+                    }
+                }
+            }
+        },
         "/api/frontend/products/{product_id}/you-may-like": {
             "get": {
                 "tags": [

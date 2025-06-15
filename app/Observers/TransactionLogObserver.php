@@ -75,14 +75,16 @@ class TransactionLogObserver
 			];
 			$changeObj = json_encode($changes);
 		}
-		$log = new TransactionLog();
-		$log->module = $module;
-		$log->action = $action;
-		$log->identifier = $identifier;
-		$log->change_obj = $changeObj;
-		$log->description = $description;
-		$log->created_by = auth()->id() ?? null;
-		$log->created_at = now();
-		$log->save();
+		if ($changeObj) {
+			$log = new TransactionLog();
+			$log->module = $module;
+			$log->action = $action;
+			$log->identifier = $identifier;
+			$log->change_obj = $changeObj;
+			$log->description = $description;
+			$log->created_by = ($module === 'Product') ? \App\Models\Product::$observerUserId : (auth()->id() ?? null);
+			$log->created_at = now();
+			$log->save();
+		}
 	}
 }
