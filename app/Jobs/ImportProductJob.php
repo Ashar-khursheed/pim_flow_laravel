@@ -485,7 +485,9 @@ class ImportProductJob implements ShouldQueue
 				$product->benefits_features = $jsonBenefitsFeatures;
 
 				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
+					Product::$observerUserId = $this->userId;
 					$product->save();
+					Product::$observerUserId = null;
 				} else {
 					$product->name = $name;
 					$product->sku = $sku;
@@ -547,12 +549,14 @@ class ImportProductJob implements ShouldQueue
 					$product->box_quantity = !empty($boxQuantity) ? $boxQuantity : null;
 
 					$product->vendor_id = $vendorId;
-					$product->created_at = now();
+					$product->created_at = $product->id ? $product->created_at : now();
 					$product->updated_at = now();
 					$product->created_by = $this->userId;
 					// $product->created_by_id = $this->userId;
 					// $product->created_by_type = User::class;
+					Product::$observerUserId = $this->userId;
 					$product->save();
+					Product::$observerUserId = null;
 
 					$SKUs[$product->id] = $sku;
 
