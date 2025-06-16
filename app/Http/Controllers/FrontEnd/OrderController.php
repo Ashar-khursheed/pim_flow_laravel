@@ -272,7 +272,7 @@ class OrderController extends BaseController
 	 * @OA\Get(
 	 *     path="/api/frontend/orders/{id}",
 	 *     summary="Get order details",
-	 *     tags={"Orders"},
+	 *     tags={"FrontEnd-Orders"},
 	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
 	 *         name="id",

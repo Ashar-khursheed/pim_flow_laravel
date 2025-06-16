@@ -12569,7 +12569,7 @@
         "/api/frontend/orders/{id}": {
             "get": {
                 "tags": [
-                    "Orders"
+                    "FrontEnd-Orders"
                 ],
                 "summary": "Get order details",
                 "operationId": "760d0a23deae9c8ac6a2cdf777816b6c",
@@ -25217,10 +25217,6 @@
             "description": "FrontEnd-Orders"
         },
         {
-            "name": "Orders",
-            "description": "Orders"
-        },
-        {
             "name": "Frontend-Attribute Products",
             "description": "Frontend-Attribute Products"
         },
@@ -25271,6 +25267,10 @@
         {
             "name": "Measurement",
             "description": "Measurement"
+        },
+        {
+            "name": "Orders",
+            "description": "Orders"
         },
         {
             "name": "Payments",
