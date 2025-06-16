@@ -69,7 +69,6 @@ class OrderController extends BaseController
 				$totalAmount += $product['quantity'] * $product['unit_price'];
 			}
 
-
 			$order = Order::create([
 				'order_number' => 'ORD-' . strtoupper(Str::random(8)),
 				'customer_id' => auth()->id() ?? $request->customer_id,
@@ -266,6 +265,67 @@ class OrderController extends BaseController
 			'data' => $records,
 			'total_pages' => $totalPages,
 			'total_records' => $totalRecords,
+		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/orders/{id}",
+	 *     summary="Get order details",
+	 *     tags={"Orders"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Order ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Order details retrieved successfully"
+	 *     )
+	 * )
+	 */
+	public function show($id)
+	{
+		$order = Order::find($id);
+
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => "Order not found."
+			]);
+		}
+
+		/* Load relationships */
+		$order->load([
+			'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+			'orderProducts.product.brand:id,name',
+			'tracking'
+		]);
+
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+
+			if ($product) {
+				/* Decode images JSON string */
+				$product->images = json_decode($product->images);
+
+				/* Replace brand relation with brand_name */
+				if ($product->brand) {
+					$product->brand_name = $product->brand->name;
+				}
+
+				unset($product->brand); /* Remove full brand object */
+			}
+		}
+
+		return response()->json([
+			'success' => true,
+			'data' => $order
 		]);
 	}
 }

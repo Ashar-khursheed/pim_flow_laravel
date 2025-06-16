@@ -12566,6 +12566,36 @@
                 ]
             }
         },
+        "/api/frontend/orders/{id}": {
+            "get": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Get order details",
+                "operationId": "760d0a23deae9c8ac6a2cdf777816b6c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order details retrieved successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product/{id}/nutrition-facts1": {
             "get": {
                 "tags": [
@@ -25187,6 +25217,10 @@
             "description": "FrontEnd-Orders"
         },
         {
+            "name": "Orders",
+            "description": "Orders"
+        },
+        {
             "name": "Frontend-Attribute Products",
             "description": "Frontend-Attribute Products"
         },
@@ -25237,10 +25271,6 @@
         {
             "name": "Measurement",
             "description": "Measurement"
-        },
-        {
-            "name": "Orders",
-            "description": "Orders"
         },
         {
             "name": "Payments",
