@@ -29,7 +29,7 @@ class Blog extends Model
         'mobile_banner', 'mobile_banner_alt', 'thumbnail', 'thumbnail_alt',
         'description', 'created_by', 'blog_category_id',
         'faqs', 'tags', 'total_views', 'total_likes', 'total_shares',
-        'status', 'is_featured',
+        'status', 'is_featured','image','created_date','written_by'
     ];
 
         protected $casts = [
