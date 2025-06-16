@@ -101,6 +101,7 @@ class CustomerController extends Controller
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
 	 *                 @OA\Property(property="type", type="string", example="Business"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
 	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
 	 *             )
@@ -118,7 +119,8 @@ class CustomerController extends Controller
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
-			'mobile_number' => 'nullable|string|max:20|unique:customers',
+			'country_code' => 'nullable|string',
+			'mobile_number' => 'nullable|string|max:20',
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 
@@ -134,6 +136,7 @@ class CustomerController extends Controller
 			'password' => Hash::make($validatedData['password']),
 			'type' => $validatedData['type'] ?? null,
 			'dob' => $validatedData['dob'] ?? null,
+			'country_code' => $validatedData['country_code'] ?? null,
 			'mobile_number' => $validatedData['mobile_number'] ?? null,
 			'profile_img' => $validatedData['profile_img'] ?? null,
 			'created_by' => auth()->id(),
@@ -198,6 +201,7 @@ class CustomerController extends Controller
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
 	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
 	 *             )
@@ -220,11 +224,12 @@ class CustomerController extends Controller
 
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:customers',
+			'email' => 'required|string|email|max:255|unique:customers,'.$id,
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
-			'mobile_number' => 'nullable|string|max:20|unique:customers',
+			'country_code' => 'nullable|string',
+			'mobile_number' => 'nullable|string|max:20',
 			// 'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 

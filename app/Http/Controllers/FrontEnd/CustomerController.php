@@ -26,6 +26,7 @@ class CustomerController extends BaseController
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
 	 *                 @OA\Property(property="type", type="string", example="Private"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
+	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
 	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
 	 *             )
@@ -42,7 +43,8 @@ class CustomerController extends BaseController
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
-			'mobile_number' => 'nullable|string|max:20|unique:customers',
+			'country_code' => 'nullable|string',
+			'mobile_number' => 'nullable|string|max:20',
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 

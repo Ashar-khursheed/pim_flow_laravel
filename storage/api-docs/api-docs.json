@@ -6798,6 +6798,10 @@
                                         "format": "date",
                                         "example": "1990-01-01"
                                     },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
+                                    },
                                     "mobile_number": {
                                         "type": "string",
                                         "example": "971500000000"
@@ -6906,6 +6910,10 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
                                     },
                                     "mobile_number": {
                                         "type": "string",
@@ -11840,6 +11848,10 @@
                                         "type": "string",
                                         "format": "date",
                                         "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
                                     },
                                     "mobile_number": {
                                         "type": "string",
