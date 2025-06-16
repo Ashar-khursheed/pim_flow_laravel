@@ -179,7 +179,9 @@ class OrderController extends BaseController
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
-			$recordsQuery->with(['orderProducts', 'payments', 'shipments']);
+			$recordsQuery->with(['orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product.brand:id,name', 'payments', 'shipments']);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -213,7 +215,7 @@ class OrderController extends BaseController
 			}
 
 			/* Sorting */
-				$recordsQuery->orderBy($sortBy, $sortDir);
+			$recordsQuery->orderBy($sortBy, $sortDir);
 
 			/* Pagination */
 			$length = (int) $request->input('length');
@@ -230,6 +232,27 @@ class OrderController extends BaseController
 			->offset(($page - 1) * $length)
 			->limit($length)
 			->get();
+
+			/* Transform results */
+			$records->transform(function ($record) {
+				/* Process each product in order products */
+				foreach ($record->orderProducts as $orderProduct) {
+					$product = $orderProduct->product;
+
+					if ($product) {
+						/* Decode image JSON only if it's a string */
+						if (is_string($product->images)) {
+							$product->images = json_decode($product->images, true);
+						}
+
+						/* Replace brand relation with just brand_name */
+						$product->brand_name = $product->brand->name ?? null;
+						unset($product->brand);
+					}
+				}
+
+				return $record;
+			});
 		} else {
 			/* No pagination: just fetch id and order_number */
 			$records = Order::orderBy('order_number', 'asc')->get(['id', 'order_number']);
