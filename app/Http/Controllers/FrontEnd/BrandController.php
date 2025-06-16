@@ -702,10 +702,10 @@ class BrandController extends Controller
                  ? json_decode($product->images, true)
                  : (array) $product->images;
 
-                //  $images = $product->images;
-                $cleanedVideo = is_string( $product->video_path)
-                 ? json_decode(  $product->video_path, true)
-                 : (array) $videos = $product->video_path;;
+                 $videos = is_string($product->video_path)
+                 ? json_decode($product->video_path, true) ?? []
+                 : ($product->video_path ?? []);
+             
                 
      
                  $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
@@ -719,7 +719,7 @@ class BrandController extends Controller
                      'id' => $product->id,
                      'name' => $product->name,
                      'images' => $cleanedImages,
-                     'video_url' => $cleanedVideo,
+                     'video_url' => $videos,
                      'video_path' => $videos,
                      'sku' => $product->sku,
                      'original_price' => $product->price,
