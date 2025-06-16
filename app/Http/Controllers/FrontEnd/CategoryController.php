@@ -873,7 +873,7 @@ use Illuminate\Support\Facades\Auth;
         }
 
         $perPage = $request->get('per_page', 10);
-        $category = ProductCategory::find($request->category_id);
+        $category = Category::find($request->category_id);
         if (!$category) {
             return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
         }
@@ -881,7 +881,7 @@ use Illuminate\Support\Facades\Auth;
         // Get products from current category
         $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
         // Get all child categories based on parent_id
-        $childCategories = ProductCategory::where('parent_id', $category->id)->get();
+        $childCategories = Category::where('parent_id', $category->id)->get();
         $childCategoryIds = $childCategories->pluck('id')->toArray();
 
         // Get all products from child categories
