@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\Frontend\Country;
+use App\Models\FrontEnd\Country;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
