@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontEndCountry;
+use App\Models\FrontEnd\Country;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
+use Illuminate\Http\JsonResponse;
+
 
 class CountryController extends Controller
 {
@@ -25,7 +27,7 @@ class CountryController extends Controller
      */
     public function index()
     {
-        $countries = FrontEndCountry::all();
+        $countries = Country::all();
         return response()->json($countries);
     }
 
@@ -56,12 +58,44 @@ class CountryController extends Controller
      */
     public function show($id)
     {
-        $country = FrontEndCountry::find($id);
+        $country = Country::find($id);
 
         if (!$country) {
             return response()->json(['message' => 'Country not found'], 404);
         }
 
         return response()->json($country);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/country-phonecodes",
+     *     operationId="getCountryPhoneCodes",
+     *     tags={"Country"},
+     *     summary="Get all country phone codes",
+     *     description="Returns a list of all country phone codes from the countries table.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of country phone codes",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="iso3", type="string", example="Pak"),
+     *                 @OA\Property(property="phonecode", type="integer", example=92)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error"
+     *     )
+     * )
+     */
+    public function getPhoneCodes(): JsonResponse
+    {
+        $phoneCodes = Country::select('id', 'iso3', 'phonecode')->get();
+        return response()->json($phoneCodes);
     }
 }

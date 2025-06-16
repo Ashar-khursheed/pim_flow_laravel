@@ -428,6 +428,8 @@ Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBr
 
 Route::get('/frontend/countries', [F_CountryController::class, 'index']);
 Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
+Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
+
 
 Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
@@ -445,7 +447,7 @@ Route::get('/frontend/categories-with-blogs', [F_BlogController::class, 'categor
 Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
 Route::get('/frontend/sliders/{id}', [F_SliderController::class, 'show']);
 
-Route::get('/frontend/public-products', [F_ProductController::class, 'getAllPublicProducts']);
+Route::get('/frontend/products-guest', [F_ProductController::class, 'getAllPublicProducts']);
 Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandSummaryStats']);
 
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
