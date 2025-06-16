@@ -19,6 +19,7 @@ return new class extends Migration
 			$table->string('password');
 			$table->timestamp('email_verified_at')->nullable();
 			$table->rememberToken();
+			$table->string('type')->nullable();
 			$table->date('dob')->nullable();
 			$table->string('mobile_number')->nullable();
 			$table->text('profile_img')->nullable();
