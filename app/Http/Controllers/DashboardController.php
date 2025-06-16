@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\Product;
-use App\Models\Order;
+use App\Models\FrontEnd\Order;
 use App\Models\Category;
 
 class DashboardController extends Controller

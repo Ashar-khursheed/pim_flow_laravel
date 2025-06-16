@@ -11005,7 +11005,7 @@
             }
         },
         "/api/frontend/products/specification-filters": {
-            "post": {
+            "get": {
                 "tags": [
                     "Frontend-Categories"
                 ],
