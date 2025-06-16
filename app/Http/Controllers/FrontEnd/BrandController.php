@@ -137,8 +137,8 @@ class BrandController extends Controller
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $wishlistIds) {
                 // Filter and limit products to 10 for each brand
-                $products = $brand->products()
-                    ->when($request->has('search'), function ($query) use ($request) {
+                $products = $brand->products->where('status', 'published')
+                ->when($request->has('search'), function ($query) use ($request) {
                         $query->where('name', 'like', '%' . $request->input('search') . '%');
                     })
                     ->when($request->has('price_min'), function ($query) use ($request) {
@@ -318,7 +318,7 @@ class BrandController extends Controller
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
                 // Filter and limit products to 10 for each brand
-                $products = $brand->products()
+                $products = $brand->products->where('status', 'published')
                     ->when($request->has('search'), function ($query) use ($request) {
                         $query->where('name', 'like', '%' . $request->input('search') . '%');
                     })
