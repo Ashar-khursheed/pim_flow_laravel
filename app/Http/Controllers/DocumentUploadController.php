@@ -200,50 +200,101 @@ class DocumentUploadController extends Controller
      * @param string $sku
      * @return array
      */
+    // private function uploadProductDocumentsToS3($documentsDir, $sku)
+    // {
+    //     $s3Path = 'production/documents/';
+    //     $documentData = [];
+        
+    //     // Get all document files in the SKU directory
+    //     $documentFiles = File::files($documentsDir);
+        
+    //     // Filter for document files only
+    //     $documentFiles = array_filter($documentFiles, function($file) {
+    //         $extension = strtolower($file->getExtension());
+    //         return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
+    //     });
+        
+    //     if (empty($documentFiles)) {
+    //         return $documentData;
+    //     }
+        
+    //     // Upload each document directly to S3
+    //     foreach ($documentFiles as $documentFile) {
+    //         // Generate a unique filename to prevent overwriting
+    //         $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
+    //         $s3FilePath = $s3Path . $uniqueFileName;
+            
+    //         // Original filename to use as title
+    //         $originalFileName = $documentFile->getFilename();
+            
+    //         // Open file and directly upload to S3
+    //         $fileStream = fopen($documentFile->getPathname(), 'r');
+    //         Storage::disk('s3')->put($s3FilePath, $fileStream);
+    //         fclose($fileStream);
+            
+    //         // Get the full URL from S3 storage
+    //         $documentUrl = Storage::disk('s3')->url($s3FilePath);
+            
+    //         // Add the document data to the array
+    //         $documentData[] = [
+    //             'title' => $originalFileName,
+    //             'path' => $documentUrl
+    //         ];
+    //     }
+        
+    //     return $documentData;
+    // }
     private function uploadProductDocumentsToS3($documentsDir, $sku)
     {
         $s3Path = 'production/documents/';
         $documentData = [];
-        
+
         // Get all document files in the SKU directory
         $documentFiles = File::files($documentsDir);
-        
+
         // Filter for document files only
         $documentFiles = array_filter($documentFiles, function($file) {
             $extension = strtolower($file->getExtension());
             return in_array($extension, ['pdf', 'doc', 'docx', 'xls', 'xlsx', 'txt']);
         });
-        
+
         if (empty($documentFiles)) {
             return $documentData;
         }
-        
+
         // Upload each document directly to S3
         foreach ($documentFiles as $documentFile) {
+            // Check file size (2 MB = 2,097,152 bytes)
+            if ($documentFile->getSize() > 2097152) {
+                // Skip files larger than 2MB
+                continue;
+            }
+
             // Generate a unique filename to prevent overwriting
             $uniqueFileName = Str::random(40) . '.' . $documentFile->getExtension();
             $s3FilePath = $s3Path . $uniqueFileName;
-            
+
             // Original filename to use as title
             $originalFileName = $documentFile->getFilename();
-            
+
             // Open file and directly upload to S3
             $fileStream = fopen($documentFile->getPathname(), 'r');
             Storage::disk('s3')->put($s3FilePath, $fileStream);
             fclose($fileStream);
-            
+
             // Get the full URL from S3 storage
             $documentUrl = Storage::disk('s3')->url($s3FilePath);
-            
+
             // Add the document data to the array
             $documentData[] = [
                 'title' => $originalFileName,
                 'path' => $documentUrl
             ];
         }
-        
+
         return $documentData;
     }
+
 
     /**
      * Upload individual document file to S3
