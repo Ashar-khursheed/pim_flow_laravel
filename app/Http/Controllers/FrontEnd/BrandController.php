@@ -137,52 +137,26 @@ class BrandController extends Controller
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $wishlistIds) {
                 // Filter and limit products to 10 for each brand
-                // $products = $brand->products->where('status', 'published')
-                // ->when($request->has('search'), function ($query) use ($request) {
-                //         $query->where('name', 'like', '%' . $request->input('search') . '%');
-                //     })
-                //     ->when($request->has('price_min'), function ($query) use ($request) {
-                //         $query->where('price', '>=', $request->input('price_min'));
-                //     })
-                //     ->when($request->has('price_max'), function ($query) use ($request) {
-                //         $query->where('price', '<=', $request->input('price_max'));
-                //     })
-                //     ->when($request->has('rating'), function ($query) use ($request) {
-                //         $query->whereHas('reviews', function ($q) use ($request) {
-                //             $q->selectRaw('AVG(star) as avg_rating')
-                //                 ->groupBy('product_id')
-                //                 ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
-                //         });
-                //     })
-                //     ->orderBy('created_at', 'desc') // Order products by latest
-                //     ->take(10) // Limit to 10 products per brand
-                //     ->get();
-                $products = $brand->products
-                ->filter(function ($product) use ($request) {
-                    if ($product->status !== 'published') {
-                        return false;
-                    }
-                    if ($request->has('search') && stripos($product->name, $request->input('search')) === false) {
-                        return false;
-                    }
-                    if ($request->has('price_min') && $product->price < $request->input('price_min')) {
-                        return false;
-                    }
-                    if ($request->has('price_max') && $product->price > $request->input('price_max')) {
-                        return false;
-                    }
-                    if ($request->has('rating')) {
-                        $avgRating = $product->reviews->avg('star');
-                        if ($avgRating < $request->input('rating')) {
-                            return false;
-                        }
-                    }
-                    return true;
+                $products = $brand->products()
+                ->where('status', 'published') // Add this line - IMPORTANT!
+                ->when($request->has('search'), function ($query) use ($request) {
+                    $query->where('name', 'like', '%' . $request->input('search') . '%');
                 })
-                ->sortByDesc('created_at') // ✅ Collection sort
+                ->when($request->has('price_min'), function ($query) use ($request) {
+                    $query->where('price', '>=', $request->input('price_min'));
+                })
+                ->when($request->has('price_max'), function ($query) use ($request) {
+                    $query->where('price', '<=', $request->input('price_max'));
+                })
+                ->when($request->has('rating'), function ($query) use ($request) {
+                    $query->whereHas('reviews', function ($q) use ($request) {
+                        $q->selectRaw('AVG(star) as avg_rating')
+                            ->groupBy('product_id')
+                            ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
+                    });
+                })
                 ->take(10)
-                ->values(); // ✅ Reindex the result
-
+                ->pluck('id'); // Only get product IDs
 
                 // Map brand data
                 return [
@@ -320,18 +294,19 @@ class BrandController extends Controller
      */
     public function getAllBrandGuestProducts(Request $request)
     {
-        // Subquery for best price and delivery days by SKU
+        // Subquery for best price and delivery days by SKU (only published products)
         $subQuery = Product::select('sku')
             ->selectRaw('MIN(price) as best_price')
             ->selectRaw('MIN(delivery_days) as best_delivery_date')
+            ->where('status', 'published') // Add this line
             ->groupBy('sku');
-
-        // Fetch only the latest 5 brands with at least 10 products
+    
+        // Fetch only the latest 5 brands with at least 10 published products
         $brands = Brand::with(['products' => function ($query) {
             $query->where('status', 'published');
         }])
         ->whereHas('products', function ($query) {
-            $query->where('status', 'published') // 👈 Add this line
+            $query->where('status', 'published')
                 ->select('brand_id')
                 ->groupBy('brand_id')
                 ->havingRaw('COUNT(*) >= 10');
@@ -343,43 +318,39 @@ class BrandController extends Controller
         return response()->json([
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
-                // Filter and limit products to 10 for each brand
-                $products = $brand->products
-                ->filter(function ($product) use ($request) {
-                    if ($product->status !== 'published') {
-                        return false;
-                    }
-                    if ($request->has('search') && stripos($product->name, $request->input('search')) === false) {
-                        return false;
-                    }
-                    if ($request->has('price_min') && $product->price < $request->input('price_min')) {
-                        return false;
-                    }
-                    if ($request->has('price_max') && $product->price > $request->input('price_max')) {
-                        return false;
-                    }
-                    if ($request->has('rating')) {
-                        $avgRating = $product->reviews->avg('star');
-                        if ($avgRating < $request->input('rating')) {
-                            return false;
-                        }
-                    }
-                    return true;
-                })
-                ->sortByDesc('created_at') // ✅ Collection sort
-                ->take(10)
-                ->values(); // ✅ Reindex the result
-
-                // Fetch product details with joined best_price and eager load
+                // Filter and limit products to 10 for each brand (only published)
+                $products = $brand->products()
+                    ->where('status', 'published') // Add this line - IMPORTANT!
+                    ->when($request->has('search'), function ($query) use ($request) {
+                        $query->where('name', 'like', '%' . $request->input('search') . '%');
+                    })
+                    ->when($request->has('price_min'), function ($query) use ($request) {
+                        $query->where('price', '>=', $request->input('price_min'));
+                    })
+                    ->when($request->has('price_max'), function ($query) use ($request) {
+                        $query->where('price', '<=', $request->input('price_max'));
+                    })
+                    ->when($request->has('rating'), function ($query) use ($request) {
+                        $query->whereHas('reviews', function ($q) use ($request) {
+                            $q->selectRaw('AVG(star) as avg_rating')
+                                ->groupBy('product_id')
+                                ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
+                        });
+                    })
+                    ->take(10)
+                    ->pluck('id'); // Only get product IDs
+    
+                // Fetch product details with joined best_price and eager load (only published)
                 $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
                         $join->on('ec_products.sku', '=', 'best_products.sku')
                             ->whereColumn('ec_products.price', 'best_products.best_price');
                     })
                     ->whereIn('ec_products.id', $products)
+                    ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
                     ->with(['reviews', 'currency'])
                     ->get()
                     ->keyBy('id');
-
+    
                 return [
                     'brand_name' => $brand->name,
                     'products' => $productDetails->map(function ($details) {
@@ -387,13 +358,13 @@ class BrandController extends Controller
                         $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
                         $leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
                         $currencyTitle = $details->currency->symbol ?? $details->price;
-
+    
                            // Assuming $details->images is already decoded once and looks like:
                            $rawImageData = $details->images;
-
+    
                            // Step 1: Make sure it's an array
                            $imageArray = is_array($rawImageData) ? $rawImageData : json_decode($rawImageData, true);
-   
+    
                            // Step 2: Decode the nested JSON strings (if any)
                            $cleanedImages = collect($imageArray)->map(function ($item) {
                                // Check if it's a string and a valid JSON array
@@ -403,10 +374,10 @@ class BrandController extends Controller
                                }
                                return [$item]; // already a normal value
                            })->flatten()->filter()->values(); // remove nulls and reindex
-   
+    
                            // Output
                            $imageUrls = $cleanedImages;
-
+    
                         return [
                             'id' => $details->id,
                             'name' => $details->name,
