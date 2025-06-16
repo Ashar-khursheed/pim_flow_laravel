@@ -313,7 +313,7 @@ class BrandController extends Controller
         ->orderBy('created_at', 'desc')
         ->take(5)
         ->get();
-        
+
         return response()->json([
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
@@ -698,8 +698,8 @@ class BrandController extends Controller
              $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
                  $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
      
-                 $images = $this->normalizeMediaUrls($product->images);
-                 $videos = $this->normalizeMediaUrls($product->video_path);
+                 $images = $this->$product->images;
+                 $videos = $this->$product->video_path;
      
                  $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
                  $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
