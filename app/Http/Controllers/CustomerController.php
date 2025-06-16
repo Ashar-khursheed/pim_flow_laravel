@@ -196,7 +196,7 @@ class CustomerController extends Controller
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"_method", "name", "email", "password"},
+	 *                 required={"_method", "name", "email"},
 	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
@@ -227,7 +227,7 @@ class CustomerController extends Controller
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:customers,email,'.$id,
-			'password' => 'string|min:8',
+			'password' => 'nullable|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
 			'country_code' => 'nullable|string',
