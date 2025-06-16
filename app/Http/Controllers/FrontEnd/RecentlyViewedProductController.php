@@ -157,15 +157,25 @@ class RecentlyViewedProductController extends Controller
                 return response()->json(['message' => 'No recently viewed products found.'], 404);
             }
 
+
             return response()->json([
                 'success' => true,
                 'data' => $recentlyViewed->map(function ($viewed) use ($wishlistIds) {
                     $product = $viewed->product;
+
             
                     // Check if the product is null
                     if (!$product) {
                         return null; // Or handle it as needed (e.g., skip this entry, log it, etc.)
                     }
+                    $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                    $cleanedImages = collect($imageArray)->map(function ($item) {
+                        if (is_string($item) && str_starts_with($item, '[')) {
+                            $decoded = json_decode($item, true);
+                            return is_array($decoded) ? $decoded : [$item];
+                        }
+                        return [$item];
+                    })->flatten()->filter()->values();
             
                     return [
                         'product_id' => $product->id,
@@ -179,13 +189,7 @@ class RecentlyViewedProductController extends Controller
                         'left_stock' => $product->left_stock ?? 0,
                         'currency' => $product->currency->title ?? 'USD',
                         'in_wishlist' => in_array($product->id, $wishlistIds),
-                        'images' => collect($product->images)->map(function ($image) {
-                            if (filter_var($image, FILTER_VALIDATE_URL)) {
-                                return $image;
-                            }
-                            $baseUrl = (strpos($image, 'storage/products/') === 0) ? url('storage/products/') : url('storage/');
-                            return $baseUrl . '/' . ltrim($image, '/');
-                        })->toArray(),
+                       'images' =>$cleanedImages,
                         'original_price' => $product->price,
                         'front_sale_price' => $product->price,
                         'best_price' => $product->price,
