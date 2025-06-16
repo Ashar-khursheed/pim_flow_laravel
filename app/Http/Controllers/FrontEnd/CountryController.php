@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\FrontEndCountry;
+use App\Models\Frontend\Country;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 
@@ -25,7 +25,7 @@ class CountryController extends Controller
      */
     public function index()
     {
-        $countries = FrontEndCountry::all();
+        $countries = Country::all();
         return response()->json($countries);
     }
 
@@ -56,7 +56,7 @@ class CountryController extends Controller
      */
     public function show($id)
     {
-        $country = FrontEndCountry::find($id);
+        $country = Country::find($id);
 
         if (!$country) {
             return response()->json(['message' => 'Country not found'], 404);
