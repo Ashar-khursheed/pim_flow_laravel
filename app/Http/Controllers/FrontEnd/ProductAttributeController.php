@@ -203,21 +203,123 @@ class ProductAttributeController extends Controller
      * )
      */
 
+    // public function getAttributesByProduct($productId)
+    // {
+    //     $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+    //         $query->whereHas('attributeGroup', function ($q) {
+    //             $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+    //         });
+    //     }])
+    //     ->where('product_id', $productId)
+    //     ->get(['attribute_value', 'attribute_id']);
+
+    //     // Filter out null attributes
+    //     $filteredAttributes = $productAttributes->filter(function ($item) {
+    //         return $item->attribute !== null;
+    //     })->values();
+
+    //     // Define fixed order
+    //     $leftOrder = [
+    //         'Sku / Item Code',
+    //         'Manufacturer',
+    //         'Country of Origin',
+    //         'Material',
+    //         'Color',
+    //         'Capacity',
+    //         'Width',
+    //         'Depth',
+    //         'Height'
+    //     ];
+
+    //     $rightOrder = [
+    //         'Type',
+    //         'Pack Type',
+    //         'Selling Unit',
+    //         'Warranty',
+    //         'Certification',
+    //         'Features'
+    //     ];
+
+    //     $left = [];
+    //     $right = [];
+    //     $usedNames = [];
+
+    //     // Helper: format item
+    //     $formatAttr = function ($item) {
+    //         return [
+    //             'attribute_name' => $item->attribute->name,
+    //             'attribute_value' => $item->attribute_value,
+    //         ];
+    //     };
+
+    //     // Add left ordered attributes
+    //     foreach ($leftOrder as $name) {
+    //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+    //         if ($match) {
+    //             $left[] = $formatAttr($match);
+    //             $usedNames[] = $name;
+    //         }
+    //     }
+
+    //     // Add right ordered attributes
+    //     foreach ($rightOrder as $name) {
+    //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+    //         if ($match) {
+    //             $right[] = $formatAttr($match);
+    //             $usedNames[] = $name;
+    //         }
+    //     }
+
+    //     // Get remaining attributes
+    //     $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
+    //         return !in_array($item->attribute->name, $usedNames);
+    //     })->map($formatAttr)->values();
+
+    //     // Balance total count between left and right
+    //     $totalLeft = count($left);
+    //     $totalRight = count($right);
+
+    //     foreach ($remaining as $item) {
+    //         if ($totalLeft <= $totalRight) {
+    //             $left[] = $item;
+    //             $totalLeft++;
+    //         } else {
+    //             $right[] = $item;
+    //             $totalRight++;
+    //         }
+    //     }
+
+    //     return response()->json([
+    //         'left' => $left,
+    //         'right' => $right
+    //     ]);
+    // }
     public function getAttributesByProduct($productId)
     {
-        $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
-            $query->whereHas('attributeGroup', function ($q) {
-                $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
-            });
-        }])
+        // $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+        //     $query->whereHas('attributeGroup', function ($q) {
+        //         $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+        //     });
+        // }])
+        // ->where('product_id', $productId)
+        // ->get(['attribute_value', 'attribute_id']);
+    
+        $productAttributes = ProductAttributes::with([
+            'attribute' => function ($query) {
+                $query->whereHas('attributeGroup', function ($q) {
+                    $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+                });
+            },
+            'measurementUnit'
+        ])
         ->where('product_id', $productId)
-        ->get(['attribute_value', 'attribute_id']);
-
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+    
         // Filter out null attributes
         $filteredAttributes = $productAttributes->filter(function ($item) {
             return $item->attribute !== null;
         })->values();
-
+    
         // Define fixed order
         $leftOrder = [
             'Sku / Item Code',
@@ -230,7 +332,7 @@ class ProductAttributeController extends Controller
             'Depth',
             'Height'
         ];
-
+    
         $rightOrder = [
             'Type',
             'Pack Type',
@@ -239,19 +341,32 @@ class ProductAttributeController extends Controller
             'Certification',
             'Features'
         ];
-
+    
         $left = [];
         $right = [];
         $usedNames = [];
-
+    
         // Helper: format item
+        // $formatAttr = function ($item) {
+        //     return [
+        //         'attribute_name' => $item->attribute->name,
+        //         'attribute_value' => $item->attribute_value,
+        //     ];
+        // };
+    
         $formatAttr = function ($item) {
+            $value = $item->attribute_value;
+            if ($item->measurementUnit && $item->measurement_unit_id) {
+                $value .= ' ' . $item->measurementUnit->symbol;
+            }
+        
             return [
                 'attribute_name' => $item->attribute->name,
-                'attribute_value' => $item->attribute_value,
+                'attribute_value' => $value,
             ];
         };
-
+        
+    
         // Add left ordered attributes
         foreach ($leftOrder as $name) {
             $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -260,7 +375,7 @@ class ProductAttributeController extends Controller
                 $usedNames[] = $name;
             }
         }
-
+    
         // Add right ordered attributes
         foreach ($rightOrder as $name) {
             $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -269,16 +384,16 @@ class ProductAttributeController extends Controller
                 $usedNames[] = $name;
             }
         }
-
+    
         // Get remaining attributes
         $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
             return !in_array($item->attribute->name, $usedNames);
         })->map($formatAttr)->values();
-
+    
         // Balance total count between left and right
         $totalLeft = count($left);
         $totalRight = count($right);
-
+    
         foreach ($remaining as $item) {
             if ($totalLeft <= $totalRight) {
                 $left[] = $item;
@@ -288,7 +403,7 @@ class ProductAttributeController extends Controller
                 $totalRight++;
             }
         }
-
+    
         return response()->json([
             'left' => $left,
             'right' => $right
