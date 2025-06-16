@@ -703,7 +703,10 @@ class BrandController extends Controller
                  : (array) $product->images;
 
                 //  $images = $product->images;
-                 $videos = $product->video_path;
+                $cleanedVideo = is_string( $product->video_path)
+                 ? json_decode(  $product->video_path, true)
+                 : (array) $videos = $product->video_path;;
+                
      
                  $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
                  $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
@@ -716,7 +719,7 @@ class BrandController extends Controller
                      'id' => $product->id,
                      'name' => $product->name,
                      'images' => $cleanedImages,
-                     'video_url' => $product->video_url,
+                     'video_url' => $cleanedVideo,
                      'video_path' => $videos,
                      'sku' => $product->sku,
                      'original_price' => $product->price,
