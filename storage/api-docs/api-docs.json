@@ -6889,8 +6889,7 @@
                                 "required": [
                                     "_method",
                                     "name",
-                                    "email",
-                                    "password"
+                                    "email"
                                 ],
                                 "properties": {
                                     "_method": {
