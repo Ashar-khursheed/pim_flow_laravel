@@ -115,7 +115,7 @@ class CustomerController extends Controller
 	{
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:customers',
+			'email' => 'required|string|email|max:255|unique:customers,email',
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
@@ -186,7 +186,7 @@ class CustomerController extends Controller
 	}
 
 	/**
-	 * @OA\Put(
+	 * @OA\Post(
 	 *     path="/api/customers/{id}",
 	 *     summary="Update a customer",
 	 *     tags={"Customers"},
@@ -196,13 +196,15 @@ class CustomerController extends Controller
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name", "email", "password"},
+	 *                 required={"_method", "name", "email", "password"},
+	 *                 @OA\Property(property="_method", type="string", example="PUT"),
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
 	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
+	 *                 @OA\Property(property="profile_img_url", type="string", example="www.example.com"),
 	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
 	 *             )
 	 *         )
@@ -224,14 +226,26 @@ class CustomerController extends Controller
 
 		$validatedData = $request->validate([
 			'name' => 'required|string|max:255',
-			'email' => 'required|string|email|max:255|unique:customers,'.$id,
-			'password' => 'required|string|min:8',
+			'email' => 'required|string|email|max:255|unique:customers,email,'.$id,
+			'password' => 'string|min:8',
 			'type' => 'nullable|string',
 			'dob' => 'nullable|date',
 			'country_code' => 'nullable|string',
 			'mobile_number' => 'nullable|string|max:20',
-			// 'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
+			'profile_img_url' => 'nullable',
+			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
+
+		if ($validatedData['profile_img']) {
+			$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
+				$request,
+				'profile_img',
+				env('STORAGE_ENV') . '/customer/profile_img'
+			);
+		} else {
+			$validatedData['profile_img'] = $validatedData['profile_img_url'];
+		}
+
 
 		if (isset($validatedData['password'])) {
 			$validatedData['password'] = Hash::make($validatedData['password']);

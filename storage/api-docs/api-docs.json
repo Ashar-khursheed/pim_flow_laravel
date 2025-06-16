@@ -6865,12 +6865,12 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Customers"
                 ],
                 "summary": "Update a customer",
-                "operationId": "07a3f33c1373d3c6a97b7d8846d81472",
+                "operationId": "a043784399f492f44e7b6e4e2fbe4af1",
                 "parameters": [
                     {
                         "name": "id",
@@ -6887,11 +6887,16 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
+                                    "_method",
                                     "name",
                                     "email",
                                     "password"
                                 ],
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
@@ -6918,6 +6923,10 @@
                                     "mobile_number": {
                                         "type": "string",
                                         "example": "971500000000"
+                                    },
+                                    "profile_img_url": {
+                                        "type": "string",
+                                        "example": "www.example.com"
                                     },
                                     "profile_img": {
                                         "description": "Profile image (jpeg, png, webp only, max 1 mb)",
