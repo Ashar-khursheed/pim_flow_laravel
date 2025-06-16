@@ -698,7 +698,11 @@ class BrandController extends Controller
              $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
                  $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
      
-                 $images = $product->images;
+                 $cleanedImages = is_string($product->images)
+                 ? json_decode($product->images, true)
+                 : (array) $product->images;
+
+                //  $images = $product->images;
                  $videos = $product->video_path;
      
                  $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
@@ -711,7 +715,7 @@ class BrandController extends Controller
                  return [
                      'id' => $product->id,
                      'name' => $product->name,
-                     'images' => $images,
+                     'images' => $cleanedImages,
                      'video_url' => $product->video_url,
                      'video_path' => $videos,
                      'sku' => $product->sku,
