@@ -120,15 +120,18 @@ class BrandController extends Controller
         $wishlistIds = $this->getWishlistProductIds();
 
         // Fetch only the latest 5 brands with at least 10 products
-        $brands = Brand::with(['products'])
-            ->whereHas('products', function ($query) {
-                $query->select('brand_id') // Select only the column needed for grouping
-                    ->groupBy('brand_id') // Group by the brand_id
-                    ->havingRaw('COUNT(*) >= 10'); // Ensure the brand has at least 10 products
-            })
-            ->orderBy('created_at', 'desc') // Order by latest brands
-            ->take(5) // Limit to 5 brands
-            ->get();
+        $brands = Brand::with(['products' => function ($query) {
+            $query->where('status', 'published');
+        }])
+        ->whereHas('products', function ($query) {
+            $query->where('status', 'published') // 👈 Add this line
+                ->select('brand_id')
+                ->groupBy('brand_id')
+                ->havingRaw('COUNT(*) >= 10');
+        })
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
 
         return response()->json([
             'success' => true,
@@ -298,16 +301,19 @@ class BrandController extends Controller
             ->groupBy('sku');
 
         // Fetch only the latest 5 brands with at least 10 products
-        $brands = Brand::with(['products'])
-            ->whereHas('products', function ($query) {
-                $query->select('brand_id')
-                    ->groupBy('brand_id')
-                    ->havingRaw('COUNT(*) >= 10');
-            })
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
-
+        $brands = Brand::with(['products' => function ($query) {
+            $query->where('status', 'published');
+        }])
+        ->whereHas('products', function ($query) {
+            $query->where('status', 'published') // 👈 Add this line
+                ->select('brand_id')
+                ->groupBy('brand_id')
+                ->havingRaw('COUNT(*) >= 10');
+        })
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
+        
         return response()->json([
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
