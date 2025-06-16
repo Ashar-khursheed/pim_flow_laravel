@@ -44,7 +44,17 @@ class ExcelImporterService
 			throw new \Exception('Missing required column(s): ' . implode(', ', $missing));
 		}
 
-		$rowsPerChunk = 100;
+		$userRole = auth()->user()->getRoleNames()->first();
+		if ($module == 'Product')
+			if (in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
+				$rowsPerChunk = 5;
+			} else {
+				$rowsPerChunk = 50;
+			}
+		} else {
+			$rowsPerChunk = 100;
+		}
+
 		$totalRecords = $totalRows - 1;
 
 		if ($totalRecords == 0) {
