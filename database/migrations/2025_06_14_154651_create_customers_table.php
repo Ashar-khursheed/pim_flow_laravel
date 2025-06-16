@@ -21,6 +21,7 @@ return new class extends Migration
 			$table->rememberToken();
 			$table->string('type')->nullable();
 			$table->date('dob')->nullable();
+			$table->string('country_code')->nullable();
 			$table->string('mobile_number')->nullable();
 			$table->text('profile_img')->nullable();
 			$table->integer('created_by')->nullable();

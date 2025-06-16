@@ -60,7 +60,7 @@ class CustomerController extends Controller
 			}
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'name', 'email', 'dob', 'mobile_number', 'created_by', 'created_at', 'updated_at'
+				'id', 'name', 'email', 'type', 'dob', 'country_code', 'mobile_number', 'profile_img', 'created_by', 'created_at', 'updated_at'
 			]);
 
 			$records->transform(function ($record) {
