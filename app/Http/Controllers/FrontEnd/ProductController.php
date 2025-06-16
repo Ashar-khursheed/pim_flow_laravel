@@ -190,8 +190,17 @@ class ProductController extends Controller
 
 
                         if (is_string($product->description)) {
-                            $product->description = json_decode($product->description, true);
+                            $decoded = json_decode($product->description, true);
+                        
+                            // If it's a valid JSON array, use it directly
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                $product->description = $decoded;
+                            } else {
+                                // If it's not a valid JSON array, wrap the raw string in an array
+                                $product->description = [$product->description];
+                            }
                         }
+                        
 
                         if ($product->brand) {
                             $product->brand_id = $product->brand->id;
@@ -422,9 +431,21 @@ class ProductController extends Controller
 
                         $product->benefits_features = json_decode($product->benefits_features, true);
                     
+                        // if (is_string($product->description)) {
+                        //     $product->description = json_decode($product->description, true);
+                        // }
                         if (is_string($product->description)) {
-                            $product->description = json_decode($product->description, true);
+                            $decoded = json_decode($product->description, true);
+                        
+                            // If it's a valid JSON array, use it directly
+                            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                                $product->description = $decoded;
+                            } else {
+                                // If it's not a valid JSON array, wrap the raw string in an array
+                                $product->description = [$product->description];
+                            }
                         }
+                        
                     
                         if ($product->brand) {
                             $product->brand_id = $product->brand->id;
