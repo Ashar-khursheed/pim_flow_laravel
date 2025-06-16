@@ -64,4 +64,36 @@ class CountryController extends Controller
 
         return response()->json($country);
     }
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/country-phonecodes",
+     *     operationId="getCountryPhoneCodes",
+     *     tags={"Country"},
+     *     summary="Get all country phone codes",
+     *     description="Returns a list of all country phone codes from the countries table.",
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of country phone codes",
+     *         @OA\JsonContent(
+     *             type="array",
+     *             @OA\Items(
+     *                 type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="iso3", type="string", example="Pak"),
+     *                 @OA\Property(property="phonecode", type="integer", example=92)
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error"
+     *     )
+     * )
+     */
+    public function getPhoneCodes(): JsonResponse
+    {
+        $phoneCodes = Country::select('id', 'iso3', 'phonecode')->get();
+        return response()->json($phoneCodes);
+    }
 }

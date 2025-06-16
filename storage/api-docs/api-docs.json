@@ -11741,6 +11741,48 @@
                 }
             }
         },
+        "/api/frontend/country-phonecodes": {
+            "get": {
+                "tags": [
+                    "Country"
+                ],
+                "summary": "Get all country phone codes",
+                "description": "Returns a list of all country phone codes from the countries table.",
+                "operationId": "getCountryPhoneCodes",
+                "responses": {
+                    "200": {
+                        "description": "List of country phone codes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "iso3": {
+                                                "type": "string",
+                                                "example": "Pak"
+                                            },
+                                            "phonecode": {
+                                                "type": "integer",
+                                                "example": 92
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error"
+                    }
+                }
+            }
+        },
         "/api/frontend/coupons/apply": {
             "post": {
                 "tags": [
@@ -25009,6 +25051,10 @@
         {
             "name": "Frontend-Countries",
             "description": "Frontend-Countries"
+        },
+        {
+            "name": "Country",
+            "description": "Country"
         },
         {
             "name": "FrontEnd-Coupon",

@@ -427,6 +427,8 @@ Route::get('/frontend/brands/alphabetical', [F_BrandController::class, 'getAllBr
 
 Route::get('/frontend/countries', [F_CountryController::class, 'index']);
 Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
+Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
+
 
 Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
