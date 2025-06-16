@@ -251,7 +251,7 @@ public function index(Request $request)
             // Corrected validation for the new fields
             'written_by' => 'nullable|string',
             'created_date' => 'nullable|date',
-            'image' => 'nullable|string', // Assuming this is a string path
+            'image' => 'nullable|image', // Assuming this is a string path
         ]);
 
         $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name);
@@ -452,7 +452,7 @@ public function index(Request $request)
             // New fields
             'written_by' => 'nullable|string',
             'created_date' => 'nullable|date',
-            'image' => 'nullable|string', // Assuming frontend passes path or URL
+            'nullable|image', // Assuming frontend passes path or URL
         ]);
 
         $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name ?? $blog->name);
