@@ -45,7 +45,7 @@ class ExcelImporterService
 		}
 
 		$userRole = auth()->user()->getRoleNames()->first();
-		if ($module == 'Product')
+		if ($module == 'Product') {
 			if (in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
 				$rowsPerChunk = 5;
 			} else {
