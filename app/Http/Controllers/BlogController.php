@@ -282,7 +282,7 @@ public function index(Request $request)
             // Added new fields
             'written_by' => $request->written_by,
             'created_date' => $request->created_date,
-            'image' => $request->image,
+            'image' => $uploadToS3($request->file('image')),
         ];
 
         $blog = Blog::create($data);
@@ -492,6 +492,9 @@ public function index(Request $request)
 
         if ($request->hasFile('thumbnail')) {
             $data['thumbnail'] = $uploadToS3($request->file('thumbnail'));
+        }
+        if ($request->hasFile('image')) {
+            $data['image'] = $uploadToS3($request->file('image'));
         }
 
         $blog->update($data);
