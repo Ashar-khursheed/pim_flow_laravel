@@ -6789,6 +6789,10 @@
                                         "format": "password",
                                         "example": "secret123"
                                     },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Business"
+                                    },
                                     "dob": {
                                         "type": "string",
                                         "format": "date",
@@ -11827,6 +11831,10 @@
                                         "type": "string",
                                         "format": "password",
                                         "example": "secret123"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Private"
                                     },
                                     "dob": {
                                         "type": "string",
