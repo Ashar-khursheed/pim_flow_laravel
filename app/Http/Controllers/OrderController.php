@@ -178,8 +178,7 @@ class OrderController extends Controller
 	public function store(Request $request)
 	{
 		$request->validate([
-			/* 'customer_id' => 'required|integer|exists:customers,id', */
-			'customer_id' => 'required|integer',
+			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address' => 'required|string|max:1000',
 			'shipping_charge' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',

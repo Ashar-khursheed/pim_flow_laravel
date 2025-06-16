@@ -316,9 +316,10 @@ Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 
-Route::post('frontend/orders', [F_OrderController::class, 'store']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	Route::apiResource('frontend/orders', F_OrderController::class);
+
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
