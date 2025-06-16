@@ -6430,6 +6430,255 @@
                 ]
             }
         },
+        "/api/customers/{customer_id}/addresses": {
+            "get": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Get all addresses of a specific customer",
+                "operationId": "843b848eb05b3890fb110089dfa9c7f8",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "description": "ID of the customer",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-address": {
+            "post": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Create a new customer address",
+                "operationId": "71d2755ba1d354ee1e090d1b8320d7fa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-address/{id}": {
+            "get": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Get customer address details",
+                "description": "Fetches customer address details based on the given ID.",
+                "operationId": "f49c7e0f5425c908024da4ef2a7390bf",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customer Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Update a specific customer address",
+                "operationId": "72ead6bdc0c2586920be9d5aa215e294",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "456 New Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 102
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 15
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123123"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Customer-Address"
+                ],
+                "summary": "Delete a specific customer address",
+                "operationId": "48c54df4623abb99f2e43314bb3a524d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/customers": {
             "get": {
                 "tags": [
@@ -6439,10 +6688,29 @@
                 "operationId": "2b23ac696cfd81c23807c2c1fd63b0b0",
                 "parameters": [
                     {
-                        "name": "search",
+                        "name": "page",
                         "in": "query",
-                        "description": "Search by name or email",
-                        "required": false,
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
                         "schema": {
                             "type": "string"
                         }
@@ -6450,49 +6718,38 @@
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column to sort by (e.g., name, email, created_at)",
-                        "required": false,
+                        "description": "Column name to sort by",
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "email",
+                                "created_at",
+                                "updated_at"
+                            ]
                         }
                     },
                     {
-                        "name": "sort_order",
+                        "name": "sort_dir",
                         "in": "query",
-                        "description": "Sort order (asc or desc)",
-                        "required": false,
+                        "description": "Sort direction (asc or desc)",
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "asc",
                                 "desc"
                             ]
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Number of results per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 10
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Paginated list of customers"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -6510,7 +6767,7 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
                                 "required": [
                                     "name",
@@ -6519,31 +6776,39 @@
                                 ],
                                 "properties": {
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "John Doe"
                                     },
                                     "email": {
                                         "type": "string",
-                                        "format": "email"
+                                        "format": "email",
+                                        "example": "john@example.com"
                                     },
                                     "password": {
                                         "type": "string",
-                                        "format": "password"
+                                        "format": "password",
+                                        "example": "secret123"
                                     },
-                                    "avatar": {
-                                        "type": "string"
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Business"
                                     },
                                     "dob": {
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "example": "1990-01-01"
                                     },
-                                    "phone": {
-                                        "type": "string"
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
                                     },
-                                    "status": {
-                                        "type": "string"
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
                                     },
-                                    "is_vendor": {
-                                        "type": "boolean"
+                                    "profile_img": {
+                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "type": "file"
                                     }
                                 },
                                 "type": "object"
@@ -6553,10 +6818,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Customer created"
-                    },
-                    "422": {
-                        "description": "Validation error"
+                        "description": "Customer created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -6571,24 +6836,27 @@
                 "tags": [
                     "Customers"
                 ],
-                "summary": "Get a specific customer by ID",
+                "summary": "Get customer details",
+                "description": "Fetches customer details based on the given customer ID.",
                 "operationId": "d51ce35bfe185b82c242dd4443ffba54",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
+                        "description": "ID of the customer",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Customer found"
-                    },
-                    "404": {
-                        "description": "Customer not found"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -6597,12 +6865,12 @@
                     }
                 ]
             },
-            "put": {
+            "post": {
                 "tags": [
                     "Customers"
                 ],
                 "summary": "Update a customer",
-                "operationId": "07a3f33c1373d3c6a97b7d8846d81472",
+                "operationId": "a043784399f492f44e7b6e4e2fbe4af1",
                 "parameters": [
                     {
                         "name": "id",
@@ -6616,35 +6884,52 @@
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/json": {
+                        "multipart/form-data": {
                             "schema": {
+                                "required": [
+                                    "_method",
+                                    "name",
+                                    "email"
+                                ],
                                 "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
                                     "name": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "John Doe"
                                     },
                                     "email": {
                                         "type": "string",
-                                        "format": "email"
+                                        "format": "email",
+                                        "example": "john@example.com"
                                     },
                                     "password": {
                                         "type": "string",
-                                        "format": "password"
-                                    },
-                                    "avatar": {
-                                        "type": "string"
+                                        "format": "password",
+                                        "example": "secret123"
                                     },
                                     "dob": {
                                         "type": "string",
-                                        "format": "date"
+                                        "format": "date",
+                                        "example": "1990-01-01"
                                     },
-                                    "phone": {
-                                        "type": "string"
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
                                     },
-                                    "status": {
-                                        "type": "string"
+                                    "mobile_number": {
+                                        "type": "string",
+                                        "example": "971500000000"
                                     },
-                                    "is_vendor": {
-                                        "type": "boolean"
+                                    "profile_img_url": {
+                                        "type": "string",
+                                        "example": "www.example.com"
+                                    },
+                                    "profile_img": {
+                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "type": "file"
                                     }
                                 },
                                 "type": "object"
@@ -6654,10 +6939,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Customer updated"
-                    },
-                    "404": {
-                        "description": "Customer not found"
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -6684,48 +6969,9 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Customer deleted"
-                    },
-                    "404": {
-                        "description": "Customer not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/customers/list-names": {
-            "get": {
-                "tags": [
-                    "Customers"
-                ],
-                "summary": "Get list of customer IDs and names",
-                "operationId": "0f5a7855fe6f653535621c0a3f9de3d9",
-                "responses": {
-                    "200": {
-                        "description": "List of customer IDs and names",
+                        "description": "Deleted successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "id": {
-                                                "type": "integer",
-                                                "example": 1
-                                            },
-                                            "name": {
-                                                "type": "string",
-                                                "example": "John Doe"
-                                            }
-                                        },
-                                        "type": "object"
-                                    }
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -11602,10 +11848,18 @@
                                         "format": "password",
                                         "example": "secret123"
                                     },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "Private"
+                                    },
                                     "dob": {
                                         "type": "string",
                                         "format": "date",
                                         "example": "1990-01-01"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "+91"
                                     },
                                     "mobile_number": {
                                         "type": "string",
@@ -11643,41 +11897,8 @@
                     "200": {
                         "description": "List of customer coupons",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "all_coupons": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Coupon"
-                                            }
-                                        },
-                                        "available_coupons": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Coupon"
-                                            }
-                                        },
-                                        "used_coupons": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Coupon"
-                                            }
-                                        },
-                                        "expired_coupons": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Coupon"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
-                    },
-                    "401": {
-                        "description": "Unauthorized"
                     }
                 },
                 "security": [
@@ -11710,23 +11931,7 @@
                     "200": {
                         "description": "Search results",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "coupons": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Coupon"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -24302,43 +24507,6 @@
                 },
                 "type": "object"
             },
-            "Coupon": {
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "SAVE10"
-                    },
-                    "value": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 10
-                    },
-                    "type": {
-                        "type": "string",
-                        "example": "fixed"
-                    },
-                    "min_order_price": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 50
-                    },
-                    "start_date": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2025-01-01T00:00:00Z"
-                    },
-                    "end_date": {
-                        "type": "string",
-                        "format": "date-time",
-                        "example": "2025-12-31T23:59:59Z"
-                    }
-                },
-                "type": "object"
-            },
             "Newsletter": {
                 "title": "Newsletter",
                 "required": [
@@ -24789,6 +24957,10 @@
         {
             "name": "Benefits & Features",
             "description": "Benefits & Features"
+        },
+        {
+            "name": "Customer-Address",
+            "description": "Customer-Address"
         },
         {
             "name": "Customers",

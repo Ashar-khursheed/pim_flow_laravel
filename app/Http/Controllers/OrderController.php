@@ -53,7 +53,7 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer', 'products', 'payments', 'shipments', 'creator', 'updator']);
+			$recordsQuery->with(['customer', 'orderProducts', 'payments', 'shipments', 'creator', 'updator']);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -242,10 +242,35 @@ class OrderController extends Controller
 
 			DB::commit();
 
+			/* Load relationships */
+			$order->load([
+				'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product.brand:id,name',
+				'tracking'
+			]);
+
+			/* Mutate the data for each order product */
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+
+				if ($product) {
+					/* Decode images JSON string */
+					$product->images = json_decode($product->images);
+
+					/* Replace brand relation with brand_name */
+					if ($product->brand) {
+						$product->brand_name = $product->brand->name;
+					}
+
+					unset($product->brand); /* Remove full brand object */
+				}
+			}
+
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order->load(['products', 'tracking'])
+				'data' => $order
 			], 201);
 
 		} catch (\Exception $e) {
@@ -279,16 +304,38 @@ class OrderController extends Controller
 	 */
 	public function show($id)
 	{
-		$order = Order::with([
-			'products',
-			'tracking'
-		])->find($id);
+		$order = Order::find($id);
 
 		if (!$order) {
 			return response()->json([
 				'success' => false,
 				'message' => "Order not found."
 			]);
+		}
+
+		/* Load relationships */
+		$order->load([
+			'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+			'orderProducts.product.brand:id,name',
+			'tracking'
+		]);
+
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+
+			if ($product) {
+				/* Decode images JSON string */
+				$product->images = json_decode($product->images);
+
+				/* Replace brand relation with brand_name */
+				if ($product->brand) {
+					$product->brand_name = $product->brand->name;
+				}
+
+				unset($product->brand); /* Remove full brand object */
+			}
 		}
 
 		return response()->json([
@@ -384,7 +431,7 @@ class OrderController extends Controller
 			]);
 		}
 
-		$orderProduct = $order->products()->find($orderProductId);
+		$orderProduct = $order->orderProducts()->find($orderProductId);
 
 		if (!$orderProduct) {
 			return response()->json([
@@ -457,7 +504,7 @@ class OrderController extends Controller
 		]);
 
 		/* Fetch order with related products */
-		$order = Order::with('products')->find($id);
+		$order = Order::with('orderProducts')->find($id);
 
 		if (!$order) {
 			return response()->json([
@@ -481,8 +528,8 @@ class OrderController extends Controller
 			/* Process each product */
 			foreach ($request->products as $productData) {
 				$orderProduct = OrderProduct::where('id', $productData['order_product_id'])
-					->where('order_id', $order->id)
-					->firstOrFail();
+				->where('order_id', $order->id)
+				->firstOrFail();
 
 				if ($productData['quantity'] > $orderProduct->remaining_quantity) {
 					throw new \Exception("Cannot ship more than remaining quantity for product ID {$orderProduct->id}");
@@ -501,7 +548,7 @@ class OrderController extends Controller
 			}
 
 			/* Update order delivery status */
-			$allShipped = $order->products->every(fn($product) => $product->remaining_quantity <= 0);
+			$allShipped = $order->orderProducts->every(fn($product) => $product->remaining_quantity <= 0);
 			$order->status = $allShipped ? 'Delivered' : 'Partially Delivered';
 			$order->save();
 
@@ -517,7 +564,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Shipment created successfully',
-				'data' => $shipment->load('products.orderProduct')
+				'data' => $shipment->load('shipmentProducts.orderProduct')
 			], 201);
 		} catch (\Exception $e) {
 			DB::rollBack();

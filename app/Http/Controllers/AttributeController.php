@@ -83,7 +83,7 @@ class AttributeController extends BaseController
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
-			$recordsQuery->with(['attributeGroup:id,name']);
+			$recordsQuery->with(['attributeGroup:id,name', 'creator:id,first_name,last_name', 'updator:id,first_name,last_name']);
 
 			/* Apply global or column-specific filters */
 			if ($request->filled('global')) {

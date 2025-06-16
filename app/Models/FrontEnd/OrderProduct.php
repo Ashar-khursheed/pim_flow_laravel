@@ -3,6 +3,7 @@
 namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Product;
 
 class OrderProduct extends Model
 {
@@ -29,6 +30,11 @@ class OrderProduct extends Model
 	public function order()
 	{
 		return $this->belongsTo(Order::class);
+	}
+
+	public function product()
+	{
+		return $this->belongsTo(Product::class);
 	}
 
 	/* Accessor: Fully Shipped */
