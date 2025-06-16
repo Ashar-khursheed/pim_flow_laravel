@@ -137,26 +137,52 @@ class BrandController extends Controller
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $wishlistIds) {
                 // Filter and limit products to 10 for each brand
-                $products = $brand->products->where('status', 'published')
-                ->when($request->has('search'), function ($query) use ($request) {
-                        $query->where('name', 'like', '%' . $request->input('search') . '%');
-                    })
-                    ->when($request->has('price_min'), function ($query) use ($request) {
-                        $query->where('price', '>=', $request->input('price_min'));
-                    })
-                    ->when($request->has('price_max'), function ($query) use ($request) {
-                        $query->where('price', '<=', $request->input('price_max'));
-                    })
-                    ->when($request->has('rating'), function ($query) use ($request) {
-                        $query->whereHas('reviews', function ($q) use ($request) {
-                            $q->selectRaw('AVG(star) as avg_rating')
-                                ->groupBy('product_id')
-                                ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
-                        });
-                    })
-                    ->orderBy('created_at', 'desc') // Order products by latest
-                    ->take(10) // Limit to 10 products per brand
-                    ->get();
+                // $products = $brand->products->where('status', 'published')
+                // ->when($request->has('search'), function ($query) use ($request) {
+                //         $query->where('name', 'like', '%' . $request->input('search') . '%');
+                //     })
+                //     ->when($request->has('price_min'), function ($query) use ($request) {
+                //         $query->where('price', '>=', $request->input('price_min'));
+                //     })
+                //     ->when($request->has('price_max'), function ($query) use ($request) {
+                //         $query->where('price', '<=', $request->input('price_max'));
+                //     })
+                //     ->when($request->has('rating'), function ($query) use ($request) {
+                //         $query->whereHas('reviews', function ($q) use ($request) {
+                //             $q->selectRaw('AVG(star) as avg_rating')
+                //                 ->groupBy('product_id')
+                //                 ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
+                //         });
+                //     })
+                //     ->orderBy('created_at', 'desc') // Order products by latest
+                //     ->take(10) // Limit to 10 products per brand
+                //     ->get();
+                $products = $brand->products
+                ->filter(function ($product) use ($request) {
+                    if ($product->status !== 'published') {
+                        return false;
+                    }
+                    if ($request->has('search') && stripos($product->name, $request->input('search')) === false) {
+                        return false;
+                    }
+                    if ($request->has('price_min') && $product->price < $request->input('price_min')) {
+                        return false;
+                    }
+                    if ($request->has('price_max') && $product->price > $request->input('price_max')) {
+                        return false;
+                    }
+                    if ($request->has('rating')) {
+                        $avgRating = $product->reviews->avg('star');
+                        if ($avgRating < $request->input('rating')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                ->sortByDesc('created_at') // ✅ Collection sort
+                ->take(10)
+                ->values(); // ✅ Reindex the result
+
 
                 // Map brand data
                 return [
@@ -318,25 +344,31 @@ class BrandController extends Controller
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
                 // Filter and limit products to 10 for each brand
-                $products = $brand->products->where('status', 'published')
-                    ->when($request->has('search'), function ($query) use ($request) {
-                        $query->where('name', 'like', '%' . $request->input('search') . '%');
-                    })
-                    ->when($request->has('price_min'), function ($query) use ($request) {
-                        $query->where('price', '>=', $request->input('price_min'));
-                    })
-                    ->when($request->has('price_max'), function ($query) use ($request) {
-                        $query->where('price', '<=', $request->input('price_max'));
-                    })
-                    ->when($request->has('rating'), function ($query) use ($request) {
-                        $query->whereHas('reviews', function ($q) use ($request) {
-                            $q->selectRaw('AVG(star) as avg_rating')
-                                ->groupBy('product_id')
-                                ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
-                        });
-                    })
-                    ->take(10)
-                    ->pluck('id'); // Only get product IDs
+                $products = $brand->products
+                ->filter(function ($product) use ($request) {
+                    if ($product->status !== 'published') {
+                        return false;
+                    }
+                    if ($request->has('search') && stripos($product->name, $request->input('search')) === false) {
+                        return false;
+                    }
+                    if ($request->has('price_min') && $product->price < $request->input('price_min')) {
+                        return false;
+                    }
+                    if ($request->has('price_max') && $product->price > $request->input('price_max')) {
+                        return false;
+                    }
+                    if ($request->has('rating')) {
+                        $avgRating = $product->reviews->avg('star');
+                        if ($avgRating < $request->input('rating')) {
+                            return false;
+                        }
+                    }
+                    return true;
+                })
+                ->sortByDesc('created_at') // ✅ Collection sort
+                ->take(10)
+                ->values(); // ✅ Reindex the result
 
                 // Fetch product details with joined best_price and eager load
                 $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
