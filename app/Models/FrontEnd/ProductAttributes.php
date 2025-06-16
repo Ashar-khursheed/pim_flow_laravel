@@ -4,7 +4,7 @@ namespace App\Models\FrontEnd;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product;
 use App\Models\Attribute;
-
+use App\Models\MeasurementUnit;
 class ProductAttributes extends Model
 {
     protected $table = 'product_attributes';
@@ -36,5 +36,10 @@ class ProductAttributes extends Model
 	{
 		return $this->belongsTo(Attribute::class, 'attribute_id');
 	}
+
+    public function measurementUnit()
+    {
+        return $this->belongsTo(MeasurementUnit::class, 'measurement_unit_id');
+    }
 
 }
