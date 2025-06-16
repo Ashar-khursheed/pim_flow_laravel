@@ -27,6 +27,7 @@ class Customer extends Authenticatable
 		'name',
 		'email',
 		'password',
+		'type',
 		'dob',
 		'mobile_number',
 		'profile_img',

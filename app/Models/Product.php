@@ -303,13 +303,13 @@ class Product extends Model
 		return $this->hasMany(Wishlist::class, 'product_id');
 	}
 
-	// public function isInWishlist()
-	// {
-	//     if (Auth::check()) {
-	//         return $this->wishlist()->where('user_id', Auth::id())->exists();
-	//     }
-	//     return false; // Or return null if you want to differentiate between guest and no wishlist
-	// }
+	public function isInWishlist($customerId)
+	{
+	    if ($customerId) {
+	        return $this->wishlist()->where('user_id', $customerId)->exists();
+	    }
+	    return false;
+	}
 
 	public function slugData()
 	{
