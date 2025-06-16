@@ -174,6 +174,62 @@ public function index(Request $request)
      *     )
      * )
      */
+    // public function store(Request $request)
+    // {
+    //     $request->validate([
+    //         'name' => 'required|string|max:255',
+    //         'slug' => 'nullable|string|unique:blogs,slug',
+    //         'desktop_banner' => 'nullable|image',
+    //         'desktop_banner_alt' => 'nullable|string',
+    //         'mobile_banner' => 'nullable|image',
+    //         'mobile_banner_alt' => 'nullable|string',
+    //         'thumbnail' => 'nullable|image',
+    //         'thumbnail_alt' => 'nullable|string',
+    //         'description' => 'nullable|string',
+    //         'faqs' => 'nullable|string',
+    //         'tags' => 'nullable|string',
+    //         'blog_category_id' => 'nullable|exists:blog_categories,id',
+    //         'status' => 'required|in:draft,published',
+    //         'is_featured' => 'nullable|boolean',
+    //         'written_by' => 'nullable|string',
+    //         'created_date' => 'nullable|date',
+    //         'image' => 'nullable|string', // Assuming this is a string path
+    //     ]);
+
+    //     $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name);
+
+    //     $uploadToS3 = fn($file) => $file
+    //     ? Storage::disk('s3')->url(
+    //         Storage::disk('s3')->put($pathPrefix, $file)
+    //     )
+    //     : null;
+
+
+    //     $data = [
+    //     'name' => $request->name,
+    //     'slug' => $request->slug ?? Str::slug($request->name),
+    //     'desktop_banner' => $uploadToS3($request->file('desktop_banner')),
+    //     'desktop_banner_alt' => $request->desktop_banner_alt,
+    //     'mobile_banner' => $uploadToS3($request->file('mobile_banner')),
+    //     'mobile_banner_alt' => $request->mobile_banner_alt,
+    //     'thumbnail' => $uploadToS3($request->file('thumbnail')),
+    //     'thumbnail_alt' => $request->thumbnail_alt,
+    //     'description' => json_decode($request->description, true),
+    //     'faqs' => json_decode($request->faqs, true),
+    //     'tags' => json_decode($request->tags, true),
+    //     'blog_category_id' => $request->blog_category_id,
+    //     'status' => $request->status,
+    //     'is_featured' => $request->is_featured ?? false,
+    //     'created_by' => auth()->id(),
+    //     ];
+
+    //     $blog = Blog::create($data);
+
+    //     return response()->json([
+    //         'message' => 'Blog created successfully.',
+    //         'data' => $blog
+    //     ], 201);
+    // }
     public function store(Request $request)
     {
         $request->validate([
@@ -191,33 +247,42 @@ public function index(Request $request)
             'blog_category_id' => 'nullable|exists:blog_categories,id',
             'status' => 'required|in:draft,published',
             'is_featured' => 'nullable|boolean',
+
+            // Corrected validation for the new fields
+            'written_by' => 'nullable|string',
+            'created_date' => 'nullable|date',
+            'image' => 'nullable|string', // Assuming this is a string path
         ]);
 
         $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name);
 
         $uploadToS3 = fn($file) => $file
-        ? Storage::disk('s3')->url(
-            Storage::disk('s3')->put($pathPrefix, $file)
-        )
-        : null;
-
+            ? Storage::disk('s3')->url(
+                Storage::disk('s3')->put($pathPrefix, $file)
+            )
+            : null;
 
         $data = [
-        'name' => $request->name,
-        'slug' => $request->slug ?? Str::slug($request->name),
-        'desktop_banner' => $uploadToS3($request->file('desktop_banner')),
-        'desktop_banner_alt' => $request->desktop_banner_alt,
-        'mobile_banner' => $uploadToS3($request->file('mobile_banner')),
-        'mobile_banner_alt' => $request->mobile_banner_alt,
-        'thumbnail' => $uploadToS3($request->file('thumbnail')),
-        'thumbnail_alt' => $request->thumbnail_alt,
-        'description' => json_decode($request->description, true),
-        'faqs' => json_decode($request->faqs, true),
-        'tags' => json_decode($request->tags, true),
-        'blog_category_id' => $request->blog_category_id,
-        'status' => $request->status,
-        'is_featured' => $request->is_featured ?? false,
-        'created_by' => auth()->id(),
+            'name' => $request->name,
+            'slug' => $request->slug ?? Str::slug($request->name),
+            'desktop_banner' => $uploadToS3($request->file('desktop_banner')),
+            'desktop_banner_alt' => $request->desktop_banner_alt,
+            'mobile_banner' => $uploadToS3($request->file('mobile_banner')),
+            'mobile_banner_alt' => $request->mobile_banner_alt,
+            'thumbnail' => $uploadToS3($request->file('thumbnail')),
+            'thumbnail_alt' => $request->thumbnail_alt,
+            'description' => json_decode($request->description, true),
+            'faqs' => json_decode($request->faqs, true),
+            'tags' => json_decode($request->tags, true),
+            'blog_category_id' => $request->blog_category_id,
+            'status' => $request->status,
+            'is_featured' => $request->is_featured ?? false,
+            'created_by' => auth()->id(),
+
+            // Added new fields
+            'written_by' => $request->written_by,
+            'created_date' => $request->created_date,
+            'image' => $request->image,
         ];
 
         $blog = Blog::create($data);
@@ -227,6 +292,7 @@ public function index(Request $request)
             'data' => $blog
         ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -291,6 +357,73 @@ public function index(Request $request)
      *     )
      * )
     */
+    // public function update(Request $request, $id)
+    // {
+    //     // Check method spoofing manually since this is a POST route
+    //     if ($request->_method !== 'PUT') {
+    //         return response()->json(['message' => 'Invalid method. Use _method=PUT in form data.'], 405);
+    //     }
+
+    //     $blog = Blog::findOrFail($id);
+
+    //     $request->validate([
+    //         'name' => 'sometimes|required|string|max:255',
+    //         'slug' => 'nullable|string|unique:blogs,slug,' . $blog->id,
+    //         'desktop_banner' => 'nullable|image',
+    //         'desktop_banner_alt' => 'nullable|string',
+    //         'mobile_banner' => 'nullable|image',
+    //         'mobile_banner_alt' => 'nullable|string',
+    //         'thumbnail' => 'nullable|image',
+    //         'thumbnail_alt' => 'nullable|string',
+    //         'description' => 'nullable|string',
+    //         'faqs' => 'nullable|string',
+    //         'tags' => 'nullable|string',
+    //         'blog_category_id' => 'nullable|exists:blog_categories,id',
+    //         'status' => 'required|in:draft,published',
+    //         'is_featured' => 'nullable|boolean',
+    //     ]);
+
+    //     $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name ?? $blog->name);
+
+    //     $uploadToS3 = fn($file) => $file
+    //         ? Storage::disk('s3')->url(
+    //             Storage::disk('s3')->put($pathPrefix, $file)
+    //         )
+    //         : null;
+
+    //     $data = [
+    //         'name' => $request->name ?? $blog->name,
+    //         'slug' => $request->slug ?? $blog->slug,
+    //         'desktop_banner_alt' => $request->desktop_banner_alt ?? $blog->desktop_banner_alt,
+    //         'mobile_banner_alt' => $request->mobile_banner_alt ?? $blog->mobile_banner_alt,
+    //         'thumbnail_alt' => $request->thumbnail_alt ?? $blog->thumbnail_alt,
+    //         'description' => $request->filled('description') ? json_decode($request->description, true) : $blog->description,
+    //         'faqs' => $request->filled('faqs') ? json_decode($request->faqs, true) : $blog->faqs,
+    //         'tags' => $request->filled('tags') ? json_decode($request->tags, true) : $blog->tags,
+    //         'blog_category_id' => $request->blog_category_id ?? $blog->blog_category_id,
+    //         'status' => $request->status,
+    //         'is_featured' => $request->is_featured ?? $blog->is_featured,
+    //     ];
+
+    //     if ($request->hasFile('desktop_banner')) {
+    //         $data['desktop_banner'] = $uploadToS3($request->file('desktop_banner'));
+    //     }
+
+    //     if ($request->hasFile('mobile_banner')) {
+    //         $data['mobile_banner'] = $uploadToS3($request->file('mobile_banner'));
+    //     }
+
+    //     if ($request->hasFile('thumbnail')) {
+    //         $data['thumbnail'] = $uploadToS3($request->file('thumbnail'));
+    //     }
+
+    //     $blog->update($data);
+
+    //     return response()->json([
+    //         'message' => 'Blog updated successfully.',
+    //         'data' => $blog
+    //     ]);
+    // }
     public function update(Request $request, $id)
     {
         // Check method spoofing manually since this is a POST route
@@ -315,6 +448,11 @@ public function index(Request $request)
             'blog_category_id' => 'nullable|exists:blog_categories,id',
             'status' => 'required|in:draft,published',
             'is_featured' => 'nullable|boolean',
+
+            // New fields
+            'written_by' => 'nullable|string',
+            'created_date' => 'nullable|date',
+            'image' => 'nullable|string', // Assuming frontend passes path or URL
         ]);
 
         $pathPrefix = env('STORAGE_ENV') . '/blogs/' . Str::slug($request->name ?? $blog->name);
@@ -337,6 +475,11 @@ public function index(Request $request)
             'blog_category_id' => $request->blog_category_id ?? $blog->blog_category_id,
             'status' => $request->status,
             'is_featured' => $request->is_featured ?? $blog->is_featured,
+
+            // New fields
+            'written_by' => $request->written_by ?? $blog->written_by,
+            'created_date' => $request->created_date ?? $blog->created_date,
+            'image' => $request->image ?? $blog->image,
         ];
 
         if ($request->hasFile('desktop_banner')) {
@@ -358,6 +501,7 @@ public function index(Request $request)
             'data' => $blog
         ]);
     }
+
 
 
 
