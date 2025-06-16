@@ -234,6 +234,8 @@ class ProductController extends Controller
                             return $video; // Already a full URL, just return it
                         });
 
+                        
+
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {

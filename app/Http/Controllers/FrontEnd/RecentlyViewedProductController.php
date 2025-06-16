@@ -189,7 +189,7 @@ class RecentlyViewedProductController extends Controller
                         'left_stock' => $product->left_stock ?? 0,
                         'currency' => $product->currency->title ?? 'USD',
                         'in_wishlist' => in_array($product->id, $wishlistIds),
-                       'images' =>$cleanedImages,
+                        'images' =>$cleanedImages,
                         'original_price' => $product->price,
                         'front_sale_price' => $product->price,
                         'best_price' => $product->price,
