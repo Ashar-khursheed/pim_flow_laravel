@@ -53,7 +53,9 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer', 'orderProducts', 'payments', 'shipments', 'creator', 'updator']);
+			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product.brand:id,name', 'payments', 'shipments', 'creator', 'updator']);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -118,13 +120,28 @@ class OrderController extends Controller
 			/* Transform results */
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
-				unset($record->customer_id, $record->customer);
 
 				$record->created_by = $record->creator->name ?? null;
 				unset($record->creator);
 
 				$record->updated_by = $record->updator->name ?? null;
 				unset($record->updator);
+
+				/* Process each product in order products */
+				foreach ($record->orderProducts as $orderProduct) {
+					$product = $orderProduct->product;
+
+					if ($product) {
+						/* Decode image JSON only if it's a string */
+						if (is_string($product->images)) {
+							$product->images = json_decode($product->images, true);
+						}
+
+						/* Replace brand relation with just brand_name */
+						$product->brand_name = $product->brand->name ?? null;
+						unset($product->brand);
+					}
+				}
 
 				return $record;
 			});
