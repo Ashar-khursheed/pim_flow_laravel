@@ -1014,24 +1014,70 @@ use Illuminate\Support\Facades\Auth;
 
    // Replace the existing filter processing section with this improved version
 
-  // Add this at the beginning of your getSpecificationFilters method, after validation
+//   // Add this at the beginning of your getSpecificationFilters method, after validation
+// $cleanFilterValue = function($value) {
+//     // Remove count information like " (27)" from the end
+//     return trim(preg_replace('/\s*\(\d+\)$/', '', $value));
+// };
+
+// // Then replace your existing filter processing section with this:
+// if ($request->has('filters') && is_array($request->filters)) {
+//     foreach ($request->filters as $filter) {
+//         if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+//             continue;
+//         }
+
+//         $specName = $filter['specification_name'];
+//         $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
+
+//         // Check if this is a range filter first (before cleaning)
+//         $isRangeFilter = false;
+//         foreach ($specValues as $value) {
+//             if (is_array($value) && isset($value['min']) && isset($value['max'])) {
+//                 $isRangeFilter = true;
+
+//                 if (!isset($rangeFiltersByAttribute[$specName])) {
+//                     $rangeFiltersByAttribute[$specName] = [];
+//                 }
+//                 $rangeFiltersByAttribute[$specName][] = $value;
+//             }
+//         }
+
+//         // If not a range filter, clean the values and add to regular grouped filters
+//         if (!$isRangeFilter) {
+//             // Clean the specification values to remove count information
+//             $cleanedSpecValues = array_map($cleanFilterValue, $specValues);
+            
+//             if (!isset($groupedFilters[$specName])) {
+//                 $groupedFilters[$specName] = [];
+//             }
+//             $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $cleanedSpecValues);
+//         }
+//     }
+// }
 $cleanFilterValue = function($value) {
     // Remove count information like " (27)" from the end
     return trim(preg_replace('/\s*\(\d+\)$/', '', $value));
 };
 
-// Then replace your existing filter processing section with this:
+$rangeFiltersByAttribute = [];
+$groupedFilters = [];
+
 if ($request->has('filters') && is_array($request->filters)) {
     foreach ($request->filters as $filter) {
-        if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+        if (
+            !isset($filter['specification_name']) || 
+            !isset($filter['specification_value']) || 
+            empty($filter['specification_value'])
+        ) {
             continue;
         }
 
         $specName = $filter['specification_name'];
         $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
-
-        // Check if this is a range filter first (before cleaning)
+        
         $isRangeFilter = false;
+
         foreach ($specValues as $value) {
             if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                 $isRangeFilter = true;
@@ -1039,22 +1085,33 @@ if ($request->has('filters') && is_array($request->filters)) {
                 if (!isset($rangeFiltersByAttribute[$specName])) {
                     $rangeFiltersByAttribute[$specName] = [];
                 }
-                $rangeFiltersByAttribute[$specName][] = $value;
+
+                // Avoid duplicates
+                $rangeFiltersByAttribute[$specName][] = [
+                    'min' => $value['min'],
+                    'max' => $value['max']
+                ];
             }
         }
 
-        // If not a range filter, clean the values and add to regular grouped filters
         if (!$isRangeFilter) {
-            // Clean the specification values to remove count information
+            // Clean values
             $cleanedSpecValues = array_map($cleanFilterValue, $specValues);
-            
+
             if (!isset($groupedFilters[$specName])) {
                 $groupedFilters[$specName] = [];
             }
-            $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $cleanedSpecValues);
+
+            // Avoid overwriting, merge with previous
+            foreach ($cleanedSpecValues as $val) {
+                if (!in_array($val, $groupedFilters[$specName])) {
+                    $groupedFilters[$specName][] = $val;
+                }
+            }
         }
     }
 }
+
 
 $debugInfo['grouped_filters'] = $groupedFilters;
 $debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute;
