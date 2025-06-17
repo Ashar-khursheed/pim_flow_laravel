@@ -240,7 +240,7 @@ class CustomerAddressController extends Controller
 		}
 
 		CustomerAddress::where('customer_id', auth()->id())->where('is_default', 1)->update(['is_default' => 0]);
-		$address->update(['is_default' => 1]);
+		$updated = $address->update(['is_default' => 1]);
 		if ($updated) {
 			return response()->json([
 				'message' => 'Default address updated successfully.',
