@@ -372,8 +372,7 @@ class OrderController extends BaseController
 	public function update(Request $request, $orderId)
 	{
 		$allowedStatuses = [
-			'Pending', 'Confirmed', 'Supplier Delivery', 'International',
-			'Export', 'On hold', 'Ready to ship'
+			'Pending'
 		];
 
 		$order = Order::with('orderProducts')->find($orderId);
@@ -388,7 +387,7 @@ class OrderController extends BaseController
 		if (!in_array($order->status, $allowedStatuses)) {
 			return response()->json([
 				'success' => false,
-				'message' => 'This order has already been shipped or delivered. You can no longer update it.'
+				'message' => 'This order has already been confirmed or processed and cannot be updated.'
 			], 400);
 		}
 
@@ -520,8 +519,8 @@ class OrderController extends BaseController
 	public function updateStatus(Request $request, $id)
 	{
 		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
-			'notes' => 'nullable|string'
+			'status' => 'required|string|in:Cancelled',
+			'notes' => 'required|string'
 		]);
 
 		$order = Order::find($id);
@@ -533,21 +532,34 @@ class OrderController extends BaseController
 			]);
 		}
 
-		$oldStatus = $order->status;
+		$allowedStatuses = [
+			'Pending', 'Confirmed', 'Supplier Delivery', 'International',
+			'Export', 'On hold', 'Ready to ship'
+		];
 
-		$order->update(['status' => $request->status]);
+		if (!in_array($order->status, $allowedStatuses)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This order has already been shipped, delivered, or cancelled. You can no longer cancel it.'
+			], 400);
+		}
+
+		$order->update([
+			'status' => $request->status,
+		]);
+		$order->orderProducts->update(['status' => $request->status]);
 
 		/* dd tracking entry */
 		OrderTracking::create([
 			'order_id' => $order->id,
-			'status' => $request->status,
-			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+			'status' => 'Cancelled by customer',
+			'description' => $request->notes,
 		]);
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Order status updated successfully',
-			'data' => $order->fresh(['tracking'])
-		]);
+			'message' => 'Order cancelled successfully.',
+			'data' => $order
+		], 200);
 	}
 }
