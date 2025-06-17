@@ -340,8 +340,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
     Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
-	Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
-	Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
+
 
 
 
@@ -385,7 +384,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
 
-
+Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
+Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
