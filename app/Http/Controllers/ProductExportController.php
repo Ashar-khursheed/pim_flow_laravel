@@ -107,7 +107,9 @@ class ProductExportController extends BaseController
 		/* Apply relational filters */
 		if ($request->status != "all") {
 			$query->where('status', $request->status);
-		} elseif ($request->type == "Brand") {
+		}
+
+		if ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
 		} elseif ($request->type == "Vendor") {
 			$query->where('vendor_id', $request->relational_id);
