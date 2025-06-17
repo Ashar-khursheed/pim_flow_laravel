@@ -156,7 +156,7 @@ class BrandController extends Controller
                     });
                 })
                 ->take(10)
-                ->pluck('id'); // Only get product IDs
+                ->get(); // Only get product IDs
 
                 // Map brand data
                 return [
