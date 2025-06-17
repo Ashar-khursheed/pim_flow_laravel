@@ -5,15 +5,46 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Botble\Ecommerce\Models\Cart;
-use Botble\Ecommerce\Models\SaveForLater;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
+use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\SaveForLater;
+use App\Models\Product;
 
 
 class SaveForLaterController extends Controller
 {
-        public function saveForLater(Request $request)
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/save-for-later",
+     *     summary="Move a product from cart to Save for Later",
+     *     tags={"Frontend-Save For Later"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id"},
+     *             @OA\Property(property="product_id", type="integer", example=123)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product has been moved to Save for Later",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product has been moved to Save for Later.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found in cart",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product not found in cart.")
+     *         )
+     *     )
+     * )
+     */
+   
+    public function saveForLater(Request $request)
         {
             // Validate the incoming request
             $request->validate([
@@ -52,34 +83,39 @@ class SaveForLaterController extends Controller
                 'message' => 'Product has been moved to Save for Later.',
             ], 200);
         }
-        //  public function showSaveForLater()
-        // {
-        //     // Get the logged-in user
-        //     $user = Auth::user();
-
-        //     // Fetch all saved products for the user
-        //     $savedProducts = SaveForLater::where('user_id', $user->id)
-        //                                  ->with('product')  // Assuming `product` is the relationship
-        //                                  ->get();
-
-        //     if ($savedProducts->isEmpty()) {
-        //         return response()->json([
-        //             'message' => 'No products saved for later.'
-        //         ], 404);
-        //     }
-
-        //     // Return the saved products data
-        //     $productsData = $savedProducts->map(function ($item) {
-        //         return $item->product; // Return product data associated with the saved product
-        //     });
-
-        //     return response()->json([
-        //         'message' => 'Saved for Later Products retrieved successfully.',
-        //         'product' => $productsData
-        //     ], 200);
-        // }
-        
-        public function showSaveForLater(Request $request)
+       
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/save-for-later",
+     *     summary="Get all products saved for later by the user",
+     *     tags={"Frontend-Save For Later"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of saved products",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Saved for Later Products retrieved successfully."),
+     *             @OA\Property(property="product", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer", example=123),
+     *                 @OA\Property(property="name", type="string", example="Sample Product"),
+     *                 @OA\Property(property="price", type="number", format="float", example=99.99),
+     *                 @OA\Property(property="currency_title", type="string", example="$"),
+     *                 @OA\Property(property="total_reviews", type="integer", example=10),
+     *                 @OA\Property(property="avg_rating", type="number", format="float", example=4.5)
+     *             ))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No products saved for later",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No products saved for later.")
+     *         )
+     *     )
+     * )
+     */
+    
+    public function showSaveForLater(Request $request)
     {
         // Get the logged-in user
         $user = Auth::user();
@@ -122,6 +158,36 @@ class SaveForLaterController extends Controller
             'product' => $productsData
         ], 200);
     }
+
+    /**
+     * @OA\Delete(
+     *     path="/api/frontend/save-for-later",
+     *     summary="Remove a product from Save for Later",
+     *     tags={"Frontend-Save For Later"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id"},
+     *             @OA\Property(property="product_id", type="integer", example=123)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product has been removed from Save for Later",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product has been removed from Save for Later.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Product not found in Save for Later",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product not found in Save for Later.")
+     *         )
+     *     )
+     * )
+     */
 
     public function removeFromSaveForLater(Request $request)
     {
