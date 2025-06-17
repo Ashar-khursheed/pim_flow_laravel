@@ -251,8 +251,9 @@ class RecentlyViewedProductController extends Controller
             'product_id' => $productId,
         ]);
 
-        return response()->json(['success' => true]);
-    }
+        return response()->json(['success' => true])
+        ->withCookie(cookie('guest_token', $guestToken, 60 * 24 * 30));
+        }
 
     /**
      * @OA\Get(
