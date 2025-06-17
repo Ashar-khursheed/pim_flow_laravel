@@ -1327,7 +1327,7 @@ use Illuminate\Support\Facades\Auth;
                                         ->where('pa.attribute_id', $attribute->id)
                                         ->where('pa.attribute_value', $value)
                                         ->where('p.status', 'published')
-                                        ->whereIn('pa.product_id', $allCategoryProductIds)
+                                        ->whereIn('pa.product_id', $filteredProductIds)
                                         ->distinct('pa.product_id')
                                         ->count('pa.product_id');
 
