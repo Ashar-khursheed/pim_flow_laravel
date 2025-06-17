@@ -487,30 +487,69 @@ use Illuminate\Support\Facades\Auth;
         $groupedFilters = [];
         $rangeFiltersByAttribute = []; // Changed: Store range filters by attribute name
     
+        // if ($request->has('filters') && is_array($request->filters)) {
+        //     foreach ($request->filters as $filter) {
+        //         if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+        //             continue;
+        //         }
+    
+        //         $specName = $filter['specification_name'];
+        //         $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
+    
+        //         // Check if this is a range filter
+        //         $isRangeFilter = false;
+        //         foreach ($specValues as $value) {
+        //             if (is_array($value) && isset($value['min']) && isset($value['max'])) {
+        //                 $isRangeFilter = true;
+    
+        //                 // Changed: Store range filters by attribute name
+        //                 if (!isset($rangeFiltersByAttribute[$specName])) {
+        //                     $rangeFiltersByAttribute[$specName] = [];
+        //                 }
+        //                 $rangeFiltersByAttribute[$specName][] = $value;
+        //             }
+        //         }
+    
+        //         // If not a range filter, add to regular grouped filters
+        //         if (!$isRangeFilter) {
+        //             if (!isset($groupedFilters[$specName])) {
+        //                 $groupedFilters[$specName] = [];
+        //             }
+        //             $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $specValues);
+        //         }
+        //     }
+        // }
         if ($request->has('filters') && is_array($request->filters)) {
+            $rangeFiltersByAttribute = [];
+            $groupedFilters = [];
+        
             foreach ($request->filters as $filter) {
-                if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+                if (
+                    !isset($filter['specification_name']) ||
+                    !isset($filter['specification_value']) ||
+                    empty($filter['specification_value'])
+                ) {
                     continue;
                 }
-    
+        
                 $specName = $filter['specification_name'];
-                $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
-    
-                // Check if this is a range filter
+                $specValues = is_array($filter['specification_value'])
+                    ? $filter['specification_value']
+                    : [$filter['specification_value']];
+        
                 $isRangeFilter = false;
+        
                 foreach ($specValues as $value) {
                     if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                         $isRangeFilter = true;
-    
-                        // Changed: Store range filters by attribute name
+        
                         if (!isset($rangeFiltersByAttribute[$specName])) {
                             $rangeFiltersByAttribute[$specName] = [];
                         }
                         $rangeFiltersByAttribute[$specName][] = $value;
                     }
                 }
-    
-                // If not a range filter, add to regular grouped filters
+        
                 if (!$isRangeFilter) {
                     if (!isset($groupedFilters[$specName])) {
                         $groupedFilters[$specName] = [];
@@ -518,7 +557,21 @@ use Illuminate\Support\Facades\Auth;
                     $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $specValues);
                 }
             }
+        
+            // Remove filters with only one value or one range
+            foreach ($rangeFiltersByAttribute as $key => $ranges) {
+                if (count($ranges) <= 1) {
+                    unset($rangeFiltersByAttribute[$key]);
+                }
+            }
+        
+            foreach ($groupedFilters as $key => $values) {
+                if (count(array_unique($values)) <= 1) {
+                    unset($groupedFilters[$key]);
+                }
+            }
         }
+        
     
         $debugInfo['grouped_filters'] = $groupedFilters;
         $debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute; // Changed: Updated debug info
