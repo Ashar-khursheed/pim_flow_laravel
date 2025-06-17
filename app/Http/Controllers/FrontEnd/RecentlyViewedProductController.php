@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
+use App\Models\FrontEnd\GuestRecentlyViewedProduct;
 
 
 class RecentlyViewedProductController extends Controller
@@ -198,6 +199,161 @@ class RecentlyViewedProductController extends Controller
             ]);
         }
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/guest/view-product",
+     *     tags={"Guest"},
+     *     summary="Save guest product view",
+     *     description="Stores a product view by a guest user using a cookie-based guest_token.",
+     *     operationId="saveGuestProductView",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"product_id"},
+     *             @OA\Property(property="product_id", type="integer", example=123)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product view saved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid product ID or no guest_token",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Invalid product ID.")
+     *         )
+     *     )
+     * )
+     */
+
+    public function saveGuestProductView(Request $request)
+    {
+        $productId = $request->input('product_id');
+
+        if (!$productId || !Product::find($productId)) {
+            return response()->json(['message' => 'Invalid product ID.'], 400);
+        }
+
+        $guestToken = $request->cookie('guest_token') ?? Str::uuid()->toString();
+
+        if (!$request->hasCookie('guest_token')) {
+            Cookie::queue('guest_token', $guestToken, 60 * 24 * 30); // 30 days
+        }
+
+        GuestRecentlyViewedProduct::create([
+            'guest_token' => $guestToken,
+            'product_id' => $productId,
+        ]);
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/guest/recent-products",
+     *     tags={"Guest"},
+     *     summary="Get recently viewed guest products",
+     *     description="Returns the last 5 products viewed by a guest using the guest_token from cookies.",
+     *     operationId="getGuestRecentProducts",
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of recently viewed products",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     @OA\Property(property="product_id", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string", example="Product Name"),
+     *                     @OA\Property(property="sku", type="string", example="SKU123"),
+     *                     @OA\Property(property="price", type="number", format="float", example=99.99),
+     *                     @OA\Property(property="sale_price", type="number", format="float", example=89.99),
+     *                     @OA\Property(property="best_delivery_date", type="string", format="date", example="2025-06-20"),
+     *                     @OA\Property(property="total_reviews", type="integer", example=15),
+     *                     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
+     *                     @OA\Property(property="left_stock", type="integer", example=10),
+     *                     @OA\Property(property="currency", type="string", example="USD"),
+     *                     @OA\Property(property="in_wishlist", type="boolean", example=false),
+     *                     @OA\Property(property="images", type="array", @OA\Items(type="string", example="https://example.com/image.jpg")),
+     *                     @OA\Property(property="original_price", type="number", format="float", example=99.99),
+     *                     @OA\Property(property="front_sale_price", type="number", format="float", example=99.99),
+     *                     @OA\Property(property="best_price", type="number", format="float", example=99.99)
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="No guest token found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No guest token found.")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="No recently viewed products found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="No recently viewed products found.")
+     *         )
+     *     )
+     * )
+     */
+
+    public function getGuestRecentProducts(Request $request)
+    {
+        $guestToken = $request->cookie('guest_token');
+
+        if (!$guestToken) {
+            return response()->json(['message' => 'No guest token found.'], 400);
+        }
+
+        $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
+            ->where('guest_token', $guestToken)
+            ->latest()
+            ->take(5)
+            ->get();
+
+        if ($recentlyViewed->isEmpty()) {
+            return response()->json(['message' => 'No recently viewed products found.'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => $recentlyViewed->map(function ($viewed) {
+                $product = $viewed->product;
+                if (!$product) return null;
+
+                $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                $cleanedImages = collect($images)->flatten()->filter()->values();
+
+                return [
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'price' => $product->price,
+                    'sale_price' => $product->sale_price,
+                    'best_delivery_date' => $product->best_delivery_date,
+                    'total_reviews' => $product->reviews->count(),
+                    'avg_rating' => $product->reviews->avg('star'),
+                    'left_stock' => $product->left_stock ?? 0,
+                    'currency' => $product->currency->title ?? 'USD',
+                    'in_wishlist' => false, // guests don't have wishlists
+                    'images' => $cleanedImages,
+                    'original_price' => $product->price,
+                    'front_sale_price' => $product->price,
+                    'best_price' => $product->price,
+                ];
+            })->filter()
+        ]);
+    }
+
+
 
 }
 

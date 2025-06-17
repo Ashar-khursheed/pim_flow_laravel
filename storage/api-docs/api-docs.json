@@ -14055,6 +14055,207 @@
                 ]
             }
         },
+        "/api/frontend/guest/view-product": {
+            "post": {
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Save guest product view",
+                "description": "Stores a product view by a guest user using a cookie-based guest_token.",
+                "operationId": "saveGuestProductView",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product view saved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid product ID or no guest_token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid product ID."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/guest/recent-products": {
+            "get": {
+                "tags": [
+                    "Guest"
+                ],
+                "summary": "Get recently viewed guest products",
+                "description": "Returns the last 5 products viewed by a guest using the guest_token from cookies.",
+                "operationId": "getGuestRecentProducts",
+                "responses": {
+                    "200": {
+                        "description": "List of recently viewed products",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "product_id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Product Name"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "SKU123"
+                                                    },
+                                                    "price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 99.99
+                                                    },
+                                                    "sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 89.99
+                                                    },
+                                                    "best_delivery_date": {
+                                                        "type": "string",
+                                                        "format": "date",
+                                                        "example": "2025-06-20"
+                                                    },
+                                                    "total_reviews": {
+                                                        "type": "integer",
+                                                        "example": 15
+                                                    },
+                                                    "avg_rating": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 4.5
+                                                    },
+                                                    "left_stock": {
+                                                        "type": "integer",
+                                                        "example": 10
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "USD"
+                                                    },
+                                                    "in_wishlist": {
+                                                        "type": "boolean",
+                                                        "example": false
+                                                    },
+                                                    "images": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string",
+                                                            "example": "https://example.com/image.jpg"
+                                                        }
+                                                    },
+                                                    "original_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 99.99
+                                                    },
+                                                    "front_sale_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 99.99
+                                                    },
+                                                    "best_price": {
+                                                        "type": "number",
+                                                        "format": "float",
+                                                        "example": 99.99
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "No guest token found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No guest token found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No recently viewed products found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "No recently viewed products found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/search": {
             "get": {
                 "tags": [
@@ -24549,6 +24750,10 @@
                 },
                 "type": "object"
             },
+            "GuestRecentlyViewedProduct": {
+                "description": "GuestRecentlyViewedProduct model",
+                "type": "object"
+            },
             "Newsletter": {
                 "title": "Newsletter",
                 "required": [
@@ -25095,6 +25300,10 @@
         {
             "name": "Frontend-Recently Viewed Products",
             "description": "Frontend-Recently Viewed Products"
+        },
+        {
+            "name": "Guest",
+            "description": "Guest"
         },
         {
             "name": "Frontend-Search",
