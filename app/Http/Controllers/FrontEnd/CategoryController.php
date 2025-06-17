@@ -958,7 +958,6 @@ use Illuminate\Support\Facades\Auth;
         $groupedFilters = [];
         $rangeFiltersByAttribute = []; // Changed: Store range filters by attribute name
 
-        
         if ($request->has('filters') && is_array($request->filters)) {
             foreach ($request->filters as $filter) {
                 if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
@@ -1328,7 +1327,7 @@ use Illuminate\Support\Facades\Auth;
                                         ->where('pa.attribute_id', $attribute->id)
                                         ->where('pa.attribute_value', $value)
                                         ->where('p.status', 'published')
-                                        ->whereIn('pa.product_id', $filteredProductIds)
+                                        ->whereIn('pa.product_id', $allCategoryProductIds)
                                         ->distinct('pa.product_id')
                                         ->count('pa.product_id');
 
