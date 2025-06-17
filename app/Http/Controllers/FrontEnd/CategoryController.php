@@ -897,23 +897,23 @@ use Illuminate\Support\Facades\Auth;
             'brand_id.*' => 'integer',
             'rating' => 'nullable|numeric|min:1|max:5',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json(['success' => false, 'message' => $validator->errors()], 400);
         }
-    
+
         $perPage = $request->get('per_page', 10);
         $category = Category::find($request->category_id);
         if (!$category) {
             return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
         }
-    
+
         // Get products from current category
         $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
         // Get all child categories based on parent_id
         $childCategories = Category::where('parent_id', $category->id)->get();
         $childCategoryIds = $childCategories->pluck('id')->toArray();
-    
+
         // Get all products from child categories
         $childProductIds = [];
         if (!empty($childCategoryIds)) {
@@ -922,10 +922,10 @@ use Illuminate\Support\Facades\Auth;
                 $childProductIds = array_merge($childProductIds, $childCategory->products()->where('status', 'published')->pluck('id')->all());
             }
         }
-    
+
         // Combine products from current category and all child categories
         $allCategoryProductIds = array_unique(array_merge($currentCategoryProducts, $childProductIds));
-    
+
         // Debug info for verification
         $debugInfo = [
             'category_id' => $request->category_id,
@@ -935,7 +935,7 @@ use Illuminate\Support\Facades\Auth;
             'child_products_count' => count($childProductIds),
             'total_products' => count($allCategoryProductIds)
         ];
-    
+
         if (empty($allCategoryProductIds)) {
             return response()->json([
                 'success' => true,
@@ -950,29 +950,29 @@ use Illuminate\Support\Facades\Auth;
                 'debug_info' => $debugInfo
             ]);
         }
-    
+
         // Start with all category product IDs (including child categories)
         $filteredProductIds = collect($allCategoryProductIds);
-    
+
         // Group filters by specification name for proper application
         $groupedFilters = [];
         $rangeFiltersByAttribute = []; // Changed: Store range filters by attribute name
-    
+
         if ($request->has('filters') && is_array($request->filters)) {
             foreach ($request->filters as $filter) {
                 if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
                     continue;
                 }
-    
+
                 $specName = $filter['specification_name'];
                 $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
-    
+
                 // Check if this is a range filter
                 $isRangeFilter = false;
                 foreach ($specValues as $value) {
                     if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                         $isRangeFilter = true;
-    
+
                         // Changed: Store range filters by attribute name
                         if (!isset($rangeFiltersByAttribute[$specName])) {
                             $rangeFiltersByAttribute[$specName] = [];
@@ -980,7 +980,7 @@ use Illuminate\Support\Facades\Auth;
                         $rangeFiltersByAttribute[$specName][] = $value;
                     }
                 }
-    
+
                 // If not a range filter, add to regular grouped filters
                 if (!$isRangeFilter) {
                     if (!isset($groupedFilters[$specName])) {
@@ -990,10 +990,10 @@ use Illuminate\Support\Facades\Auth;
                 }
             }
         }
-    
+
         $debugInfo['grouped_filters'] = $groupedFilters;
         $debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute; // Changed: Updated debug info
-    
+
         // Apply regular attribute filters if provided, grouped by specification name
         foreach ($groupedFilters as $specName => $specValues) {
             // Find attribute ID based on name
@@ -1001,7 +1001,7 @@ use Illuminate\Support\Facades\Auth;
             if (!$attribute) {
                 continue;
             }
-    
+
             // Find product IDs that match this attribute and values
             $matchingProductIds = DB::table('product_attributes as pa')
                 ->where('pa.attribute_id', $attribute->id)
@@ -1009,10 +1009,10 @@ use Illuminate\Support\Facades\Auth;
                 ->whereIn('pa.product_id', $filteredProductIds)
                 ->pluck('pa.product_id')
                 ->unique();
-    
+
             // Intersect with our running list of product IDs
             $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
-    
+
             // If no products match these filters, return empty results early
             if ($filteredProductIds->isEmpty()) {
                 return response()->json([
@@ -1029,7 +1029,7 @@ use Illuminate\Support\Facades\Auth;
                 ]);
             }
         }
-    
+
         // Changed: Apply range filters by attribute
         foreach ($rangeFiltersByAttribute as $specName => $ranges) {
             // Find attribute ID based on name
@@ -1037,35 +1037,35 @@ use Illuminate\Support\Facades\Auth;
             if (!$attribute) {
                 continue;
             }
-    
+
             // Start with the base query
             $query = DB::table('product_attributes as pa')
                 ->where('pa.attribute_id', $attribute->id)
                 ->whereIn('pa.product_id', $filteredProductIds);
-    
+
             // Build range conditions for this attribute - using OR between ranges of the same attribute
             $rangeConditions = [];
             foreach ($ranges as $range) {
                 $min = $range['min'];
                 $max = $range['max'];
-    
+
                 // For numeric attribute values, handle different formats
                 $rangeConditions[] = "(CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN $min AND $max OR
                                 CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9].*', '') AS DECIMAL(10,2)) BETWEEN $min AND $max)";
             }
-    
+
             // Only add WHERE condition if we have range conditions
             if (count($rangeConditions) > 0) {
                 // Use OR between ranges of the same attribute
                 $query->whereRaw('(' . implode(' OR ', $rangeConditions) . ')');
             }
-    
+
             // Get products that match ANY of the ranges for this attribute
             $matchingProductIds = $query->pluck('pa.product_id')->unique();
-    
+
             // Intersect with our running list of product IDs
             $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
-    
+
             // If no products match these filters, return empty results early
             if ($filteredProductIds->isEmpty()) {
                 return response()->json([
@@ -1082,7 +1082,7 @@ use Illuminate\Support\Facades\Auth;
                 ]);
             }
         }
-    
+
         // If a rating filter is applied, filter the already filtered product IDs
         if ($request->has('rating') && $request->rating) {
             $ratingFilteredIds = DB::table('ec_reviews')
@@ -1091,9 +1091,9 @@ use Illuminate\Support\Facades\Auth;
                 ->groupBy('product_id')
                 ->havingRaw('ROUND(AVG(star)) = ?', [$request->rating])
                 ->pluck('product_id');
-    
+
             $filteredProductIds = $filteredProductIds->intersect($ratingFilteredIds);
-    
+
             if ($filteredProductIds->isEmpty()) {
                 return response()->json([
                     'success' => true,
@@ -1109,7 +1109,7 @@ use Illuminate\Support\Facades\Auth;
                 ]);
             }
         }
-    
+
         // Fetching products based on filters
         $products = Product::whereIn('id', $filteredProductIds)
             ->where('status', 'published')
@@ -1122,7 +1122,7 @@ use Illuminate\Support\Facades\Auth;
             ->when($request->has('brand_id') && $request->brand_id, function ($query) use ($request) {
                 return $query->whereIn('brand_id', $request->brand_id);
             });
-    
+
         // Apply sorting
         $sortBy = $request->input('sort_by', 'created_at');
         $sortByType = $request->input('sort_by_type', 'desc');
@@ -1131,14 +1131,14 @@ use Illuminate\Support\Facades\Auth;
         } else {
             $products = $products->orderBy($sortBy, $sortByType);
         }
-    
+
         $paginatedProducts = $products->paginate($perPage);
         
         // Get wishlist product IDs (adjust this based on your auth system)
         $wishlistProductIds = auth()->check() ? 
             \App\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->toArray() : 
             [];
-    
+
         $modifiedProducts = $paginatedProducts->getCollection()->map(function ($product) use ($wishlistProductIds) {
             // Calculate reviews data
             $totalReviews = $product->reviews->count();
@@ -1180,42 +1180,42 @@ use Illuminate\Support\Facades\Auth;
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
             ];
         });
-    
+
         $paginatedProducts->setCollection($modifiedProducts);
-    
+
         // Initialize filters array - will remain empty if subcategory doesn't exist
         $filters = [];
-    
+
         // Get subcategory for this category
         $subCategory = DB::table('sub_categories')
             ->where('category_id', $request->category_id)
             ->first();
-    
+
         $debugInfo['has_subcategory'] = $subCategory ? true : false;
-    
+
         // Only process attribute filters if the subcategory exists
         if ($subCategory) {
             $attributeIdsField = null;
             $attributeIds = [];
-    
+
             // Check which attribute ID field exists
             if (property_exists($subCategory, 'attributes_ids') || isset($subCategory->attributes_ids)) {
                 $attributeIdsField = 'attributes_ids';
             } else if (property_exists($subCategory, 'attributes_jd') || isset($subCategory->attributes_jd)) {
                 $attributeIdsField = 'attributes_jd';
             }
-    
+
             $debugInfo['attribute_ids_field'] = $attributeIdsField;
-    
+
             // Process attribute IDs if the field exists and has value
             if ($attributeIdsField && !empty($subCategory->$attributeIdsField)) {
                 $attributeIdsValue = $subCategory->$attributeIdsField;
-    
+
                 // Parse attribute IDs based on data type
                 if (is_string($attributeIdsValue)) {
                     $attributeIds = json_decode($attributeIdsValue, true);
                     $debugInfo['json_decode_error'] = json_last_error_msg();
-    
+
                     // If it's not valid JSON, try comma-separated format
                     if (json_last_error() !== JSON_ERROR_NONE) {
                         $attributeIds = explode(',', $attributeIdsValue);
@@ -1229,11 +1229,11 @@ use Illuminate\Support\Facades\Auth;
                 } else {
                     $attributeIds = $attributeIdsValue;
                 }
-    
+
                 // Ensure we have an array of integers
                 $attributeIds = array_map('intval', (array)$attributeIds);
                 $debugInfo['attribute_ids_parsed'] = $attributeIds;
-    
+
                 // Only proceed if we have valid attribute IDs
                 if (!empty($attributeIds)) {
                     // Get attribute filters for both parent and child category products
@@ -1243,23 +1243,23 @@ use Illuminate\Support\Facades\Auth;
                         ->whereIn('pa.attribute_id', $attributeIds)
                         ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id')
                         ->get();
-    
+
                         
                     $debugInfo['attribute_values_count'] = $attributeValues->count();
-    
+
                     // If we have any attribute values
                     if ($attributeValues->count() > 0) {
                         $attributeValues = $attributeValues->groupBy('attribute_name');
-    
+
                         // Process attribute filters
                         foreach ($attributeValues as $attributeName => $values) {
                             $uniqueValues = $values->pluck('attribute_value')->unique()->filter()->values();
-    
+
                             // Skip filters with only one value
                             if ($uniqueValues->count() <= 1) {
                                 continue;
                             }
-    
+
                             // Helper function to extract clean integer from various formats
                             $extractIntegerValue = function($value) {
                                 // Handle fractions like "13 4/5"
@@ -1276,7 +1276,7 @@ use Illuminate\Support\Facades\Auth;
                                 }
                                 return $value;
                             };
-    
+
                             // Check if all values are numeric-like
                             $numericValues = true;
                             $cleanedValues = $uniqueValues->map(function($val) use ($extractIntegerValue, &$numericValues) {
@@ -1286,28 +1286,28 @@ use Illuminate\Support\Facades\Auth;
                                 }
                                 return $cleanedVal;
                             });
-    
+
                             if ($numericValues && $cleanedValues->count() > 2) {
                                 $sorted = $cleanedValues->filter(function($value) {
                                     return is_numeric($value);
                                 })->map(function($val) {
                                     return (int)$val;
                                 })->unique()->sort()->values();
-    
+
                                 // Store original mapping for debugging
                                 $debugInfo['numeric_values_' . $attributeName] = $sorted->toArray();
-    
+
                                 // Calculate ranges based on actual data
                                 $chunkCount = min(5, ceil($sorted->count() / 2));
                                 $chunkSize = ceil($sorted->count() / $chunkCount);
-    
+
                                 $ranges = $sorted->chunk($chunkSize)->map(function ($chunk) {
                                     return [
                                         'min' => $chunk->first(),
                                         'max' => $chunk->last(),
                                     ];
                                 })->toArray();
-    
+
                                 $filters[] = [
                                     'specification_name' => $attributeName,
                                     'specification_type' => 'range',
@@ -1319,37 +1319,37 @@ use Illuminate\Support\Facades\Auth;
                                 if (!$attribute) {
                                     continue;
                                 }
-    
+
                                 $valuesWithCounts = [];
                                 foreach ($uniqueValues as $value) {
                                     $productCount = DB::table('product_attributes as pa')
-                                        ->join('products as p', 'p.id', '=', 'pa.product_id')
+                                        ->join('ec_products as p', 'p.id', '=', 'pa.product_id')
                                         ->where('pa.attribute_id', $attribute->id)
                                         ->where('pa.attribute_value', $value)
                                         ->where('p.status', 'published')
                                         ->whereIn('pa.product_id', $allCategoryProductIds)
                                         ->distinct('pa.product_id')
                                         ->count('pa.product_id');
-    
+
                                     $valuesWithCounts[] = [
                                         'value' => $value,
                                         'count' => $productCount
                                     ];
                                 }
-    
+
                                 // Sort by product count (highest first)
                                 usort($valuesWithCounts, function($a, $b) {
                                     return $b['count'] - $a['count'];
                                 });
-    
+
                                 // Create values with count in parentheses
                                 $sortedValuesWithCounts = array_map(function($item) {
                                     return $item['value'] . ' (' . $item['count'] . ')';
                                 }, $valuesWithCounts);
-    
+
                                 // For debugging, also store the counts
                                 $debugInfo['filter_counts_' . $attributeName] = $valuesWithCounts;
-    
+
                                 $filters[] = [
                                     'specification_name' => $attributeName,
                                     'specification_type' => 'fixed',
@@ -1363,22 +1363,22 @@ use Illuminate\Support\Facades\Auth;
                 $debugInfo['attributes_field_empty'] = true;
             }
         }
-    
+
         // Get brands from all products (parent + child categories)
         $brandIds = Product::whereIn('id', $allCategoryProductIds)->where('status', 'published')->whereNotNull('brand_id')->pluck('brand_id')->unique();
         $brands = Brand::whereIn('id', $brandIds)->select('id', 'name')->get();
-    
+
         $ratingFilter = [
             'filter_name' => 'Rating',
             'filter_type' => 'rating',
             'filter_values' => [5, 4, 3, 2, 1],
         ];
-    
+
         $minPrice = Product::whereIn('id', $allCategoryProductIds)
         ->where('status', 'published')
         ->selectRaw('MIN(COALESCE(NULLIF(sale_price, 0), price)) as min_price')
         ->value('min_price');
-    
+
         $maxPrice = Product::whereIn('id', $allCategoryProductIds)
         ->where('status', 'published')
         ->selectRaw('MAX(COALESCE(NULLIF(sale_price, 0), price)) as max_price')
