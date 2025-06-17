@@ -1,7 +1,10 @@
 <?php
+namespace App\Http\Controllers\FrontEnd;
 
-namespace App\Http\Controllers;
-
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 
@@ -9,22 +12,23 @@ class CustomerAddressController extends Controller
 {
 	/**
 	 * @OA\Get(
-	 *     path="/api/customers/{customer_id}/addresses",
-	 *     summary="Get all addresses of a specific customer",
-	 *     tags={"Customer-Address"},
-	 *     @OA\Parameter(
-	 *         name="customer_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="ID of the customer",
-	 *         @OA\Schema(type="integer", example=1)
-	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     path="/api/frontend/customer-address",
+	 *     summary="Get all addresses of the authenticated customer",
+	 *     tags={"Frontend-Customer-Address"},
+	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function indexByCustomer($customerId)
+	public function index()
 	{
+		$customerId = Auth::id();
+		if (!$customerId) {
+			return response()->json([
+				'success' => false,
+				'message' => 'User not authenticated.'
+			]);
+		}
+
 		$addresses = CustomerAddress::with(['country:id,name', 'state:id,name', 'city:id,name'])
 		->where('customer_id', $customerId)
 		->get();
@@ -44,14 +48,13 @@ class CustomerAddressController extends Controller
 
 	/**
 	 * @OA\Post(
-	 *     path="/api/customer-address",
+	 *     path="/api/frontend/customer-address",
 	 *     summary="Create a new customer address",
-	 *     tags={"Customer-Address"},
+	 *     tags={"Frontend-Customer-Address"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_id", "type", "address"},
-	 *             @OA\Property(property="customer_id", type="integer", example=1),
+	 *             required={"type", "address"},
 	 *             @OA\Property(property="type", type="string", example="home"),
 	 *             @OA\Property(property="address", type="string", example="123 Main Street"),
 	 *             @OA\Property(property="country_id", type="integer", example=101),
@@ -68,7 +71,6 @@ class CustomerAddressController extends Controller
 	public function store(Request $request)
 	{
 		$validated = $request->validate([
-			'customer_id' => 'required|exists:customers,id',
 			'type' => 'required|in:home,work,other',
 			'address' => 'required|string',
 			'country_id' => 'nullable|integer',
@@ -79,7 +81,7 @@ class CustomerAddressController extends Controller
 		]);
 
 		$address = CustomerAddress::create([
-			'customer_id' => $validated['customer_id'],
+			'customer_id' => auth()->id(),
 			'type' => $validated['type'],
 			'address' => $validated['address'],
 			'country_id' => $validated['country_id'],
@@ -99,10 +101,10 @@ class CustomerAddressController extends Controller
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/customer-address/{id}",
+	 *     path="/api/frontend/customer-address/{id}",
 	 *     summary="Get customer address details",
 	 *     description="Fetches customer address details based on the given ID.",
-	 *     tags={"Customer-Address"},
+	 *     tags={"Frontend-Customer-Address"},
 	 *     @OA\Parameter(name="id", in="path", required=true, description="Customer Address ID", @OA\Schema(type="integer", example=1)),
 	 *     @OA\Response(response=200, description="Retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -110,7 +112,7 @@ class CustomerAddressController extends Controller
 	 */
 	public function show($id)
 	{
-		$address = CustomerAddress::with(['country:id,name', 'state:id,name', 'city:id,name'])->find($id);
+		$address = CustomerAddress::with(['country:id,name', 'state:id,name', 'city:id,name'])->where('customer_id', auth()->id())->where('id', $id)->first();
 
 		if (!$address) {
 			return response()->json([
@@ -127,15 +129,14 @@ class CustomerAddressController extends Controller
 
 	/**
 	 * @OA\Put(
-	 *     path="/api/customer-address/{id}",
+	 *     path="/api/frontend/customer-address/{id}",
 	 *     summary="Update a specific customer address",
-	 *     tags={"Customer-Address"},
+	 *     tags={"Frontend-Customer-Address"},
 	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_id", "type", "address"},
-	 *             @OA\Property(property="customer_id", type="integer", example=1),
+	 *             required={"type", "address"},
 	 *             @OA\Property(property="type", type="string", example="home"),
 	 *             @OA\Property(property="address", type="string", example="456 New Street"),
 	 *             @OA\Property(property="country_id", type="integer", example=102),
@@ -151,7 +152,7 @@ class CustomerAddressController extends Controller
 	 */
 	public function update(Request $request, $id)
 	{
-		$address = CustomerAddress::find($id);
+		$address = CustomerAddress::where('customer_id', auth()->id())->where('id', $id)->first();
 
 		if (!$address) {
 			return response()->json([
@@ -181,9 +182,9 @@ class CustomerAddressController extends Controller
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/customer-address/{id}",
+	 *     path="/api/frontend/customer-address/{id}",
 	 *     summary="Delete a specific customer address",
-	 *     tags={"Customer-Address"},
+	 *     tags={"Frontend-Customer-Address"},
 	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -191,7 +192,7 @@ class CustomerAddressController extends Controller
 	 */
 	public function destroy($id)
 	{
-		$address = CustomerAddress::find($id);
+		$address = CustomerAddress::where('customer_id', auth()->id())->where('id', $id)->first();
 
 		if (!$address) {
 			return response()->json([
@@ -207,4 +208,64 @@ class CustomerAddressController extends Controller
 			'message' => 'Address deleted successfully.'
 		]);
 	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/customer-address/default",
+	 *     summary="Set default address",
+	 *     tags={"Frontend-Customer-Address"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"address_id"},
+	 *             @OA\Property(property="address_id", type="integer", example=1)
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Default address updated successfully"),
+	 *     @OA\Response(response=401, description="Unauthorized"),
+	 *     @OA\Response(response=500, description="Server error")
+	 * )
+	 */
+	 public function updateDefaultAddress(Request $request)
+	 {
+	 	Log::info('Entered updateDefaultAddress method.');
+
+	 	$userId = Auth::id();
+	 	if (!$userId) {
+	 		return response()->json(['message' => 'User not authenticated.'], 401);
+	 	}
+
+	 	$validatedData = $request->validate([
+	 		'address_id' => 'required|integer|exists:ec_customer_addresses,id'
+	 	]);
+
+	 	try {
+			// Remove current default
+	 		Address::where('customer_id', $userId)->where('is_default', 1)->update(['is_default' => 0]);
+
+			// Set the requested address as default
+	 		$updated = Address::where('id', $validatedData['address_id'])->update(['is_default' => 1]);
+
+	 		if ($updated) {
+	 			Log::info('Default address updated successfully.');
+	 			return response()->json([
+	 				'message' => 'Default address updated successfully.',
+	 				'success' => true,
+	 			]);
+	 		}
+
+	 		Log::error('Failed to update the default address.');
+	 		return response()->json([
+	 			'error' => 'Failed to set default address.',
+	 			'success' => false,
+	 		], 500);
+	 	} catch (\Exception $e) {
+	 		Log::error('Unexpected error in updateDefaultAddress: ', ['error' => $e->getMessage()]);
+	 		return response()->json([
+	 			'error' => 'An unexpected error occurred.',
+	 			'details' => $e->getMessage()
+	 		], 500);
+	 	}
+	 }
 }

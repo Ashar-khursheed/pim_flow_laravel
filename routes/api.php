@@ -71,7 +71,7 @@ use App\Http\Controllers\FrontEnd\BlogController as F_BlogController;
 use App\Http\Controllers\FrontEnd\DiscountController as F_DiscountController;
 use App\Http\Controllers\FrontEnd\BrandController as F_BrandController;
 use App\Http\Controllers\FrontEnd\CartController as F_CartController;
-use App\Http\Controllers\FrontEnd\AddressController as F_AddressController;
+use App\Http\Controllers\FrontEnd\CustomerAddressController as F_CustomerAddressController;
 use App\Http\Controllers\FrontEnd\CategoryController as F_CategoryController;
 use App\Http\Controllers\FrontEnd\CountryController as F_CountryController;
 use App\Http\Controllers\FrontEnd\CouponController as F_CouponController;
@@ -92,6 +92,12 @@ Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCal
 //     return $request->user();
 // })->middleware('auth:sanctum');
 Route::post('/login', [AuthController::class, 'store'])->name('login');
+
+
+Route::get('/countries', [LocationController::class, 'getCountryList']);
+Route::get('/states/{countryId}', [LocationController::class, 'getStateList']);
+Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
+Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -184,9 +190,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/vendors/export', [VendorController::class, 'export']);
 	Route::apiResource('vendors', VendorController::class);
 	Route::apiResource('pre-onboarding-vendors', PreOnboardingVendorController::class);
-	Route::get('/countries', [LocationController::class, 'getCountryList']);
-	Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
-	Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 
 	Route::resource('transaction-logs', TransactionLogController::class);
 
@@ -318,18 +321,30 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::apiResource('frontend/addresses', F_CustomerAddressController::class);
+
+	// Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
+	// Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
+	// Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
+	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
+	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
+
+
+
+
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class);
 
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
 
 	Route::post('/frontend/wishlist/add', [F_WishlistController::class, 'addToWishlist']);
-    Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
-    Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
+	Route::get('/frontend/wishlist', [F_WishlistController::class, 'getWishlist']);
+	Route::delete('/frontend/wishlist/remove', [F_WishlistController::class, 'removeFromWishlist']);
 
-    // Additional wishlist routes
-    Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
-    Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
+	// Additional wishlist routes
+	Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
+	Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
@@ -338,10 +353,10 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::delete('/customer-reviews-delete/{id}', [F_UserReviewController::class, 'deleteReview']);
 
 	Route::get('/frontend/products/products-you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
-    Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
+	Route::get('/frontend/products/{product_id}/you-may-like', [F_ProductYouMayLikeController::class, 'getProductsYouMayLike']);
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
-    Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
+	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
 
 
 
@@ -353,7 +368,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/cart/add', [F_CartController::class, 'addToCart']);
 	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
 	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
-    Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
+	Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
 	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
 	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
 	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
@@ -361,11 +376,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/cart/total-products', [F_CartController::class, 'totalProductsInCart']);
 
 
-	Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
-    Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
-    Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
-    Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
-    Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
 	Route::get('/frontend/categoryproducts', [F_CategoryController::class, 'getAllFeaturedProductsByCategory']);
 

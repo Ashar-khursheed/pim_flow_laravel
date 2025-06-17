@@ -60,7 +60,7 @@ class CustomerController extends BaseController
 				'name' => $validated['name'],
 				'email' => $validated['email'],
 				'password' => $hashedPassword,
-				'type' => $request->input('type'),
+				'type' => 'Private',
 				'dob' => $request->input('dob'),
 				'mobile_number' => $request->input('mobile_number'),
 				'profile_img' => $request->input('profile_img'),
