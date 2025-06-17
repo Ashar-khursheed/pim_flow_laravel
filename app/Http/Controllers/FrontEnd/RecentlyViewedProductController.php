@@ -231,33 +231,32 @@ class RecentlyViewedProductController extends Controller
      *     )
      * )
      */
-
     public function saveGuestProductView(Request $request)
     {
         $productId = $request->input('product_id');
-
+        $guestToken = $request->input('guest_token');
+    
         if (!$productId || !Product::find($productId)) {
             return response()->json(['message' => 'Invalid product ID.'], 400);
         }
-
-        $guestToken = $request->cookie('guest_token') ?? Str::uuid()->toString();
-
-        if (!$request->hasCookie('guest_token')) {
-            Cookie::queue('guest_token', $guestToken, 60 * 24 * 30); // 30 days
+    
+        // If token not provided, create one
+        if (!$guestToken) {
+            $guestToken = Str::uuid()->toString();
         }
-
+    
+        // Save the guest product view
         GuestRecentlyViewedProduct::create([
             'guest_token' => $guestToken,
             'product_id' => $productId,
         ]);
-
-      
+    
         return response()->json([
             'success' => true,
-            'guest_token' => $guestToken, // ✅ send back token in JSON
+            'guest_token' => $guestToken, // send back token to store on frontend
         ]);
     }
-
+    
     /**
      * @OA\Get(
      *     path="/api/frontend/guest/recent-products",
