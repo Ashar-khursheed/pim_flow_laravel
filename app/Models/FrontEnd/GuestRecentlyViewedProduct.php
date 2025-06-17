@@ -2,6 +2,7 @@
 // app/Models/GuestRecentlyViewedProduct.php
 
 namespace App\Models\FrontEnd;
+use App\Models\Product;
 
 use Illuminate\Database\Eloquent\Model;
 
