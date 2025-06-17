@@ -214,7 +214,6 @@ class CustomerAddressController extends Controller
 	 *     path="/api/frontend/customer-address/default",
 	 *     summary="Set default address",
 	 *     tags={"Frontend-Customer-Address"},
-	 *     security={{"bearerAuth":{}}},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
@@ -223,49 +222,30 @@ class CustomerAddressController extends Controller
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Default address updated successfully"),
-	 *     @OA\Response(response=401, description="Unauthorized"),
-	 *     @OA\Response(response=500, description="Server error")
+	 *     security={{"bearerAuth":{}}},
 	 * )
 	 */
-	 public function updateDefaultAddress(Request $request)
-	 {
-	 	Log::info('Entered updateDefaultAddress method.');
+	public function updateDefaultAddress(Request $request)
+	{
+		$validatedData = $request->validate([
+			'address_id' => 'required|integer|exists:customer_addresses,id'
+		]);
+		$address = CustomerAddress::where('customer_id', auth()->id())->where('id', $validatedData['address_id'])->first();
 
-	 	$userId = Auth::id();
-	 	if (!$userId) {
-	 		return response()->json(['message' => 'User not authenticated.'], 401);
-	 	}
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Address not found.'
+			], 404);
+		}
 
-	 	$validatedData = $request->validate([
-	 		'address_id' => 'required|integer|exists:ec_customer_addresses,id'
-	 	]);
-
-	 	try {
-			// Remove current default
-	 		Address::where('customer_id', $userId)->where('is_default', 1)->update(['is_default' => 0]);
-
-			// Set the requested address as default
-	 		$updated = Address::where('id', $validatedData['address_id'])->update(['is_default' => 1]);
-
-	 		if ($updated) {
-	 			Log::info('Default address updated successfully.');
-	 			return response()->json([
-	 				'message' => 'Default address updated successfully.',
-	 				'success' => true,
-	 			]);
-	 		}
-
-	 		Log::error('Failed to update the default address.');
-	 		return response()->json([
-	 			'error' => 'Failed to set default address.',
-	 			'success' => false,
-	 		], 500);
-	 	} catch (\Exception $e) {
-	 		Log::error('Unexpected error in updateDefaultAddress: ', ['error' => $e->getMessage()]);
-	 		return response()->json([
-	 			'error' => 'An unexpected error occurred.',
-	 			'details' => $e->getMessage()
-	 		], 500);
-	 	}
-	 }
+		CustomerAddress::where('customer_id', auth()->id())->where('is_default', 1)->update(['is_default' => 0]);
+		$address->update(['is_default' => 1]);
+		if ($updated) {
+			return response()->json([
+				'message' => 'Default address updated successfully.',
+				'success' => true,
+			]);
+		}
+	}
 }

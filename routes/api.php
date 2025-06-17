@@ -322,7 +322,8 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-	Route::apiResource('frontend/addresses', F_CustomerAddressController::class);
+	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
+	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
 
 	// Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
 	// Route::post('/frontend/addresses', [F_AddressController::class, 'store']);

@@ -11874,12 +11874,6 @@
                 "responses": {
                     "200": {
                         "description": "Default address updated successfully"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Server error"
                     }
                 },
                 "security": [
