@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
 use App\Models\FrontEnd\Customer;
+use Illuminate\Support\Str;
 
 class CustomerController extends BaseController
 {
@@ -20,7 +21,8 @@ class CustomerController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"name", "email", "password"},
+	 *                 required={"name", "email"},
+	 *                 @OA\Property(property="is_guest", type="boolean", example=true, description="Set to true if registering as a guest"),
 	 *                 @OA\Property(property="name", type="string", example="John Doe"),
 	 *                 @OA\Property(property="email", type="string", format="email", example="john@example.com"),
 	 *                 @OA\Property(property="password", type="string", format="password", example="secret123"),
@@ -28,16 +30,53 @@ class CustomerController extends BaseController
 	 *                 @OA\Property(property="dob", type="string", format="date", example="1990-01-01"),
 	 *                 @OA\Property(property="country_code", type="string", example="+91"),
 	 *                 @OA\Property(property="mobile_number", type="string", example="971500000000"),
-	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 mb)"),
+	 *                 @OA\Property(property="profile_img", type="file", description="Profile image (jpeg, png, webp only, max 1 MB)")
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Customer registered successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=201, description="Customer registered successfully"),
 	 * )
 	 */
 	public function register(Request $request)
 	{
-		$validatedData = $request->validate([
+		if ($request->is_guest == true) {
+			$validated = $request->validate([
+				'name' => 'required|string|max:255',
+				'email' => 'required|string|email|max:255',
+			]);
+
+			$existingCustomer = Customer::where('email', $validated['email'])->first();
+			if ($existingCustomer) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You are already registered. Please login to continue.',
+				], 409);
+			}
+
+			$randomPassword = Str::random(8); // alphanumeric
+			$hashedPassword = Hash::make($randomPassword);
+
+			$guestCustomer = new Customer([
+				'name' => $validated['name'],
+				'email' => $validated['email'],
+				'password' => $hashedPassword,
+				'type' => $request->input('type'),
+				'dob' => $request->input('dob'),
+				'mobile_number' => $request->input('mobile_number'),
+				'profile_img' => $request->input('profile_img'),
+			]);
+			$guestCustomer->save();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Guest account created successfully.',
+				'user' => $guestCustomer,
+				'plain_password' => $randomPassword
+			], 201);
+		}
+
+		/* Normal customer registration */
+		$validated = $request->validate([
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:customers',
 			'password' => 'required|string|min:8',
@@ -49,35 +88,38 @@ class CustomerController extends BaseController
 		]);
 
 		try {
-			$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
+			$validated['profile_img'] = uploadImageToWebpS3FromFile(
 				$request,
 				'profile_img',
 				env('STORAGE_ENV') . '/customer/profile_img'
 			);
 
 			$customer = new Customer([
-				'name' => $validatedData['name'],
-				'email' => $validatedData['email'],
-				'password' => Hash::make($validatedData['password']),
-				'type' => $validatedData['type'] ?? null,
-				'dob' => $validatedData['dob'] ?? null,
-				'mobile_number' => $validatedData['mobile_number'] ?? null,
-				'profile_img' => $validatedData['profile_img'] ?? null,
+				'name' => $validated['name'],
+				'email' => $validated['email'],
+				'password' => Hash::make($validated['password']),
+				'type' => $validated['type'] ?? null,
+				'dob' => $validated['dob'] ?? null,
+				'mobile_number' => $validated['mobile_number'] ?? null,
+				'profile_img' => $validated['profile_img'] ?? null,
 			]);
-
 			$customer->save();
 
 			return response()->json([
 				'success' => true,
-				'message' => 'Customer registered successfully!',
+				'message' => 'Customer registered successfully.',
 				'user' => $customer
 			], 201);
 
 		} catch (\Exception $e) {
-			\Log::error('Error registering user: ' . $e->getMessage());
-			return response()->json(['error' => 'Failed to register user'], 500);
+			\Log::error('Error registering customer: ' . $e->getMessage());
+			return response()->json([
+				'success' => false,
+				'message' => 'Registration failed. Please try again later.'
+			], 500);
 		}
 	}
+
 
 	/**
 	 * @OA\Get(
