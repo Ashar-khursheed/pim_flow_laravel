@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\GuestRecentlyViewedProduct;
-
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cookie;
 
 class RecentlyViewedProductController extends Controller
 {
