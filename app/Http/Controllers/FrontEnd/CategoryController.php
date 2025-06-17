@@ -1323,8 +1323,10 @@ use Illuminate\Support\Facades\Auth;
                                 $valuesWithCounts = [];
                                 foreach ($uniqueValues as $value) {
                                     $productCount = DB::table('product_attributes as pa')
+                                        ->join('ec_products as p', 'p.id', '=', 'pa.product_id')
                                         ->where('pa.attribute_id', $attribute->id)
                                         ->where('pa.attribute_value', $value)
+                                        ->where('p.status', 'published')
                                         ->whereIn('pa.product_id', $allCategoryProductIds)
                                         ->distinct('pa.product_id')
                                         ->count('pa.product_id');
