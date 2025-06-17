@@ -310,54 +310,54 @@ class RecentlyViewedProductController extends Controller
      * )
      */
 
-    public function getGuestRecentProducts(Request $request)
-    {
-        $guestToken = $request->cookie('guest_token');
-
-        if (!$guestToken) {
-            return response()->json(['message' => 'No guest token found.'], 400);
-        }
-
-        $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
-            ->where('guest_token', $guestToken)
-            ->latest()
-            ->take(5)
-            ->get();
-
-        if ($recentlyViewed->isEmpty()) {
-            return response()->json(['message' => 'No recently viewed products found.'], 404);
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $recentlyViewed->map(function ($viewed) {
-                $product = $viewed->product;
-                if (!$product) return null;
-
-                $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
-                $cleanedImages = collect($images)->flatten()->filter()->values();
-
-                return [
-                    'product_id' => $product->id,
-                    'name' => $product->name,
-                    'sku' => $product->sku,
-                    'price' => $product->price,
-                    'sale_price' => $product->sale_price,
-                    'best_delivery_date' => $product->best_delivery_date,
-                    'total_reviews' => $product->reviews->count(),
-                    'avg_rating' => $product->reviews->avg('star'),
-                    'left_stock' => $product->left_stock ?? 0,
-                    'currency' => $product->currency->title ?? 'USD',
-                    'in_wishlist' => false, // guests don't have wishlists
-                    'images' => $cleanedImages,
-                    'original_price' => $product->price,
-                    'front_sale_price' => $product->price,
-                    'best_price' => $product->price,
-                ];
-            })->filter()
-        ]);
-    }
-
+     public function getGuestRecentProducts(Request $request)
+     {
+         $guestToken = $request->input('guest_token'); // 🔁 use from request param instead of cookie
+     
+         if (!$guestToken) {
+             return response()->json(['message' => 'No guest token provided.'], 400);
+         }
+     
+         $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
+             ->where('guest_token', $guestToken)
+             ->latest()
+             ->take(5)
+             ->get();
+     
+         if ($recentlyViewed->isEmpty()) {
+             return response()->json(['message' => 'No recently viewed products found.'], 404);
+         }
+     
+         return response()->json([
+             'success' => true,
+             'data' => $recentlyViewed->map(function ($viewed) {
+                 $product = $viewed->product;
+                 if (!$product) return null;
+     
+                 $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                 $cleanedImages = collect($images)->flatten()->filter()->values();
+     
+                 return [
+                     'product_id' => $product->id,
+                     'name' => $product->name,
+                     'sku' => $product->sku,
+                     'price' => $product->price,
+                     'sale_price' => $product->sale_price,
+                     'best_delivery_date' => $product->best_delivery_date,
+                     'total_reviews' => $product->reviews->count(),
+                     'avg_rating' => $product->reviews->avg('star'),
+                     'left_stock' => $product->left_stock ?? 0,
+                     'currency' => $product->currency->title ?? 'USD',
+                     'in_wishlist' => false,
+                     'images' => $cleanedImages,
+                     'original_price' => $product->price,
+                     'front_sale_price' => $product->price,
+                     'best_price' => $product->price,
+                 ];
+             })->filter()
+         ]);
+     }
+     
 
 
 }
