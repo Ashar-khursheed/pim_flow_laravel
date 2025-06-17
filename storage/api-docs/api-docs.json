@@ -2176,6 +2176,15 @@
                                     "tags": {
                                         "type": "string"
                                     },
+                                    "image": {
+                                        "type": "file"
+                                    },
+                                    "written_by": {
+                                        "type": "string"
+                                    },
+                                    "created_date": {
+                                        "type": "string"
+                                    },
                                     "blog_category_id": {
                                         "type": "integer"
                                     },
@@ -2306,6 +2315,15 @@
                                         "type": "string"
                                     },
                                     "tags": {
+                                        "type": "string"
+                                    },
+                                    "image": {
+                                        "type": "file"
+                                    },
+                                    "written_by": {
+                                        "type": "string"
+                                    },
+                                    "created_date": {
                                         "type": "string"
                                     },
                                     "blog_category_id": {
