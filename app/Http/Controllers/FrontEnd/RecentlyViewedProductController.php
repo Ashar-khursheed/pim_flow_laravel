@@ -312,7 +312,7 @@ class RecentlyViewedProductController extends Controller
 
      public function getGuestRecentProducts(Request $request)
      {
-         $guestToken = $request->input('guest_token'); // 🔁 use from request param instead of cookie
+         $guestToken = $request->input('guest_token'); // get token from param
      
          if (!$guestToken) {
              return response()->json(['message' => 'No guest token provided.'], 400);
@@ -328,16 +328,27 @@ class RecentlyViewedProductController extends Controller
              return response()->json(['message' => 'No recently viewed products found.'], 404);
          }
      
-         return response()->json([
-             'success' => true,
-             'data' => $recentlyViewed->map(function ($viewed) {
-                 $product = $viewed->product;
-                 if (!$product) return null;
+         $data = [];
      
-                 $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+         foreach ($recentlyViewed as $viewed) {
+             try {
+                 $product = $viewed->product;
+                 if (!$product) continue;
+     
+                 $images = $product->images;
+     
+                 // Ensure images are decoded properly
+                 if (is_string($images)) {
+                     $images = json_decode($images, true);
+                 }
+     
+                 if (!is_array($images)) {
+                     $images = [];
+                 }
+     
                  $cleanedImages = collect($images)->flatten()->filter()->values();
      
-                 return [
+                 $data[] = [
                      'product_id' => $product->id,
                      'name' => $product->name,
                      'sku' => $product->sku,
@@ -354,7 +365,14 @@ class RecentlyViewedProductController extends Controller
                      'front_sale_price' => $product->price,
                      'best_price' => $product->price,
                  ];
-             })->filter()
+             } catch (\Throwable $e) {
+                 \Log::error('Error while processing product for guest token: ' . $e->getMessage());
+             }
+         }
+     
+         return response()->json([
+             'success' => true,
+             'data' => $data,
          ]);
      }
      
