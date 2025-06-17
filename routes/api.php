@@ -345,6 +345,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 
+
+
 	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
 
 	Route::get('/frontend/brandproducts', [F_BrandController::class, 'getAllBrandProducts']);
@@ -384,7 +386,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
 
-
+Route::post('/frontend/guest/view-product', [F_RecentlyViewedProductController::class, 'saveGuestProductView']);
+Route::get('/frontend/guest/recent-products', [F_RecentlyViewedProductController::class, 'getGuestRecentProducts']);
 
 Route::get('/frontend/home-categories', [F_CategoryController::class, 'fetchCategories']);
 Route::get('/frontend/all-categories', [F_CategoryController::class, 'fetchAllCategories']);
@@ -459,6 +462,10 @@ Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'crea
 Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
+
+Route::post('/frontend/save-for-later', [SaveForLaterController::class, 'saveForLater']);
+Route::get('/frontend/save-for-later', [SaveForLaterController::class, 'showSaveForLater']);
+Route::delete('/frontend/save-for-later', [SaveForLaterController::class, 'removeFromSaveForLater']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);

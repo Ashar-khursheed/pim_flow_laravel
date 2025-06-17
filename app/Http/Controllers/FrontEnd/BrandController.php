@@ -654,7 +654,18 @@ class BrandController extends Controller
          try {
              $searchTerm = strtolower($request->input('search'));
      
-             $brand = Brand::with(['products.categories'])->findOrFail($brandId);
+             $brand = Brand::with([
+                'products' => function ($query) {
+                    $query->where('status', 'published')
+                          ->whereHas('categories', function ($catQuery) {
+                              $catQuery->where('status', 'published');
+                          });
+                },
+                'products.categories' => function ($query) {
+                    $query->where('status', 'published');
+                }
+            ])->findOrFail($brandId);
+            
      
              // Filter by category
              $filteredProducts = is_null($categoryId)
