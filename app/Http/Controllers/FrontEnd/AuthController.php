@@ -43,7 +43,10 @@ class AuthController extends Controller
 		$customer = Customer::where('email', $request->email)->first();
 
 		if (!$customer || !Hash::check($request->password, $customer->password)) {
-			return response()->json(['error' => 'The provided credentials are incorrect.'], 401);
+			return response()->json([
+				'success' => false,
+				'error' => 'The provided credentials are incorrect.'
+			], 401);
 		}
 
 		$token = $customer->createToken('auth_token')->plainTextToken;
