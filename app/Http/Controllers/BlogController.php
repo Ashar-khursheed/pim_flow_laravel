@@ -158,6 +158,9 @@ public function index(Request $request)
      *                 @OA\Property(property="description", type="string"),
      *                 @OA\Property(property="faqs", type="string"),
      *                 @OA\Property(property="tags", type="string"),
+     *                 @OA\Property(property="image", type="file"),
+     *                 @OA\Property(property="written_by", type="string"),
+     *                 @OA\Property(property="created_date", type="string"),
      *                 @OA\Property(property="blog_category_id", type="integer"),
      *                 @OA\Property(property="status", type="draft"),
      *                 @OA\Property(property="is_featured", type="integer")
@@ -341,6 +344,9 @@ public function index(Request $request)
      *                 @OA\Property(property="description", type="string"),
      *                 @OA\Property(property="faqs", type="string"),
      *                 @OA\Property(property="tags", type="string"),
+     *                 @OA\Property(property="image", type="file"),
+     *                 @OA\Property(property="written_by", type="string"),
+     *                 @OA\Property(property="created_date", type="string"),
      *                 @OA\Property(property="blog_category_id", type="integer"),
      *                 @OA\Property(property="status", type="string", enum={"draft", "published"}),
      *                 @OA\Property(property="is_featured", type="integer")
