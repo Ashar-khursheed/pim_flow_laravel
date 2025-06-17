@@ -16,7 +16,7 @@ return new class extends Migration
 			$table->id();
 			$table->string('order_number')->unique();
 			$table->integer('customer_id');
-			$table->text('customer_address');
+			$table->text('customer_address_id');
 			$table->enum('status', [
 				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
