@@ -1055,60 +1055,45 @@ use Illuminate\Support\Facades\Auth;
 //         }
 //     }
 // }
-$cleanFilterValue = function($value) {
-    // Remove count information like " (27)" from the end
-    return trim(preg_replace('/\s*\(\d+\)$/', '', $value));
-};
+foreach ($filters as $filterGroup) {
+    $specName = $filterGroup['specification_name'];
 
-$rangeFiltersByAttribute = [];
-$groupedFilters = [];
+    // Build a base product query excluding the current filter group
+    $query = Product::query();
 
-if ($request->has('filters') && is_array($request->filters)) {
-    foreach ($request->filters as $filter) {
-        if (
-            !isset($filter['specification_name']) || 
-            !isset($filter['specification_value']) || 
-            empty($filter['specification_value'])
-        ) {
-            continue;
+    foreach ($groupedFilters as $name => $values) {
+        if ($name === $specName) continue; // <--- skip current group
+
+        $query->whereHas('specifications', function ($q) use ($name, $values) {
+            $q->where('specification_name', $name)
+              ->whereIn('specification_value', $values);
+        });
+    }
+
+    foreach ($rangeFiltersByAttribute as $name => $ranges) {
+        if ($name === $specName) continue; // skip current range group
+
+        foreach ($ranges as $range) {
+            $query->whereHas('specifications', function ($q) use ($name, $range) {
+                $q->where('specification_name', $name)
+                  ->whereBetween('specification_value', [$range['min'], $range['max']]);
+            });
         }
+    }
 
-        $specName = $filter['specification_name'];
-        $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
-        
-        $isRangeFilter = false;
+    // Now calculate counts for each value in the current group
+    $values = getAllPossibleValuesFor($specName); // You likely have this already
 
-        foreach ($specValues as $value) {
-            if (is_array($value) && isset($value['min']) && isset($value['max'])) {
-                $isRangeFilter = true;
+    foreach ($values as $value) {
+        $count = (clone $query)->whereHas('specifications', function ($q) use ($specName, $value) {
+            $q->where('specification_name', $specName)
+              ->where('specification_value', $value);
+        })->count();
 
-                if (!isset($rangeFiltersByAttribute[$specName])) {
-                    $rangeFiltersByAttribute[$specName] = [];
-                }
-
-                // Avoid duplicates
-                $rangeFiltersByAttribute[$specName][] = [
-                    'min' => $value['min'],
-                    'max' => $value['max']
-                ];
-            }
-        }
-
-        if (!$isRangeFilter) {
-            // Clean values
-            $cleanedSpecValues = array_map($cleanFilterValue, $specValues);
-
-            if (!isset($groupedFilters[$specName])) {
-                $groupedFilters[$specName] = [];
-            }
-
-            // Avoid overwriting, merge with previous
-            foreach ($cleanedSpecValues as $val) {
-                if (!in_array($val, $groupedFilters[$specName])) {
-                    $groupedFilters[$specName][] = $val;
-                }
-            }
-        }
+        $result[] = [
+            'value' => $value,
+            'count' => $count
+        ];
     }
 }
 
