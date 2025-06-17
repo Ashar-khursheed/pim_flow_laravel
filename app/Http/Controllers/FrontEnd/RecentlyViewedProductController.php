@@ -256,7 +256,7 @@ class RecentlyViewedProductController extends Controller
             'success' => true,
             'guest_token' => $guestToken, // ✅ send back token in JSON
         ]);
-        }
+    }
 
     /**
      * @OA\Get(
@@ -312,62 +312,17 @@ class RecentlyViewedProductController extends Controller
 
      public function getGuestRecentProducts(Request $request)
      {
-         $guestToken = $request->input('guest_token'); // get token from param
+         // Get token from param or cookie
+         $guestToken = $request->input('guest_token') ?? $request->cookie('guest_token');
      
          if (!$guestToken) {
-             return response()->json(['message' => 'No guest token provided.'], 400);
+             return response()->json(['message' => 'No guest token found.'], 400);
          }
      
-         $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
-             ->where('guest_token', $guestToken)
-             ->latest()
-             ->take(5)
-             ->get();
+         $data = $this->getGuestRecentlyViewedData($guestToken);
      
-         if ($recentlyViewed->isEmpty()) {
+         if (empty($data)) {
              return response()->json(['message' => 'No recently viewed products found.'], 404);
-         }
-     
-         $data = [];
-     
-         foreach ($recentlyViewed as $viewed) {
-             try {
-                 $product = $viewed->product;
-                 if (!$product) continue;
-     
-                 $images = $product->images;
-     
-                 // Ensure images are decoded properly
-                 if (is_string($images)) {
-                     $images = json_decode($images, true);
-                 }
-     
-                 if (!is_array($images)) {
-                     $images = [];
-                 }
-     
-                 $cleanedImages = collect($images)->flatten()->filter()->values();
-     
-                 $data[] = [
-                     'product_id' => $product->id,
-                     'name' => $product->name,
-                     'sku' => $product->sku,
-                     'price' => $product->price,
-                     'sale_price' => $product->sale_price,
-                     'best_delivery_date' => $product->best_delivery_date,
-                     'total_reviews' => $product->reviews->count(),
-                     'avg_rating' => $product->reviews->avg('star'),
-                     'left_stock' => $product->left_stock ?? 0,
-                     'currency' => $product->currency->title ?? 'USD',
-                     'in_wishlist' => false,
-                     'images' => $cleanedImages,
-                     'original_price' => $product->price,
-                     'front_sale_price' => $product->price,
-                     'best_price' => $product->price,
-                 ];
-             } catch (\Throwable $e) {
-                 \Log::error('Error while processing product for guest token: ' . $e->getMessage());
-             }
          }
      
          return response()->json([
@@ -375,7 +330,55 @@ class RecentlyViewedProductController extends Controller
              'data' => $data,
          ]);
      }
+
+     private function getGuestRecentlyViewedData(string $guestToken): array
+{
+    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
+        ->where('guest_token', $guestToken)
+        ->latest()
+        ->take(5)
+        ->get();
+
+    $data = [];
+
+    foreach ($recentlyViewed as $viewed) {
+        $product = $viewed->product;
+        if (!$product) continue;
+
+        $images = $product->images;
+        if (is_string($images)) {
+            $images = json_decode($images, true);
+        }
+        if (!is_array($images)) {
+            $images = [];
+        }
+
+        $cleanedImages = collect($images)->flatten()->filter()->values();
+
+        $data[] = [
+            'product_id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'price' => $product->price,
+            'sale_price' => $product->sale_price,
+            'best_delivery_date' => $product->best_delivery_date,
+            'total_reviews' => $product->reviews->count(),
+            'avg_rating' => $product->reviews->avg('star'),
+            'left_stock' => $product->left_stock ?? 0,
+            'currency' => $product->currency->title ?? 'USD',
+            'in_wishlist' => false,
+            'images' => $cleanedImages,
+            'original_price' => $product->price,
+            'front_sale_price' => $product->price,
+            'best_price' => $product->price,
+        ];
+    }
+
+    return $data;
+}
+
      
+
 
 
 }
