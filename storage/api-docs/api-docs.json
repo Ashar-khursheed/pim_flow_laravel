@@ -11890,10 +11890,14 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "email",
-                                    "password"
+                                    "email"
                                 ],
                                 "properties": {
+                                    "is_guest": {
+                                        "description": "Set to true if registering as a guest",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
@@ -11926,7 +11930,7 @@
                                         "example": "971500000000"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
                                     }
                                 },
@@ -11937,10 +11941,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Customer registered successfully",
-                        "content": {
-                            "application/json": {}
-                        }
+                        "description": "Customer registered successfully"
                     }
                 }
             }
