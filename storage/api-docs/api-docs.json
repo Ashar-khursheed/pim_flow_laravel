@@ -2176,6 +2176,15 @@
                                     "tags": {
                                         "type": "string"
                                     },
+                                    "image": {
+                                        "type": "file"
+                                    },
+                                    "written_by": {
+                                        "type": "string"
+                                    },
+                                    "created_date": {
+                                        "type": "string"
+                                    },
                                     "blog_category_id": {
                                         "type": "integer"
                                     },
@@ -2306,6 +2315,15 @@
                                         "type": "string"
                                     },
                                     "tags": {
+                                        "type": "string"
+                                    },
+                                    "image": {
+                                        "type": "file"
+                                    },
+                                    "written_by": {
+                                        "type": "string"
+                                    },
+                                    "created_date": {
                                         "type": "string"
                                     },
                                     "blog_category_id": {
@@ -8223,262 +8241,6 @@
                 ]
             }
         },
-        "/api/frontend/addresses": {
-            "get": {
-                "tags": [
-                    "Frontend-Address"
-                ],
-                "summary": "Get all addresses of the authenticated user",
-                "operationId": "6ff12f46175f6b15c9345cfa14bd708b",
-                "responses": {
-                    "200": {
-                        "description": "List of user addresses",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string"
-                                        },
-                                        "success": {
-                                            "type": "boolean"
-                                        },
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "$ref": "#/components/schemas/Address"
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Frontend-Address"
-                ],
-                "summary": "Add a new address",
-                "operationId": "577cb481e74ecaecd81f0f77431bf1cb",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "name",
-                                    "phone",
-                                    "country",
-                                    "state",
-                                    "city",
-                                    "address",
-                                    "zip_code"
-                                ],
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "phone": {
-                                        "type": "string"
-                                    },
-                                    "email": {
-                                        "type": "string",
-                                        "format": "email"
-                                    },
-                                    "country": {
-                                        "type": "string"
-                                    },
-                                    "state": {
-                                        "type": "string"
-                                    },
-                                    "city": {
-                                        "type": "string"
-                                    },
-                                    "address": {
-                                        "type": "string"
-                                    },
-                                    "zip_code": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Address added successfully"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/addresses/default": {
-            "post": {
-                "tags": [
-                    "Frontend-Address"
-                ],
-                "summary": "Set default address",
-                "operationId": "285c67dbb64a337373cd377874efbea5",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "address_id"
-                                ],
-                                "properties": {
-                                    "address_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Default address updated successfully"
-                    },
-                    "401": {
-                        "description": "Unauthorized"
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/frontend/addresses/{id}": {
-            "put": {
-                "tags": [
-                    "Frontend-Address"
-                ],
-                "summary": "Update an address by ID",
-                "operationId": "8b7b3851dcd6b22167e5aa0b3d536e85",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Address ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "phone": {
-                                        "type": "string"
-                                    },
-                                    "email": {
-                                        "type": "string"
-                                    },
-                                    "country": {
-                                        "type": "string"
-                                    },
-                                    "state": {
-                                        "type": "string"
-                                    },
-                                    "city": {
-                                        "type": "string"
-                                    },
-                                    "address": {
-                                        "type": "string"
-                                    },
-                                    "zip_code": {
-                                        "type": "string"
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Address updated successfully"
-                    },
-                    "404": {
-                        "description": "Address not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "delete": {
-                "tags": [
-                    "Frontend-Address"
-                ],
-                "summary": "Delete an address by ID",
-                "operationId": "7d7ee412b405489d813df055a43a306c",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Address ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Address deleted successfully"
-                    },
-                    "404": {
-                        "description": "Address not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/frontend/login": {
             "post": {
                 "tags": [
@@ -11858,6 +11620,269 @@
                 }
             }
         },
+        "/api/frontend/customer-address": {
+            "get": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Get all addresses of the authenticated customer",
+                "operationId": "3dfd00d987c033bec80ad67ec2d46076",
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Create a new customer address",
+                "operationId": "8926a16585a872f46351b15492f5fb51",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 10
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-address/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Get customer address details",
+                "description": "Fetches customer address details based on the given ID.",
+                "operationId": "32309fbd44d7bf70b15e3f9bb35ca71e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Customer Address ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Update a specific customer address",
+                "operationId": "080f23af8a3295c5fa67c5d824d170d5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "type",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "type": {
+                                        "type": "string",
+                                        "example": "home"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "456 New Street"
+                                    },
+                                    "country_id": {
+                                        "type": "integer",
+                                        "example": 102
+                                    },
+                                    "state_id": {
+                                        "type": "integer",
+                                        "example": 20
+                                    },
+                                    "city_id": {
+                                        "type": "integer",
+                                        "example": 15
+                                    },
+                                    "zip_code": {
+                                        "type": "string",
+                                        "example": "123123"
+                                    },
+                                    "is_default": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Delete a specific customer address",
+                "operationId": "f4ea0f2f3073da3e7530c424f6957156",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-address/default": {
+            "post": {
+                "tags": [
+                    "Frontend-Customer-Address"
+                ],
+                "summary": "Set default address",
+                "operationId": "64a0072bfec6057ac4193ffb80a7080d",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "address_id"
+                                ],
+                                "properties": {
+                                    "address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Default address updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/register": {
             "post": {
                 "tags": [
@@ -11872,10 +11897,14 @@
                             "schema": {
                                 "required": [
                                     "name",
-                                    "email",
-                                    "password"
+                                    "email"
                                 ],
                                 "properties": {
+                                    "is_guest": {
+                                        "description": "Set to true if registering as a guest",
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
@@ -11908,7 +11937,7 @@
                                         "example": "971500000000"
                                     },
                                     "profile_img": {
-                                        "description": "Profile image (jpeg, png, webp only, max 1 mb)",
+                                        "description": "Profile image (jpeg, png, webp only, max 1 MB)",
                                         "type": "file"
                                     }
                                 },
@@ -11919,10 +11948,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Customer registered successfully",
-                        "content": {
-                            "application/json": {}
-                        }
+                        "description": "Customer registered successfully"
                     }
                 }
             }
@@ -12374,6 +12400,107 @@
             }
         },
         "/api/frontend/orders": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Get all orders with pagination and filters",
+                "operationId": "6d6249081312123a0b9ff700b57f17f0",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by order status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "payment_status",
+                        "in": "query",
+                        "description": "Filter by payment status.",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "Paid",
+                                "Unpaid",
+                                "Partially Paid"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "order_number",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "FrontEnd-Orders"
@@ -12387,7 +12514,7 @@
                             "schema": {
                                 "required": [
                                     "customer_id",
-                                    "customer_address",
+                                    "customer_address_id",
                                     "shipping_charge",
                                     "products"
                                 ],
@@ -12396,9 +12523,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "customer_address": {
-                                        "type": "string",
-                                        "example": "123 Main St, City, Country"
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
                                     },
                                     "shipping_charge": {
                                         "type": "number",
@@ -12452,12 +12579,197 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Order created successfully",
+                        "description": "Created successfully",
                         "content": {
                             "application/json": {}
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/{id}": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Get order details",
+                "operationId": "760d0a23deae9c8ac6a2cdf777816b6c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Update an existing order (if not yet shipped)",
+                "operationId": "b88757624ec0e7800c63b3da133e8c62",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_address_id",
+                                    "shipping_charge",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "4"
+                                    },
+                                    "shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 75
+                                    },
+                                    "ship_all_at_once": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "separate_deliveries": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 249.99
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/{id}/status": {
+            "put": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Update order status",
+                "operationId": "6e455a869b5ab85d0b5611c954090729",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order status updated successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/product/{id}/nutrition-facts1": {
@@ -16191,8 +16503,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -16203,7 +16514,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -16213,17 +16523,62 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "List retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
                     }
-                },
-                "security": [
+                }
+            }
+        },
+        "/api/states/{country_id}": {
+            "get": {
+                "tags": [
+                    "Locations"
+                ],
+                "summary": "Get state List",
+                "description": "Fetches a list of all states.",
+                "operationId": "6f50cbf8323285d91859d2199f8a3417",
+                "parameters": [
                     {
-                        "bearerAuth": []
+                        "name": "country_id",
+                        "in": "path",
+                        "description": "ID of the country",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
                     }
-                ]
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
             }
         },
         "/api/cities/{country_id}": {
@@ -16248,8 +16603,7 @@
                     {
                         "name": "page",
                         "in": "query",
-                        "description": "Page number for pagination. Starts from 1.",
-                        "required": true,
+                        "description": "Page number for pagination",
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -16260,7 +16614,6 @@
                         "name": "length",
                         "in": "query",
                         "description": "Number of records per page.",
-                        "required": true,
                         "schema": {
                             "type": "integer",
                             "minimum": 1
@@ -16270,17 +16623,12 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "List retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/zipcodes/{city_id}": {
@@ -16881,7 +17229,7 @@
                             "schema": {
                                 "required": [
                                     "customer_id",
-                                    "customer_address",
+                                    "customer_address_id",
                                     "shipping_charge",
                                     "products"
                                 ],
@@ -16890,9 +17238,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "customer_address": {
-                                        "type": "string",
-                                        "example": "123 Main St, City, Country"
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
                                     },
                                     "shipping_charge": {
                                         "type": "number",
@@ -25438,10 +25786,6 @@
             "description": "Flash Sales"
         },
         {
-            "name": "Frontend-Address",
-            "description": "Frontend-Address"
-        },
-        {
             "name": "Frontend-Blogs",
             "description": "Frontend-Blogs"
         },
@@ -25476,6 +25820,10 @@
         {
             "name": "FrontEnd-Coupon",
             "description": "FrontEnd-Coupon"
+        },
+        {
+            "name": "Frontend-Customer-Address",
+            "description": "Frontend-Customer-Address"
         },
         {
             "name": "FrontEnd-Customer",

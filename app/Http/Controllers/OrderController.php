@@ -10,6 +10,7 @@ use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\Payment;
 use App\Models\FrontEnd\Shipment;
 use App\Models\FrontEnd\ShipmentProduct;
+use App\Models\FrontEnd\CustomerAddress;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +54,9 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer', 'orderProducts', 'payments', 'shipments', 'creator', 'updator']);
+			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product.brand:id,name', 'payments', 'shipments', 'creator', 'updator']);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -118,13 +121,28 @@ class OrderController extends Controller
 			/* Transform results */
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
-				unset($record->customer_id, $record->customer);
 
 				$record->created_by = $record->creator->name ?? null;
 				unset($record->creator);
 
 				$record->updated_by = $record->updator->name ?? null;
 				unset($record->updator);
+
+				/* Process each product in order products */
+				foreach ($record->orderProducts as $orderProduct) {
+					$product = $orderProduct->product;
+
+					if ($product) {
+						/* Decode image JSON only if it's a string */
+						if (is_string($product->images)) {
+							$product->images = json_decode($product->images, true);
+						}
+
+						/* Replace brand relation with just brand_name */
+						$product->brand_name = $product->brand->name ?? null;
+						unset($product->brand);
+					}
+				}
 
 				return $record;
 			});
@@ -152,9 +170,9 @@ class OrderController extends Controller
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_id", "customer_address", "shipping_charge", "products"},
+	 *             required={"customer_id", "customer_address_id", "shipping_charge", "products"},
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
-	 *             @OA\Property(property="customer_address", type="string", example="123 Main St, City, Country"),
+	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="shipping_charge", type="number", format="float", example=50.00),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -178,9 +196,8 @@ class OrderController extends Controller
 	public function store(Request $request)
 	{
 		$request->validate([
-			/* 'customer_id' => 'required|integer|exists:customers,id', */
-			'customer_id' => 'required|integer',
-			'customer_address' => 'required|string|max:1000',
+			'customer_id' => 'required|integer|exists:customers,id',
+			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'shipping_charge' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -190,6 +207,15 @@ class OrderController extends Controller
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.unit_price' => 'required|numeric|min:0',
 		]);
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $request->customer_id)->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
 
 		DB::beginTransaction();
 
@@ -205,7 +231,7 @@ class OrderController extends Controller
 			$order = Order::create([
 				'order_number' => 'ORD-' . strtoupper(Str::random(8)),
 				'customer_id' => $request->customer_id,
-				'customer_address' => $request->customer_address,
+				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $request->shipping_charge,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
