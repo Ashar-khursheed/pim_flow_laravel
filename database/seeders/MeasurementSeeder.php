@@ -61,6 +61,8 @@ class MeasurementSeeder extends Seeder
 				['fluid ounce', 'fl oz'],
 				['tablespoon', 'tbsp'],
 				['teaspoon', 'tsp'],
+				['pound', 'lb'],
+				['cubic feet', 'cb3'],
 			],
 			'Temperature' => [
 				['celsius', 'C'],
