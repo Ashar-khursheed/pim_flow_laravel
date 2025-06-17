@@ -1012,22 +1012,39 @@ use Illuminate\Support\Facades\Auth;
     $groupedFilters = [];
     $rangeFiltersByAttribute = []; // Changed: Store range filters by attribute name
 
-    if ($request->has('filters') && is_array($request->filters)) {
-        foreach ($request->filters as $filter) {
-            if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
-                continue;
-            }
+   // Replace the existing filter processing section with this improved version
 
-            $specName = $filter['specification_name'];
+if ($request->has('filters') && is_array($request->filters)) {
+    foreach ($request->filters as $filter) {
+        if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+            continue;
+        }
+
+        $specName = $filter['specification_name'];
+        $specType = $filter['specification_type'] ?? 'fixed';
+
+        // Handle range filters
+        if ($specType === 'range' && isset($filter['specification_value']['start']) && isset($filter['specification_value']['end'])) {
+            $rangeValue = [
+                'min' => $filter['specification_value']['start'],
+                'max' => $filter['specification_value']['end']
+            ];
+
+            if (!isset($rangeFiltersByAttribute[$specName])) {
+                $rangeFiltersByAttribute[$specName] = [];
+            }
+            $rangeFiltersByAttribute[$specName][] = $rangeValue;
+        }
+        // Handle fixed filters and legacy range format
+        else {
             $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
 
-            // Check if this is a range filter
-            $isRangeFilter = false;
+            // Check if this is a legacy range filter format
+            $isLegacyRangeFilter = false;
             foreach ($specValues as $value) {
                 if (is_array($value) && isset($value['min']) && isset($value['max'])) {
-                    $isRangeFilter = true;
+                    $isLegacyRangeFilter = true;
 
-                    // Changed: Store range filters by attribute name
                     if (!isset($rangeFiltersByAttribute[$specName])) {
                         $rangeFiltersByAttribute[$specName] = [];
                     }
@@ -1035,15 +1052,118 @@ use Illuminate\Support\Facades\Auth;
                 }
             }
 
-            // If not a range filter, add to regular grouped filters
-            if (!$isRangeFilter) {
+            // If not a range filter, clean the values and add to regular grouped filters
+            if (!$isLegacyRangeFilter) {
+                // Clean the specification values to remove count information
+                $cleanedSpecValues = array_map($cleanFilterValue, $specValues);
+                
                 if (!isset($groupedFilters[$specName])) {
                     $groupedFilters[$specName] = [];
                 }
-                $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $specValues);
+                $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $cleanedSpecValues);
             }
         }
     }
+}
+
+$debugInfo['grouped_filters'] = $groupedFilters;
+$debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute;
+
+// Apply regular attribute filters if provided, grouped by specification name
+foreach ($groupedFilters as $specName => $specValues) {
+    // Find attribute ID based on name
+    $attribute = Attribute::where('name', $specName)->first();
+    if (!$attribute) {
+        continue;
+    }
+
+    // Find product IDs that match this attribute and values
+    $matchingProductIds = DB::table('product_attributes as pa')
+        ->where('pa.attribute_id', $attribute->id)
+        ->whereIn('pa.attribute_value', $specValues)
+        ->whereIn('pa.product_id', $filteredProductIds)
+        ->pluck('pa.product_id')
+        ->unique();
+
+    // Intersect with our running list of product IDs
+    $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
+
+    // If no products match these filters, return empty results early
+    if ($filteredProductIds->isEmpty()) {
+        return response()->json([
+            'success' => true,
+            'filters' => [],
+            'products' => [],
+            'brands' => [],
+            'rating_filter' => [
+                'filter_name' => 'Rating',
+                'filter_type' => 'rating',
+                'filter_values' => [5, 4, 3, 2, 1],
+            ],
+            'debug_info' => array_merge($debugInfo, ['filter_applied' => $specName, 'empty_after' => true])
+        ]);
+    }
+}
+
+// Apply range filters by attribute - FIXED VERSION
+foreach ($rangeFiltersByAttribute as $specName => $ranges) {
+    // Find attribute ID based on name
+    $attribute = Attribute::where('name', $specName)->first();
+    if (!$attribute) {
+        continue;
+    }
+
+    // Build a query to find products that match ANY of the ranges for this attribute
+    $matchingProductIds = collect();
+    
+    foreach ($ranges as $range) {
+        $min = $range['min'];
+        $max = $range['max'];
+
+        // Query for products matching this specific range
+        $rangeProductIds = DB::table('product_attributes as pa')
+            ->where('pa.attribute_id', $attribute->id)
+            ->whereIn('pa.product_id', $filteredProductIds)
+            ->where(function($query) use ($min, $max) {
+                $query->whereRaw("CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN ? AND ?", [$min, $max])
+                      ->orWhereRaw("CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9].*', '') AS DECIMAL(10,2)) BETWEEN ? AND ?", [$min, $max]);
+            })
+            ->pluck('pa.product_id')
+            ->unique();
+
+        // Union the results (combine products from all ranges)
+        $matchingProductIds = $matchingProductIds->merge($rangeProductIds);
+    }
+
+    // Remove duplicates
+    $matchingProductIds = $matchingProductIds->unique();
+
+    // Intersect with our running list of product IDs
+    $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
+
+    // Debug info for this range filter
+    $debugInfo['range_filter_' . $specName] = [
+        'ranges_applied' => $ranges,
+        'products_found' => $matchingProductIds->count(),
+        'products_after_intersect' => $filteredProductIds->count()
+    ];
+
+    // If no products match these filters, return empty results early
+    if ($filteredProductIds->isEmpty()) {
+        return response()->json([
+            'success' => true,
+            'filters' => [],
+            'products' => [],
+            'brands' => [],
+            'rating_filter' => [
+                'filter_name' => 'Rating',
+                'filter_type' => 'rating',
+                'filter_values' => [5, 4, 3, 2, 1],
+            ],
+            'debug_info' => array_merge($debugInfo, ['range_filter_applied' => $specName, 'empty_after_range' => true])
+        ]);
+    }
+}
 
     $debugInfo['grouped_filters'] = $groupedFilters;
     $debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute; // Changed: Updated debug info
