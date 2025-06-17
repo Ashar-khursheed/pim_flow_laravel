@@ -10,6 +10,7 @@ use App\Models\FrontEnd\OrderTracking;
 use App\Models\FrontEnd\Payment;
 use App\Models\FrontEnd\Shipment;
 use App\Models\FrontEnd\ShipmentProduct;
+use App\Models\FrontEnd\CustomerAddress;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -206,6 +207,15 @@ class OrderController extends Controller
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.unit_price' => 'required|numeric|min:0',
 		]);
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $request->customer_id)->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
 
 		DB::beginTransaction();
 

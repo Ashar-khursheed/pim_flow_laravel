@@ -12481,7 +12481,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Orders retrieved successfully",
+                        "description": "List retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -12506,7 +12506,7 @@
                             "schema": {
                                 "required": [
                                     "customer_id",
-                                    "customer_address",
+                                    "customer_address_id",
                                     "shipping_charge",
                                     "products"
                                 ],
@@ -12515,9 +12515,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "customer_address": {
-                                        "type": "string",
-                                        "example": "123 Main St, City, Country"
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
                                     },
                                     "shipping_charge": {
                                         "type": "number",
@@ -12571,7 +12571,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Order created successfully",
+                        "description": "Created successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -12604,7 +12604,157 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Order details retrieved successfully"
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Update an existing order (if not yet shipped)",
+                "operationId": "b88757624ec0e7800c63b3da133e8c62",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_address_id",
+                                    "shipping_charge",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "4"
+                                    },
+                                    "shipping_charge": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 75
+                                    },
+                                    "ship_all_at_once": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "separate_deliveries": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 101
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 249.99
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/{id}/status": {
+            "put": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Update order status",
+                "operationId": "6e455a869b5ab85d0b5611c954090729",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Order ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "notes": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Order status updated successfully"
                     }
                 },
                 "security": [
@@ -16622,7 +16772,7 @@
                             "schema": {
                                 "required": [
                                     "customer_id",
-                                    "customer_address",
+                                    "customer_address_id",
                                     "shipping_charge",
                                     "products"
                                 ],
@@ -16631,9 +16781,9 @@
                                         "type": "integer",
                                         "example": 1
                                     },
-                                    "customer_address": {
-                                        "type": "string",
-                                        "example": "123 Main St, City, Country"
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": "1"
                                     },
                                     "shipping_charge": {
                                         "type": "number",

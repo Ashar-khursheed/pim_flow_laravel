@@ -6,6 +6,7 @@ use App\Http\Controllers\BaseController;
 use App\Models\FrontEnd\Order;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
+use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -175,6 +176,17 @@ class OrderController extends BaseController
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.unit_price' => 'required|numeric|min:0',
 		]);
+
+		$customerId = auth()->id();
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
 
 		DB::beginTransaction();
 
@@ -392,6 +404,17 @@ class OrderController extends BaseController
 			'products.*.unit_price' => 'required|numeric|min:0',
 		]);
 
+		$customerId = auth()->id();
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
+
 		DB::beginTransaction();
 
 		try {
@@ -433,7 +456,7 @@ class OrderController extends BaseController
 
 			OrderTracking::create([
 				'order_id' => $order->id,
-				'status' => 'Order Updated',
+				'status' => 'Order Updated By Customer',
 				'description' => 'Order has been successfully updated',
 			]);
 
@@ -476,4 +499,55 @@ class OrderController extends BaseController
 		}
 	}
 
+	/**
+	 * @OA\Put(
+	 *     path="/api/frontend/orders/{id}/status",
+	 *     summary="Update order status",
+	 *     tags={"FrontEnd-Orders"},
+	 *     @OA\Parameter(name="id", in="path", description="Order ID", required=true, @OA\Schema(type="integer")),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"status"},
+	 *             @OA\Property(property="status", type="string"),
+	 *             @OA\Property(property="notes", type="string")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Order status updated successfully"),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function updateStatus(Request $request, $id)
+	{
+		$request->validate([
+			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
+			'notes' => 'nullable|string'
+		]);
+
+		$order = Order::find($id);
+
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => "Order not found."
+			]);
+		}
+
+		$oldStatus = $order->status;
+
+		$order->update(['status' => $request->status]);
+
+		/* dd tracking entry */
+		OrderTracking::create([
+			'order_id' => $order->id,
+			'status' => $request->status,
+			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+		]);
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Order status updated successfully',
+			'data' => $order->fresh(['tracking'])
+		]);
+	}
 }

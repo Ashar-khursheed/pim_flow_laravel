@@ -318,6 +318,7 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class);
 
 	Route::post('/frontend/logout', [F_AuthController::class, 'logout']);
