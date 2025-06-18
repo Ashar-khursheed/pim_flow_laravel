@@ -236,18 +236,7 @@ class CartController extends Controller
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
 
             // Base URLs for generating image links
-            $baseStorageUrl = url('storage/');
-            $baseProductsUrl = url('storage/products/');
-
-            // Generate full URLs for product images
-            $item->product->images = collect($item->product->images ?? [])->map(function ($image) use ($baseStorageUrl, $baseProductsUrl) {
-                if (Str::startsWith($image, ['http://', 'https://'])) {
-                    return $image;
-                }
-                $url = Storage::exists('products/' . $image) ? $baseProductsUrl : $baseStorageUrl;
-                return $url . '/' . $image;
-            });
-
+            $item->product->images = collect($item->product->images ?? []);
             // Add full URL for the main product image
             if ($item->product->image) {
                 if (!Str::startsWith($item->product->image, ['http://', 'https://'])) {
