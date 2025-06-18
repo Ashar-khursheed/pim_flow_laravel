@@ -57,7 +57,9 @@ class CategoryMenuController extends Controller
     public function showCategoryBySlug($slug)
     {
         // Fetch the category by slug
-        $category = Category::where('slug', $slug)->first();
+        $category = Category::where('slug', $slug)
+        ->where('status', 'published')
+        ->first();
 
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
@@ -79,7 +81,9 @@ class CategoryMenuController extends Controller
     private function getCategoryWithChildren($category)
     {
         // Get the children of the category
-        $children = Category::where('parent_id', $category->id)->get();
+        $children = Category::where('parent_id', $category->id)
+        ->where('status', 'published')
+        ->get();
 
         // Iterate through each child and fetch its children recursively
         foreach ($children as $child) {
