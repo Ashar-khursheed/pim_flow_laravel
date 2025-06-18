@@ -84,8 +84,6 @@ use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentCont
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 
-
-
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
 Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
@@ -474,7 +472,6 @@ Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'crea
 Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
-
 
 Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
 Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
