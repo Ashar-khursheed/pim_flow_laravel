@@ -141,7 +141,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type']);
 
 		/* Apply search if provided */
 
@@ -179,6 +179,7 @@ class ProductController extends BaseController
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
+				'gen_type' => $product->gen_type,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
@@ -329,7 +330,7 @@ class ProductController extends BaseController
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
-			'Marketing' => ['name', 'description'],
+			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
@@ -1028,21 +1029,61 @@ class ProductController extends BaseController
 		}
 
 		/* Process and store FAQs */
+		// foreach ($faqs as $faqData) {
+		// 	if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+		// 		Faq::updateOrCreate(
+		// 			[
+		// 				'product_id' => $product->id,
+		// 				'question' => $faqData['question'],
+		// 			],
+		// 			[
+		// 				'answer' => $faqData['answer'],
+		// 				'category_id' => $faqData['category_id'] ?? null,
+		// 				// 'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
+		// 				'status' => 'published', // ✅ Always save as published
+
+
+		// 			]
+		// 		);
+		// 	}
+		// }
 		foreach ($faqs as $faqData) {
 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				Faq::updateOrCreate(
-					[
-						'product_id' => $product->id,
+		
+				$faq = null;
+		
+				if (!empty($faqData['id'])) {
+					// Try to find existing FAQ by ID
+					$faq = Faq::where('id', $faqData['id'])
+						->where('product_id', $product->id)
+						->first();
+				}
+		
+				if ($faq) {
+					// Update existing FAQ
+					$faq->update([
 						'question' => $faqData['question'],
-					],
-					[
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
-						'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
-					]
-				);
+						'status' => 'published',
+					]);
+				} else {
+					// Create new FAQ
+					Faq::create([
+						'product_id' => $product->id,
+						'question' => $faqData['question'],
+						'answer' => $faqData['answer'],
+						'category_id' => $faqData['category_id'] ?? null,
+						'status' => 'published',
+					]);
+				}
 			}
 		}
+		
+		
+		
+		
+		
 
 		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
