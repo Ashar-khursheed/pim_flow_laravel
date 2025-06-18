@@ -195,34 +195,39 @@ class SaveForLaterController extends Controller
      * )
      */
 
-    public function removeFromSaveForLater(Request $request)
-    {
-        // Validate the incoming request
-        $request->validate([
-            'product_id' => 'required|exists:ec_products,id', // Ensure the product exists in the product table
-        ]);
-
-        // Get the logged-in user
-        $user = Auth::id();
-
-        // Check if the product exists in the "Save for Later" list
-        $savedProduct = SaveForLater::where('user_id', $user->id)
-                                ->where('product_id', $request->product_id)
-                                ->first();
-
-        if (!$savedProduct) {
-            return response()->json([
-                'message' => 'Product not found in Save for Later.'
-            ], 404);
-        }
-
-        // Remove the product from the Save for Later table
-        $savedProduct->delete();
-
-        return response()->json([
-            'message' => 'Product has been removed from Save for Later.'
-        ], 200);
-    }
+     public function removeFromSaveForLater(Request $request)
+     {
+         // Validate the incoming request
+         $request->validate([
+             'product_id' => 'required|exists:ec_products,id',
+         ]);
+     
+         // Get the logged-in user ID
+         $userId = Auth::id();
+     
+         if (!$userId) {
+             return response()->json(['message' => 'Unauthorized'], 401);
+         }
+     
+         // Check if the product exists in the "Save for Later" list
+         $savedProduct = SaveForLater::where('user_id', $userId)
+                                     ->where('product_id', $request->product_id)
+                                     ->first();
+     
+         if (!$savedProduct) {
+             return response()->json([
+                 'message' => 'Product not found in Save for Later.'
+             ], 404);
+         }
+     
+         // Remove the product from the Save for Later table
+         $savedProduct->delete();
+     
+         return response()->json([
+             'message' => 'Product has been removed from Save for Later.'
+         ], 200);
+     }
+     
 
 
 }
