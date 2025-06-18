@@ -125,7 +125,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -179,6 +179,7 @@ class ProductController extends BaseController
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
+				'gen_type' =>$product->gen_type,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
