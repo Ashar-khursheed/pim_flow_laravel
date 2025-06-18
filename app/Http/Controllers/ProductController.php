@@ -1047,34 +1047,32 @@ class ProductController extends BaseController
 		// 	}
 		// }
 		foreach ($faqs as $faqData) {
-			// ✅ Skip if status is not 1 (only publish those)
+			// ✅ Skip if not published
 			if (($faqData['status'] ?? 0) != 1) {
 				continue;
 			}
 		
-			// ✅ Skip if empty question or answer
+			// ✅ Skip if missing essential data
 			if (empty($faqData['question']) || empty($faqData['answer'])) {
 				continue;
 			}
 		
-			// ✅ UPDATE: If faq ID is present, update that ID only
+			// ✅ UPDATE: If ID is present
 			if (!empty($faqData['id'])) {
-				$existingFaq = Faq::where('id', $faqData['id'])->first();
+				$existingFaq = Faq::find($faqData['id']); // 🔍 Find by ID only
 		
 				if ($existingFaq) {
 					$existingFaq->update([
 						'question' => $faqData['question'],
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
-						'product_id' => $product->id, // optional if you want to reassign
 						'status' => 'published',
 					]);
-		
-					continue; // ✅ Important: don't fall through to create()
+					continue;
 				}
 			}
 		
-			// ✅ CREATE: If no id, create a new one
+			// ✅ CREATE: If no ID is given or no match
 			Faq::create([
 				'product_id' => $product->id,
 				'question' => $faqData['question'],
@@ -1083,6 +1081,7 @@ class ProductController extends BaseController
 				'status' => 'published',
 			]);
 		}
+		
 		
 		
 		
