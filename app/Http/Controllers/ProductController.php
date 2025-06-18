@@ -1047,32 +1047,43 @@ class ProductController extends BaseController
 		// 	}
 		// }
 		foreach ($faqs as $faqData) {
-			// ✅ Skip if status is not 1
+			// ✅ Only process published
 			if (($faqData['status'] ?? 0) != 1) {
 				continue;
 			}
 		
-			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				// ✅ If ID exists, update
-				if (!empty($faqData['id'])) {
-					Faq::where('id', $faqData['id'])->update([
+			// ✅ Basic validation
+			if (empty($faqData['question']) || empty($faqData['answer'])) {
+				continue;
+			}
+		
+			// ✅ If editing existing FAQ
+			if (!empty($faqData['id'])) {
+				$existingFaq = Faq::where('id', $faqData['id'])
+					->where('product_id', $product->id) // 🔐 ensure it's for this product
+					->first();
+		
+				if ($existingFaq) {
+					$existingFaq->update([
 						'question' => $faqData['question'],
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
 						'status' => 'published',
 					]);
-				} else {
-					// ✅ Else insert new
-					Faq::create([
-						'product_id' => $product->id,
-						'question' => $faqData['question'],
-						'answer' => $faqData['answer'],
-						'category_id' => $faqData['category_id'] ?? null,
-						'status' => 'published',
-					]);
+					continue;
 				}
 			}
+		
+			// ✅ Only create if not updating
+			Faq::create([
+				'product_id' => $product->id,
+				'question' => $faqData['question'],
+				'answer' => $faqData['answer'],
+				'category_id' => $faqData['category_id'] ?? null,
+				'status' => 'published',
+			]);
 		}
+		
 		
 
 		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
