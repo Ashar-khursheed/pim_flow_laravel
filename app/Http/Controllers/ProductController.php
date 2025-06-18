@@ -329,7 +329,7 @@ class ProductController extends BaseController
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
-			'Marketing' => ['name', 'description'],
+			'Marketing' => ['name', 'description' , 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
