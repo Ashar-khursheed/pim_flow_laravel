@@ -117,13 +117,12 @@ class SaveForLaterController extends Controller
     
      public function showSaveForLater(Request $request)
      {
-         // Get the logged-in user ID
          $userId = Auth::id();
      
-         // Fetch all saved products for the user
+         // Fetch all saved products for the user with relations
          $savedProducts = SaveForLater::where('user_id', $userId)
-                                     ->with(['product.reviews', 'product.currency']) // Eager load relations
-                                     ->get();
+             ->with(['product.reviews', 'product.currency'])
+             ->get();
      
          if ($savedProducts->isEmpty()) {
              return response()->json([
@@ -131,21 +130,18 @@ class SaveForLaterController extends Controller
              ], 404);
          }
      
-         // Return the saved products data
+         // Filter out null products and transform data
          $productsData = $savedProducts->map(function ($item) {
+             if (!$item->product) return null;
+     
              $product = $item->product;
      
-             if (!$product) {
-                 return null; // skip if product is missing
-             }
-     
-             // Calculate the total reviews and average rating
-             $totalReviews = $product->reviews->count();
+             $totalReviews = $product->reviews ? $product->reviews->count() : 0;
              $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+     
              $product->total_reviews = $totalReviews;
              $product->avg_rating = $avgRating;
      
-             // Add currency details
              if ($product->currency) {
                  $product->currency_title = $product->currency->is_prefix_symbol
                      ? $product->currency->title . ' ' . $product->price
@@ -155,11 +151,11 @@ class SaveForLaterController extends Controller
              }
      
              return $product;
-         })->filter(); // Removes nulls
+         })->filter()->values(); // filter nulls and reindex
      
          return response()->json([
              'message' => 'Saved for Later Products retrieved successfully.',
-             'product' => $productsData->values()
+             'product' => $productsData
          ], 200);
      }
      
