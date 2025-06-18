@@ -11442,6 +11442,129 @@
                 }
             }
         },
+        "/frontend/ccavenue/payment": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Initiate CCAvenue Payment",
+                "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
+                "operationId": "dc6be3fb4d980cdcc4c92430e4876074",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "name",
+                                    "email",
+                                    "phone",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Street Name, City"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "HTML form auto-submitting to CCAvenue"
+                    }
+                }
+            }
+        },
+        "/ccavenue/response": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Handle CCAvenue Payment Response",
+                "description": "Handles the encrypted response from CCAvenue and returns payment status.",
+                "operationId": "c255141dfa48f70933768184c47e2204",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "encResp"
+                                ],
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "encrypted_response_string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment status result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456"
+                                                },
+                                                "order_status": {
+                                                    "type": "string",
+                                                    "example": "Success"
+                                                },
+                                                "tracking_id": {
+                                                    "type": "string",
+                                                    "example": "987654321"
+                                                },
+                                                "bank_ref_no": {
+                                                    "type": "string",
+                                                    "example": "REF987654"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/countries": {
             "get": {
                 "tags": [
@@ -25810,6 +25933,10 @@
             "description": "Frontend-Menu Categories"
         },
         {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
             "name": "Frontend-Countries",
             "description": "Frontend-Countries"
         },
@@ -25908,10 +26035,6 @@
         {
             "name": "Orders",
             "description": "Orders"
-        },
-        {
-            "name": "Payments",
-            "description": "Payments"
         },
         {
             "name": "Pre Onboarding Vendors",

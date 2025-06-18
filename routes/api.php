@@ -83,9 +83,7 @@ use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
 use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
-
-
-
+use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -483,3 +481,6 @@ Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'rem
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
+
+Route::post('/frontend/ccavenue/payment', [F_CcavenueController::class, 'initiatePayment']);
+Route::post('/frontend/ccavenue/response', [F_CcavenueController::class, 'handleResponse']);
