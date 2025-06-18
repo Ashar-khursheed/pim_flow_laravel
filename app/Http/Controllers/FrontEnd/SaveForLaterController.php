@@ -52,7 +52,7 @@ class SaveForLaterController extends Controller
             ]);
 
             // Get the logged-in user
-            $user = Auth::user();
+            $user = Auth::id();
 
             // Check if the product exists in the user's cart
             $cartItem = Cart::where('user_id', $user->id)
@@ -118,10 +118,9 @@ class SaveForLaterController extends Controller
     public function showSaveForLater(Request $request)
     {
         // Get the logged-in user
-        $user = Auth::user();
-
+        $userId = Auth::id();
         // Fetch all saved products for the user
-        $savedProducts = SaveForLater::where('user_id', $user->id)
+        $savedProducts = SaveForLater::where('user_id', $userId->id)
                                     ->with('product')  // Assuming `product` is the relationship
                                     ->get();
 
@@ -197,7 +196,7 @@ class SaveForLaterController extends Controller
         ]);
 
         // Get the logged-in user
-        $user = Auth::user();
+        $user = Auth::id();
 
         // Check if the product exists in the "Save for Later" list
         $savedProduct = SaveForLater::where('user_id', $user->id)
