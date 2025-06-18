@@ -1658,28 +1658,31 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
-    public function fetchAllCategories(Request $request)
-    {
-        // Fetch parent categories
-        $parentCategories = Category::where('parent_id', 0)
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Fetch child categories
-        $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Merge parent and child categories
-        $allCategories = $parentCategories->merge($childCategories);
-
-        // Add product count and adjust image URLs
-        foreach ($allCategories as $category) {
-            $category->productCount = $category->products()->count(); // Count related products
-            $category->image ; // Adjust image URL
-        }
-
-        // Return all categories with their details
-        return response()->json($allCategories);
-    }
+     public function fetchAllCategories(Request $request)
+     {
+         // Fetch published parent categories
+         $parentCategories = Category::where('parent_id', 0)
+             ->where('status', 'published') // or ->where('status', 1)
+             ->get(['id', 'name', 'slug', 'parent_id', 'image']);
+     
+         // Fetch published child categories of published parents
+         $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
+             ->where('status', 'published') // or ->where('status', 1)
+             ->get(['id', 'name', 'slug', 'parent_id', 'image']);
+     
+         // Merge parent and child categories
+         $allCategories = $parentCategories->merge($childCategories);
+     
+         // Add product count and adjust image URLs
+         foreach ($allCategories as $category) {
+             $category->productCount = $category->products()->where('status', 'published')->count(); // Only published products
+             // Adjust image URL if needed
+             // $category->image = asset('storage/' . $category->image); // example
+         }
+     
+         return response()->json($allCategories);
+     }
+     
 
     /**
      * @OA\Get(
