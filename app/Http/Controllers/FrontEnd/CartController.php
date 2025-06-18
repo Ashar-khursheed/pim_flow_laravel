@@ -236,8 +236,7 @@ class CartController extends Controller
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
 
            
-            // Generate full URLs for product images
-            $item->product->images = collect($item->product->images ?? []);
+            $item->product->images = collect(json_decode($item->product->images, true) ?? []);
 
             // Attach all applicable discounts
             $discountIds = $productDiscounts[$item->product->id] ?? [];
