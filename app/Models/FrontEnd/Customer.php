@@ -68,6 +68,11 @@ class Customer extends Authenticatable
 		return $this->hasMany(CustomerAddress::class);
 	}
 
+	public function orders()
+	{
+		return $this->hasMany(Order::class);
+	}
+
 	public function passwordResetToken()
 	{
 		return $this->morphOne(PasswordResetToken::class, 'resettable');

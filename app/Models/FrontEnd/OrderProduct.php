@@ -49,6 +49,12 @@ class OrderProduct extends Model
 		return $this->quantity - $this->shipped_quantity;
 	}
 
+	public function returnRequests()
+	{
+		return $this->hasMany(ReturnOrderProduct::class);
+	}
+
+
 	/**
 	 * Prepare a date for array / JSON serialization.
 	 *

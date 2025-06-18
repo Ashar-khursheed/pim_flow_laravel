@@ -56,6 +56,7 @@ use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
+use App\Http\Controllers\ReturnOrderProductController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -82,6 +83,7 @@ use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
 use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
 use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderProductController;
 
 
 
@@ -282,6 +284,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('categories', CategoryController::class);
 
 
+	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
+	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
+
 	Route::prefix('orders')->group(function () {
 		Route::get('/', [OrderController::class, 'index']);
 		Route::post('/', [OrderController::class, 'store']);
@@ -334,6 +339,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 
+	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
+	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class);
 
