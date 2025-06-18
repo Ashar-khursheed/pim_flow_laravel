@@ -153,7 +153,8 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency'                ])
+                    'currency' ,
+                    'categories'               ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -394,7 +395,7 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency'
+                    'currency',  'categories'
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);

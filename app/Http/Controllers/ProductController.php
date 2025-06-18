@@ -1028,21 +1028,65 @@ class ProductController extends BaseController
 		}
 
 		/* Process and store FAQs */
+		// foreach ($faqs as $faqData) {
+		// 	if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+		// 		Faq::updateOrCreate(
+		// 			[
+		// 				'product_id' => $product->id,
+		// 				'question' => $faqData['question'],
+		// 			],
+		// 			[
+		// 				'answer' => $faqData['answer'],
+		// 				'category_id' => $faqData['category_id'] ?? null,
+		// 				// 'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
+		// 				'status' => 'published', // ✅ Always save as published
+
+
+		// 			]
+		// 		);
+		// 	}
+		// }
 		foreach ($faqs as $faqData) {
-			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				Faq::updateOrCreate(
-					[
-						'product_id' => $product->id,
+			// ✅ Skip if not published
+			if (($faqData['status'] ?? 0) != 1) {
+				continue;
+			}
+		
+			// ✅ Skip if missing essential data
+			if (empty($faqData['question']) || empty($faqData['answer'])) {
+				continue;
+			}
+		
+			// ✅ UPDATE: If ID is present
+			if (!empty($faqData['id'])) {
+				$existingFaq = Faq::where('id', $faqData['id'])
+				->where('product_id', $product->id) // ✅ Prevent hijacking another product's FAQ
+				->first();		
+				if ($existingFaq) {
+					$existingFaq->update([
 						'question' => $faqData['question'],
-					],
-					[
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
-						'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
-					]
-				);
+						'status' => 'published',
+					]);
+					continue;
+				}
 			}
+		
+			// ✅ CREATE: If no ID is given or no match
+			Faq::create([
+				'product_id' => $product->id,
+				'question' => $faqData['question'],
+				'answer' => $faqData['answer'],
+				'category_id' => $faqData['category_id'] ?? null,
+				'status' => 'published',
+			]);
 		}
+		
+		
+		
+		
+		
 
 		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
