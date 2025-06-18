@@ -76,13 +76,20 @@ class TransactionLogObserver
 			$changeObj = json_encode($changes);
 		}
 		if ($changeObj) {
+			$createdBy = null;
+			if ($module === 'Product' && \App\Models\Product::$observerUserId) {
+				$createdBy = \App\Models\Product::$observerUserId;
+			} else {
+				$createdBy = auth()->id();
+			}
+
 			$log = new TransactionLog();
 			$log->module = $module;
 			$log->action = $action;
 			$log->identifier = $identifier;
 			$log->change_obj = $changeObj;
 			$log->description = $description;
-			$log->created_by = ($module === 'Product') ? \App\Models\Product::$observerUserId : (auth()->id() ?? null);
+			$log->created_by = $createdBy;
 			$log->created_at = now();
 			$log->save();
 		}
