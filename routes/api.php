@@ -82,6 +82,7 @@ use App\Http\Controllers\FrontEnd\SearchController as F_SearchController;
 use App\Http\Controllers\FrontEnd\SliderController as F_SliderController;
 use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentController;
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
+use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 
 
 
@@ -463,9 +464,10 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
-Route::post('/frontend/save-for-later', [SaveForLaterController::class, 'saveForLater']);
-Route::get('/frontend/save-for-later', [SaveForLaterController::class, 'showSaveForLater']);
-Route::delete('/frontend/save-for-later', [SaveForLaterController::class, 'removeFromSaveForLater']);
+
+Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
+Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
+Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
