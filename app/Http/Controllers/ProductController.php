@@ -1059,8 +1059,9 @@ class ProductController extends BaseController
 		
 			// ✅ UPDATE: If ID is present
 			if (!empty($faqData['id'])) {
-				$existingFaq = Faq::find($faqData['id']); // 🔍 Find by ID only
-		
+				$existingFaq = Faq::where('id', $faqData['id'])
+				->where('product_id', $product->id) // ✅ Prevent hijacking another product's FAQ
+				->first();		
 				if ($existingFaq) {
 					$existingFaq->update([
 						'question' => $faqData['question'],
