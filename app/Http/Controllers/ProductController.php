@@ -1028,24 +1028,52 @@ class ProductController extends BaseController
 		}
 
 		/* Process and store FAQs */
+		// foreach ($faqs as $faqData) {
+		// 	if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+		// 		Faq::updateOrCreate(
+		// 			[
+		// 				'product_id' => $product->id,
+		// 				'question' => $faqData['question'],
+		// 			],
+		// 			[
+		// 				'answer' => $faqData['answer'],
+		// 				'category_id' => $faqData['category_id'] ?? null,
+		// 				// 'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
+		// 				'status' => 'published', // ✅ Always save as published
+
+
+		// 			]
+		// 		);
+		// 	}
+		// }
 		foreach ($faqs as $faqData) {
+			// ✅ Skip if status is not 1
+			if (($faqData['status'] ?? 0) != 1) {
+				continue;
+			}
+		
 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				Faq::updateOrCreate(
-					[
-						'product_id' => $product->id,
+				// ✅ If ID exists, update
+				if (!empty($faqData['id'])) {
+					Faq::where('id', $faqData['id'])->update([
 						'question' => $faqData['question'],
-					],
-					[
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
-						// 'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
-						'status' => 'published', // ✅ Always save as published
-
-
-					]
-				);
+						'status' => 'published',
+					]);
+				} else {
+					// ✅ Else insert new
+					Faq::create([
+						'product_id' => $product->id,
+						'question' => $faqData['question'],
+						'answer' => $faqData['answer'],
+						'category_id' => $faqData['category_id'] ?? null,
+						'status' => 'published',
+					]);
+				}
 			}
 		}
+		
 
 		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
