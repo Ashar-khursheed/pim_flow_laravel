@@ -115,48 +115,55 @@ class SaveForLaterController extends Controller
      * )
      */
     
-    public function showSaveForLater(Request $request)
-    {
-        // Get the logged-in user
-        $userId = Auth::id();
-        // Fetch all saved products for the user
-        $savedProducts = SaveForLater::where('user_id', $userId->id)
-                                    ->with('product')  // Assuming `product` is the relationship
-                                    ->get();
-
-        if ($savedProducts->isEmpty()) {
-            return response()->json([
-                'message' => 'No products saved for later.'
-            ], 404);
-        }
-
-        // Return the saved products data
-        $productsData = $savedProducts->map(function ($item) {
-            $product = $item->product; // Get the product
-
-            // Calculate the total reviews and average rating
-            $totalReviews = $product->reviews->count();
-            $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-            $product->total_reviews = $totalReviews;
-            $product->avg_rating = $avgRating;
-
-            // Add currency details
-            if ($product->currency) {
-                $product->currency_title = $product->currency->is_prefix_symbol
-                    ? $product->currency->title
-                    : $product->price . ' ' . $product->currency->title;
-            } else {
-                $product->currency_title = $product->price; // Fallback if no currency found
-            }
-
-            return $product; // Return the modified product data
-        });
-
-        return response()->json([
-            'message' => 'Saved for Later Products retrieved successfully.',
-            'product' => $productsData
-        ], 200);
-    }
+     public function showSaveForLater(Request $request)
+     {
+         // Get the logged-in user ID
+         $userId = Auth::id();
+     
+         // Fetch all saved products for the user
+         $savedProducts = SaveForLater::where('user_id', $userId)
+                                     ->with(['product.reviews', 'product.currency']) // Eager load relations
+                                     ->get();
+     
+         if ($savedProducts->isEmpty()) {
+             return response()->json([
+                 'message' => 'No products saved for later.'
+             ], 404);
+         }
+     
+         // Return the saved products data
+         $productsData = $savedProducts->map(function ($item) {
+             $product = $item->product;
+     
+             if (!$product) {
+                 return null; // skip if product is missing
+             }
+     
+             // Calculate the total reviews and average rating
+             $totalReviews = $product->reviews->count();
+             $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
+             $product->total_reviews = $totalReviews;
+             $product->avg_rating = $avgRating;
+     
+             // Add currency details
+             if ($product->currency) {
+                 $product->currency_title = $product->currency->is_prefix_symbol
+                     ? $product->currency->title . ' ' . $product->price
+                     : $product->price . ' ' . $product->currency->title;
+             } else {
+                 $product->currency_title = $product->price;
+             }
+     
+             return $product;
+         })->filter(); // Removes nulls
+     
+         return response()->json([
+             'message' => 'Saved for Later Products retrieved successfully.',
+             'product' => $productsData->values()
+         ], 200);
+     }
+     
+     
 
     /**
      * @OA\Delete(
