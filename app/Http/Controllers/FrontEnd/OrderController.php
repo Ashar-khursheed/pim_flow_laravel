@@ -562,4 +562,64 @@ class OrderController extends BaseController
 			'data' => $order
 		], 200);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/orders/buy-it-again",
+	 *     summary="Get products from last 5 delivered orders to buy again",
+	 *     tags={"FrontEnd-Orders"},
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Products retrieved from previous delivered orders successfully"
+	 *     ),
+	 *     @OA\Response(
+	 *         response=404,
+	 *         description="No delivered orders found with products"
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function buyItAgain()
+	{
+		$customer = auth()->user();
+
+		$deliveredOrders = $customer->orders()->where('status', 'Delivered')->orderByDesc('created_at')->take(5)->with(['orderProducts.product'])->get();
+
+		$products = collect();
+
+		foreach ($deliveredOrders as $order) {
+			foreach ($order->orderProducts as $orderProduct) {
+				if ($orderProduct->product) {
+					$images = null;
+					if (is_string($orderProduct->product->images)) {
+						$images = json_decode($orderProduct->product->images, true);
+					} elseif (is_array($orderProduct->product->images)) {
+						$images = $orderProduct->product->images;
+					}
+
+					$products->push([
+						'product_id' => $orderProduct->product->id,
+						'name' => $orderProduct->product->name,
+						'quantity' => $orderProduct->quantity,
+						'unit_price' => $orderProduct->unit_price,
+						'images' => $images,
+						'brand_name' => $orderProduct->product->brand->name ?? null,
+					]);
+				}
+			}
+		}
+
+		if ($products->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No delivered orders found or no valid products available to buy again.'
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Products retrieved from your previous orders.',
+			'data' => $products
+		], 200);
+	}
 }
