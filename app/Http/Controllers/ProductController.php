@@ -1047,40 +1047,36 @@ class ProductController extends BaseController
 		// 	}
 		// }
 		foreach ($faqs as $faqData) {
-			// ✅ Skip if not published
-			if (($faqData['status'] ?? 0) != 1) {
-				continue;
-			}
+			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
 		
-			// ✅ Skip if missing essential data
-			if (empty($faqData['question']) || empty($faqData['answer'])) {
-				continue;
-			}
+				$faq = null;
 		
-			// ✅ UPDATE: If ID is present
-			if (!empty($faqData['id'])) {
-				$existingFaq = Faq::where('id', $faqData['id'])
-				->where('product_id', $product->id) // ✅ Prevent hijacking another product's FAQ
-				->first();		
-				if ($existingFaq) {
-					$existingFaq->update([
+				if (!empty($faqData['id'])) {
+					// Try to find existing FAQ by ID
+					$faq = Faq::where('id', $faqData['id'])
+						->where('product_id', $product->id)
+						->first();
+				}
+		
+				if ($faq) {
+					// Update existing FAQ
+					$faq->update([
 						'question' => $faqData['question'],
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
 						'status' => 'published',
 					]);
-					continue;
+				} else {
+					// Create new FAQ
+					Faq::create([
+						'product_id' => $product->id,
+						'question' => $faqData['question'],
+						'answer' => $faqData['answer'],
+						'category_id' => $faqData['category_id'] ?? null,
+						'status' => 'published',
+					]);
 				}
 			}
-		
-			// ✅ CREATE: If no ID is given or no match
-			Faq::create([
-				'product_id' => $product->id,
-				'question' => $faqData['question'],
-				'answer' => $faqData['answer'],
-				'category_id' => $faqData['category_id'] ?? null,
-				'status' => 'published',
-			]);
 		}
 		
 		
