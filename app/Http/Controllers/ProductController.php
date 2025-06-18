@@ -1038,8 +1038,8 @@ class ProductController extends BaseController
 					[
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
-						'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
-					]
+						'status' => 'published', // ✅ Always save as published
+						]
 				);
 			}
 		}
