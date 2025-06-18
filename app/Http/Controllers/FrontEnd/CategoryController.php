@@ -1582,34 +1582,57 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
+    // public function fetchCategories(Request $request)
+    // {
+    //     // Limit to 14 categories
+    //     $limit = 13;
+
+    //     // Fetch parent categories
+    //     $parentCategories = Category::where('parent_id', 0)
+    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
+
+    //     // Fetch child categories
+    //     $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
+    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
+
+    //     // Merge parent and child categories
+    //     $allCategories = $parentCategories->merge($childCategories);
+
+    //     // Limit the combined result to 14 categories
+    //     $limitedCategories = $allCategories->take($limit);
+
+    //     // Add product count and adjust image URLs
+    //     foreach ($limitedCategories as $category) {
+    //         $category->productCount = $category->products()->count(); // Count related products
+    //         $category->image; // Adjust image URL
+    //     }
+
+    //     // Return categories with their details
+    //     return response()->json($limitedCategories);
+    // }
     public function fetchCategories(Request $request)
     {
-        // Limit to 14 categories
         $limit = 13;
 
-        // Fetch parent categories
-        $parentCategories = Category::where('parent_id', 0)
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
+        // Get only published categories that have no children (leaf categories)
+        $leafCategories = Category::where('status', 'published')
+            ->whereDoesntHave('children') // ✅ Only categories without children
+            ->get(['id', 'name', 'slug', 'parent_id', 'image']);
 
-        // Fetch child categories
-        $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Merge parent and child categories
-        $allCategories = $parentCategories->merge($childCategories);
-
-        // Limit the combined result to 14 categories
-        $limitedCategories = $allCategories->take($limit);
+        // Limit the result
+        $limitedCategories = $leafCategories->take($limit);
 
         // Add product count and adjust image URLs
         foreach ($limitedCategories as $category) {
-            $category->productCount = $category->products()->count(); // Count related products
-            $category->image; // Adjust image URL
+            $category->productCount = $category->products()
+                ->where('status', 'published') // Optional: count only published products
+                ->count();
+            $category->image; // To adjust/resolve image URL
         }
 
-        // Return categories with their details
         return response()->json($limitedCategories);
     }
+
 
     /**
      * @OA\Get(
