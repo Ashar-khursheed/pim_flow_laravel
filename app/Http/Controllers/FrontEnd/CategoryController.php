@@ -1771,7 +1771,7 @@ use Illuminate\Support\Facades\Auth;
         $categories = Category::whereHas('products', function ($query) {
             $query->where('is_featured', 1)
                   ->where('status', 'published');
-        }, '>=', 10)        
+        }, '>=', 5)        
         ->whereHas('parent.parent') // Ensures only third-level child categories
         ->with(['products' => function ($query) {
             $query->where('is_featured', 1)
