@@ -814,7 +814,6 @@ class ProductController extends Controller
         ]);
     }
 
-
     /**
      * @OA\Get(
      *     path="/api/frontend/brands/{id}/sale-products",
@@ -1100,12 +1099,14 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
 
-        $products = Product::whereHas('categories', function ($query) use ($allCategoryIds) {
-                $query->whereIn('categories.id', $allCategoryIds);
-            })
-            ->inRandomOrder()
-            ->take(15)
-            ->get();
+        $products = Product::where('status', 'published') // only published products
+        ->whereHas('categories', function ($query) use ($allCategoryIds) {
+            $query->whereIn('categories.id', $allCategoryIds);
+        })
+        ->inRandomOrder()
+        ->take(15)
+        ->get();
+
 
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found in this category or its children'], 404);
@@ -1225,12 +1226,14 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-        $products = Product::whereHas('categories', function ($query) use ($allCategoryIds) {
-                $query->whereIn('categories.id', $allCategoryIds);
-            })
-            ->inRandomOrder()
-            ->take(15)
-            ->get();
+        $products = Product::where('status', 'published') // only published products
+        ->whereHas('categories', function ($query) use ($allCategoryIds) {
+            $query->whereIn('categories.id', $allCategoryIds);
+        })
+        ->inRandomOrder()
+        ->take(15)
+        ->get();
+    
 
         if ($products->isEmpty()) {
             return response()->json(['message' => 'No products found in this category or its children'], 404);

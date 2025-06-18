@@ -84,7 +84,6 @@ class CategoryMenuController extends Controller
         $children = Category::where('parent_id', $category->id)
         ->where('status', 'published')
         ->get();
-;
 
         // Iterate through each child and fetch its children recursively
         foreach ($children as $child) {
@@ -105,7 +104,7 @@ class CategoryMenuController extends Controller
         return $category->only(['id', 'name', 'slug', 'parent_id', 'image', 'children']);
     }
 
-    
+
 
 
     /**

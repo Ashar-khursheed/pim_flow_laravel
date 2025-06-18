@@ -125,7 +125,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -1049,16 +1049,16 @@ class ProductController extends BaseController
 		// }
 		foreach ($faqs as $faqData) {
 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-		
+
 				$faq = null;
-		
+
 				if (!empty($faqData['id'])) {
 					// Try to find existing FAQ by ID
 					$faq = Faq::where('id', $faqData['id'])
 						->where('product_id', $product->id)
 						->first();
 				}
-		
+
 				if ($faq) {
 					// Update existing FAQ
 					$faq->update([
@@ -1079,11 +1079,11 @@ class ProductController extends BaseController
 				}
 			}
 		}
-		
-		
-		
-		
-		
+
+
+
+
+
 
 		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
 
