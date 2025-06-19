@@ -41,36 +41,74 @@ class CcavenueController extends Controller
      *     )
      * )
      */
+    // public function initiatePayment(Request $request)
+    // {
+    //     $orderId = uniqid();
+
+    //     $postData = [
+    //         "merchant_id" => $this->merchantId,
+    //         "order_id" => $orderId,
+    //         "currency" => "AED",
+    //         "amount" => $request->amount,
+    //         "redirect_url" => $this->redirectUrl,
+    //         "cancel_url" => $this->redirectUrl,
+    //         "language" => "EN",
+    //         "billing_name" => $request->name ?? 'Test User',
+    //         "billing_email" => $request->email ?? 'test@example.com',
+    //         "billing_tel" => $request->phone ?? '9999999999',
+    //         "billing_address" => $request->address ?? 'Test Address',
+    //         "billing_city" => "Mumbai",
+    //         "billing_state" => "MH",
+    //         "billing_zip" => "400001",
+    //         "billing_country" => "India",
+    //     ];
+
+    //     $merchantData = http_build_query($postData);
+    //     $encryptedData = CcavenueHelper::encrypt($merchantData, $this->workingKey);
+
+    //     return view('ccavenue.payment', [
+    //         'encRequest' => $encryptedData,
+    //         'accessCode' => $this->accessCode,
+    //     ]);
+    // }
+
     public function initiatePayment(Request $request)
-    {
-        $orderId = uniqid();
+{
+    $orderId = uniqid();
 
-        $postData = [
-            "merchant_id" => $this->merchantId,
-            "order_id" => $orderId,
-            "currency" => "AED",
-            "amount" => $request->amount,
-            "redirect_url" => $this->redirectUrl,
-            "cancel_url" => $this->redirectUrl,
-            "language" => "EN",
-            "billing_name" => $request->name ?? 'Test User',
-            "billing_email" => $request->email ?? 'test@example.com',
-            "billing_tel" => $request->phone ?? '9999999999',
-            "billing_address" => $request->address ?? 'Test Address',
-            "billing_city" => "Mumbai",
-            "billing_state" => "MH",
-            "billing_zip" => "400001",
-            "billing_country" => "India",
-        ];
+    $postData = [
+        "merchant_id" => env('CCAVENUE_MERCHANT_ID'),
+        "order_id" => $orderId,
+        "currency" => "AED",
+        "amount" => $request->amount,
+        "redirect_url" => env('CCAVENUE_REDIRECT_URL'),
+        "cancel_url" => env('CCAVENUE_CANCEL_URL'),
+        "language" => "EN",
 
-        $merchantData = http_build_query($postData);
-        $encryptedData = CcavenueHelper::encrypt($merchantData, $this->workingKey);
+        // Billing info
+        "billing_name" => $request->name ?? 'Test User',
+        "billing_email" => $request->email ?? 'test@example.com',
+        "billing_tel" => $request->phone ?? '9999999999',
+        "billing_address" => $request->address ?? 'Test Address',
+        "billing_city" => "Dubai", // UAE city (replacing Mumbai)
+        "billing_state" => "DU",
+        "billing_zip" => "000000",
+        "billing_country" => "UAE",
+    ];
 
-        return view('ccavenue.payment', [
-            'encRequest' => $encryptedData,
-            'accessCode' => $this->accessCode,
-        ]);
-    }
+    // Convert to query string
+    $merchantData = http_build_query($postData);
+
+    // Encrypt the request
+    $encryptedData = CcavenueHelper::encrypt($merchantData, env('CCAVENUE_WORKING_KEY'));
+
+    // Return the form view
+    return view('ccavenue.payment', [
+        'encRequest' => $encryptedData,
+        'accessCode' => env('CCAVENUE_ACCESS_CODE'),
+    ]);
+}
+
 
    /**
      * @OA\Post(
