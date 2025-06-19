@@ -156,7 +156,7 @@ class ProductController extends Controller
                     'currency' ,
                     'categories.slugable',
                     'categories.parent.slugable',
-                    'categories.parent.parent.slugable'           ])
+                    'categories.childrenRecursive.slug'      ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -457,9 +457,9 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',   'categories.slugable',
+                    'currency',    'categories.slugable',
                     'categories.parent.slugable',
-                    'categories.parent.parent.slugable' // optional: to support deeper nesting
+                    'categories.childrenRecursive.slug' // 👈 Add this
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
