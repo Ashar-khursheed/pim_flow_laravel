@@ -333,13 +333,28 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                        $product->category_list = $product->categories->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                            ];
-                        });
+                        // $product->category_list = $product->categories->map(function ($category) {
+                        //     return [
+                        //         'id' => $category->id,
+                        //         'name' => $category->name,
+                        //         'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                        //     ];
+                        // });
+                        $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
+
+                        $product->category_list = $product->categories->flatMap(function ($category) {
+                            // Get all ancestors + self
+                            $allCategories = $category->all_parents->push($category);
+
+                            // Map each into desired format
+                            return $allCategories->map(function ($cat) {
+                                return [
+                                    'id' => $cat->id,
+                                    'name' => $cat->name,
+                                    'slug' => optional($cat->slugable)->key,
+                                ];
+                            });
+                        })->unique('id')->values(); // Remove duplicates & reindex
 
                         return $product;
                     });
@@ -612,10 +627,24 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                    
+                        $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
+
+                        $product->category_list = $product->categories->flatMap(function ($category) {
+                            // Get all ancestors + self
+                            $allCategories = $category->all_parents->push($category);
+
+                            // Map each into desired format
+                            return $allCategories->map(function ($cat) {
+                                return [
+                                    'id' => $cat->id,
+                                    'name' => $cat->name,
+                                    'slug' => optional($cat->slugable)->key,
+                                ];
+                            });
+                        })->unique('id')->values(); // Remove duplicates & reindex
+
                         return $product;
                     });
-                    
 
                     return response()->json([
                         'success' => true,

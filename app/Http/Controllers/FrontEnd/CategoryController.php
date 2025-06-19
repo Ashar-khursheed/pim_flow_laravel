@@ -1453,7 +1453,7 @@ use Illuminate\Support\Facades\Auth;
                                     return [
                                         'min' => $min,
                                         'max' => $max,
-                                        'product_count' => $productCount,
+                                        // 'product_count' => $productCount,
                                         'display_value' => $min == $max ? $min : "$min - $max",
                                     ];
                                 })->filter(function($range) {
@@ -1485,7 +1485,7 @@ use Illuminate\Support\Facades\Auth;
                                     if ($productCount > 0) {
                                         $valueCountMap[] = [
                                             'value' => $value,
-                                            'product_count' => $productCount,
+                                            // 'product_count' => $productCount,
                                             'display_value' => $value . ' (' . $productCount . ')'
                                         ];
                                     }
@@ -1523,7 +1523,7 @@ use Illuminate\Support\Facades\Auth;
             return [
                 'id' => $brand->id,
                 'name' => $brand->name,
-                'product_count' => $productCount,
+                // 'product_count' => $productCount,
                 'display_name' => $brand->name . ' (' . $productCount . ')'
             ];
         })->filter(function($brand) {
