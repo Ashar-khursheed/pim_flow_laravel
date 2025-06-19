@@ -1005,28 +1005,28 @@ class ProductController extends BaseController
 		$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
 		/* Check if faqs is a string and decode it properly */
-			if (is_string($faqs)) {
-				$decoded = json_decode($faqs, true);
+		if (is_string($faqs)) {
+			$decoded = json_decode($faqs, true);
 
-				/* Handle invalid JSON */
-				if (json_last_error() !== JSON_ERROR_NONE) {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid JSON format for faqs.'
-					], 400);
-				}
-
-				/* Ensure we extract faqs correctly */
-   				 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-				}
-
-			/* Validate that faqs is an array */
-			if (!is_array($faqs)) {
+			/* Handle invalid JSON */
+			if (json_last_error() !== JSON_ERROR_NONE) {
 				return response()->json([
 					'success' => false,
-					'message' => 'The field faqs must be a valid JSON array.'
+					'message' => 'Invalid JSON format for faqs.'
 				], 400);
 			}
+
+			/* Ensure we extract faqs correctly */
+				 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+			}
+
+		/* Validate that faqs is an array */
+		if (!is_array($faqs)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The field faqs must be a valid JSON array.'
+			], 400);
+		}
 
 		/* Get all existing FAQ IDs for this product */
 		$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
