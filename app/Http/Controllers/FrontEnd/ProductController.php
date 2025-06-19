@@ -156,7 +156,7 @@ class ProductController extends Controller
                     'currency' ,
                     'categories.slugable',
                     'categories.parent.slugable',
-                    'categories.childrenRecursive.slug'      ])
+                    'categories.children.slugable'   ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -317,30 +317,31 @@ class ProductController extends Controller
                      $product->category_list = $product->categories->flatMap(function ($category) {
                         $all = collect();
                     
-                        // 1. All parent categories (up the tree)
+                        // 1. Add ancestors (parents, grandparents, etc.)
                         $current = $category;
                         while ($current->parent) {
                             $current = $current->parent;
-                            $all->prepend($current);
+                            $all->prepend($current); // add to the beginning so it's in correct order
                         }
                     
-                        // 2. Current category
+                        // 2. Add the current category
                         $all->push($category);
                     
-                        // 3. All children recursively (down the tree)
-                        $traverseChildren = function ($category) use (&$traverseChildren) {
-                            $allChildren = collect();
-                            foreach ($category->childrenRecursive as $child) {
-                                $allChildren->push($child);
-                                $allChildren = $allChildren->merge($traverseChildren($child));
+                        // 3. Add all recursive children (children, grandchildren, etc.)
+                        $traverseChildren = function ($cat) use (&$traverseChildren) {
+                            $descendants = collect();
+                            foreach ($cat->children as $child) {
+                                $descendants->push($child);
+                                $descendants = $descendants->merge($traverseChildren($child));
                             }
-                            return $allChildren;
+                            return $descendants;
                         };
                     
-                        if ($category->relationLoaded('childrenRecursive')) {
+                        if ($category->relationLoaded('children')) {
                             $all = $all->merge($traverseChildren($category));
                         }
                     
+                        // 4. Map the result
                         return $all->map(function ($cat) {
                             return [
                                 'id' => $cat->id,
@@ -349,6 +350,7 @@ class ProductController extends Controller
                             ];
                         });
                     })->unique('id')->values();
+                    
                     
                     
 
@@ -471,9 +473,9 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',    'categories.slugable',
+                    'currency',      'categories.slugable',
                     'categories.parent.slugable',
-                    'categories.childrenRecursive.slug' // 👈 Add this
+                    'categories.children.slugable' // ✅ this is needed
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -629,30 +631,31 @@ class ProductController extends Controller
                          $product->category_list = $product->categories->flatMap(function ($category) {
                             $all = collect();
                         
-                            // 1. All parent categories (up the tree)
+                            // 1. Add ancestors (parents, grandparents, etc.)
                             $current = $category;
                             while ($current->parent) {
                                 $current = $current->parent;
-                                $all->prepend($current);
+                                $all->prepend($current); // add to the beginning so it's in correct order
                             }
                         
-                            // 2. Current category
+                            // 2. Add the current category
                             $all->push($category);
                         
-                            // 3. All children recursively (down the tree)
-                            $traverseChildren = function ($category) use (&$traverseChildren) {
-                                $allChildren = collect();
-                                foreach ($category->childrenRecursive as $child) {
-                                    $allChildren->push($child);
-                                    $allChildren = $allChildren->merge($traverseChildren($child));
+                            // 3. Add all recursive children (children, grandchildren, etc.)
+                            $traverseChildren = function ($cat) use (&$traverseChildren) {
+                                $descendants = collect();
+                                foreach ($cat->children as $child) {
+                                    $descendants->push($child);
+                                    $descendants = $descendants->merge($traverseChildren($child));
                                 }
-                                return $allChildren;
+                                return $descendants;
                             };
                         
-                            if ($category->relationLoaded('childrenRecursive')) {
+                            if ($category->relationLoaded('children')) {
                                 $all = $all->merge($traverseChildren($category));
                             }
                         
+                            // 4. Map the result
                             return $all->map(function ($cat) {
                                 return [
                                     'id' => $cat->id,
@@ -661,6 +664,7 @@ class ProductController extends Controller
                                 ];
                             });
                         })->unique('id')->values();
+                        
     
                         return $product;
                     });
