@@ -542,53 +542,54 @@ class BrandController extends Controller
     //     ]);
     // }.
     public function getCategories($id)
-{
-    // Load brand with published products and their published categories
-    $brand = Brand::with([
-        'products' => function ($query) {
-            $query->where('status', 'published')
-                  ->whereHas('categories', fn($q) => $q->where('status', 'published'));
-        },
-        'products.categories' => function ($query) {
-            $query->where('status', 'published');
-        }
-    ])->findOrFail($id);
-
-    $categoryCounts = [];
-
-    foreach ($brand->products as $product) {
-        foreach ($product->categories as $category) {
-            // Check if the category is a leaf (has no children)
-            $hasChildren = Category::where('parent_id', $category->id)
-                                   ->where('status', 'published')
-                                   ->exists();
-
-            if ($hasChildren) {
-                continue; // Skip non-leaf categories
+    {
+        // Load brand with only published products and their published categories
+        $brand = Brand::with([
+            'products' => function ($query) {
+                $query->where('status', 'published')
+                      ->whereHas('categories', fn($q) => $q->where('status', 'published'));
+            },
+            'products.categories' => function ($query) {
+                $query->where('status', 'published');
             }
-
-            if (!isset($categoryCounts[$category->id])) {
-                $categoryCounts[$category->id] = [
-                    'id' => $category->id,
-                    'name' => $category->name,
-                    'image' => $category->image,
-                    'product_count' => 0
-                ];
+        ])->findOrFail($id);
+    
+        $categoryCounts = [];
+    
+        foreach ($brand->products as $product) {
+            foreach ($product->categories as $category) {
+                // Check if this category is a published leaf
+                $hasPublishedChildren = Category::where('parent_id', $category->id)
+                                                ->where('status', 'published')
+                                                ->exists();
+    
+                if ($hasPublishedChildren) {
+                    continue; // Skip non-leaf categories
+                }
+    
+                if (!isset($categoryCounts[$category->id])) {
+                    $categoryCounts[$category->id] = [
+                        'id' => $category->id,
+                        'name' => $category->name,
+                        'image' => $category->image,
+                        'product_count' => 0
+                    ];
+                }
+    
+                $categoryCounts[$category->id]['product_count']++;
             }
-
-            $categoryCounts[$category->id]['product_count']++;
         }
+    
+        // Keep response structure same
+        $categories = array_values($categoryCounts);
+    
+        return response()->json([
+            'success' => true,
+            'brand_id' => $id,
+            'categories' => $categories
+        ]);
     }
-
-    $categories = array_values($categoryCounts);
-
-    return response()->json([
-        'success' => true,
-        'brand_id' => $id,
-        'categories' => $categories
-    ]);
-}
-
+    
 
 
     
