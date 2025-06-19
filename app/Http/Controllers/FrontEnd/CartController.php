@@ -235,18 +235,7 @@ class CartController extends Controller
         $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
 
-            // Base URLs for generating image links
-            $item->product->images = collect($item->product->images ?? []);
-            // Add full URL for the main product image
-            if ($item->product->image) {
-                if (!Str::startsWith($item->product->image, ['http://', 'https://'])) {
-                    $imagePath = 'products/' . $item->product->image;
-                    $url = Storage::exists($imagePath) ? $baseProductsUrl : $baseStorageUrl;
-                    $item->product->image = $url . '/' . $item->product->image;
-                }
-            } else {
-                $item->product->image = null;
-            }
+            $item->product->images = collect(json_decode($item->product->images, true) ?? []);
 
             // Attach all applicable discounts
             $discountIds = $productDiscounts[$item->product->id] ?? [];
@@ -290,13 +279,13 @@ class CartController extends Controller
     public function clearCart(Request $request)
     {
         $deleted = 0; // Track rows deleted
-        
+
         if (Auth::check()) {
             $deleted = Cart::where('user_id', Auth::id())->delete();
         } else {
             $deleted = Cart::where('session_id', $request->session()->getId())->delete();
         }
-    
+
         if ($deleted > 0) {
             return response()->json([
                 'success' => true,
@@ -309,7 +298,7 @@ class CartController extends Controller
             ]);
         }
     }
-    
+
     /**
      * @OA\Delete(
      *     path="/api/frontend/cart/product/{productId}",
@@ -419,10 +408,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-    
+
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
-    
+
         if (Auth::check()) {
             $userId = Auth::id();
             $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
@@ -430,11 +419,11 @@ class CartController extends Controller
             $sessionId = $request->session()->getId();
             $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
         }
-    
+
         if ($cartItem) {
             $cartItem->quantity = $quantity;
             $cartItem->save();
-    
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -449,7 +438,7 @@ class CartController extends Controller
                 ],
             ]);
         }
-    
+
         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
     }
 
@@ -527,10 +516,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-    
+
         $productId = $request->input('product_id');
         $quantityToDecrease = $request->input('quantity');
-    
+
         // Determine if the user is logged in and retrieve the cart item
         $cartItem = null;
         if (Auth::check()) {
@@ -544,7 +533,7 @@ class CartController extends Controller
                 ->where('product_id', $productId)
                 ->first();
         }
-    
+
         // Check if the cart item exists
         if (!$cartItem) {
             Log::info('Cart item not found for product', [
@@ -554,16 +543,16 @@ class CartController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
         }
-    
+
         // Decrease the quantity and check if it should be removed
         $cartItem->quantity -= $quantityToDecrease;
-    
+
         if ($cartItem->quantity <= 0) {
             $cartItem->delete();
             return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
         } else {
             $cartItem->save();
-    
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -622,7 +611,7 @@ class CartController extends Controller
             'data' => $cartItems,
         ]);
     }
-    
+
     /**
      * @OA\Delete(
      *     path="/api/frontend/cart/guest/clear",
@@ -642,11 +631,11 @@ class CartController extends Controller
     {
         // Delete all items from the cart for a guest user (based on session ID)
         Cart::where('session_id', $request->session()->getId())->delete();
-    
+
         return response()->json(['success' => true]);
     }
 
-    
+
     /**
      * Add multiple products to the cart.
      *
@@ -839,7 +828,7 @@ class CartController extends Controller
         $totalWithTax = $subtotal + $tax;
 
 
-     
+
         // Return the cart summary with currency title
         return response()->json([
             'subtotal' => $subtotal,
@@ -901,10 +890,10 @@ class CartController extends Controller
     {
         // Get the session ID from the current request
         $sessionId = $request->session()->getId();
-    
+
         // Get the total quantity of items for the guest session
         $totalQuantity = Cart::where('session_id', $sessionId)->sum('quantity');
-    
+
         return response()->json(['total' => $totalQuantity]);
     }
 
