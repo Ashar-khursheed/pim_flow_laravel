@@ -42,4 +42,5 @@ class ProductAttributes extends Model
         return $this->belongsTo(MeasurementUnit::class, 'measurement_unit_id');
     }
 
+    
 }

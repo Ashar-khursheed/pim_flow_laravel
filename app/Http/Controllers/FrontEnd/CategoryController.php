@@ -1582,34 +1582,87 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
+    // public function fetchCategories(Request $request)
+    // {
+    //     // Limit to 14 categories
+    //     $limit = 13;
+
+    //     // Fetch parent categories
+    //     $parentCategories = Category::where('parent_id', 0)
+    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
+
+    //     // Fetch child categories
+    //     $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
+    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
+
+    //     // Merge parent and child categories
+    //     $allCategories = $parentCategories->merge($childCategories);
+
+    //     // Limit the combined result to 14 categories
+    //     $limitedCategories = $allCategories->take($limit);
+
+    //     // Add product count and adjust image URLs
+    //     foreach ($limitedCategories as $category) {
+    //         $category->productCount = $category->products()->count(); // Count related products
+    //         $category->image; // Adjust image URL
+    //     }
+
+    //     // Return categories with their details
+    //     return response()->json($limitedCategories);
+    // }
     public function fetchCategories(Request $request)
     {
-        // Limit to 14 categories
         $limit = 13;
-
-        // Fetch parent categories
-        $parentCategories = Category::where('parent_id', 0)
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Fetch child categories
-        $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Merge parent and child categories
-        $allCategories = $parentCategories->merge($childCategories);
-
-        // Limit the combined result to 14 categories
-        $limitedCategories = $allCategories->take($limit);
-
-        // Add product count and adjust image URLs
+    
+        // Get only published leaf categories (no children)
+        $leafCategories = Category::where('status', 'published')
+            ->whereDoesntHave('children')
+            ->get(['id', 'name', 'slug', 'parent_id', 'image']);
+    
+        // Limit results
+        $limitedCategories = $leafCategories->take($limit);
+    
         foreach ($limitedCategories as $category) {
-            $category->productCount = $category->products()->count(); // Count related products
-            $category->image; // Adjust image URL
+            // Add product count (published products only)
+            $category->productCount = $category->products()
+                ->where('status', 'published')
+                ->count();
+    
+            // Optional: adjust image if needed
+            // $category->image = asset('storage/' . $category->image);
+    
+            // Build hierarchy
+            $hierarchy = [];
+            $current = $category;
+    
+            // Walk up the tree to get parents
+            while ($current && $current->parent_id) {
+                $parent = Category::where('id', $current->parent_id)
+                    ->where('status', 'published')
+                    ->first(['id', 'name', 'slug', 'parent_id']);
+    
+                if ($parent) {
+                    $hierarchy[] = [
+                        'id' => $parent->id,
+                        'name' => $parent->name,
+                        'slug' => $parent->slug,
+                    ];
+                    $current = $parent;
+                } else {
+                    break;
+                }
+            }
+    
+            // Reverse so it becomes [grandparent → parent]
+            $hierarchy = array_reverse($hierarchy);
+    
+            // Add hierarchy to the category
+            $category->hierarchy = $hierarchy;
         }
-
-        // Return categories with their details
+    
         return response()->json($limitedCategories);
     }
+    
 
     /**
      * @OA\Get(
@@ -1635,28 +1688,59 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
-    public function fetchAllCategories(Request $request)
-    {
-        // Fetch parent categories
-        $parentCategories = Category::where('parent_id', 0)
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Fetch child categories
-        $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
-            ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-        // Merge parent and child categories
-        $allCategories = $parentCategories->merge($childCategories);
-
-        // Add product count and adjust image URLs
-        foreach ($allCategories as $category) {
-            $category->productCount = $category->products()->count(); // Count related products
-            $category->image ; // Adjust image URL
-        }
-
-        // Return all categories with their details
-        return response()->json($allCategories);
-    }
+     public function fetchAllCategories(Request $request)
+     {
+         // Fetch published parent categories
+         $parentCategories = Category::where('parent_id', 0)
+             ->where('status', 'published')
+             ->get(['id', 'name', 'slug', 'parent_id', 'image']);
+     
+         // Fetch published child categories of published parents
+         $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
+             ->where('status', 'published')
+             ->get(['id', 'name', 'slug', 'parent_id', 'image']);
+     
+         // Merge parent and child categories
+         $allCategories = $parentCategories->merge($childCategories);
+     
+         foreach ($allCategories as $category) {
+             // Count only published products
+             $category->productCount = $category->products()
+                 ->where('status', 'published')
+                 ->count();
+     
+             // Optional: adjust image URL
+             // $category->image = asset('storage/' . $category->image);
+     
+             // Build full parent hierarchy
+             $hierarchy = [];
+             $current = $category;
+     
+             while ($current && $current->parent_id) {
+                 $parent = Category::where('id', $current->parent_id)
+                     ->where('status', 'published')
+                     ->first(['id', 'name', 'slug', 'parent_id']);
+     
+                 if ($parent) {
+                     $hierarchy[] = [
+                         'id' => $parent->id,
+                         'name' => $parent->name,
+                         'slug' => $parent->slug,
+                     ];
+                     $current = $parent;
+                 } else {
+                     break;
+                 }
+             }
+     
+             // Reverse to get hierarchy from root to parent
+             $category->hierarchy = array_reverse($hierarchy);
+         }
+     
+         return response()->json($allCategories);
+     }
+     
+     
 
     /**
      * @OA\Get(

@@ -11442,6 +11442,129 @@
                 }
             }
         },
+        "/frontend/ccavenue/payment": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Initiate CCAvenue Payment",
+                "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
+                "operationId": "dc6be3fb4d980cdcc4c92430e4876074",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount",
+                                    "name",
+                                    "email",
+                                    "phone",
+                                    "address"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 500
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "123 Street Name, City"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "HTML form auto-submitting to CCAvenue"
+                    }
+                }
+            }
+        },
+        "/ccavenue/response": {
+            "post": {
+                "tags": [
+                    "Payments"
+                ],
+                "summary": "Handle CCAvenue Payment Response",
+                "description": "Handles the encrypted response from CCAvenue and returns payment status.",
+                "operationId": "c255141dfa48f70933768184c47e2204",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "required": [
+                                    "encResp"
+                                ],
+                                "properties": {
+                                    "encResp": {
+                                        "type": "string",
+                                        "example": "encrypted_response_string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment status result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456"
+                                                },
+                                                "order_status": {
+                                                    "type": "string",
+                                                    "example": "Success"
+                                                },
+                                                "tracking_id": {
+                                                    "type": "string",
+                                                    "example": "987654321"
+                                                },
+                                                "bank_ref_no": {
+                                                    "type": "string",
+                                                    "example": "REF987654"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/countries": {
             "get": {
                 "tags": [
@@ -13752,6 +13875,169 @@
                     },
                     "404": {
                         "description": "Not Found - No products found"
+                    }
+                }
+            }
+        },
+        "/api/frontend/product-questions": {
+            "post": {
+                "tags": [
+                    "Frontend-Product Questions"
+                ],
+                "summary": "Submit a question for a product",
+                "operationId": "ac255289099f27972eeb07d600ae8f2c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "question"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "question": {
+                                        "type": "string",
+                                        "example": "Is this dishwasher safe?"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Question submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Question submitted successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "question": {
+                                                    "type": "string",
+                                                    "example": "Is this dishwasher safe?"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/product-questions/{product_id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product Questions"
+                ],
+                "summary": "Get all questions for a product",
+                "operationId": "31796bb2112bab67cb46d958192f790b",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of product questions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "customer_id": {
+                                                "type": "integer",
+                                                "example": 45
+                                            },
+                                            "product_id": {
+                                                "type": "integer",
+                                                "example": 123
+                                            },
+                                            "question": {
+                                                "type": "string",
+                                                "example": "Is this dishwasher safe?"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "customer": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 45
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -20333,6 +20619,135 @@
                 ]
             }
         },
+        "/api/product-questions/{product_id}": {
+            "get": {
+                "tags": [
+                    "Product Questions"
+                ],
+                "summary": "Get all questions for a product",
+                "operationId": "5ea42efaff56092239c2942114bd8b25",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of product questions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "customer_id": {
+                                                "type": "integer",
+                                                "example": 45
+                                            },
+                                            "product_id": {
+                                                "type": "integer",
+                                                "example": 123
+                                            },
+                                            "question": {
+                                                "type": "string",
+                                                "example": "Is this dishwasher safe?"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-06-19T12:34:56Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-06-19T12:34:56Z"
+                                            },
+                                            "customer": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 45
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "john@example.com"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "product": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electric Kettle"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "KETTLE-001"
+                                                    },
+                                                    "brand": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Philips"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "vendor": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 22
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Vendor Store"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-suppliers": {
             "get": {
                 "tags": [
@@ -26032,6 +26447,10 @@
             "description": "Frontend-Menu Categories"
         },
         {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
             "name": "Frontend-Countries",
             "description": "Frontend-Countries"
         },
@@ -26074,6 +26493,10 @@
         {
             "name": "Frontend-Product",
             "description": "Frontend-Product"
+        },
+        {
+            "name": "Frontend-Product Questions",
+            "description": "Frontend-Product Questions"
         },
         {
             "name": "Frontend-Product You May Like",
@@ -26132,10 +26555,6 @@
             "description": "Orders"
         },
         {
-            "name": "Payments",
-            "description": "Payments"
-        },
-        {
             "name": "Pre Onboarding Vendors",
             "description": "Pre Onboarding Vendors"
         },
@@ -26146,6 +26565,10 @@
         {
             "name": "Product Groups",
             "description": "Product Groups"
+        },
+        {
+            "name": "Product Questions",
+            "description": "Product Questions"
         },
         {
             "name": "Product Suppliers",

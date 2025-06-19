@@ -55,6 +55,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerAddressController;
+use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 
@@ -85,6 +86,8 @@ use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentCont
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
 use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderProductController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
+use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
+use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -123,7 +126,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
 
-
+    Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
 	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
@@ -335,8 +338,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
-
-
+	Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
@@ -430,7 +432,7 @@ Route::get('/frontend/product-reviews', [F_UserReviewController::class, 'getProd
 Route::get('/frontend/products/{product_id}/you-may-like-guest', [F_ProductYouMayLikeController::class, 'getProductsYouMayLikeGuest']);
 
 Route::get('/frontend/product/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProduct']);
-Route::get('/product/{id}/nutrition-facts', [F_ProductAttributeController::class, 'getNutritionFactsByProduct']);
+Route::get('frontend/product/{id}/nutrition-facts', [F_ProductAttributeController::class, 'getNutritionFactsByProduct']);
 Route::get('/frontend/product/{productId}/nutrition-facts1', [F_ProductAttributeController::class, 'getNutritionFactsByProduct1']);
 Route::get('/frontend/product-group/{productId}/attributes', [F_ProductAttributeController::class, 'getAttributesByProductWithGroup']);
 
@@ -486,3 +488,6 @@ Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'rem
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
+
+Route::post('/frontend/ccavenue/payment', [F_CcavenueController::class, 'initiatePayment']);
+Route::post('/frontend/ccavenue/response', [F_CcavenueController::class, 'handleResponse']);

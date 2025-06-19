@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
 
@@ -511,15 +512,62 @@ class BrandController extends Controller
      *     )
      * )
      */
+    // public function getCategories($id)
+    // {
+    //     $brand = Brand::with(['products.categories'])->findOrFail($id);
+    
+    //     // Count the number of products per category for this brand
+    //     $categoryCounts = [];
+    
+    //     foreach ($brand->products as $product) {
+    //         foreach ($product->categories as $category) {
+    //             if (!isset($categoryCounts[$category->id])) {
+    //                 $categoryCounts[$category->id] = [
+    //                     'id' => $category->id,
+    //                     'name' => $category->name,
+    //                     'image' => $category->image,
+    //                     'product_count' => 0
+    //                 ];
+    //             }
+    //             $categoryCounts[$category->id]['product_count']++;
+    //         }
+    //     }
+    
+    //     // Reindex array and return as values
+    //     $categories = array_values($categoryCounts);
+    
+    //     return response()->json([
+    //         'success' => true,
+    //         'brand_id' => $id,
+    //         'categories' => $categories
+    //     ]);
+    // }.
     public function getCategories($id)
     {
-        $brand = Brand::with(['products.categories'])->findOrFail($id);
+        // Load brand with only published products and their published categories
+        $brand = Brand::with([
+            'products' => function ($query) {
+                $query->where('status', 'published')
+                      ->whereHas('categories', fn($q) => $q->where('status', 'published'));
+            },
+            'products.categories' => function ($query) {
+                $query->where('status', 'published');
+            }
+        ])->findOrFail($id);
     
-        // Count the number of products per category for this brand
         $categoryCounts = [];
     
         foreach ($brand->products as $product) {
             foreach ($product->categories as $category) {
+                // Check if this category is a published leaf
+                $hasPublishedChildren = Category::where('parent_id', $category->id)
+                                                ->where('status', 'published')
+                                                ->exists();
+    
+                if ($hasPublishedChildren) {
+                    continue; // Skip non-leaf categories
+                }
+    
                 if (!isset($categoryCounts[$category->id])) {
                     $categoryCounts[$category->id] = [
                         'id' => $category->id,
@@ -528,11 +576,12 @@ class BrandController extends Controller
                         'product_count' => 0
                     ];
                 }
+    
                 $categoryCounts[$category->id]['product_count']++;
             }
         }
     
-        // Reindex array and return as values
+        // Keep response structure same
         $categories = array_values($categoryCounts);
     
         return response()->json([
@@ -541,6 +590,7 @@ class BrandController extends Controller
             'categories' => $categories
         ]);
     }
+    
 
 
     
@@ -772,6 +822,7 @@ class BrandController extends Controller
              ], 500);
          }
      }
+
      
    
      protected function emptyPagination()

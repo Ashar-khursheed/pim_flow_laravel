@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetToken;
 use App\Models\User;
 
+
 class Customer extends Authenticatable
 {
 	use HasApiTokens, Notifiable;
@@ -88,4 +89,10 @@ class Customer extends Authenticatable
 	{
 		return $date->format('Y-m-d H:i:s');
 	}
+
+	public function questions()
+	{
+		return $this->hasMany(ProductQuestion::class);
+	}
+
 }
