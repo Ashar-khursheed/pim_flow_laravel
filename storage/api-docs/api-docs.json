@@ -13940,7 +13940,7 @@
                 },
                 "security": [
                     {
-                        "sanctum": []
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -20525,6 +20525,135 @@
                 ]
             }
         },
+        "/api/product-questions/{product_id}": {
+            "get": {
+                "tags": [
+                    "Product Questions"
+                ],
+                "summary": "Get all questions for a product",
+                "operationId": "5ea42efaff56092239c2942114bd8b25",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of product questions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "customer_id": {
+                                                "type": "integer",
+                                                "example": 45
+                                            },
+                                            "product_id": {
+                                                "type": "integer",
+                                                "example": 123
+                                            },
+                                            "question": {
+                                                "type": "string",
+                                                "example": "Is this dishwasher safe?"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-06-19T12:34:56Z"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time",
+                                                "example": "2024-06-19T12:34:56Z"
+                                            },
+                                            "customer": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 45
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "email": {
+                                                        "type": "string",
+                                                        "example": "john@example.com"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            },
+                                            "product": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Electric Kettle"
+                                                    },
+                                                    "sku": {
+                                                        "type": "string",
+                                                        "example": "KETTLE-001"
+                                                    },
+                                                    "brand": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Philips"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    },
+                                                    "vendor": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 22
+                                                            },
+                                                            "name": {
+                                                                "type": "string",
+                                                                "example": "Vendor Store"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/product-suppliers": {
             "get": {
                 "tags": [
@@ -26214,6 +26343,10 @@
         {
             "name": "Product Groups",
             "description": "Product Groups"
+        },
+        {
+            "name": "Product Questions",
+            "description": "Product Questions"
         },
         {
             "name": "Product Suppliers",

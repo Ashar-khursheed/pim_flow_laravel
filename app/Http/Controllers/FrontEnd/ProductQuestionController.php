@@ -13,7 +13,7 @@ class ProductQuestionController extends Controller
      *     path="/api/frontend/product-questions",
      *     tags={"Frontend-Product Questions"},
      *     summary="Submit a question for a product",
-     *     security={{"sanctum":{}}},
+     *     security={{"bearerAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(

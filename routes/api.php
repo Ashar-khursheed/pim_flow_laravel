@@ -55,6 +55,7 @@ use App\Http\Controllers\BlogController;
 use App\Http\Controllers\BlogCategoryController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\CustomerAddressController;
+use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
@@ -125,7 +126,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
 
-
+    Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
 	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
@@ -335,7 +336,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
 	Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
-    Route::get('/frontend/product-questions/{product_id}', [F_ProductQuestionController::class, 'index']);
 
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class);
