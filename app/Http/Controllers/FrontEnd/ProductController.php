@@ -302,11 +302,21 @@ class ProductController extends Controller
                         }
 
                         $product->category_list = $product->categories->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                            ];
+                            $hierarchy = [];
+                            $current = $category;
+                            
+                            // Build hierarchy from bottom to top
+                            while ($current) {
+                                array_unshift($hierarchy, [
+                                    'id' => $current->id,
+                                    'name' => $current->name,
+                                    'slug' => optional($current->slugable)->key,
+                                    'level' => $current->level ?? 0, // if you have level field
+                                ]);
+                                $current = $current->parent; // assuming you have parent relationship
+                            }
+                            
+                            return $hierarchy;
                         });
 
                         return $product;
@@ -581,11 +591,21 @@ class ProductController extends Controller
                     
                         // ❌ Removed frequently bought together section
                         $product->category_list = $product->categories->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                            ];
+                            $hierarchy = [];
+                            $current = $category;
+                            
+                            // Build hierarchy from bottom to top
+                            while ($current) {
+                                array_unshift($hierarchy, [
+                                    'id' => $current->id,
+                                    'name' => $current->name,
+                                    'slug' => optional($current->slugable)->key,
+                                    'level' => $current->level ?? 0, // if you have level field
+                                ]);
+                                $current = $current->parent; // assuming you have parent relationship
+                            }
+                            
+                            return $hierarchy;
                         });
 
                         return $product;
