@@ -547,7 +547,7 @@ class OrderController extends BaseController
 		$order->update([
 			'status' => $request->status,
 		]);
-		$order->orderProducts->update(['status' => $request->status]);
+		$order->orderProducts()->update(['status' => $request->status]);
 
 		/* dd tracking entry */
 		OrderTracking::create([
