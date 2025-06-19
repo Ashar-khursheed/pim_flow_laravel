@@ -154,9 +154,7 @@ class ProductController extends Controller
                         $query->select('id', 'product_id', 'star');
                     },
                     'currency' ,
-                    'categories.slugable',
-                    'categories.parent.slugable',
-                    'categories.children.slugable'   ])
+                    'categories'               ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -303,59 +301,16 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                    //     $product->category_list = $product->categories->map(function ($category) {
-                    //         return [
-                    //             'id' => $category->id,
-                    //             'name' => $category->name,
-                    //             'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                    //         ];
-                    //     });
-
-                    //     return $product;
-                    // });
-                     // ❌ Removed frequently bought together section
-                     $product->category_list = $product->categories->flatMap(function ($category) {
-                        $all = collect();
-                    
-                        // 1. Add ancestors (parents, grandparents, etc.)
-                        $current = $category;
-                        while ($current->parent) {
-                            $current = $current->parent;
-                            $all->prepend($current); // add to the beginning so it's in correct order
-                        }
-                    
-                        // 2. Add the current category
-                        $all->push($category);
-                    
-                        // 3. Add all recursive children (children, grandchildren, etc.)
-                        $traverseChildren = function ($cat) use (&$traverseChildren) {
-                            $descendants = collect();
-                            foreach ($cat->children as $child) {
-                                $descendants->push($child);
-                                $descendants = $descendants->merge($traverseChildren($child));
-                            }
-                            return $descendants;
-                        };
-                    
-                        if ($category->relationLoaded('children')) {
-                            $all = $all->merge($traverseChildren($category));
-                        }
-                    
-                        // 4. Map the result
-                        return $all->map(function ($cat) {
+                        $product->category_list = $product->categories->map(function ($category) {
                             return [
-                                'id' => $cat->id,
-                                'name' => $cat->name,
-                                'slug' => optional($cat->slug)->key,
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
                             ];
                         });
-                    })->unique('id')->values();
-                    
-                    
-                    
 
-                     return $product;
-                 });
+                        return $product;
+                    });
 
                     return response()->json([
                         'success' => true,
@@ -473,9 +428,7 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',      'categories.slugable',
-                    'categories.parent.slugable',
-                    'categories.children.slugable' // ✅ this is needed
+                    'currency',  'categories'
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -627,47 +580,18 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                         // ❌ Removed frequently bought together section
-                         $product->category_list = $product->categories->flatMap(function ($category) {
-                            $all = collect();
-                        
-                            // 1. Add ancestors (parents, grandparents, etc.)
-                            $current = $category;
-                            while ($current->parent) {
-                                $current = $current->parent;
-                                $all->prepend($current); // add to the beginning so it's in correct order
-                            }
-                        
-                            // 2. Add the current category
-                            $all->push($category);
-                        
-                            // 3. Add all recursive children (children, grandchildren, etc.)
-                            $traverseChildren = function ($cat) use (&$traverseChildren) {
-                                $descendants = collect();
-                                foreach ($cat->children as $child) {
-                                    $descendants->push($child);
-                                    $descendants = $descendants->merge($traverseChildren($child));
-                                }
-                                return $descendants;
-                            };
-                        
-                            if ($category->relationLoaded('children')) {
-                                $all = $all->merge($traverseChildren($category));
-                            }
-                        
-                            // 4. Map the result
-                            return $all->map(function ($cat) {
-                                return [
-                                    'id' => $cat->id,
-                                    'name' => $cat->name,
-                                    'slug' => optional($cat->slug)->key,
-                                ];
-                            });
-                        })->unique('id')->values();
-                        
-    
+                        $product->category_list = $product->categories->map(function ($category) {
+                            return [
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                            ];
+                        });
+
                         return $product;
                     });
+                    
+                    
                     
 
                     return response()->json([
