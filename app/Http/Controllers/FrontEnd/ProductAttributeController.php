@@ -156,7 +156,7 @@ class ProductAttributeController extends Controller
                 return [
                     'name'  => $item->attribute->name,
                     'value' => $item->attribute_value,
-                    'unit'  => $item->measurementUnit->name ?? null  // 👈 unit name
+                    'unit'  => $item->measurementUnit->symbol ?? null  // 👈 unit name
 
                 ];
             })
@@ -330,10 +330,11 @@ class ProductAttributeController extends Controller
                     $q->where('name', 'Nutrition Facts Per Serving Group');
                 })->with('attributeGroup');
             },
-            'measurementUnit' // 👈 eager load unit
+            'measurementUnit' // 👈 ADD THIS LINE
         ])
         ->where('product_id', $productId)
-        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']); // 👈 include unit ID
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']); // 👈 Include unit ID
+        
         
     
         // Filter out null attributes

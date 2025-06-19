@@ -15,4 +15,10 @@ class MeasurementUnit extends Model
 	{
 		return $this->belongsToMany(Attribute::class, 'attribute_measurements')->using(AttributeMeasurement::class);
 	}
+	// optional, for inverse relation
+		public function productAttributes()
+		{
+			return $this->hasMany(ProductAttributes::class, 'measurement_unit_id');
+		}
+
 }
