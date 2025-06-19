@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use App\Models\Brand;
 use App\Models\Product;
+use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
 
