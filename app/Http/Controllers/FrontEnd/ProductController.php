@@ -154,7 +154,9 @@ class ProductController extends Controller
                         $query->select('id', 'product_id', 'star');
                     },
                     'currency' ,
-                    'categories'               ])
+                    'categories.slugable',
+                    'categories.parent.slugable',
+                    'categories.parent.parent.slugable'           ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -312,21 +314,29 @@ class ProductController extends Controller
                     //     return $product;
                     // });
                      // ❌ Removed frequently bought together section
-                     $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
-
                      $product->category_list = $product->categories->flatMap(function ($category) {
-                         // Get all ancestors + self
-                         $allCategories = $category->all_parents->push($category);
-
-                         // Map each into desired format
-                         return $allCategories->map(function ($cat) {
-                             return [
-                                 'id' => $cat->id,
-                                 'name' => $cat->name,
-                                 'slug' => optional($cat->slugable)->key,
-                             ];
-                         });
-                     })->unique('id')->values(); // Remove duplicates & reindex
+                        // Get all ancestors + current category
+                        $allCategories = collect();
+                    
+                        // Recursively collect parents
+                        $current = $category;
+                        while ($current->parent) {
+                            $current = $current->parent;
+                            $allCategories->prepend($current);
+                        }
+                    
+                        $allCategories->push($category); // Add the original category
+                    
+                        // Return formatted data
+                        return $allCategories->map(function ($cat) {
+                            return [
+                                'id' => $cat->id,
+                                'name' => $cat->name,
+                                'slug' => optional($cat->slugable)->key,
+                            ];
+                        });
+                    })->unique('id')->values();
+                    
 
                      return $product;
                  });
@@ -447,7 +457,9 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories'
+                    'currency',   'categories.slugable',
+                    'categories.parent.slugable',
+                    'categories.parent.parent.slugable' // optional: to support deeper nesting
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -600,21 +612,29 @@ class ProductController extends Controller
                     
                         // ❌ Removed frequently bought together section
                          // ❌ Removed frequently bought together section
-                         $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
-
                          $product->category_list = $product->categories->flatMap(function ($category) {
-                             // Get all ancestors + self
-                             $allCategories = $category->all_parents->push($category);
- 
-                             // Map each into desired format
-                             return $allCategories->map(function ($cat) {
-                                 return [
-                                     'id' => $cat->id,
-                                     'name' => $cat->name,
-                                     'slug' => optional($cat->slugable)->key,
-                                 ];
-                             });
-                         })->unique('id')->values(); // Remove duplicates & reindex
+                            // Get all ancestors + current category
+                            $allCategories = collect();
+                        
+                            // Recursively collect parents
+                            $current = $category;
+                            while ($current->parent) {
+                                $current = $current->parent;
+                                $allCategories->prepend($current);
+                            }
+                        
+                            $allCategories->push($category); // Add the original category
+                        
+                            // Return formatted data
+                            return $allCategories->map(function ($cat) {
+                                return [
+                                    'id' => $cat->id,
+                                    'name' => $cat->name,
+                                    'slug' => optional($cat->slugable)->key,
+                                ];
+                            });
+                        })->unique('id')->values();
+                        
  
                       
                         return $product;
