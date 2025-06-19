@@ -649,129 +649,255 @@ class BrandController extends Controller
      * )
      */
     
-     public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
-     {
-         try {
-             $searchTerm = strtolower($request->input('search'));
+    //  public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
+    //  {
+    //      try {
+    //          $searchTerm = strtolower($request->input('search'));
      
-             $brand = Brand::with([
-                'products' => function ($query) {
-                    $query->where('status', 'published')
-                          ->whereHas('categories', function ($catQuery) {
-                              $catQuery->where('status', 'published');
-                          });
-                },
-                'products.categories' => function ($query) {
-                    $query->where('status', 'published');
-                }
-            ])->findOrFail($brandId);
+    //          $brand = Brand::with([
+    //             'products' => function ($query) {
+    //                 $query->where('status', 'published')
+    //                       ->whereHas('categories', function ($catQuery) {
+    //                           $catQuery->where('status', 'published');
+    //                       });
+    //             },
+    //             'products.categories' => function ($query) {
+    //                 $query->where('status', 'published');
+    //             }
+    //         ])->findOrFail($brandId);
             
      
-             // Filter by category
-             $filteredProducts = is_null($categoryId)
-                 ? $brand->products
-                 : $brand->products->filter(function ($product) use ($categoryId) {
-                     return $product->categories->contains('id', $categoryId);
-                 })->values();
+    //          // Filter by category
+    //          $filteredProducts = is_null($categoryId)
+    //              ? $brand->products
+    //              : $brand->products->filter(function ($product) use ($categoryId) {
+    //                  return $product->categories->contains('id', $categoryId);
+    //              })->values();
      
-             // Filter by search term if provided
-             if (!empty($searchTerm)) {
-                 $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
-                     return stripos($product->name, $searchTerm) !== false;
-                 })->values();
-             }
+    //          // Filter by search term if provided
+    //          if (!empty($searchTerm)) {
+    //              $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
+    //                  return stripos($product->name, $searchTerm) !== false;
+    //              })->values();
+    //          }
      
-             if ($filteredProducts->isEmpty()) {
-                 return response()->json([
-                     'success' => true,
-                     'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($searchTerm ? ' with search term' : ''),
-                     'data' => [],
-                     'pagination' => $this->emptyPagination(),
-                 ]);
-             }
+    //          if ($filteredProducts->isEmpty()) {
+    //              return response()->json([
+    //                  'success' => true,
+    //                  'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($searchTerm ? ' with search term' : ''),
+    //                  'data' => [],
+    //                  'pagination' => $this->emptyPagination(),
+    //              ]);
+    //          }
      
-             $productIds = $filteredProducts->pluck('id')->toArray();
+    //          $productIds = $filteredProducts->pluck('id')->toArray();
      
-             $productsWithRelations = Product::whereIn('id', $productIds)
-                 ->with([
-                     'reviews:id,product_id,star',
-                     'currency',
-                     'specifications',
-                 ])
-                 ->get()
-                 ->keyBy('id');
+    //          $productsWithRelations = Product::whereIn('id', $productIds)
+    //              ->with([
+    //                  'reviews:id,product_id,star',
+    //                  'currency',
+    //                  'specifications',
+    //              ])
+    //              ->get()
+    //              ->keyBy('id');
      
-             $perPage = 50;
-             $page = max(1, (int) $request->input('page', 1));
-             $total = count($productIds);
-             $offset = ($page - 1) * $perPage;
-             $paginatedProducts = $filteredProducts->slice($offset, $perPage);
+    //          $perPage = 50;
+    //          $page = max(1, (int) $request->input('page', 1));
+    //          $total = count($productIds);
+    //          $offset = ($page - 1) * $perPage;
+    //          $paginatedProducts = $filteredProducts->slice($offset, $perPage);
      
-             $pagination = $this->buildPagination($page, $perPage, $total);
+    //          $pagination = $this->buildPagination($page, $perPage, $total);
      
-             $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
-                 $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
+    //          $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
+    //              $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
      
-                 $cleanedImages = is_string($product->images)
-                 ? json_decode($product->images, true)
-                 : (array) $product->images;
+    //              $cleanedImages = is_string($product->images)
+    //              ? json_decode($product->images, true)
+    //              : (array) $product->images;
 
-                 $videos = is_string($product->video_path)
-                 ? json_decode($product->video_path, true) ?? []
-                 : ($product->video_path ?? []);
+    //              $videos = is_string($product->video_path)
+    //              ? json_decode($product->video_path, true) ?? []
+    //              : ($product->video_path ?? []);
              
                 
      
-                 $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
-                 $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
+    //              $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
+    //              $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
      
-                 $quantity = $product->quantity ?? 0;
-                 $unitsSold = $product->units_sold ?? 0;
-                 $leftStock = $quantity - $unitsSold;
+    //              $quantity = $product->quantity ?? 0;
+    //              $unitsSold = $product->units_sold ?? 0;
+    //              $leftStock = $quantity - $unitsSold;
      
-                 return [
-                     'id' => $product->id,
-                     'name' => $product->name,
-                     'images' => $cleanedImages,
-                     'video_url' => $videos,
-                     'video_path' => $videos,
-                     'sku' => $product->sku,
-                     'original_price' => $product->price,
-                     'front_sale_price' => $product->price,
-                     'sale_price' => $product->sale_price,
-                     'price' => $product->price,
-                     'start_date' => $product->start_date,
-                     'end_date' => $product->end_date,
-                     'warranty_information' => $product->warranty_information,
-                     'currency' => $productWithRelations->currency?->title,
-                     'total_reviews' => $totalReviews,
-                     'avg_rating' => $avgRating,
-                     'best_price' => $product->sale_price ?? $product->price,
-                     'best_delivery_date' => null,
-                     'leftStock' => $leftStock,
-                     'currency_title' => $productWithRelations->currency
-                         ? ($productWithRelations->currency->is_prefix_symbol
-                             ? $productWithRelations->currency->title
-                             : ($product->price . ' ' . $productWithRelations->currency->title))
-                         : $product->price,
-                 ];
-             });
+    //              return [
+    //                  'id' => $product->id,
+    //                  'name' => $product->name,
+    //                  'images' => $cleanedImages,
+    //                  'video_url' => $videos,
+    //                  'video_path' => $videos,
+    //                  'sku' => $product->sku,
+    //                  'original_price' => $product->price,
+    //                  'front_sale_price' => $product->price,
+    //                  'sale_price' => $product->sale_price,
+    //                  'price' => $product->price,
+    //                  'start_date' => $product->start_date,
+    //                  'end_date' => $product->end_date,
+    //                  'warranty_information' => $product->warranty_information,
+    //                  'currency' => $productWithRelations->currency?->title,
+    //                  'total_reviews' => $totalReviews,
+    //                  'avg_rating' => $avgRating,
+    //                  'best_price' => $product->sale_price ?? $product->price,
+    //                  'best_delivery_date' => null,
+    //                  'leftStock' => $leftStock,
+    //                  'currency_title' => $productWithRelations->currency
+    //                      ? ($productWithRelations->currency->is_prefix_symbol
+    //                          ? $productWithRelations->currency->title
+    //                          : ($product->price . ' ' . $productWithRelations->currency->title))
+    //                      : $product->price,
+    //              ];
+    //          });
      
-             return response()->json([
-                 'success' => true,
-                 'data' => $transformedProducts->values(),
-                 'pagination' => $pagination,
-                 'message' => 'Products retrieved successfully',
-             ]);
-         } catch (\Exception $e) {
-             Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
-             return response()->json([
-                 'success' => false,
-                 'message' => 'An error occurred while fetching products',
-                 'error' => $e->getMessage(),
-             ], 500);
-         }
-     }
+    //          return response()->json([
+    //              'success' => true,
+    //              'data' => $transformedProducts->values(),
+    //              'pagination' => $pagination,
+    //              'message' => 'Products retrieved successfully',
+    //          ]);
+    //      } catch (\Exception $e) {
+    //          Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
+    //          return response()->json([
+    //              'success' => false,
+    //              'message' => 'An error occurred while fetching products',
+    //              'error' => $e->getMessage(),
+    //          ], 500);
+    //      }
+    //  }
+    public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
+{
+    try {
+        $searchTerm = strtolower($request->input('search'));
+
+        // Load brand with only published products and only products in published categories
+        $brand = Brand::with([
+            'products' => function ($query) {
+                $query->where('status', 'published')
+                      ->whereHas('categories', function ($catQuery) {
+                          $catQuery->where('status', 'published');
+                      });
+            },
+            'products.categories' => function ($query) {
+                $query->where('status', 'published');
+            }
+        ])->findOrFail($brandId);
+
+        // Now filter by published category (if provided)
+        $filteredProducts = collect($brand->products)->filter(function ($product) use ($categoryId) {
+            if (!$categoryId) return true;
+
+            return $product->categories->contains(function ($cat) {
+                return $cat->status === 'published';
+            }) && $product->categories->contains('id', $categoryId);
+        })->values();
+
+        // Apply search filter
+        if (!empty($searchTerm)) {
+            $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
+                return stripos($product->name, $searchTerm) !== false;
+            })->values();
+        }
+
+        if ($filteredProducts->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No products found for this brand' . ($categoryId ? ' and category' : '') . ($searchTerm ? ' with search term' : ''),
+                'data' => [],
+                'pagination' => $this->emptyPagination(),
+            ]);
+        }
+
+        $productIds = $filteredProducts->pluck('id')->toArray();
+
+        // Fetch full product data with relations
+        $productsWithRelations = Product::whereIn('id', $productIds)
+            ->where('status', 'published') // ✅ ensure still published
+            ->with([
+                'reviews:id,product_id,star',
+                'currency',
+                'specifications',
+            ])
+            ->get()
+            ->keyBy('id');
+
+        $perPage = 50;
+        $page = max(1, (int) $request->input('page', 1));
+        $total = count($filteredProducts); // ✅ Only published product count
+        $offset = ($page - 1) * $perPage;
+        $paginatedProducts = $filteredProducts->slice($offset, $perPage);
+
+        $pagination = $this->buildPagination($page, $perPage, $total);
+
+        $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
+            $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
+
+            $cleanedImages = is_string($product->images)
+                ? json_decode($product->images, true)
+                : (array) $product->images;
+
+            $videos = is_string($product->video_path)
+                ? json_decode($product->video_path, true) ?? []
+                : ($product->video_path ?? []);
+
+            $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
+            $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
+
+            $quantity = $product->quantity ?? 0;
+            $unitsSold = $product->units_sold ?? 0;
+            $leftStock = $quantity - $unitsSold;
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'images' => $cleanedImages,
+                'video_url' => $videos,
+                'video_path' => $videos,
+                'sku' => $product->sku,
+                'original_price' => $product->price,
+                'front_sale_price' => $product->sale_price,
+                'sale_price' => $product->sale_price,
+                'price' => $product->price,
+                'start_date' => $product->start_date,
+                'end_date' => $product->end_date,
+                'warranty_information' => $product->warranty_information,
+                'currency' => $productWithRelations->currency?->title,
+                'total_reviews' => $totalReviews,
+                'avg_rating' => $avgRating,
+                'best_price' => $product->sale_price ?? $product->price,
+                'best_delivery_date' => null,
+                'leftStock' => $leftStock,
+                'currency_title' => $productWithRelations->currency
+                    ? ($productWithRelations->currency->is_prefix_symbol
+                        ? $productWithRelations->currency->title
+                        : ($product->price . ' ' . $productWithRelations->currency->title))
+                    : $product->price,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedProducts->values(),
+            'pagination' => $pagination,
+            'message' => 'Products retrieved successfully',
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error in getProductsByBrandAndCategory: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while fetching products',
+            'error' => $e->getMessage(),
+        ], 500);
+    }
+}
+
      
    
      protected function emptyPagination()
