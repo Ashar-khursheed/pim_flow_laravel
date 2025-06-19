@@ -152,11 +152,12 @@ class ProductAttributeController extends Controller
         // Build the final response
         $response = [
             'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
-           'attributes' => $sortedFacts->map(function ($item) {
-                $unit = $item->measurementUnit->name ?? '';
+            'attributes' => $sortedFacts->map(function ($item) {
                 return [
                     'name'  => $item->attribute->name,
-                    'value' => trim($item->attribute_value . ' ' . $unit), // 👈 value with unit
+                    'value' => $item->attribute_value,
+                    'unit'  => $item->measurementUnit->name ?? null  // 👈 unit name
+
                 ];
             })
         ];
