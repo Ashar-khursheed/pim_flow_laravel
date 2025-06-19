@@ -511,15 +511,43 @@ class BrandController extends Controller
      *     )
      * )
      */
+    // public function getCategories($id)
+    // {
+    //     $brand = Brand::with(['products.categories'])->findOrFail($id);
+    
+    //     // Count the number of products per category for this brand
+    //     $categoryCounts = [];
+    
+    //     foreach ($brand->products as $product) {
+    //         foreach ($product->categories as $category) {
+    //             if (!isset($categoryCounts[$category->id])) {
+    //                 $categoryCounts[$category->id] = [
+    //                     'id' => $category->id,
+    //                     'name' => $category->name,
+    //                     'image' => $category->image,
+    //                     'product_count' => 0
+    //                 ];
+    //             }
+    //             $categoryCounts[$category->id]['product_count']++;
+    //         }
+    //     }
+    
+    //     // Reindex array and return as values
+    //     $categories = array_values($categoryCounts);
+    
+    //     return response()->json([
+    //         'success' => true,
+    //         'brand_id' => $id,
+    //         'categories' => $categories
+    //     ]);
+    // }.
     public function getCategories($id)
 {
-    // Load brand with only published products and their published categories
+    // Load brand with published products and their published categories
     $brand = Brand::with([
         'products' => function ($query) {
             $query->where('status', 'published')
-                  ->whereHas('categories', function ($catQuery) {
-                      $catQuery->where('status', 'published');
-                  });
+                  ->whereHas('categories', fn($q) => $q->where('status', 'published'));
         },
         'products.categories' => function ($query) {
             $query->where('status', 'published');
@@ -530,8 +558,13 @@ class BrandController extends Controller
 
     foreach ($brand->products as $product) {
         foreach ($product->categories as $category) {
-            if ($category->status !== 'published') {
-                continue; // Skip unpublished categories just in case
+            // Check if the category is a leaf (has no children)
+            $hasChildren = Category::where('parent_id', $category->id)
+                                   ->where('status', 'published')
+                                   ->exists();
+
+            if ($hasChildren) {
+                continue; // Skip non-leaf categories
             }
 
             if (!isset($categoryCounts[$category->id])) {
@@ -555,6 +588,7 @@ class BrandController extends Controller
         'categories' => $categories
     ]);
 }
+
 
 
     
