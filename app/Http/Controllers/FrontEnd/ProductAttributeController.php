@@ -156,13 +156,13 @@ class ProductAttributeController extends Controller
         $response = [
             'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
             'attributes' => $sortedFacts->map(function ($item) {
-                return [
-                    'name'  => $item->attribute->name,
-                    'value' => $item->attribute_value,
-                    'unit'  => $item->measurementUnit->symbol ?? null  // 👈 unit name
+            $symbol = $item->measurementUnit->symbol ?? '';
+            return [
+                'name'  => $item->attribute->name,
+                'value' => trim($item->attribute_value . ' ' . $symbol),
+            ];
+        })
 
-                ];
-            })
         ];
 
         return response()->json($response);
