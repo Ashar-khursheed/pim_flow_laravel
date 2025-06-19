@@ -139,6 +139,7 @@ class SearchController extends Controller
                         'parent.parent.slug',
                         'products.slug'
                     ])
+                    ->where('status', 'published') // ✅ Only published categories
                     ->inRandomOrder()->take(4)
                     ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
                     ->get()->map(function ($cat) use ($imageUrl) {
@@ -163,6 +164,7 @@ class SearchController extends Controller
                     });
     
                 $brands = Brand::with(['slug', 'products.slug'])
+                    ->where('status', 'published') // ✅ Only published brands
                     ->inRandomOrder()->take(4)
                     ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
                     ->get()->map(function ($brand) use ($imageUrl) {
@@ -215,6 +217,7 @@ class SearchController extends Controller
                 'parent.parent.slug',
                 'products.slug'
             ])
+            ->where('status', 'published') // ✅ Only published categories
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                   ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
@@ -242,6 +245,7 @@ class SearchController extends Controller
             });
     
         $brands = Brand::with(['slug', 'products.slug'])
+            ->where('status', 'published') // ✅ Only published brands
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                   ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
