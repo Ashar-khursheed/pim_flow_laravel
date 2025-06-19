@@ -152,10 +152,11 @@ class ProductAttributeController extends Controller
         // Build the final response
         $response = [
             'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
-            'attributes' => $sortedFacts->map(function ($item) {
+           'attributes' => $sortedFacts->map(function ($item) {
+                $unit = $item->measurementUnit->name ?? '';
                 return [
                     'name'  => $item->attribute->name,
-                    'value' => $item->attribute_value
+                    'value' => trim($item->attribute_value . ' ' . $unit), // 👈 value with unit
                 ];
             })
         ];
@@ -304,16 +305,35 @@ class ProductAttributeController extends Controller
         // ->where('product_id', $productId)
         // ->get(['attribute_value', 'attribute_id']);
     
+        // $productAttributes = ProductAttributes::with([
+        //     'attribute' => function ($query) {
+        //         $query->whereHas('attributeGroup', function ($q) {
+        //             $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+        //         });
+        //     },
+        //     'measurementUnit'
+        // ])
+        // $productAttributes = ProductAttributes::with([
+        //     'attribute' => function ($query) {
+        //         $query->whereHas('attributeGroup', function ($q) {
+        //             $q->where('name', 'Nutrition Facts Per Serving Group');
+        //         })->with('attributeGroup');
+        //     },
+        //     'measurementUnit' // 👈 eager load unit
+        // ])
+        // ->where('product_id', $productId)
+        // ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
         $productAttributes = ProductAttributes::with([
             'attribute' => function ($query) {
                 $query->whereHas('attributeGroup', function ($q) {
-                    $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
-                });
+                    $q->where('name', 'Nutrition Facts Per Serving Group');
+                })->with('attributeGroup');
             },
-            'measurementUnit'
+            'measurementUnit' // 👈 eager load unit
         ])
         ->where('product_id', $productId)
-        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']); // 👈 include unit ID
+        
     
         // Filter out null attributes
         $filteredAttributes = $productAttributes->filter(function ($item) {
