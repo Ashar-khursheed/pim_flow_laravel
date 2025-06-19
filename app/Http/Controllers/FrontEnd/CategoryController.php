@@ -1993,7 +1993,7 @@ use Illuminate\Support\Facades\Auth;
                                     return [
                                         'min' => $min,
                                         'max' => $max,
-                                        // 'product_count' => $productCount,
+                                        'product_count' => $productCount,
                                         'display_value' => $min == $max ? $min : "$min - $max",
                                     ];
                                 })->filter(function($range) {
