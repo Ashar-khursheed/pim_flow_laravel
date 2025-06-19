@@ -315,27 +315,41 @@ class ProductController extends Controller
                     // });
                      // ❌ Removed frequently bought together section
                      $product->category_list = $product->categories->flatMap(function ($category) {
-                        // Get all ancestors + current category
-                        $allCategories = collect();
+                        $all = collect();
                     
-                        // Recursively collect parents
+                        // 1. All parent categories (up the tree)
                         $current = $category;
                         while ($current->parent) {
                             $current = $current->parent;
-                            $allCategories->prepend($current);
+                            $all->prepend($current);
                         }
                     
-                        $allCategories->push($category); // Add the original category
+                        // 2. Current category
+                        $all->push($category);
                     
-                        // Return formatted data
-                        return $allCategories->map(function ($cat) {
+                        // 3. All children recursively (down the tree)
+                        $traverseChildren = function ($category) use (&$traverseChildren) {
+                            $allChildren = collect();
+                            foreach ($category->childrenRecursive as $child) {
+                                $allChildren->push($child);
+                                $allChildren = $allChildren->merge($traverseChildren($child));
+                            }
+                            return $allChildren;
+                        };
+                    
+                        if ($category->relationLoaded('childrenRecursive')) {
+                            $all = $all->merge($traverseChildren($category));
+                        }
+                    
+                        return $all->map(function ($cat) {
                             return [
                                 'id' => $cat->id,
                                 'name' => $cat->name,
-                                'slug' => optional($cat->slugable)->key,
+                                'slug' => optional($cat->slug)->key,
                             ];
                         });
                     })->unique('id')->values();
+                    
                     
 
                      return $product;
@@ -613,30 +627,41 @@ class ProductController extends Controller
                         // ❌ Removed frequently bought together section
                          // ❌ Removed frequently bought together section
                          $product->category_list = $product->categories->flatMap(function ($category) {
-                            // Get all ancestors + current category
-                            $allCategories = collect();
+                            $all = collect();
                         
-                            // Recursively collect parents
+                            // 1. All parent categories (up the tree)
                             $current = $category;
                             while ($current->parent) {
                                 $current = $current->parent;
-                                $allCategories->prepend($current);
+                                $all->prepend($current);
                             }
                         
-                            $allCategories->push($category); // Add the original category
+                            // 2. Current category
+                            $all->push($category);
                         
-                            // Return formatted data
-                            return $allCategories->map(function ($cat) {
+                            // 3. All children recursively (down the tree)
+                            $traverseChildren = function ($category) use (&$traverseChildren) {
+                                $allChildren = collect();
+                                foreach ($category->childrenRecursive as $child) {
+                                    $allChildren->push($child);
+                                    $allChildren = $allChildren->merge($traverseChildren($child));
+                                }
+                                return $allChildren;
+                            };
+                        
+                            if ($category->relationLoaded('childrenRecursive')) {
+                                $all = $all->merge($traverseChildren($category));
+                            }
+                        
+                            return $all->map(function ($cat) {
                                 return [
                                     'id' => $cat->id,
                                     'name' => $cat->name,
-                                    'slug' => optional($cat->slugable)->key,
+                                    'slug' => optional($cat->slug)->key,
                                 ];
                             });
                         })->unique('id')->values();
-                        
- 
-                      
+    
                         return $product;
                     });
                     
