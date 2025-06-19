@@ -13857,6 +13857,169 @@
                 }
             }
         },
+        "/api/frontend/product-questions": {
+            "post": {
+                "tags": [
+                    "Frontend-Product Questions"
+                ],
+                "summary": "Submit a question for a product",
+                "operationId": "ac255289099f27972eeb07d600ae8f2c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_id",
+                                    "question"
+                                ],
+                                "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "question": {
+                                        "type": "string",
+                                        "example": "Is this dishwasher safe?"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Question submitted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Question submitted successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "customer_id": {
+                                                    "type": "integer",
+                                                    "example": 45
+                                                },
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 123
+                                                },
+                                                "question": {
+                                                    "type": "string",
+                                                    "example": "Is this dishwasher safe?"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "updated_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/product-questions/{product_id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product Questions"
+                ],
+                "summary": "Get all questions for a product",
+                "operationId": "31796bb2112bab67cb46d958192f790b",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "ID of the product",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 123
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of product questions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "properties": {
+                                            "id": {
+                                                "type": "integer",
+                                                "example": 1
+                                            },
+                                            "customer_id": {
+                                                "type": "integer",
+                                                "example": 45
+                                            },
+                                            "product_id": {
+                                                "type": "integer",
+                                                "example": 123
+                                            },
+                                            "question": {
+                                                "type": "string",
+                                                "example": "Is this dishwasher safe?"
+                                            },
+                                            "created_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "updated_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            },
+                                            "customer": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 45
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/products/{product_id}/you-may-like": {
             "get": {
                 "tags": [
@@ -25979,6 +26142,10 @@
         {
             "name": "Frontend-Product",
             "description": "Frontend-Product"
+        },
+        {
+            "name": "Frontend-Product Questions",
+            "description": "Frontend-Product Questions"
         },
         {
             "name": "Frontend-Product You May Like",

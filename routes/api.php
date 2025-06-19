@@ -84,6 +84,8 @@ use App\Http\Controllers\FrontEnd\SquarePaymentController as F_SquarePaymentCont
 use App\Http\Controllers\FrontEnd\LocationController as F_LocationController;
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
+use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
+
 
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -332,8 +334,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
-
-
+	Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
+    Route::get('/frontend/product-questions/{product_id}', [F_ProductQuestionController::class, 'index']);
 
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
 	Route::apiResource('frontend/orders', F_OrderController::class);

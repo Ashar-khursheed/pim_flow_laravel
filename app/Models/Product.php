@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
-
+use App\Models\Frontend\ProductQuestion;
 
 /**
  * @OA\Schema(
@@ -315,4 +315,9 @@ class Product extends Model
 	{
 		return $this->morphOne(Slug::class, 'reference')->where('prefix', 'products');
 	}
+	public function questions()
+	{
+		return $this->hasMany(ProductQuestion::class);
+	}
+
 }
