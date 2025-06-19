@@ -301,28 +301,15 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                       // Before mapping, eager load all the parent chain
-                            $product->load(['categories' => function($query) {
-                                $query->with('parent.parent.parent.parent.parent'); // Load up to 5 levels deep
-                            }]);
+                        $product->category_list = $product->categories->map(function ($category) {
+                            return [
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                            ];
+                        });
 
-                            $product->category_list = $product->categories->map(function ($category) {
-                                $hierarchy = [];
-                                $current = $category;
-                                
-                                while ($current) {
-                                    array_unshift($hierarchy, [
-                                        'id' => $current->id,
-                                        'name' => $current->name,
-                                        'slug' => optional($current->slugable)->key,
-                                        'level' => $current->level ?? 0,
-                                    ]);
-                                    $current = $current->parent;
-                                }
-                                
-                                return $hierarchy;
-                            });
-                                                    return $product;
+                        return $product;
                     });
 
                     return response()->json([
@@ -593,32 +580,18 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                       // Before mapping, eager load all the parent chain
-                    $product->load(['categories' => function($query) {
-                        $query->with('parent.parent.parent.parent.parent'); // Load up to 5 levels deep
-                    }]);
+                        $product->category_list = $product->categories->map(function ($category) {
+                            return [
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                            ];
+                        });
 
-                    $product->category_list = $product->categories->map(function ($category) {
-                        $hierarchy = [];
-                        $current = $category;
-                        
-                        while ($current) {
-                            array_unshift($hierarchy, [
-                                'id' => $current->id,
-                                'name' => $current->name,
-                                'slug' => optional($current->slugable)->key,
-                                'level' => $current->level ?? 0,
-                            ]);
-                            $current = $current->parent;
-                        }
-                        
-                        return $hierarchy;
-                    });
-
+                      
+                    
                         return $product;
                     });
-                    
-                    
                     
 
                     return response()->json([
