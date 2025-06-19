@@ -1005,120 +1005,74 @@ class ProductController extends BaseController
 		$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
 		/* Check if faqs is a string and decode it properly */
-		if (is_string($faqs)) {
-			$decoded = json_decode($faqs, true);
+			if (is_string($faqs)) {
+				$decoded = json_decode($faqs, true);
+				
+				/* Handle invalid JSON */
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for faqs.'
+					], 400);
+				}
+				
+				/* Ensure we extract faqs correctly */
+   				 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+				}
 
-			/* Handle invalid JSON */
-			if (json_last_error() !== JSON_ERROR_NONE) {
+			/* Validate that faqs is an array */
+			if (!is_array($faqs)) {
 				return response()->json([
 					'success' => false,
-					'message' => 'Invalid JSON format for faqs.'
+					'message' => 'The field faqs must be a valid JSON array.'
 				], 400);
 			}
 
-			/* Ensure we extract faqs correctly */
-			$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-		}
-
-		/* Validate that faqs is an array */
-		if (!is_array($faqs)) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The field faqs must be a valid JSON array.'
-			], 400);
-		}
+		/* Get all existing FAQ IDs for this product */
+		$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
+		$processedFaqIds = [];
 
 		/* Process and store FAQs */
-		// foreach ($faqs as $faqData) {
-		// 	if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-		// 		Faq::updateOrCreate(
-		// 			[
-		// 				'product_id' => $product->id,
-		// 				'question' => $faqData['question'],
-		// 			],
-		// 			[
-		// 				'answer' => $faqData['answer'],
-		// 				'category_id' => $faqData['category_id'] ?? null,
-		// 				// 'status' => $faqData['status'] == 1 ? 'published' : 'draft' /* Map status */
-		// 				'status' => 'published', // ✅ Always save as published
-
-
-		// 			]
-		// 		);
-		// 	}
-		// }
 		foreach ($faqs as $faqData) {
 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-		
-				$faq = null;
-		
+				
 				if (!empty($faqData['id'])) {
-					// Try to find existing FAQ by ID
+					/* Update existing FAQ */
 					$faq = Faq::where('id', $faqData['id'])
 						->where('product_id', $product->id)
 						->first();
-				}
-		
-				if ($faq) {
-					// Update existing FAQ
-					$faq->update([
-						'question' => $faqData['question'],
-						'answer' => $faqData['answer'],
-						'category_id' => $faqData['category_id'] ?? null,
-						'status' => 'published',
-					]);
+						
+					if ($faq) {
+						$faq->update([
+							'question' => $faqData['question'],
+							'answer' => $faqData['answer'],
+							'category_id' => $faqData['category_id'] ?? null,
+							'status' => 'published',
+						]);
+						$processedFaqIds[] = $faq->id;
+					}
 				} else {
-					// Create new FAQ
-					Faq::create([
+					/* Create new FAQ */
+					$newFaq = Faq::create([
 						'product_id' => $product->id,
 						'question' => $faqData['question'],
 						'answer' => $faqData['answer'],
 						'category_id' => $faqData['category_id'] ?? null,
 						'status' => 'published',
 					]);
+					$processedFaqIds[] = $newFaq->id;
 				}
 			}
 		}
+
+		/* Delete FAQs that were not included in the update */
+		$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+		if (!empty($faqsToDelete)) {
+			Faq::where('product_id', $product->id)
+				->whereIn('id', $faqsToDelete)
+				->delete();
+		}
 		
-		
-		
-		
-		
-
-		// if ($request->hasAny(['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'])) {
-
-		// 	/* ✅ Check if a review already exists for this customer & product */
-		// 	$review = Review::where('product_id', $product->id)
-		// 	->where('customer_email', $request->input('review_customer_email'))
-		// 	->first();
-
-		// 	if (!$review) {
-		// 		/* ✅ No existing review, create a new one */
-		// 		$review = new Review();
-		// 		$review->product_id = $product->id;
-		// 		$review->customer_id = $request->input('customer_id');
-		// 		$review->customer_email = $request->input('review_customer_email');
-		// 		$review->customer_name = $request->input('review_customer_name');
-		// 	}
-
-		// 	/* ✅ Update fields (applies to both new & existing reviews) */
-		// 	$review->comment = $request->input('review_comment');
-		// 	$review->status = $request->input('review_status', 'pending');
-		// 	$review->star = $request->input('review_star', null);
-
-		// 	/* ✅ Handle review images upload */
-		// 	if ($request->hasFile('review_images')) {
-		// 		$uploadedReviewImages = [];
-		// 		foreach ($request->file('review_images') as $image) {
-		// 			$path = $image->store('production/reviews', 's3');
-		// 			$uploadedReviewImages[] = Storage::disk('s3')->url($path);
-		// 		}
-		// 		$review->images = $uploadedReviewImages; /* Store as an array */
-		// 	}
-
-		// 	$review->save(); /* ✅ Save either as new or updated review */
-		// }
-
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
 		/* Remove 'faqs' from the input before validation */
