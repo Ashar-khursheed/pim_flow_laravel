@@ -1310,7 +1310,7 @@ class ProductController extends BaseController
 			"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
 			"variant_barcode", "variant_color_title", "variant_color_value", "vendor_id",
 			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
-			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features"
+			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features" , "gen_type"
 		];
 
 		unset($input['product_attributes']);
