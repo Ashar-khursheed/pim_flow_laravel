@@ -373,20 +373,7 @@ class SearchController extends Controller
         return implode('/', $slugPath);
     }
 
-    private function getFullImageUrl($imagePath)
-    {
-        if (!$imagePath) {
-            return null; // Handle null cases
-        }
-
-        // Check if the image path starts with http or https, return it as is
-        if (preg_match('/^https?:\/\//', $imagePath)) {
-            return $imagePath;
-        }
-
-        // Use RvMedia to get the full image URL
-        return RvMedia::getImageUrl($imagePath);
-    }
+  
     
 
 }
