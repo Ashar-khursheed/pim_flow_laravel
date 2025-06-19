@@ -119,14 +119,17 @@ class ProductAttributeController extends Controller
         ];
 
         // Fetch product attributes in the group
-        $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
-            $query->whereHas('attributeGroup', function ($q) {
-                $q->where('name', 'Nutrition Facts Per Serving Group');
-            })->with('attributeGroup');
-        }])
+        $productAttributes = ProductAttributes::with([
+            'attribute' => function ($query) {
+                $query->whereHas('attributeGroup', function ($q) {
+                    $q->where('name', 'Nutrition Facts Per Serving Group');
+                })->with('attributeGroup');
+            },
+            'measurementUnit' // ✅ Correctly added as a second relation
+        ])
         ->where('product_id', $productId)
-        ->get(['attribute_value', 'attribute_id']);
-
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+        
         // Filter out null attributes
         $nutritionFacts = $productAttributes->filter(function ($item) {
             return $item->attribute !== null;
