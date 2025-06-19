@@ -301,25 +301,28 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                        $product->category_list = $product->categories->map(function ($category) {
-                            $hierarchy = [];
-                            $current = $category;
-                            
-                            // Build hierarchy from bottom to top
-                            while ($current) {
-                                array_unshift($hierarchy, [
-                                    'id' => $current->id,
-                                    'name' => $current->name,
-                                    'slug' => optional($current->slugable)->key,
-                                    'level' => $current->level ?? 0, // if you have level field
-                                ]);
-                                $current = $current->parent; // assuming you have parent relationship
-                            }
-                            
-                            return $hierarchy;
-                        });
+                       // Before mapping, eager load all the parent chain
+                            $product->load(['categories' => function($query) {
+                                $query->with('parent.parent.parent.parent.parent'); // Load up to 5 levels deep
+                            }]);
 
-                        return $product;
+                            $product->category_list = $product->categories->map(function ($category) {
+                                $hierarchy = [];
+                                $current = $category;
+                                
+                                while ($current) {
+                                    array_unshift($hierarchy, [
+                                        'id' => $current->id,
+                                        'name' => $current->name,
+                                        'slug' => optional($current->slugable)->key,
+                                        'level' => $current->level ?? 0,
+                                    ]);
+                                    $current = $current->parent;
+                                }
+                                
+                                return $hierarchy;
+                            });
+                                                    return $product;
                     });
 
                     return response()->json([
