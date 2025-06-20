@@ -229,8 +229,9 @@ class ProductController extends Controller
                         });
 
                         // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specifications Sheet',
+                         // Custom sorting for documents
+                         $desiredOrder = [
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
@@ -261,18 +262,7 @@ class ProductController extends Controller
                             $product->documents = [];
                         }
                         
-                        // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specification Sheet',
-                            'Warranty Information',
-                            'Horeca Buying Guide',
-                            'Setup & Usage Instructions',
-                            'Product Installation Guide',
-                            'Installation & Elevation Diagram',
-                            'Spare Parts List',
-                            'Product Brochure',
-                        ];
-
+                       
                         // $documents = json_decode($product->documents, true);
                         // if (is_array($documents)) {
                         //     // Remove .pdf extension from titles
