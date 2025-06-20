@@ -979,17 +979,41 @@ class ProductController extends BaseController
 					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
 						$value = $attributeValue['value'] ?? null;
 						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+						if (!$value || !$measurementUnitID) {
+							/* Delete attribute if either value or measurement ID is missing */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Update or create measurement attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => $measurementUnitID
+								]
+							);
+						}
 					} else {
 						$value = $attributeValue;
-					}
 
-					$product->productAttributes()->updateOrCreate(
-						['attribute_id' => $attributeId],
-						[
-							'attribute_value' => $value,
-							'measurement_unit_id' => $measurementUnitID
-						]
-					);
+						if (empty($value)) {
+							/* Delete non-measurement attribute if empty */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Update or create normal attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => null
+								]
+							);
+						}
+					}
 
 					if ($existingAttribute->type === 'select') {
 						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
@@ -1017,8 +1041,8 @@ class ProductController extends BaseController
 			}
 
 			/* Ensure we extract faqs correctly */
-				 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-			}
+			$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+		}
 
 		/* Validate that faqs is an array */
 		if (!is_array($faqs)) {
@@ -1039,8 +1063,8 @@ class ProductController extends BaseController
 				if (!empty($faqData['id'])) {
 					/* Update existing FAQ */
 					$faq = Faq::where('id', $faqData['id'])
-						->where('product_id', $product->id)
-						->first();
+					->where('product_id', $product->id)
+					->first();
 
 					if ($faq) {
 						$faq->update([
@@ -1069,8 +1093,8 @@ class ProductController extends BaseController
 		$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
 		if (!empty($faqsToDelete)) {
 			Faq::where('product_id', $product->id)
-				->whereIn('id', $faqsToDelete)
-				->delete();
+			->whereIn('id', $faqsToDelete)
+			->delete();
 		}
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
