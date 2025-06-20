@@ -22,7 +22,7 @@
 </head>
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
     <div style="width: 100%; padding: 20px; box-sizing: border-box; background-color: #f8f8f8;">
-        <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border: 1px solid #eaeaea; box-sizing: border-box;">
+        <div class="container" style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #ffffff; padding: 40px; border: 1px solid #eaeaea; box-sizing: border-box;">
 
             <!-- Logo -->
             <div style="margin-bottom: 20px;">
