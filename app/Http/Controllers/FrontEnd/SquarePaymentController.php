@@ -14,11 +14,12 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-        $this->client = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENV', 'sandbox'), // or 'production'
-        ]);
+        $this->client = new SquareClient(
+            accessToken: env('SQUARE_ACCESS_TOKEN'),
+            environment: env('SQUARE_ENV', 'sandbox')
+        );
     }
+    
 
     public function createPayment(Request $request)
     {
