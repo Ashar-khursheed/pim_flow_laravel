@@ -31,10 +31,10 @@
 
             <!-- Greeting -->
             <p style="font-size: 16px; color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">Hi <strong style="color: #186737;">{{ $name }}</strong>!</p>
-            <p style="font-size: 15px; color: #000000;">
-                <span style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
+            <p style="box-sizing:border-box; line-height:1.5em; margin-top:0; text-align:left; font-size:15px; color:#000000;">
+                <font face="&#x27;Helvetica Neue&#x27;, Helvetica, Arial, sans-serif">
                   We received a request to reset your HORECA account password.
-                </span>
+                </font>
               </p>
               
             <p style="font-size: 15px; color: #000000; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">To set a new password, simply click the link below:</p>
