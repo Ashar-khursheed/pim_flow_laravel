@@ -3,7 +3,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Square\API\SquareClient;
+use Square\SquareClient;
 use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\OfflinePaymentDetails;
