@@ -1,13 +1,12 @@
 <?php
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
-use Square\SquareClient;
-use Square\Models\Money;
-use Square\Models\QuickPay;
-use Square\Models\CreatePaymentLinkRequest;
-use Illuminate\Support\Str;
+
 use Illuminate\Http\Request;
+use Square\SquareClient;
+use Square\Models\CreatePaymentRequest;
+use Square\Models\Money;
+use Illuminate\Support\Str;
 
 class SquarePaymentController extends Controller
 {
@@ -17,47 +16,40 @@ class SquarePaymentController extends Controller
     {
         $this->client = new SquareClient([
             'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => 'sandbox', // Change to 'production' in live mode
+            'environment' => env('SQUARE_ENV', 'sandbox'), // or 'production'
         ]);
     }
 
-    public function createPaymentLink(Request $request)
+    public function createPayment(Request $request)
     {
         $request->validate([
+            'nonce' => 'required|string',
             'amount' => 'required|numeric|min:1',
-            'currency' => 'required|string|size:3',
-            'title' => 'required|string|max:255',
         ]);
 
-        $amount = (int) ($request->amount * 100); // Convert to cents
-        $idempotencyKey = Str::uuid();
+        $money = new Money();
+        $money->setAmount((int) ($request->amount * 100)); // Convert to cents
+        $money->setCurrency('USD');
 
-        $quickPay = new QuickPay([
-            'name' => $request->title,
-            'priceMoney' => new Money([
-                'amount' => $amount,
-                'currency' => strtoupper($request->currency),
-            ]),
-            'locationId' => env('SQUARE_LOCATION_ID'),
-        ]);
+        $paymentRequest = new CreatePaymentRequest(
+            $request->nonce,
+            Str::uuid(),
+            $money
+        );
 
-        $createRequest = new CreatePaymentLinkRequest([
-            'idempotencyKey' => $idempotencyKey,
-            'quickPay' => $quickPay,
-        ]);
+        $paymentRequest->setLocationId(env('SQUARE_LOCATION_ID'));
 
-        $apiResponse = $this->client->getCheckoutApi()->createPaymentLink($createRequest);
+        $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
 
-        if ($apiResponse->isSuccess()) {
-            $result = $apiResponse->getResult();
+        if ($response->isSuccess()) {
             return response()->json([
                 'success' => true,
-                'payment_url' => $result->getPaymentLink()->getUrl(),
+                'payment' => $response->getResult()->getPayment(),
             ]);
         } else {
             return response()->json([
                 'success' => false,
-                'errors' => $apiResponse->getErrors(),
+                'errors' => $response->getErrors(),
             ], 400);
         }
     }
