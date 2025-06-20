@@ -31,7 +31,12 @@
 
             <!-- Greeting -->
             <p style="font-size: 16px; color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">Hi <strong style="color: #186737;">{{ $name }}</strong>!</p>
-            <p style="font-size: 15px; color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">We received a request to reset your HORECA account password.</p>
+            <p style="font-size: 15px; color: #000000;">
+                <span style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
+                  We received a request to reset your HORECA account password.
+                </span>
+              </p>
+              
             <p style="font-size: 15px; color: #000000; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">To set a new password, simply click the link below:</p>
 
             <!-- Reset Button -->
