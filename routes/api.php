@@ -375,7 +375,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
 	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
 	Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
-	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
+	Route::post('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
 	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
 	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
 	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
