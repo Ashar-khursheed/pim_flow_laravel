@@ -404,7 +404,7 @@ class ProductController extends Controller
                         return [
                             'id' => $category->id,
                             'name' => $category->name,
-                            'slug' => optional($category->slugable)->key,
+                            'slug' => $category->slug,
                         ];
                     })->values();
 
@@ -712,7 +712,7 @@ class ProductController extends Controller
                             return [
                                 'id' => $category->id,
                                 'name' => $category->name,
-                                'slug' => optional($category->slugable)->key,
+                                'slug' => $category->slug,
                             ];
                         })->values();
 
