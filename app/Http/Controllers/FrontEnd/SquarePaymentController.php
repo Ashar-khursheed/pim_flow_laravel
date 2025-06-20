@@ -22,7 +22,7 @@ class SquarePaymentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="api/frontend/payment-square",
+     *     path="/api/frontend/payment-square",
      *     operationId="createSquarePayment",
      *     tags={"Frontend-Payment"},
      *     summary="Create a payment using Square API",
@@ -152,7 +152,7 @@ class SquarePaymentController extends Controller
 
     /**
      * @OA\Get(
-     *     path="api/frontend/payment-form",
+     *     path="/api/frontend/payment-form",
      *     operationId="paymentFormView",
      *     tags={"Frontend-Payment"},
      *     summary="Get payment form view",
