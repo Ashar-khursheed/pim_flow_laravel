@@ -46,26 +46,31 @@ class SaveForLaterController extends Controller
    
      public function saveForLater(Request $request)
      {
-         // Validate the incoming request
          $request->validate([
              'product_id' => 'required|exists:ec_products,id',
          ]);
      
-         // Get the logged-in user ID
-         $userId = Auth::id();
+         $userId = auth()->id();
      
-         // Check if the product exists in the user's cart
+         // Check if customer is authenticated
+         if (!$userId) {
+             return response()->json([
+                 'message' => 'Customer not authenticated.',
+             ], 401);
+         }
+     
+         // Check if product is in the cart
          $cartItem = Cart::where('user_id', $userId)
                          ->where('product_id', $request->product_id)
                          ->first();
      
          if (!$cartItem) {
              return response()->json([
-                 'message' => 'Product not found in cart.'
+                 'message' => 'Product not found in cart.',
              ], 404);
          }
      
-         // Add the product to the Save for Later table
+         // Move to save for later
          SaveForLater::updateOrCreate(
              [
                  'user_id' => $userId,
@@ -76,15 +81,15 @@ class SaveForLaterController extends Controller
              ]
          );
      
-         // Remove the product from the cart
          $cartItem->delete();
      
          return response()->json([
              'message' => 'Product has been moved to Save for Later.',
          ], 200);
      }
+     
     
-        /**
+    /**
      * @OA\Get(
      *     path="/api/frontend/save-for-later",
      *     summary="Get all products saved for later by the user",
@@ -118,7 +123,7 @@ class SaveForLaterController extends Controller
     public function showSaveForLater(Request $request)
     {
         // Get the logged-in user
-        $user = Auth::id();
+        $userId = auth()->id();
 
         // Fetch all saved products for the user
         $savedProducts = SaveForLater::where('user_id',  $user)
@@ -197,7 +202,7 @@ class SaveForLaterController extends Controller
         ]);
 
         // Get the logged-in user
-        $user = Auth::id();
+        $userId = auth()->id();
 
         // Check if the product exists in the "Save for Later" list
         $savedProduct = SaveForLater::where('user_id', $user)
