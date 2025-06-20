@@ -423,7 +423,7 @@ class CartController extends Controller
     
         if ($cartItem) {
             $cartItem->quantity = $quantity;
-            $cartItem->save();
+            $cartItem->update();
     
             return response()->json([
                 'success' => true,
