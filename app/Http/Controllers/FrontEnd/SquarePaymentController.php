@@ -15,11 +15,10 @@ class SquarePaymentController extends Controller
     public function __construct()
     {
         $this->client = new SquareClient(
-            accessToken: env('SQUARE_ACCESS_TOKEN'),
+            token: env('SQUARE_ACCESS_TOKEN'),
             environment: env('SQUARE_ENV', 'sandbox')
         );
     }
-    
 
     public function createPayment(Request $request)
     {
@@ -28,30 +27,27 @@ class SquarePaymentController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
 
-        $money = new Money();
-        $money->setAmount((int) ($request->amount * 100)); // Convert to cents
-        $money->setCurrency('USD');
+        $body = new CreatePaymentRequest([
+            'sourceId' => $request->nonce,
+            'idempotencyKey' => Str::uuid(),
+            'amountMoney' => new Money([
+                'amount' => (int)($request->amount * 100), // cents
+                'currency' => 'USD',
+            ]),
+        ]);
 
-        $paymentRequest = new CreatePaymentRequest(
-            $request->nonce,
-            Str::uuid(),
-            $money
-        );
+        $apiResponse = $this->client->payments->create($body);
 
-        $paymentRequest->setLocationId(env('SQUARE_LOCATION_ID'));
-
-        $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
-
-        if ($response->isSuccess()) {
+        if ($apiResponse->isSuccess()) {
             return response()->json([
                 'success' => true,
-                'payment' => $response->getResult()->getPayment(),
+                'payment' => $apiResponse->getResult()->getPayment(),
             ]);
-        } else {
-            return response()->json([
-                'success' => false,
-                'errors' => $response->getErrors(),
-            ], 400);
         }
+
+        return response()->json([
+            'success' => false,
+            'errors' => $apiResponse->getErrors(),
+        ], 400);
     }
 }
