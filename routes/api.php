@@ -482,7 +482,7 @@ Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandS
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
 
-Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPaymentLink']);
+Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
 
 Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
