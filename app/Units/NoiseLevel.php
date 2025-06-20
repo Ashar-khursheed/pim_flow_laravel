@@ -3,6 +3,7 @@
 namespace App\Units;
 
 use PhpUnitsOfMeasure\AbstractPhysicalQuantity;
+use PhpUnitsOfMeasure\UnitOfMeasure;
 
 class NoiseLevel extends AbstractPhysicalQuantity
 {
@@ -10,9 +11,32 @@ class NoiseLevel extends AbstractPhysicalQuantity
 
 	protected static function initialize()
 	{
-		static::addUnit('decibel', ['dB'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('A-weighted decibel', ['dB(A)', 'dBA'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('C-weighted decibel', ['dB(C)', 'dBC'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('sound pressure level', ['dB SPL', 'SPL'], fn($v) => $v, fn($v) => $v);
+		static::addUnit(new UnitOfMeasure(
+			'decibel',
+			fn($v) => $v,
+			fn($v) => $v,
+			['dB']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'A-weighted decibel',
+			fn($v) => $v,
+			fn($v) => $v,
+			['dB(A)', 'dBA']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'C-weighted decibel',
+			fn($v) => $v,
+			fn($v) => $v,
+			['dB(C)', 'dBC']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'sound pressure level',
+			fn($v) => $v,
+			fn($v) => $v,
+			['dB SPL', 'SPL']
+		));
 	}
 }

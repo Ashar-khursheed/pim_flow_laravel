@@ -3,6 +3,7 @@
 namespace App\Units;
 
 use PhpUnitsOfMeasure\AbstractPhysicalQuantity;
+use PhpUnitsOfMeasure\UnitOfMeasure;
 
 class Density extends AbstractPhysicalQuantity
 {
@@ -10,7 +11,18 @@ class Density extends AbstractPhysicalQuantity
 
 	protected static function initialize()
 	{
-		static::addUnit('kilogram per cubic meter', ['kg/m³'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('gram per cubic centimeter', ['g/cm³'], fn($v) => $v * 1000, fn($v) => $v / 1000);
+		static::addUnit(new UnitOfMeasure(
+			'kilogram per cubic meter',
+			fn($v) => $v,
+			fn($v) => $v,
+			['kg/m³']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'gram per cubic centimeter',
+			fn($v) => $v * 1000,
+			fn($v) => $v / 1000,
+			['g/cm³']
+		));
 	}
 }

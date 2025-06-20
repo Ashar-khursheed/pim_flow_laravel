@@ -3,6 +3,7 @@
 namespace App\Units;
 
 use PhpUnitsOfMeasure\AbstractPhysicalQuantity;
+use PhpUnitsOfMeasure\UnitOfMeasure;
 
 class RotationalSpeed extends AbstractPhysicalQuantity
 {
@@ -10,7 +11,18 @@ class RotationalSpeed extends AbstractPhysicalQuantity
 
 	protected static function initialize()
 	{
-		static::addUnit('revolutions per minute', ['rpm'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('revolutions per second', ['rps'], fn($v) => $v * 60, fn($v) => $v / 60);
+		static::addUnit(new UnitOfMeasure(
+			'revolutions per minute',
+			fn($v) => $v,
+			fn($v) => $v,
+			['rpm']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'revolutions per second',
+			fn($v) => $v * 60,
+			fn($v) => $v / 60,
+			['rps']
+		));
 	}
 }

@@ -3,6 +3,7 @@
 namespace App\Units;
 
 use PhpUnitsOfMeasure\AbstractPhysicalQuantity;
+use PhpUnitsOfMeasure\UnitOfMeasure;
 
 class Humidity extends AbstractPhysicalQuantity
 {
@@ -10,6 +11,11 @@ class Humidity extends AbstractPhysicalQuantity
 
 	protected static function initialize()
 	{
-		static::addUnit('percent', ['%'], fn($v) => $v, fn($v) => $v);
+		static::addUnit(new UnitOfMeasure(
+			'percent',
+			fn($v) => $v,
+			fn($v) => $v,
+			['%']
+		));
 	}
 }

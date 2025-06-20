@@ -3,6 +3,7 @@
 namespace App\Units;
 
 use PhpUnitsOfMeasure\AbstractPhysicalQuantity;
+use PhpUnitsOfMeasure\UnitOfMeasure;
 
 class EnergyConsumption extends AbstractPhysicalQuantity
 {
@@ -10,8 +11,25 @@ class EnergyConsumption extends AbstractPhysicalQuantity
 
 	protected static function initialize()
 	{
-		static::addUnit('kilowatt-hour', ['kWh'], fn($v) => $v, fn($v) => $v);
-		static::addUnit('watt-hour', ['Wh'], fn($v) => $v / 1000, fn($v) => $v * 1000);
-		static::addUnit('megajoule', ['MJ'], fn($v) => $v * 0.277778, fn($v) => $v / 0.277778); // 1 MJ = 0.277778 kWh
+		static::addUnit(new UnitOfMeasure(
+			'kilowatt-hour',
+			fn($v) => $v,
+			fn($v) => $v,
+			['kWh']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'watt-hour',
+			fn($v) => $v / 1000,
+			fn($v) => $v * 1000,
+			['Wh']
+		));
+
+		static::addUnit(new UnitOfMeasure(
+			'megajoule',
+			fn($v) => $v * 0.277778,
+			fn($v) => $v / 0.277778,
+			['MJ']
+		));
 	}
 }
