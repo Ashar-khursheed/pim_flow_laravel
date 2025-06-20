@@ -4,12 +4,11 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Square\SquareClient;
 use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Exceptions\ApiException;
 use Illuminate\Support\Str;
-
+use Square\Clients\SquareClient;
 class SquarePaymentController extends Controller
 {
     protected SquareClient $client;
