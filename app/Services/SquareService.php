@@ -14,11 +14,9 @@ class SquareService
 
     public function __construct()
     {
-        // Fix: Correct SquareClient initialization
-        $this->client = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENV', 'sandbox') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX,
-        ]);
+        // Alternative approach: Pass token as first parameter directly
+        $environment = env('SQUARE_ENV', 'sandbox') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX;
+        $this->client = new SquareClient(env('SQUARE_ACCESS_TOKEN'), $environment);
     }
 
     public function processPayment($nonce, $amount, $currency = 'USD')

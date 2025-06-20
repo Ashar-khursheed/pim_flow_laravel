@@ -8,6 +8,7 @@ use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\OfflinePaymentDetails;
 use Square\Exceptions\ApiException;
+use Square\Environment;
 
 class SquarePaymentController extends Controller
 {
@@ -15,11 +16,9 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-        $this->squareClient = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENV', 'sandbox'),
-        ]);
-        
+        // Alternative approach: Pass token as first parameter directly
+        $environment = env('SQUARE_ENV', 'sandbox') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX;
+        $this->squareClient = new SquareClient(env('SQUARE_ACCESS_TOKEN'), $environment);
     }
 
     /**
@@ -71,10 +70,10 @@ class SquarePaymentController extends Controller
             'nonce' => 'required|string',
             'amount' => 'required|numeric|min:0.5',
             'currency' => 'required|string|size:3',
-            'customer_id' => 'required|string',
+            'customer_id' => 'nullable|string',
             'location_id' => 'required|string',
-            'team_member_id' => 'required|string',
-            'buyer_email_address' => 'required|email',
+            'team_member_id' => 'nullable|string',
+            'buyer_email_address' => 'nullable|email',
         ]);
 
         $nonce = $request->input('nonce');
@@ -93,9 +92,6 @@ class SquarePaymentController extends Controller
             $amountMoney->setAmount((int)($amount * 100)); // Convert amount to cents
             $amountMoney->setCurrency($currency);
 
-            // Create Offline Payment Details (if applicable)
-            $offlinePaymentDetails = new OfflinePaymentDetails();
-
             // Create the payment request with necessary parameters
             $paymentRequest = new CreatePaymentRequest(
                 $nonce,  // Nonce
@@ -105,14 +101,28 @@ class SquarePaymentController extends Controller
             // Set amount_money using the Money object
             $paymentRequest->setAmountMoney($amountMoney);
 
-            // Set additional fields
-            $paymentRequest->setCustomerId($customerId);
-            $paymentRequest->setLocationId($locationId);
-            $paymentRequest->setTeamMemberId($teamMemberId);
+            // Set additional optional fields only if they are provided
+            if ($customerId) {
+                $paymentRequest->setCustomerId($customerId);
+            }
+            
+            if ($locationId) {
+                $paymentRequest->setLocationId($locationId);
+            }
+            
+            if ($teamMemberId) {
+                $paymentRequest->setTeamMemberId($teamMemberId);
+            }
+            
+            if ($buyerEmailAddress) {
+                $paymentRequest->setBuyerEmailAddress($buyerEmailAddress);
+            }
+
             $paymentRequest->setReferenceId(uniqid('ref_'));  // Optional: Unique reference ID
-            $paymentRequest->setAcceptPartialAuthorization(true);  // Accept partial authorization if needed
-            $paymentRequest->setBuyerEmailAddress($buyerEmailAddress);
-            $paymentRequest->setOfflinePaymentDetails($offlinePaymentDetails); // If needed
+            $paymentRequest->setAcceptPartialAuthorization(false);  // Set to false by default
+
+            // Remove offline payment details as they're not needed for regular card payments
+            // $paymentRequest->setOfflinePaymentDetails($offlinePaymentDetails);
 
             // Send the payment request to Square API
             $response = $paymentsApi->createPayment($paymentRequest);
@@ -132,6 +142,11 @@ class SquarePaymentController extends Controller
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => 'An unexpected error occurred: ' . $e->getMessage(),
             ], 500);
         }
     }
