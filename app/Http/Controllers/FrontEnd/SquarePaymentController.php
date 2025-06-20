@@ -8,7 +8,6 @@ use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\OfflinePaymentDetails;
 use Square\Exceptions\ApiException;
-use Square\Environment;
 
 class SquarePaymentController extends Controller
 {
@@ -16,8 +15,8 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-        // Alternative approach: Pass token as first parameter directly
-        $environment = env('SQUARE_ENV', 'sandbox') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX;
+        // Simple constructor - just pass the access token and environment as string
+        $environment = env('SQUARE_ENV', 'sandbox'); // 'sandbox' or 'production'
         $this->squareClient = new SquareClient(env('SQUARE_ACCESS_TOKEN'), $environment);
     }
 
