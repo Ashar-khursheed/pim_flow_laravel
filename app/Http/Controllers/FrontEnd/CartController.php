@@ -192,7 +192,7 @@ class CartController extends Controller
      */
     public function viewCart(Request $request)
     {
-        $userId = Auth::id();
+        $userId = auth()->id();
         $isUserLoggedIn = $userId !== null;
 
         Log::info('User logged in:', ['user_id' => $userId]);
@@ -326,7 +326,7 @@ class CartController extends Controller
     public function clearProductFromCart(Request $request, $productId)
     {
         // Determine if the user is logged in and get the user ID
-        $userId = Auth::id();
+        $userId = auth()->id();
 
         if (Auth::check()) {
             // Remove the product from the cart for logged-in user
@@ -414,7 +414,7 @@ class CartController extends Controller
         $quantity = $request->input('quantity');
     
         if (Auth::check()) {
-            $userId = Auth::id();
+            $userId = auth()->id();
             $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
         } else {
             $sessionId = $request->session()->getId();
@@ -525,7 +525,7 @@ class CartController extends Controller
         // Determine if the user is logged in and retrieve the cart item
         $cartItem = null;
         if (Auth::check()) {
-            $userId = Auth::id();
+            $userId = auth()->id();
             $cartItem = Cart::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->first();
@@ -796,7 +796,7 @@ class CartController extends Controller
     public function cartSummary(Request $request)
     {
         // Determine if the user is logged in
-        $userId = Auth::id();
+        $userId = auth()->id();
         $sessionId = $userId ? null : $request->session()->getId();
 
         // Fetch cart items with product details and currency information
@@ -866,7 +866,7 @@ class CartController extends Controller
 
     public function totalProductsInCart(Request $request)
     {
-        $userId = Auth::id();
+        $userId = auth()->id();
 
         $totalQuantity = Cart::where('user_id', $userId)->sum('quantity');
 
