@@ -37,6 +37,47 @@ class SquarePaymentController extends Controller
         }
     }
 
+    /**
+     * @OA\Post(
+     *     path="/frontend/payment-square",
+     *     operationId="createSquarePayment",
+     *     tags={"Frontend-Payment"},
+     *     summary="Create a payment using Square API",
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"nonce", "amount", "currency", "customer_id", "location_id", "team_member_id", "buyer_email_address"},
+     *             @OA\Property(property="nonce", type="string", example="card_nonce_value"),
+     *             @OA\Property(property="amount", type="number", format="float", example=10.50),
+     *             @OA\Property(property="currency", type="string", example="USD"),
+     *             @OA\Property(property="customer_id", type="string"),
+     *             @OA\Property(property="location_id", type="string"),
+     *             @OA\Property(property="team_member_id", type="string"),
+     *             @OA\Property(property="buyer_email_address", type="string", format="email", example="customer@example.com")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment successfully created",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="payment", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation or payment error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error"
+     *     )
+     * )
+     */
     public function createPayment(Request $request)
     {
         // Debug: Log all incoming request data
@@ -185,6 +226,18 @@ class SquarePaymentController extends Controller
         }
     }
 
+      /**
+     * @OA\Get(
+     *     path="/frontend/payment-form",
+     *     operationId="paymentFormView",
+     *     tags={"Frontend-Payment"},
+     *     summary="Get payment form view",
+     *     @OA\Response(
+     *         response=200,
+     *         description="Blade view with Square form"
+     *     )
+     * )
+     */
     public function paymentForm()
     {
         return view('payment.form', [

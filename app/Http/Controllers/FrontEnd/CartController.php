@@ -444,131 +444,184 @@ class CartController extends Controller
     }
 
 
-    /**
-     * @OA\Post(
-     *     path="/api/frontend/cart/decrease-quantity",
-     *     tags={"Frontend-Cart"},
-     *     summary="Decrease cart item quantity",
-     *     description="Decrease the quantity of a specific product in the cart. If quantity becomes 0 or less, the item will be removed from cart.",
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"product_id", "quantity"},
-     *             @OA\Property(property="product_id", type="integer", description="ID of the product", example=1),
-     *             @OA\Property(property="quantity", type="integer", minimum=1, description="Quantity to decrease", example=1)
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=201,
-     *         description="Cart item quantity decreased successfully",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(
-     *                 property="data",
-     *                 type="object",
-     *                 @OA\Property(property="id", type="integer", example=1),
-     *                 @OA\Property(property="user_id", type="integer", example=1),
-     *                 @OA\Property(property="session_id", type="string", nullable=true, example=null),
-     *                 @OA\Property(property="product_id", type="integer", example=1),
-     *                 @OA\Property(property="quantity", type="integer", example=2),
-     *                 @OA\Property(property="created_at", type="string", format="date-time", example="2023-01-01T12:00:00.000000Z"),
-     *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-01-01T12:30:00.000000Z")
-     *             )
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=200,
-     *         description="Item removed from cart (quantity became 0)",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=true),
-     *             @OA\Property(property="message", type="string", example="Item removed from cart.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=404,
-     *         description="Cart item not found",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="message", type="string", example="Item not found in cart.")
-     *         )
-     *     ),
-     *     @OA\Response(
-     *         response=422,
-     *         description="Validation error",
-     *         @OA\JsonContent(
-     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-     *             @OA\Property(
-     *                 property="errors",
-     *                 type="object",
-     *                 @OA\Property(
-     *                     property="quantity",
-     *                     type="array",
-     *                     @OA\Items(type="string", example="The quantity must be at least 1.")
-     *                 )
-     *             )
-     *         )
-     *     ),
-     *     security={{"bearerAuth": {}}}
-     * )
-     */
-    public function decreaseQuantity(Request $request)
-    {
+   /**
+ * @OA\Post(
+ *     path="/api/frontend/cart/decrease-quantity",
+ *     tags={"Frontend-Cart"},
+ *     summary="Decrease cart item quantity",
+ *     description="Decrease the quantity of a specific product in the cart by 1. If quantity becomes 0, the item will be removed from cart.",
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"product_id"},
+ *             @OA\Property(property="product_id", type="integer", description="ID of the product", example=1)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Cart item quantity decreased successfully",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="object",
+ *                 @OA\Property(property="id", type="integer", example=1),
+ *                 @OA\Property(property="user_id", type="integer", example=1),
+ *                 @OA\Property(property="session_id", type="string", nullable=true, example=null),
+ *                 @OA\Property(property="product_id", type="integer", example=1),
+ *                 @OA\Property(property="quantity", type="integer", example=2),
+ *                 @OA\Property(property="currency_title", type="string", example="USD"),
+ *                 @OA\Property(property="created_at", type="string", format="date-time", example="2023-01-01T12:00:00.000000Z"),
+ *                 @OA\Property(property="updated_at", type="string", format="date-time", example="2023-01-01T12:30:00.000000Z")
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=201,
+ *         description="Item removed from cart (quantity became 0)",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Item removed from cart."),
+ *             @OA\Property(property="removed", type="boolean", example=true)
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Cart item not found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Item not found in cart.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+ *             @OA\Property(
+ *                 property="errors",
+ *                 type="object",
+ *                 @OA\Property(
+ *                     property="product_id",
+ *                     type="array",
+ *                     @OA\Items(type="string", example="The product_id field is required.")
+ *                 )
+ *             )
+ *         )
+ *     ),
+ *     security={{"bearerAuth": {}}}
+ * )
+ */
+public function decreaseQuantity(Request $request)
+{
+    try {
         // Validate request inputs
         $request->validate([
             'product_id' => 'required|exists:ec_products,id',
-            'quantity' => 'required|integer|min:1',
         ]);
-    
+
         $productId = $request->input('product_id');
-        $quantityToDecrease = $request->input('quantity');
-    
-        // Determine if the user is logged in and retrieve the cart item
+
+        // Find cart item based on user authentication status
         $cartItem = null;
         if (Auth::check()) {
             $userId = Auth::id();
             $cartItem = Cart::where('user_id', $userId)
                 ->where('product_id', $productId)
+                ->with('product.currency')
                 ->first();
         } else {
             $sessionId = $request->session()->getId();
             $cartItem = Cart::where('session_id', $sessionId)
                 ->where('product_id', $productId)
+                ->with('product.currency')
                 ->first();
         }
-    
+
         // Check if the cart item exists
         if (!$cartItem) {
-            Log::info('Cart item not found for product', [
+            \Log::info('Cart item not found for product', [
                 'product_id' => $productId,
-                'user_id' => Auth::id(),
+                'user_id' => Auth::id() ?? null,
                 'session_id' => $request->session()->getId()
             ]);
-            return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-        }
-    
-        // Decrease the quantity and check if it should be removed
-        $cartItem->quantity -= $quantityToDecrease;
-    
-        if ($cartItem->quantity <= 0) {
-            $cartItem->delete();
-            return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
-        } else {
-            $cartItem->save();
-    
+            
             return response()->json([
-                'success' => true,
-                'data' => [
-                    'id' => $cartItem->id,
-                    'user_id' => $cartItem->user_id,
-                    'session_id' => $cartItem->session_id,
-                    'product_id' => $cartItem->product_id,
-                    'quantity' => $cartItem->quantity,
-                    'created_at' => $cartItem->created_at,
-                    'updated_at' => $cartItem->updated_at,
-                ],
+                'success' => false, 
+                'message' => 'Item not found in cart.'
+            ], 404);
+        }
+
+        // Decrease the quantity by 1
+        $newQuantity = $cartItem->quantity - 1;
+
+        // If quantity becomes 0 or less, remove the item
+        if ($newQuantity <= 0) {
+            $cartItem->delete();
+            
+            \Log::info('Cart item removed', [
+                'product_id' => $productId,
+                'user_id' => Auth::id() ?? null,
+                'session_id' => $request->session()->getId()
+            ]);
+            
+            return response()->json([
+                'success' => true, 
+                'message' => 'Item removed from cart.',
+                'removed' => true
             ]);
         }
+
+        // Update the quantity and save
+        $cartItem->quantity = $newQuantity;
+        $cartItem->save();
+
+        // Refresh the model to get updated timestamps
+        $cartItem->refresh();
+
+        \Log::info('Cart quantity decreased', [
+            'product_id' => $productId,
+            'old_quantity' => $cartItem->quantity + 1,
+            'new_quantity' => $cartItem->quantity,
+            'user_id' => Auth::id() ?? null,
+            'session_id' => $request->session()->getId()
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cart quantity decreased successfully',
+            'data' => [
+                'id' => $cartItem->id,
+                'user_id' => $cartItem->user_id,
+                'session_id' => $cartItem->session_id,
+                'product_id' => $cartItem->product_id,
+                'quantity' => $cartItem->quantity,
+                'currency_title' => $cartItem->product->currency->symbol ?? 'USD',
+                'created_at' => $cartItem->created_at,
+                'updated_at' => $cartItem->updated_at,
+            ],
+        ]);
+
+    } catch (\Illuminate\Validation\ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (\Exception $e) {
+        \Log::error('Cart decrease quantity error: ' . $e->getMessage(), [
+            'product_id' => $request->input('product_id'),
+            'user_id' => Auth::id() ?? null,
+            'session_id' => $request->session()->getId(),
+            'trace' => $e->getTraceAsString()
+        ]);
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while updating cart'
+        ], 500);
     }
+}
 
 
     /**
