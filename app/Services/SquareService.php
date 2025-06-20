@@ -14,21 +14,24 @@ class SquareService
 
     public function __construct()
     {
-        $this->squareClient = new SquareClient(env('SQUARE_ACCESS_TOKEN'));
-
+        // Fix: Correct SquareClient initialization
+        $this->client = new SquareClient([
+            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
+            'environment' => env('SQUARE_ENV', 'sandbox') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX,
+        ]);
     }
 
-    public function processPayment($nonce, $amount)
+    public function processPayment($nonce, $amount, $currency = 'USD')
     {
         $paymentsApi = $this->client->getPaymentsApi();
 
         // Create a Money object to represent the amount
         $money = new Money();
         $money->setAmount((int)($amount * 100)); // Convert dollars to cents
-        $money->setCurrency('USD'); // Set the appropriate currency
+        $money->setCurrency($currency); // Set the appropriate currency
 
         // Create a unique idempotency key
-        $idempotencyKey = uniqid();
+        $idempotencyKey = uniqid('payment_');
 
         // Create a payment request
         $createPaymentRequest = new CreatePaymentRequest($nonce, $idempotencyKey);
@@ -54,6 +57,16 @@ class SquareService
                 'success' => false,
                 'error' => $e->getMessage(),
             ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'An unexpected error occurred: ' . $e->getMessage(),
+            ];
         }
+    }
+
+    public function getClient()
+    {
+        return $this->client;
     }
 }
