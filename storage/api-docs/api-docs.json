@@ -15699,7 +15699,7 @@
                 }
             }
         },
-        "/api/frontend/payment-square": {
+        "/frontend/payment-square": {
             "post": {
                 "tags": [
                     "Frontend-Payment"
@@ -15800,7 +15800,7 @@
                 }
             }
         },
-        "/api/frontend/payment-form": {
+        "/frontend/payment-form": {
             "get": {
                 "tags": [
                     "Frontend-Payment"

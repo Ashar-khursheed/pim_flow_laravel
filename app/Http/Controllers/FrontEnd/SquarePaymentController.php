@@ -22,7 +22,7 @@ class SquarePaymentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/frontend/payment-square",
+     *     path="/frontend/payment-square",
      *     operationId="createSquarePayment",
      *     tags={"Frontend-Payment"},
      *     summary="Create a payment using Square API",
@@ -84,7 +84,8 @@ class SquarePaymentController extends Controller
         $buyerEmailAddress = $request->input('buyer_email_address');
 
         try {
-            $paymentsApi = $this->squareClient->getPaymentsApi();
+            // Use the correct method name - payments instead of getPaymentsApi()
+            $paymentsApi = $this->squareClient->payments;
 
             // Create the Money object for the payment amount
             $amountMoney = new Money();
@@ -152,7 +153,7 @@ class SquarePaymentController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/frontend/payment-form",
+     *     path="/frontend/payment-form",
      *     operationId="paymentFormView",
      *     tags={"Frontend-Payment"},
      *     summary="Get payment form view",
@@ -162,7 +163,6 @@ class SquarePaymentController extends Controller
      *     )
      * )
      */
-
     public function paymentForm()
     {
         return view('payment.form', [

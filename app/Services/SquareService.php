@@ -20,7 +20,8 @@ class SquareService
 
     public function processPayment($nonce, $amount, $currency = 'USD')
     {
-        $paymentsApi = $this->client->getPaymentsApi();
+        // Use the correct method name - payments instead of getPaymentsApi()
+        $paymentsApi = $this->client->payments;
 
         // Create a Money object to represent the amount
         $money = new Money();
