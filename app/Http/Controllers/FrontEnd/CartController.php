@@ -344,7 +344,7 @@ class CartController extends Controller
     }
 
     /**
-     * @OA\Put(
+     * @OA\Post(
      *     path="/api/frontend/cart/update-quantity",
      *     tags={"Frontend-Cart"},
      *     summary="Update cart item quantity",
@@ -409,10 +409,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-
+    
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
-
+    
         if (Auth::check()) {
             $userId = Auth::id();
             $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
@@ -420,11 +420,11 @@ class CartController extends Controller
             $sessionId = $request->session()->getId();
             $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
         }
-
+    
         if ($cartItem) {
             $cartItem->quantity = $quantity;
             $cartItem->save();
-
+    
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -433,15 +433,16 @@ class CartController extends Controller
                     'session_id' => $cartItem->session_id,
                     'product_id' => $cartItem->product_id,
                     'quantity' => $cartItem->quantity,
-                    'currency_title' => $cartItem->product->currency->title ?? null, // Currency title inside data
+                    'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
                     'created_at' => $cartItem->created_at,
                     'updated_at' => $cartItem->updated_at,
                 ],
             ]);
         }
-
+    
         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
     }
+
 
     /**
      * @OA\Post(
@@ -517,10 +518,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-
+    
         $productId = $request->input('product_id');
         $quantityToDecrease = $request->input('quantity');
-
+    
         // Determine if the user is logged in and retrieve the cart item
         $cartItem = null;
         if (Auth::check()) {
@@ -534,7 +535,7 @@ class CartController extends Controller
                 ->where('product_id', $productId)
                 ->first();
         }
-
+    
         // Check if the cart item exists
         if (!$cartItem) {
             Log::info('Cart item not found for product', [
@@ -544,16 +545,16 @@ class CartController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
         }
-
+    
         // Decrease the quantity and check if it should be removed
         $cartItem->quantity -= $quantityToDecrease;
-
+    
         if ($cartItem->quantity <= 0) {
             $cartItem->delete();
             return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
         } else {
             $cartItem->save();
-
+    
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -568,6 +569,7 @@ class CartController extends Controller
             ]);
         }
     }
+
 
     /**
      * @OA\Get(
