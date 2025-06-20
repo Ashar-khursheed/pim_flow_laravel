@@ -1865,9 +1865,18 @@ class ProductController extends BaseController
     $reviewImagePath = 'production/reviews';
 
     // Handle images with role-based permission
-    if ($request->has('images')) {
-		if (!$canModifyImages) {
-			// User doesn't have permission to modify images, return error
+	if ($request->has('images')) {
+		// Check if user is actually trying to modify images (upload new files)
+		$hasNewImageFiles = false;
+		foreach ($request->images as $key => $image) {
+			if ($request->hasFile("images.$key")) {
+				$hasNewImageFiles = true;
+				break;
+			}
+		}
+		
+		// Only check permissions if user is uploading new image files
+		if ($hasNewImageFiles && !$canModifyImages) {
 			return response()->json([
 				'success' => false,
 				'message' => 'You do not have permission to modify product images.'
@@ -1885,47 +1894,55 @@ class ProductController extends BaseController
 				$path = $file->store($imagePath, 's3');
 				$finalImages[] = Storage::disk('s3')->url($path);
 			}
-            // else ignore invalid inputs
-        }
-
-        // Save as JSON with unescaped slashes
+			// else ignore invalid inputs
+		}
+	
+		// Save as JSON with unescaped slashes
 		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
-    } else {
-        // If images are not being updated, preserve existing images
+	} else {
+		// If images are not being updated, preserve existing images
 		$input['images'] = $product->images;
-    }
+	}
 
     // Handle videos with role-based permission
-   if ($request->has('video_path')) {
-    if (!$canModifyImages) {
-        // User doesn't have permission to modify videos, return error
-        return response()->json([
-            'success' => false,
-            'message' => 'You do not have permission to modify product videos.'
-        ], 403);
-    }
-
-    $finalVideos = [];
-    $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-    foreach ($videoPaths as $key => $video) {
-        if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
-            // It's a URL, keep as is
-            $finalVideos[] = $video;
-        } elseif ($request->hasFile("video_path.$key")) {
-            // It's an uploaded file, upload to S3
-            $file = $request->file("video_path.$key");
-            $path = $file->store($videoPath, 's3');
-            $finalVideos[] = Storage::disk('s3')->url($path);
-        }
-            // ignore invalid inputs
-        }
-
+	if ($request->has('video_path')) {
+		// Check if user is actually trying to modify videos (upload new files)
+		$hasNewVideoFiles = false;
+		$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+		foreach ($videoPaths as $key => $video) {
+			if ($request->hasFile("video_path.$key")) {
+				$hasNewVideoFiles = true;
+				break;
+			}
+		}
+		
+		// Only check permissions if user is uploading new video files
+		if ($hasNewVideoFiles && !$canModifyImages) {
+			return response()->json([
+				'success' => false,
+				'message' => 'You do not have permission to modify product videos.'
+			], 403);
+		}
+	
+		$finalVideos = [];
+		foreach ($videoPaths as $key => $video) {
+			if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+				// It's a URL, keep as is
+				$finalVideos[] = $video;
+			} elseif ($request->hasFile("video_path.$key")) {
+				// It's an uploaded file, upload to S3
+				$file = $request->file("video_path.$key");
+				$path = $file->store($videoPath, 's3');
+				$finalVideos[] = Storage::disk('s3')->url($path);
+			}
+			// ignore invalid inputs
+		}
+	
 		$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
 	} else {
 		// If videos are not being updated, preserve existing videos
 		$input['video_path'] = $product->video_path;
 	}
-
     // Handle document upload (keeping existing logic)
     $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
     $existingDocs = is_array($existingDocs) ? $existingDocs : [];
