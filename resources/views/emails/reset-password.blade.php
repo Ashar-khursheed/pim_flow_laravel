@@ -20,9 +20,9 @@
         }
     </style>
 </head>
-<body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
+<body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
     <div style="width: 100%; padding: 20px; box-sizing: border-box; background-color: #f8f8f8;">
-        <div class="container" style="max-width: 600px; margin: 0 auto; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important; background-color: #ffffff; padding: 40px; border: 1px solid #eaeaea; box-sizing: border-box;">
+        <div class="container" style="max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 40px; border: 1px solid #eaeaea; box-sizing: border-box;">
 
             <!-- Logo -->
             <div style="margin-bottom: 20px;">
@@ -30,14 +30,9 @@
             </div>
 
             <!-- Greeting -->
-            <p style="font-size: 16px; color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">Hi <strong style="color: #186737;">{{ $name }}</strong>!</p>
-            <p style="box-sizing:border-box; line-height:1.5em; margin-top:0; text-align:left; font-size:15px; color:#000000;">
-                <font face="&#x27;Helvetica Neue&#x27;, Helvetica, Arial, sans-serif">
-                  We received a request to reset your HORECA account password.
-                </font>
-              </p>
-              
-            <p style="font-size: 15px; color: #000000; font-weight: 600; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">To set a new password, simply click the link below:</p>
+            <p style="font-size: 16px; color: #000000;">Hi <strong style="color: #186737;">{{ $name }}</strong>!</p>
+            <p style="font-size: 15px; color: #000000;">We received a request to reset your HORECA account password.</p>
+            <p style="font-size: 15px; color: #000000; font-weight: 600;">To set a new password, simply click the link below:</p>
 
             <!-- Reset Button -->
             <div class="reset-button" style="margin: 25px 0;">
@@ -47,21 +42,21 @@
             </div>
 
             <!-- Security Note -->
-            <p style="font-size: 14px; color: #000000; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">
+            <p style="font-size: 14px; color: #000000;">
                 If you didn’t request this, you can safely ignore the email — your current password will remain unchanged. Your privacy and security are important to us.
             </p>
-            <p style="color: #186737; font-weight: bold; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">– Team Horeca</p>
+            <p style="color: #186737; font-weight: bold;">– Team Horeca</p>
 
             <!-- Divider -->
-            <div style="border-top: 1px solid #eaeaea; margin: 30px 0; "></div>
+            <div style="border-top: 1px solid #eaeaea; margin: 30px 0;"></div>
 
             <!-- Security Box -->
             <div class="footer-box" style="font-size: 13px; color: #333333; background-color: #f0f0f0; padding: 15px; border-radius: 6px;">
-                <p style="margin: 0 0 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;"><strong>Is this link safe?</strong></p>
-                <p style="margin: 0 0 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">The password reset link in this email starts with: <strong>{{ $finalUrl }}</strong></p>
-                <p style="margin: 0 0 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">For your security, you can also copy and paste the following URL into your browser:</p>
-                <p style="margin: 0 0 10px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;"><a href="{{ $resetUrl }}" style="color: #186737;">{{ $resetUrl }}</a></p>
-                <p style="margin: 0; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif !important;">If you didn’t request a password reset, you can safely ignore this email.</p>
+                <p style="margin: 0 0 10px;"><strong>Is this link safe?</strong></p>
+                <p style="margin: 0 0 10px;">The password reset link in this email starts with: <strong>{{ $finalUrl }}</strong></p>
+                <p style="margin: 0 0 10px;">For your security, you can also copy and paste the following URL into your browser:</p>
+                <p style="margin: 0 0 10px;"><a href="{{ $resetUrl }}" style="color: #186737;">{{ $resetUrl }}</a></p>
+                <p style="margin: 0;">If you didn’t request a password reset, you can safely ignore this email.</p>
             </div>
 
         </div>
