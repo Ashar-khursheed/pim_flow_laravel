@@ -360,17 +360,56 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                        $product->category_list = $product->categories->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                            ];
-                        });
+                    //     $product->category_list = $product->categories->map(function ($category) {
+                    //         return [
+                    //             'id' => $category->id,
+                    //             'name' => $category->name,
+                    //             'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                    //         ];
+                    //     });
 
-                        return $product;
+                    //     return $product;
+                    // });
+                    // Get all categories including parent hierarchies
+                    $allCategories = collect();
+
+                    $product->categories->each(function ($category) use ($allCategories) {
+                        // Function to recursively get parent categories
+                        $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                            $parents = collect();
+                            if ($cat->parent_id) {
+                                // Get parent category - adjust model name if needed
+                                $parent = \App\Models\Category::with('slugable')->find($cat->parent_id);
+                                if ($parent) {
+                                    // Recursively get parent's hierarchy
+                                    $parents = $parents->merge($getParentHierarchy($parent));
+                                    $parents->push($parent);
+                                }
+                            }
+                            return $parents;
+                        };
+                        
+                        // Get all parent categories
+                        $parentHierarchy = $getParentHierarchy($category);
+                        
+                        // Add parents to collection
+                        $allCategories->push(...$parentHierarchy);
+                        
+                        // Add current category
+                        $allCategories->push($category);
                     });
 
+                    // Remove duplicates and map to desired structure
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => optional($category->slugable)->key,
+                        ];
+                    })->values();
+
+                    return $product;
+                });
                     return response()->json([
                         'success' => true,
                         'data' => $products,
@@ -639,18 +678,46 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                        $product->category_list = $product->categories->map(function ($category) {
+                       // Get all categories including parent hierarchies
+                        $allCategories = collect();
+
+                        $product->categories->each(function ($category) use ($allCategories) {
+                            // Function to recursively get parent categories
+                            $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                                $parents = collect();
+                                if ($cat->parent_id) {
+                                    // Get parent category - adjust model name if needed
+                                    $parent = \App\Models\Category::with('slugable')->find($cat->parent_id);
+                                    if ($parent) {
+                                        // Recursively get parent's hierarchy
+                                        $parents = $parents->merge($getParentHierarchy($parent));
+                                        $parents->push($parent);
+                                    }
+                                }
+                                return $parents;
+                            };
+                            
+                            // Get all parent categories
+                            $parentHierarchy = $getParentHierarchy($category);
+                            
+                            // Add parents to collection
+                            $allCategories->push(...$parentHierarchy);
+                            
+                            // Add current category
+                            $allCategories->push($category);
+                        });
+
+                        // Remove duplicates and map to desired structure
+                        $product->category_list = $allCategories->unique('id')->map(function ($category) {
                             return [
                                 'id' => $category->id,
                                 'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                                'slug' => optional($category->slugable)->key,
                             ];
-                        });
+                        })->values();
 
-                      
-                    
                         return $product;
-                    });
+                        });
                     
 
                     return response()->json([
