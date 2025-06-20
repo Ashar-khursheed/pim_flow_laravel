@@ -58,8 +58,8 @@ class CategoryMenuController extends Controller
     {
         // Fetch the category by slug
         $category = Category::where('slug', $slug)
-        ->where('status', 'published')
-        ->first();
+                        ->where('status', 'published')
+                        ->first();
 
         if (!$category) {
             return response()->json(['message' => 'Category not found'], 404);
@@ -104,7 +104,7 @@ class CategoryMenuController extends Controller
         return $category->only(['id', 'name', 'slug', 'parent_id', 'image', 'children']);
     }
 
-    
+
 
 
     /**

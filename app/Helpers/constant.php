@@ -462,3 +462,9 @@ function uploadImageToWebpS3FromFile(Request $request, string $key, string $path
 		return null;
 	}
 }
+
+function uploadFileToS3($file, $path)
+{
+	$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
+	return Storage::disk('s3')->putFileAs($path, $file, $filename, 'public') ? Storage::disk('s3')->url("$path/$filename") : null;
+}

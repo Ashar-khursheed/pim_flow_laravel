@@ -14,7 +14,7 @@ class MeasurementSeeder extends Seeder
 			'Length', 'Mass', 'Volume', 'Temperature',
 			'Time', 'Speed', 'Area', 'Energy', 'Pressure', 'Force',
 			'Power', 'Energy Consumption', 'Electrical Potential',
-            'Electric Current', 'Frequency', 'Battery Capacity', 'Rotational Speed',
+			'Electric Current', 'Frequency', 'Battery Capacity', 'Rotational Speed',
 			'Noise Level', 'Humidity', 'Density', 'Nutrition Facts',
 		];
 
@@ -61,7 +61,7 @@ class MeasurementSeeder extends Seeder
 				['fluid ounce', 'fl oz'],
 				['tablespoon', 'tbsp'],
 				['teaspoon', 'tsp'],
-				['pound', 'lb'],
+				// ['pound', 'lb'],
 				['cubic feet', 'cb3'],
 			],
 			'Temperature' => [
@@ -126,9 +126,11 @@ class MeasurementSeeder extends Seeder
 			],
 			'Electrical Potential' => [
 				['volt', 'V'],
+				['millivolt', 'mV'],
 			],
 			'Electric Current' => [
 				['ampere', 'A'],
+				['milliampere', 'mA'],
 			],
 			'Frequency' => [
 				['hertz', 'Hz'],

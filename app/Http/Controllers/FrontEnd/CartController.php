@@ -236,6 +236,7 @@ class CartController extends Controller
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
 
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+
             $item->product->original_price = $item->product->price;
             $item->product->front_sale_price = $item->product->sale_price ?? $item->product->price;
             // Attach all applicable discounts

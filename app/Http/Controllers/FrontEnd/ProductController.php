@@ -261,6 +261,38 @@ class ProductController extends Controller
                             $product->documents = [];
                         }
                         
+                        // Custom sorting for documents
+                        $desiredOrder = [
+                            'Technical Specifications Sheet',
+                            'Warranty Information',
+                            'Horeca Buying Guide',
+                            'Setup & Usage Instructions',
+                            'Product Installation Guide',
+                            'Installation & Elevation Diagram',
+                            'Spare Parts List',
+                            'Product Brochure',
+                        ];
+
+                        $documents = json_decode($product->documents, true);
+                        if (is_array($documents)) {
+                            // Remove .pdf extension from titles
+                            foreach ($documents as &$doc) {
+                                $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                            }
+
+                            // Sort documents by desired order
+                            usort($documents, function ($a, $b) use ($desiredOrder) {
+                                $posA = array_search($a['title'], $desiredOrder);
+                                $posB = array_search($b['title'], $desiredOrder);
+                                $posA = $posA === false ? PHP_INT_MAX : $posA;
+                                $posB = $posB === false ? PHP_INT_MAX : $posB;
+                                return $posA <=> $posB;
+                            });
+
+                            $product->documents = $documents;
+                        } else {
+                            $product->documents = [];
+                        }
 
                         // Handle videos
                         $videoPaths = json_decode($product->video_path, true);
