@@ -1,22 +1,24 @@
 <?php
+
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Square\SquareClient;
-use Square\Models\CreatePaymentRequest;
-use Square\Models\Money;
+use Square\Payments\Models\CreatePaymentRequest;
+use Square\Types\Money;
+use Square\Types\Currency;
 use Illuminate\Support\Str;
 
 class SquarePaymentController extends Controller
 {
-    protected $client;
+    protected SquareClient $client;
 
     public function __construct()
     {
         $this->client = new SquareClient(
             token: env('SQUARE_ACCESS_TOKEN'),
-            environment: env('SQUARE_ENV', 'sandbox')
+            environment: env('SQUARE_ENV', 'sandbox') // or 'production'
         );
     }
 
@@ -27,27 +29,29 @@ class SquarePaymentController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
 
-        $body = new CreatePaymentRequest([
-            'sourceId' => $request->nonce,
-            'idempotencyKey' => Str::uuid(),
-            'amountMoney' => new Money([
-                'amount' => (int)($request->amount * 100), // cents
-                'currency' => 'USD',
-            ]),
-        ]);
+        $money = new Money(
+            amount: (int)($request->amount * 100),
+            currency: Currency::Usd
+        );
 
-        $apiResponse = $this->client->payments->create($body);
+        $paymentRequest = new CreatePaymentRequest(
+            sourceId: $request->nonce,
+            idempotencyKey: (string) Str::uuid(),
+            amountMoney: $money
+        );
 
-        if ($apiResponse->isSuccess()) {
+        $response = $this->client->payments->create($paymentRequest);
+
+        if ($response->isSuccess()) {
             return response()->json([
                 'success' => true,
-                'payment' => $apiResponse->getResult()->getPayment(),
+                'payment' => $response->getResult()->payment,
             ]);
         }
 
         return response()->json([
             'success' => false,
-            'errors' => $apiResponse->getErrors(),
+            'errors' => $response->getErrors(),
         ], 400);
     }
 }
