@@ -293,6 +293,33 @@ class ProductController extends Controller
                         // } else {
                         //     $product->documents = [];
                         // }
+                        $documents = $product->documents;
+
+                        // If $documents is already an array, skip decoding
+                        if (is_string($documents)) {
+                            $documents = json_decode($documents, true);
+                        }
+
+                        // Proceed if it's a valid array
+                        if (is_array($documents)) {
+                            // Remove .pdf extension from titles
+                            foreach ($documents as &$doc) {
+                                if (isset($doc['title'])) {
+                                    $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                                }
+                            }
+                            // Sort documents based on desired order
+                            usort($documents, function ($a, $b) use ($desiredOrder) {
+                                $posA = array_search($a['title'], $desiredOrder);
+                                $posB = array_search($b['title'], $desiredOrder);
+                                $posA = $posA === false ? PHP_INT_MAX : $posA;
+                                $posB = $posB === false ? PHP_INT_MAX : $posB;
+                                return $posA <=> $posB;
+                            });
+
+                            // Save back to product
+                            $product->documents = $documents;
+                        }
 
                         // Handle videos
                         $videoPaths = json_decode($product->video_path, true);
