@@ -3,9 +3,7 @@
 namespace App\Services;
 
 use Square\SquareClient;
-use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
-use Square\Environment;
 use Square\Exceptions\ApiException;
 
 class SquareService
@@ -14,27 +12,27 @@ class SquareService
 
     public function __construct()
     {
-        $this->client = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENVIRONMENT', Environment::SANDBOX),
-        ]);
+        // Simple constructor - just pass the access token and environment as string
+        $environment = env('SQUARE_ENV', 'sandbox'); // 'sandbox' or 'production'
+        $this->client = new SquareClient(env('SQUARE_ACCESS_TOKEN'), $environment);
     }
 
-    public function processPayment($nonce, $amount)
+    public function processPayment($nonce, $amount, $currency = 'USD')
     {
-        $paymentsApi = $this->client->getPaymentsApi();
-
-        // Create a Money object to represent the amount
-        $money = new Money();
-        $money->setAmount((int)($amount * 100)); // Convert dollars to cents
-        $money->setCurrency('USD'); // Set the appropriate currency
+        // Use the correct method name - payments instead of getPaymentsApi()
+        $paymentsApi = $this->client->payments;
 
         // Create a unique idempotency key
-        $idempotencyKey = uniqid();
+        $idempotencyKey = uniqid('payment_');
 
         // Create a payment request
         $createPaymentRequest = new CreatePaymentRequest($nonce, $idempotencyKey);
-        $createPaymentRequest->setAmountMoney($money); // Set the amount_money field
+        
+        // Set amount directly as array (amount_money structure)
+        $createPaymentRequest->setAmountMoney([
+            'amount' => (int)($amount * 100), // Convert to cents
+            'currency' => $currency
+        ]);
 
         try {
             // Execute the payment request
@@ -56,6 +54,16 @@ class SquareService
                 'success' => false,
                 'error' => $e->getMessage(),
             ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'error' => 'An unexpected error occurred: ' . $e->getMessage(),
+            ];
         }
+    }
+
+    public function getClient()
+    {
+        return $this->client;
     }
 }

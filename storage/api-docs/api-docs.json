@@ -9807,13 +9807,13 @@
             }
         },
         "/api/frontend/cart/update-quantity": {
-            "put": {
+            "post": {
                 "tags": [
                     "Frontend-Cart"
                 ],
                 "summary": "Update cart item quantity",
                 "description": "Update the quantity of a specific product in the cart",
-                "operationId": "e99d055c17b871915fa4f17bcd08cb01",
+                "operationId": "2403917f0f2112fb69edbf4acea99e46",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -9960,7 +9960,7 @@
                     "Frontend-Cart"
                 ],
                 "summary": "Decrease cart item quantity",
-                "description": "Decrease the quantity of a specific product in the cart. If quantity becomes 0 or less, the item will be removed from cart.",
+                "description": "Decrease the quantity of a specific product in the cart by 1. If quantity becomes 0, the item will be removed from cart.",
                 "operationId": "9eae342e7dccfba4445e21557c3184ab",
                 "requestBody": {
                     "required": true,
@@ -9968,19 +9968,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id",
-                                    "quantity"
+                                    "product_id"
                                 ],
                                 "properties": {
                                     "product_id": {
                                         "description": "ID of the product",
                                         "type": "integer",
-                                        "example": 1
-                                    },
-                                    "quantity": {
-                                        "description": "Quantity to decrease",
-                                        "type": "integer",
-                                        "minimum": 1,
                                         "example": 1
                                     }
                                 },
@@ -9990,7 +9983,7 @@
                     }
                 },
                 "responses": {
-                    "201": {
+                    "200": {
                         "description": "Cart item quantity decreased successfully",
                         "content": {
                             "application/json": {
@@ -10023,6 +10016,10 @@
                                                     "type": "integer",
                                                     "example": 2
                                                 },
+                                                "currency_title": {
+                                                    "type": "string",
+                                                    "example": "USD"
+                                                },
                                                 "created_at": {
                                                     "type": "string",
                                                     "format": "date-time",
@@ -10042,7 +10039,7 @@
                             }
                         }
                     },
-                    "200": {
+                    "201": {
                         "description": "Item removed from cart (quantity became 0)",
                         "content": {
                             "application/json": {
@@ -10055,6 +10052,10 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Item removed from cart."
+                                        },
+                                        "removed": {
+                                            "type": "boolean",
+                                            "example": true
                                         }
                                     },
                                     "type": "object"
@@ -10094,11 +10095,11 @@
                                         },
                                         "errors": {
                                             "properties": {
-                                                "quantity": {
+                                                "product_id": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "The quantity must be at least 1."
+                                                        "example": "The product_id field is required."
                                                     }
                                                 }
                                             },

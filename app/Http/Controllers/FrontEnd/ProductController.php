@@ -612,6 +612,15 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
+                        $product->category_list = $product->categories->map(function ($category) {
+                            return [
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                            ];
+                        });
+
+                      
                     
                         return $product;
                     });
