@@ -14,10 +14,8 @@ class SquareService
 
     public function __construct()
     {
-        $this->client = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENVIRONMENT', Environment::SANDBOX),
-        ]);
+        $this->squareClient = new SquareClient(env('SQUARE_ACCESS_TOKEN'));
+
     }
 
     public function processPayment($nonce, $amount)
