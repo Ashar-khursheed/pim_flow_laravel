@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use Square\SquareClient;
-use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Exceptions\ApiException;
 
@@ -23,17 +22,17 @@ class SquareService
         // Use the correct method name - payments instead of getPaymentsApi()
         $paymentsApi = $this->client->payments;
 
-        // Create a Money object to represent the amount
-        $money = new Money();
-        $money->setAmount((int)($amount * 100)); // Convert dollars to cents
-        $money->setCurrency($currency); // Set the appropriate currency
-
         // Create a unique idempotency key
         $idempotencyKey = uniqid('payment_');
 
         // Create a payment request
         $createPaymentRequest = new CreatePaymentRequest($nonce, $idempotencyKey);
-        $createPaymentRequest->setAmountMoney($money); // Set the amount_money field
+        
+        // Set amount directly as array (amount_money structure)
+        $createPaymentRequest->setAmountMoney([
+            'amount' => (int)($amount * 100), // Convert to cents
+            'currency' => $currency
+        ]);
 
         try {
             // Execute the payment request

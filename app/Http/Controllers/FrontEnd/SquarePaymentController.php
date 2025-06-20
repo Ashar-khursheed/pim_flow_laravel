@@ -4,7 +4,6 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Square\SquareClient;
-use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\OfflinePaymentDetails;
 use Square\Exceptions\ApiException;
@@ -87,19 +86,17 @@ class SquarePaymentController extends Controller
             // Use the correct method name - payments instead of getPaymentsApi()
             $paymentsApi = $this->squareClient->payments;
 
-            // Create the Money object for the payment amount
-            $amountMoney = new Money();
-            $amountMoney->setAmount((int)($amount * 100)); // Convert amount to cents
-            $amountMoney->setCurrency($currency);
-
             // Create the payment request with necessary parameters
             $paymentRequest = new CreatePaymentRequest(
                 $nonce,  // Nonce
                 uniqid('payment_')  // Idempotency key for uniqueness
             );
 
-            // Set amount_money using the Money object
-            $paymentRequest->setAmountMoney($amountMoney);
+            // Set amount directly as array (amount_money structure)
+            $paymentRequest->setAmountMoney([
+                'amount' => (int)($amount * 100), // Convert to cents
+                'currency' => $currency
+            ]);
 
             // Set additional optional fields only if they are provided
             if ($customerId) {
