@@ -400,6 +400,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
 	Route::get('/auth/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProductsForUser']);
 
+	Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
+	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
+	Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 });
 
@@ -462,6 +465,9 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
+
+
+
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
 Route::get('/frontend/category/{slug}/blogs', [F_BlogController::class, 'blogsByCategorySlug']);
@@ -482,9 +488,7 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
-Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
-Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
-Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
+
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
