@@ -599,7 +599,7 @@ class ProductController extends Controller
 
                         // Custom sorting for documents
                         $desiredOrder = [
-                            'Technical Specifications Sheet',
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
