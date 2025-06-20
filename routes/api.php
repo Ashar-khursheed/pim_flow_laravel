@@ -402,7 +402,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
 	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
-	Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
+	Route::delete('/frontend/remove-from-save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 });
 
