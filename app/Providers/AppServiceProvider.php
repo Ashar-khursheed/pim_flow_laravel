@@ -93,6 +93,10 @@ class AppServiceProvider extends ServiceProvider
 	 */
 	public function boot(): void
 	{
+		foreach (config('units') as $unitClass) {
+			new $unitClass(0, $unitClass::getUnitDefinitions()[0]->getName());
+		}
+
 		Attribute::observe(TransactionLogObserver::class);
 		AttributeValue::observe(TransactionLogObserver::class);
 		AttributeMeasurement::observe(TransactionLogObserver::class);

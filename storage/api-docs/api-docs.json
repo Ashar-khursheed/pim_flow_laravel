@@ -12896,6 +12896,28 @@
                 ]
             }
         },
+        "/api/frontend/orders/buy-it-again": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Get products from last 5 delivered orders to buy again",
+                "operationId": "443110464c29f1b483c2700fa600a323",
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved from previous delivered orders successfully"
+                    },
+                    "404": {
+                        "description": "No delivered orders found with products"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/product/{id}/nutrition-facts1": {
             "get": {
                 "tags": [
@@ -14853,6 +14875,78 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/order-products/{order_product_id}/return": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Create a return request for an order product",
+                "operationId": "b7d121855dccd5e23a438c499c1c01bd",
+                "parameters": [
+                    {
+                        "name": "order_product_id",
+                        "in": "path",
+                        "description": "Order Product ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "quantity",
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Defective product"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Scratched screen"
+                                    },
+                                    "product_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "product_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Return request created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/save-for-later": {
@@ -21346,6 +21440,134 @@
                     },
                     "422": {
                         "description": "Invalid file upload"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/return-products/{id}/inspect": {
+            "put": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Admin inspects and approves/rejects a return request",
+                "operationId": "c6efbdb48a795d1a9ddba7cc49129960",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Return request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "status",
+                                    "comment"
+                                ],
+                                "properties": {
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "inspected",
+                                            "approved",
+                                            "rejected"
+                                        ],
+                                        "example": "approved"
+                                    },
+                                    "comment": {
+                                        "type": "string",
+                                        "example": "Item in good condition, approving refund."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Return inspected successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/return-products/{id}/refund": {
+            "put": {
+                "tags": [
+                    "Orders"
+                ],
+                "summary": "Finance confirms refund payment",
+                "operationId": "41ef6dfb26370dbf8c7c8f67e2381923",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Return request ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "refund_status",
+                                    "refund_amount",
+                                    "refund_method"
+                                ],
+                                "properties": {
+                                    "refund_status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "in_finance",
+                                            "refunded",
+                                            "refund_failed"
+                                        ],
+                                        "example": "refunded"
+                                    },
+                                    "refund_amount": {
+                                        "type": "number",
+                                        "example": 59.99
+                                    },
+                                    "refund_method": {
+                                        "type": "string",
+                                        "example": "UPI"
+                                    },
+                                    "refund_date": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-06-20T12:34:56Z"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Refund status updated"
                     }
                 },
                 "security": [

@@ -141,7 +141,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type']);
 
 		/* Apply search if provided */
 
@@ -179,7 +179,7 @@ class ProductController extends BaseController
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
-				'gen_type' =>$product->gen_type,
+				'gen_type' => $product->gen_type,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
@@ -330,7 +330,7 @@ class ProductController extends BaseController
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
-			'Marketing' => ['name', 'description' , 'gen_type'],
+			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
 			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
@@ -979,17 +979,41 @@ class ProductController extends BaseController
 					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
 						$value = $attributeValue['value'] ?? null;
 						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+						if (!$value || !$measurementUnitID) {
+							/* Delete attribute if either value or measurement ID is missing */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Update or create measurement attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => $measurementUnitID
+								]
+							);
+						}
 					} else {
 						$value = $attributeValue;
-					}
 
-					$product->productAttributes()->updateOrCreate(
-						['attribute_id' => $attributeId],
-						[
-							'attribute_value' => $value,
-							'measurement_unit_id' => $measurementUnitID
-						]
-					);
+						if (empty($value)) {
+							/* Delete non-measurement attribute if empty */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Update or create normal attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => null
+								]
+							);
+						}
+					}
 
 					if ($existingAttribute->type === 'select') {
 						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
@@ -1005,28 +1029,28 @@ class ProductController extends BaseController
 		$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
 		/* Check if faqs is a string and decode it properly */
-			if (is_string($faqs)) {
-				$decoded = json_decode($faqs, true);
-				
-				/* Handle invalid JSON */
-				if (json_last_error() !== JSON_ERROR_NONE) {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid JSON format for faqs.'
-					], 400);
-				}
-				
-				/* Ensure we extract faqs correctly */
-   				 $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-				}
+		if (is_string($faqs)) {
+			$decoded = json_decode($faqs, true);
 
-			/* Validate that faqs is an array */
-			if (!is_array($faqs)) {
+			/* Handle invalid JSON */
+			if (json_last_error() !== JSON_ERROR_NONE) {
 				return response()->json([
 					'success' => false,
-					'message' => 'The field faqs must be a valid JSON array.'
+					'message' => 'Invalid JSON format for faqs.'
 				], 400);
 			}
+
+			/* Ensure we extract faqs correctly */
+			$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+		}
+
+		/* Validate that faqs is an array */
+		if (!is_array($faqs)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The field faqs must be a valid JSON array.'
+			], 400);
+		}
 
 		/* Get all existing FAQ IDs for this product */
 		$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
@@ -1035,13 +1059,13 @@ class ProductController extends BaseController
 		/* Process and store FAQs */
 		foreach ($faqs as $faqData) {
 			if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-				
+
 				if (!empty($faqData['id'])) {
 					/* Update existing FAQ */
 					$faq = Faq::where('id', $faqData['id'])
-						->where('product_id', $product->id)
-						->first();
-						
+					->where('product_id', $product->id)
+					->first();
+
 					if ($faq) {
 						$faq->update([
 							'question' => $faqData['question'],
@@ -1069,10 +1093,9 @@ class ProductController extends BaseController
 		$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
 		if (!empty($faqsToDelete)) {
 			Faq::where('product_id', $product->id)
-				->whereIn('id', $faqsToDelete)
-				->delete();
+			->whereIn('id', $faqsToDelete)
+			->delete();
 		}
-		
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
 		/* Remove 'faqs' from the input before validation */
