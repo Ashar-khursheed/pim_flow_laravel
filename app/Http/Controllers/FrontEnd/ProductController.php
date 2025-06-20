@@ -379,7 +379,7 @@ class ProductController extends Controller
                             $parents = collect();
                             if ($cat->parent_id) {
                                 // Get parent category - adjust model name if needed
-                                $parent = \App\Models\Category::with('slugable')->find($cat->parent_id);
+                                $parent = Category::with('slug')->find($cat->parent_id);
                                 if ($parent) {
                                     // Recursively get parent's hierarchy
                                     $parents = $parents->merge($getParentHierarchy($parent));
@@ -687,7 +687,7 @@ class ProductController extends Controller
                                 $parents = collect();
                                 if ($cat->parent_id) {
                                     // Get parent category - adjust model name if needed
-                                    $parent = \App\Models\Category::with('slugable')->find($cat->parent_id);
+                                    $parent = Category::with('slug')->find($cat->parent_id);
                                     if ($parent) {
                                         // Recursively get parent's hierarchy
                                         $parents = $parents->merge($getParentHierarchy($parent));
