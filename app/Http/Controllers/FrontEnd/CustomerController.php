@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Str;
+use App\Notifications\WelcomeMail;
 
 class CustomerController extends BaseController
 {
@@ -67,6 +68,8 @@ class CustomerController extends BaseController
 			]);
 			$guestCustomer->save();
 
+			$guestCustomer->notify(new WelcomeMail());
+
 			return response()->json([
 				'success' => true,
 				'message' => 'Guest account created successfully.',
@@ -104,6 +107,8 @@ class CustomerController extends BaseController
 				'profile_img' => $validated['profile_img'] ?? null,
 			]);
 			$customer->save();
+
+			$customer->notify(new WelcomeMail());
 
 			return response()->json([
 				'success' => true,
