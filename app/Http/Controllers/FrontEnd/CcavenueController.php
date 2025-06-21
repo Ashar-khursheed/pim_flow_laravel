@@ -3,267 +3,307 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use Illuminate\Http\Request;
-use App\Helpers\CcavenueHelper;
+use App\Http\Requests\PaymentRequest;
+use App\Services\CCavenueService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\JsonResponse;
 
-class CcavenueController extends Controller
+class CCavenueController extends Controller
 {
-    private $accessCode;
-    private $workingKey;
-    private $merchantId;
-    private $redirectUrl;
-    private $cancelUrl;
+    protected $ccavenueService;
 
-    public function __construct()
+    public function __construct(CCavenueService $ccavenueService)
     {
-        $this->accessCode = config('ccavenue.access_code');
-        $this->workingKey = config('ccavenue.working_key');
-        $this->merchantId = config('ccavenue.merchant_id');
-        $this->redirectUrl = config('ccavenue.redirect_url');
-        $this->cancelUrl = config('ccavenue.cancel_url');
+        $this->ccavenueService = $ccavenueService;
     }
 
     /**
      * @OA\Post(
-     *     path="/api/frontend/ccavenue/initiate",
-     *     tags={"CCAVENUE"},
-     *     summary="Initiate CCAvenue Payment",
-     *     description="Initiates a payment request to CCAvenue and returns a redirect HTML form.",
+     *     path="/ccavenue/initiate-payment",
+     *     summary="Initiate CCAvenue payment",
+     *     description="Create a payment request and get payment URL",
+     *     operationId="initiatePayment",
+     *     tags={"CCAvenue"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"amount", "name", "email", "phone", "address"},
-     *             @OA\Property(property="amount", type="number", example=500.00),
-     *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="phone", type="string", example="9876543210"),
-     *             @OA\Property(property="address", type="string", example="123 Street Name, City")
+     *             required={"order_id", "amount", "currency", "redirect_url", "cancel_url"},
+     *             @OA\Property(property="order_id", type="string", example="ORD123456789", description="Unique order identifier"),
+     *             @OA\Property(property="amount", type="number", format="float", example=100.50, description="Payment amount"),
+     *             @OA\Property(property="currency", type="string", example="INR", enum={"INR", "USD", "EUR", "GBP", "AED"}),
+     *             @OA\Property(property="redirect_url", type="string", format="uri", example="https://yoursite.com/payment/success"),
+     *             @OA\Property(property="cancel_url", type="string", format="uri", example="https://yoursite.com/payment/cancel"),
+     *             @OA\Property(property="language", type="string", example="EN", enum={"EN", "HI"}),
+     *             @OA\Property(property="billing_name", type="string", example="John Doe"),
+     *             @OA\Property(property="billing_address", type="string", example="123 Main Street"),
+     *             @OA\Property(property="billing_city", type="string", example="Mumbai"),
+     *             @OA\Property(property="billing_state", type="string", example="Maharashtra"),
+     *             @OA\Property(property="billing_zip", type="string", example="400001"),
+     *             @OA\Property(property="billing_country", type="string", example="India"),
+     *             @OA\Property(property="billing_tel", type="string", example="9876543210"),
+     *             @OA\Property(property="billing_email", type="string", format="email", example="john@example.com"),
+     *             @OA\Property(property="delivery_name", type="string", example="John Doe"),
+     *             @OA\Property(property="delivery_address", type="string", example="456 Oak Avenue"),
+     *             @OA\Property(property="delivery_city", type="string", example="Delhi"),
+     *             @OA\Property(property="delivery_state", type="string", example="Delhi"),
+     *             @OA\Property(property="delivery_zip", type="string", example="110001"),
+     *             @OA\Property(property="delivery_country", type="string", example="India"),
+     *             @OA\Property(property="delivery_tel", type="string", example="9876543210"),
+     *             @OA\Property(property="merchant_param1", type="string", example="Additional info 1"),
+     *             @OA\Property(property="merchant_param2", type="string", example="Additional info 2"),
+     *             @OA\Property(property="merchant_param3", type="string", example="Additional info 3"),
+     *             @OA\Property(property="merchant_param4", type="string", example="Additional info 4"),
+     *             @OA\Property(property="merchant_param5", type="string", example="Additional info 5"),
+     *             @OA\Property(property="promo_code", type="string", example="DISCOUNT10"),
+     *             @OA\Property(property="customer_identifier", type="string", example="CUST123")
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="HTML form auto-submitting to CCAvenue"
+     *         description="Payment URL generated successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Payment URL generated successfully"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="payment_url", type="string", example="https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction&encRequest=..."),
+     *                 @OA\Property(property="order_id", type="string", example="ORD123456789"),
+     *                 @OA\Property(property="amount", type="number", example=100.50),
+     *                 @OA\Property(property="currency", type="string", example="INR")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation errors",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Validation failed"),
+     *             @OA\Property(property="errors", type="object")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to generate payment URL")
+     *         )
      *     )
      * )
      */
-    public function initiatePayment(Request $request)
+    public function initiatePayment(PaymentRequest $request): JsonResponse
     {
         try {
-            // Validate the request
-            $validator = Validator::make($request->all(), [
-                'amount' => 'required|numeric|min:1',
-                'name' => 'required|string|max:255',
-                'email' => 'required|email|max:255',
-                'phone' => 'required|string|max:20',
-                'address' => 'required|string|max:500',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // Generate unique order ID
-            $orderId = 'ORD_' . time() . '_' . rand(1000, 9999);
-
-            // Prepare post data for CCAvenue
-            $postData = [
-                "merchant_id" => $this->merchantId,
-                "order_id" => $orderId,
-                "currency" => "AED",
-                "amount" => number_format($request->amount, 2, '.', ''),
-                "redirect_url" => $this->redirectUrl,
-                "cancel_url" => $this->cancelUrl,
-                "language" => "EN",
-                
-                // Billing information
-                "billing_name" => $request->name,
-                "billing_email" => $request->email,
-                "billing_tel" => $request->phone,
-                "billing_address" => $request->address,
-                "billing_city" => $request->city ?? "Dubai",
-                "billing_state" => $request->state ?? "DU",
-                "billing_zip" => $request->zip ?? "000000",
-                "billing_country" => "United Arab Emirates",
-                
-                // Optional delivery information (same as billing for now)
-                "delivery_name" => $request->name,
-                "delivery_address" => $request->address,
-                "delivery_city" => $request->city ?? "Dubai",
-                "delivery_state" => $request->state ?? "DU",
-                "delivery_zip" => $request->zip ?? "000000",
-                "delivery_country" => "United Arab Emirates",
-                "delivery_tel" => $request->phone,
-            ];
-
-            // Convert to query string
-            $merchantData = http_build_query($postData);
+            $data = $request->validated();
             
-            // Log the merchant data for debugging (remove in production)
-            Log::info('CCAvenue Payment Initiated', [
-                'order_id' => $orderId,
-                'amount' => $request->amount,
-                'customer' => $request->name
-            ]);
-
-            // Encrypt the request
-            $encryptedData = CcavenueHelper::encrypt($merchantData, $this->workingKey);
-
-            // Return the form view for web requests
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'status' => 'success',
-                    'order_id' => $orderId,
-                    'redirect_form' => view('ccavenue.payment', [
-                        'encRequest' => $encryptedData,
-                        'accessCode' => $this->accessCode,
-                    ])->render()
-                ]);
+            // Add merchant ID
+            $data['merchant_id'] = $this->ccavenueService->getMerchantId();
+            
+            // Set default values
+            $data['language'] = $data['language'] ?? 'EN';
+            $data['integration_type'] = 'iframe_normal';
+            
+            // Build merchant data string
+            $merchantData = '';
+            foreach ($data as $key => $value) {
+                if (!empty($value)) {
+                    $merchantData .= $key . '=' . urlencode($value) . '&';
+                }
             }
-
-            return view('ccavenue.payment', [
-                'encRequest' => $encryptedData,
-                'accessCode' => $this->accessCode,
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('CCAvenue Payment Initiation Failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            $merchantData = rtrim($merchantData, '&');
+            
+            // Generate payment URL
+            $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
+            
             return response()->json([
-                'status' => 'error',
-                'message' => 'Payment initiation failed. Please try again.'
+                'success' => true,
+                'message' => 'Payment URL generated successfully',
+                'data' => [
+                    'payment_url' => $paymentUrl,
+                    'order_id' => $data['order_id'],
+                    'amount' => $data['amount'],
+                    'currency' => $data['currency']
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to generate payment URL',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
      * @OA\Post(
-     *     path="/api/frontend/ccavenue/response",
-     *     tags={"CCAVENUE"},
-     *     summary="Handle CCAvenue Payment Response",
-     *     description="Handles the encrypted response from CCAvenue and returns payment status.",
+     *     path="/ccavenue/handle-response",
+     *     summary="Handle CCAvenue payment response",
+     *     description="Process the encrypted response from CCAvenue after payment",
+     *     operationId="handleResponse",
+     *     tags={"CCAvenue"},
      *     @OA\RequestBody(
      *         required=true,
-     *         @OA\MediaType(
-     *             mediaType="application/x-www-form-urlencoded",
-     *             @OA\Schema(
-     *                 required={"encResp"},
-     *                 @OA\Property(property="encResp", type="string", example="encrypted_response_string")
-     *             )
+     *         @OA\JsonContent(
+     *             required={"encResp"},
+     *             @OA\Property(property="encResp", type="string", description="Encrypted response from CCAvenue")
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Payment status result",
+     *         description="Payment response processed successfully",
      *         @OA\JsonContent(
-     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Payment response processed successfully"),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="order_id", type="string", example="ORD123456"),
      *                 @OA\Property(property="order_status", type="string", example="Success"),
-     *                 @OA\Property(property="tracking_id", type="string", example="987654321"),
-     *                 @OA\Property(property="bank_ref_no", type="string", example="REF987654")
+     *                 @OA\Property(property="order_id", type="string", example="ORD123456789"),
+     *                 @OA\Property(property="tracking_id", type="string", example="123456789"),
+     *                 @OA\Property(property="bank_ref_no", type="string", example="987654321"),
+     *                 @OA\Property(property="amount", type="string", example="100.50"),
+     *                 @OA\Property(property="currency", type="string", example="INR"),
+     *                 @OA\Property(property="payment_mode", type="string", example="Credit Card"),
+     *                 @OA\Property(property="status_message", type="string", example="Transaction Successful"),
+     *                 @OA\Property(property="response_code", type="string", example="0"),
+     *                 @OA\Property(property="trans_date", type="string", example="01/12/2023 10:30:45")
      *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Invalid or missing encrypted response",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Invalid encrypted response")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Failed to process payment response")
      *         )
      *     )
      * )
      */
-    public function handleResponse(Request $request)
+    public function handleResponse(Request $request): JsonResponse
     {
         try {
-            $encResponse = $request->input("encResp");
+            $encResponse = $request->input('encResp');
             
-            if (!$encResponse) {
-                Log::warning('CCAvenue Response: No encrypted response received');
+            if (empty($encResponse)) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Invalid response from payment gateway'
+                    'success' => false,
+                    'message' => 'Invalid encrypted response'
                 ], 400);
             }
-
-            // Decrypt the response
-            $decryptedString = CcavenueHelper::decrypt($encResponse, $this->workingKey);
             
-            // Parse the decrypted string
-            parse_str($decryptedString, $output);
-
-            // Log the response for debugging (remove sensitive data in production)
-            Log::info('CCAvenue Payment Response', [
-                'order_id' => $output['order_id'] ?? 'N/A',
-                'order_status' => $output['order_status'] ?? 'N/A',
-                'tracking_id' => $output['tracking_id'] ?? 'N/A'
-            ]);
-
-            // Check payment status
-            if (isset($output['order_status']) && $output['order_status'] === "Success") {
-                // Payment successful - you can add your business logic here
-                // e.g., update order status in database, send confirmation email, etc.
-                
-                return response()->json([
-                    'status' => 'success',
-                    'message' => 'Payment completed successfully',
-                    'data' => [
-                        'order_id' => $output['order_id'] ?? '',
-                        'order_status' => $output['order_status'] ?? '',
-                        'tracking_id' => $output['tracking_id'] ?? '',
-                        'bank_ref_no' => $output['bank_ref_no'] ?? '',
-                        'amount' => $output['amount'] ?? '',
-                        'status_code' => $output['status_code'] ?? '',
-                        'status_message' => $output['status_message'] ?? ''
-                    ]
-                ]);
-            } else {
-                // Payment failed
-                return response()->json([
-                    'status' => 'failed',
-                    'message' => $output['status_message'] ?? 'Payment failed',
-                    'data' => [
-                        'order_id' => $output['order_id'] ?? '',
-                        'order_status' => $output['order_status'] ?? '',
-                        'failure_message' => $output['failure_message'] ?? '',
-                        'status_code' => $output['status_code'] ?? '',
-                        'status_message' => $output['status_message'] ?? ''
-                    ]
-                ]);
-            }
-
-        } catch (\Exception $e) {
-            Log::error('CCAvenue Response Handling Failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
+            // Decrypt and parse response
+            $responseData = $this->ccavenueService->parseResponse($encResponse);
+            
+            // Determine payment status
+            $orderStatus = $responseData['order_status'] ?? 'Unknown';
+            $statusMessage = $this->getStatusMessage($orderStatus);
+            
             return response()->json([
-                'status' => 'error',
-                'message' => 'Response processing failed'
+                'success' => true,
+                'message' => 'Payment response processed successfully',
+                'data' => array_merge($responseData, [
+                    'status_message' => $statusMessage,
+                    'is_success' => $orderStatus === 'Success'
+                ])
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to process payment response',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Test endpoint to verify CCAvenue configuration
+     * @OA\Get(
+     *     path="/ccavenue/payment-status/{orderId}",
+     *     summary="Get payment status by order ID",
+     *     description="Check the status of a payment using order ID",
+     *     operationId="getPaymentStatus", 
+     *     tags={"CCAvenue"},
+     *     @OA\Parameter(
+     *         name="orderId",
+     *         in="path",
+     *         required=true,
+     *         description="Order ID to check status for",
+     *         @OA\Schema(type="string", example="ORD123456789")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment status retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Payment status retrieved successfully"),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="order_id", type="string", example="ORD123456789"),
+     *                 @OA\Property(property="status", type="string", example="Pending"),
+     *                 @OA\Property(property="created_at", type="string", example="2023-12-01T10:30:45Z"),
+     *                 @OA\Property(property="updated_at", type="string", example="2023-12-01T10:30:45Z")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Order not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="message", type="string", example="Order not found")
+     *         )
+     *     )
+     * )
      */
-    public function testConfiguration()
+    public function getPaymentStatus(string $orderId): JsonResponse
     {
-        $config = [
-            'access_code' => $this->accessCode ? 'Set' : 'Not Set',
-            'working_key' => $this->workingKey ? 'Set' : 'Not Set',
-            'merchant_id' => $this->merchantId ? 'Set' : 'Not Set',
-            'redirect_url' => $this->redirectUrl ?: 'Not Set',
-            'cancel_url' => $this->cancelUrl ?: 'Not Set',
-        ];
+        try {
+            // Here you would typically query your database to get order status
+            // This is a placeholder implementation
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Payment status retrieved successfully',
+                'data' => [
+                    'order_id' => $orderId,
+                    'status' => 'Pending', // You would get this from your database
+                    'created_at' => now()->toISOString(),
+                    'updated_at' => now()->toISOString()
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve payment status',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
-        return response()->json([
-            'status' => 'success',
-            'message' => 'CCAvenue Configuration Status',
-            'config' => $config
-        ]);
+    /**
+     * Get human-readable status message
+     */
+    private function getStatusMessage(string $status): string
+    {
+        switch ($status) {
+            case 'Success':
+                return 'Transaction completed successfully';
+            case 'Aborted':
+                return 'Transaction was aborted by user';
+            case 'Failure':
+                return 'Transaction failed';
+            default:
+                return 'Transaction status unknown';
+        }
     }
 }
