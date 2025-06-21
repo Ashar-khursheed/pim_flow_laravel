@@ -90,7 +90,7 @@ use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 
 Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
-Route::post(' /frontend/ccavenue/payment', [PaymentController::class, 'initiatePayment']);
+Route::post(' /frontend/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
 Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();

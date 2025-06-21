@@ -11442,14 +11442,14 @@
                 }
             }
         },
-        "/api/frontend/ccavenue/payment": {
+        "/api/frontend/ccavenue/initiate": {
             "post": {
                 "tags": [
                     "Payments"
                 ],
                 "summary": "Initiate CCAvenue Payment",
                 "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
-                "operationId": "338112f5803623c091d008dcfc639dd0",
+                "operationId": "faabe87953da5102daadc5dadb0962d7",
                 "requestBody": {
                     "required": true,
                     "content": {
