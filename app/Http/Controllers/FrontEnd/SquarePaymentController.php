@@ -2,82 +2,103 @@
 
 namespace App\Http\Controllers\FrontEnd;
 
-use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Square\SquareClient;
+use Square\Environment;
 use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
-use Square\Exceptions\ApiException;
 use Illuminate\Support\Str;
-use Square\Clients\SquareClient;
+
 class SquarePaymentController extends Controller
 {
-    protected SquareClient $client;
+    protected $client;
 
     public function __construct()
     {
         $this->client = new SquareClient([
             'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'),
-            'userAgentDetail' => 'laravel_square_payment_api', // optional
+            'environment' => env('SQUARE_ENVIRONMENT') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX,
         ]);
     }
 
-    public function create(Request $request)
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/square/pay",
+     *     summary="Process a payment using Square",
+     *     description="Accepts a nonce from the frontend and creates a payment using Square's API.",
+     *     tags={"Frontend-Square Payment"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"nonce", "amount"},
+     *             @OA\Property(property="nonce", type="string", example="cnon:card-nonce-ok", description="Card nonce generated from Square Web Payments SDK"),
+     *             @OA\Property(property="amount", type="number", format="float", example=10.00, description="Payment amount in dollars")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="payment", type="object", description="Payment details")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Validation error or Square API error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Internal server error message")
+     *         )
+     *     )
+     * )
+     */
+    public function pay(Request $request)
     {
-        $validated = $request->validate([
-            'token' => 'required|string',
-            'idempotencyKey' => 'nullable|string',
-            'amount' => 'nullable|numeric|min:0.5',
-            'currency' => 'nullable|string|size:3',
-            'location_id' => 'nullable|string'
+        $request->validate([
+            'nonce' => 'required|string',
+            'amount' => 'required|numeric|min:0.5',
         ]);
 
-        $token = $validated['token'];
-        $idempotencyKey = $validated['idempotencyKey'] ?? (string) Str::uuid();
-        $amount = $validated['amount'] ?? 100; // default $1.00 (in cents)
-        $currency = $validated['currency'] ?? 'USD';
-        $locationId = $validated['location_id'] ?? $this->getDefaultLocationId();
+        $paymentsApi = $this->client->getPaymentsApi();
 
-        $money = new Money([
-            'amount' => (int) $amount,
-            'currency' => strtoupper($currency),
-        ]);
+        $money = new Money();
+        $money->setAmount((int) ($request->amount * 100)); // amount in cents
+        $money->setCurrency('USD');
+
+        $paymentRequest = new CreatePaymentRequest(
+            $request->nonce,
+            (string) Str::uuid(),
+            $money
+        );
 
         try {
-            $paymentRequest = new CreatePaymentRequest(
-                $token,
-                $idempotencyKey,
-                $money
-            );
-
-            $paymentRequest->setLocationId($locationId);
-
-            $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
+            $response = $paymentsApi->createPayment($paymentRequest);
 
             if ($response->isSuccess()) {
-                return response()->json($response->getResult(), 200);
+                return response()->json([
+                    'status' => 'success',
+                    'payment' => $response->getResult()->getPayment(),
+                ]);
+            } else {
+                return response()->json([
+                    'status' => 'error',
+                    'errors' => $response->getErrors(),
+                ], 400);
             }
-
+        } catch (\Exception $e) {
             return response()->json([
-                'errors' => $response->getErrors()
-            ], 400);
-
-        } catch (ApiException $e) {
-            return response()->json([
-                'errors' => $e->getMessage()
+                'status' => 'error',
+                'message' => $e->getMessage(),
             ], 500);
         }
-    }
-
-    private function getDefaultLocationId()
-    {
-        $locationResponse = $this->client->getLocationsApi()->listLocations();
-
-        if ($locationResponse->isSuccess()) {
-            $locations = $locationResponse->getResult()->getLocations();
-            return $locations[0]->getId(); // Use first location
-        }
-
-        return null; // fallback or handle properly in production
     }
 }
