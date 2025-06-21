@@ -240,6 +240,20 @@ class ProductYouMayLikeController extends Controller
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
 
+                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
+
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
+                    ];
+                }
+
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -265,7 +279,8 @@ class ProductYouMayLikeController extends Controller
                             ? $productWithRelations->currency->title
                             : ($product->price . ' ' . $productWithRelations->currency->title))
                         : $product->price,
-                    'in_wishlist' => in_array($product->id, $wishlistProductIds)
+                    'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                    "selling_type"=> $sellingType,
                 ];
             });
 
@@ -552,6 +567,19 @@ class ProductYouMayLikeController extends Controller
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
+                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
+
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
+                    ];
+                }
+
     
                 return [
                     'id' => $product->id,
@@ -578,6 +606,7 @@ class ProductYouMayLikeController extends Controller
                             ? $productWithRelations->currency->title
                             : ($product->price . ' ' . $productWithRelations->currency->title))
                         : $product->price,
+                        "selling_type"=> $sellingType,
                 ];
             });
     
