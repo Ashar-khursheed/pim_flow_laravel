@@ -187,6 +187,22 @@ class BrandController extends Controller
                            // Output
                            $imageUrls = $cleanedImages;
 
+                           $sellingType = null;
+
+                        if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                            $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                            $attributeUnit = strpos($fullValue, '/') !== false
+                                ? trim(explode('/', $fullValue)[1])
+                                : $fullValue;
+
+                            $sellingType = [
+                                'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                                'attribute_value_unit' => $attributeUnit,
+                            ];
+                        }
+
+
                         return [
                             "id" => $product->id,
                             // "name" => $product->name,
@@ -212,6 +228,8 @@ class BrandController extends Controller
                             'original_price' => $product->price,
                             'front_sale_price' => $product->price,
                             'best_price' => $product->price,
+                            "selling_type"=> $sellingType,
+
                         ];
                     }),
                 ];
@@ -378,6 +396,20 @@ class BrandController extends Controller
     
                            // Output
                            $imageUrls = $cleanedImages;
+
+                           if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+                            $fullValue = $details->sellingUnitAttribute->attribute_value;
+
+                            $attributeUnit = strpos($fullValue, '/') !== false
+                                ? trim(explode('/', $fullValue)[1])
+                                : $fullValue;
+
+                            $sellingType = [
+                                'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+                                'attribute_value_unit' => $attributeUnit,
+                            ];
+                        }
+
     
                         return [
                             'id' => $details->id,
@@ -394,6 +426,7 @@ class BrandController extends Controller
                             'images' => $imageUrls,
                             'front_sale_price' => $details->price,
                             'best_price' => $details->best_price ?? $details->price,
+                            "selling_type"=> $sellingType,
                         ];
                     })->values(),
                 ];
@@ -778,6 +811,20 @@ class BrandController extends Controller
                  $quantity = $product->quantity ?? 0;
                  $unitsSold = $product->units_sold ?? 0;
                  $leftStock = $quantity - $unitsSold;
+
+                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
+
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
+                    ];
+                }
+
      
                  return [
                      'id' => $product->id,
@@ -804,6 +851,7 @@ class BrandController extends Controller
                              ? $productWithRelations->currency->title
                              : ($product->price . ' ' . $productWithRelations->currency->title))
                          : $product->price,
+                         "selling_type"=> $sellingType,
                  ];
              });
      
