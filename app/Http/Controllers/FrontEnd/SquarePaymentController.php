@@ -74,36 +74,66 @@ class SquarePaymentController extends Controller
      *     )
      * )
      */
+    // public function createPayment(Request $request)
+    // {
+    //     $request->validate([
+    //         'source_id' => 'required|string', // card token from JS
+    //         'amount' => 'required|numeric|min:1',
+    //     ]);
+
+    //     $money = new Money(
+    //         amount: (int)($request->amount * 100),
+    //         currency: Currency::Usd->value,
+    //     );
+
+    //     $paymentRequest = new CreatePaymentRequest(
+    //         idempotencyKey: (string) Str::uuid(),
+    //         sourceId: $request->source_id,
+    //         amountMoney: $money,
+    //     );
+
+    //     $response = $this->client->payments->create($paymentRequest);
+
+    //     if ($response->isSuccess()) {
+    //         return response()->json([
+    //             'success' => true,
+    //             'payment' => $response->getResult()->payment,
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'success' => false,
+    //         'errors' => $response->getErrors(),
+    //     ], 400);
+    // }
     public function createPayment(Request $request)
-    {
-        $request->validate([
-            'source_id' => 'required|string', // card token from JS
-            'amount' => 'required|numeric|min:1',
-        ]);
+{
+    $request->validate([
+        'source_id' => 'required|string', // card token from JS
+        'amount' => 'required|numeric|min:1',
+    ]);
 
-        $money = new Money(
-            amount: (int)($request->amount * 100),
-            currency: Currency::Usd->value,
-        );
+    $money = new Money();
+    $money->setAmount((int) ($request->amount * 100));
+    $money->setCurrency('USD');
 
-        $paymentRequest = new CreatePaymentRequest(
-            idempotencyKey: (string) Str::uuid(),
-            sourceId: $request->source_id,
-            amountMoney: $money,
-        );
+    $paymentRequest = new CreatePaymentRequest();
+    $paymentRequest->setIdempotencyKey((string) Str::uuid());
+    $paymentRequest->setSourceId($request->source_id);
+    $paymentRequest->setAmountMoney($money);
 
-        $response = $this->client->payments->create($paymentRequest);
+    $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
 
-        if ($response->isSuccess()) {
-            return response()->json([
-                'success' => true,
-                'payment' => $response->getResult()->payment,
-            ]);
-        }
-
+    if ($response->isSuccess()) {
         return response()->json([
-            'success' => false,
-            'errors' => $response->getErrors(),
-        ], 400);
+            'success' => true,
+            'payment' => $response->getResult()->getPayment(),
+        ]);
     }
+
+    return response()->json([
+        'success' => false,
+        'errors' => $response->getErrors(),
+    ], 400);
+}
 }
