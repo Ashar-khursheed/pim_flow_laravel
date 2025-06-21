@@ -99,7 +99,8 @@ class CCavenueController extends Controller
             $data = $request->validated();
             
             // Add merchant ID
-            $data['merchant_id'] = $this->ccavenueService->getMerchantId();
+            $merchantId = $this->ccavenueService->getMerchantId();
+                $data['merchant_id'] = $merchantId;
             
             // Set default values
             $data['language'] = $data['language'] ?? 'EN';
@@ -124,7 +125,8 @@ class CCavenueController extends Controller
                 'merchant_param4', 'merchant_param5', 'promo_code', 'customer_identifier'
             ];
             
-            $merchantData = '';
+            $merchantData = "merchant_id={$merchantId}&"; // ✅ manually insert at the top
+
             foreach ($data as $key => $value) {
                 if (in_array($key, $allowedKeys) && !empty($value)) {
                     $merchantData .= "$key=$value&";  // ✅ Do NOT urlencode
