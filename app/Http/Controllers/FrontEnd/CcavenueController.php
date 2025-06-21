@@ -4,7 +4,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use Illuminate\Http\Request;
 use App\Http\Requests\PaymentRequest;
-use App\Services\CCavenueService;
+use App\Services\CCAvenueService;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
