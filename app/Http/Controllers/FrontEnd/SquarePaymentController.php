@@ -5,9 +5,9 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Square\SquareClient;
-use Square\Models\Money;
-use Square\Models\CreatePaymentRequest;
+use Square\Types\Money;
 use Square\Types\Currency;
+use Square\Payments\Requests\CreatePaymentRequest;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
@@ -115,14 +115,13 @@ class SquarePaymentController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
     
-        // Create Money object using array constructor
-        $money = new Money([
-            'amount' => (int)($request->amount * 100),
-            'currency' => 'USD',
-        ]);
+        // Create Money object using the Square\Types classes
+        $money = new \Square\Types\Money();
+        $money->setAmount((int)($request->amount * 100));
+        $money->setCurrency(\Square\Types\Currency::USD);
     
-        // Alternative: Create payment request and set properties individually
-        $paymentRequest = new CreatePaymentRequest();
+        // Create payment request
+        $paymentRequest = new \Square\Payments\Requests\CreatePaymentRequest();
         $paymentRequest->setIdempotencyKey((string) Str::uuid());
         $paymentRequest->setSourceId($request->source_id);
         $paymentRequest->setAmountMoney($money);
