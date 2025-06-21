@@ -103,13 +103,31 @@ class CCavenueController extends Controller
             
             // Set default values
             $data['language'] = $data['language'] ?? 'EN';
-            $data['integration_type'] = 'iframe_normal';
+            // $data['integration_type'] = 'iframe_normal';
             
             // Build merchant data string
+            // $merchantData = '';
+            // foreach ($data as $key => $value) {
+            //     if (!empty($value)) {
+            //         $merchantData .= $key . '=' . urlencode($value) . '&';
+            //     }
+            // }
+            // $merchantData = rtrim($merchantData, '&');
+            $allowedKeys = [
+                'merchant_id', 'order_id', 'currency', 'amount',
+                'redirect_url', 'cancel_url', 'language',
+                'billing_name', 'billing_address', 'billing_city', 'billing_state',
+                'billing_zip', 'billing_country', 'billing_tel', 'billing_email',
+                'delivery_name', 'delivery_address', 'delivery_city', 'delivery_state',
+                'delivery_zip', 'delivery_country', 'delivery_tel',
+                'merchant_param1', 'merchant_param2', 'merchant_param3',
+                'merchant_param4', 'merchant_param5', 'promo_code', 'customer_identifier'
+            ];
+            
             $merchantData = '';
             foreach ($data as $key => $value) {
-                if (!empty($value)) {
-                    $merchantData .= $key . '=' . urlencode($value) . '&';
+                if (in_array($key, $allowedKeys) && !empty($value)) {
+                    $merchantData .= "$key=$value&";  // ✅ Do NOT urlencode
                 }
             }
             $merchantData = rtrim($merchantData, '&');
