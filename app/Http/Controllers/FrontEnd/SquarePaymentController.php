@@ -115,16 +115,15 @@ class SquarePaymentController extends Controller
             'amount' => 'required|numeric|min:1',
         ]);
     
-        // Create Money object using the Square\Types classes
-        $money = new \Square\Types\Money();
-        $money->setAmount((int)($request->amount * 100));
-        $money->setCurrency(\Square\Types\Currency::USD);
-    
-        // Create payment request
-        $paymentRequest = new \Square\Payments\Requests\CreatePaymentRequest();
-        $paymentRequest->setIdempotencyKey((string) Str::uuid());
-        $paymentRequest->setSourceId($request->source_id);
-        $paymentRequest->setAmountMoney($money);
+        // Follow the official Square documentation approach
+        $paymentRequest = new \Square\Payments\Requests\CreatePaymentRequest([
+            'idempotencyKey' => (string) Str::uuid(),
+            'amountMoney' => new \Square\Types\Money([
+                'amount' => (int)($request->amount * 100),
+                'currency' => \Square\Types\Currency::Usd->value,
+            ]),
+            'sourceId' => $request->source_id,
+        ]);
     
         $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
     
