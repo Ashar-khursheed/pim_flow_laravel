@@ -5,9 +5,8 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Square\SquareClient;
-use Square\Environment;
-use Square\Models\Money;
 use Square\Models\CreatePaymentRequest;
+use Square\Models\Money;
 use Illuminate\Support\Str;
 
 class SquarePaymentController extends Controller
@@ -18,7 +17,7 @@ class SquarePaymentController extends Controller
     {
         $this->client = new SquareClient([
             'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENVIRONMENT') === 'production' ? Environment::PRODUCTION : Environment::SANDBOX,
+            'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'),
         ]);
     }
 
