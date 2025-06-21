@@ -97,7 +97,8 @@ class CCavenueController extends Controller
     {
         try {
             $data = $request->validated();
-            
+            $data['amount'] = number_format((float)$data['amount'], 2, '.', '');
+
             // Add merchant ID
             $merchantId = $this->ccavenueService->getMerchantId();
                 $data['merchant_id'] = $merchantId;
