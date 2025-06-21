@@ -98,25 +98,16 @@ class CCavenueController extends Controller
         try {
             $data = $request->validated();
             $data['amount'] = number_format((float)$data['amount'], 2, '.', '');
-
-            // Add merchant ID
+    
+            // Get merchant ID
             $merchantId = $this->ccavenueService->getMerchantId();
-                $data['merchant_id'] = $merchantId;
             
             // Set default values
             $data['language'] = $data['language'] ?? 'EN';
-            // $data['integration_type'] = 'iframe_normal';
             
-            // Build merchant data string
-            // $merchantData = '';
-            // foreach ($data as $key => $value) {
-            //     if (!empty($value)) {
-            //         $merchantData .= $key . '=' . urlencode($value) . '&';
-            //     }
-            // }
-            // $merchantData = rtrim($merchantData, '&');
+            // Define allowed parameters for CCAvenue
             $allowedKeys = [
-                'merchant_id', 'order_id', 'currency', 'amount',
+                'order_id', 'currency', 'amount',
                 'redirect_url', 'cancel_url', 'language',
                 'billing_name', 'billing_address', 'billing_city', 'billing_state',
                 'billing_zip', 'billing_country', 'billing_tel', 'billing_email',
@@ -126,16 +117,26 @@ class CCavenueController extends Controller
                 'merchant_param4', 'merchant_param5', 'promo_code', 'customer_identifier'
             ];
             
-            $merchantData = "merchant_id={$merchantId}&"; // ✅ manually insert at the top
-
+            // Build merchant data string - start with merchant_id
+            $merchantData = "merchant_id={$merchantId}";
+    
             foreach ($data as $key => $value) {
                 if (in_array($key, $allowedKeys) && !empty($value)) {
-                    $merchantData .= "$key=$value&";  // ✅ Do NOT urlencode
+                    $merchantData .= "&{$key}={$value}";
                 }
             }
-            $merchantData = rtrim($merchantData, '&');
-            \Log::info('Merchant data being encrypted:', [$merchantData]);
-
+            
+            // Validate required fields
+            $requiredFields = ['order_id', 'amount', 'currency', 'redirect_url', 'cancel_url'];
+            foreach ($requiredFields as $field) {
+                if (empty($data[$field])) {
+                    throw new \Exception("Required field '{$field}' is missing");
+                }
+            }
+            
+            \Log::info('Final merchant data:', [$merchantData]);
+            \Log::info('Data being processed:', $data);
+    
             // Generate payment URL
             $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
             
@@ -151,6 +152,11 @@ class CCavenueController extends Controller
             ]);
             
         } catch (\Exception $e) {
+            \Log::error('CCAvenue payment initiation failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to generate payment URL',
