@@ -5,9 +5,10 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Square\SquareClient;
+use Square\Environments;
+use Square\Payments\Requests\CreatePaymentRequest;
 use Square\Types\Money;
 use Square\Types\Currency;
-use Square\Payments\Requests\CreatePaymentRequest;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
@@ -17,10 +18,12 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-        $this->client = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'), // Explicitly set sandbox
-        ]);
+        $this->client = new SquareClient(
+            token: env('SQUARE_ACCESS_TOKEN'),
+            options: [
+                'baseUrl' => Environments::Sandbox->value,
+            ]
+        );
     }
 
     /**
@@ -76,7 +79,7 @@ class SquarePaymentController extends Controller
      */
     public function createPayment(Request $request)
     {
-        // Debug: Check if token is loaded
+        // Validate access token
         $token = env('SQUARE_ACCESS_TOKEN');
         if (!$token) {
             return response()->json([
@@ -85,9 +88,10 @@ class SquarePaymentController extends Controller
             ], 500);
         }
 
+        // Validate request input
         $request->validate([
             'source_id' => 'required|string',
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:0.01',
         ]);
 
         try {
@@ -119,11 +123,6 @@ class SquarePaymentController extends Controller
             return response()->json([
                 'success' => false,
                 'errors' => ['Square API Error: ' . $e->getMessage()],
-                'debug_info' => [
-                    'token_present' => !empty($token),
-                    'token_prefix' => substr($token, 0, 10) . '...',
-                    'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'),
-                ]
             ], 500);
         } catch (\Exception $e) {
             return response()->json([
@@ -132,4 +131,6 @@ class SquarePaymentController extends Controller
             ], 500);
         }
     }
-}
+
+
+}  
