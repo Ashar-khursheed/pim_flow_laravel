@@ -11442,14 +11442,14 @@
                 }
             }
         },
-        "/frontend/ccavenue/payment": {
+        "/api/frontend/ccavenue/payment": {
             "post": {
                 "tags": [
                     "Payments"
                 ],
                 "summary": "Initiate CCAvenue Payment",
                 "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
-                "operationId": "dc6be3fb4d980cdcc4c92430e4876074",
+                "operationId": "338112f5803623c091d008dcfc639dd0",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -11497,14 +11497,14 @@
                 }
             }
         },
-        "/ccavenue/response": {
+        "/api/frontend/ccavenue/response": {
             "post": {
                 "tags": [
                     "Payments"
                 ],
                 "summary": "Handle CCAvenue Payment Response",
                 "description": "Handles the encrypted response from CCAvenue and returns payment status.",
-                "operationId": "c255141dfa48f70933768184c47e2204",
+                "operationId": "1dc9c5f3c8419bb423d1221d31373d3a",
                 "requestBody": {
                     "required": true,
                     "content": {
