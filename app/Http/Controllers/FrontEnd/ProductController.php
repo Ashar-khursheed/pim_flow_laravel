@@ -328,6 +328,9 @@ class ProductController extends Controller
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
                         }
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
+                        }
                         
                         // Add review and stock details
                         $totalReviews = $product->reviews->count();
@@ -643,6 +646,9 @@ class ProductController extends Controller
                             } else {
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
+                        }
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
                     
                         // Reviews and stock
