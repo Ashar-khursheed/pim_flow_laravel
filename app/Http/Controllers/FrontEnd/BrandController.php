@@ -398,8 +398,8 @@ class BrandController extends Controller
                            $imageUrls = $cleanedImages;
                            
                            $sellingType=null;
-                           if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                            $fullValue = $product->sellingUnitAttribute->attribute_value;
+                           if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+                            $fullValue = $details->sellingUnitAttribute->attribute_value;
 
                             $attributeUnit = strpos($fullValue, '/') !== false
                                 ? trim(explode('/', $fullValue)[1])
