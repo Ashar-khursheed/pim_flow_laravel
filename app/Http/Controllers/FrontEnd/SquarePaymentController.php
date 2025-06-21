@@ -106,22 +106,28 @@ class SquarePaymentController extends Controller
     //         'errors' => $response->getErrors(),
     //     ], 400);
     // }
-    public function createPayment(Request $request)
+   
+public function createPayment(Request $request)
 {
     $request->validate([
-        'source_id' => 'required|string', // card token from JS
+        'source_id' => 'required|string', // card token from frontend
         'amount' => 'required|numeric|min:1',
     ]);
 
-    $money = new Money();
-    $money->setAmount((int) ($request->amount * 100));
-    $money->setCurrency('USD');
+    // Convert dollars to cents
+    $amount = (int) ($request->amount * 100);
 
-    $paymentRequest = new CreatePaymentRequest();
-    $paymentRequest->setIdempotencyKey((string) Str::uuid());
-    $paymentRequest->setSourceId($request->source_id);
-    $paymentRequest->setAmountMoney($money);
+    // Prepare payment payload
+    $paymentRequest = new CreatePaymentRequest([
+        'source_id' => $request->source_id,
+        'idempotency_key' => (string) Str::uuid(),
+        'amount_money' => [
+            'amount' => $amount,
+            'currency' => 'USD',
+        ],
+    ]);
 
+    // Send request
     $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
 
     if ($response->isSuccess()) {
