@@ -2403,6 +2403,22 @@ use Illuminate\Support\Facades\Auth;
                     $imageUrls = is_string($details->images)
                     ? json_decode($details->images, true)
                     : (array) $details->images;
+
+                    $sellingType = null;
+
+                    if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+                        $fullValue = $details->sellingUnitAttribute->attribute_value;
+
+                        $attributeUnit = strpos($fullValue, '/') !== false
+                            ? trim(explode('/', $fullValue)[1])
+                            : $fullValue;
+
+                        $sellingType = [
+                            'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+                            'attribute_value_unit' => $attributeUnit,
+                        ];
+                    }
+
         
                 
                     return [
@@ -2421,6 +2437,8 @@ use Illuminate\Support\Facades\Auth;
                         "original_price"=> $details->price,
                         "front_sale_price"=> $details->price,
                         "best_price"=> $details->price,
+                        "selling_type"=> $sellingType,
+
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
@@ -2534,6 +2552,22 @@ use Illuminate\Support\Facades\Auth;
                     ? json_decode($details->images, true)
                     : (array) $details->images;
 
+                    $sellingType = null;
+
+                    if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+                        $fullValue = $details->sellingUnitAttribute->attribute_value;
+                    
+                        $attributeUnit = strpos($fullValue, '/') !== false
+                            ? trim(explode('/', $fullValue)[1])
+                            : $fullValue;
+                    
+                        $sellingType = [
+                            'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+                            'attribute_value_unit' => $attributeUnit,
+                        ];
+                    }
+                    
+
 
                     return [
                         'id' => $details->id,
@@ -2550,6 +2584,7 @@ use Illuminate\Support\Facades\Auth;
                         "original_price"=> $details->price,
                         "front_sale_price"=> $details->price,
                         "best_price"=> $details->price,
+                        "selling_type"=> $sellingType,
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
