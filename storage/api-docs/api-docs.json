@@ -11442,47 +11442,155 @@
                 }
             }
         },
-        "/api/frontend/ccavenue/initiate": {
+        "/ccavenue/initiate-payment": {
             "post": {
                 "tags": [
-                    "CCAVENUE"
+                    "CCAvenue"
                 ],
-                "summary": "Initiate CCAvenue Payment",
-                "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
-                "operationId": "faabe87953da5102daadc5dadb0962d7",
+                "summary": "Initiate CCAvenue payment",
+                "description": "Create a payment request and get payment URL",
+                "operationId": "initiatePayment",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "order_id",
                                     "amount",
-                                    "name",
-                                    "email",
-                                    "phone",
-                                    "address"
+                                    "currency",
+                                    "redirect_url",
+                                    "cancel_url"
                                 ],
                                 "properties": {
-                                    "amount": {
-                                        "type": "number",
-                                        "example": 500
+                                    "order_id": {
+                                        "description": "Unique order identifier",
+                                        "type": "string",
+                                        "example": "ORD123456789"
                                     },
-                                    "name": {
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "enum": [
+                                            "INR",
+                                            "USD",
+                                            "EUR",
+                                            "GBP",
+                                            "AED"
+                                        ],
+                                        "example": "INR"
+                                    },
+                                    "redirect_url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://yoursite.com/payment/success"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://yoursite.com/payment/cancel"
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "enum": [
+                                            "EN",
+                                            "HI"
+                                        ],
+                                        "example": "EN"
+                                    },
+                                    "billing_name": {
                                         "type": "string",
                                         "example": "John Doe"
                                     },
-                                    "email": {
+                                    "billing_address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "billing_city": {
+                                        "type": "string",
+                                        "example": "Mumbai"
+                                    },
+                                    "billing_state": {
+                                        "type": "string",
+                                        "example": "Maharashtra"
+                                    },
+                                    "billing_zip": {
+                                        "type": "string",
+                                        "example": "400001"
+                                    },
+                                    "billing_country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "billing_tel": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "billing_email": {
                                         "type": "string",
                                         "format": "email",
                                         "example": "john@example.com"
                                     },
-                                    "phone": {
+                                    "delivery_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "delivery_address": {
+                                        "type": "string",
+                                        "example": "456 Oak Avenue"
+                                    },
+                                    "delivery_city": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "delivery_state": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "delivery_zip": {
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "delivery_country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "delivery_tel": {
                                         "type": "string",
                                         "example": "9876543210"
                                     },
-                                    "address": {
+                                    "merchant_param1": {
                                         "type": "string",
-                                        "example": "123 Street Name, City"
+                                        "example": "Additional info 1"
+                                    },
+                                    "merchant_param2": {
+                                        "type": "string",
+                                        "example": "Additional info 2"
+                                    },
+                                    "merchant_param3": {
+                                        "type": "string",
+                                        "example": "Additional info 3"
+                                    },
+                                    "merchant_param4": {
+                                        "type": "string",
+                                        "example": "Additional info 4"
+                                    },
+                                    "merchant_param5": {
+                                        "type": "string",
+                                        "example": "Additional info 5"
+                                    },
+                                    "promo_code": {
+                                        "type": "string",
+                                        "example": "DISCOUNT10"
+                                    },
+                                    "customer_identifier": {
+                                        "type": "string",
+                                        "example": "CUST123"
                                     }
                                 },
                                 "type": "object"
@@ -11492,31 +11600,112 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "HTML form auto-submitting to CCAvenue"
+                        "description": "Payment URL generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment URL generated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "payment_url": {
+                                                    "type": "string",
+                                                    "example": "https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction&encRequest=..."
+                                                },
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456789"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "example": 100.5
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "INR"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to generate payment URL"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
         },
-        "/api/frontend/ccavenue/response": {
+        "/ccavenue/handle-response": {
             "post": {
                 "tags": [
-                    "CCAVENUE"
+                    "CCAvenue"
                 ],
-                "summary": "Handle CCAvenue Payment Response",
-                "description": "Handles the encrypted response from CCAvenue and returns payment status.",
-                "operationId": "1dc9c5f3c8419bb423d1221d31373d3a",
+                "summary": "Handle CCAvenue payment response",
+                "description": "Process the encrypted response from CCAvenue after payment",
+                "operationId": "handleResponse",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/x-www-form-urlencoded": {
+                        "application/json": {
                             "schema": {
                                 "required": [
                                     "encResp"
                                 ],
                                 "properties": {
                                     "encResp": {
-                                        "type": "string",
-                                        "example": "encrypted_response_string"
+                                        "description": "Encrypted response from CCAvenue",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -11526,35 +11715,188 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Payment status result",
+                        "description": "Payment response processed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
                                             "type": "string",
-                                            "example": "success"
+                                            "example": "Payment response processed successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order_status": {
+                                                    "type": "string",
+                                                    "example": "Success"
+                                                },
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456789"
+                                                },
+                                                "tracking_id": {
+                                                    "type": "string",
+                                                    "example": "123456789"
+                                                },
+                                                "bank_ref_no": {
+                                                    "type": "string",
+                                                    "example": "987654321"
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "example": "100.50"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "INR"
+                                                },
+                                                "payment_mode": {
+                                                    "type": "string",
+                                                    "example": "Credit Card"
+                                                },
+                                                "status_message": {
+                                                    "type": "string",
+                                                    "example": "Transaction Successful"
+                                                },
+                                                "response_code": {
+                                                    "type": "string",
+                                                    "example": "0"
+                                                },
+                                                "trans_date": {
+                                                    "type": "string",
+                                                    "example": "01/12/2023 10:30:45"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing encrypted response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid encrypted response"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to process payment response"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/ccavenue/payment-status/{orderId}": {
+            "get": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "Get payment status by order ID",
+                "description": "Check the status of a payment using order ID",
+                "operationId": "getPaymentStatus",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "Order ID to check status for",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "ORD123456789"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment status retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment status retrieved successfully"
                                         },
                                         "data": {
                                             "properties": {
                                                 "order_id": {
                                                     "type": "string",
-                                                    "example": "ORD123456"
+                                                    "example": "ORD123456789"
                                                 },
-                                                "order_status": {
+                                                "status": {
                                                     "type": "string",
-                                                    "example": "Success"
+                                                    "example": "Pending"
                                                 },
-                                                "tracking_id": {
+                                                "created_at": {
                                                     "type": "string",
-                                                    "example": "987654321"
+                                                    "example": "2023-12-01T10:30:45Z"
                                                 },
-                                                "bank_ref_no": {
+                                                "updated_at": {
                                                     "type": "string",
-                                                    "example": "REF987654"
+                                                    "example": "2023-12-01T10:30:45Z"
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order not found"
                                         }
                                     },
                                     "type": "object"
@@ -26414,8 +26756,8 @@
             "description": "Frontend-Menu Categories"
         },
         {
-            "name": "CCAVENUE",
-            "description": "CCAVENUE"
+            "name": "CCAvenue",
+            "description": "CCAvenue"
         },
         {
             "name": "Frontend-Countries",
