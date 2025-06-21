@@ -733,6 +733,20 @@ use Illuminate\Support\Facades\Auth;
             
             // Calculate left stock (adjust field name based on your database)
             $leftStock = $product->quantity ?? 0; // Change 'quantity' to your actual stock field name
+
+            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                $attributeUnit = strpos($fullValue, '/') !== false
+                    ? trim(explode('/', $fullValue)[1])
+                    : $fullValue;
+
+                $sellingType = [
+                    'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                    'attribute_value_unit' => $attributeUnit,
+                ];
+            }
+
             
             return [
                 'id' => $product->id,
@@ -760,6 +774,7 @@ use Illuminate\Support\Facades\Auth;
                         : ($product->price . ' ' . $product->currency->title))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                "selling_type"=> $sellingType,
             ];
         });
     
@@ -2597,8 +2612,6 @@ use Illuminate\Support\Facades\Auth;
     }
 
 
-
-    
     // Recursive function to modify images for children and all sub-level categories
     private function addImageUrlsRecursively($category)
     {
