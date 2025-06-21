@@ -89,9 +89,9 @@ use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterContro
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 
-Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
-Route::post(' /frontend/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
-Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
+// Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
+// Route::post(' /frontend/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
+// Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -493,5 +493,5 @@ Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress'
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::post('/frontend/ccavenue/payment', [F_CcavenueController::class, 'initiatePayment']);
+Route::post('/frontend/ccavenue/initiate', [F_CcavenueController::class, 'initiatePayment']);
 Route::post('/frontend/ccavenue/response', [F_CcavenueController::class, 'handleResponse']);

@@ -11445,7 +11445,7 @@
         "/api/frontend/ccavenue/initiate": {
             "post": {
                 "tags": [
-                    "Payments"
+                    "CCAVENUE"
                 ],
                 "summary": "Initiate CCAvenue Payment",
                 "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
@@ -11500,7 +11500,7 @@
         "/api/frontend/ccavenue/response": {
             "post": {
                 "tags": [
-                    "Payments"
+                    "CCAVENUE"
                 ],
                 "summary": "Handle CCAvenue Payment Response",
                 "description": "Handles the encrypted response from CCAvenue and returns payment status.",
@@ -26414,8 +26414,8 @@
             "description": "Frontend-Menu Categories"
         },
         {
-            "name": "Payments",
-            "description": "Payments"
+            "name": "CCAVENUE",
+            "description": "CCAVENUE"
         },
         {
             "name": "Frontend-Countries",
@@ -26520,6 +26520,10 @@
         {
             "name": "Orders",
             "description": "Orders"
+        },
+        {
+            "name": "Payments",
+            "description": "Payments"
         },
         {
             "name": "Pre Onboarding Vendors",
