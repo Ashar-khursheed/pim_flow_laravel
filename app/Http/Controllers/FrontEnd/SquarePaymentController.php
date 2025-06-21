@@ -107,39 +107,35 @@ class SquarePaymentController extends Controller
     //     ], 400);
     // }
    
-public function createPayment(Request $request)
-{
-    $request->validate([
-        'source_id' => 'required|string', // card token from frontend
-        'amount' => 'required|numeric|min:1',
-    ]);
 
-    // Convert dollars to cents
-    $amount = (int) ($request->amount * 100);
-
-    // Prepare payment payload
-    $paymentRequest = new CreatePaymentRequest([
-        'source_id' => $request->source_id,
-        'idempotency_key' => (string) Str::uuid(),
-        'amount_money' => [
-            'amount' => $amount,
-            'currency' => 'USD',
-        ],
-    ]);
-
-    // Send request
-    $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
-
-    if ($response->isSuccess()) {
-        return response()->json([
-            'success' => true,
-            'payment' => $response->getResult()->getPayment(),
+    public function createPayment(Request $request)
+    {
+        $request->validate([
+            'source_id' => 'required|string',
+            'amount' => 'required|numeric|min:1',
         ]);
+    
+        $paymentRequest = new CreatePaymentRequest([
+            'sourceId' => $request->input('source_id'), // map snake_case to camelCase
+            'idempotencyKey' => (string) Str::uuid(),
+            'amountMoney' => [
+                'amount' => (int) ($request->amount * 100),
+                'currency' => 'USD',
+            ],
+        ]);
+    
+        $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
+    
+        if ($response->isSuccess()) {
+            return response()->json([
+                'success' => true,
+                'payment' => $response->getResult()->getPayment(),
+            ]);
+        }
+    
+        return response()->json([
+            'success' => false,
+            'errors' => $response->getErrors(),
+        ], 400);
     }
-
-    return response()->json([
-        'success' => false,
-        'errors' => $response->getErrors(),
-    ], 400);
-}
 }
