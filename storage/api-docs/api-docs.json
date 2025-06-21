@@ -9960,7 +9960,7 @@
                     "Frontend-Cart"
                 ],
                 "summary": "Decrease cart item quantity",
-                "description": "Decrease the quantity of a specific product in the cart by 1. If quantity becomes 0, the item will be removed from cart.",
+                "description": "Decrease the quantity of a specific product in the cart. If quantity becomes 0 or less, the item will be removed from cart.",
                 "operationId": "9eae342e7dccfba4445e21557c3184ab",
                 "requestBody": {
                     "required": true,
@@ -9968,12 +9968,19 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id"
+                                    "product_id",
+                                    "quantity"
                                 ],
                                 "properties": {
                                     "product_id": {
                                         "description": "ID of the product",
                                         "type": "integer",
+                                        "example": 1
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity to decrease",
+                                        "type": "integer",
+                                        "minimum": 1,
                                         "example": 1
                                     }
                                 },
@@ -9983,7 +9990,7 @@
                     }
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Cart item quantity decreased successfully",
                         "content": {
                             "application/json": {
@@ -10016,10 +10023,6 @@
                                                     "type": "integer",
                                                     "example": 2
                                                 },
-                                                "currency_title": {
-                                                    "type": "string",
-                                                    "example": "USD"
-                                                },
                                                 "created_at": {
                                                     "type": "string",
                                                     "format": "date-time",
@@ -10039,7 +10042,7 @@
                             }
                         }
                     },
-                    "201": {
+                    "200": {
                         "description": "Item removed from cart (quantity became 0)",
                         "content": {
                             "application/json": {
@@ -10052,10 +10055,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Item removed from cart."
-                                        },
-                                        "removed": {
-                                            "type": "boolean",
-                                            "example": true
                                         }
                                     },
                                     "type": "object"
@@ -10095,11 +10094,11 @@
                                         },
                                         "errors": {
                                             "properties": {
-                                                "product_id": {
+                                                "quantity": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "The product_id field is required."
+                                                        "example": "The quantity must be at least 1."
                                                     }
                                                 }
                                             },
@@ -15794,13 +15793,14 @@
                 }
             }
         },
-        "/frontend/payment-square": {
+        "/api/frontend/square/pay": {
             "post": {
                 "tags": [
-                    "Frontend-Payment"
+                    "Frontend-Square Payment"
                 ],
-                "summary": "Create a payment using Square API",
-                "operationId": "createSquarePayment",
+                "summary": "Process a payment using Square",
+                "description": "Accepts a nonce from the frontend and creates a payment using Square's API.",
+                "operationId": "2881c92c5d242bfc5e8691e772fd3dd2",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -15808,40 +15808,19 @@
                             "schema": {
                                 "required": [
                                     "nonce",
-                                    "amount",
-                                    "currency",
-                                    "customer_id",
-                                    "location_id",
-                                    "team_member_id",
-                                    "buyer_email_address"
+                                    "amount"
                                 ],
                                 "properties": {
                                     "nonce": {
+                                        "description": "Card nonce generated from Square Web Payments SDK",
                                         "type": "string",
-                                        "example": "card_nonce_value"
+                                        "example": "cnon:card-nonce-ok"
                                     },
                                     "amount": {
+                                        "description": "Payment amount in dollars",
                                         "type": "number",
                                         "format": "float",
-                                        "example": 10.5
-                                    },
-                                    "currency": {
-                                        "type": "string",
-                                        "example": "USD"
-                                    },
-                                    "customer_id": {
-                                        "type": "string"
-                                    },
-                                    "location_id": {
-                                        "type": "string"
-                                    },
-                                    "team_member_id": {
-                                        "type": "string"
-                                    },
-                                    "buyer_email_address": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "customer@example.com"
+                                        "example": 10
                                     }
                                 },
                                 "type": "object"
@@ -15851,15 +15830,17 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Payment successfully created",
+                        "description": "Payment successful",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean"
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
                                         },
                                         "payment": {
+                                            "description": "Payment details",
                                             "type": "object"
                                         }
                                     },
@@ -15869,13 +15850,14 @@
                         }
                     },
                     "400": {
-                        "description": "Validation or payment error",
+                        "description": "Validation error or Square API error",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "success": {
-                                            "type": "boolean"
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
                                         },
                                         "errors": {
                                             "type": "array",
@@ -15890,21 +15872,24 @@
                         }
                     },
                     "500": {
-                        "description": "Server error"
-                    }
-                }
-            }
-        },
-        "/frontend/payment-form": {
-            "get": {
-                "tags": [
-                    "Frontend-Payment"
-                ],
-                "summary": "Get payment form view",
-                "operationId": "paymentFormView",
-                "responses": {
-                    "200": {
-                        "description": "Blade view with Square form"
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Internal server error message"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -26528,8 +26513,8 @@
             "description": "Frontend-Sliders"
         },
         {
-            "name": "Frontend-Payment",
-            "description": "Frontend-Payment"
+            "name": "Frontend-Square Payment",
+            "description": "Frontend-Square Payment"
         },
         {
             "name": "Frontend-User Reviews",
