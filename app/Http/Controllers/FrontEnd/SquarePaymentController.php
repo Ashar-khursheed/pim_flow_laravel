@@ -8,6 +8,8 @@ use Square\SquareClient;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\Money;
 use Illuminate\Support\Str;
+use Square\SquareClientBuilder;
+
 
 class SquarePaymentController extends Controller
 {
@@ -15,9 +17,10 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-        $this->client = (new SquareClient())
-        ->setEnvironment(env('SQUARE_ENVIRONMENT', 'sandbox'))
-        ->build(); // no need for .setAccessToken()
+        $this->client = SquareClientBuilder::init()
+            ->accessToken(env('SQUARE_ACCESS_TOKEN'))
+            ->environment(env('SQUARE_ENVIRONMENT', 'sandbox')) // or 'production'
+            ->build();
     }
 
     /**
