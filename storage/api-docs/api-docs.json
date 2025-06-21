@@ -12413,7 +12413,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Customer registered successfully"
+                        "description": "Customer registered successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 }
             }
