@@ -15796,28 +15796,28 @@
         "/api/frontend/payment-square": {
             "post": {
                 "tags": [
-                    "Frontend-Square Payment"
+                    "Square Payment"
                 ],
-                "summary": "Process a payment using Square",
-                "description": "Accepts a nonce from the frontend and creates a payment using Square's API.",
-                "operationId": "ad71b5c6e16950e4a07190d61e5c4f2b",
+                "summary": "Create a payment using Square",
+                "description": "Receives a source_id (card token) and amount to process payment via Square API.",
+                "operationId": "457abb898828ebd20e127a512cebada2",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "nonce",
+                                    "source_id",
                                     "amount"
                                 ],
                                 "properties": {
-                                    "nonce": {
-                                        "description": "Card nonce generated from Square Web Payments SDK",
+                                    "source_id": {
+                                        "description": "Card token generated from Square Web Payments SDK",
                                         "type": "string",
                                         "example": "cnon:card-nonce-ok"
                                     },
                                     "amount": {
-                                        "description": "Payment amount in dollars",
+                                        "description": "Amount in USD",
                                         "type": "number",
                                         "format": "float",
                                         "example": 10
@@ -15835,12 +15835,12 @@
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "success"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "payment": {
-                                            "description": "Payment details",
+                                            "description": "Square payment object returned after success",
                                             "type": "object"
                                         }
                                     },
@@ -15850,40 +15850,21 @@
                         }
                     },
                     "400": {
-                        "description": "Validation error or Square API error",
+                        "description": "Payment failed or validation error",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "errors": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "Card declined"
                                             }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "status": {
-                                            "type": "string",
-                                            "example": "error"
-                                        },
-                                        "message": {
-                                            "type": "string",
-                                            "example": "Internal server error message"
                                         }
                                     },
                                     "type": "object"
@@ -26513,8 +26494,8 @@
             "description": "Frontend-Sliders"
         },
         {
-            "name": "Frontend-Square Payment",
-            "description": "Frontend-Square Payment"
+            "name": "Square Payment",
+            "description": "Square Payment"
         },
         {
             "name": "Frontend-User Reviews",

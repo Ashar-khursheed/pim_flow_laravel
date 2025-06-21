@@ -9,6 +9,8 @@ use Square\Payments\Requests\CreatePaymentRequest;
 use Square\Types\Money;
 use Square\Types\Currency;
 use Illuminate\Support\Str;
+use OpenApi\Annotations as OA;
+
 
 class SquarePaymentController extends Controller
 {
@@ -21,6 +23,57 @@ class SquarePaymentController extends Controller
         );
     }
 
+      /**
+     * @OA\Post(
+     *     path="/api/frontend/payment-square",
+     *     summary="Create a payment using Square",
+     *     description="Receives a source_id (card token) and amount to process payment via Square API.",
+     *     tags={"Square Payment"},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             required={"source_id", "amount"},
+     *             @OA\Property(
+     *                 property="source_id",
+     *                 type="string",
+     *                 example="cnon:card-nonce-ok",
+     *                 description="Card token generated from Square Web Payments SDK"
+     *             ),
+     *             @OA\Property(
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=10.00,
+     *                 description="Amount in USD"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Payment successful",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="payment",
+     *                 type="object",
+     *                 description="Square payment object returned after success"
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=400,
+     *         description="Payment failed or validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="Card declined")
+     *             )
+     *         )
+     *     )
+     * )
+     */
     public function createPayment(Request $request)
     {
         $request->validate([
