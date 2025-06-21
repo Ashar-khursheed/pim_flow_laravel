@@ -27,7 +27,7 @@ class CcavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/frontend/ccavenue/payment",
+     *     path="/api/frontend/ccavenue/payment",
      *     tags={"Payments"},
      *     summary="Initiate CCAvenue Payment",
      *     description="Initiates a payment request to CCAvenue and returns a redirect HTML form.",
@@ -146,7 +146,7 @@ class CcavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/ccavenue/response",
+     *     path="/api/frontend/ccavenue/response",
      *     tags={"Payments"},
      *     summary="Handle CCAvenue Payment Response",
      *     description="Handles the encrypted response from CCAvenue and returns payment status.",
