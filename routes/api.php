@@ -493,7 +493,7 @@ Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress'
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::prefix('ccavenue')->group(function () {
+Route::prefix('/frontend/ccavenue')->group(function () {
     Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
     Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);  
     Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
