@@ -25,7 +25,7 @@ class SquarePaymentController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/frontend/square/pay",
+     *     path="/api/frontend/payment-square",
      *     summary="Process a payment using Square",
      *     description="Accepts a nonce from the frontend and creates a payment using Square's API.",
      *     tags={"Frontend-Square Payment"},

@@ -15793,14 +15793,14 @@
                 }
             }
         },
-        "/api/frontend/square/pay": {
+        "/api/frontend/payment-square": {
             "post": {
                 "tags": [
                     "Frontend-Square Payment"
                 ],
                 "summary": "Process a payment using Square",
                 "description": "Accepts a nonce from the frontend and creates a payment using Square's API.",
-                "operationId": "2881c92c5d242bfc5e8691e772fd3dd2",
+                "operationId": "ad71b5c6e16950e4a07190d61e5c4f2b",
                 "requestBody": {
                     "required": true,
                     "content": {
