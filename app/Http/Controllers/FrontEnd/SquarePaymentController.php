@@ -109,35 +109,37 @@ class SquarePaymentController extends Controller
    
 
     public function createPayment(Request $request)
-{
-    $request->validate([
-        'source_id' => 'required|string',
-        'amount' => 'required|numeric|min:1',
-    ]);
-
-    $money = new Money(
-        amount: (int)($request->amount * 100),
-        currency: Currency::USD,
-    );
-
-    $paymentRequest = new CreatePaymentRequest(
-        idempotencyKey: (string) Str::uuid(),
-        sourceId: $request->source_id,
-        amountMoney: $money,
-    );
-
-    $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
-
-    if ($response->isSuccess()) {
-        return response()->json([
-            'success' => true,
-            'payment' => $response->getResult()->getPayment(),
+    {
+        $request->validate([
+            'source_id' => 'required|string',
+            'amount' => 'required|numeric|min:1',
         ]);
+    
+        // Create Money object using array constructor
+        $money = new Money([
+            'amount' => (int)($request->amount * 100),
+            'currency' => 'USD',
+        ]);
+    
+        // Create payment request using array constructor
+        $paymentRequest = new CreatePaymentRequest([
+            'idempotency_key' => (string) Str::uuid(),
+            'source_id' => $request->source_id,
+            'amount_money' => $money,
+        ]);
+    
+        $response = $this->client->getPaymentsApi()->createPayment($paymentRequest);
+    
+        if ($response->isSuccess()) {
+            return response()->json([
+                'success' => true,
+                'payment' => $response->getResult()->getPayment(),
+            ]);
+        }
+    
+        return response()->json([
+            'success' => false,
+            'errors' => $response->getErrors(),
+        ], 400);
     }
-
-    return response()->json([
-        'success' => false,
-        'errors' => $response->getErrors(),
-    ], 400);
-}
 }
