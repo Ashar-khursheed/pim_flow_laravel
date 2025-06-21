@@ -179,6 +179,7 @@ class RecentlyViewedProductController extends Controller
                         return [$item];
                     })->flatten()->filter()->values();
 
+                    $sellingType = null;
                     if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                         $fullValue = $product->sellingUnitAttribute->attribute_value;
 
@@ -399,7 +400,7 @@ class RecentlyViewedProductController extends Controller
         }
 
         $cleanedImages = collect($images)->flatten()->filter()->values();
-
+        $sellingType = null;
         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
             $fullValue = $product->sellingUnitAttribute->attribute_value;
 
