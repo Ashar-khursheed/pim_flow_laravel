@@ -146,12 +146,12 @@ class SearchController extends Controller
                         return [
                             'id' => $cat->id,
                             'name' => $cat->name,
-                            'slug' => optional($cat->slug)->key,
+                            'slug' => $cat->slug,
                             'url' => $cat->url,
                             'image' =>$cat->image,
                             'parent_id' => $cat->parent_id,
-                            'parent_slug' => optional($cat->parent?->slug)->key,
-                            'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
+                            'parent_slug' => $cat->parent?->slug,
+                            'parent_parent_slug' => $cat->parent?->parent?->slug,
                             'products' => $cat->products->map(fn($p) => [
                                 'id' => $p->id,
                                 'name' => $p->name,
@@ -227,12 +227,12 @@ class SearchController extends Controller
                 return [
                     'id' => $cat->id,
                     'name' => $cat->name,
-                    'slug' => optional($cat->slug)->key,
+                    'slug' => $cat->slug,
                     'url' => $cat->url,
                     'image' => $imageUrl($cat->image),
                     'parent_id' => $cat->parent_id,
-                    'parent_slug' => optional($cat->parent?->slug)->key,
-                    'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
+                    'parent_slug' => $cat->slug,
+                    'parent_parent_slug' => $cat->parent?->parent?->slug,
                     'products' => $cat->products->map(fn($p) => [
                         'id' => $p->id,
                         'name' => $p->name,
