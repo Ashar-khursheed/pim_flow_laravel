@@ -11442,7 +11442,7 @@
                 }
             }
         },
-        "/ccavenue/initiate-payment": {
+        "/api/frontend/ccavenue/initiate-payment": {
             "post": {
                 "tags": [
                     "CCAvenue"
@@ -11686,7 +11686,7 @@
                 }
             }
         },
-        "/ccavenue/handle-response": {
+        "/api/frontend/ccavenue/handle-response": {
             "post": {
                 "tags": [
                     "CCAvenue"
@@ -11822,7 +11822,7 @@
                 }
             }
         },
-        "/ccavenue/payment-status/{orderId}": {
+        "/api/frontend/ccavenue/payment-status/{orderId}": {
             "get": {
                 "tags": [
                     "CCAvenue"

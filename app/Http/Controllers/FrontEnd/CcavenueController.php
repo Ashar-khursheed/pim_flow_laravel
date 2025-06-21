@@ -21,7 +21,7 @@ class CCavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/ccavenue/initiate-payment",
+     *     path="/api/frontend/ccavenue/initiate-payment",
      *     summary="Initiate CCAvenue payment",
      *     description="Create a payment request and get payment URL",
      *     operationId="initiatePayment",
@@ -139,7 +139,7 @@ class CCavenueController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/ccavenue/handle-response",
+     *     path="/api/frontend/ccavenue/handle-response",
      *     summary="Handle CCAvenue payment response",
      *     description="Process the encrypted response from CCAvenue after payment",
      *     operationId="handleResponse",
@@ -228,7 +228,7 @@ class CCavenueController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/ccavenue/payment-status/{orderId}",
+     *     path="/api/frontend/ccavenue/payment-status/{orderId}",
      *     summary="Get payment status by order ID",
      *     description="Check the status of a payment using order ID",
      *     operationId="getPaymentStatus", 
