@@ -406,7 +406,7 @@ class BrandController extends Controller
                                 : $fullValue;
 
                             $sellingType = [
-                                'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                                'attribute_value' => $details->sellingUnitAttribute->attribute_value,
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
