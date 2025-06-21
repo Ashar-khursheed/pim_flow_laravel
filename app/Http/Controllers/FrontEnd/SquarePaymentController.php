@@ -11,19 +11,19 @@ use Square\Payments\Requests\CreatePaymentRequest;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 
-
 class SquarePaymentController extends Controller
 {
     protected SquareClient $client;
 
     public function __construct()
     {
-        $this->client = new SquareClient(
-            token: env('SQUARE_ACCESS_TOKEN'), // ✅ works with SDK v43+
-        );
+        $this->client = new SquareClient([
+            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
+            'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'), // Explicitly set sandbox
+        ]);
     }
 
-      /**
+    /**
      * @OA\Post(
      *     path="/api/frontend/payment-square",
      *     summary="Create a payment using Square",
@@ -74,69 +74,62 @@ class SquarePaymentController extends Controller
      *     )
      * )
      */
-    // public function createPayment(Request $request)
-    // {
-    //     $request->validate([
-    //         'source_id' => 'required|string', // card token from JS
-    //         'amount' => 'required|numeric|min:1',
-    //     ]);
-
-    //     $money = new Money(
-    //         amount: (int)($request->amount * 100),
-    //         currency: Currency::Usd->value,
-    //     );
-
-    //     $paymentRequest = new CreatePaymentRequest(
-    //         idempotencyKey: (string) Str::uuid(),
-    //         sourceId: $request->source_id,
-    //         amountMoney: $money,
-    //     );
-
-    //     $response = $this->client->payments->create($paymentRequest);
-
-    //     if ($response->isSuccess()) {
-    //         return response()->json([
-    //             'success' => true,
-    //             'payment' => $response->getResult()->payment,
-    //         ]);
-    //     }
-
-    //     return response()->json([
-    //         'success' => false,
-    //         'errors' => $response->getErrors(),
-    //     ], 400);
-    // }
-   
-
     public function createPayment(Request $request)
     {
+        // Debug: Check if token is loaded
+        $token = env('SQUARE_ACCESS_TOKEN');
+        if (!$token) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Square access token not found in environment'],
+            ], 500);
+        }
+
         $request->validate([
             'source_id' => 'required|string',
             'amount' => 'required|numeric|min:1',
         ]);
-    
-        // Follow the official Square documentation approach exactly
-        $response = $this->client->payments->create(
-            new \Square\Payments\Requests\CreatePaymentRequest([
-                'idempotencyKey' => (string) Str::uuid(),
-                'amountMoney' => new \Square\Types\Money([
-                    'amount' => (int)($request->amount * 100),
-                    'currency' => \Square\Types\Currency::Usd->value,
-                ]),
-                'sourceId' => $request->source_id,
-            ])
-        );
-    
-        if ($response->isSuccess()) {
+
+        try {
+            // Follow the official Square documentation approach exactly
+            $response = $this->client->payments->create(
+                new CreatePaymentRequest([
+                    'idempotencyKey' => (string) Str::uuid(),
+                    'amountMoney' => new Money([
+                        'amount' => (int)($request->amount * 100),
+                        'currency' => Currency::Usd->value,
+                    ]),
+                    'sourceId' => $request->source_id,
+                ])
+            );
+
+            if ($response->isSuccess()) {
+                return response()->json([
+                    'success' => true,
+                    'payment' => $response->getResult()->getPayment(),
+                ]);
+            }
+
             return response()->json([
-                'success' => true,
-                'payment' => $response->getResult()->getPayment(),
-            ]);
+                'success' => false,
+                'errors' => $response->getErrors(),
+            ], 400);
+
+        } catch (\Square\Exceptions\SquareApiException $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Square API Error: ' . $e->getMessage()],
+                'debug_info' => [
+                    'token_present' => !empty($token),
+                    'token_prefix' => substr($token, 0, 10) . '...',
+                    'environment' => env('SQUARE_ENVIRONMENT', 'sandbox'),
+                ]
+            ], 500);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['General Error: ' . $e->getMessage()],
+            ], 500);
         }
-    
-        return response()->json([
-            'success' => false,
-            'errors' => $response->getErrors(),
-        ], 400);
     }
 }
