@@ -4,9 +4,6 @@ namespace App\Helpers;
 
 class CcavenueHelper
 {
-    /**
-     * Encrypt the data using AES-128-CBC
-     */
     public static function encrypt($plainText, $key)
     {
         $key = self::hextobin(md5($key));
@@ -16,9 +13,6 @@ class CcavenueHelper
         return $encryptedText;
     }
 
-    /**
-     * Decrypt the data using AES-128-CBC
-     */
     public static function decrypt($encryptedText, $key)
     {
         $key = self::hextobin(md5($key));
@@ -28,9 +22,6 @@ class CcavenueHelper
         return $decryptedText;
     }
 
-    /**
-     * Convert hexadecimal to binary
-     */
     private static function hextobin($hexString)
     {
         $length = strlen($hexString);
