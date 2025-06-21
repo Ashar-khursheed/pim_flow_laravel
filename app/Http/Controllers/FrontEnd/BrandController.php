@@ -396,19 +396,21 @@ class BrandController extends Controller
     
                            // Output
                            $imageUrls = $cleanedImages;
-
-                           if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
-                            $fullValue = $details->sellingUnitAttribute->attribute_value;
+                           
+                           $sellingType=null;
+                           if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                            $fullValue = $product->sellingUnitAttribute->attribute_value;
 
                             $attributeUnit = strpos($fullValue, '/') !== false
                                 ? trim(explode('/', $fullValue)[1])
                                 : $fullValue;
 
                             $sellingType = [
-                                'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+                                'attribute_value' => $product->sellingUnitAttribute->attribute_value,
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
+
 
     
                         return [
@@ -811,6 +813,8 @@ class BrandController extends Controller
                  $quantity = $product->quantity ?? 0;
                  $unitsSold = $product->units_sold ?? 0;
                  $leftStock = $quantity - $unitsSold;
+
+                 $sellingType = null;
 
                  if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
