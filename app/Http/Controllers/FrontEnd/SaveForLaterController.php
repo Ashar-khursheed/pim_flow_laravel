@@ -161,8 +161,9 @@ class SaveForLaterController extends Controller
 										'message' => 'Saved for Later Products retrieved successfully.',
 										'product' => $productsData
 									], 200);
-								}
+    }
 
+	
 	/**
 	 * @OA\Delete(
 	 *     path="/api/frontend/save-for-later",
@@ -192,7 +193,8 @@ class SaveForLaterController extends Controller
 	 *     )
 	 * )
 	 */
-	public function removeFromSaveForLater(Request $request)
+	
+	 public function removeFromSaveForLater(Request $request)
 	{
 		// Validate the incoming request
 		$request->validate([
