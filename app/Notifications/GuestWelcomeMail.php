@@ -7,9 +7,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class WelcomeMail extends Notification implements ShouldQueue
+class GuestWelcomeMail extends Notification implements ShouldQueue
 {
 	use Queueable;
+
+	public $randomPassword;
+
+	public function __construct($randomPassword)
+	{
+		$this->randomPassword = $randomPassword;
+	}
 
 	/**
 	 * Get the notification's delivery channels.
@@ -28,13 +35,17 @@ class WelcomeMail extends Notification implements ShouldQueue
 	{
 		$logoUrl = config('app.logo_url');
 		$name = $notifiable->name ?? 'User';
+		$randomPassword = $this->randomPassword ?? 'User';
+		$resetPasswordUrl = url("/");
 		$websiteUrl = url("/");
 
 		return (new MailMessage)
 		->subject('Welcome Email')
-		->markdown('emails.welcome', [
+		->markdown('emails.guest-welcome', [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
+			'randomPassword' => $randomPassword,
+			'resetPasswordUrl' => $resetPasswordUrl,
 			'websiteUrl' => $websiteUrl,
 		]);
 	}

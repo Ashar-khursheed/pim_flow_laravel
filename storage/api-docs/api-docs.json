@@ -9960,7 +9960,7 @@
                     "Frontend-Cart"
                 ],
                 "summary": "Decrease cart item quantity",
-                "description": "Decrease the quantity of a specific product in the cart by 1. If quantity becomes 0, the item will be removed from cart.",
+                "description": "Decrease the quantity of a specific product in the cart. If quantity becomes 0 or less, the item will be removed from cart.",
                 "operationId": "9eae342e7dccfba4445e21557c3184ab",
                 "requestBody": {
                     "required": true,
@@ -9968,12 +9968,19 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "product_id"
+                                    "product_id",
+                                    "quantity"
                                 ],
                                 "properties": {
                                     "product_id": {
                                         "description": "ID of the product",
                                         "type": "integer",
+                                        "example": 1
+                                    },
+                                    "quantity": {
+                                        "description": "Quantity to decrease",
+                                        "type": "integer",
+                                        "minimum": 1,
                                         "example": 1
                                     }
                                 },
@@ -9983,7 +9990,7 @@
                     }
                 },
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Cart item quantity decreased successfully",
                         "content": {
                             "application/json": {
@@ -10016,10 +10023,6 @@
                                                     "type": "integer",
                                                     "example": 2
                                                 },
-                                                "currency_title": {
-                                                    "type": "string",
-                                                    "example": "USD"
-                                                },
                                                 "created_at": {
                                                     "type": "string",
                                                     "format": "date-time",
@@ -10039,7 +10042,7 @@
                             }
                         }
                     },
-                    "201": {
+                    "200": {
                         "description": "Item removed from cart (quantity became 0)",
                         "content": {
                             "application/json": {
@@ -10052,10 +10055,6 @@
                                         "message": {
                                             "type": "string",
                                             "example": "Item removed from cart."
-                                        },
-                                        "removed": {
-                                            "type": "boolean",
-                                            "example": true
                                         }
                                     },
                                     "type": "object"
@@ -10095,11 +10094,11 @@
                                         },
                                         "errors": {
                                             "properties": {
-                                                "product_id": {
+                                                "quantity": {
                                                     "type": "array",
                                                     "items": {
                                                         "type": "string",
-                                                        "example": "The product_id field is required."
+                                                        "example": "The quantity must be at least 1."
                                                     }
                                                 }
                                             },
@@ -12072,7 +12071,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Customer registered successfully"
+                        "description": "Customer registered successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 }
             }

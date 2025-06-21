@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Str;
+use App\Notifications\GuestWelcomeMail;
 use App\Notifications\WelcomeMail;
 
 class CustomerController extends BaseController
@@ -35,7 +36,7 @@ class CustomerController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Customer registered successfully"),
+	 *     @OA\Response(response=201, description="Customer registered successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
 	public function register(Request $request)
@@ -68,7 +69,7 @@ class CustomerController extends BaseController
 			]);
 			$guestCustomer->save();
 
-			$guestCustomer->notify(new WelcomeMail());
+			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
 
 			return response()->json([
 				'success' => true,
