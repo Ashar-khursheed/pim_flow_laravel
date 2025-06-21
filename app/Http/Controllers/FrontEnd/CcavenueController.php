@@ -131,7 +131,8 @@ class CCavenueController extends Controller
                 }
             }
             $merchantData = rtrim($merchantData, '&');
-            
+            \Log::info('Merchant data being encrypted:', [$merchantData]);
+
             // Generate payment URL
             $paymentUrl = $this->ccavenueService->generatePaymentUrl($merchantData);
             
