@@ -155,7 +155,11 @@ class ProductController extends Controller
                     },
                     'currency' ,
                     'categories',
-                    'productAttributes.attributeDetails',
+                    'productAttributes' => function ($query) {
+                        $query->whereHas('attributeDetails', function ($q) {
+                            $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                        });
+                    },
                      ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -539,7 +543,11 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories' , 'productAttributes.attributeDetails',
+                    'currency',  'categories' ,  'productAttributes' => function ($query) {
+                        $query->whereHas('attributeDetails', function ($q) {
+                            $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                        });
+                    },
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
