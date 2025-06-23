@@ -497,18 +497,21 @@ class ProductAttributeController extends Controller
             }
         }
         // Inside Carton calculation
-        $unitsPerCase = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case Pack Type');
+       // Inside Carton calculation
+        $unitsPerCase = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+        $packType = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
         $unitQty = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
-        $unitMeasurement = $unitQty && $unitQty->measurementUnit ? $unitQty->measurementUnit->symbol : null;
+        $unitMeasurement = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
 
-        if ($unitsPerCase && $unitQty && $unitMeasurement) {
-            $insideCartonValue = $unitsPerCase->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement;
-            
+        if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
+            $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
+
             $right[] = [
                 'attribute_name' => 'Inside Carton',
                 'attribute_value' => $insideCartonValue,
             ];
         }
+
 
             
         return response()->json([
@@ -590,39 +593,4 @@ class ProductAttributeController extends Controller
 
 
 
-    // public function getAttributesByProductWithGroup($productId)
-    // {
-    //         $productAttributes = ProductAttributes::with(['attribute.attributeGroups'])
-    //         ->where('product_id', $productId)
-    //         ->get();
-
-    //     $groupedAttributes = [];
-
-    //     foreach ($productAttributes as $productAttribute) {
-    //         $attribute = $productAttribute->attribute;
-
-    //         if (!$attribute || $attribute->attributeGroups->isEmpty()) {
-    //             $groupName = 'Other';
-    //         } else {
-    //             // If attribute belongs to multiple groups, pick the first
-    //             $groupName = $attribute->attributeGroups->first()->name;
-    //         }
-
-    //         $groupedAttributes[$groupName][] = [
-    //             'name' => $attribute->name,
-    //             'value' => $productAttribute->attribute_value,
-    //         ];
-    //     }
-
-    //     // Final formatting
-    //     $formatted = [];
-    //     foreach ($groupedAttributes as $section => $specs) {
-    //         $formatted[] = [
-    //             'section' => $section,
-    //             'specs' => $specs,
-    //         ];
-    //     }
-
-    //     return response()->json($formatted);
-    // }
 }
