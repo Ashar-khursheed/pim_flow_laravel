@@ -496,7 +496,21 @@ class ProductAttributeController extends Controller
                 $totalRight++;
             }
         }
-    
+        // Inside Carton calculation
+        $unitsPerCase = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case Pack Type');
+        $unitQty = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+        $unitMeasurement = $unitQty && $unitQty->measurementUnit ? $unitQty->measurementUnit->symbol : null;
+
+        if ($unitsPerCase && $unitQty && $unitMeasurement) {
+            $insideCartonValue = $unitsPerCase->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement;
+            
+            $right[] = [
+                'attribute_name' => 'Inside Carton',
+                'attribute_value' => $insideCartonValue,
+            ];
+        }
+
+            
         return response()->json([
             'left' => $left,
             'right' => $right
