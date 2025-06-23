@@ -127,7 +127,11 @@ class BrandController extends Controller
                       $query->whereHas('attributeDetails', function ($q) {
                           $q->whereIn('name', ['Units per Case', 'Pack Type']);
                       });
-                  }, 'reviews', 'currency', 'sellingUnitAttribute']);
+                  }, 'reviews', 'currency','productAttributes' => function ($query) {
+                $query->whereHas('attributeDetails', function ($q) {
+                    $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                });
+            },]);
         }])
         ->whereHas('products', function ($query) {
             $query->where('status', 'published')
@@ -253,7 +257,7 @@ class BrandController extends Controller
                             'front_sale_price' => $product->price,
                             'best_price' => $product->price,
                             "selling_type"=> $sellingType,
-                            'per_unit_price' =>  $details->per_unit_price
+                            'per_unit_price' =>  $product->per_unit_price
 
                         ];
                     }),
