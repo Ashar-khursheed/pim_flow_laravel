@@ -399,8 +399,9 @@ class ProductAttributeController extends Controller
         $productAttributes = ProductAttributes::with([
             'attribute' => function ($query) {
                 $query->whereHas('attributeGroup', function ($q) {
-                    $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+                    $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
                 });
+                
             },
             'measurementUnit'
         ])
