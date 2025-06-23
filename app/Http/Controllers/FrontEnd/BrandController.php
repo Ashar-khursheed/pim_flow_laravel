@@ -208,6 +208,23 @@ class BrandController extends Controller
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
+                          // Calculate per unit price
+                          $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                          $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                          
+  
+                          $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                          $perUnitPrice = null;
+  
+                          if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                              $unitValue = (float) $unitsPerCase->attribute_value;
+                              if ($unitValue > 0) {
+                                  $calculated = round($basePrice / $unitValue, 2);
+                                  $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+                              }
+                          }
+  
+                          $product->per_unit_price = $perUnitPrice;
 
 
                         return [
@@ -236,6 +253,7 @@ class BrandController extends Controller
                             'front_sale_price' => $product->price,
                             'best_price' => $product->price,
                             "selling_type"=> $sellingType,
+                            'per_unit_price' =>  $details->per_unit_price
 
                         ];
                     }),
