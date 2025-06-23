@@ -154,7 +154,9 @@ class ProductController extends Controller
                         $query->select('id', 'product_id', 'star');
                     },
                     'currency' ,
-                    'categories'               ])
+                    'categories',
+                    'perUnitPrice.attribute',
+                     ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -329,6 +331,24 @@ class ProductController extends Controller
                         if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
+
+                        // Calculate per unit price
+                            $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
+                            $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
+
+                            $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                            $perUnitPrice = null;
+
+                            if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                                $unitValue = (float) $unitsPerCase->attribute_value;
+                                if ($unitValue > 0) {
+                                    $calculated = round($basePrice / $unitValue, 2);
+                                    $perUnitPrice = $calculated . ' ' . ($packType?->attribute_value ?? '');
+                                }
+                            }
+
+                            $product->per_unit_price = $perUnitPrice;
+
                 
                         
                         // Add review and stock details
@@ -518,7 +538,7 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories'
+                    'currency',  'categories' , 'perUnitPrice.attribute',
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -649,7 +669,25 @@ class ProductController extends Controller
                         if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
-                    
+
+                        // Calculate per unit price
+                        $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
+                        $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
+
+                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                        $perUnitPrice = null;
+
+                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                            $unitValue = (float) $unitsPerCase->attribute_value;
+                            if ($unitValue > 0) {
+                                $calculated = round($basePrice / $unitValue, 2);
+                                $perUnitPrice = $calculated . ' ' . ($packType?->attribute_value ?? '');
+                            }
+                        }
+
+                        $product->per_unit_price = $perUnitPrice;
+
+                                            
                         // Reviews and stock
                         $totalReviews = $product->reviews->count();
                         $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
