@@ -414,7 +414,8 @@ class ProductAttributeController extends Controller
                 'Unit of Measurement',
                 'Unit Qty',
                 'Units per Case',
-                'Pack Type'
+                'Pack Type',
+                'Ingredients'
             ]);
         })->values();
 
