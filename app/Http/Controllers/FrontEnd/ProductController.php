@@ -329,7 +329,7 @@ class ProductController extends Controller
                         if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
-                        $product = Product::with('perUnitPrice')->find($id);
+                        $product = Product::with('perUnitPrice');
 
                         $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
                         $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
@@ -669,7 +669,8 @@ class ProductController extends Controller
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
 
-                        $product = Product::with('perUnitPrice')->find($id);
+                 
+                        $product = Product::with('perUnitPrice');
 
                         $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
                         $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
