@@ -329,25 +329,7 @@ class ProductController extends Controller
                         if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
-
-                        $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
-                        $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
-                        
-                        $perUnitPrice = null;
-                        
-                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-                        
-                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-                            $unitValue = (float) $unitsPerCase->attribute_value;
-                        
-                            if ($unitValue > 0) {
-                                $calculated = round($basePrice / $unitValue, 2);
-                                $perUnitPrice = $calculated . ' ' . ($packType?->attribute_value ?? '');
-                            }
-                        }
-                        $product-> $perUnitPrice;
-                        
-                  
+                
                         
                         // Add review and stock details
                         $totalReviews = $product->reviews->count();
@@ -667,25 +649,6 @@ class ProductController extends Controller
                         if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
-
-                 
-
-                        $unitsPerCase = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Units per Case');
-                        $packType = $product->perUnitPrice->firstWhere(fn($attr) => $attr->attribute->name === 'Pack Type');
-                        
-                        $perUnitPrice = null;
-                        
-                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-                        
-                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-                            $unitValue = (float) $unitsPerCase->attribute_value;
-                        
-                            if ($unitValue > 0) {
-                                $calculated = round($basePrice / $unitValue, 2);
-                                $perUnitPrice = $calculated . ' ' . ($packType?->attribute_value ?? '');
-                            }
-                        }
-                        $product-> $perUnitPrice;
                     
                         // Reviews and stock
                         $totalReviews = $product->reviews->count();
