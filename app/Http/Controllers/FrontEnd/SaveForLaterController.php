@@ -125,7 +125,7 @@ class SaveForLaterController extends Controller
 		$userId = auth()->id();
 
 		// Fetch all saved products for the user
-		$savedProducts = SaveForLater::where('user_id',  $user)
+		$savedProducts = SaveForLater::where('user_id',  $userId)
 									->with('product')  // Assuming `product` is the relationship
 									->get();
 
