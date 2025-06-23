@@ -137,7 +137,8 @@ class SearchController extends Controller
                         'slug',
                         'parent.slug',
                         'parent.parent.slug',
-                        'products.slug'
+                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+
                     ])
                     ->where('status', 'published') // ✅ Only published categories
                     ->inRandomOrder()->take(4)
@@ -163,7 +164,10 @@ class SearchController extends Controller
                         ];
                     });
     
-                $brands = Brand::with(['slug', 'products.slug'])
+                    $brands = Brand::with([
+                        'slug',
+                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+                    ])
                     ->where('status', 'published') // ✅ Only published brands
                     ->inRandomOrder()->take(4)
                     ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
@@ -215,7 +219,7 @@ class SearchController extends Controller
                 'slug',
                 'parent.slug',
                 'parent.parent.slug',
-                'products.slug'
+                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
             ])
             ->where('status', 'published') // ✅ Only published categories
             ->where(function ($q) use ($query) {
@@ -244,7 +248,10 @@ class SearchController extends Controller
                 ];
             });
     
-        $brands = Brand::with(['slug', 'products.slug'])
+            $brands = Brand::with([
+                'slug',
+                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+            ])
             ->where('status', 'published') // ✅ Only published brands
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
