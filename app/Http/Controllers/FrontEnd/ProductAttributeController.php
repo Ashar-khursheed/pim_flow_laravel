@@ -525,7 +525,7 @@ class ProductAttributeController extends Controller
                 $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
         
                 // Build the "Inside Carton" portion
-                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value;
+                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value . ' ' . 'Each';
         
                 // Final full value
                 $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
