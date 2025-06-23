@@ -239,7 +239,7 @@ class ProductYouMayLikeController extends Controller
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
-
+                $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
 
@@ -567,6 +567,7 @@ class ProductYouMayLikeController extends Controller
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
+                $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
 

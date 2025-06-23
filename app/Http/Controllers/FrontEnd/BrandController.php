@@ -366,7 +366,7 @@ class BrandController extends Controller
                     })
                     ->whereIn('ec_products.id', $products)
                     ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
-                    ->with(['reviews', 'currency'])
+                    ->with(['reviews', 'currency' , 'vendor_id'])
                     ->get()
                     ->keyBy('id');
     

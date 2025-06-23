@@ -316,7 +316,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video; // Already a full URL, just return it
                         });
-                        
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {
@@ -635,7 +635,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video;
                         });
-                    
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {

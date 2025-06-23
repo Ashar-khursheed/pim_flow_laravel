@@ -734,6 +734,7 @@ use Illuminate\Support\Facades\Auth;
             // Calculate left stock (adjust field name based on your database)
             $leftStock = $product->quantity ?? 0; // Change 'quantity' to your actual stock field name
 
+            $sellingType = null;
             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                 $fullValue = $product->sellingUnitAttribute->attribute_value;
 
