@@ -399,14 +399,14 @@ class ProductAttributeController extends Controller
         $productAttributes = ProductAttributes::with([
             'attribute' => function ($query) {
                 $query->whereHas('attributeGroup', function ($q) {
-                    $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
+                    $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients' , 'Unit of Measurement' , 'Unit Qty' , 'Units per Case' , 'Pack Type']);
                 });
                 
             },
             'measurementUnit'
         ])
         ->where('product_id', $productId)
-        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id' ]);
     
         // Filter out null attributes
         $filteredAttributes = $productAttributes->filter(function ($item) {
