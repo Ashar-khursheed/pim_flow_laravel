@@ -604,6 +604,7 @@ class OrderController extends BaseController
 						'unit_price' => $orderProduct->unit_price,
 						'images' => $images,
 						'brand_name' => $orderProduct->product->brand->name ?? null,
+						
 					]);
 				}
 			}
