@@ -11,6 +11,7 @@ class ProductTitleFormulaController extends Controller
      * @OA\Get(
      *     path="/api/product-title-formula",
      *     summary="Get a list of product title formulas",
+     * 	   security={{"bearerAuth":{}}},
      *     description="Returns a paginated list with optional search and sorting.",
      *     tags={"Product Title Formula"},
      *     @OA\Parameter(name="search", in="query", required=false, description="Search term", @OA\Schema(type="string")),
@@ -55,6 +56,7 @@ class ProductTitleFormulaController extends Controller
      * @OA\Get(
      *     path="/api/product-title-formula/{id}",
      *     summary="Get a single product title formula",
+     * 	   security={{"bearerAuth":{}}},
      *     tags={"Product Title Formula"},
      *     @OA\Parameter(name="id", in="path", required=true, description="Formula ID", @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Formula data"),
@@ -73,6 +75,7 @@ class ProductTitleFormulaController extends Controller
      *     path="/api/product-title-formula",
      *     summary="Create a new product title formula",
      *     tags={"Product Title Formula"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -108,6 +111,7 @@ class ProductTitleFormulaController extends Controller
      *     path="/api/product-title-formula/{id}",
      *     summary="Update an existing product title formula",
      *     tags={"Product Title Formula"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(name="id", in="path", required=true, description="Formula ID", @OA\Schema(type="integer")),
      *     @OA\RequestBody(
      *         required=true,
@@ -147,6 +151,7 @@ class ProductTitleFormulaController extends Controller
      * @OA\Delete(
      *     path="/api/product-title-formula/{id}",
      *     summary="Delete a product title formula",
+     * 	   security={{"bearerAuth":{}}},
      *     tags={"Product Title Formula"},
      *     @OA\Parameter(name="id", in="path", required=true, description="Formula ID", @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Deleted successfully"),
@@ -166,6 +171,7 @@ class ProductTitleFormulaController extends Controller
      *     path="/api/product-title-formula/delete-multiple",
      *     summary="Delete multiple product title formulas",
      *     tags={"Product Title Formula"},
+     * 	   security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
