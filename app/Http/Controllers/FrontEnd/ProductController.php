@@ -344,7 +344,7 @@ class ProductController extends Controller
                                 $unitValue = (float) $unitsPerCase->attribute_value;
                                 if ($unitValue > 0) {
                                     $calculated = round($basePrice / $unitValue, 2);
-                                    $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+                                    $perUnitPrice = $calculated .  '/' . ($packType?->attribute_value ?? '');
                                 }
                             }
 
