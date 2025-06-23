@@ -517,41 +517,42 @@ class ProductAttributeController extends Controller
         $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
         $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
         
-        if ($sellingUnit) {
-            $rawSelling = $sellingUnit->attribute_value;
+        $rawSelling = $sellingUnit?->attribute_value;
         
-            $hasAllValues = $unitsPerCase && $packType && $unitQty && $unitMeasurement &&
-                !empty($unitsPerCase->attribute_value) &&
-                !empty($packType->attribute_value) &&
-                !empty($unitQty->attribute_value) &&
-                !empty($unitMeasurement->attribute_value);
+        $hasAllValues =
+            $sellingUnit && !empty($rawSelling) &&
+            $unitsPerCase && !empty($unitsPerCase->attribute_value) &&
+            $packType && !empty($packType->attribute_value) &&
+            $unitQty && !empty($unitQty->attribute_value) &&
+            $unitMeasurement && !empty($unitMeasurement->attribute_value);
         
-            if ($hasAllValues) {
-                $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
+        // First, always remove original Selling Unit if it exists
+        $right = collect($right)->filter(fn($item) =>
+            strtolower($item['attribute_name']) !== 'selling unit'
+        )->values()->toArray();
         
-                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value . ' Each';
+        // If all required values are present, show the custom format
+        if ($hasAllValues) {
+            $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
         
-                $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
+            $insideCarton = $unitsPerCase->attribute_value . ' ' .
+                            $packType->attribute_value . ' x ' .
+                            $unitQty->attribute_value . ' ' .
+                            $unitMeasurement->attribute_value . ' Each';
         
-                array_splice($right, 0, 0, [[
-                    'attribute_name'  => 'Selling Unit',
-                    'attribute_value' => $fullValue,
-                ]]);
+            $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
         
-                // Remove the original Selling Unit entry
-                $right = collect($right)->filter(fn($item) =>
-                    !(strtolower($item['attribute_name']) === 'selling unit' && $item['attribute_value'] === $rawSelling)
-                )->values()->toArray();
-        
-            } else {
-                // Only show original Selling Unit if at least it has value
-                if (!empty($rawSelling)) {
-                    array_splice($right, 0, 0, [[
-                        'attribute_name'  => 'Selling Unit',
-                        'attribute_value' => $rawSelling,
-                    ]]);
-                }
-            }
+            array_splice($right, 0, 0, [[
+                'attribute_name'  => 'Selling Unit',
+                'attribute_value' => $fullValue,
+            ]]);
+        }
+        // If not all present, but Selling Unit exists, add original
+        elseif (!empty($rawSelling)) {
+            array_splice($right, 0, 0, [[
+                'attribute_name'  => 'Selling Unit',
+                'attribute_value' => $rawSelling,
+            ]]);
         }
         
 
