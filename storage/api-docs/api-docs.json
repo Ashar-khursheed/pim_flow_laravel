@@ -21635,6 +21635,262 @@
                 ]
             }
         },
+        "/api/product-title-formula": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Get a list of product title formulas",
+                "description": "Returns a paginated list with optional search and sorting.",
+                "operationId": "9d319f1a9b925d9e78419a23fcb5ad0a",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by field",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "category_id",
+                                "created_by",
+                                "locked"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of formulas"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Create a new product title formula",
+                "operationId": "bdfae049b119cc1adb7b0c188b433212",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attribute_ids"
+                                ],
+                                "properties": {
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "locked": {
+                                        "type": "boolean"
+                                    },
+                                    "created_by": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/product-title-formula/{id}": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Get a single product title formula",
+                "operationId": "7a8616e4871bbb63e23b0a16b4adfa66",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Formula data"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Update an existing product title formula",
+                "operationId": "9e68472b6f4c469edac7d4c8294fc922",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "locked": {
+                                        "type": "boolean"
+                                    },
+                                    "created_by": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Delete a product title formula",
+                "operationId": "bd52d95b6bd5d117756492a83ce2e18e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    }
+                }
+            }
+        },
+        "/api/product-title-formula/delete-multiple": {
+            "post": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Delete multiple product title formulas",
+                "operationId": "16b51600bc494f0ec8a4782c73e59826",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Records deleted"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                }
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
@@ -26889,6 +27145,10 @@
         {
             "name": "Product Suppliers",
             "description": "Product Suppliers"
+        },
+        {
+            "name": "Product Title Formula",
+            "description": "Product Title Formula"
         },
         {
             "name": "Redirect Links",

@@ -58,6 +58,8 @@ use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
+use App\Http\Controllers\ProductTitleFormulaController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -88,6 +90,7 @@ use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderP
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
+
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
 // Route::post(' /frontend/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
@@ -317,6 +320,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
+
+	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
+	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
+
+
 });
 
 
