@@ -178,6 +178,21 @@ class RecentlyViewedProductController extends Controller
                         }
                         return [$item];
                     })->flatten()->filter()->values();
+
+                    $sellingType = null;
+                    if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                        $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                        $attributeUnit = strpos($fullValue, '/') !== false
+                            ? trim(explode('/', $fullValue)[1])
+                            : $fullValue;
+
+                        $sellingType = [
+                            'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                            'attribute_value_unit' => $attributeUnit,
+                        ];
+                    }
+
             
                     return [
                         'product_id' => $product->id,
@@ -195,6 +210,7 @@ class RecentlyViewedProductController extends Controller
                         'original_price' => $product->price,
                         'front_sale_price' => $product->price,
                         'best_price' => $product->price,
+                        "selling_type"=> $sellingType,
                     ];
                 })->filter(), // Filter out null values
             ]);
@@ -384,6 +400,20 @@ class RecentlyViewedProductController extends Controller
         }
 
         $cleanedImages = collect($images)->flatten()->filter()->values();
+        $sellingType = null;
+        if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+            $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+            $attributeUnit = strpos($fullValue, '/') !== false
+                ? trim(explode('/', $fullValue)[1])
+                : $fullValue;
+
+            $sellingType = [
+                'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                'attribute_value_unit' => $attributeUnit,
+            ];
+        }
+
 
         $data[] = [
             'product_id' => $product->id,
@@ -401,6 +431,7 @@ class RecentlyViewedProductController extends Controller
             'original_price' => $product->price,
             'front_sale_price' => $product->price,
             'best_price' => $product->price,
+            "selling_type"=> $sellingType,
         ];
     }
 

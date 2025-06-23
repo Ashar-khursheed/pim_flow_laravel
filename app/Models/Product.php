@@ -231,6 +231,13 @@ class Product extends Model
 			$query->where('name', 'Selling Unit');
 		});
 	}
+	public function ingredientsAttribute()
+	{
+		return $this->hasOne(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->where('name', 'Ingredients');
+		});
+	}
 
 	public function discounts(): BelongsToMany
 	{

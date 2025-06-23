@@ -229,8 +229,9 @@ class ProductController extends Controller
                         });
 
                         // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specifications Sheet',
+                         // Custom sorting for documents
+                         $desiredOrder = [
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
@@ -261,26 +262,43 @@ class ProductController extends Controller
                             $product->documents = [];
                         }
                         
-                        // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specifications Sheet',
-                            'Warranty Information',
-                            'Horeca Buying Guide',
-                            'Setup & Usage Instructions',
-                            'Product Installation Guide',
-                            'Installation & Elevation Diagram',
-                            'Spare Parts List',
-                            'Product Brochure',
-                        ];
+                       
+                        // $documents = json_decode($product->documents, true);
+                        // if (is_array($documents)) {
+                        //     // Remove .pdf extension from titles
+                        //     foreach ($documents as &$doc) {
+                        //         $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                        //     }
 
-                        $documents = json_decode($product->documents, true);
+                        //     // Sort documents by desired order
+                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
+                        //         $posA = array_search($a['title'], $desiredOrder);
+                        //         $posB = array_search($b['title'], $desiredOrder);
+                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
+                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
+                        //         return $posA <=> $posB;
+                        //     });
+
+                        //     $product->documents = $documents;
+                        // } else {
+                        //     $product->documents = [];
+                        // }
+                        $documents = $product->documents;
+
+                        // If $documents is already an array, skip decoding
+                        if (is_string($documents)) {
+                            $documents = json_decode($documents, true);
+                        }
+
+                        // Proceed if it's a valid array
                         if (is_array($documents)) {
                             // Remove .pdf extension from titles
                             foreach ($documents as &$doc) {
-                                $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                                if (isset($doc['title'])) {
+                                    $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                                }
                             }
-
-                            // Sort documents by desired order
+                            // Sort documents based on desired order
                             usort($documents, function ($a, $b) use ($desiredOrder) {
                                 $posA = array_search($a['title'], $desiredOrder);
                                 $posB = array_search($b['title'], $desiredOrder);
@@ -289,9 +307,8 @@ class ProductController extends Controller
                                 return $posA <=> $posB;
                             });
 
+                            // Save back to product
                             $product->documents = $documents;
-                        } else {
-                            $product->documents = [];
                         }
 
                         // Handle videos
@@ -299,9 +316,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video; // Already a full URL, just return it
                         });
-
-                        
-
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {
@@ -310,6 +325,9 @@ class ProductController extends Controller
                             } else {
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
+                        }
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
                         
                         // Add review and stock details
@@ -333,32 +351,56 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                        // $product->category_list = $product->categories->map(function ($category) {
-                        //     return [
-                        //         'id' => $category->id,
-                        //         'name' => $category->name,
-                        //         'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                        //     ];
-                        // });
-                        $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
+                    //     $product->category_list = $product->categories->map(function ($category) {
+                    //         return [
+                    //             'id' => $category->id,
+                    //             'name' => $category->name,
+                    //             'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                    //         ];
+                    //     });
 
-                        $product->category_list = $product->categories->flatMap(function ($category) {
-                            // Get all ancestors + self
-                            $allCategories = $category->all_parents->push($category);
+                    //     return $product;
+                    // });
+                    // Get all categories including parent hierarchies
+                    $allCategories = collect();
 
-                            // Map each into desired format
-                            return $allCategories->map(function ($cat) {
-                                return [
-                                    'id' => $cat->id,
-                                    'name' => $cat->name,
-                                    'slug' => optional($cat->slugable)->key,
-                                ];
-                            });
-                        })->unique('id')->values(); // Remove duplicates & reindex
-
-                        return $product;
+                    $product->categories->each(function ($category) use ($allCategories) {
+                        // Function to recursively get parent categories
+                        $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                            $parents = collect();
+                            if ($cat->parent_id) {
+                                // Get parent category - adjust model name if needed
+                                $parent = Category::with('slug')->find($cat->parent_id);
+                                if ($parent) {
+                                    // Recursively get parent's hierarchy
+                                    $parents = $parents->merge($getParentHierarchy($parent));
+                                    $parents->push($parent);
+                                }
+                            }
+                            return $parents;
+                        };
+                        
+                        // Get all parent categories
+                        $parentHierarchy = $getParentHierarchy($category);
+                        
+                        // Add parents to collection
+                        $allCategories->push(...$parentHierarchy);
+                        
+                        // Add current category
+                        $allCategories->push($category);
                     });
 
+                    // Remove duplicates and map to desired structure
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                        ];
+                    })->values();
+
+                    return $product;
+                });
                     return response()->json([
                         'success' => true,
                         'data' => $products,
@@ -558,7 +600,7 @@ class ProductController extends Controller
 
                         // Custom sorting for documents
                         $desiredOrder = [
-                            'Technical Specifications Sheet',
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
@@ -593,7 +635,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video;
                         });
-                    
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {
@@ -602,6 +644,9 @@ class ProductController extends Controller
                             } else {
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
+                        }
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
                     
                         // Reviews and stock
@@ -627,24 +672,47 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                        $product = Product::with(['categories.parent.slugable', 'categories.slugable'])->find($id);
+                       // Get all categories including parent hierarchies
+                        $allCategories = collect();
 
-                        $product->category_list = $product->categories->flatMap(function ($category) {
-                            // Get all ancestors + self
-                            $allCategories = $category->all_parents->push($category);
+                        $product->categories->each(function ($category) use ($allCategories) {
+                            // Function to recursively get parent categories
+                            $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                                $parents = collect();
+                                if ($cat->parent_id) {
+                                    // Get parent category - adjust model name if needed
+                                    $parent = Category::with('slug')->find($cat->parent_id);
+                                    if ($parent) {
+                                        // Recursively get parent's hierarchy
+                                        $parents = $parents->merge($getParentHierarchy($parent));
+                                        $parents->push($parent);
+                                    }
+                                }
+                                return $parents;
+                            };
+                            
+                            // Get all parent categories
+                            $parentHierarchy = $getParentHierarchy($category);
+                            
+                            // Add parents to collection
+                            $allCategories->push(...$parentHierarchy);
+                            
+                            // Add current category
+                            $allCategories->push($category);
+                        });
 
-                            // Map each into desired format
-                            return $allCategories->map(function ($cat) {
-                                return [
-                                    'id' => $cat->id,
-                                    'name' => $cat->name,
-                                    'slug' => optional($cat->slugable)->key,
-                                ];
-                            });
-                        })->unique('id')->values(); // Remove duplicates & reindex
+                        // Remove duplicates and map to desired structure
+                        $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                            return [
+                                'id' => $category->id,
+                                'name' => $category->name,
+                                'slug' => $category->slug,
+                            ];
+                        })->values();
 
                         return $product;
-                    });
+                        });
+                    
 
                     return response()->json([
                         'success' => true,

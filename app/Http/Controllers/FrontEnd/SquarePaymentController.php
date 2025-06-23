@@ -1,156 +1,274 @@
 <?php
+
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Square\SquareClient;
-use Square\Models\Money;
-use Square\Models\CreatePaymentRequest;
-use Square\Models\OfflinePaymentDetails;
-use Square\Exceptions\ApiException;
+use Square\Environments;
+use Square\Payments\Requests\CreatePaymentRequest;
+use Square\Types\Money;
+use Square\Types\Currency;
+use Illuminate\Support\Str;
+use OpenApi\Annotations as OA;
+// class SquarePaymentController extends Controller
+// {
+//     // protected SquareClient $client;
+
+//     // public function __construct()
+//     // {
+//     //     $this->client = new SquareClient(
+//     //         token: env('SQUARE_ACCESS_TOKEN'),
+//     //         options: [
+//     //             'baseUrl' => Environments::Sandbox->value,
+//     //         ]
+//     //     );
+//     // }
+
+//     /**
+//      * @OA\Post(
+//      *     path="/api/frontend/payment-square",
+//      *     summary="Create a payment using Square",
+//      *     description="Receives a source_id (card token) and amount to process payment via Square API.",
+//      *     tags={"Square Payment"},
+//      *     @OA\RequestBody(
+//      *         required=true,
+//      *         @OA\JsonContent(
+//      *             required={"source_id", "amount"},
+//      *             @OA\Property(
+//      *                 property="source_id",
+//      *                 type="string",
+//      *                 example="cnon:card-nonce-ok",
+//      *                 description="Card token generated from Square Web Payments SDK"
+//      *             ),
+//      *             @OA\Property(
+//      *                 property="amount",
+//      *                 type="number",
+//      *                 format="float",
+//      *                 example=10.00,
+//      *                 description="Amount in USD"
+//      *             )
+//      *         )
+//      *     ),
+//      *     @OA\Response(
+//      *         response=200,
+//      *         description="Payment successful",
+//      *         @OA\JsonContent(
+//      *             @OA\Property(property="success", type="boolean", example=true),
+//      *             @OA\Property(
+//      *                 property="payment",
+//      *                 type="object",
+//      *                 description="Square payment object returned after success"
+//      *             )
+//      *         )
+//      *     ),
+//      *     @OA\Response(
+//      *         response=400,
+//      *         description="Payment failed or validation error",
+//      *         @OA\JsonContent(
+//      *             @OA\Property(property="success", type="boolean", example=false),
+//      *             @OA\Property(
+//      *                 property="errors",
+//      *                 type="array",
+//      *                 @OA\Items(type="string", example="Card declined")
+//      *             )
+//      *         )
+//      *     )
+//      * )
+//      */
+//     // public function createPayment(Request $request)
+//     // {
+//     //     // Validate access token
+//     //     $token = env('SQUARE_ACCESS_TOKEN');
+//     //     if (!$token) {
+//     //         return response()->json([
+//     //             'success' => false,
+//     //             'errors' => ['Square access token not found in environment'],
+//     //         ], 500);
+//     //     }
+
+//     //     // Validate request input
+//     //     $request->validate([
+//     //         'source_id' => 'required|string',
+//     //         'amount' => 'required|numeric|min:0.01',
+//     //     ]);
+
+//     //     try {
+//     //         // Follow the official Square documentation approach exactly
+//     //         $response = $this->client->payments->create(
+//     //             new CreatePaymentRequest([
+//     //                 'idempotencyKey' => (string) Str::uuid(),
+//     //                 'amountMoney' => new Money([
+//     //                     'amount' => (int)($request->amount * 100),
+//     //                     'currency' => Currency::Usd->value,
+//     //                 ]),
+//     //                 'sourceId' => $request->source_id,
+//     //             ])
+//     //         );
+
+//     //         if ($response->isSuccess()) {
+//     //             return response()->json([
+//     //                 'success' => true,
+//     //                 'payment' => $response->getResult()->getPayment(),
+//     //             ]);
+//     //         }
+
+//     //         return response()->json([
+//     //             'success' => false,
+//     //             'errors' => $response->getErrors(),
+//     //         ], 400);
+
+//     //     } catch (\Square\Exceptions\SquareApiException $e) {
+//     //         return response()->json([
+//     //             'success' => false,
+//     //             'errors' => ['Square API Error: ' . $e->getMessage()],
+//     //         ], 500);
+//     //     } catch (\Exception $e) {
+//     //         return response()->json([
+//     //             'success' => false,
+//     //             'errors' => ['General Error: ' . $e->getMessage()],
+//     //         ], 500);
+//     //     }
+//     // }
+
+
+// }  
+
+
 
 class SquarePaymentController extends Controller
 {
-    private $squareClient;
+    protected SquareClient $client;
 
     public function __construct()
     {
-        $this->squareClient = new SquareClient([
-            'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-            'environment' => env('SQUARE_ENV', 'sandbox'),
-        ]);
+        $this->client = new SquareClient(
+            token: env('SQUARE_ACCESS_TOKEN'),
+            options: [
+                'baseUrl' => Environments::Sandbox->value,
+            ]
+        );
     }
 
     /**
      * @OA\Post(
-     *     path="/frontend/payment-square",
-     *     operationId="createSquarePayment",
-     *     tags={"Frontend-Payment"},
-     *     summary="Create a payment using Square API",
+     *     path="/api/frontend/payment-square",
+     *     summary="Create a payment using Square",
+     *     description="Receives a source_id (card token) and amount to process payment via Square API.",
+     *     tags={"Square Payment"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"nonce", "amount", "currency", "customer_id", "location_id", "team_member_id", "buyer_email_address"},
-     *             @OA\Property(property="nonce", type="string", example="card_nonce_value"),
-     *             @OA\Property(property="amount", type="number", format="float", example=10.50),
-     *             @OA\Property(property="currency", type="string", example="USD"),
-     *             @OA\Property(property="customer_id", type="string"),
-     *             @OA\Property(property="location_id", type="string"),
-     *             @OA\Property(property="team_member_id", type="string"),
-     *             @OA\Property(property="buyer_email_address", type="string", format="email", example="customer@example.com")
+     *             required={"source_id", "amount"},
+     *             @OA\Property(
+     *                 property="source_id",
+     *                 type="string",
+     *                 example="cnon:card-nonce-ok",
+     *                 description="Card token generated from Square Web Payments SDK"
+     *             ),
+     *             @OA\Property(
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
+     *                 example=10.00,
+     *                 description="Amount in USD"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Payment successfully created",
+     *         description="Payment successful",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean"),
-     *             @OA\Property(property="payment", type="object")
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(
+     *                 property="payment",
+     *                 type="object",
+     *                 description="Square payment object returned after success"
+     *             )
      *         )
      *     ),
      *     @OA\Response(
      *         response=400,
-     *         description="Validation or payment error",
+     *         description="Payment failed or validation error",
      *         @OA\JsonContent(
-     *             @OA\Property(property="success", type="boolean"),
-     *             @OA\Property(property="errors", type="array", @OA\Items(type="string"))
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="array",
+     *                 @OA\Items(type="string", example="Card declined")
+     *             )
      *         )
-     *     ),
-     *     @OA\Response(
-     *         response=500,
-     *         description="Server error"
      *     )
      * )
      */
-
     public function createPayment(Request $request)
     {
-        // Validate input
-        $request->validate([
-            'nonce' => 'required|string',
-            'amount' => 'required|numeric|min:0.5',
-            'currency' => 'required|string|size:3',
-            'customer_id' => 'required|string',
-            'location_id' => 'required|string',
-            'team_member_id' => 'required|string',
-            'buyer_email_address' => 'required|email',
-        ]);
-
-        $nonce = $request->input('nonce');
-        $amount = $request->input('amount');
-        $currency = strtoupper($request->input('currency'));
-        $customerId = $request->input('customer_id');
-        $locationId = $request->input('location_id');
-        $teamMemberId = $request->input('team_member_id');
-        $buyerEmailAddress = $request->input('buyer_email_address');
-
-        try {
-            $paymentsApi = $this->squareClient->getPaymentsApi();
-
-            // Create the Money object for the payment amount
-            $amountMoney = new Money();
-            $amountMoney->setAmount((int)($amount * 100)); // Convert amount to cents
-            $amountMoney->setCurrency($currency);
-
-            // Create Offline Payment Details (if applicable)
-            $offlinePaymentDetails = new OfflinePaymentDetails();
-
-            // Create the payment request with necessary parameters
-            $paymentRequest = new CreatePaymentRequest(
-                $nonce,  // Nonce
-                uniqid('payment_')  // Idempotency key for uniqueness
-            );
-
-            // Set amount_money using the Money object
-            $paymentRequest->setAmountMoney($amountMoney);
-
-            // Set additional fields
-            $paymentRequest->setCustomerId($customerId);
-            $paymentRequest->setLocationId($locationId);
-            $paymentRequest->setTeamMemberId($teamMemberId);
-            $paymentRequest->setReferenceId(uniqid('ref_'));  // Optional: Unique reference ID
-            $paymentRequest->setAcceptPartialAuthorization(true);  // Accept partial authorization if needed
-            $paymentRequest->setBuyerEmailAddress($buyerEmailAddress);
-            $paymentRequest->setOfflinePaymentDetails($offlinePaymentDetails); // If needed
-
-            // Send the payment request to Square API
-            $response = $paymentsApi->createPayment($paymentRequest);
-
-            if ($response->isSuccess()) {
-                return response()->json([
-                    'success' => true,
-                    'payment' => $response->getResult()->getPayment(),
-                ]);
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'errors' => $response->getErrors(),
-                ], 400);
-            }
-        } catch (ApiException $e) {
+        // Validate access token
+        $token = env('SQUARE_ACCESS_TOKEN');
+        if (!$token) {
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage(),
+                'errors' => ['Square access token not found in environment'],
+            ], 500);
+        }
+
+        // Validate request input
+        $request->validate([
+            'source_id' => 'required|string',
+            'amount' => 'required|numeric|min:0.01',
+        ]);
+
+        try {
+            // Follow the official Square documentation approach exactly
+            $response = $this->client->payments->create(
+                new CreatePaymentRequest([
+                    'idempotencyKey' => (string) Str::uuid(),
+                    'amountMoney' => new Money([
+                        'amount' => (int)($request->amount * 100),
+                        'currency' => Currency::Usd->value,
+                    ]),
+                    'sourceId' => $request->source_id,
+                ])
+            );
+
+            // Check if the response has errors (errors property exists and is not empty)
+            if (empty($response->getErrors())) {
+                // Success - payment was created
+                $payment = $response->getPayment();
+                
+                return response()->json([
+                    'success' => true,
+                    'payment' => [
+                        'id' => $payment->getId(),
+                        'status' => $payment->getStatus(),
+                        'amount' => $payment->getAmountMoney()->getAmount() / 100, // Convert back to dollars
+                        'currency' => $payment->getAmountMoney()->getCurrency(),
+                        'created_at' => $payment->getCreatedAt(),
+                        'receipt_url' => $payment->getReceiptUrl(),
+                    ]
+                ]);
+            }
+
+            // Has errors - payment failed
+            $errors = [];
+            foreach ($response->getErrors() as $error) {
+                $errors[] = $error->getCode() . ': ' . $error->getDetail();
+            }
+
+            return response()->json([
+                'success' => false,
+                'errors' => $errors,
+            ], 400);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'errors' => ['Error: ' . $e->getMessage()],
+                'debug_info' => [
+                    'exception_class' => get_class($e),
+                    'file' => $e->getFile() . ':' . $e->getLine(),
+                ]
             ], 500);
         }
     }
-
-    /**
-     * @OA\Get(
-     *     path="/frontend/payment-form",
-     *     operationId="paymentFormView",
-     *     tags={"Frontend-Payment"},
-     *     summary="Get payment form view",
-     *     @OA\Response(
-     *         response=200,
-     *         description="Blade view with Square form"
-     *     )
-     * )
-     */
-    public function paymentForm()
-    {
-        return view('payment.form', [
-            'square_application_id' => env('SQUARE_APPLICATION_ID'),
-        ]);
-    }
-}
+} 

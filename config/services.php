@@ -42,4 +42,11 @@ return [
         'version' => env('CLAUDE_VERSION', '2023-06-01'),
     ],
 
+    'square' => [
+        'application_id' => env('SQUARE_APPLICATION_ID'),
+        'access_token' => env('SQUARE_ACCESS_TOKEN'),
+        'environment' => env('SQUARE_ENV', 'sandbox'), // 'sandbox' or 'production'
+        'location_id' => env('SQUARE_LOCATION_ID'), // Optional default location
+    ],
+
 ];

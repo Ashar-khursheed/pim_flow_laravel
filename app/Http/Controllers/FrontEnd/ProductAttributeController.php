@@ -96,77 +96,164 @@ class ProductAttributeController extends Controller
      * )
      */
 
-     public function getNutritionFactsByProduct($productId)
-     {
-         // Keyword-based sort order (lowercase)
-         $sortKeywords = [
-             'serving',
-             'calories',
-             'total fat',
-             'saturated fat',
-             'trans fat',
-             'cholesterol',
-             'sodium',
-             'total carbohydrate',
-             'dietary fiber',
-             'total sugars',
-             'added sugars',
-             'protein',
-             'vitamin d',
-             'calcium',
-             'iron',
-             'potassium'
-         ];
+    //  public function getNutritionFactsByProduct($productId)
+    //  {
+    //      // Keyword-based sort order (lowercase)
+    //      $sortKeywords = [
+    //          'serving',
+    //          'energy',
+    //          'protein',
+    //          'total fat',
+    //          'trans fat',
+    //          'fat',
+    //          'saturated fat',
+    //          'total carbohydrate',
+    //          'carbohydrate',
+    //           'sugars',
+    //           'total sugars',
+    //          'added sugars',
+    //           'fiber',
+    //           'dietary fiber',
+    //           'sodium',
+    //          'calories',
+    //          'cholesterol',
+    //          'vitamin d',
+    //          'calcium',
+    //          'iron',
+    //          'potassium'
+    //      ];
  
-         // Fetch product attributes in the group
-         $productAttributes = ProductAttributes::with([
-             'attribute' => function ($query) {
-                 $query->whereHas('attributeGroup', function ($q) {
-                     $q->where('name', 'Nutrition Facts Per Serving Group');
-                 })->with('attributeGroup');
-             },
-             'measurementUnit' // ✅ Correctly added as a second relation
-         ])
-         ->where('product_id', $productId)
-         ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+    //      // Fetch product attributes in the group
+    //      $productAttributes = ProductAttributes::with([
+    //          'attribute' => function ($query) {
+    //              $query->whereHas('attributeGroup', function ($q) {
+    //                  $q->where('name', 'Nutrition Facts Per Serving Group');
+    //              })->with('attributeGroup');
+    //          },
+    //          'measurementUnit' // ✅ Correctly added as a second relation
+    //      ])
+    //      ->where('product_id', $productId)
+    //      ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
          
-         // Filter out null attributes
-         $nutritionFacts = $productAttributes->filter(function ($item) {
-             return $item->attribute !== null;
-         });
+    //      // Filter out null attributes
+    //      $nutritionFacts = $productAttributes->filter(function ($item) {
+    //          return $item->attribute !== null;
+    //      });
  
-         if ($nutritionFacts->isEmpty()) {
-             return response()->json([
-                 'message' => 'Nutrition Facts Per Serving Group not found for this product.'
-             ], 200);
-         }
+    //      if ($nutritionFacts->isEmpty()) {
+    //          return response()->json([
+    //              'message' => 'Nutrition Facts Per Serving Group not found for this product.'
+    //          ], 200);
+    //      }
  
-         // Sort dynamically based on keyword order
-         $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
-             $name = strtolower($item->attribute->name);
-             foreach ($sortKeywords as $index => $keyword) {
-                 if (strpos($name, $keyword) !== false) {
-                     return $index;
-                 }
-             }
-             return count($sortKeywords) + 1; // Unknown attributes go to end
-         })->values();
+    //      // Sort dynamically based on keyword order
+    //      $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
+    //          $name = strtolower($item->attribute->name);
+    //          foreach ($sortKeywords as $index => $keyword) {
+    //              if (strpos($name, $keyword) !== false) {
+    //                  return $index;
+    //              }
+    //          }
+    //          return count($sortKeywords) + 1; // Unknown attributes go to end
+    //      })->values();
  
-         // Build the final response
-         $response = [
-             'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
-             'attributes' => $sortedFacts->map(function ($item) {
-             $symbol = $item->measurementUnit->symbol ?? '';
-             return [
-                 'name'  => $item->attribute->name,
-                 'value' => trim($item->attribute_value . ' ' . $symbol),
-             ];
-         })
+    //      // Build the final response
+    //      $response = [
+    //          'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
+    //          'attributes' => $sortedFacts->map(function ($item) {
+    //          $symbol = $item->measurementUnit->symbol ?? '';
+    //          return [
+    //              'name'  => $item->attribute->name,
+    //              'value' => trim($item->attribute_value . ' ' . $symbol),
+    //          ];
+    //      })
  
-         ];
+    //      ];
  
-         return response()->json($response);
-     }
+    //      return response()->json($response);
+    //  }
+    public function getNutritionFactsByProduct($productId)
+{
+    // Keyword-based sort order (lowercase)
+    $sortKeywords = [
+        'serving',
+        'energy',
+        'protein',
+        'total fat',
+        'trans fat',
+        'fat',
+        'saturated fat',
+        'total carbohydrate',
+        'carbohydrate',
+        'sugars',
+        'total sugars',
+        'added sugars',
+        'fiber',
+        'dietary fiber',
+        'sodium',
+        'calories',
+        'cholesterol',
+        'vitamin d',
+        'calcium',
+        'iron',
+        'potassium'
+    ];
+
+    // Fetch product attributes in the group
+    $productAttributes = ProductAttributes::with([
+        'attribute' => function ($query) {
+            $query->whereHas('attributeGroup', function ($q) {
+                $q->where('name', 'Nutrition Facts Per Serving Group');
+            })->with('attributeGroup');
+        },
+        'measurementUnit'
+    ])
+    ->where('product_id', $productId)
+    ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+
+    // Filter out null attributes
+    $nutritionFacts = $productAttributes->filter(function ($item) {
+        return $item->attribute !== null;
+    });
+
+    if ($nutritionFacts->isEmpty()) {
+        return response()->json([
+            'message' => 'Nutrition Facts Per Serving Group not found for this product.'
+        ], 200);
+    }
+
+    // Sort dynamically based on partial keyword match
+    $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
+        $name = strtolower($item->attribute->name);
+
+        foreach ($sortKeywords as $index => $keyword) {
+            $keywordParts = explode(' ', strtolower($keyword));
+
+            foreach ($keywordParts as $part) {
+                if (strpos($name, $part) !== false) {
+                    return $index;
+                }
+            }
+        }
+
+        return count($sortKeywords) + 1; // Unknowns go to the end
+    })->values();
+
+    // Build the final response
+    $response = [
+        'group_name' => $sortedFacts[0]->attribute->attributeGroup->name ?? 'Nutrition Facts Per Serving Group',
+        'attributes' => $sortedFacts->map(function ($item) {
+            $symbol = $item->measurementUnit->symbol ?? '';
+            return [
+                'name'  => $item->attribute->name,
+                'value' => trim($item->attribute_value . ' ' . $symbol),
+            ];
+        })
+    ];
+
+    return response()->json($response);
+}
+
  
 
     /**

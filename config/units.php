@@ -6,7 +6,6 @@ return [
 	\App\Units\ElectricPotential::class,
 	\App\Units\ElectricCurrent::class,
 	\App\Units\RotationalSpeed::class,
-	\App\Units\NutritionEnergy::class,
 	\App\Units\Density::class,
 	\App\Units\Humidity::class,
 	\App\Units\BatteryCapacity::class,

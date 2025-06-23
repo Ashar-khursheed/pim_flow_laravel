@@ -58,6 +58,8 @@ use App\Http\Controllers\CustomerAddressController;
 use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
+use App\Http\Controllers\ProductTitleFormulaController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -89,9 +91,10 @@ use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterContro
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 
-Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
-Route::post('/payment/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
-Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
+
+// Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
+// Route::post(' /frontend/ccavenue/initiate', [PaymentController::class, 'initiatePayment']);
+// Route::post('/payment/ccavenue/callback', [PaymentController::class, 'paymentCallback']);
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -317,6 +320,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
+
+	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
+	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
+
+
 });
 
 
@@ -380,7 +388,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/cart', [F_CartController::class, 'viewCart']);
 	Route::delete('/frontend/cart/clear', [F_CartController::class, 'clearCart']);
 	Route::delete('/frontend/cart/product/{productId}', [F_CartController::class, 'clearProductFromCart']);
-	Route::put('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
+	Route::post('/frontend/cart/update-quantity', [F_CartController::class, 'updateCartQuantity']);
 	Route::post('/frontend/cart/decrease-quantity', [F_CartController::class, 'decreaseQuantity']);
 	Route::post('/frontend/cart/add-multiple', [F_CartController::class, 'addMultipleToCart']);
 	Route::get('/frontend/cart-summary', [F_CartController::class, 'cartSummary']);
@@ -400,6 +408,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/products/random/{category_id}', [F_ProductController::class, 'getRandomProducts']);
 	Route::get('/auth/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProductsForUser']);
 
+	Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
+	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
+	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
 });
 
@@ -462,6 +473,9 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
+
+
+
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
 Route::get('/frontend/category/{slug}/blogs', [F_BlogController::class, 'blogsByCategorySlug']);
@@ -482,12 +496,13 @@ Route::get('/frontend/location', [F_LocationController::class, 'getLocation']);
 Route::get('/frontend/get-coordinates', [F_LocationController::class, 'getCoordinates']);
 Route::post('/frontend/get-location', [F_LocationController::class, 'getAddress']);
 
-Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
-Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
-Route::delete('/frontend/save-for-later', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
+
 
 Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']);
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
-Route::post('/frontend/ccavenue/payment', [F_CcavenueController::class, 'initiatePayment']);
-Route::post('/frontend/ccavenue/response', [F_CcavenueController::class, 'handleResponse']);
+Route::prefix('/frontend/ccavenue')->group(function () {
+    Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
+    Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);  
+    Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
+});

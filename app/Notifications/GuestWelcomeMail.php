@@ -7,19 +7,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class ResetPasswordNotification extends Notification implements ShouldQueue
+class GuestWelcomeMail extends Notification implements ShouldQueue
 {
 	use Queueable;
 
-	public $token;
-	public $email;
-	public $type;
+	public $randomPassword;
 
-	public function __construct($token, $email, $type = 'user')
+	public function __construct($randomPassword)
 	{
-		$this->token = $token;
-		$this->email = $email;
-		$this->type = $type;
+		$this->randomPassword = $randomPassword;
 	}
 
 	/**
@@ -37,18 +33,20 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
-		$name = $notifiable->name ?? 'User';
-		$resetUrl = url("/reset-password?token={$this->token}&email={$this->email}&type={$this->type}");
-		$finalUrl = $url ?? config('app.url');
 		$logoUrl = config('app.logo_url');
+		$name = $notifiable->name ?? 'User';
+		$randomPassword = $this->randomPassword ?? 'User';
+		$resetPasswordUrl = url("/");
+		$websiteUrl = url("/");
 
 		return (new MailMessage)
-		->subject('Reset Your Password')
-		->markdown('emails.reset-password', [
-			'name' => $name,
-			'resetUrl' => $resetUrl,
-			'finalUrl' => $finalUrl,
+		->subject('Welcome Email')
+		->markdown('emails.guest-welcome', [
 			'logoUrl' => $logoUrl,
+			'name' => $name,
+			'randomPassword' => $randomPassword,
+			'resetPasswordUrl' => $resetPasswordUrl,
+			'websiteUrl' => $websiteUrl,
 		]);
 	}
 

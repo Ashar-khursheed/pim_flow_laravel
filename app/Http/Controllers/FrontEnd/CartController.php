@@ -192,7 +192,7 @@ class CartController extends Controller
      */
     public function viewCart(Request $request)
     {
-        $userId = Auth::id();
+        $userId = auth()->id();
         $isUserLoggedIn = $userId !== null;
 
         Log::info('User logged in:', ['user_id' => $userId]);
@@ -244,7 +244,7 @@ class CartController extends Controller
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
         });
 
-        $currencyTitles = $cartItems->pluck('product.currency.title')->unique()->filter()->values();
+        $currencyTitles = $cartItems->pluck('product.currency.symbol')->unique()->filter()->values();
 
         return response()->json([
             'success' => true,
@@ -327,7 +327,7 @@ class CartController extends Controller
     public function clearProductFromCart(Request $request, $productId)
     {
         // Determine if the user is logged in and get the user ID
-        $userId = Auth::id();
+        $userId = auth()->id();
 
         if (Auth::check()) {
             // Remove the product from the cart for logged-in user
@@ -345,7 +345,7 @@ class CartController extends Controller
     }
 
     /**
-     * @OA\Put(
+     * @OA\Post(
      *     path="/api/frontend/cart/update-quantity",
      *     tags={"Frontend-Cart"},
      *     summary="Update cart item quantity",
@@ -410,22 +410,22 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-
+    
         $productId = $request->input('product_id');
         $quantity = $request->input('quantity');
-
+    
         if (Auth::check()) {
-            $userId = Auth::id();
+            $userId = auth()->id();
             $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
         } else {
             $sessionId = $request->session()->getId();
             $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
         }
-
+    
         if ($cartItem) {
             $cartItem->quantity = $quantity;
-            $cartItem->save();
-
+            $cartItem->update();
+    
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -434,15 +434,16 @@ class CartController extends Controller
                     'session_id' => $cartItem->session_id,
                     'product_id' => $cartItem->product_id,
                     'quantity' => $cartItem->quantity,
-                    'currency_title' => $cartItem->product->currency->title ?? null, // Currency title inside data
+                    'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
                     'created_at' => $cartItem->created_at,
                     'updated_at' => $cartItem->updated_at,
                 ],
             ]);
         }
-
+    
         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
     }
+
 
     /**
      * @OA\Post(
@@ -518,14 +519,14 @@ class CartController extends Controller
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-
+    
         $productId = $request->input('product_id');
         $quantityToDecrease = $request->input('quantity');
-
+    
         // Determine if the user is logged in and retrieve the cart item
         $cartItem = null;
         if (Auth::check()) {
-            $userId = Auth::id();
+            $userId = auth()->id();
             $cartItem = Cart::where('user_id', $userId)
                 ->where('product_id', $productId)
                 ->first();
@@ -535,7 +536,7 @@ class CartController extends Controller
                 ->where('product_id', $productId)
                 ->first();
         }
-
+    
         // Check if the cart item exists
         if (!$cartItem) {
             Log::info('Cart item not found for product', [
@@ -545,16 +546,16 @@ class CartController extends Controller
             ]);
             return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
         }
-
+    
         // Decrease the quantity and check if it should be removed
         $cartItem->quantity -= $quantityToDecrease;
-
+    
         if ($cartItem->quantity <= 0) {
             $cartItem->delete();
             return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
         } else {
             $cartItem->save();
-
+    
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -569,6 +570,7 @@ class CartController extends Controller
             ]);
         }
     }
+
 
     /**
      * @OA\Get(
@@ -795,7 +797,7 @@ class CartController extends Controller
     public function cartSummary(Request $request)
     {
         // Determine if the user is logged in
-        $userId = Auth::id();
+        $userId = auth()->id();
         $sessionId = $userId ? null : $request->session()->getId();
 
         // Fetch cart items with product details and currency information
@@ -865,7 +867,7 @@ class CartController extends Controller
 
     public function totalProductsInCart(Request $request)
     {
-        $userId = Auth::id();
+        $userId = auth()->id();
 
         $totalQuantity = Cart::where('user_id', $userId)->sum('quantity');
 
