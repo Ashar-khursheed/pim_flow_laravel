@@ -511,33 +511,45 @@ class ProductAttributeController extends Controller
         //         'attribute_value' => $insideCartonValue,
         //     ]]);
         // }
-        $sellingUnit = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
-        $unitsPerCase = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
-        $packType = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
-        $unitQty = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+        $sellingUnit     = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
+        $unitsPerCase    = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+        $packType        = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
+        $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
         $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
-
+        
         if ($sellingUnit) {
             $rawSelling = $sellingUnit->attribute_value;
-
+        
             if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
-                // Convert "1/Carton" or "1/Each" to "1 Carton" etc.
+                // Convert "1/Carton" or "1/Each" to "1 Carton"
                 $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
-
+        
+                // Build the "Inside Carton" portion
                 $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value;
-
+        
+                // Final full value
                 $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
+        
+                // Inject custom "Selling Unit" at top (index 0)
+                array_splice($right, 0, 0, [[
+                    'attribute_name'  => 'Selling Unit',
+                    'attribute_value' => $fullValue,
+                ]]);
+        
+                // ✅ Skip/Remove the original Selling Unit entry from $right
+                $right = collect($right)->filter(fn($item) =>
+                    !(strtolower($item['attribute_name']) === 'selling unit' && $item['attribute_value'] === $rawSelling)
+                )->values()->toArray();
+        
             } else {
-                // Fallback to original selling unit if any attribute is missing
-                $fullValue = $rawSelling;
+                // If some values are missing, show original Selling Unit
+                array_splice($right, 0, 0, [[
+                    'attribute_name'  => 'Selling Unit',
+                    'attribute_value' => $rawSelling,
+                ]]);
             }
-
-            // Insert at index 0 for "Right Top"
-            array_splice($right, 0, 0, [[
-                'attribute_name' => 'Selling Unit',
-                'attribute_value' => $fullValue,
-            ]]);
         }
+        
 
         
 
