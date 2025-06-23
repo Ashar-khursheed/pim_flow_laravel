@@ -695,7 +695,7 @@ use Illuminate\Support\Facades\Auth;
         // Fetching products based on filters
         $products = Product::whereIn('id', $filteredProductIds)
             ->where('status', 'published')
-            ->with(['currency', 'reviews', 'brand'])
+            ->with(['currency', 'reviews', 'brand' , 'vendor'])
             ->when($request->has('price_min') || $request->has('price_max'), function ($query) use ($request) {
                 $min = $request->input('price_min', 0);
                 $max = $request->input('price_max', PHP_INT_MAX);
@@ -776,6 +776,7 @@ use Illuminate\Support\Facades\Auth;
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
                 "selling_type"=> $sellingType,
+                'vendor_id' => $details->vendor_id
             ];
         });
     
