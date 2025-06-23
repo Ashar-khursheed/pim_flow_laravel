@@ -520,33 +520,37 @@ class ProductAttributeController extends Controller
         if ($sellingUnit) {
             $rawSelling = $sellingUnit->attribute_value;
         
-            if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
-                // Convert "1/Carton" or "1/Each" to "1 Carton"
+            $hasAllValues = $unitsPerCase && $packType && $unitQty && $unitMeasurement &&
+                !empty($unitsPerCase->attribute_value) &&
+                !empty($packType->attribute_value) &&
+                !empty($unitQty->attribute_value) &&
+                !empty($unitMeasurement->attribute_value);
+        
+            if ($hasAllValues) {
                 $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
         
-                // Build the "Inside Carton" portion
-                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value . ' ' . 'Each';
+                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value . ' Each';
         
-                // Final full value
                 $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
         
-                // Inject custom "Selling Unit" at top (index 0)
                 array_splice($right, 0, 0, [[
                     'attribute_name'  => 'Selling Unit',
                     'attribute_value' => $fullValue,
                 ]]);
         
-                // ✅ Skip/Remove the original Selling Unit entry from $right
+                // Remove the original Selling Unit entry
                 $right = collect($right)->filter(fn($item) =>
                     !(strtolower($item['attribute_name']) === 'selling unit' && $item['attribute_value'] === $rawSelling)
                 )->values()->toArray();
         
             } else {
-                // If some values are missing, show original Selling Unit
-                array_splice($right, 0, 0, [[
-                    'attribute_name'  => 'Selling Unit',
-                    'attribute_value' => $rawSelling,
-                ]]);
+                // Only show original Selling Unit if at least it has value
+                if (!empty($rawSelling)) {
+                    array_splice($right, 0, 0, [[
+                        'attribute_name'  => 'Selling Unit',
+                        'attribute_value' => $rawSelling,
+                    ]]);
+                }
             }
         }
         
