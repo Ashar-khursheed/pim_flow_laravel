@@ -2548,7 +2548,7 @@ use Illuminate\Support\Facades\Auth;
                         ->whereColumn('ec_products.price', 'best_products.best_price');
                 })
                 ->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-                ->with(['reviews', 'currency']) // Eager load relationships
+                ->with(['reviews', 'currency' , 'vendor']) // Eager load relationships
                 ->get()
                 ->keyBy('id'); // Use keyBy to quickly fetch by ID later
 
@@ -2601,6 +2601,7 @@ use Illuminate\Support\Facades\Auth;
                         "front_sale_price"=> $details->price,
                         "best_price"=> $details->price,
                         "selling_type"=> $sellingType,
+                        'vendor_id' => $details->vendor_id,
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];

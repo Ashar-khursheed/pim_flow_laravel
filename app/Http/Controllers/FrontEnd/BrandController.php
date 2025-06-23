@@ -428,7 +428,8 @@ class BrandController extends Controller
                             'images' => $imageUrls,
                             'front_sale_price' => $details->price,
                             'best_price' => $details->best_price ?? $details->price,
-                            "selling_type"=> $sellingType,
+                            'selling_type'=> $sellingType,
+                            'vendor_id' => $details->vendor_id,
                         ];
                     })->values(),
                 ];
