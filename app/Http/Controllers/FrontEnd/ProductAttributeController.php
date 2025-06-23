@@ -495,21 +495,50 @@ class ProductAttributeController extends Controller
             }
         }
 
-        // Inside Carton calculation using the original (not filtered) attributes
+        // // Inside Carton calculation using the original (not filtered) attributes
+        // $unitsPerCase = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+        // $unitSelling = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
+        // $packType = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
+        // $unitQty = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+        // $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
+
+        // if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
+        //     $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
+        
+        //     // Insert at second position (index 1)
+        //     array_splice($right, 1, 0, [[
+        //         'attribute_name' => 'Inside Carton',
+        //         'attribute_value' => $insideCartonValue,
+        //     ]]);
+        // }
+        $sellingUnit = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
         $unitsPerCase = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
         $packType = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
         $unitQty = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
         $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
 
-        if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
-            $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
-        
-            // Insert at second position (index 1)
-            array_splice($right, 1, 0, [[
-                'attribute_name' => 'Inside Carton',
-                'attribute_value' => $insideCartonValue,
+        if ($sellingUnit) {
+            $rawSelling = $sellingUnit->attribute_value;
+
+            if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
+                // Convert "1/Carton" or "1/Each" to "1 Carton" etc.
+                $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
+
+                $insideCarton = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . ' ' . $unitMeasurement->attribute_value;
+
+                $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
+            } else {
+                // Fallback to original selling unit if any attribute is missing
+                $fullValue = $rawSelling;
+            }
+
+            // Insert at index 0 for "Right Top"
+            array_splice($right, 0, 0, [[
+                'attribute_name' => 'Selling Unit',
+                'attribute_value' => $fullValue,
             ]]);
         }
+
         
 
         return response()->json([
