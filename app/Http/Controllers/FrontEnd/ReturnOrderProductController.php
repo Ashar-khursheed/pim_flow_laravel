@@ -15,7 +15,6 @@ class ReturnOrderProductController extends BaseController
 	 *     path="/api/frontend/order-products/{order_product_id}/return",
 	 *     summary="Create a return request for an order product",
 	 *     tags={"FrontEnd-Orders"},
-	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
 	 *         name="order_product_id",
 	 *         in="path",
@@ -37,7 +36,8 @@ class ReturnOrderProductController extends BaseController
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Return request created successfully")
+	 *     @OA\Response(response=200, description="Return request created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function store(Request $request, $order_product_id)
