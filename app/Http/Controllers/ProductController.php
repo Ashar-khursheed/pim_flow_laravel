@@ -1593,15 +1593,24 @@ class ProductController extends BaseController
 		// CONTENT FIELD RESTRICTIONS - Check before processing
 
 		// 1. DESCRIPTION RESTRICTION
+		// CONTENT FIELD RESTRICTIONS - Check only when values actually change
+
+		// 1. DESCRIPTION RESTRICTION
 		if ($request->has('description')) {
 			$currentDescription = $product->description ?? '';
 			$newDescription = $request->input('description');
 			
+			// Only check permissions if the value is actually being changed
 			if ($currentDescription !== $newDescription && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
 					'message' => 'You do not have permission to modify product description.'
 				], 403);
+			}
+			
+			// If values are the same, remove from input to avoid unnecessary processing
+			if ($currentDescription === $newDescription) {
+				unset($input['description']);
 			}
 		}
 
@@ -1750,13 +1759,21 @@ class ProductController extends BaseController
 
 		// 4. FAQ RESTRICTION - Check before processing FAQs
 		if ($request->has('faqs')) {
-			if (!$canModifyContent) {
+			// For FAQs, we need to compare the actual content since it's more complex
+			$currentFaqs = $product->faqs()->get(['question', 'answer', 'category_id'])->toArray();
+			$newFaqs = $request->input('faqs', []);
+			
+			// Simple check - if FAQ data is being sent and user can't modify content
+			if (!empty($newFaqs) && !$canModifyContent) {
+				// You might want to implement a more sophisticated comparison here
+				// For now, just check if user is trying to modify FAQs
 				return response()->json([
 					'success' => false,
 					'message' => 'You do not have permission to modify product FAQs.'
 				], 403);
 			}
 		}
+		
 
 		$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
@@ -2057,58 +2074,26 @@ class ProductController extends BaseController
 
 		/* Handle benefits_features field with role restriction */
 		if ($request->has('benefits_features')) {
-			// 5. BENEFITS_FEATURES RESTRICTION
-			if (!$canModifyContent) {
+			$currentBenefits = $product->benefits_features ?? '';
+			$newBenefits = $request->input('benefits_features');
+			
+			// Convert to comparable format
+			$currentBenefitsArray = json_decode($currentBenefits, true) ?? [];
+			$newBenefitsArray = is_string($newBenefits) ? json_decode($newBenefits, true) : $newBenefits;
+			$newBenefitsArray = $newBenefitsArray ?? [];
+			
+			// Check if actually changing
+			if ($currentBenefitsArray !== $newBenefitsArray && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
 					'message' => 'You do not have permission to modify product benefits and features.'
 				], 403);
 			}
-
-			/* Decode existing benefits_features if available */
-			$existingBenefits = json_decode($product->benefits_features, true);
-
-			/* Ensure existingBenefits is an array */
-			if (!is_array($existingBenefits)) {
-				$existingBenefits = [];
+			
+			// Remove from input if unchanged
+			if ($currentBenefitsArray === $newBenefitsArray) {
+				unset($input['benefits_features']);
 			}
-
-			/* Get the incoming benefits_features */
-			$benefitsFeaturesInput = $request->input('benefits_features');
-
-			/* Handle different input formats */
-			if (is_string($benefitsFeaturesInput)) {
-				/* Try to decode JSON string */
-				$newBenefits = json_decode($benefitsFeaturesInput, true);
-
-				/* If JSON decode failed, treat as invalid */
-				if (json_last_error() !== JSON_ERROR_NONE) {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid benefits_features JSON format.'
-					], 400);
-				}
-			} elseif (is_array($benefitsFeaturesInput)) {
-				/* Already an array */
-				$newBenefits = $benefitsFeaturesInput;
-			} else {
-				/* Invalid format */
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-				], 400);
-			}
-
-			/* Ensure newBenefits is an array */
-			if (!is_array($newBenefits)) {
-				$newBenefits = [];
-			}
-
-			/* Merge existing benefits with new ones */
-			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
-
-			/* Save back as JSON */
-			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 		}
 
 		/* Stock status validation */
