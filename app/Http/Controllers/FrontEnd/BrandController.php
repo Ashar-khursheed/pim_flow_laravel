@@ -268,107 +268,107 @@ class BrandController extends Controller
     //     ]);
     // }
     public function getAllHomeBrandProducts(Request $request)
-{
-    $wishlistIds = $this->getWishlistProductIds();
+    {
+        $wishlistIds = $this->getWishlistProductIds();
 
-    // Preload brands with featured flag and 10+ published products
-    $brands = Brand::where('is_featured', 1)
-        ->whereHas('products', function ($query) {
-            $query->where('status', 'published')
-                  ->select('brand_id')
-                  ->groupBy('brand_id')
-                  ->havingRaw('COUNT(*) >= 10');
-        })
-        ->with(['products' => function ($query) {
-            $query->where('status', 'published')
-                  ->take(10) // limit at DB level
-                  ->with([
-                      'productAttributes.attributeDetails:id,name',
-                      'reviews:id,product_id,star',
-                      'currency:id,symbol'
-                  ]);
-        }])
-        ->orderBy('created_at', 'desc')
-        ->take(5)
-        ->get();
+        // Preload brands with featured flag and 10+ published products
+        $brands = Brand::where('is_featured', 1)
+            ->whereHas('products', function ($query) {
+                $query->where('status', 'published')
+                    ->select('brand_id')
+                    ->groupBy('brand_id')
+                    ->havingRaw('COUNT(*) >= 10');
+            })
+            ->with(['products' => function ($query) {
+                $query->where('status', 'published')
+                    ->take(10) // limit at DB level
+                    ->with([
+                        'productAttributes.attributeDetails:id,name',
+                        'reviews:id,product_id,star',
+                        'currency:id,symbol'
+                    ]);
+            }])
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
 
-    // Structure response
-    return response()->json([
-        'success' => true,
-        'data' => $brands->map(function ($brand) use ($request, $wishlistIds) {
-            $products = $brand->products->filter(function ($product) use ($request) {
-                // Apply filters in memory (cheaper than querying again)
-                if ($request->has('search') && !str_contains(strtolower($product->name), strtolower($request->input('search')))) {
-                    return false;
-                }
-                if ($request->has('price_min') && $product->price < $request->price_min) {
-                    return false;
-                }
-                if ($request->has('price_max') && $product->price > $request->price_max) {
-                    return false;
-                }
-                if ($request->has('rating') && $product->reviews->avg('star') < $request->rating) {
-                    return false;
-                }
-                return true;
-            })->take(10); // Final memory-level filter
-
-            return [
-                'brand_name' => $brand->name,
-                'products' => $products->map(function ($product) use ($wishlistIds) {
-                    // Preprocess image
-                    $rawImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
-                    $imageUrls = collect($rawImages)->flatten()->filter()->values();
-
-                    // Selling unit
-                    $sellingAttr = $product->sellingUnitAttribute;
-                    $sellingType = null;
-                    if ($sellingAttr && $sellingAttr->attribute_value) {
-                        $value = $sellingAttr->attribute_value;
-                        $unit = strpos($value, '/') !== false ? trim(explode('/', $value)[1]) : $value;
-                        $sellingType = [
-                            'attribute_value' => $value,
-                            'attribute_value_unit' => $unit,
-                        ];
+        // Structure response
+        return response()->json([
+            'success' => true,
+            'data' => $brands->map(function ($brand) use ($request, $wishlistIds) {
+                $products = $brand->products->filter(function ($product) use ($request) {
+                    // Apply filters in memory (cheaper than querying again)
+                    if ($request->has('search') && !str_contains(strtolower($product->name), strtolower($request->input('search')))) {
+                        return false;
                     }
+                    if ($request->has('price_min') && $product->price < $request->price_min) {
+                        return false;
+                    }
+                    if ($request->has('price_max') && $product->price > $request->price_max) {
+                        return false;
+                    }
+                    if ($request->has('rating') && $product->reviews->avg('star') < $request->rating) {
+                        return false;
+                    }
+                    return true;
+                })->take(10); // Final memory-level filter
 
-                    // Per unit price
-                    $unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
-                    $packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
-                    $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-                    $perUnitPrice = null;
-                    if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-                        $unitValue = (float) $unitsPerCase->attribute_value;
-                        if ($unitValue > 0) {
-                            $calculated = round($basePrice / $unitValue, 2);
-                            $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+                return [
+                    'brand_name' => $brand->name,
+                    'products' => $products->map(function ($product) use ($wishlistIds) {
+                        // Preprocess image
+                        $rawImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                        $imageUrls = collect($rawImages)->flatten()->filter()->values();
+
+                        // Selling unit
+                        $sellingAttr = $product->sellingUnitAttribute;
+                        $sellingType = null;
+                        if ($sellingAttr && $sellingAttr->attribute_value) {
+                            $value = $sellingAttr->attribute_value;
+                            $unit = strpos($value, '/') !== false ? trim(explode('/', $value)[1]) : $value;
+                            $sellingType = [
+                                'attribute_value' => $value,
+                                'attribute_value_unit' => $unit,
+                            ];
                         }
-                    }
 
-                    return [
-                        "id" => $product->id,
-                        "name" => $product->name,
-                        "sku" => $product->sku,
-                        "price" => $product->price,
-                        "sale_price" => $product->sale_price,
-                        "best_delivery_date" => $product->best_delivery_date,
-                        "total_reviews" => $product->reviews->count(),
-                        "avg_rating" => $product->reviews->avg('star'),
-                        "left_stock" => $product->left_stock ?? 0,
-                        "currency" => $product->currency->symbol ?? 'USD',
-                        "in_wishlist" => in_array($product->id, $wishlistIds),
-                        "images" => $imageUrls,
-                        "original_price" => $product->price,
-                        "front_sale_price" => $product->price,
-                        "best_price" => $product->price,
-                        "selling_type" => $sellingType,
-                        "per_unit_price" => $perUnitPrice,
-                    ];
-                })
-            ];
-        }),
-    ]);
-}
+                        // Per unit price
+                        $unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+                        $packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                        $perUnitPrice = null;
+                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                            $unitValue = (float) $unitsPerCase->attribute_value;
+                            if ($unitValue > 0) {
+                                $calculated = round($basePrice / $unitValue, 2);
+                                $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+                            }
+                        }
+
+                        return [
+                            "id" => $product->id,
+                            "name" => $product->name,
+                            "sku" => $product->sku,
+                            "price" => $product->price,
+                            "sale_price" => $product->sale_price,
+                            "best_delivery_date" => $product->best_delivery_date,
+                            "total_reviews" => $product->reviews->count(),
+                            "avg_rating" => $product->reviews->avg('star'),
+                            "left_stock" => $product->left_stock ?? 0,
+                            "currency" => $product->currency->symbol ?? 'USD',
+                            "in_wishlist" => in_array($product->id, $wishlistIds),
+                            "images" => $imageUrls,
+                            "original_price" => $product->price,
+                            "front_sale_price" => $product->price,
+                            "best_price" => $product->price,
+                            "selling_type" => $sellingType,
+                            "per_unit_price" => $perUnitPrice,
+                        ];
+                    })
+                ];
+            }),
+        ]);
+    }
 
 
     /**
@@ -454,28 +454,26 @@ class BrandController extends Controller
             ->where('status', 'published') // Add this line
             ->groupBy('sku');
     
-            $brands = Brand::with(['products' => function ($query) {
-                $query->where('status', 'published')
-                    ->with([
-                        'productAttributes' => function ($query) {
-                            $query->whereHas('attributeDetails', function ($q) {
-                                $q->whereIn('name', ['Units per Case', 'Pack Type']);
-                            });
-                        },
-                        'reviews',
-                        'currency'
-                    ]);
-            }])
-            ->where('is_featured', 1) // ✅ Only featured brands
-            ->whereHas('products', function ($query) {
-                $query->where('status', 'published')
-                    ->select('brand_id')
-                    ->groupBy('brand_id')
-                    ->havingRaw('COUNT(*) >= 10');
-            })
-            ->orderBy('created_at', 'desc')
-            ->take(5)
-            ->get();
+           // Preload brands with featured flag and 10+ published products
+        $brands = Brand::where('is_featured', 1)
+        ->whereHas('products', function ($query) {
+            $query->where('status', 'published')
+                ->select('brand_id')
+                ->groupBy('brand_id')
+                ->havingRaw('COUNT(*) >= 10');
+        })
+        ->with(['products' => function ($query) {
+            $query->where('status', 'published')
+                ->take(10) // limit at DB level
+                ->with([
+                    'productAttributes.attributeDetails:id,name',
+                    'reviews:id,product_id,star',
+                    'currency:id,symbol'
+                ]);
+        }])
+        ->orderBy('created_at', 'desc')
+        ->take(5)
+        ->get();
             
                 
         return response()->json([
