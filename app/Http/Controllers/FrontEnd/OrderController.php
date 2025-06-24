@@ -341,7 +341,7 @@ class OrderController extends BaseController
 	/**
 	 * @OA\Put(
 	 *     path="/api/frontend/orders/{id}",
-	 *     summary="Update an existing order (if not yet shipped)",
+	 *     summary="Update an existing order (if not yet confirmed)",
 	 *     tags={"FrontEnd-Orders"},
 	 *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(
@@ -604,7 +604,7 @@ class OrderController extends BaseController
 						'unit_price' => $orderProduct->unit_price,
 						'images' => $images,
 						'brand_name' => $orderProduct->product->brand->name ?? null,
-						
+
 					]);
 				}
 			}

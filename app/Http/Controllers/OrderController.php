@@ -471,7 +471,6 @@ class OrderController extends Controller
 		]);
 	}
 
-
 	/**
 	 * @OA\Put(
 	 *     path="/api/orders/{orderId}/products/{orderProductId}/status",
@@ -562,7 +561,6 @@ class OrderController extends Controller
 
 		$oldStatus = $orderProduct->status;
 		$orderProduct->status = $request->status;
-		$orderProduct->notes = $request->notes;
 		$orderProduct->save();
 
 		/* Get all product statuses from this order */
@@ -629,16 +627,6 @@ class OrderController extends Controller
 	 */
 	public function createShipment(Request $request, $id)
 	{
-		/* Validate input */
-		$request->validate([
-			'products' => 'required|array|min:1',
-			'products.*.order_product_id' => 'required|integer|exists:order_products,id',
-			'products.*.quantity' => 'required|integer|min:1',
-			'tracking_number' => 'nullable|string|max:255',
-			'carrier' => 'nullable|string|max:255',
-			'notes' => 'nullable|string|max:500',
-		]);
-
 		/* Fetch order with related products */
 		$order = Order::with('orderProducts')->find($id);
 
@@ -648,6 +636,24 @@ class OrderController extends Controller
 				'message' => 'Order not found.'
 			], 404);
 		}
+
+		/* Prevent status update before order is confirmed */
+		if ($order->status === 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Shipment cannot be created until the order is confirmed."
+			]);
+		}
+
+		/* Validate input */
+		$request->validate([
+			'products' => 'required|array|min:1',
+			'products.*.order_product_id' => 'required|integer|exists:order_products,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'tracking_number' => 'nullable|string|max:255',
+			'carrier' => 'nullable|string|max:255',
+			'notes' => 'nullable|string|max:500',
+		]);
 
 		DB::beginTransaction();
 
@@ -685,8 +691,6 @@ class OrderController extends Controller
 			}
 
 			/* Update order delivery status */
-			$allShipped = $order->orderProducts->every(fn($product) => $product->remaining_quantity <= 0);
-			$order->status = $allShipped ? 'Delivered' : 'Partially Delivered';
 			$order->save();
 
 			/* Add tracking entry */
