@@ -351,7 +351,6 @@ class BrandController extends Controller
             ->where('status', 'published') // Add this line
             ->groupBy('sku');
     
-            // Fetch only the latest 5 brands with at least 10 published products
             $brands = Brand::with(['products' => function ($query) {
                 $query->where('status', 'published')
                     ->with([
@@ -364,6 +363,7 @@ class BrandController extends Controller
                         'currency'
                     ]);
             }])
+            ->where('is_featured', 1) // ✅ Only featured brands
             ->whereHas('products', function ($query) {
                 $query->where('status', 'published')
                     ->select('brand_id')
