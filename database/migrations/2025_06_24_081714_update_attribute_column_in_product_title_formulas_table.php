@@ -17,8 +17,6 @@ class UpdateAttributeColumnInProductTitleFormulasTable extends Migration
             // Add the new integer column
             $table->unsignedBigInteger('attribute_id')->after('id');
 
-            // Optional: Add foreign key constraint
-            $table->foreign('attribute_id')->references('id')->on('attributes')->onDelete('cascade');
         });
     }
 
@@ -28,7 +26,7 @@ class UpdateAttributeColumnInProductTitleFormulasTable extends Migration
             // Reverse: drop new column and restore old one
             $table->dropForeign(['attribute_id']);
             $table->dropColumn('attribute_id');
-            $table->json('attribute_ids')->nullable(); // restore if needed
+            $table->text('attribute_ids')->nullable(); // restore if needed
         });
     }
 }
