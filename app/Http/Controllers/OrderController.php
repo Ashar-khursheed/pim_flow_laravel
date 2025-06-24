@@ -390,11 +390,6 @@ class OrderController extends Controller
 	 */
 	public function updateStatus(Request $request, $id)
 	{
-		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
-			'notes' => 'nullable|string'
-		]);
-
 		$order = Order::find($id);
 
 		if (!$order) {
@@ -404,11 +399,51 @@ class OrderController extends Controller
 			]);
 		}
 
+		$request->validate([
+			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
+			'notes' => 'nullable|string'
+		]);
+
+		/* Validate shipment and quantity for delivery-related statuses */
+		$deliveryStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+
+		if (in_array($request->status, $deliveryStatuses)) {
+
+			/* Check if order has any shipments */
+			if (!$order->shipments()->exists()) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark order as {$request->status} because no shipments are available."
+				]);
+			}
+
+			/* Calculate total quantity from shipmentProducts */
+			$totalShippedQuantity = 0;
+
+			foreach ($order->shipments as $shipment) {
+				foreach ($shipment->shipmentProducts as $shipmentProduct) {
+					$totalShippedQuantity += $shipmentProduct->quantity;
+				}
+			}
+
+			if ($totalShippedQuantity !== $order->total_products) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark order as {$request->status} because total shipped quantity ({$totalShippedQuantity}) does not match total ordered products ({$order->total_products})."
+				]);
+			}
+		}
+
 		$oldStatus = $order->status;
 
-		$order->update(['status' => $request->status]);
+		/* Update order and products */
+		$order->update([
+			'status' => $request->status,
+		]);
 
-		/* dd tracking entry */
+		$order->orderProducts()->update(['status' => $request->status]);
+
+		/* Add tracking */
 		OrderTracking::create([
 			'order_id' => $order->id,
 			'status' => $request->status,
@@ -421,6 +456,7 @@ class OrderController extends Controller
 			'data' => $order->fresh(['tracking'])
 		]);
 	}
+
 
 	/**
 	 * @OA\Put(
@@ -443,11 +479,6 @@ class OrderController extends Controller
 	 */
 	public function updateProductStatus(Request $request, $orderId, $orderProductId)
 	{
-		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
-			'notes' => 'nullable|string'
-		]);
-
 		$order = Order::find($orderId);
 
 		if (!$order) {
@@ -466,10 +497,66 @@ class OrderController extends Controller
 			]);
 		}
 
-		$oldStatus = $orderProduct->status;
-		$orderProduct->update(['status' => $request->status]);
+		/* Prevent status update before order is confirmed */
+		if ($order->status === 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Product status cannot be changed until the order is confirmed."
+			]);
+		}
 
-		/* dd tracking entry */
+		$request->validate([
+			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,'Pickups', 'Partially Pickups', 'Out for delivery', 'Partially Out for delivery', 'Delivered', 'Partially Delivered',Re-Attempt,Returned,Cancelled,Out of Stock',
+			'notes' => 'nullable|string'
+		]);
+
+		$restrictedStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+
+		if (in_array($request->status, $restrictedStatuses)) {
+			$shipmentProducts = $orderProduct->shipmentProducts;
+
+			if ($shipmentProducts->isEmpty()) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark product as '{$request->status}' because it has no shipment records."
+				]);
+			}
+
+			$totalShipped = 0;
+			foreach ($shipmentProducts as $shipmentProduct) {
+				$totalShipped += $shipmentProduct->quantity;
+			}
+
+			if ($totalShipped !== $orderProduct->quantity) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
+				]);
+			}
+		}
+
+		$oldStatus = $orderProduct->status;
+		$orderProduct->status = $request->status;
+		$orderProduct->notes = $request->notes;
+		$orderProduct->save();
+
+		/* Get all product statuses from this order */
+		$productStatuses = $order->orderProducts()->pluck('status')->toArray();
+
+		/* Check if all products have the same status */
+		$allSame = count(array_unique($productStatuses)) === 1;
+
+		if ($allSame) {
+			/* All products have the same status — update order to match */
+			$order->status = $productStatuses[0];
+		} elseif (in_array('Delivered', $productStatuses)) {
+			/* Some products delivered, but not all — mark as Partially Delivered */
+			$order->status = 'Partially Delivered';
+		}
+
+		$order->save();
+
+		/* add tracking entry */
 		OrderTracking::create([
 			'order_id' => $order->id,
 			'status' => "Product Status Updated",
