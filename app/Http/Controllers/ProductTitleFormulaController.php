@@ -86,11 +86,30 @@ class ProductTitleFormulaController extends Controller
 	 * )
 	 */
 
-	public function show($id)
-	{
-		$formula = ProductTitleFormula::findOrFail($id);
-		return response()->json($formula);
-	}
+	 public function show($id)
+	 {
+		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
+	 
+		 $attributeNames = collect(json_decode($formula->attribute_ids))
+			 ->map(function ($attrId) {
+				 return Attribute::find($attrId)?->name;
+			 })
+			 ->filter()
+			 ->values();
+	 
+		 $response = [
+			 'id' => $formula->id,
+			 'category' => $formula->category?->name,
+			 'created_by' => $formula->creator?->name,
+			 'locked' => $formula->locked,
+			 'attribute_names' => $attributeNames,
+			 'created_at' => $formula->created_at,
+			 'updated_at' => $formula->updated_at,
+		 ];
+	 
+		 return response()->json($response);
+	 }
+	 
 
 	/**
 	 * @OA\Post(
