@@ -211,25 +211,28 @@ class ProductController extends Controller
                             $decoded = json_decode($product->description, true);
                         
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = array_values(array_filter($decoded, function ($item) {
+                                $product->description = array_values(array_filter(array_map(function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
-                                        return false;
+                                        return null;
                                     }
                         
-                                    // Remove trailing <p>&nbsp;</p> or <p> </p> blocks
-                                    $item = preg_replace('/(<p>(&nbsp;|\s| )*<\/p>)+$/iu', '', $item);
+                                    // Remove all &nbsp; (HTML and UTF-8) from the string
+                                    $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
                         
-                                    // Decode &nbsp; and UTF-8 non-breaking spaces
-                                    $text = html_entity_decode(strip_tags($item));
-                                    $text = preg_replace('/\xc2\xa0/', ' ', $text);
-                                    $text = trim($text);
+                                    // Optionally clean up extra spaces
+                                    $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+                                    $item = trim($item);
                         
-                                    return $text !== '';
-                                }));
+                                    // Still keep <p> tags or not? Your call — if not, uncomment below:
+                                    // $item = strip_tags($item);
+                        
+                                    return $item !== '' ? $item : null;
+                                }, $decoded)));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
                         
                         
@@ -620,25 +623,28 @@ class ProductController extends Controller
                             $decoded = json_decode($product->description, true);
                         
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = array_values(array_filter($decoded, function ($item) {
+                                $product->description = array_values(array_filter(array_map(function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
-                                        return false;
+                                        return null;
                                     }
                         
-                                    // Remove trailing <p>&nbsp;</p> or <p> </p> blocks
-                                    $item = preg_replace('/(<p>(&nbsp;|\s| )*<\/p>)+$/iu', '', $item);
+                                    // Remove all &nbsp; (HTML and UTF-8) from the string
+                                    $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
                         
-                                    // Decode &nbsp; and UTF-8 non-breaking spaces
-                                    $text = html_entity_decode(strip_tags($item));
-                                    $text = preg_replace('/\xc2\xa0/', ' ', $text);
-                                    $text = trim($text);
+                                    // Optionally clean up extra spaces
+                                    $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+                                    $item = trim($item);
                         
-                                    return $text !== '';
-                                }));
+                                    // Still keep <p> tags or not? Your call — if not, uncomment below:
+                                    // $item = strip_tags($item);
+                        
+                                    return $item !== '' ? $item : null;
+                                }, $decoded)));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
                         
                         
