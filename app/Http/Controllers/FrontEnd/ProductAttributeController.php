@@ -96,113 +96,202 @@ class ProductAttributeController extends Controller
      * )
      */
 
-     public function getNutritionFactsByProduct($productId)
-     {
-         // Keyword-based sort order (lowercase)
-         $sortKeywords = [
-             'serving',
-             'energy',
-             'protein',
-             'total fat',
-             'trans fat',
-             'fat',
-             'saturated fat',
-             'total carbohydrate',
-             'carbohydrate',
-             'sugars',
-             'total sugars',
-             'added sugars',
-             'fiber',
-             'dietary fiber',
-             'sodium',
-             'calories',
-             'cholesterol',
-             'vitamin a',
-             'vitamin c',
-             'vitamin d',
-             'calcium',
-             'iron',
-             'potassium',
-             'magnesium',
-             'chloride',
-             'fluoride',
-             'nitrate',
-             'bicarbonate',
-             'carbonate',
-             'sulfate',
-             'ph',
-             'tds',
-             'salt',
-             'caffeination'
-         ];
+    //  public function getNutritionFactsByProduct($productId)
+    //  {
+    //      // Keyword-based sort order (lowercase)
+    //      $sortKeywords = [
+    //          'serving',
+    //          'energy',
+    //          'protein',
+    //          'total fat',
+    //          'trans fat',
+    //          'fat',
+    //          'saturated fat',
+    //          'total carbohydrate',
+    //          'carbohydrate',
+    //          'sugars',
+    //          'total sugars',
+    //          'added sugars',
+    //          'fiber',
+    //          'dietary fiber',
+    //          'sodium',
+    //          'calories',
+    //          'cholesterol',
+    //          'vitamin a',
+    //          'vitamin c',
+    //          'vitamin d',
+    //          'calcium',
+    //          'iron',
+    //          'potassium',
+    //          'magnesium',
+    //          'chloride',
+    //          'fluoride',
+    //          'nitrate',
+    //          'bicarbonate',
+    //          'carbonate',
+    //          'sulfate',
+    //          'ph',
+    //          'tds',
+    //          'salt',
+    //          'caffeination'
+    //      ];
      
-         // Fetch product attributes in the group
-         $productAttributes = ProductAttributes::with([
-             'attribute' => function ($query) {
-                 $query->whereHas('attributeGroup', function ($q) {
-                     $q->where('name', 'Nutrition Facts Per Serving Group');
-                 })->with('attributeGroup');
-             },
-             'measurementUnit'
-         ])
-         ->where('product_id', $productId)
-         ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+    //      // Fetch product attributes in the group
+    //      $productAttributes = ProductAttributes::with([
+    //          'attribute' => function ($query) {
+    //              $query->whereHas('attributeGroup', function ($q) {
+    //                  $q->where('name', 'Nutrition Facts Per Serving Group');
+    //              })->with('attributeGroup');
+    //          },
+    //          'measurementUnit'
+    //      ])
+    //      ->where('product_id', $productId)
+    //      ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
      
-         // Filter out null attributes
-         $nutritionFacts = $productAttributes->filter(function ($item) {
-             return $item->attribute !== null;
-         });
+    //      // Filter out null attributes
+    //      $nutritionFacts = $productAttributes->filter(function ($item) {
+    //          return $item->attribute !== null;
+    //      });
      
-         if ($nutritionFacts->isEmpty()) {
-             return response()->json([
-                 'message' => 'Nutrition Facts Per Serving Group not found for this product.'
-             ], 200);
-         }
+    //      if ($nutritionFacts->isEmpty()) {
+    //          return response()->json([
+    //              'message' => 'Nutrition Facts Per Serving Group not found for this product.'
+    //          ], 200);
+    //      }
      
-         // Sort dynamically based on partial keyword match
-         $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
-             $name = strtolower($item->attribute->name);
+    //      // Sort dynamically based on partial keyword match
+    //      $sortedFacts = $nutritionFacts->sortBy(function ($item) use ($sortKeywords) {
+    //          $name = strtolower($item->attribute->name);
      
-             foreach ($sortKeywords as $index => $keyword) {
-                 $keywordParts = explode(' ', strtolower($keyword));
+    //          foreach ($sortKeywords as $index => $keyword) {
+    //              $keywordParts = explode(' ', strtolower($keyword));
      
-                 foreach ($keywordParts as $part) {
-                     if (strpos($name, $part) !== false) {
-                         return $index;
-                     }
-                 }
-             }
+    //              foreach ($keywordParts as $part) {
+    //                  if (strpos($name, $part) !== false) {
+    //                      return $index;
+    //                  }
+    //              }
+    //          }
      
-             return count($sortKeywords) + 1; // Unknowns go to the end
-         })->values();
+    //          return count($sortKeywords) + 1; // Unknowns go to the end
+    //      })->values();
      
-         // Build flat response array
-         $response = [];
+    //      // Build flat response array
+    //      $response = [];
      
-         foreach ($sortedFacts as $item) {
-             $name = $item->attribute->name;
-             $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
+    //      foreach ($sortedFacts as $item) {
+    //          $name = $item->attribute->name;
+    //          $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
      
-             // Add dash for sub-values (e.g., "Saturated Fat" under "Fat")
-             $formattedName = preg_match('/^(saturated|trans|polyunsaturated|monounsaturated|sugar|fibre|fiber|added)/i', $name)
-                 ? "- $name"
-                 : $name;
+    //          // Add dash for sub-values (e.g., "Saturated Fat" under "Fat")
+    //          $formattedName = preg_match('/^(saturated|trans|polyunsaturated|monounsaturated|sugar|fibre|fiber|added)/i', $name)
+    //              ? "- $name"
+    //              : $name;
      
-             $response[] = "{$formattedName} {$value}";
-         }
+    //          $response[] = "{$formattedName} {$value}";
+    //      }
      
-         // Optionally bring "Serving Size" to the top if it exists
-         foreach ($response as $index => $line) {
-             if (stripos($line, 'Serving Size') === 0) {
-                 $servingLine = $line;
-                 unset($response[$index]);
-                 array_unshift($response, $servingLine);
-                 break;
-             }
-         }
+    //      // Optionally bring "Serving Size" to the top if it exists
+    //      foreach ($response as $index => $line) {
+    //          if (stripos($line, 'Serving Size') === 0) {
+    //              $servingLine = $line;
+    //              unset($response[$index]);
+    //              array_unshift($response, $servingLine);
+    //              break;
+    //          }
+    //      }
      
-         return response()->json(array_values($response));
-     }
+    //      return response()->json(array_values($response));
+    //  }
+    public function getNutritionFactsByProduct($productId)
+{
+    $sortKeywords = [
+        'serving size', 'energy', 'fat', 'saturated fat', 'trans fat', 'polyunsaturated fat', 'monounsaturated fat',
+        'cholesterol', 'carbohydrates', 'sugar', 'fibre', 'fiber', 'added sugar', 'protein', 'sodium', 'salt',
+        'caffeination', 'vitamin a', 'vitamin c', 'vitamin d', 'calcium', 'iron', 'potassium', 'magnesium', 'chloride',
+        'fluoride', 'nitrate', 'bicarbonate', 'carbonate', 'sulfate', 'ph', 'tds'
+    ];
+
+    // Define sub-attributes for grouping
+    $groups = [
+        'Fat' => ['Saturated Fat', 'Trans Fat', 'Polyunsaturated Fat', 'Monounsaturated Fat'],
+        'Carbohydrates' => ['Sugar', 'Fibre', 'Fiber', 'Added Sugar'],
+    ];
+
+    // Load attributes for the product
+    $productAttributes = ProductAttributes::with([
+        'attribute' => function ($query) {
+            $query->whereHas('attributeGroup', function ($q) {
+                $q->where('name', 'Nutrition Facts Per Serving Group');
+            })->with('attributeGroup');
+        },
+        'measurementUnit'
+    ])
+    ->where('product_id', $productId)
+    ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+
+    $nutritionFacts = $productAttributes->filter(function ($item) {
+        return $item->attribute !== null;
+    });
+
+    if ($nutritionFacts->isEmpty()) {
+        return response()->json([
+            'message' => 'Nutrition Facts Per Serving Group not found for this product.'
+        ], 200);
+    }
+
+    // Prepare final structured response
+    $response = [];
+    $subItems = [];
+
+    foreach ($nutritionFacts as $item) {
+        $name = trim($item->attribute->name);
+        $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
+
+        $isSub = false;
+
+        foreach ($groups as $parent => $children) {
+            foreach ($children as $child) {
+                if (strcasecmp($name, $child) === 0) {
+                    if (!isset($subItems[$parent])) {
+                        $subItems[$parent] = [];
+                    }
+                    $subItems[$parent][$child] = ['value' => $value];
+                    $isSub = true;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$isSub) {
+            $response[$name] = ['value' => $value];
+        }
+    }
+
+    // Merge sub-items into their parent groups
+    foreach ($subItems as $parent => $items) {
+        if (isset($response[$parent])) {
+            $response[$parent] = array_merge($response[$parent], $items);
+        } else {
+            // In case the parent wasn't found directly but sub-items exist
+            $response[$parent] = ['value' => ''] + $items;
+        }
+    }
+
+    // Sort the final array based on the keyword order
+    uksort($response, function ($a, $b) use ($sortKeywords) {
+        $aIndex = array_search(strtolower($a), $sortKeywords);
+        $bIndex = array_search(strtolower($b), $sortKeywords);
+
+        $aIndex = $aIndex === false ? 999 : $aIndex;
+        $bIndex = $bIndex === false ? 999 : $bIndex;
+
+        return $aIndex <=> $bIndex;
+    });
+
+    return response()->json($response);
+}
+
      
     // public function getNutritionFactsByProduct($productId)
     // {
