@@ -18411,6 +18411,254 @@
                 ]
             }
         },
+        "/api/payments": {
+            "get": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Get all payments with search, sort, and pagination",
+                "operationId": "5c4aa51b9b17fa5745731629378153d4",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of payments"
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Create a new payment",
+                "operationId": "d89caa9b25d4e7107a98c44987e0f0de",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "payment_mode",
+                                    "amount",
+                                    "status",
+                                    "payment_date"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 299.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "completed"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "First installment paid"
+                                    },
+                                    "payment_details": {
+                                        "type": "object",
+                                        "example": {
+                                            "bank": "XYZ Bank",
+                                            "ref": "12345XYZ"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created"
+                    }
+                }
+            }
+        },
+        "/api/payments/{id}": {
+            "get": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Get a single payment",
+                "operationId": "5fe6a8e6068719216090b0335f6ca172",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment details"
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Update a payment",
+                "operationId": "aab6c51e15b80bb82a8d375ac76a4dbd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "example": "PayPal"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 199.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "pending"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Awaiting confirmation"
+                                    },
+                                    "payment_details": {
+                                        "type": "object",
+                                        "example": {
+                                            "paypal_email": "user@example.com"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment updated"
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Payment History"
+                ],
+                "summary": "Delete a payment",
+                "operationId": "0a47314c2b2bf40eabb00e4dbc15e1f6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment deleted"
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                }
+            }
+        },
         "/api/pre-onboarding-vendors": {
             "get": {
                 "tags": [
@@ -27220,6 +27468,10 @@
         {
             "name": "Payments",
             "description": "Payments"
+        },
+        {
+            "name": "Payment History",
+            "description": "Payment History"
         },
         {
             "name": "Pre Onboarding Vendors",

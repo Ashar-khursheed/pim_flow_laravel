@@ -59,7 +59,7 @@ use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
-
+use App\Http\Controllers\PaymentManagementController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -323,6 +323,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
+
+	Route::apiResource('payments', PaymentManagementController::class);
 
 
 });
