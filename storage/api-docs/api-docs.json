@@ -13265,7 +13265,7 @@
         "/api/frontend/payments": {
             "get": {
                 "tags": [
-                    "Payment History"
+                    "Frontend-Payment History"
                 ],
                 "summary": "Get all payments with search, sort, and pagination",
                 "operationId": "64c0c2bd4b168d52664f3f846d0b907f",
@@ -13320,7 +13320,7 @@
             },
             "post": {
                 "tags": [
-                    "Payment History"
+                    "Frontend-Payment History"
                 ],
                 "summary": "Create a new payment",
                 "operationId": "1a60a79b3e72aaac752b2bbed036efc6",
@@ -13395,7 +13395,7 @@
         "/api/frontend/payments/{id}": {
             "get": {
                 "tags": [
-                    "Payment History"
+                    "Frontend-Payment History"
                 ],
                 "summary": "Get a single payment",
                 "operationId": "f9d29e6fe17b83ea28576573a7b02226",
@@ -13426,7 +13426,7 @@
             },
             "put": {
                 "tags": [
-                    "Payment History"
+                    "Frontend-Payment History"
                 ],
                 "summary": "Update a payment",
                 "operationId": "44a1a95790d12f285dcd70e553124378",
@@ -13505,7 +13505,7 @@
             },
             "delete": {
                 "tags": [
-                    "Payment History"
+                    "Frontend-Payment History"
                 ],
                 "summary": "Delete a payment",
                 "operationId": "686ab3b23b4d55f6e83e39a2f2d26ab4",
@@ -27423,8 +27423,8 @@
             "description": "FrontEnd-Orders"
         },
         {
-            "name": "Payment History",
-            "description": "Payment History"
+            "name": "Frontend-Payment History",
+            "description": "Frontend-Payment History"
         },
         {
             "name": "Frontend-Attribute Products",
