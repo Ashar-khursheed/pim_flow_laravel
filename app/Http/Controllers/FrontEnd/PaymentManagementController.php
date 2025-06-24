@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
@@ -10,9 +10,10 @@ class PaymentManagementController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/payments",
+     *     path="/api/frontend/payments",
      *     summary="Get all payments with search, sort, and pagination",
-     *     tags={"Payment History"},
+     *     tags={"Frontend-Payment History"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(name="search", in="query", description="Search term", @OA\Schema(type="string")),
      *     @OA\Parameter(name="sort_by", in="query", description="Column to sort by", @OA\Schema(type="string")),
      *     @OA\Parameter(name="sort_order", in="query", description="Sort order (asc or desc)", @OA\Schema(type="string", enum={"asc", "desc"})),
@@ -48,9 +49,10 @@ class PaymentManagementController extends Controller
 
     /**
      * @OA\Post(
-     *     path="/api/payments",
+     *     path="/api/frontend/payments",
      *     summary="Create a new payment",
-     *     tags={"Payment History"},
+     *     tags={"Frontend-Payment History"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -88,9 +90,10 @@ class PaymentManagementController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/payments/{id}",
+     *     path="/api/frontend/payments/{id}",
      *     summary="Get a single payment",
-     *     tags={"Payment History"},
+     *     tags={"Frontend-Payment History"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -110,9 +113,10 @@ class PaymentManagementController extends Controller
 
     /**
      * @OA\Put(
-     *     path="/api/payments/{id}",
+     *     path="/api/frontend/payments/{id}",
      *     summary="Update a payment",
-     *     tags={"Payment History"},
+     *     tags={"Frontend-Payment History"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -159,9 +163,10 @@ class PaymentManagementController extends Controller
 
     /**
      * @OA\Delete(
-     *     path="/api/payments/{id}",
+     *     path="/api/frontend/payments/{id}",
      *     summary="Delete a payment",
-     *     tags={"Payment History"},
+     *     tags={"Frontend-Payment History"},
+     *     security={{"bearerAuth": {}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

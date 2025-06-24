@@ -59,7 +59,6 @@ use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
-use App\Http\Controllers\PaymentManagementController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -90,6 +89,7 @@ use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderP
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
+use App\Http\Controllers\PaymentManagementController as F_PaymentManagementController;
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -324,7 +324,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
 
-	Route::apiResource('payments', PaymentManagementController::class);
 
 
 });
@@ -413,6 +412,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/save-for-later', [F_SaveForLaterController::class, 'saveForLater']);
 	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
 	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
+
+	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
+
 
 });
 
