@@ -196,17 +196,36 @@ class ProductController extends Controller
                         $product->benefits_features = json_decode($product->benefits_features, true);
 
 
+                        // if (is_string($product->description)) {
+                        //     $decoded = json_decode($product->description, true);
+                        
+                        //     // If it's a valid JSON array, use it directly
+                        //     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        //         $product->description = $decoded;
+                        //     } else {
+                        //         // If it's not a valid JSON array, wrap the raw string in an array
+                        //         $product->description = [$product->description];
+                        //     }
+                        // }
                         if (is_string($product->description)) {
                             $decoded = json_decode($product->description, true);
                         
                             // If it's a valid JSON array, use it directly
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = $decoded;
+                                // Clean the array: remove nulls and &nbsp;-only entries
+                                $product->description = array_values(array_filter($decoded, function ($item) {
+                                    // Remove if null, empty, or only contains &nbsp;/whitespace
+                                    $text = strip_tags($item); // Remove HTML tags
+                                    $text = str_replace("\xc2\xa0", ' ', $text); // Remove non-breaking space (UTF-8)
+                                    $text = str_replace('&nbsp;', ' ', $text); // Remove encoded &nbsp;
+                                    return trim($text) !== ''; // Keep only non-empty content
+                                }));
                             } else {
                                 // If it's not a valid JSON array, wrap the raw string in an array
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
 
                         if ($product->brand) {
@@ -594,12 +613,20 @@ class ProductController extends Controller
                         
                             // If it's a valid JSON array, use it directly
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = $decoded;
+                                // Clean the array: remove nulls and &nbsp;-only entries
+                                $product->description = array_values(array_filter($decoded, function ($item) {
+                                    // Remove if null, empty, or only contains &nbsp;/whitespace
+                                    $text = strip_tags($item); // Remove HTML tags
+                                    $text = str_replace("\xc2\xa0", ' ', $text); // Remove non-breaking space (UTF-8)
+                                    $text = str_replace('&nbsp;', ' ', $text); // Remove encoded &nbsp;
+                                    return trim($text) !== ''; // Keep only non-empty content
+                                }));
                             } else {
                                 // If it's not a valid JSON array, wrap the raw string in an array
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
                     
                         if ($product->brand) {
