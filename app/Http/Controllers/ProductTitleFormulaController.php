@@ -115,7 +115,7 @@ class ProductTitleFormulaController extends Controller
      */
 
     public function store(Request $request)
-     {
+    {
          $validated = $request->validate([
              'attribute_ids' => 'required|array',
              'attribute_ids.*' => 'integer|exists:attributes,id',
@@ -139,23 +139,28 @@ class ProductTitleFormulaController extends Controller
              'message' => 'Product title formulas created successfully.',
              'data' => $createdFormulas,
          ], 201);
-     }
-     
-
+    }
+    
     /**
      * @OA\Put(
      *     path="/api/product-title-formula/{id}",
      *     summary="Update an existing product title formula",
      *     tags={"Product Title Formula"},
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(name="id", in="path", required=true, description="Formula ID", @OA\Schema(type="integer")),
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         description="Formula ID",
+     *         @OA\Schema(type="integer")
+     *     ),
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
-     *             @OA\Property(property="category_id", type="integer"),
-     *             @OA\Property(property="locked", type="boolean"),
-     *             @OA\Property(property="created_by", type="integer")
+     *             @OA\Property(property="attribute_id", type="integer", example=2),
+     *             @OA\Property(property="category_id", type="integer", example=47),
+     *             @OA\Property(property="locked", type="boolean", example=true),
+     *             @OA\Property(property="created_by", type="integer", example=1)
      *         )
      *     ),
      *     @OA\Response(response=200, description="Updated successfully"),
@@ -163,24 +168,23 @@ class ProductTitleFormulaController extends Controller
      *     @OA\Response(response=422, description="Validation error")
      * )
      */
-
     public function update(Request $request, $id)
     {
         $formula = ProductTitleFormula::findOrFail($id);
 
-        $data = $request->validate([
-            'attribute_ids' => 'sometimes|array',
+        $validated = $request->validate([
+            'attribute_id' => 'sometimes|integer|exists:attributes,id',
             'category_id' => 'nullable|exists:categories,id',
             'locked' => 'boolean',
             'created_by' => 'nullable|integer',
         ]);
 
-        if (isset($data['attribute_ids'])) {
-            $data['attribute_ids'] = json_encode($data['attribute_ids']);
-        }
+        $formula->update($validated);
 
-        $formula->update($data);
-        return response()->json($formula);
+        return response()->json([
+            'message' => 'Product title formula updated successfully.',
+            'data' => $formula,
+        ]);
     }
 
     /**
