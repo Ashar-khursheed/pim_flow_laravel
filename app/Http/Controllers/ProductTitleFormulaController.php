@@ -73,38 +73,70 @@ class ProductTitleFormulaController extends Controller
     /**
      * @OA\Post(
      *     path="/api/product-title-formula",
-     *     summary="Create a new product title formula",
+     *     summary="Create product title formulas (one per attribute ID)",
      *     tags={"Product Title Formula"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
      *             required={"attribute_ids"},
-     *             @OA\Property(property="attribute_ids", type="array", @OA\Items(type="integer")),
-     *             @OA\Property(property="category_id", type="integer"),
-     *             @OA\Property(property="locked", type="boolean"),
-     *             @OA\Property(property="created_by", type="integer")
+     *             @OA\Property(
+     *                 property="attribute_ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=1)
+     *             ),
+     *             @OA\Property(property="category_id", type="integer", example=5),
+     *             @OA\Property(property="locked", type="boolean", example=true),
+     *             @OA\Property(property="created_by", type="integer", example=2)
      *         )
      *     ),
-     *     @OA\Response(response=201, description="Created successfully"),
-     *     @OA\Response(response=422, description="Validation error")
+     *     @OA\Response(
+     *         response=201,
+     *         description="Product title formulas created successfully.",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product title formulas created successfully."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="array",
+     *                 @OA\Items(ref="#/components/schemas/ProductTitleFormula")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error"
+     *     )
      * )
      */
 
-    public function store(Request $request)
-    {
-        $data = $request->validate([
-            'attribute_ids' => 'required|array',
-            'category_id' => 'nullable|exists:categories,id',
-            'locked' => 'boolean',
-            'created_by' => 'nullable|integer',
-        ]);
 
-        $data['attribute_ids'] = json_encode($data['attribute_ids']);
-
-        $formula = ProductTitleFormula::create($data);
-        return response()->json($formula, 201);
-    }
+     public function store(Request $request)
+     {
+         $validated = $request->validate([
+             'attribute_ids' => 'required|array',
+             'attribute_ids.*' => 'integer|exists:attributes,id', // optional but good for validation
+             'category_id' => 'nullable|exists:categories,id',
+             'locked' => 'boolean',
+             'created_by' => 'nullable|integer',
+         ]);
+     
+         $createdFormulas = [];
+     
+         foreach ($validated['attribute_ids'] as $attributeId) {
+             $createdFormulas[] = ProductTitleFormula::create([
+                 'attribute_ids' => json_encode([$attributeId]), // store as single-item array or just $attributeId
+                 'category_id' => $validated['category_id'] ?? null,
+                 'locked' => $validated['locked'] ?? false,
+                 'created_by' => $validated['created_by'] ?? null,
+             ]);
+         }
+     
+         return response()->json([
+             'message' => 'Product title formulas created successfully.',
+             'data' => $createdFormulas,
+         ], 201);
+     }
+     
 
     /**
      * @OA\Put(
