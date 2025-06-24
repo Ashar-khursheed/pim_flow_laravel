@@ -186,7 +186,7 @@ class PaymentManagementController extends Controller
             // Validate the incoming request
             $validated = $request->validate([
                 'order_id' => 'required|integer|exists:orders,id', // Ensure order exists
-                'transaction_id' => 'nullable|string|max:255|unique:payment_managements,transaction_id', // Ensure unique transaction
+                'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id', // Ensure unique transaction
                 'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash,Stripe,Razorpay',
                 'amount' => 'required|numeric|min:0.01|max:999999.99',
                 'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
