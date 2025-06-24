@@ -22,34 +22,56 @@ class ProductTitleFormulaController extends Controller
 	 * )
 	 */
 
-	public function index(Request $request)
-	{
-		$query = ProductTitleFormula::query();
-
-		// Search by category_id or created_by or any other fields
-		if ($search = $request->input('search')) {
-			$query->where(function ($q) use ($search) {
-				$q->where('category_id', 'like', "%{$search}%")
-				->orWhere('created_by', 'like', "%{$search}%")
-				->orWhere('attribute_ids', 'like', "%{$search}%");
-			});
-		}
-
-		// Sorting
-		$sortBy = $request->input('sort_by', 'id'); // default sort field
-		$sortOrder = $request->input('sort_order', 'desc'); // default sort order
-
-		if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) &&
-			in_array($sortOrder, ['asc', 'desc'])) {
-			$query->orderBy($sortBy, $sortOrder);
-	}
-
-		// Pagination
-	$perPage = $request->input('per_page', 10);
-	$data = $query->paginate($perPage);
-
-	return response()->json($data);
-}
+	 public function index(Request $request)
+	 {
+		 $query = ProductTitleFormula::with(['category', 'creator']); // eager load relations
+	 
+		 // Search
+		 if ($search = $request->input('search')) {
+			 $query->where(function ($q) use ($search) {
+				 $q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+				   ->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+				   ->orWhere('attribute_ids', 'like', "%{$search}%");
+			 });
+		 }
+	 
+		 // Sorting
+		 $sortBy = $request->input('sort_by', 'id');
+		 $sortOrder = $request->input('sort_order', 'desc');
+		 if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
+			 $query->orderBy($sortBy, $sortOrder);
+		 }
+	 
+		 // Pagination
+		 $perPage = $request->input('per_page', 10);
+		 $data = $query->paginate($perPage);
+	 
+		 // Transform data to show names
+		 $transformed = $data->getCollection()->map(function ($item) {
+			 return [
+				 'id' => $item->id,
+				 'category' => $item->category?->name,
+				 'created_by' => $item->creator?->name,
+				 'locked' => $item->locked,
+				 'attribute_names' => collect(json_decode($item->attribute_ids))
+					 ->map(function ($id) {
+						 return \App\Models\Attribute::find($id)?->name;
+					 })->filter()->values(),
+				 'created_at' => $item->created_at,
+				 'updated_at' => $item->updated_at,
+			 ];
+		 });
+	 
+		 // Return paginated response with transformed data
+		 return response()->json([
+			 'data' => $transformed,
+			 'current_page' => $data->currentPage(),
+			 'last_page' => $data->lastPage(),
+			 'per_page' => $data->perPage(),
+			 'total' => $data->total(),
+		 ]);
+	 }
+	 
 
 
 	/**
@@ -139,6 +161,7 @@ class ProductTitleFormulaController extends Controller
 			'data' => $createdFormulas,
 		], 201);
 	}
+
 	/**
 	 * @OA\Put(
 	 *     path="/api/product-title-formula/{id}",
