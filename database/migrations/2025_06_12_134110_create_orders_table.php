@@ -52,7 +52,7 @@ return new class extends Migration
 			$table->decimal('unit_price', 10, 2);
 			$table->decimal('total_amount', 10, 2);
 			$table->enum('status', [
-				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Re-Attempt', 'Returned', 'Cancelled', 'Out of Stock'
+				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Partially Pickups', 'Out for delivery', 'Partially Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled', 'Out of Stock'
 			])->default('Pending');
 			$table->timestamps();
 		});
