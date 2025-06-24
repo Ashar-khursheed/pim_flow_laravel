@@ -24,7 +24,7 @@ class ProductTitleFormulaController extends Controller
 
 	 public function index(Request $request)
 	 {
-		 $query = ProductTitleFormula::with(['category', 'creator']); // eager load relations
+		 $query = ProductTitleFormula::with(['category', 'creator' , 'attributes']); // eager load relations
 	 
 		 // Search
 		 if ($search = $request->input('search')) {
