@@ -204,93 +204,94 @@ class ProductAttributeController extends Controller
     //      return response()->json(array_values($response));
     //  }
     public function getNutritionFactsByProduct($productId)
-{
-    $sortKeywords = [
-        'serving size', 'energy', 'fat', 'saturated fat', 'trans fat', 'polyunsaturated fat', 'monounsaturated fat',
-        'cholesterol', 'carbohydrates', 'sugar', 'fibre', 'fiber', 'added sugar', 'protein', 'sodium', 'salt',
-        'caffeination', 'vitamin a', 'vitamin c', 'vitamin d', 'calcium', 'iron', 'potassium', 'magnesium', 'chloride',
-        'fluoride', 'nitrate', 'bicarbonate', 'carbonate', 'sulfate', 'ph', 'tds'
-    ];
-
-    // Define sub-attributes for grouping
-    $groups = [
-        'Fat' => ['Saturated Fat', 'Trans Fat', 'Polyunsaturated Fat', 'Monounsaturated Fat'],
-        'Carbohydrates' => ['Sugar', 'Fibre', 'Fiber', 'Added Sugar'],
-    ];
-
-    // Load attributes for the product
-    $productAttributes = ProductAttributes::with([
-        'attribute' => function ($query) {
-            $query->whereHas('attributeGroup', function ($q) {
-                $q->where('name', 'Nutrition Facts Per Serving Group');
-            })->with('attributeGroup');
-        },
-        'measurementUnit'
-    ])
-    ->where('product_id', $productId)
-    ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
-
-    $nutritionFacts = $productAttributes->filter(function ($item) {
-        return $item->attribute !== null;
-    });
-
-    if ($nutritionFacts->isEmpty()) {
-        return response()->json([
-            'message' => 'Nutrition Facts Per Serving Group not found for this product.'
-        ], 200);
-    }
-
-    // Prepare final structured response
-    $response = [];
-    $subItems = [];
-
-    foreach ($nutritionFacts as $item) {
-        $name = trim($item->attribute->name);
-        $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
-
-        $isSub = false;
-
-        foreach ($groups as $parent => $children) {
-            foreach ($children as $child) {
-                if (strcasecmp($name, $child) === 0) {
-                    if (!isset($subItems[$parent])) {
-                        $subItems[$parent] = [];
+    {
+        $sortKeywords = [
+            'serving size', 'energy', 'fat', 'saturated fat', 'trans fat', 'polyunsaturated fat', 'monounsaturated fat',
+            'cholesterol', 'carbohydrates', 'sugar', 'fibre', 'fiber', 'added sugar', 'protein', 'sodium', 'salt',
+            'caffeination', 'vitamin a', 'vitamin c', 'vitamin d', 'calcium', 'iron', 'potassium', 'magnesium', 'chloride',
+            'fluoride', 'nitrate', 'bicarbonate', 'carbonate', 'sulfate', 'ph', 'tds'
+        ];
+    
+        $groups = [
+            'Fat' => ['Saturated Fat', 'Trans Fat', 'Polyunsaturated Fat', 'Monounsaturated Fat'],
+            'Carbohydrates' => ['Sugar', 'Fibre', 'Fiber', 'Added Sugar'],
+        ];
+    
+        $productAttributes = ProductAttributes::with([
+            'attribute' => function ($query) {
+                $query->whereHas('attributeGroup', function ($q) {
+                    $q->where('name', 'Nutrition Facts Per Serving Group');
+                })->with('attributeGroup');
+            },
+            'measurementUnit'
+        ])
+        ->where('product_id', $productId)
+        ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
+    
+        $nutritionFacts = $productAttributes->filter(function ($item) {
+            return $item->attribute !== null;
+        });
+    
+        if ($nutritionFacts->isEmpty()) {
+            return response()->json([
+                'message' => 'Nutrition Facts Per Serving Group not found for this product.'
+            ], 200);
+        }
+    
+        $items = [];
+        $grouped = [];
+    
+        foreach ($nutritionFacts as $item) {
+            $name = trim($item->attribute->name);
+            $value = trim($item->attribute_value . ' ' . ($item->measurementUnit->symbol ?? ''));
+    
+            $isChild = false;
+            foreach ($groups as $parent => $children) {
+                foreach ($children as $child) {
+                    if (strcasecmp($name, $child) === 0) {
+                        $grouped[$parent]['children'][] = [
+                            'name' => $child,
+                            'value' => $value
+                        ];
+                        $isChild = true;
+                        break 2;
                     }
-                    $subItems[$parent][$child] = ['value' => $value];
-                    $isSub = true;
-                    break 2;
                 }
             }
+    
+            if (!$isChild) {
+                $grouped[$name]['value'] = $value;
+            }
         }
-
-        if (!$isSub) {
-            $response[$name] = ['value' => $value];
+    
+        // Transform grouped data into array format
+        foreach ($grouped as $key => $entry) {
+            $data = [
+                'name' => $key,
+                'value' => $entry['value'] ?? ''
+            ];
+    
+            if (isset($entry['children'])) {
+                $data['children'] = $entry['children'];
+            }
+    
+            $items[] = $data;
         }
+    
+        // Sort based on sortKeywords order
+        usort($items, function ($a, $b) use ($sortKeywords) {
+            $aIndex = array_search(strtolower($a['name']), $sortKeywords);
+            $bIndex = array_search(strtolower($b['name']), $sortKeywords);
+    
+            $aIndex = $aIndex === false ? 999 : $aIndex;
+            $bIndex = $bIndex === false ? 999 : $bIndex;
+    
+            return $aIndex <=> $bIndex;
+        });
+    
+        return response()->json($items);
     }
-
-    // Merge sub-items into their parent groups
-    foreach ($subItems as $parent => $items) {
-        if (isset($response[$parent])) {
-            $response[$parent] = array_merge($response[$parent], $items);
-        } else {
-            // In case the parent wasn't found directly but sub-items exist
-            $response[$parent] = ['value' => ''] + $items;
-        }
-    }
-
-    // Sort the final array based on the keyword order
-    uksort($response, function ($a, $b) use ($sortKeywords) {
-        $aIndex = array_search(strtolower($a), $sortKeywords);
-        $bIndex = array_search(strtolower($b), $sortKeywords);
-
-        $aIndex = $aIndex === false ? 999 : $aIndex;
-        $bIndex = $bIndex === false ? 999 : $bIndex;
-
-        return $aIndex <=> $bIndex;
-    });
-
-    return response()->json($response);
-}
+    
 
      
     // public function getNutritionFactsByProduct($productId)
