@@ -120,29 +120,31 @@ class BrandController extends Controller
     {
         $wishlistIds = $this->getWishlistProductIds();
 
-        // Fetch only the latest 5 brands with at least 10 products
-        $brands = Brand::with(['products' => function ($query) {
-            $query->where('status', 'published')
-                  ->with(['productAttributes' => function ($query) {
-                      $query->whereHas('attributeDetails', function ($q) {
-                          $q->whereIn('name', ['Units per Case', 'Pack Type']);
-                      });
-                  }, 'reviews', 'currency','productAttributes' => function ($query) {
-                $query->whereHas('attributeDetails', function ($q) {
-                    $q->whereIn('name', ['Units per Case', 'Pack Type']);
-                });
-            },]);
-        }])
-        ->whereHas('products', function ($query) {
-            $query->where('status', 'published')
-                  ->select('brand_id')
-                  ->groupBy('brand_id')
-                  ->havingRaw('COUNT(*) >= 10');
-        })
-        ->orderBy('created_at', 'desc')
-        ->take(5)
-        ->get();
-        
+                // Fetch only the latest 5 featured brands with at least 10 published products
+            $brands = Brand::with(['products' => function ($query) {
+                $query->where('status', 'published')
+                    ->with([
+                        'productAttributes' => function ($query) {
+                            $query->whereHas('attributeDetails', function ($q) {
+                                $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                            });
+                        },
+                        'reviews',
+                        'currency'
+                    ]);
+            }])
+            ->where('is_featured', 1) // ✅ Only featured brands
+            ->whereHas('products', function ($query) {
+                $query->where('status', 'published')
+                    ->select('brand_id')
+                    ->groupBy('brand_id')
+                    ->havingRaw('COUNT(*) >= 10');
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+
+                    
 
         return response()->json([
             'success' => true,
@@ -349,29 +351,29 @@ class BrandController extends Controller
             ->where('status', 'published') // Add this line
             ->groupBy('sku');
     
-        // Fetch only the latest 5 brands with at least 10 published products
-                $brands = Brand::with(['products' => function ($query) {
-                    $query->where('status', 'published')
-                        ->with(['productAttributes' => function ($query) {
+            // Fetch only the latest 5 brands with at least 10 published products
+            $brands = Brand::with(['products' => function ($query) {
+                $query->where('status', 'published')
+                    ->with([
+                        'productAttributes' => function ($query) {
                             $query->whereHas('attributeDetails', function ($q) {
                                 $q->whereIn('name', ['Units per Case', 'Pack Type']);
                             });
-                        }, 'reviews', 'currency',   'productAttributes' => function ($query) {
-                            $query->whereHas('attributeDetails', function ($q) {
-                                $q->whereIn('name', ['Units per Case', 'Pack Type']);
-                            });
-                        },]);
-                }])
-                ->whereHas('products', function ($query) {
-                    $query->where('status', 'published')
-                        ->select('brand_id')
-                        ->groupBy('brand_id')
-                        ->havingRaw('COUNT(*) >= 10');
-                })
-                ->orderBy('created_at', 'desc')
-                ->take(5)
-                ->get();
-                
+                        },
+                        'reviews',
+                        'currency'
+                    ]);
+            }])
+            ->whereHas('products', function ($query) {
+                $query->where('status', 'published')
+                    ->select('brand_id')
+                    ->groupBy('brand_id')
+                    ->havingRaw('COUNT(*) >= 10');
+            })
+            ->orderBy('created_at', 'desc')
+            ->take(5)
+            ->get();
+            
                 
         return response()->json([
             'success' => true,
