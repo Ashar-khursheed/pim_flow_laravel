@@ -61,11 +61,11 @@ class ReturnOrderProductController extends BaseController
 		$request->validate([
 			'quantity' => 'required|integer|min:1|max:' . $orderProduct->shipped_quantity,
 			'reason' => 'required|string',
-			'product_images' => 'nullable|array',
-			'product_videos' => 'nullable|array',
-			'product_images.*' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:2048',
-			'product_videos.*' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
 			'description' => 'nullable|string',
+			'product_images' => 'nullable|array',
+			'product_images.*' => ['sometimes', 'file', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+			'product_videos' => 'nullable|array',
+			'product_videos.*' => ['sometimes', 'file', 'mimes:mp4,mov,avi,webm', 'max:10240'],
 		]);
 
 		/* Upload media files and convert to array of URLs */
