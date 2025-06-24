@@ -31,8 +31,8 @@ class ReturnOrderProductController extends BaseController
 	 *                 @OA\Property(property="quantity", type="integer", example=1),
 	 *                 @OA\Property(property="reason", type="string", example="Defective product"),
 	 *                 @OA\Property(property="description", type="string", example="Scratched screen"),
-	 *                 @OA\Property(property="product_images[]", type="array", @OA\Items(type="string", format="binary")),
-	 *                 @OA\Property(property="product_videos[]", type="array", @OA\Items(type="string", format="binary"))
+	 *                 @OA\Property(property="product_images", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="product_videos", type="array", @OA\Items(type="string", format="binary"))
 	 *             )
 	 *         )
 	 *     ),

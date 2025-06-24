@@ -679,6 +679,7 @@ class OrderController extends Controller
 				]);
 
 				/* Update remaining quantity */
+				$orderProduct->shipped_quantity += $productData['quantity'];
 				$orderProduct->remaining_quantity -= $productData['quantity'];
 				$orderProduct->save();
 			}
