@@ -8,14 +8,14 @@ class ProductTitleFormula extends Model
     protected $table = 'product_title_formula';
 
     protected $fillable = [
-        'attribute_ids',
+        'attribute_id',
         'category_id',
         'locked',
         'created_by',
     ];
 
     protected $casts = [
-        'attribute_ids' => 'array',
+        'attribute_id' => 'array',
         'locked' => 'boolean',
     ];
 
