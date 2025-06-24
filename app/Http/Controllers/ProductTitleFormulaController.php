@@ -24,7 +24,7 @@ class ProductTitleFormulaController extends Controller
 
 	 public function index(Request $request)
 	 {
-		 $query = ProductTitleFormula::with(['category', 'creator' , 'attributes']); // eager load relations
+		 $query = ProductTitleFormula::with(['category', 'creator']); // eager load relations
 	 
 		 // Search
 		 if ($search = $request->input('search')) {
@@ -88,7 +88,7 @@ class ProductTitleFormulaController extends Controller
 
 	 public function show($id)
 	 {
-		 $formula = ProductTitleFormula::with(['category', 'creator' ,'attributes'])->findOrFail($id);
+		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
 	 
 		 $attributeNames = collect(json_decode($formula->attribute_ids))
 			 ->map(function ($attrId) {
