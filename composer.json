@@ -13,7 +13,6 @@
         "laravel/framework": "^12.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "league/csv": "^9.23",
         "league/flysystem-aws-s3-v3": "^3.29",
         "php-units-of-measure/php-units-of-measure": "^2.2",
         "phpoffice/phpspreadsheet": "^4.1",
