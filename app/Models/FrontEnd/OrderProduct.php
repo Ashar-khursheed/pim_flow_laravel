@@ -37,6 +37,11 @@ class OrderProduct extends Model
 		return $this->belongsTo(Product::class);
 	}
 
+	public function shipmentProducts()
+	{
+		return $this->hasMany(ShipmentProduct::class);
+	}
+
 	/* Accessor: Fully Shipped */
 	public function getIsFullyShippedAttribute(): bool
 	{
