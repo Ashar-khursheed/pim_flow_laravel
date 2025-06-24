@@ -89,7 +89,7 @@ use App\Http\Controllers\FrontEnd\ReturnOrderProductController as F_ReturnOrderP
 use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterController;
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
-use App\Http\Controllers\PaymentManagementController as F_PaymentManagementController;
+use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
