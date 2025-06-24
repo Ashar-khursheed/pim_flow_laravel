@@ -70,7 +70,7 @@ class ProductTitleFormulaController extends Controller
         return response()->json($formula);
     }
 
-    /**
+	/**
      * @OA\Post(
      *     path="/api/product-title-formula",
      *     summary="Create product title formulas (one per attribute ID)",
@@ -113,7 +113,6 @@ class ProductTitleFormulaController extends Controller
      *     )
      * )
      */
-
     public function store(Request $request)
     {
          $validated = $request->validate([
@@ -123,9 +122,9 @@ class ProductTitleFormulaController extends Controller
              'locked' => 'boolean',
              'created_by' => 'nullable|integer',
          ]);
-     
+
          $createdFormulas = [];
-     
+
          foreach ($validated['attribute_ids'] as $attributeId) {
              $createdFormulas[] = ProductTitleFormula::create([
                  'attribute_id' => $attributeId,
@@ -134,13 +133,12 @@ class ProductTitleFormulaController extends Controller
                  'created_by' => $validated['created_by'] ?? null,
              ]);
          }
-     
+
          return response()->json([
              'message' => 'Product title formulas created successfully.',
              'data' => $createdFormulas,
          ], 201);
     }
-    
     /**
      * @OA\Put(
      *     path="/api/product-title-formula/{id}",
