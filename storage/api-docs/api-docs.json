@@ -21872,20 +21872,21 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "attribute_ids": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer"
-                                        }
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 2
                                     },
                                     "category_id": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 47
                                     },
                                     "locked": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "created_by": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
