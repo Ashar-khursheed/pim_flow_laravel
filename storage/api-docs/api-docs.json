@@ -13096,7 +13096,7 @@
                 "tags": [
                     "FrontEnd-Orders"
                 ],
-                "summary": "Update an existing order (if not yet shipped)",
+                "summary": "Update an existing order (if not yet confirmed)",
                 "operationId": "b88757624ec0e7800c63b3da133e8c62",
                 "parameters": [
                     {

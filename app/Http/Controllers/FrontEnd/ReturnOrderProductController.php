@@ -31,8 +31,8 @@ class ReturnOrderProductController extends BaseController
 	 *                 @OA\Property(property="quantity", type="integer", example=1),
 	 *                 @OA\Property(property="reason", type="string", example="Defective product"),
 	 *                 @OA\Property(property="description", type="string", example="Scratched screen"),
-	 *                 @OA\Property(property="product_images", type="array", @OA\Items(type="string", format="binary")),
-	 *                 @OA\Property(property="product_videos", type="array", @OA\Items(type="string", format="binary"))
+	 *                 @OA\Property(property="product_images[]", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="product_videos[]", type="array", @OA\Items(type="string", format="binary"))
 	 *             )
 	 *         )
 	 *     ),
@@ -61,13 +61,12 @@ class ReturnOrderProductController extends BaseController
 		$request->validate([
 			'quantity' => 'required|integer|min:1|max:' . $orderProduct->shipped_quantity,
 			'reason' => 'required|string',
-			'description' => 'nullable|string',
 			'product_images' => 'nullable|array',
-			'product_images.*' => ['sometimes', 'file', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
 			'product_videos' => 'nullable|array',
-			'product_videos.*' => ['sometimes', 'file', 'mimes:mp4,mov,avi,webm', 'max:10240'],
+			'product_images.*' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:2048',
+			'product_videos.*' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
+			'description' => 'nullable|string',
 		]);
-
 		/* Upload media files and convert to array of URLs */
 		$productImages = [];
 
@@ -82,7 +81,7 @@ class ReturnOrderProductController extends BaseController
 				$tempRequest = new \Illuminate\Http\Request();
 				$tempRequest->files->set('product_image_single', $imageFile);
 
-				$uploadedUrl = uploadImageToWebpS3FromFile($tempRequest, 'product_image_single', env('STORAGE_ENV') . '/returns/images');
+				$uploadedUrl = uploadImageToWebpS3FromFile($tempRequest, 'product_image_single', env('STORAGE_ENV') . '/product-returns/images');
 
 				if ($uploadedUrl) {
 					$productImages[] = $uploadedUrl;
@@ -97,15 +96,14 @@ class ReturnOrderProductController extends BaseController
 				$productVideos[] = uploadFileToS3($video, env('STORAGE_ENV') . '/returns/videos');
 			}
 		}
-
 		$return = ReturnOrderProduct::create([
 			'refund_number' => 'R-' . strtoupper(Str::random(10)),
 			'order_product_id' => $orderProduct->id,
 			'quantity' => $request->quantity,
 			'reason' => $request->reason,
 			'description' => $request->description,
-			'product_images' => $productImages,
-			'product_videos' => $productVideos,
+			'product_images' => json_encode($productImages),
+			'product_videos' => json_encode($productVideos),
 			'status' => 'requested',
 		]);
 
