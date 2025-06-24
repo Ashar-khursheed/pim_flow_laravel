@@ -18019,7 +18019,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Order details retrieved successfully"
+                        "description": "Order details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -18070,7 +18073,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Order status updated successfully"
+                        "description": "Order status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -18130,7 +18136,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Product status updated successfully"
+                        "description": "Product status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -18202,7 +18211,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Shipment created successfully"
+                        "description": "Shipment created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [

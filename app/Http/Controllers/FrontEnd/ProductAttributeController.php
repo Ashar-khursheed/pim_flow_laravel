@@ -388,30 +388,37 @@ class ProductAttributeController extends Controller
     // }
     public function getAttributesByProduct($productId)
     {
-        // $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
-        //     $query->whereHas('attributeGroup', function ($q) {
-        //         $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
-        //     });
-        // }])
-        // ->where('product_id', $productId)
-        // ->get(['attribute_value', 'attribute_id']);
-    
+        // Fetch product attributes with their attribute and measurement unit
         $productAttributes = ProductAttributes::with([
             'attribute' => function ($query) {
                 $query->whereHas('attributeGroup', function ($q) {
-                    $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+                    $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
                 });
             },
             'measurementUnit'
         ])
         ->where('product_id', $productId)
         ->get(['attribute_value', 'attribute_id', 'measurement_unit_id']);
-    
-        // Filter out null attributes
+
+        // Filter out attributes where attribute relation is null
         $filteredAttributes = $productAttributes->filter(function ($item) {
             return $item->attribute !== null;
         })->values();
-    
+
+        // Clone before hiding for use in Inside Carton logic
+        $allAttributes = clone $filteredAttributes;
+
+        // Now hide attributes by name from the output
+        $filteredAttributes = $filteredAttributes->reject(function ($item) {
+            return in_array($item->attribute->name, [
+                'Unit of Measurement',
+                'Unit Qty',
+                'Units per Case',
+                'Pack Type',
+                'Ingredients'
+            ]);
+        })->values();
+
         // Define fixed order
         $leftOrder = [
             'Sku / Item Code',
@@ -424,41 +431,33 @@ class ProductAttributeController extends Controller
             'Depth',
             'Height'
         ];
-    
+
         $rightOrder = [
+            'Inside Carton',
             'Type',
-            'Pack Type',
             'Selling Unit',
             'Warranty',
             'Certification',
             'Features'
         ];
-    
+
         $left = [];
         $right = [];
         $usedNames = [];
-    
-        // Helper: format item
-        // $formatAttr = function ($item) {
-        //     return [
-        //         'attribute_name' => $item->attribute->name,
-        //         'attribute_value' => $item->attribute_value,
-        //     ];
-        // };
-    
+
+        // Helper to format attribute
         $formatAttr = function ($item) {
             $value = $item->attribute_value;
             if ($item->measurementUnit && $item->measurement_unit_id) {
                 $value .= ' ' . $item->measurementUnit->symbol;
             }
-        
+
             return [
                 'attribute_name' => $item->attribute->name,
                 'attribute_value' => $value,
             ];
         };
-        
-    
+
         // Add left ordered attributes
         foreach ($leftOrder as $name) {
             $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -467,7 +466,7 @@ class ProductAttributeController extends Controller
                 $usedNames[] = $name;
             }
         }
-    
+
         // Add right ordered attributes
         foreach ($rightOrder as $name) {
             $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
@@ -476,16 +475,16 @@ class ProductAttributeController extends Controller
                 $usedNames[] = $name;
             }
         }
-    
+
         // Get remaining attributes
         $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
             return !in_array($item->attribute->name, $usedNames);
         })->map($formatAttr)->values();
-    
-        // Balance total count between left and right
+
+        // Balance left and right
         $totalLeft = count($left);
         $totalRight = count($right);
-    
+
         foreach ($remaining as $item) {
             if ($totalLeft <= $totalRight) {
                 $left[] = $item;
@@ -495,12 +494,209 @@ class ProductAttributeController extends Controller
                 $totalRight++;
             }
         }
-    
+
+        // // Inside Carton calculation using the original (not filtered) attributes
+        // $unitsPerCase = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+        // $unitSelling = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
+        // $packType = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
+        // $unitQty = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+        // $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
+
+        // if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
+        //     $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
+        
+        //     // Insert at second position (index 1)
+        //     array_splice($right, 1, 0, [[
+        //         'attribute_name' => 'Inside Carton',
+        //         'attribute_value' => $insideCartonValue,
+        //     ]]);
+        // }
+        $sellingUnit     = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Selling Unit');
+        $unitsPerCase    = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+        $packType        = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
+        $unitQty         = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+        $unitMeasurement = $allAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
+        
+        $rawSelling = $sellingUnit?->attribute_value;
+        
+        $hasAllValues =
+            $sellingUnit && !empty($rawSelling) &&
+            $unitsPerCase && !empty($unitsPerCase->attribute_value) &&
+            $packType && !empty($packType->attribute_value) &&
+            $unitQty && !empty($unitQty->attribute_value) &&
+            $unitMeasurement && !empty($unitMeasurement->attribute_value);
+        
+        // First, always remove original Selling Unit if it exists
+        $right = collect($right)->filter(fn($item) =>
+            strtolower($item['attribute_name']) !== 'selling unit'
+        )->values()->toArray();
+        
+        // If all required values are present, show the custom format
+        if ($hasAllValues) {
+            $parsedSelling = preg_replace('#/#', ' ', $rawSelling);
+        
+            $insideCarton = $unitsPerCase->attribute_value . ' ' .
+                            $packType->attribute_value . ' x ' .
+                            $unitQty->attribute_value . ' ' .
+                            $unitMeasurement->attribute_value . ' Each';
+        
+            $fullValue = $parsedSelling . ' (' . $insideCarton . ')';
+        
+            array_splice($right, 0, 0, [[
+                'attribute_name'  => 'Selling Unit',
+                'attribute_value' => $fullValue,
+            ]]);
+        }
+        // If not all present, but Selling Unit exists, add original
+        elseif (!empty($rawSelling)) {
+            array_splice($right, 0, 0, [[
+                'attribute_name'  => 'Selling Unit',
+                'attribute_value' => $rawSelling,
+            ]]);
+        }
+        
+
+        
+
         return response()->json([
             'left' => $left,
             'right' => $right
         ]);
     }
+
+    // public function getAttributesByProduct($productId)
+    // {
+    //     // $productAttributes = ProductAttributes::with(['attribute' => function ($query) {
+    //     //     $query->whereHas('attributeGroup', function ($q) {
+    //     //         $q->where('name', '!=', 'Nutrition Facts Per Serving Group');
+    //     //     });
+    //     // }])
+    //     // ->where('product_id', $productId)
+    //     // ->get(['attribute_value', 'attribute_id']);
+    
+    //     $productAttributes = ProductAttributes::with([
+    //         'attribute' => function ($query) {
+    //             $query->whereHas('attributeGroup', function ($q) {
+    //                 $q->whereNotIn('name', ['Nutrition Facts Per Serving Group', 'Ingredients']);
+    //             });
+                
+    //         },
+    //         'measurementUnit'
+    //     ])
+    //     ->where('product_id', $productId)
+    //     ->get(['attribute_value', 'attribute_id', 'measurement_unit_id' ]);
+    
+    //     // Filter out null attributes
+    //     $filteredAttributes = $productAttributes->filter(function ($item) {
+    //         return $item->attribute !== null;
+    //     })->values();
+    
+    //     // Define fixed order
+    //     $leftOrder = [
+    //         'Sku / Item Code',
+    //         'Manufacturer',
+    //         'Country of Origin',
+    //         'Material',
+    //         'Color',
+    //         'Capacity',
+    //         'Width',
+    //         'Depth',
+    //         'Height'
+    //     ];
+    
+    //     $rightOrder = [
+    //         'Type',
+    //         'Pack Type',
+    //         'Selling Unit',
+    //         'Warranty',
+    //         'Certification',
+    //         'Features'
+    //     ];
+    
+    //     $left = [];
+    //     $right = [];
+    //     $usedNames = [];
+    
+    //     // Helper: format item
+    //     // $formatAttr = function ($item) {
+    //     //     return [
+    //     //         'attribute_name' => $item->attribute->name,
+    //     //         'attribute_value' => $item->attribute_value,
+    //     //     ];
+    //     // };
+    
+    //     $formatAttr = function ($item) {
+    //         $value = $item->attribute_value;
+    //         if ($item->measurementUnit && $item->measurement_unit_id) {
+    //             $value .= ' ' . $item->measurementUnit->symbol;
+    //         }
+        
+    //         return [
+    //             'attribute_name' => $item->attribute->name,
+    //             'attribute_value' => $value,
+    //         ];
+    //     };
+        
+    
+    //     // Add left ordered attributes
+    //     foreach ($leftOrder as $name) {
+    //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+    //         if ($match) {
+    //             $left[] = $formatAttr($match);
+    //             $usedNames[] = $name;
+    //         }
+    //     }
+    
+    //     // Add right ordered attributes
+    //     foreach ($rightOrder as $name) {
+    //         $match = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === $name);
+    //         if ($match) {
+    //             $right[] = $formatAttr($match);
+    //             $usedNames[] = $name;
+    //         }
+    //     }
+    
+    //     // Get remaining attributes
+    //     $remaining = $filteredAttributes->filter(function ($item) use ($usedNames) {
+    //         return !in_array($item->attribute->name, $usedNames);
+    //     })->map($formatAttr)->values();
+    
+    //     // Balance total count between left and right
+    //     $totalLeft = count($left);
+    //     $totalRight = count($right);
+    
+    //     foreach ($remaining as $item) {
+    //         if ($totalLeft <= $totalRight) {
+    //             $left[] = $item;
+    //             $totalLeft++;
+    //         } else {
+    //             $right[] = $item;
+    //             $totalRight++;
+    //         }
+    //     }
+    //     // Inside Carton calculation
+    //    // Inside Carton calculation
+    //     $unitsPerCase = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Units per Case');
+    //     $packType = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Pack Type');
+    //     $unitQty = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit Qty');
+    //     $unitMeasurement = $filteredAttributes->firstWhere(fn($item) => $item->attribute->name === 'Unit of Measurement');
+
+    //     if ($unitsPerCase && $packType && $unitQty && $unitMeasurement) {
+    //         $insideCartonValue = $unitsPerCase->attribute_value . ' ' . $packType->attribute_value . ' x ' . $unitQty->attribute_value . $unitMeasurement->attribute_value;
+
+    //         $right[] = [
+    //             'attribute_name' => 'Inside Carton',
+    //             'attribute_value' => $insideCartonValue,
+    //         ];
+    //     }
+
+
+            
+    //     return response()->json([
+    //         'left' => $left,
+    //         'right' => $right
+    //     ]);
+    // }
 
    /**
      * @OA\Get(
@@ -575,39 +771,4 @@ class ProductAttributeController extends Controller
 
 
 
-    // public function getAttributesByProductWithGroup($productId)
-    // {
-    //         $productAttributes = ProductAttributes::with(['attribute.attributeGroups'])
-    //         ->where('product_id', $productId)
-    //         ->get();
-
-    //     $groupedAttributes = [];
-
-    //     foreach ($productAttributes as $productAttribute) {
-    //         $attribute = $productAttribute->attribute;
-
-    //         if (!$attribute || $attribute->attributeGroups->isEmpty()) {
-    //             $groupName = 'Other';
-    //         } else {
-    //             // If attribute belongs to multiple groups, pick the first
-    //             $groupName = $attribute->attributeGroups->first()->name;
-    //         }
-
-    //         $groupedAttributes[$groupName][] = [
-    //             'name' => $attribute->name,
-    //             'value' => $productAttribute->attribute_value,
-    //         ];
-    //     }
-
-    //     // Final formatting
-    //     $formatted = [];
-    //     foreach ($groupedAttributes as $section => $specs) {
-    //         $formatted[] = [
-    //             'section' => $section,
-    //             'specs' => $specs,
-    //         ];
-    //     }
-
-    //     return response()->json($formatted);
-    // }
 }

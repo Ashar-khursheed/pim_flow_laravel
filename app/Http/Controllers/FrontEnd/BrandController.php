@@ -122,17 +122,27 @@ class BrandController extends Controller
 
         // Fetch only the latest 5 brands with at least 10 products
         $brands = Brand::with(['products' => function ($query) {
-            $query->where('status', 'published');
+            $query->where('status', 'published')
+                  ->with(['productAttributes' => function ($query) {
+                      $query->whereHas('attributeDetails', function ($q) {
+                          $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                      });
+                  }, 'reviews', 'currency','productAttributes' => function ($query) {
+                $query->whereHas('attributeDetails', function ($q) {
+                    $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                });
+            },]);
         }])
         ->whereHas('products', function ($query) {
-            $query->where('status', 'published') // 👈 Add this line
-                ->select('brand_id')
-                ->groupBy('brand_id')
-                ->havingRaw('COUNT(*) >= 10');
+            $query->where('status', 'published')
+                  ->select('brand_id')
+                  ->groupBy('brand_id')
+                  ->havingRaw('COUNT(*) >= 10');
         })
         ->orderBy('created_at', 'desc')
         ->take(5)
         ->get();
+        
 
         return response()->json([
             'success' => true,
@@ -156,6 +166,7 @@ class BrandController extends Controller
                             ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
                     });
                 })
+          
                 ->take(10)
                 ->get(); // Only get product IDs
 
@@ -201,6 +212,23 @@ class BrandController extends Controller
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
+                          // Calculate per unit price
+                          $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                          $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                          
+  
+                          $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                          $perUnitPrice = null;
+  
+                          if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                              $unitValue = (float) $unitsPerCase->attribute_value;
+                              if ($unitValue > 0) {
+                                  $calculated = round($basePrice / $unitValue, 2);
+                                  $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+                              }
+                          }
+  
+                          $product->per_unit_price = $perUnitPrice;
 
 
                         return [
@@ -229,6 +257,7 @@ class BrandController extends Controller
                             'front_sale_price' => $product->price,
                             'best_price' => $product->price,
                             "selling_type"=> $sellingType,
+                            'per_unit_price' =>  $product->per_unit_price
 
                         ];
                     }),
@@ -321,19 +350,29 @@ class BrandController extends Controller
             ->groupBy('sku');
     
         // Fetch only the latest 5 brands with at least 10 published products
-        $brands = Brand::with(['products' => function ($query) {
-            $query->where('status', 'published');
-        }])
-        ->whereHas('products', function ($query) {
-            $query->where('status', 'published')
-                ->select('brand_id')
-                ->groupBy('brand_id')
-                ->havingRaw('COUNT(*) >= 10');
-        })
-        ->orderBy('created_at', 'desc')
-        ->take(5)
-        ->get();
-        
+                $brands = Brand::with(['products' => function ($query) {
+                    $query->where('status', 'published')
+                        ->with(['productAttributes' => function ($query) {
+                            $query->whereHas('attributeDetails', function ($q) {
+                                $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                            });
+                        }, 'reviews', 'currency',   'productAttributes' => function ($query) {
+                            $query->whereHas('attributeDetails', function ($q) {
+                                $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                            });
+                        },]);
+                }])
+                ->whereHas('products', function ($query) {
+                    $query->where('status', 'published')
+                        ->select('brand_id')
+                        ->groupBy('brand_id')
+                        ->havingRaw('COUNT(*) >= 10');
+                })
+                ->orderBy('created_at', 'desc')
+                ->take(5)
+                ->get();
+                
+                
         return response()->json([
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
@@ -366,7 +405,11 @@ class BrandController extends Controller
                     })
                     ->whereIn('ec_products.id', $products)
                     ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
-                    ->with(['reviews', 'currency' , 'vendor'])
+                    ->with(['reviews', 'currency' , 'vendor' ,   'productAttributes' => function ($query) {
+                        $query->whereHas('attributeDetails', function ($q) {
+                            $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                        });
+                    },])
                     ->get()
                     ->keyBy('id');
     
@@ -410,7 +453,23 @@ class BrandController extends Controller
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
+                        // Calculate per unit price
+                        $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                        $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        
 
+                        $basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
+                        $perUnitPrice = null;
+
+                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                            $unitValue = (float) $unitsPerCase->attribute_value;
+                            if ($unitValue > 0) {
+                                $calculated = round($basePrice / $unitValue, 2);
+                                $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+                            }
+                        }
+
+                        $details->per_unit_price = $perUnitPrice;
 
     
                         return [
@@ -430,6 +489,7 @@ class BrandController extends Controller
                             'best_price' => $details->best_price ?? $details->price,
                             'selling_type'=> $sellingType,
                             'vendor_id' => $details->vendor_id,
+                            'per_unit_price' =>  $details->per_unit_price
                         ];
                     })->values(),
                 ];

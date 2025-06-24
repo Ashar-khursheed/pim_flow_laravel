@@ -239,6 +239,17 @@ class Product extends Model
 		});
 	}
 
+	
+	// Then create a helper to get only those two
+	public function getPerUnitPriceAttributesAttribute()
+	{
+		return $this->productAttributes
+			->filter(function ($attr) {
+				return in_array($attr->attributeDetails->name, ['Units per Case', 'Pack Type']);
+			});
+	}
+		
+
 	public function discounts(): BelongsToMany
 	{
 		return $this->belongsToMany(Discount::class, 'ec_discount_products', 'product_id', 'discount_id');
