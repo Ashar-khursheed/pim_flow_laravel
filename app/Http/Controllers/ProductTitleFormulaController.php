@@ -88,7 +88,7 @@ class ProductTitleFormulaController extends Controller
 
 	 public function show($id)
 	 {
-		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
+		 $formula = ProductTitleFormula::with(['category', 'creator' ,'attributes'])->findOrFail($id);
 	 
 		 $attributeNames = collect(json_decode($formula->attribute_ids))
 			 ->map(function ($attrId) {
