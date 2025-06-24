@@ -31,7 +31,7 @@ class OrderController extends Controller
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "order_number", "customer_name", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
-	 *     @OA\Response(response=200, description="Orders retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=200, description="Orders retrieved successfully"
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -322,10 +322,7 @@ class OrderController extends Controller
 	 *         required=true,
 	 *         @OA\Schema(type="integer")
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Order details retrieved successfully"
-	 *     )
+	 *     @OA\Response(response=200, description="Order details retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function show($id)
@@ -384,7 +381,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Order status updated successfully"),
+	 *     @OA\Response(response=200, description="Order status updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -473,7 +470,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Product status updated successfully"),
+	 *     @OA\Response(response=200, description="Product status updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
@@ -609,7 +606,7 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Shipment created successfully"),
+	 *     @OA\Response(response=201, description="Shipment created successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}},
 	 * )
 	 */
