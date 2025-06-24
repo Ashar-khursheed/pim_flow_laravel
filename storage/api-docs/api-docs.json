@@ -21718,7 +21718,7 @@
                 "tags": [
                     "Product Title Formula"
                 ],
-                "summary": "Create a new product title formula",
+                "summary": "Create product title formulas (one per attribute ID)",
                 "operationId": "bdfae049b119cc1adb7b0c188b433212",
                 "requestBody": {
                     "required": true,
@@ -21732,17 +21732,21 @@
                                     "attribute_ids": {
                                         "type": "array",
                                         "items": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "example": 1
                                         }
                                     },
                                     "category_id": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 47
                                     },
                                     "locked": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "created_by": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     }
                                 },
                                 "type": "object"
@@ -21751,11 +21755,59 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Created successfully"
-                    },
-                    "422": {
-                        "description": "Validation error"
+                    "200": {
+                        "description": "Product title formulas created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product title formulas created successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attribute_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 47
+                                                    },
+                                                    "locked": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
