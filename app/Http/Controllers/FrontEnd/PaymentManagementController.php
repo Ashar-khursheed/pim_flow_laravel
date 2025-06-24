@@ -70,23 +70,49 @@ class PaymentManagementController extends Controller
      *     @OA\Response(response=201, description="Payment created")
      * )
      */
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'order_id' => 'required|integer',
-            'transaction_id' => 'nullable|string',
-            'payment_mode' => 'required|string',
-            'amount' => 'required|numeric',
-            'status' => 'required|string',
-            'payment_date' => 'required|date',
-            'notes' => 'nullable|string',
-            'payment_details' => 'nullable|json',
-        ]);
+   /**
+ * @OA\Post(
+ *     path="/api/frontend/payments",
+ *     summary="Create a new payment",
+ *     tags={"Frontend-Payment History"},
+ *     security={{"bearerAuth": {}}},
+ *     @OA\RequestBody(
+ *         required=true,
+ *         @OA\JsonContent(
+ *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
+ *             @OA\Property(property="order_id", type="integer", example=123),
+ *             @OA\Property(property="transaction_id", type="string", example="TXN456789"),
+ *             @OA\Property(property="payment_mode", type="string", example="Credit Card"),
+ *             @OA\Property(property="amount", type="number", format="float", example=299.99),
+ *             @OA\Property(property="status", type="string", example="completed"),
+ *             @OA\Property(property="payment_date", type="string", format="date", example="2024-06-24"),
+ *             @OA\Property(property="notes", type="string", example="First installment paid"),
+ *             @OA\Property(property="payment_details", type="object", example={"bank":"XYZ Bank","ref":"12345XYZ"})
+ *         )
+ *     ),
+ *     @OA\Response(response=201, description="Payment created")
+ * )
+ */
+public function store(Request $request)
+{
+    $validated = $request->validate([
+        'order_id' => 'required|integer',
+        'transaction_id' => 'nullable|string',
+        'payment_mode' => 'required|string',
+        'amount' => 'required|numeric',
+        'status' => 'required|string',
+        'payment_date' => 'required|date',
+        'notes' => 'nullable|string',
+        'payment_details' => 'nullable|json',
+    ]);
 
-        $payment = PaymentManagement::create($validated);
+    // Add authenticated user ID (assumes customer authentication)
+    $validated['customer_id'] = auth()->id();
 
-        return response()->json($payment, 201);
-    }
+    $payment = PaymentManagement::create($validated);
+
+    return response()->json($payment, 201);
+}
 
     /**
      * @OA\Get(
