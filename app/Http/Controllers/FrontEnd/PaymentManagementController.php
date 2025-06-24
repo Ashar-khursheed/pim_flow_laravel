@@ -192,7 +192,7 @@ class PaymentManagementController extends Controller
                 'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
                 'payment_date' => 'required|date|before_or_equal:today',
                 'notes' => 'nullable|string|max:1000',
-                'payment_details' => 'nullable|json|max:2000',
+                'payment_details' => 'nullable|array|max:2000',
             ]);
 
             // Add authenticated user ID (assumes customer authentication)
@@ -203,6 +203,10 @@ class PaymentManagementController extends Controller
             }
 
             $validated['customer_id'] = auth()->id();
+            
+            if (isset($validated['payment_details'])) {
+                $validated['payment_details'] = json_encode($validated['payment_details']);
+            }
 
             // Create the payment record
             $payment = PaymentManagement::create($validated);

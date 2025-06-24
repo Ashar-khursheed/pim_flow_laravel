@@ -324,7 +324,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
 
-
+   
 
 });
 
