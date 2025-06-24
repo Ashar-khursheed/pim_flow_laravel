@@ -29,7 +29,7 @@ class ProductTitleFormula extends Model
     }
 
     public function attributes()
-    {
-        return $this->belongsToMany(Attribute::class, 'product_title_formula_attribute', 'product_title_formula_id', 'attribute_id');
-    }
+{
+    return $this->belongsToMany(Attribute::class);
+}
 }
