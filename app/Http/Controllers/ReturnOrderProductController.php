@@ -15,14 +15,14 @@ class ReturnOrderProductController extends BaseController
 	 *     path="/api/return-products/{id}/inspect",
 	 *     summary="Admin inspects and approves/rejects a return request",
 	 *     tags={"Orders"},
-	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(name="id", in="path", required=true, description="Return request ID", @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(required=true, @OA\JsonContent(
 	 *         required={"status","comment"},
 	 *         @OA\Property(property="status", type="string", enum={"inspected","approved","rejected"}, example="approved"),
 	 *         @OA\Property(property="comment", type="string", example="Item in good condition, approving refund.")
 	 *     )),
-	 *     @OA\Response(response=200, description="Return inspected successfully")
+	 *     @OA\Response(response=200, description="Return inspected successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function inspectReturn(Request $request, $id)
@@ -70,7 +70,8 @@ class ReturnOrderProductController extends BaseController
 	 *         @OA\Property(property="refund_method", type="string", example="UPI"),
 	 *         @OA\Property(property="refund_date", type="string", format="date-time", example="2025-06-20T12:34:56Z")
 	 *     )),
-	 *     @OA\Response(response=200, description="Refund status updated")
+	 *     @OA\Response(response=200, description="Refund status updated", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function refundReturn(Request $request, $id)

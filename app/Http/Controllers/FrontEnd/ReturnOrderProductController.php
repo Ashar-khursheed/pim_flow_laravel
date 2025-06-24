@@ -15,7 +15,6 @@ class ReturnOrderProductController extends BaseController
 	 *     path="/api/frontend/order-products/{order_product_id}/return",
 	 *     summary="Create a return request for an order product",
 	 *     tags={"FrontEnd-Orders"},
-	 *     security={{"bearerAuth":{}}},
 	 *     @OA\Parameter(
 	 *         name="order_product_id",
 	 *         in="path",
@@ -32,12 +31,13 @@ class ReturnOrderProductController extends BaseController
 	 *                 @OA\Property(property="quantity", type="integer", example=1),
 	 *                 @OA\Property(property="reason", type="string", example="Defective product"),
 	 *                 @OA\Property(property="description", type="string", example="Scratched screen"),
-	 *                 @OA\Property(property="product_images[]", type="array", @OA\Items(type="string", format="binary")),
-	 *                 @OA\Property(property="product_videos[]", type="array", @OA\Items(type="string", format="binary"))
+	 *                 @OA\Property(property="product_images", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="product_videos", type="array", @OA\Items(type="string", format="binary"))
 	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Return request created successfully")
+	 *     @OA\Response(response=200, description="Return request created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function store(Request $request, $order_product_id)
@@ -61,9 +61,11 @@ class ReturnOrderProductController extends BaseController
 		$request->validate([
 			'quantity' => 'required|integer|min:1|max:' . $orderProduct->shipped_quantity,
 			'reason' => 'required|string',
-			'product_images.*' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:2048',
-			'product_videos.*' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
 			'description' => 'nullable|string',
+			'product_images' => 'nullable|array',
+			'product_images.*' => ['sometimes', 'file', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
+			'product_videos' => 'nullable|array',
+			'product_videos.*' => ['sometimes', 'file', 'mimes:mp4,mov,avi,webm', 'max:10240'],
 		]);
 
 		/* Upload media files and convert to array of URLs */

@@ -15556,7 +15556,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Return request created successfully"
+                        "description": "Return request created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -22433,7 +22436,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Return inspected successfully"
+                        "description": "Return inspected successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -22502,7 +22508,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Refund status updated"
+                        "description": "Refund status updated",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
