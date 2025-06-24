@@ -213,20 +213,24 @@ class ProductController extends Controller
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                                 $product->description = array_values(array_filter($decoded, function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
-                                        return false; // Remove actual null or string "null"
+                                        return false;
                                     }
                         
-                                    // Remove HTML tags but keep &nbsp; content for check
-                                    $text = html_entity_decode(strip_tags($item)); // decode &nbsp; to UTF-8
-                                    $text = preg_replace('/\xc2\xa0/', ' ', $text); // clean UTF-8 non-breaking space
+                                    // Remove trailing <p>&nbsp;</p> or <p> </p> blocks
+                                    $item = preg_replace('/(<p>(&nbsp;|\s| )*<\/p>)+$/iu', '', $item);
+                        
+                                    // Decode &nbsp; and UTF-8 non-breaking spaces
+                                    $text = html_entity_decode(strip_tags($item));
+                                    $text = preg_replace('/\xc2\xa0/', ' ', $text);
                                     $text = trim($text);
                         
-                                    return $text !== ''; // Remove if only &nbsp; or spaces
+                                    return $text !== '';
                                 }));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
                         
                         
@@ -618,20 +622,24 @@ class ProductController extends Controller
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                                 $product->description = array_values(array_filter($decoded, function ($item) {
                                     if (is_null($item) || strtolower($item) === 'null') {
-                                        return false; // Remove actual null or string "null"
+                                        return false;
                                     }
                         
-                                    // Remove HTML tags but keep &nbsp; content for check
-                                    $text = html_entity_decode(strip_tags($item)); // decode &nbsp; to UTF-8
-                                    $text = preg_replace('/\xc2\xa0/', ' ', $text); // clean UTF-8 non-breaking space
+                                    // Remove trailing <p>&nbsp;</p> or <p> </p> blocks
+                                    $item = preg_replace('/(<p>(&nbsp;|\s| )*<\/p>)+$/iu', '', $item);
+                        
+                                    // Decode &nbsp; and UTF-8 non-breaking spaces
+                                    $text = html_entity_decode(strip_tags($item));
+                                    $text = preg_replace('/\xc2\xa0/', ' ', $text);
                                     $text = trim($text);
                         
-                                    return $text !== ''; // Remove if only &nbsp; or spaces
+                                    return $text !== '';
                                 }));
                             } else {
                                 $product->description = [$product->description];
                             }
                         }
+                        
                         
                         
                         
