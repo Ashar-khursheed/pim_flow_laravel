@@ -506,13 +506,15 @@ class OrderController extends Controller
 		}
 
 		$request->validate([
-			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,'Pickups', 'Partially Pickups', 'Out for delivery', 'Partially Out for delivery', 'Delivered', 'Partially Delivered',Re-Attempt,Returned,Cancelled,Out of Stock',
+			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Partially Pickups,Out for delivery,Partially Out for delivery,Delivered,Partially Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
 			'notes' => 'nullable|string'
 		]);
 
-		$restrictedStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+		$fullStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+		$partialStatuses = ['Partially Pickups', 'Partially Out for delivery', 'Partially Delivered'];
 
-		if (in_array($request->status, $restrictedStatuses)) {
+		if (in_array($request->status, array_merge($fullStatuses, $partialStatuses))) {
+
 			$shipmentProducts = $orderProduct->shipmentProducts;
 
 			if ($shipmentProducts->isEmpty()) {
@@ -527,11 +529,20 @@ class OrderController extends Controller
 				$totalShipped += $shipmentProduct->quantity;
 			}
 
-			if ($totalShipped !== $orderProduct->quantity) {
-				return response()->json([
-					'success' => false,
-					'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
-				]);
+			if (in_array($request->status, $fullStatuses)) {
+				if ($totalShipped !== $orderProduct->quantity) {
+					return response()->json([
+						'success' => false,
+						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
+					]);
+				}
+			} elseif (in_array($request->status, $partialStatuses)) {
+				if ($totalShipped <= 0 || $totalShipped >= $orderProduct->quantity) {
+					return response()->json([
+						'success' => false,
+						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) must be greater than 0 and less than ordered quantity ({$orderProduct->quantity})."
+					]);
+				}
 			}
 		}
 
@@ -543,20 +554,18 @@ class OrderController extends Controller
 		/* Get all product statuses from this order */
 		$productStatuses = $order->orderProducts()->pluck('status')->toArray();
 
-		/* Check if all products have the same status */
+		/* Check if all product statuses are the same */
 		$allSame = count(array_unique($productStatuses)) === 1;
 
 		if ($allSame) {
-			/* All products have the same status — update order to match */
 			$order->status = $productStatuses[0];
-		} elseif (in_array('Delivered', $productStatuses)) {
-			/* Some products delivered, but not all — mark as Partially Delivered */
+		} elseif (in_array('Delivered', $productStatuses) || in_array('Partially Delivered', $productStatuses)) {
 			$order->status = 'Partially Delivered';
 		}
 
 		$order->save();
 
-		/* add tracking entry */
+		/* Add tracking entry */
 		OrderTracking::create([
 			'order_id' => $order->id,
 			'status' => "Product Status Updated",
