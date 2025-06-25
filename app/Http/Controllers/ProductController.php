@@ -2103,7 +2103,11 @@ class ProductController extends BaseController
 			$incomingDescription = $descriptionInput ?? '';
 		
 			// Check if there's an actual change
+			$incomingDescription = is_string($descriptionInput) ? $descriptionInput : '';
+			$currentDescription = is_string($product->description) ? $product->description : '';
+
 			$hasNewDescriptionData = trim($incomingDescription) !== trim($currentDescription);
+
 		
 			// Block if trying to modify without permission
 			if ($hasNewDescriptionData && !$canModifyContent) {
