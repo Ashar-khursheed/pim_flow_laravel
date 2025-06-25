@@ -15712,14 +15712,14 @@
                                         "type": "string",
                                         "example": "Scratched screen"
                                     },
-                                    "product_images": {
+                                    "product_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
                                         }
                                     },
-                                    "product_videos": {
+                                    "product_videos[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -22276,13 +22276,14 @@
                 "tags": [
                     "Product Title Formula"
                 ],
-                "summary": "Get a single product title formula",
+                "summary": "Get a product title formula with category-wide attribute names",
+                "description": "Returns a product title formula and all unique attribute names used by any formula within the same category.",
                 "operationId": "7a8616e4871bbb63e23b0a16b4adfa66",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Formula ID",
+                        "description": "The ID of the product title formula",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -22291,72 +22292,54 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Formula data"
-                    },
-                    "404": {
-                        "description": "Formula not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "put": {
-                "tags": [
-                    "Product Title Formula"
-                ],
-                "summary": "Update an existing product title formula",
-                "operationId": "9e68472b6f4c469edac7d4c8294fc922",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Formula ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "properties": {
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 2
+                        "description": "Successful response with formula details and category-wide attributes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 9
+                                        },
+                                        "category_id": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "category_name": {
+                                            "type": "string",
+                                            "example": "Mobile Phones"
+                                        },
+                                        "created_by": {
+                                            "type": "string",
+                                            "example": "Admin"
+                                        },
+                                        "attribute_names": {
+                                            "description": "Comma-separated list of attribute names used by all formulas in this category",
+                                            "type": "string",
+                                            "example": "Color, Brand, Battery Life, Screen Size"
+                                        },
+                                        "locked": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-06-15T11:22:00Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-06-24T13:45:00Z"
+                                        }
                                     },
-                                    "category_id": {
-                                        "type": "integer",
-                                        "example": 47
-                                    },
-                                    "locked": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "created_by": {
-                                        "type": "integer",
-                                        "example": 1
-                                    }
-                                },
-                                "type": "object"
+                                    "type": "object"
+                                }
                             }
                         }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "Updated successfully"
                     },
                     "404": {
                         "description": "Formula not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
                     }
                 },
                 "security": [
@@ -22388,6 +22371,111 @@
                     },
                     "404": {
                         "description": "Formula not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-title-formula/update-by-category": {
+            "put": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Update product title formulas by category (replace existing with new)",
+                "operationId": "09ae76254e4a8001e470f12c0dc638fc",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attribute_ids",
+                                    "category_id"
+                                ],
+                                "properties": {
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 47
+                                    },
+                                    "locked": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product title formulas updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product title formulas updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attribute_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 47
+                                                    },
+                                                    "locked": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
