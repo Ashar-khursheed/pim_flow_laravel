@@ -12981,16 +12981,11 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "customer_id",
                                     "customer_address_id",
                                     "shipping_charge",
                                     "products"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "customer_address_id": {
                                         "type": "integer",
                                         "example": "1"
