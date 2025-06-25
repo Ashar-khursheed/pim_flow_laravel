@@ -123,16 +123,46 @@ class ProductTitleFormulaController extends Controller
 
 
 	/**
-	 * @OA\Get(
-	 *     path="/api/product-title-formula/{id}",
-	 *     summary="Get a single product title formula",
-	 * 	   security={{"bearerAuth":{}}},
-	 *     tags={"Product Title Formula"},
-	 *     @OA\Parameter(name="id", in="path", required=true, description="Formula ID", @OA\Schema(type="integer")),
-	 *     @OA\Response(response=200, description="Formula data"),
-	 *     @OA\Response(response=404, description="Formula not found")
-	 * )
-	 */
+ * @OA\Get(
+ *     path="/api/product-title-formula/{id}",
+ *     summary="Get a product title formula with category-wide attribute names",
+ *     description="Returns a product title formula and all unique attribute names used by any formula within the same category.",
+ *     security={{"bearerAuth":{}}},
+ *     tags={"Product Title Formula"},
+ *     @OA\Parameter(
+ *         name="id",
+ *         in="path",
+ *         required=true,
+ *         description="The ID of the product title formula",
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Successful response with formula details and category-wide attributes",
+ *         @OA\JsonContent(
+ *             type="object",
+ *             @OA\Property(property="id", type="integer", example=9),
+ *             @OA\Property(property="category_id", type="integer", example=3),
+ *             @OA\Property(property="category_name", type="string", example="Mobile Phones"),
+ *             @OA\Property(property="created_by", type="string", example="Admin"),
+ *             @OA\Property(
+ *                 property="attribute_names",
+ *                 type="string",
+ *                 example="Color, Brand, Battery Life, Screen Size",
+ *                 description="Comma-separated list of attribute names used by all formulas in this category"
+ *             ),
+ *             @OA\Property(property="locked", type="boolean", example=false),
+ *             @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-15T11:22:00Z"),
+ *             @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-24T13:45:00Z")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Formula not found"
+ *     )
+ * )
+ */
+
 
 	 public function show($id)
 	 {
