@@ -15712,14 +15712,14 @@
                                         "type": "string",
                                         "example": "Scratched screen"
                                     },
-                                    "product_images": {
+                                    "product_images[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
                                         }
                                     },
-                                    "product_videos": {
+                                    "product_videos[]": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
