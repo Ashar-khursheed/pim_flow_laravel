@@ -330,6 +330,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
+Route::post('/frontend/auth/google', [F_AuthController::class, 'login']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -416,7 +417,12 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
 
 
+
+
+
 });
+
+
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
 
