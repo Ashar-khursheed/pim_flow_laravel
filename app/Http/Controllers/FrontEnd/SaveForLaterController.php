@@ -136,7 +136,7 @@ class SaveForLaterController extends Controller
 									}
 
 		// Return the saved products data
-									$productsData = $savedProducts->map(function ($item) {
+		$productsData = $savedProducts->map(function ($item) {
 			$product = $item->product; // Get the product
 
 			// Calculate the total reviews and average rating
@@ -148,6 +148,9 @@ class SaveForLaterController extends Controller
 			$product->images = is_string($product->images)
                  ? json_decode($product->images, true)
                  : (array) $product->images;
+
+				 $product->original_price = $product->price;
+                 $product->front_sale_price= $product->sale_price ?? $product->price;
 
 			// Add currency details
 			if ($product->currency) {
