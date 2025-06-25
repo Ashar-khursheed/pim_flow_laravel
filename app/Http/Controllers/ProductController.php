@@ -2098,26 +2098,28 @@ class ProductController extends BaseController
 		if ($request->has('description')) {
 			$descriptionInput = $request->input('description');
 		
-			// If input is not a string, treat as invalid and skip processing
+			// If description is not a string, ignore it for permission check
 			if (!is_string($descriptionInput)) {
-				// Do not process or compare; silently ignore if user has no permission
 				if (!$canModifyContent) {
+					// silently skip processing for unauthorized users
 					unset($input['description']);
-					// skip silently
 					return;
 				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid format for product description.'
+						'message' => 'Invalid format for description.'
 					], 400);
 				}
 			}
 		
+			// Normalize and compare
 			$incomingDescription = trim($descriptionInput);
 			$existingDescription = is_string($product->description) ? trim($product->description) : '';
 		
+			// Compare only if both are strings
 			$hasNewDescriptionData = $incomingDescription !== $existingDescription;
 		
+			// Block only if user is trying to modify and has no permission
 			if ($hasNewDescriptionData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
@@ -2125,10 +2127,12 @@ class ProductController extends BaseController
 				], 403);
 			}
 		
+			// Only save if allowed and actually changed
 			if ($canModifyContent && $hasNewDescriptionData) {
 				$product->description = $incomingDescription;
 			}
 		
+			// Prevent double processing
 			unset($input['description']);
 		}
 		
