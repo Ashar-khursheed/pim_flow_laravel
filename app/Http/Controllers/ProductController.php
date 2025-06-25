@@ -1716,11 +1716,10 @@ class ProductController extends BaseController
 
 		// Handle FAQs with content writer permission check
 		if ($request->has('faqs')) {
-			// Check if user is actually trying to modify FAQs (has actual FAQ data)
 			$faqs = $request->input('faqs', []);
 			$hasNewFaqData = false;
-			
-			// Check if faqs is a string and decode it properly
+		
+			// Decode if it's a JSON string
 			if (is_string($faqs)) {
 				$decoded = json_decode($faqs, true);
 				if (json_last_error() !== JSON_ERROR_NONE) {
@@ -1731,49 +1730,50 @@ class ProductController extends BaseController
 				}
 				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
 			}
-			
-			// Check if there's actual FAQ data being sent
+		
+			// Fetch existing FAQs for comparison
+			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
+			$processedFaqIds = [];
+		
+			// Check if there are actual changes
 			if (is_array($faqs) && !empty($faqs)) {
 				foreach ($faqs as $faqData) {
-					if (!empty($faqData['question']) || !empty($faqData['answer'])) {
+					$id = $faqData['id'] ?? null;
+					$question = trim($faqData['question'] ?? '');
+					$answer = trim($faqData['answer'] ?? '');
+		
+					// Create or update
+					if ($id && isset($existingFaqs[$id])) {
+						$existing = $existingFaqs[$id];
+						if (
+							$existing->question !== $question ||
+							$existing->answer !== $answer ||
+							$existing->category_id != ($faqData['category_id'] ?? null)
+						) {
+							$hasNewFaqData = true;
+							break;
+						}
+					} elseif (!empty($question) || !empty($answer)) {
 						$hasNewFaqData = true;
 						break;
 					}
 				}
 			}
-			
-			// Only check permissions if user is actually modifying FAQ data
+		
+			// If user is trying to modify and has no permission
 			if ($hasNewFaqData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
 					'message' => 'You do not have permission to modify product FAQs.'
 				], 403);
 			}
-			
-			// Process FAQs only if user has permission or no actual changes
-			if ($canModifyContent || !$hasNewFaqData) {
-				/* Validate that faqs is an array */
-				if (!is_array($faqs)) {
-					return response()->json([
-						'success' => false,
-						'message' => 'The field faqs must be a valid JSON array.'
-					], 400);
-				}
-
-				/* Get all existing FAQ IDs for this product */
-				$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
-				$processedFaqIds = [];
-
-				/* Process and store FAQs */
+		
+			// If no real changes or user has permission, continue saving
+			if ($canModifyContent && is_array($faqs)) {
 				foreach ($faqs as $faqData) {
 					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-
 						if (!empty($faqData['id'])) {
-							/* Update existing FAQ */
-							$faq = Faq::where('id', $faqData['id'])
-							->where('product_id', $product->id)
-							->first();
-
+							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
 							if ($faq) {
 								$faq->update([
 									'question' => $faqData['question'],
@@ -1784,7 +1784,6 @@ class ProductController extends BaseController
 								$processedFaqIds[] = $faq->id;
 							}
 						} else {
-							/* Create new FAQ */
 							$newFaq = Faq::create([
 								'product_id' => $product->id,
 								'question' => $faqData['question'],
@@ -1796,16 +1795,18 @@ class ProductController extends BaseController
 						}
 					}
 				}
-
-				/* Delete FAQs that were not included in the update */
+		
+				// Remove deleted FAQs
+				$existingFaqIds = $existingFaqs->keys()->toArray();
 				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
 				if (!empty($faqsToDelete)) {
 					Faq::where('product_id', $product->id)
-					->whereIn('id', $faqsToDelete)
-					->delete();
+						->whereIn('id', $faqsToDelete)
+						->delete();
 				}
 			}
 		}
+		
 
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
