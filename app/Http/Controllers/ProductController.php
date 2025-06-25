@@ -2095,37 +2095,37 @@ class ProductController extends BaseController
 		
 
 		/* Handle description field with content writer permission check */
-		if ($request->has('description')) {
-			$descriptionInput = $request->input('description');
+		// if ($request->has('description')) {
+		// 	$descriptionInput = $request->input('description');
 		
-			// Check if input is a valid string
-			if (is_string($descriptionInput)) {
-				$incomingDescription = trim($descriptionInput);
-			} else {
-				$incomingDescription = '';
-			}
+		// 	// Check if input is a valid string
+		// 	if (is_string($descriptionInput)) {
+		// 		$incomingDescription = trim($descriptionInput);
+		// 	} else {
+		// 		$incomingDescription = '';
+		// 	}
 		
-			$existingDescription = is_string($product->description) ? trim($product->description) : '';
+		// 	$existingDescription = is_string($product->description) ? trim($product->description) : '';
 		
-			// Detect actual modification
-			$hasNewDescriptionData = $incomingDescription !== $existingDescription;
+		// 	// Detect actual modification
+		// 	$hasNewDescriptionData = $incomingDescription !== $existingDescription;
 		
-			// Only block if trying to change and lacks permission
-			if ($hasNewDescriptionData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product description.'
-				], 403);
-			}
+		// 	// Only block if trying to change and lacks permission
+		// 	if ($hasNewDescriptionData && !$canModifyContent) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'You do not have permission to modify product description.'
+		// 		], 403);
+		// 	}
 		
-			// If user has permission and there's a change — update
-			if ($hasNewDescriptionData && $canModifyContent) {
-				$input['description'] = $incomingDescription;
-			} else {
-				// Preserve original value if no change or no permission
-				$input['description'] = $product->description;
-			}
-		}
+		// 	// If user has permission and there's a change — update
+		// 	if ($hasNewDescriptionData && $canModifyContent) {
+		// 		$input['description'] = $incomingDescription;
+		// 	} else {
+		// 		// Preserve original value if no change or no permission
+		// 		$input['description'] = $product->description;
+		// 	}
+		// }
 		
 		
 		/* Stock status validation */
