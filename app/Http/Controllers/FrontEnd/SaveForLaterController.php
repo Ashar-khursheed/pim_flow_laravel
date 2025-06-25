@@ -136,7 +136,7 @@ class SaveForLaterController extends Controller
 									}
 
 		// Return the saved products data
-									$productsData = $savedProducts->map(function ($item) {
+		$productsData = $savedProducts->map(function ($item) {
 			$product = $item->product; // Get the product
 
 			// Calculate the total reviews and average rating
@@ -144,6 +144,13 @@ class SaveForLaterController extends Controller
 			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
 			$product->total_reviews = $totalReviews;
 			$product->avg_rating = $avgRating;
+
+			$product->images = is_string($product->images)
+                 ? json_decode($product->images, true)
+                 : (array) $product->images;
+
+				 $product->original_price = $product->price;
+                 $product->front_sale_price= $product->sale_price ?? $product->price;
 
 			// Add currency details
 			if ($product->currency) {
@@ -153,14 +160,45 @@ class SaveForLaterController extends Controller
 			} else {
 				$product->currency_title = $product->price; // Fallback if no currency found
 			}
+			$sellingType = null;
+
+			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+				$fullValue = $product->sellingUnitAttribute->attribute_value;
+
+				$attributeUnit = strpos($fullValue, '/') !== false
+					? trim(explode('/', $fullValue)[1])
+					: $fullValue;
+
+				$sellingType = [
+					'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+					'attribute_value_unit' => $attributeUnit,
+				];
+			}
+			 // Calculate per unit price
+			 $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+			 $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+			 
+
+			 $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+			 $perUnitPrice = null;
+
+			 if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+				 $unitValue = (float) $unitsPerCase->attribute_value;
+				 if ($unitValue > 0) {
+					 $calculated = round($basePrice / $unitValue, 2);
+					 $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+				 }
+			 }
+
+			 $product->per_unit_price = $perUnitPrice;
 
 			return $product; // Return the modified product data
 		});
 
-									return response()->json([
-										'message' => 'Saved for Later Products retrieved successfully.',
-										'product' => $productsData
-									], 200);
+		return response()->json([
+	    'message' => 'Saved for Later Products retrieved successfully.',
+		'product' => $productsData
+		], 200);
     }
 
 	

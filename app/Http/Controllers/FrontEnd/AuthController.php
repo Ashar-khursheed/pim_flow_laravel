@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\FrontEnd\Customer;
+use Google_Client;
+
 
 class AuthController extends Controller
 {
@@ -89,4 +91,42 @@ class AuthController extends Controller
 			'message' => 'Logout successful'
 		]);
 	}
+
+	public function login(Request $request)
+    {
+        $idToken = $request->input('credential');
+
+        $client = new Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
+        $payload = $client->verifyIdToken($idToken);
+
+        if ($payload) {
+            // Get user info
+            $email = $payload['email'];
+            $name = $payload['name'];
+            $avatar = $payload['profile_img'];
+
+            // Find or create the user
+			$user = Customer::firstOrCreate(
+				['email' => $email],
+				[
+					'name' => $name,
+					'avatar' => $avatar,
+					'mobile_number' => 0000000000 // allow null in DB temporarily
+				]
+			);
+			
+
+            // Log in the user
+            Auth::login($user);
+
+            // Return user and token if needed (e.g., Sanctum or Passport)
+            return response()->json([
+                'message' => 'Logged in successfully',
+                'user' => $user,
+                'token' => $user->createToken('google-auth')->plainTextToken
+            ]);
+        } else {
+            return response()->json(['error' => 'Invalid ID token'], 401);
+        }
+    }
 }
