@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Models\Attribute;
 use App\Models\ProductTitleFormula;
 use Illuminate\Http\Request;
 
@@ -23,53 +23,53 @@ class ProductTitleFormulaController extends Controller
 	 */
 
 	 public function index(Request $request)
-{
-    $query = ProductTitleFormula::with(['category', 'creator']);
+	{
+		$query = ProductTitleFormula::with(['category', 'creator']);
 
-    // Search
-    if ($search = $request->input('search')) {
-        $query->where(function ($q) use ($search) {
-            $q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-              ->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-              ->orWhere('attribute_id', 'like', "%{$search}%"); // still searching by JSON field
-        });
-    }
+		// Search
+		if ($search = $request->input('search')) {
+			$query->where(function ($q) use ($search) {
+				$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+				->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+				->orWhere('attribute_id', 'like', "%{$search}%"); // still searching by JSON field
+			});
+		}
 
-    // Sorting
-    $sortBy = $request->input('sort_by', 'id');
-    $sortOrder = $request->input('sort_order', 'desc');
-    if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
-        $query->orderBy($sortBy, $sortOrder);
-    }
+		// Sorting
+		$sortBy = $request->input('sort_by', 'id');
+		$sortOrder = $request->input('sort_order', 'desc');
+		if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
+			$query->orderBy($sortBy, $sortOrder);
+		}
 
-    // Pagination
-    $perPage = $request->input('per_page', 10);
-    $data = $query->paginate($perPage);
+		// Pagination
+		$perPage = $request->input('per_page', 10);
+		$data = $query->paginate($perPage);
 
-    // Transform data to show attribute names
-    $transformed = $data->getCollection()->map(function ($item) {
-        return [
-            'id' => $item->id,
-            'category' => $item->category?->name,
-            'created_by' => $item->creator?->name,
-            'locked' => $item->locked,
-            'attribute_names' => collect($item->attribute_id) // already cast to array in model
-                ->map(fn($id) => Attribute::find($id)?->name)
-                ->filter()
-                ->values(),
-            'created_at' => $item->created_at,
-            'updated_at' => $item->updated_at,
-        ];
-    });
+		// Transform data to show attribute names
+		$transformed = $data->getCollection()->map(function ($item) {
+			return [
+				'id' => $item->id,
+				'category' => $item->category?->name,
+				'created_by' => $item->creator?->name,
+				'locked' => $item->locked,
+				'attribute_names' => collect($item->attribute_id) // already cast to array in model
+					->map(fn($id) => Attribute::find($id)?->name)
+					->filter()
+					->values(),
+				'created_at' => $item->created_at,
+				'updated_at' => $item->updated_at,
+			];
+		});
 
-    return response()->json([
-        'data' => $transformed,
-        'current_page' => $data->currentPage(),
-        'last_page' => $data->lastPage(),
-        'per_page' => $data->perPage(),
-        'total' => $data->total(),
-    ]);
-}
+		return response()->json([
+			'data' => $transformed,
+			'current_page' => $data->currentPage(),
+			'last_page' => $data->lastPage(),
+			'per_page' => $data->perPage(),
+			'total' => $data->total(),
+		]);
+	}
 
 
 
