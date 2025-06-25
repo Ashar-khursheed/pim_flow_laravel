@@ -2290,48 +2290,132 @@ class ProductController extends BaseController
 			$review->customer_id = $customerId;
 			$review->customer_name = $reviewInput['customer_name'] ?? 'Guest';
 			$review->customer_email = $reviewInput['customer_email'] ?? null;
-			$review->star = isset($reviewInput['star']) ? (int) $reviewInput['star'] : null;
-			$review->comment = $reviewInput['comment'];
-			$review->status = 'pending'; /* Set a default status if needed */
+			$review->star = isset($reviewInput['star']) ? (int) $reviewInput['star'] : 5;
+        $review->comment = $reviewInput['comment'];
+        $review->status = $reviewInput['status'] ?? 'published';
 
-			if ($review->save()) {
-				/* Handle review images (if any) */
-				if ($request->hasFile('review_images')) {
-					foreach ($request->file('review_images') as $image) {
-						$path = $image->store('reviews', 'public');
+        /* Handle review images */
+        $reviewImages = [];
+        if ($request->hasFile('review.images')) {
+            foreach ($request->file('review.images') as $image) {
+                $path = $image->store($reviewImagePath, 's3');
+                $reviewImages[] = Storage::disk('s3')->url($path);
+            }
+        }
+        $review->images = json_encode($reviewImages, JSON_UNESCAPED_SLASHES);
 
-						ReviewImage::create([
-							'review_id' => $review->id,
-							'image_path' => $path,
-						]);
-					}
-				}
+        /* Save the review */
+        $review->save();
+    }
 
-				return response()->json([
-					'success' => true,
-					'message' => 'Review saved successfully.',
-				]);
-			} else {
-				\Log::error('Failed to save review:', $review->toArray());
-				return response()->json(['success' => false, 'message' => 'Failed to save review.']);
-			}
-		}
+    /* Save the product */
+    $product->save();
 
-		/* Save the product */
-		$product->save();
+    /* Load relationships for response */
+    $product->load([
+        'categories',
+        'productAttributes.attribute',
+        'productAttributes.measurementUnit',
+        'faqs',
+        'vendor',
+        'brand',
+        'tax',
+        'currency'
+    ]);
 
-		$product = Product::find($product->id);
+    /* Format the response data */
+    $responseData = [
+        'id' => $product->id,
+        'name' => $product->name,
+        'description' => $product->description,
+        'sku' => $product->sku,
+        'barcode' => $product->barcode,
+        'price' => $product->price,
+        'sale_price' => $product->sale_price,
+        'cost_per_item' => $product->cost_per_item,
+        'cost_per_item_currency' => $product->cost_per_item_currency,
+        'cost_type' => $product->cost_type,
+        'additional_cost_percentage' => $product->additional_cost_percentage,
+        'additional_cost_value' => $product->additional_cost_value,
+        'total_cost_per_item' => $product->total_cost_per_item,
+        'quantity' => $product->quantity,
+        'stock_status' => $product->stock_status,
+        'status' => $product->status,
+        'refund' => $product->refund,
+        'warranty_information' => $product->warranty_information,
+        'images' => json_decode($product->images, true),
+        'video_path' => json_decode($product->video_path, true),
+        'documents' => json_decode($product->documents, true),
+        'benefits_features' => json_decode($product->benefits_features, true),
+        'is_variation' => $product->is_variation,
+        'variant_requires_shipping' => $product->variant_requires_shipping,
+        'variant_barcode' => $product->variant_barcode,
+        'variant_color_title' => $product->variant_color_title,
+        'variant_color_value' => $product->variant_color_value,
+        'views' => $product->views,
+        'units_sold' => $product->units_sold,
+        'frequently_bought_together' => $product->frequently_bought_together,
+        'google_shopping_category' => $product->google_shopping_category,
+        'google_shopping_mpn' => $product->google_shopping_mpn,
+        'order' => $product->order,
+        'box_quantity' => $product->box_quantity,
+        'delivery_days' => $product->delivery_days,
+        'unit_of_measurement_id' => $product->unit_of_measurement_id,
+        'gen_type' => $product->gen_type,
+        'created_at' => $product->created_at,
+        'updated_at' => $product->updated_at,
+        'categories' => $product->categories->map(function ($category) {
+            return [
+                'id' => $category->id,
+                'name' => $category->name,
+            ];
+        }),
+        'product_attributes' => $product->productAttributes->map(function ($attribute) {
+            return [
+                'id' => $attribute->id,
+                'attribute_id' => $attribute->attribute_id,
+                'attribute_name' => $attribute->attribute->name ?? null,
+                'attribute_value' => $attribute->attribute_value,
+                'measurement_unit_id' => $attribute->measurement_unit_id,
+                'measurement_unit_name' => $attribute->measurementUnit->name ?? null,
+            ];
+        }),
+        'faqs' => $product->faqs->map(function ($faq) {
+            return [
+                'id' => $faq->id,
+                'question' => $faq->question,
+                'answer' => $faq->answer,
+                'category_id' => $faq->category_id,
+                'status' => $faq->status,
+            ];
+        }),
+        'vendor' => $product->vendor ? [
+            'id' => $product->vendor->id,
+            'name' => $product->vendor->name,
+        ] : null,
+        'brand' => $product->brand ? [
+            'id' => $product->brand->id,
+            'name' => $product->brand->name,
+        ] : null,
+        'tax' => $product->tax ? [
+            'id' => $product->tax->id,
+            'name' => $product->tax->name,
+            'rate' => $product->tax->rate,
+        ] : null,
+        'currency' => $product->currency ? [
+            'id' => $product->currency->id,
+            'name' => $product->currency->name,
+            'symbol' => $product->currency->symbol,
+        ] : null,
+    ];
 
-		/* Return success response */
-		return response()->json([
-			'success' => true,
-			'message' => 'Product updated successfully.',
-			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
-			'unitOfMeasurements' => $unitOfMeasurements ,
-			// 'review' => $review ?? null,
-			'faq' => $faqs ?? null,
-		]);
-	}
+    return response()->json([
+        'success' => true,
+        'message' => 'Product updated successfully.',
+        'data' => $responseData,
+        'unit_of_measurements' => $unitOfMeasurements
+    ]);
+}
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/product-input",
