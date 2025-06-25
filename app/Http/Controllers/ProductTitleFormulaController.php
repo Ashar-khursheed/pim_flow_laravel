@@ -22,54 +22,102 @@ class ProductTitleFormulaController extends Controller
 	 * )
 	 */
 
-	 public function index(Request $request)
-	{
-		$query = ProductTitleFormula::with(['category', 'creator']);
+	//  public function index(Request $request)
+	// {
+	// 	$query = ProductTitleFormula::with(['category', 'creator']);
 
-		// Search
-		if ($search = $request->input('search')) {
-			$query->where(function ($q) use ($search) {
-				$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+	// 	// Search
+	// 	if ($search = $request->input('search')) {
+	// 		$query->where(function ($q) use ($search) {
+	// 			$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+	// 			->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+	// 			->orWhere('attribute_id', 'like', "%{$search}%"); // still searching by JSON field
+	// 		});
+	// 	}
+
+	// 	// Sorting
+	// 	$sortBy = $request->input('sort_by', 'id');
+	// 	$sortOrder = $request->input('sort_order', 'desc');
+	// 	if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
+	// 		$query->orderBy($sortBy, $sortOrder);
+	// 	}
+
+	// 	// Pagination
+	// 	$perPage = $request->input('per_page', 10);
+	// 	$data = $query->paginate($perPage);
+
+	// 	// Transform data to show attribute names
+	// 	$transformed = $data->getCollection()->map(function ($item) {
+	// 		return [
+	// 			'id' => $item->id,
+	// 			'category' => $item->category?->name,
+	// 			'created_by' => $item->creator?->name,
+	// 			'locked' => $item->locked,
+	// 			'attribute_names' => collect($item->attribute_id) // already cast to array in model
+	// 				->map(fn($id) => Attribute::find($id)?->name)
+	// 				->filter()
+	// 				->values(),
+	// 			'created_at' => $item->created_at,
+	// 			'updated_at' => $item->updated_at,
+	// 		];
+	// 	});
+
+	// 	return response()->json([
+	// 		'data' => $transformed,
+	// 		'current_page' => $data->currentPage(),
+	// 		'last_page' => $data->lastPage(),
+	// 		'per_page' => $data->perPage(),
+	// 		'total' => $data->total(),
+	// 	]);
+	// }
+	public function index(Request $request)
+{
+	$query = ProductTitleFormula::with(['category', 'creator']);
+
+	// Apply search
+	if ($search = $request->input('search')) {
+		$query->where(function ($q) use ($search) {
+			$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
 				->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
-				->orWhere('attribute_id', 'like', "%{$search}%"); // still searching by JSON field
-			});
-		}
-
-		// Sorting
-		$sortBy = $request->input('sort_by', 'id');
-		$sortOrder = $request->input('sort_order', 'desc');
-		if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
-			$query->orderBy($sortBy, $sortOrder);
-		}
-
-		// Pagination
-		$perPage = $request->input('per_page', 10);
-		$data = $query->paginate($perPage);
-
-		// Transform data to show attribute names
-		$transformed = $data->getCollection()->map(function ($item) {
-			return [
-				'id' => $item->id,
-				'category' => $item->category?->name,
-				'created_by' => $item->creator?->name,
-				'locked' => $item->locked,
-				'attribute_names' => collect($item->attribute_id) // already cast to array in model
-					->map(fn($id) => Attribute::find($id)?->name)
-					->filter()
-					->values(),
-				'created_at' => $item->created_at,
-				'updated_at' => $item->updated_at,
-			];
+				->orWhere('attribute_id', 'like', "%{$search}%");
 		});
-
-		return response()->json([
-			'data' => $transformed,
-			'current_page' => $data->currentPage(),
-			'last_page' => $data->lastPage(),
-			'per_page' => $data->perPage(),
-			'total' => $data->total(),
-		]);
 	}
+
+	// Sorting
+	$sortBy = $request->input('sort_by', 'id');
+	$sortOrder = $request->input('sort_order', 'desc');
+	if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
+		$query->orderBy($sortBy, $sortOrder);
+	}
+
+	// Fetch all results
+	$formulas = $query->get();
+
+	$grouped = $formulas->groupBy('category_id')->map(function ($items, $categoryId) {
+		$categoryName = optional($items->first()->category)->name;
+
+		// Unique attribute IDs
+		$attributeIds = $items->pluck('attribute_id')->flatten()->unique()->filter();
+		$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
+
+		// Unique creators
+		$creatorNames = $items->pluck('creator.name')->unique()->filter()->values();
+
+		return [
+			'category_id' => $categoryId,
+			'category_name' => $categoryName,
+			'attribute_names' => implode(', ', $attributeNames),
+			'created_by' => $creatorNames, // can return as array or implode
+			// If you want comma-separated creators instead:
+			// 'created_by' => implode(', ', $creatorNames->toArray()),
+		];
+	})->values();
+
+	return response()->json([
+		'data' => $grouped,
+	]);
+}
+
 
 
 
