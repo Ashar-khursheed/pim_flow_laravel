@@ -22348,45 +22348,12 @@
                     }
                 ]
             },
-            "delete": {
-                "tags": [
-                    "Product Title Formula"
-                ],
-                "summary": "Delete a product title formula",
-                "operationId": "bd52d95b6bd5d117756492a83ce2e18e",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Formula ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Deleted successfully"
-                    },
-                    "404": {
-                        "description": "Formula not found"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/product-title-formula/update-by-category": {
             "put": {
                 "tags": [
                     "Product Title Formula"
                 ],
                 "summary": "Update product title formulas by category (replace existing with new)",
-                "operationId": "09ae76254e4a8001e470f12c0dc638fc",
+                "operationId": "9e68472b6f4c469edac7d4c8294fc922",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -22476,6 +22443,37 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Delete a product title formula",
+                "operationId": "bd52d95b6bd5d117756492a83ce2e18e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Formula not found"
                     }
                 },
                 "security": [

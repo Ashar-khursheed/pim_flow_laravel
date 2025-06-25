@@ -163,29 +163,35 @@ class ProductTitleFormulaController extends Controller
 	 * )
 	 */
 
-	public function show($id)
+	 public function show($id)
 	 {
+		 // Load the requested formula with its category and creator
 		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
 	 
-		 // Collect attribute names from the JSON-casted array
-		 $attributeNames = collect($formula->attribute_id) // assuming attribute_id is casted to array in model
-			 ->map(function ($attrId) {
-				 return Attribute::find($attrId)?->name;
-			 })
-			 ->filter()
-			 ->values();
+		 // Get all formulas under the same category
+		 $formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
+	 
+		 // Collect unique attribute IDs across all formulas in this category
+		 $attributeIds = $formulasInSameCategory->pluck('attribute_id')
+			 ->flatten()
+			 ->unique()
+			 ->filter();
+	 
+		 // Get attribute names
+		 $attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
 	 
 		 return response()->json([
 			 'id' => $formula->id,
 			 'category_id' => $formula->category_id,
 			 'category_name' => $formula->category?->name,
 			 'created_by' => $formula->creator?->name,
-			 'attribute_names' => implode(', ', $attributeNames->toArray()),
+			 'attribute_names' => implode(', ', $attributeNames),
 			 'locked' => $formula->locked,
 			 'created_at' => $formula->created_at,
 			 'updated_at' => $formula->updated_at,
 		 ]);
 	 }
+	 
 	 
 
 	/**
@@ -259,92 +265,91 @@ class ProductTitleFormulaController extends Controller
 	}
 
 	/**
- * @OA\Put(
- *     path="/api/product-title-formula/update-by-category",
- *     summary="Update product title formulas by category (replace existing with new)",
- *     tags={"Product Title Formula"},
- *     security={{"bearerAuth":{}}},
- *     @OA\RequestBody(
- *         required=true,
- *         @OA\JsonContent(
- *             required={"attribute_ids", "category_id"},
- *             @OA\Property(
- *                 property="attribute_ids",
- *                 type="array",
- *                 @OA\Items(type="integer", example=1)
- *             ),
- *             @OA\Property(property="category_id", type="integer", example=47),
- *             @OA\Property(property="locked", type="boolean", example=true),
- *             @OA\Property(property="created_by", type="integer", example=1)
- *         )
- *     ),
- *     @OA\Response(
- *         response=200,
- *         description="Product title formulas updated successfully",
- *         @OA\JsonContent(
- *             @OA\Property(property="message", type="string", example="Product title formulas updated successfully."),
- *             @OA\Property(
- *                 property="data",
- *                 type="array",
- *                 @OA\Items(
- *                     type="object",
- *                     @OA\Property(property="id", type="integer", example=1),
- *                     @OA\Property(property="attribute_id", type="integer", example=3),
- *                     @OA\Property(property="category_id", type="integer", example=47),
- *                     @OA\Property(property="locked", type="boolean", example=true),
- *                     @OA\Property(property="created_by", type="integer", example=1),
- *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z"),
- *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z")
- *                 )
- *             )
- *         )
- *     )
- * )
- */
-public function updateByCategory(Request $request)
-{
-    $validated = $request->validate([
-        'attribute_ids' => 'required|array',
-        'attribute_ids.*' => 'integer|exists:attributes,id',
-        'category_id' => 'required|exists:categories,id',
-        'locked' => 'boolean',
-        'created_by' => 'nullable|integer',
-    ]);
-
-    // Start DB transaction for atomicity
-    DB::beginTransaction();
-
-    try {
-        // Delete existing formulas in the given category
-        ProductTitleFormula::where('category_id', $validated['category_id'])->delete();
-
-        // Insert new formulas
-        $newFormulas = [];
-        foreach ($validated['attribute_ids'] as $attributeId) {
-            $newFormulas[] = ProductTitleFormula::create([
-                'attribute_id' => $attributeId,
-                'category_id' => $validated['category_id'],
-                'locked' => $validated['locked'] ?? false,
-                'created_by' => $validated['created_by'] ?? null,
-            ]);
-        }
-
-        DB::commit();
-
-        return response()->json([
-            'message' => 'Product title formulas updated successfully.',
-            'data' => $newFormulas,
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-
-        return response()->json([
-            'message' => 'Failed to update product title formulas.',
-            'error' => $e->getMessage(),
-        ], 500);
-    }
-}
-
+	 * @OA\Put(
+		*     path="/api/product-title-formula/{id}",
+	    *     summary="Update product title formulas by category (replace existing with new)",
+		*     tags={"Product Title Formula"},
+		*     security={{"bearerAuth":{}}},
+		*     @OA\RequestBody(
+		*         required=true,
+		*         @OA\JsonContent(
+		*             required={"attribute_ids", "category_id"},
+		*             @OA\Property(
+		*                 property="attribute_ids",
+		*                 type="array",
+		*                 @OA\Items(type="integer", example=1)
+		*             ),
+		*             @OA\Property(property="category_id", type="integer", example=47),
+		*             @OA\Property(property="locked", type="boolean", example=true),
+		*             @OA\Property(property="created_by", type="integer", example=1)
+		*         )
+		*     ),
+		*     @OA\Response(
+		*         response=200,
+		*         description="Product title formulas updated successfully",
+		*         @OA\JsonContent(
+		*             @OA\Property(property="message", type="string", example="Product title formulas updated successfully."),
+		*             @OA\Property(
+		*                 property="data",
+		*                 type="array",
+		*                 @OA\Items(
+		*                     type="object",
+		*                     @OA\Property(property="id", type="integer", example=1),
+		*                     @OA\Property(property="attribute_id", type="integer", example=3),
+		*                     @OA\Property(property="category_id", type="integer", example=47),
+		*                     @OA\Property(property="locked", type="boolean", example=true),
+		*                     @OA\Property(property="created_by", type="integer", example=1),
+		*                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z"),
+		*                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z")
+		*                 )
+		*             )
+		*         )
+		*     )
+		* )
+		*/
+	public function update(Request $request, $id)
+	{
+		$validated = $request->validate([
+			'attribute_ids' => 'required|array',
+			'attribute_ids.*' => 'integer|exists:attributes,id',
+			'category_id' => 'required|exists:categories,id',
+			'locked' => 'boolean',
+			'created_by' => 'nullable|integer',
+		]);
+	
+		// Start DB transaction for atomicity
+		DB::beginTransaction();
+	
+		try {
+			// Delete existing formulas in the given category
+			ProductTitleFormula::where('category_id', $validated['category_id'])->delete();
+	
+			// Insert new formulas
+			$newFormulas = [];
+			foreach ($validated['attribute_ids'] as $attributeId) {
+				$newFormulas[] = ProductTitleFormula::create([
+					'attribute_id' => $attributeId,
+					'category_id' => $validated['category_id'],
+					'locked' => $validated['locked'] ?? false,
+					'created_by' => $validated['created_by'] ?? null,
+				]);
+			}
+	
+			DB::commit();
+	
+			return response()->json([
+				'message' => 'Product title formulas updated successfully.',
+				'data' => $newFormulas,
+			]);
+		} catch (\Exception $e) {
+			DB::rollBack();
+	
+			return response()->json([
+				'message' => 'Failed to update product title formulas.',
+				'error' => $e->getMessage(),
+			], 500);
+		}
+	}
 
 	/**
 	 * @OA\Delete(
