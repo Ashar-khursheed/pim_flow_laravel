@@ -894,6 +894,7 @@ class ProductController extends BaseController
 	*     security={{"bearerAuth":{}}}
 	* )
 	*/
+	
 	public function update(Request $request, $productId)
 	{
 		/* Log the incoming request for debugging */
@@ -908,6 +909,25 @@ class ProductController extends BaseController
 				'message' => 'Product does not exist.'
 			]);
 		}
+
+		// Get the authenticated user and their role
+		$user = auth()->user();
+		$userRole = $user ? $user->getRoleNames()->first() : null;
+		$allowedRoles = [
+			'Super Admin', 
+			'Admin', 
+			'Graphic Designer Manager'
+		];  // Define which roles can modify images
+		$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
+
+		$contentAllowedRoles = [
+			'Super Admin',
+			'Admin',
+			'Content Writing Manager',
+			'Content Writer'
+		];
+		$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
+	
 
 		/* Handle categories - IMPROVED VERSION */
 		if ($request->has('categories')) {
@@ -1026,6 +1046,7 @@ class ProductController extends BaseController
 			}
 		}
 
+		
 		$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
 		/* Check if faqs is a string and decode it properly */
@@ -1146,9 +1167,26 @@ class ProductController extends BaseController
 		$documentPath = 'production/documents';
 		$reviewImagePath = 'production/reviews';
 
-		$finalImages = [];
-
+		// Handle images with role-based permission
 		if ($request->has('images')) {
+			// Check if user is actually trying to modify images (upload new files)
+			$hasNewImageFiles = false;
+			foreach ($request->images as $key => $image) {
+				if ($request->hasFile("images.$key")) {
+					$hasNewImageFiles = true;
+					break;
+				}
+			}
+			
+			// Only check permissions if user is uploading new image files
+			if ($hasNewImageFiles && !$canModifyImages) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product images.'
+				], 403);
+			}
+		
+			$finalImages = [];
 			foreach ($request->images as $key => $image) {
 				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
 					// It's a URL, keep it as is
@@ -1161,64 +1199,36 @@ class ProductController extends BaseController
 				}
 				// else ignore invalid inputs
 			}
+		
+			// Save as JSON with unescaped slashes
+			$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+		} else {
+			// If images are not being updated, preserve existing images
+			$input['images'] = $product->images;
 		}
 
-		// Save as JSON with unescaped slashes
-		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
-
-		// /* ✅ Handle Single Image Upload */
-		// if ($request->hasFile('image')) {
-		// 	$path = $request->file('image')->store($imagePath, 's3');
-		// 	$input['image'] = Storage::disk('s3')->url($path); /* ✅ Full S3 URL */
-		// }
-		// $existingImages = is_array($product->images) ? $product->images : json_decode($product->images, true);
-		// $existingImages = is_array($existingImages) ? $existingImages : []; /* Ensure it's an array */
-
-		// if ($request->hasFile('images')) {
-		// 	$uploadedImages = [];
-		// 	foreach ($request->file('images') as $image) {
-		// 		$path = $image->store($imagePath, 's3');
-		// 		$uploadedImages[] = Storage::disk('s3')->url($path);
-		// 	}
-
-		// 	/* Merge old and new images */
-		// 	$input['images'] = array_merge($existingImages, $uploadedImages);
-		// } else {
-		// 	/* Keep existing images if no new images are uploaded */
-		// 	$input['images'] = $existingImages;
-		// }
-
-		// /* Convert to JSON with unescaped slashes before saving */
-		// $input['images'] = json_encode($input['images'], JSON_UNESCAPED_SLASHES);
-
-
-
-		/* Handle video upload */
-		// $existingVideos = is_array($product->video_path) ? $product->video_path : json_decode($product->video_path, true);
-		// $existingVideos = is_array($existingVideos) ? $existingVideos : [];
-
-		// if ($request->hasFile('video_path')) {
-		// 	$uploadedVideos = [];
-		// 	foreach ($request->file('video_path') as $video) {
-		// 		$path = $video->store($videoPath, 's3');
-		// 		$uploadedVideos[] = Storage::disk('s3')->url($path);
-		// 	}
-
-		// 	/* Merge with existing videos */
-		// 	$input['video_path'] = array_merge($existingVideos, $uploadedVideos);
-		// } else {
-		// 	/* Retain existing videos if no new files are uploaded */
-		// 	$input['video_path'] = $existingVideos;
-		// }
-
-		// /* Convert to JSON with unescaped slashes */
-		// $input['video_path'] = json_encode($input['video_path'], JSON_UNESCAPED_SLASHES);
-		$finalVideos = [];
-
+		// Handle videos with role-based permission
 		if ($request->has('video_path')) {
+			// Check if user is actually trying to modify videos (upload new files)
+			$hasNewVideoFiles = false;
 			$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
 			foreach ($videoPaths as $key => $video) {
-
+				if ($request->hasFile("video_path.$key")) {
+					$hasNewVideoFiles = true;
+					break;
+				}
+			}
+			
+			// Only check permissions if user is uploading new video files
+			if ($hasNewVideoFiles && !$canModifyImages) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product videos.'
+				], 403);
+			}
+		
+			$finalVideos = [];
+			foreach ($videoPaths as $key => $video) {
 				if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
 					// It's a URL, keep as is
 					$finalVideos[] = $video;
@@ -1230,11 +1240,13 @@ class ProductController extends BaseController
 				}
 				// ignore invalid inputs
 			}
+		
+			$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
+		} else {
+			// If videos are not being updated, preserve existing videos
+			$input['video_path'] = $product->video_path;
 		}
-
-		$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
-
-		// /* Handle document upload */
+		// Handle document upload (keeping existing logic)
 		$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
 		$existingDocs = is_array($existingDocs) ? $existingDocs : [];
 
@@ -1268,14 +1280,8 @@ class ProductController extends BaseController
 		/* Convert to JSON with unescaped slashes */
 		$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
 
-
-
-		// $input['allow_checkout_when_out_of_stock'] = filter_var($request->input('allow_checkout_when_out_of_stock'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		// $input['with_storehouse_management'] = filter_var($request->input('with_storehouse_management'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-		// $input['sale_type'] = $request->input('sale_type') === 'percentage' ? 1 : 0;
-
 
 		/* List of valid fields allowed for updating */
 		$validArray = [
@@ -1338,45 +1344,6 @@ class ProductController extends BaseController
 			$product->status = $input['status']; /* Assign status */
 		}
 
-		// if (isset($input['unit_of_measurement_id'])) {
-		// 	/* Fetch all valid unit IDs from the database */
-		// 	$validUnitIds = UnitOfMeasurement::pluck('id')->toArray();
-
-		// 	if (!is_numeric($input['unit_of_measurement_id']) || !in_array((int) $input['unit_of_measurement_id'], $validUnitIds)) {
-		// 		return response()->json([
-		// 			'success' => false,
-		// 			'message' => 'Invalid unit_of_measurement_id. Please provide a valid ID from the UnitOfMeasurement table.'
-		// 		]);
-		// 	}
-
-		// 	$product->unit_of_measurement_id = $input['unit_of_measurement_id']; /* Assign the valid ID */
-		// }
-
-		// /* Decode existing benefits_features if available */
-		// $existingBenefits = json_decode($product->benefits_features, true);
-
-		// /* Ensure existingBenefits is an array */
-		// if (!is_array($existingBenefits)) {
-		// 	$existingBenefits = [];
-		// }
-
-		// /* Decode incoming request JSON */
-		// $newBenefits = json_decode($request->input('benefits_features'), true);
-
-		// /* Ensure newBenefits is an array */
-		// if (!is_array($newBenefits)) {
-		// 	return response()->json([
-		// 		'success' => false,
-		// 		'message' => 'Invalid benefits_features format.'
-		// 	], 400);
-		// }
-
-		// /* Merge existing benefits with new ones */
-		// $mergedBenefits = array_merge($existingBenefits, $newBenefits);
-
-		// /* Save back as JSON */
-		// $product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
-
 		/* Handle benefits_features field */
 		if ($request->has('benefits_features')) {
 			/* Decode existing benefits_features if available */
@@ -1424,7 +1391,6 @@ class ProductController extends BaseController
 			/* Save back as JSON */
 			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 		}
-
 
 		/* Stock status validation */
 		$usStockStatusArray = [
@@ -1474,7 +1440,6 @@ class ProductController extends BaseController
 			6 => "g",
 			9 => "lbs",
 		];
-
 
 		if (isset($input['google_shopping_category'])) {
 			$product->google_shopping_category = $input['google_shopping_category'];
@@ -1528,7 +1493,6 @@ class ProductController extends BaseController
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
 		}
-
 
 		if ($request->has('review')) {
 			$reviewInput = $request->input('review');
@@ -1589,7 +1553,6 @@ class ProductController extends BaseController
 		$product->save();
 
 		$product = Product::find($product->id);
-
 
 		/* Return success response */
 		return response()->json([

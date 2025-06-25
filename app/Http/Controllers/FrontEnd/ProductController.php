@@ -154,7 +154,13 @@ class ProductController extends Controller
                         $query->select('id', 'product_id', 'star');
                     },
                     'currency' ,
-                    'categories'               ])
+                    'categories',
+                    'productAttributes' => function ($query) {
+                        $query->whereHas('attributeDetails', function ($q) {
+                            $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                        });
+                    },
+                     ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
@@ -190,17 +196,47 @@ class ProductController extends Controller
                         $product->benefits_features = json_decode($product->benefits_features, true);
 
 
+                        // if (is_string($product->description)) {
+                        //     $decoded = json_decode($product->description, true);
+                        
+                        //     // If it's a valid JSON array, use it directly
+                        //     if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        //         $product->description = $decoded;
+                        //     } else {
+                        //         // If it's not a valid JSON array, wrap the raw string in an array
+                        //         $product->description = [$product->description];
+                        //     }
+                        // }
                         if (is_string($product->description)) {
                             $decoded = json_decode($product->description, true);
                         
-                            // If it's a valid JSON array, use it directly
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = $decoded;
+                                $product->description = array_values(array_filter(array_map(function ($item) {
+                                    if (is_null($item) || strtolower($item) === 'null') {
+                                        return null;
+                                    }
+                        
+                                    // Remove all &nbsp; (HTML and UTF-8) from the string
+                                    $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
+                        
+                                    // Optionally clean up extra spaces
+                                    $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+                                    $item = trim($item);
+                        
+                                    // Still keep <p> tags or not? Your call — if not, uncomment below:
+                                    // $item = strip_tags($item);
+                        
+                                    return $item !== '' ? $item : null;
+                                }, $decoded)));
                             } else {
-                                // If it's not a valid JSON array, wrap the raw string in an array
                                 $product->description = [$product->description];
                             }
                         }
+                        
+                        
+                        
+                        
+                        
                         
 
                         if ($product->brand) {
@@ -229,8 +265,9 @@ class ProductController extends Controller
                         });
 
                         // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specifications Sheet',
+                         // Custom sorting for documents
+                         $desiredOrder = [
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
@@ -261,26 +298,43 @@ class ProductController extends Controller
                             $product->documents = [];
                         }
                         
-                        // Custom sorting for documents
-                        $desiredOrder = [
-                            'Technical Specifications Sheet',
-                            'Warranty Information',
-                            'Horeca Buying Guide',
-                            'Setup & Usage Instructions',
-                            'Product Installation Guide',
-                            'Installation & Elevation Diagram',
-                            'Spare Parts List',
-                            'Product Brochure',
-                        ];
+                       
+                        // $documents = json_decode($product->documents, true);
+                        // if (is_array($documents)) {
+                        //     // Remove .pdf extension from titles
+                        //     foreach ($documents as &$doc) {
+                        //         $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                        //     }
 
-                        $documents = json_decode($product->documents, true);
+                        //     // Sort documents by desired order
+                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
+                        //         $posA = array_search($a['title'], $desiredOrder);
+                        //         $posB = array_search($b['title'], $desiredOrder);
+                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
+                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
+                        //         return $posA <=> $posB;
+                        //     });
+
+                        //     $product->documents = $documents;
+                        // } else {
+                        //     $product->documents = [];
+                        // }
+                        $documents = $product->documents;
+
+                        // If $documents is already an array, skip decoding
+                        if (is_string($documents)) {
+                            $documents = json_decode($documents, true);
+                        }
+
+                        // Proceed if it's a valid array
                         if (is_array($documents)) {
                             // Remove .pdf extension from titles
                             foreach ($documents as &$doc) {
-                                $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                                if (isset($doc['title'])) {
+                                    $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                                }
                             }
-
-                            // Sort documents by desired order
+                            // Sort documents based on desired order
                             usort($documents, function ($a, $b) use ($desiredOrder) {
                                 $posA = array_search($a['title'], $desiredOrder);
                                 $posB = array_search($b['title'], $desiredOrder);
@@ -289,9 +343,8 @@ class ProductController extends Controller
                                 return $posA <=> $posB;
                             });
 
+                            // Save back to product
                             $product->documents = $documents;
-                        } else {
-                            $product->documents = [];
                         }
 
                         // Handle videos
@@ -299,9 +352,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video; // Already a full URL, just return it
                         });
-
-                        
-
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {
@@ -311,6 +362,29 @@ class ProductController extends Controller
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
                         }
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
+                        }
+
+                        // Calculate per unit price
+                        $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                        $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        
+
+                            $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                            $perUnitPrice = null;
+
+                            if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                                $unitValue = (float) $unitsPerCase->attribute_value;
+                                if ($unitValue > 0) {
+                                    $calculated = round($basePrice / $unitValue, 2);
+                                    $perUnitPrice = $calculated .  '/' . ($packType?->attribute_value ?? '');
+                                }
+                            }
+
+                            $product->per_unit_price = $perUnitPrice;
+
+                
                         
                         // Add review and stock details
                         $totalReviews = $product->reviews->count();
@@ -333,17 +407,56 @@ class ProductController extends Controller
                             $product->currency_title = $product->price;
                         }
 
-                        $product->category_list = $product->categories->map(function ($category) {
-                            return [
-                                'id' => $category->id,
-                                'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
-                            ];
-                        });
+                    //     $product->category_list = $product->categories->map(function ($category) {
+                    //         return [
+                    //             'id' => $category->id,
+                    //             'name' => $category->name,
+                    //             'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                    //         ];
+                    //     });
 
-                        return $product;
+                    //     return $product;
+                    // });
+                    // Get all categories including parent hierarchies
+                    $allCategories = collect();
+
+                    $product->categories->each(function ($category) use ($allCategories) {
+                        // Function to recursively get parent categories
+                        $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                            $parents = collect();
+                            if ($cat->parent_id) {
+                                // Get parent category - adjust model name if needed
+                                $parent = Category::with('slug')->find($cat->parent_id);
+                                if ($parent) {
+                                    // Recursively get parent's hierarchy
+                                    $parents = $parents->merge($getParentHierarchy($parent));
+                                    $parents->push($parent);
+                                }
+                            }
+                            return $parents;
+                        };
+                        
+                        // Get all parent categories
+                        $parentHierarchy = $getParentHierarchy($category);
+                        
+                        // Add parents to collection
+                        $allCategories->push(...$parentHierarchy);
+                        
+                        // Add current category
+                        $allCategories->push($category);
                     });
 
+                    // Remove duplicates and map to desired structure
+                    $product->category_list = $allCategories->unique('id')->map(function ($category) {
+                        return [
+                            'id' => $category->id,
+                            'name' => $category->name,
+                            'slug' => $category->slug,
+                        ];
+                    })->values();
+
+                    return $product;
+                });
                     return response()->json([
                         'success' => true,
                         'data' => $products,
@@ -460,7 +573,11 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories'
+                    'currency',  'categories' ,  'productAttributes' => function ($query) {
+                        $query->whereHas('attributeDetails', function ($q) {
+                            $q->whereIn('name', ['Units per Case', 'Pack Type']);
+                        });
+                    },
                 ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
@@ -505,14 +622,33 @@ class ProductController extends Controller
                         if (is_string($product->description)) {
                             $decoded = json_decode($product->description, true);
                         
-                            // If it's a valid JSON array, use it directly
                             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                                $product->description = $decoded;
+                                $product->description = array_values(array_filter(array_map(function ($item) {
+                                    if (is_null($item) || strtolower($item) === 'null') {
+                                        return null;
+                                    }
+                        
+                                    // Remove all &nbsp; (HTML and UTF-8) from the string
+                                    $item = str_replace(['&nbsp;', "\xc2\xa0"], ' ', $item);
+                        
+                                    // Optionally clean up extra spaces
+                                    $item = preg_replace('/\s+/', ' ', $item); // collapse spaces
+                                    $item = trim($item);
+                        
+                                    // Still keep <p> tags or not? Your call — if not, uncomment below:
+                                    // $item = strip_tags($item);
+                        
+                                    return $item !== '' ? $item : null;
+                                }, $decoded)));
                             } else {
-                                // If it's not a valid JSON array, wrap the raw string in an array
                                 $product->description = [$product->description];
                             }
                         }
+                        
+                        
+                        
+                        
+                        
                         
                     
                         if ($product->brand) {
@@ -543,7 +679,7 @@ class ProductController extends Controller
 
                         // Custom sorting for documents
                         $desiredOrder = [
-                            'Technical Specifications Sheet',
+                            'Technical Specification Sheet',
                             'Warranty Information',
                             'Horeca Buying Guide',
                             'Setup & Usage Instructions',
@@ -578,7 +714,7 @@ class ProductController extends Controller
                         $product->video_path = collect($videoPaths)->map(function ($video) {
                             return $video;
                         });
-                    
+                        $sellingType = null;
                         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                             $fullValue = $product->sellingUnitAttribute->attribute_value;
                             if (strpos($fullValue, '/') !== false) {
@@ -588,7 +724,29 @@ class ProductController extends Controller
                                 $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
                             }
                         }
-                    
+                        if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                            $fullValue = $product->ingredientsAttribute->attribute_value;
+                        }
+
+                        // Calculate per unit price
+                        $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                        $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        
+
+                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                        $perUnitPrice = null;
+
+                        if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                            $unitValue = (float) $unitsPerCase->attribute_value;
+                            if ($unitValue > 0) {
+                                $calculated = round($basePrice / $unitValue, 2);
+                                $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+                            }
+                        }
+
+                        $product->per_unit_price = $perUnitPrice;
+
+                                            
                         // Reviews and stock
                         $totalReviews = $product->reviews->count();
                         $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
@@ -612,18 +770,46 @@ class ProductController extends Controller
                         // ❌ Removed specifications section
                     
                         // ❌ Removed frequently bought together section
-                        $product->category_list = $product->categories->map(function ($category) {
+                       // Get all categories including parent hierarchies
+                        $allCategories = collect();
+
+                        $product->categories->each(function ($category) use ($allCategories) {
+                            // Function to recursively get parent categories
+                            $getParentHierarchy = function($cat) use (&$getParentHierarchy) {
+                                $parents = collect();
+                                if ($cat->parent_id) {
+                                    // Get parent category - adjust model name if needed
+                                    $parent = Category::with('slug')->find($cat->parent_id);
+                                    if ($parent) {
+                                        // Recursively get parent's hierarchy
+                                        $parents = $parents->merge($getParentHierarchy($parent));
+                                        $parents->push($parent);
+                                    }
+                                }
+                                return $parents;
+                            };
+                            
+                            // Get all parent categories
+                            $parentHierarchy = $getParentHierarchy($category);
+                            
+                            // Add parents to collection
+                            $allCategories->push(...$parentHierarchy);
+                            
+                            // Add current category
+                            $allCategories->push($category);
+                        });
+
+                        // Remove duplicates and map to desired structure
+                        $product->category_list = $allCategories->unique('id')->map(function ($category) {
                             return [
                                 'id' => $category->id,
                                 'name' => $category->name,
-                                'slug' => optional($category->slugable)->key, // Get slug from the slugs table
+                                'slug' => $category->slug,
                             ];
-                        });
+                        })->values();
 
-                      
-                    
                         return $product;
-                    });
+                        });
                     
 
                     return response()->json([

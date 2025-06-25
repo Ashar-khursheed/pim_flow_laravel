@@ -65,31 +65,29 @@ class BrandPageController extends Controller
     public function show($id): JsonResponse
     {
         $brand = Brand::find($id);
-
+    
         if (!$brand) {
             return response()->json(['error' => 'Brand not found'], 404);
         }
-
+    
         // Try finding matching template data
         $templateData = BrandTemp1::where('brand_id', $id)->first();
         $templateType = 'temp1';
-
+    
         if (!$templateData) {
             $templateData = BrandTemp2::where('brand_id', $id)->first();
             $templateType = 'temp2';
         }
-
+    
         if (!$templateData) {
             $templateData = BrandTemp3::where('brand_id', $id)->first();
             $templateType = 'temp3';
         }
-
+    
         if (!$templateData) {
             return response()->json(['error' => 'No template data found for this brand'], 404);
         }
-
-     // After retrieving the templateData
-
+    
         // Get all unique category IDs from the templateData
         $categoryIds = [];
         if (!empty($templateData->category_id)) {
@@ -100,46 +98,67 @@ class BrandPageController extends Controller
             }
         }
         $categoryIds = array_unique($categoryIds);
-
-        // Fetch category details from categories table
+    
+        // Fetch category details
         $categories = [];
         if (!empty($categoryIds)) {
             $categories = \DB::table('categories')
                 ->whereIn('id', $categoryIds)
                 ->get();
         }
-
-        // Create a lookup array for easy access to category data
+    
+        // Create category lookup
         $categoryData = [];
         foreach ($categories as $category) {
             $categoryData[$category->id] = $category;
         }
-
-        // Create a new array with the enhanced category data
+    
+        // Enhance category data
         $enhancedCategoryData = [];
         if (!empty($templateData->category_id)) {
             foreach ($templateData->category_id as $categoryItem) {
                 $catId = $categoryItem['category_id'];
-                $newItem = $categoryItem; // Copy the original item
-
+                $newItem = $categoryItem;
+    
                 if (isset($categoryData[$catId])) {
-                    // Add category details to the copied item
                     $newItem['category_details'] = $categoryData[$catId];
                 }
-
+    
                 $enhancedCategoryData[] = $newItem;
             }
         }
-
-        // Convert template data to array for modification
+    
+        // Convert template data to array and inject enhanced categories
         $templateDataArray = $templateData->toArray();
         $templateDataArray['category_id'] = $enhancedCategoryData;
-
-        // Return the response with the modified data
+    
+        // ✅ Get reviews and average rating using Eloquent
+        $products = $brand->products()
+            ->where('status', 'published')
+            ->with('reviews')
+            ->get();
+    
+        $totalReviews = 0;
+        $totalStars = 0;
+    
+        foreach ($products as $product) {
+            $validReviews = $product->reviews->whereNotNull('star');
+            $totalReviews += $validReviews->count();
+            $totalStars += $validReviews->sum('star');
+        }
+    
+        $avgRating = $totalReviews > 0 ? round($totalStars / $totalReviews, 1) : null;
+    
+        // ✅ Return everything
         return response()->json([
             'brand' => $brand,
             'template_type' => $templateType,
             'template_data' => $templateDataArray,
+            'reviews' => [
+                'total_reviews' => $totalReviews,
+                'average_rating' => $avgRating,
+            ],
         ]);
     }
+    
 }

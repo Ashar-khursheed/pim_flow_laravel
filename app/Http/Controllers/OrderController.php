@@ -227,9 +227,26 @@ class OrderController extends Controller
 				$totalProducts += $product['quantity'];
 				$totalAmount += $product['quantity'] * $product['unit_price'];
 			}
+			/* Get the latest order by ID (most recent) */
+			$latestOrder = Order::orderBy('id', 'desc')->first();
+
+			/* Generate the next order number */
+			if ($latestOrder && is_numeric($latestOrder->order_number)) {
+				$orderNumber = (int) $latestOrder->order_number + 1;
+			} else {
+				$website = config('app.website');
+
+				if ($website === 'US') {
+					$orderNumber = 10001;
+				} elseif ($website === 'UAE') {
+					$orderNumber = 1001;
+				} else {
+					$orderNumber = 101;
+				}
+			}
 
 			$order = Order::create([
-				'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+				'order_number' => $orderNumber,
 				'customer_id' => $request->customer_id,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $request->shipping_charge,
@@ -322,10 +339,7 @@ class OrderController extends Controller
 	 *         required=true,
 	 *         @OA\Schema(type="integer")
 	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Order details retrieved successfully"
-	 *     )
+	 *     @OA\Response(response=200, description="Order details retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
 	public function show($id)
@@ -384,17 +398,12 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Order status updated successfully"),
+	 *     @OA\Response(response=200, description="Order status updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function updateStatus(Request $request, $id)
 	{
-		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
-			'notes' => 'nullable|string'
-		]);
-
 		$order = Order::find($id);
 
 		if (!$order) {
@@ -404,11 +413,51 @@ class OrderController extends Controller
 			]);
 		}
 
+		$request->validate([
+			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
+			'notes' => 'nullable|string'
+		]);
+
+		/* Validate shipment and quantity for delivery-related statuses */
+		$deliveryStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+
+		if (in_array($request->status, $deliveryStatuses)) {
+
+			/* Check if order has any shipments */
+			if (!$order->shipments()->exists()) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark order as {$request->status} because no shipments are available."
+				]);
+			}
+
+			/* Calculate total quantity from shipmentProducts */
+			$totalShippedQuantity = 0;
+
+			foreach ($order->shipments as $shipment) {
+				foreach ($shipment->shipmentProducts as $shipmentProduct) {
+					$totalShippedQuantity += $shipmentProduct->quantity;
+				}
+			}
+
+			if ($totalShippedQuantity !== $order->total_products) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark order as {$request->status} because total shipped quantity ({$totalShippedQuantity}) does not match total ordered products ({$order->total_products})."
+				]);
+			}
+		}
+
 		$oldStatus = $order->status;
 
-		$order->update(['status' => $request->status]);
+		/* Update order and products */
+		$order->update([
+			'status' => $request->status,
+		]);
 
-		/* dd tracking entry */
+		$order->orderProducts()->update(['status' => $request->status]);
+
+		/* Add tracking */
 		OrderTracking::create([
 			'order_id' => $order->id,
 			'status' => $request->status,
@@ -437,17 +486,12 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=200, description="Product status updated successfully"),
+	 *     @OA\Response(response=200, description="Product status updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function updateProductStatus(Request $request, $orderId, $orderProductId)
 	{
-		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
-			'notes' => 'nullable|string'
-		]);
-
 		$order = Order::find($orderId);
 
 		if (!$order) {
@@ -466,10 +510,74 @@ class OrderController extends Controller
 			]);
 		}
 
-		$oldStatus = $orderProduct->status;
-		$orderProduct->update(['status' => $request->status]);
+		/* Prevent status update before order is confirmed */
+		if ($order->status === 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Product status cannot be changed until the order is confirmed."
+			]);
+		}
 
-		/* dd tracking entry */
+		$request->validate([
+			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Partially Pickups,Out for delivery,Partially Out for delivery,Delivered,Partially Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
+			'notes' => 'nullable|string'
+		]);
+
+		$fullStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
+		$partialStatuses = ['Partially Pickups', 'Partially Out for delivery', 'Partially Delivered'];
+
+		if (in_array($request->status, array_merge($fullStatuses, $partialStatuses))) {
+
+			$shipmentProducts = $orderProduct->shipmentProducts;
+
+			if ($shipmentProducts->isEmpty()) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot mark product as '{$request->status}' because it has no shipment records."
+				]);
+			}
+
+			$totalShipped = 0;
+			foreach ($shipmentProducts as $shipmentProduct) {
+				$totalShipped += $shipmentProduct->quantity;
+			}
+
+			if (in_array($request->status, $fullStatuses)) {
+				if ($totalShipped !== $orderProduct->quantity) {
+					return response()->json([
+						'success' => false,
+						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
+					]);
+				}
+			} elseif (in_array($request->status, $partialStatuses)) {
+				if ($totalShipped <= 0 || $totalShipped >= $orderProduct->quantity) {
+					return response()->json([
+						'success' => false,
+						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) must be greater than 0 and less than ordered quantity ({$orderProduct->quantity})."
+					]);
+				}
+			}
+		}
+
+		$oldStatus = $orderProduct->status;
+		$orderProduct->status = $request->status;
+		$orderProduct->save();
+
+		/* Get all product statuses from this order */
+		$productStatuses = $order->orderProducts()->pluck('status')->toArray();
+
+		/* Check if all product statuses are the same */
+		$allSame = count(array_unique($productStatuses)) === 1;
+
+		if ($allSame) {
+			$order->status = $productStatuses[0];
+		} elseif (in_array('Delivered', $productStatuses) || in_array('Partially Delivered', $productStatuses)) {
+			$order->status = 'Partially Delivered';
+		}
+
+		$order->save();
+
+		/* Add tracking entry */
 		OrderTracking::create([
 			'order_id' => $order->id,
 			'status' => "Product Status Updated",
@@ -513,22 +621,12 @@ class OrderController extends Controller
 	 *             @OA\Property(property="notes", type="string")
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Shipment created successfully"),
+	 *     @OA\Response(response=201, description="Shipment created successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}},
 	 * )
 	 */
 	public function createShipment(Request $request, $id)
 	{
-		/* Validate input */
-		$request->validate([
-			'products' => 'required|array|min:1',
-			'products.*.order_product_id' => 'required|integer|exists:order_products,id',
-			'products.*.quantity' => 'required|integer|min:1',
-			'tracking_number' => 'nullable|string|max:255',
-			'carrier' => 'nullable|string|max:255',
-			'notes' => 'nullable|string|max:500',
-		]);
-
 		/* Fetch order with related products */
 		$order = Order::with('orderProducts')->find($id);
 
@@ -538,6 +636,24 @@ class OrderController extends Controller
 				'message' => 'Order not found.'
 			], 404);
 		}
+
+		/* Prevent status update before order is confirmed */
+		if ($order->status === 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Shipment cannot be created until the order is confirmed."
+			]);
+		}
+
+		/* Validate input */
+		$request->validate([
+			'products' => 'required|array|min:1',
+			'products.*.order_product_id' => 'required|integer|exists:order_products,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'tracking_number' => 'nullable|string|max:255',
+			'carrier' => 'nullable|string|max:255',
+			'notes' => 'nullable|string|max:500',
+		]);
 
 		DB::beginTransaction();
 
@@ -569,13 +685,12 @@ class OrderController extends Controller
 				]);
 
 				/* Update remaining quantity */
+				$orderProduct->shipped_quantity += $productData['quantity'];
 				$orderProduct->remaining_quantity -= $productData['quantity'];
 				$orderProduct->save();
 			}
 
 			/* Update order delivery status */
-			$allShipped = $order->orderProducts->every(fn($product) => $product->remaining_quantity <= 0);
-			$order->status = $allShipped ? 'Delivered' : 'Partially Delivered';
 			$order->save();
 
 			/* Add tracking entry */

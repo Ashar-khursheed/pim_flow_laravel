@@ -11442,47 +11442,155 @@
                 }
             }
         },
-        "/frontend/ccavenue/payment": {
+        "/api/frontend/ccavenue/initiate-payment": {
             "post": {
                 "tags": [
-                    "Payments"
+                    "CCAvenue"
                 ],
-                "summary": "Initiate CCAvenue Payment",
-                "description": "Initiates a payment request to CCAvenue and returns a redirect HTML form.",
-                "operationId": "dc6be3fb4d980cdcc4c92430e4876074",
+                "summary": "Initiate CCAvenue payment",
+                "description": "Create a payment request and get payment URL",
+                "operationId": "initiatePayment",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "order_id",
                                     "amount",
-                                    "name",
-                                    "email",
-                                    "phone",
-                                    "address"
+                                    "currency",
+                                    "redirect_url",
+                                    "cancel_url"
                                 ],
                                 "properties": {
-                                    "amount": {
-                                        "type": "number",
-                                        "example": 500
+                                    "order_id": {
+                                        "description": "Unique order identifier",
+                                        "type": "string",
+                                        "example": "ORD123456789"
                                     },
-                                    "name": {
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100.5
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "enum": [
+                                            "INR",
+                                            "USD",
+                                            "EUR",
+                                            "GBP",
+                                            "AED"
+                                        ],
+                                        "example": "INR"
+                                    },
+                                    "redirect_url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://yoursite.com/payment/success"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string",
+                                        "format": "uri",
+                                        "example": "https://yoursite.com/payment/cancel"
+                                    },
+                                    "language": {
+                                        "type": "string",
+                                        "enum": [
+                                            "EN",
+                                            "HI"
+                                        ],
+                                        "example": "EN"
+                                    },
+                                    "billing_name": {
                                         "type": "string",
                                         "example": "John Doe"
                                     },
-                                    "email": {
+                                    "billing_address": {
+                                        "type": "string",
+                                        "example": "123 Main Street"
+                                    },
+                                    "billing_city": {
+                                        "type": "string",
+                                        "example": "Mumbai"
+                                    },
+                                    "billing_state": {
+                                        "type": "string",
+                                        "example": "Maharashtra"
+                                    },
+                                    "billing_zip": {
+                                        "type": "string",
+                                        "example": "400001"
+                                    },
+                                    "billing_country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "billing_tel": {
+                                        "type": "string",
+                                        "example": "9876543210"
+                                    },
+                                    "billing_email": {
                                         "type": "string",
                                         "format": "email",
                                         "example": "john@example.com"
                                     },
-                                    "phone": {
+                                    "delivery_name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "delivery_address": {
+                                        "type": "string",
+                                        "example": "456 Oak Avenue"
+                                    },
+                                    "delivery_city": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "delivery_state": {
+                                        "type": "string",
+                                        "example": "Delhi"
+                                    },
+                                    "delivery_zip": {
+                                        "type": "string",
+                                        "example": "110001"
+                                    },
+                                    "delivery_country": {
+                                        "type": "string",
+                                        "example": "India"
+                                    },
+                                    "delivery_tel": {
                                         "type": "string",
                                         "example": "9876543210"
                                     },
-                                    "address": {
+                                    "merchant_param1": {
                                         "type": "string",
-                                        "example": "123 Street Name, City"
+                                        "example": "Additional info 1"
+                                    },
+                                    "merchant_param2": {
+                                        "type": "string",
+                                        "example": "Additional info 2"
+                                    },
+                                    "merchant_param3": {
+                                        "type": "string",
+                                        "example": "Additional info 3"
+                                    },
+                                    "merchant_param4": {
+                                        "type": "string",
+                                        "example": "Additional info 4"
+                                    },
+                                    "merchant_param5": {
+                                        "type": "string",
+                                        "example": "Additional info 5"
+                                    },
+                                    "promo_code": {
+                                        "type": "string",
+                                        "example": "DISCOUNT10"
+                                    },
+                                    "customer_identifier": {
+                                        "type": "string",
+                                        "example": "CUST123"
                                     }
                                 },
                                 "type": "object"
@@ -11492,31 +11600,112 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "HTML form auto-submitting to CCAvenue"
+                        "description": "Payment URL generated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment URL generated successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "payment_url": {
+                                                    "type": "string",
+                                                    "example": "https://secure.ccavenue.ae/transaction/transaction.do?command=initiateTransaction&encRequest=..."
+                                                },
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456789"
+                                                },
+                                                "amount": {
+                                                    "type": "number",
+                                                    "example": 100.5
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "INR"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to generate payment URL"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
         },
-        "/ccavenue/response": {
+        "/api/frontend/ccavenue/handle-response": {
             "post": {
                 "tags": [
-                    "Payments"
+                    "CCAvenue"
                 ],
-                "summary": "Handle CCAvenue Payment Response",
-                "description": "Handles the encrypted response from CCAvenue and returns payment status.",
-                "operationId": "c255141dfa48f70933768184c47e2204",
+                "summary": "Handle CCAvenue payment response",
+                "description": "Process the encrypted response from CCAvenue after payment",
+                "operationId": "handleResponse",
                 "requestBody": {
                     "required": true,
                     "content": {
-                        "application/x-www-form-urlencoded": {
+                        "application/json": {
                             "schema": {
                                 "required": [
                                     "encResp"
                                 ],
                                 "properties": {
                                     "encResp": {
-                                        "type": "string",
-                                        "example": "encrypted_response_string"
+                                        "description": "Encrypted response from CCAvenue",
+                                        "type": "string"
                                     }
                                 },
                                 "type": "object"
@@ -11526,35 +11715,188 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Payment status result",
+                        "description": "Payment response processed successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
-                                        "status": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
                                             "type": "string",
-                                            "example": "success"
+                                            "example": "Payment response processed successfully"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "order_status": {
+                                                    "type": "string",
+                                                    "example": "Success"
+                                                },
+                                                "order_id": {
+                                                    "type": "string",
+                                                    "example": "ORD123456789"
+                                                },
+                                                "tracking_id": {
+                                                    "type": "string",
+                                                    "example": "123456789"
+                                                },
+                                                "bank_ref_no": {
+                                                    "type": "string",
+                                                    "example": "987654321"
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "example": "100.50"
+                                                },
+                                                "currency": {
+                                                    "type": "string",
+                                                    "example": "INR"
+                                                },
+                                                "payment_mode": {
+                                                    "type": "string",
+                                                    "example": "Credit Card"
+                                                },
+                                                "status_message": {
+                                                    "type": "string",
+                                                    "example": "Transaction Successful"
+                                                },
+                                                "response_code": {
+                                                    "type": "string",
+                                                    "example": "0"
+                                                },
+                                                "trans_date": {
+                                                    "type": "string",
+                                                    "example": "01/12/2023 10:30:45"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or missing encrypted response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invalid encrypted response"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to process payment response"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/ccavenue/payment-status/{orderId}": {
+            "get": {
+                "tags": [
+                    "CCAvenue"
+                ],
+                "summary": "Get payment status by order ID",
+                "description": "Check the status of a payment using order ID",
+                "operationId": "getPaymentStatus",
+                "parameters": [
+                    {
+                        "name": "orderId",
+                        "in": "path",
+                        "description": "Order ID to check status for",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "ORD123456789"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment status retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Payment status retrieved successfully"
                                         },
                                         "data": {
                                             "properties": {
                                                 "order_id": {
                                                     "type": "string",
-                                                    "example": "ORD123456"
+                                                    "example": "ORD123456789"
                                                 },
-                                                "order_status": {
+                                                "status": {
                                                     "type": "string",
-                                                    "example": "Success"
+                                                    "example": "Pending"
                                                 },
-                                                "tracking_id": {
+                                                "created_at": {
                                                     "type": "string",
-                                                    "example": "987654321"
+                                                    "example": "2023-12-01T10:30:45Z"
                                                 },
-                                                "bank_ref_no": {
+                                                "updated_at": {
                                                     "type": "string",
-                                                    "example": "REF987654"
+                                                    "example": "2023-12-01T10:30:45Z"
                                                 }
                                             },
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Order not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Order not found"
                                         }
                                     },
                                     "type": "object"
@@ -12754,7 +13096,7 @@
                 "tags": [
                     "FrontEnd-Orders"
                 ],
-                "summary": "Update an existing order (if not yet shipped)",
+                "summary": "Update an existing order (if not yet confirmed)",
                 "operationId": "b88757624ec0e7800c63b3da133e8c62",
                 "parameters": [
                     {
@@ -12911,6 +13253,457 @@
                     },
                     "404": {
                         "description": "No delivered orders found with products"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/payments": {
+            "get": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Get all payments with search, sort, and pagination",
+                "operationId": "d63c8a68eda5aa3c025fec14d228b3eb",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Paginated list of payments"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Create a new payment",
+                "description": "Create a new payment record for an authenticated customer",
+                "operationId": "createPayment",
+                "requestBody": {
+                    "description": "Payment data",
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "payment_mode",
+                                    "amount",
+                                    "status",
+                                    "payment_date"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "description": "ID of the order this payment is for",
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "description": "Unique transaction identifier from payment gateway",
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "description": "Method of payment",
+                                        "type": "string",
+                                        "enum": [
+                                            "Credit Card",
+                                            "Debit Card",
+                                            "PayPal",
+                                            "Bank Transfer",
+                                            "Cash",
+                                            "Stripe",
+                                            "Razorpay"
+                                        ],
+                                        "example": "Credit Card"
+                                    },
+                                    "amount": {
+                                        "description": "Payment amount",
+                                        "type": "number",
+                                        "format": "float",
+                                        "minimum": 0.01,
+                                        "example": 299.99
+                                    },
+                                    "status": {
+                                        "description": "Payment status",
+                                        "type": "string",
+                                        "enum": [
+                                            "pending",
+                                            "completed",
+                                            "failed",
+                                            "cancelled",
+                                            "refunded"
+                                        ],
+                                        "example": "completed"
+                                    },
+                                    "payment_date": {
+                                        "description": "Date when payment was made",
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "description": "Additional notes about the payment",
+                                        "type": "string",
+                                        "example": "First installment paid",
+                                        "nullable": true
+                                    },
+                                    "payment_details": {
+                                        "description": "Additional payment gateway details",
+                                        "type": "object",
+                                        "example": {
+                                            "bank": "XYZ Bank",
+                                            "ref": "12345XYZ",
+                                            "gateway_response": "success"
+                                        },
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Payment created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "order_id": {
+                                            "type": "integer",
+                                            "example": 123
+                                        },
+                                        "customer_id": {
+                                            "type": "integer",
+                                            "example": 45
+                                        },
+                                        "transaction_id": {
+                                            "type": "string",
+                                            "example": "TXN456789"
+                                        },
+                                        "payment_mode": {
+                                            "type": "string",
+                                            "example": "Credit Card"
+                                        },
+                                        "amount": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 299.99
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "completed"
+                                        },
+                                        "payment_date": {
+                                            "type": "string",
+                                            "format": "date",
+                                            "example": "2024-06-24"
+                                        },
+                                        "notes": {
+                                            "type": "string",
+                                            "example": "First installment paid"
+                                        },
+                                        "payment_details": {
+                                            "type": "object",
+                                            "example": {
+                                                "bank": "XYZ Bank",
+                                                "ref": "12345XYZ"
+                                            }
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-06-24T10:30:00.000000Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2024-06-24T10:30:00.000000Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Validation errors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "order_id": [
+                                                    "The order id field is required."
+                                                ],
+                                                "status": [
+                                                    "The status field is required."
+                                                ],
+                                                "payment_date": [
+                                                    "The payment date field is required."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid or missing authentication token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Unauthenticated."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity - Validation failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Something went wrong while creating the payment."
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/payments/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Get a single payment",
+                "operationId": "7813adfa61bef8dd454edae65387352d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment details"
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Update a payment",
+                "operationId": "528e54c518ec4365d59895d1ec3a90db",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_id": {
+                                        "type": "integer",
+                                        "example": 123
+                                    },
+                                    "transaction_id": {
+                                        "type": "string",
+                                        "example": "TXN456789"
+                                    },
+                                    "payment_mode": {
+                                        "type": "string",
+                                        "example": "PayPal"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 199.99
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "pending"
+                                    },
+                                    "payment_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2024-06-24"
+                                    },
+                                    "notes": {
+                                        "type": "string",
+                                        "example": "Awaiting confirmation"
+                                    },
+                                    "payment_details": {
+                                        "type": "object",
+                                        "example": {
+                                            "paypal_email": "user@example.com"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Payment updated"
+                    },
+                    "404": {
+                        "description": "Payment not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend-Payment History"
+                ],
+                "summary": "Delete a payment",
+                "operationId": "093ba4470d3f0e87ca8e37888b059acb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Payment ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment deleted"
+                    },
+                    "404": {
+                        "description": "Payment not found"
                     }
                 },
                 "security": [
@@ -14919,14 +15712,14 @@
                                         "type": "string",
                                         "example": "Scratched screen"
                                     },
-                                    "product_images[]": {
+                                    "product_images": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
                                             "format": "binary"
                                         }
                                     },
-                                    "product_videos[]": {
+                                    "product_videos": {
                                         "type": "array",
                                         "items": {
                                             "type": "string",
@@ -14941,7 +15734,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Return request created successfully"
+                        "description": "Return request created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -15796,54 +16592,34 @@
                 }
             }
         },
-        "/frontend/payment-square": {
+        "/api/frontend/payment-square": {
             "post": {
                 "tags": [
-                    "Frontend-Payment"
+                    "Square Payment"
                 ],
-                "summary": "Create a payment using Square API",
-                "operationId": "createSquarePayment",
+                "summary": "Create a payment using Square",
+                "description": "Receives a source_id (card token) and amount to process payment via Square API.",
+                "operationId": "457abb898828ebd20e127a512cebada2",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "nonce",
-                                    "amount",
-                                    "currency",
-                                    "customer_id",
-                                    "location_id",
-                                    "team_member_id",
-                                    "buyer_email_address"
+                                    "source_id",
+                                    "amount"
                                 ],
                                 "properties": {
-                                    "nonce": {
+                                    "source_id": {
+                                        "description": "Card token generated from Square Web Payments SDK",
                                         "type": "string",
-                                        "example": "card_nonce_value"
+                                        "example": "cnon:card-nonce-ok"
                                     },
                                     "amount": {
+                                        "description": "Amount in USD",
                                         "type": "number",
                                         "format": "float",
-                                        "example": 10.5
-                                    },
-                                    "currency": {
-                                        "type": "string",
-                                        "example": "USD"
-                                    },
-                                    "customer_id": {
-                                        "type": "string"
-                                    },
-                                    "location_id": {
-                                        "type": "string"
-                                    },
-                                    "team_member_id": {
-                                        "type": "string"
-                                    },
-                                    "buyer_email_address": {
-                                        "type": "string",
-                                        "format": "email",
-                                        "example": "customer@example.com"
+                                        "example": 10
                                     }
                                 },
                                 "type": "object"
@@ -15853,15 +16629,17 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Payment successfully created",
+                        "description": "Payment successful",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "example": true
                                         },
                                         "payment": {
+                                            "description": "Square payment object returned after success",
                                             "type": "object"
                                         }
                                     },
@@ -15871,18 +16649,20 @@
                         }
                     },
                     "400": {
-                        "description": "Validation or payment error",
+                        "description": "Payment failed or validation error",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "example": false
                                         },
                                         "errors": {
                                             "type": "array",
                                             "items": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "Card declined"
                                             }
                                         }
                                     },
@@ -15890,23 +16670,6 @@
                                 }
                             }
                         }
-                    },
-                    "500": {
-                        "description": "Server error"
-                    }
-                }
-            }
-        },
-        "/frontend/payment-form": {
-            "get": {
-                "tags": [
-                    "Frontend-Payment"
-                ],
-                "summary": "Get payment form view",
-                "operationId": "paymentFormView",
-                "responses": {
-                    "200": {
-                        "description": "Blade view with Square form"
                     }
                 }
             }
@@ -17710,7 +18473,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Order details retrieved successfully"
+                        "description": "Order details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -17761,7 +18527,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Order status updated successfully"
+                        "description": "Order status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -17821,7 +18590,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Product status updated successfully"
+                        "description": "Product status updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -17893,7 +18665,10 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Shipment created successfully"
+                        "description": "Shipment created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -21326,6 +22101,345 @@
                 ]
             }
         },
+        "/api/product-title-formula": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Get a list of product title formulas",
+                "description": "Returns a paginated list with optional search and sorting.",
+                "operationId": "9d319f1a9b925d9e78419a23fcb5ad0a",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search term",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Sort by field",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "category_id",
+                                "created_by",
+                                "locked"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of formulas"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Create product title formulas (one per attribute ID)",
+                "operationId": "bdfae049b119cc1adb7b0c188b433212",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "attribute_ids"
+                                ],
+                                "properties": {
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 47
+                                    },
+                                    "locked": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Product title formulas created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product title formulas created successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attribute_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 47
+                                                    },
+                                                    "locked": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-title-formula/{id}": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Get a single product title formula",
+                "operationId": "7a8616e4871bbb63e23b0a16b4adfa66",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Formula data"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Update an existing product title formula",
+                "operationId": "9e68472b6f4c469edac7d4c8294fc922",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "attribute_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 47
+                                    },
+                                    "locked": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Delete a product title formula",
+                "operationId": "bd52d95b6bd5d117756492a83ce2e18e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Formula ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Formula not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/product-title-formula/delete-multiple": {
+            "post": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Delete multiple product title formulas",
+                "operationId": "16b51600bc494f0ec8a4782c73e59826",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "ids"
+                                ],
+                                "properties": {
+                                    "ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Records deleted"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
@@ -21500,7 +22614,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Return inspected successfully"
+                        "description": "Return inspected successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -21569,7 +22686,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Refund status updated"
+                        "description": "Refund status updated",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -26450,8 +27570,8 @@
             "description": "Frontend-Menu Categories"
         },
         {
-            "name": "Payments",
-            "description": "Payments"
+            "name": "CCAvenue",
+            "description": "CCAvenue"
         },
         {
             "name": "Frontend-Countries",
@@ -26488,6 +27608,10 @@
         {
             "name": "FrontEnd-Orders",
             "description": "FrontEnd-Orders"
+        },
+        {
+            "name": "Frontend-Payment History",
+            "description": "Frontend-Payment History"
         },
         {
             "name": "Frontend-Attribute Products",
@@ -26530,8 +27654,8 @@
             "description": "Frontend-Sliders"
         },
         {
-            "name": "Frontend-Payment",
-            "description": "Frontend-Payment"
+            "name": "Square Payment",
+            "description": "Square Payment"
         },
         {
             "name": "Frontend-User Reviews",
@@ -26558,6 +27682,10 @@
             "description": "Orders"
         },
         {
+            "name": "Payments",
+            "description": "Payments"
+        },
+        {
             "name": "Pre Onboarding Vendors",
             "description": "Pre Onboarding Vendors"
         },
@@ -26576,6 +27704,10 @@
         {
             "name": "Product Suppliers",
             "description": "Product Suppliers"
+        },
+        {
+            "name": "Product Title Formula",
+            "description": "Product Title Formula"
         },
         {
             "name": "Redirect Links",

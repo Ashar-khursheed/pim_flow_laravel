@@ -137,7 +137,8 @@ class SearchController extends Controller
                         'slug',
                         'parent.slug',
                         'parent.parent.slug',
-                        'products.slug'
+                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+
                     ])
                     ->where('status', 'published') // ✅ Only published categories
                     ->inRandomOrder()->take(4)
@@ -146,12 +147,12 @@ class SearchController extends Controller
                         return [
                             'id' => $cat->id,
                             'name' => $cat->name,
-                            'slug' => optional($cat->slug)->key,
+                            'slug' => $cat->slug,
                             'url' => $cat->url,
                             'image' =>$cat->image,
                             'parent_id' => $cat->parent_id,
-                            'parent_slug' => optional($cat->parent?->slug)->key,
-                            'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
+                            'parent_slug' => $cat->parent?->slug,
+                            'parent_parent_slug' => $cat->parent?->parent?->slug,
                             'products' => $cat->products->map(fn($p) => [
                                 'id' => $p->id,
                                 'name' => $p->name,
@@ -163,7 +164,10 @@ class SearchController extends Controller
                         ];
                     });
     
-                $brands = Brand::with(['slug', 'products.slug'])
+                    $brands = Brand::with([
+                        'slug',
+                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+                    ])
                     ->where('status', 'published') // ✅ Only published brands
                     ->inRandomOrder()->take(4)
                     ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
@@ -215,7 +219,7 @@ class SearchController extends Controller
                 'slug',
                 'parent.slug',
                 'parent.parent.slug',
-                'products.slug'
+                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
             ])
             ->where('status', 'published') // ✅ Only published categories
             ->where(function ($q) use ($query) {
@@ -227,12 +231,12 @@ class SearchController extends Controller
                 return [
                     'id' => $cat->id,
                     'name' => $cat->name,
-                    'slug' => optional($cat->slug)->key,
+                    'slug' => $cat->slug,
                     'url' => $cat->url,
                     'image' => $imageUrl($cat->image),
                     'parent_id' => $cat->parent_id,
-                    'parent_slug' => optional($cat->parent?->slug)->key,
-                    'parent_parent_slug' => optional($cat->parent?->parent?->slug)->key,
+                    'parent_slug' => $cat->slug,
+                    'parent_parent_slug' => $cat->parent?->parent?->slug,
                     'products' => $cat->products->map(fn($p) => [
                         'id' => $p->id,
                         'name' => $p->name,
@@ -244,7 +248,10 @@ class SearchController extends Controller
                 ];
             });
     
-        $brands = Brand::with(['slug', 'products.slug'])
+            $brands = Brand::with([
+                'slug',
+                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+            ])
             ->where('status', 'published') // ✅ Only published brands
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")

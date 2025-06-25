@@ -115,4 +115,19 @@ class Category extends Model
 			'product_id'
 		);
 	}
+	public function getAllParentsAttribute()
+	{
+		$parents = collect();
+		$category = $this;
+
+		while ($category->parent) {
+			$category = $category->parent;
+			$parents->prepend($category); // insert at beginning for top-down hierarchy
+		}
+
+		return $parents;
+	}
+
+
+
 }

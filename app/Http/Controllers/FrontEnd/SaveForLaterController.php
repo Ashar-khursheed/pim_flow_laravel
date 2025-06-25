@@ -125,7 +125,7 @@ class SaveForLaterController extends Controller
 		$userId = auth()->id();
 
 		// Fetch all saved products for the user
-		$savedProducts = SaveForLater::where('user_id',  $user)
+		$savedProducts = SaveForLater::where('user_id',  $userId)
 									->with('product')  // Assuming `product` is the relationship
 									->get();
 
@@ -161,8 +161,9 @@ class SaveForLaterController extends Controller
 										'message' => 'Saved for Later Products retrieved successfully.',
 										'product' => $productsData
 									], 200);
-								}
+    }
 
+	
 	/**
 	 * @OA\Delete(
 	 *     path="/api/frontend/save-for-later",
@@ -192,32 +193,36 @@ class SaveForLaterController extends Controller
 	 *     )
 	 * )
 	 */
-	public function removeFromSaveForLater(Request $request)
-	{
-		// Validate the incoming request
-		$request->validate([
-			'product_id' => 'required|exists:ec_products,id', // Ensure the product exists in the product table
-		]);
-
-		// Get the logged-in user
-		$userId = auth()->id();
-
-		// Check if the product exists in the "Save for Later" list
-		$savedProduct = SaveForLater::where('user_id', $user)
-		->where('product_id', $request->product_id)
-		->first();
-
-		if (!$savedProduct) {
-			return response()->json([
-				'message' => 'Product not found in Save for Later.'
-			], 404);
-		}
-
-		// Remove the product from the Save for Later table
-		$savedProduct->delete();
-
-		return response()->json([
-			'message' => 'Product has been removed from Save for Later.'
-		], 200);
-	}
+	
+	 public function removeFromSaveForLater($product_id)
+	 {
+		 // Optional: Check if the product exists in the products table
+		 if (!\DB::table('ec_products')->where('id', $product_id)->exists()) {
+			 return response()->json([
+				 'message' => 'Product does not exist.'
+			 ], 404);
+		 }
+	 
+		 // Get the logged-in user ID
+		 $userId = auth()->id();
+	 
+		 // Find the saved product
+		 $savedProduct = SaveForLater::where('user_id', $userId)
+			 ->where('product_id', $product_id)
+			 ->first();
+	 
+		 if (!$savedProduct) {
+			 return response()->json([
+				 'message' => 'Product not found in Save for Later.'
+			 ], 404);
+		 }
+	 
+		 // Delete the record
+		 $savedProduct->delete();
+	 
+		 return response()->json([
+			 'message' => 'Product has been removed from Save for Later.'
+		 ], 200);
+	 }
+	 
 }

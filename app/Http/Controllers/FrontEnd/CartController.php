@@ -244,7 +244,7 @@ class CartController extends Controller
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
         });
 
-        $currencyTitles = $cartItems->pluck('product.currency.title')->unique()->filter()->values();
+        $currencyTitles = $cartItems->pluck('product.currency.symbol')->unique()->filter()->values();
 
         return response()->json([
             'success' => true,

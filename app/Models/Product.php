@@ -231,6 +231,24 @@ class Product extends Model
 			$query->where('name', 'Selling Unit');
 		});
 	}
+	public function ingredientsAttribute()
+	{
+		return $this->hasOne(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->where('name', 'Ingredients');
+		});
+	}
+
+	
+	// Then create a helper to get only those two
+	public function getPerUnitPriceAttributesAttribute()
+	{
+		return $this->productAttributes
+			->filter(function ($attr) {
+				return in_array($attr->attributeDetails->name, ['Units per Case', 'Pack Type']);
+			});
+	}
+		
 
 	public function discounts(): BelongsToMany
 	{
