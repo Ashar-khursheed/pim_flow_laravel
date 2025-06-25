@@ -17,6 +17,7 @@ if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
 		$constants = [
 			'DELIVERY_DAYS' => [
+				'1 to 2 Days',
 				'2 to 3 Days',
 				'5 to 7 Days',
 				'10 to 12 Days',
@@ -38,6 +39,8 @@ if (!function_exists('app_constants')) {
 				'Lifetime Warranty'
 			],
 			'REFUND_PERIODS' => [
+				'Non-returnable'
+				'3 Days',
 				'7 Days',
 				'14 Days',
 				'30 Days',
