@@ -332,7 +332,7 @@ class ProductController extends BaseController
 	public function show($productId, Request $request)
 	{
 		$attributeGroup = [
-			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' ],
+			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' , 'approved' ],
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
 			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
