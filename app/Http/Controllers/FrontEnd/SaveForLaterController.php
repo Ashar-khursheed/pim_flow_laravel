@@ -145,7 +145,7 @@ class SaveForLaterController extends Controller
 			$product->total_reviews = $totalReviews;
 			$product->avg_rating = $avgRating;
 
-			$product->Images = is_string($product->images)
+			$product->images = is_string($product->images)
                  ? json_decode($product->images, true)
                  : (array) $product->images;
 
