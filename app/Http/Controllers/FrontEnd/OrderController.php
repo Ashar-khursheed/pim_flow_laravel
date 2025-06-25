@@ -10,6 +10,7 @@ use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\OrderPlacedMail;
 
 class OrderController extends BaseController
 {
@@ -139,8 +140,7 @@ class OrderController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_id", "customer_address_id", "shipping_charge", "products"},
-	 *             @OA\Property(property="customer_id", type="integer", example=1),
+	 *             required={"customer_address_id", "shipping_charge", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
 	 *             @OA\Property(property="shipping_charge", type="number", format="float", example=50.00),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
@@ -165,7 +165,6 @@ class OrderController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'shipping_charge' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
@@ -198,10 +197,27 @@ class OrderController extends BaseController
 				$totalProducts += $product['quantity'];
 				$totalAmount += $product['quantity'] * $product['unit_price'];
 			}
+			/* Get the latest order by ID (most recent) */
+			$latestOrder = Order::orderBy('id', 'desc')->first();
+
+			/* Generate the next order number */
+			if ($latestOrder && is_numeric($latestOrder->order_number)) {
+				$orderNumber = (int) $latestOrder->order_number + 1;
+			} else {
+				$website = config('app.website');
+
+				if ($website === 'US') {
+					$orderNumber = 10001;
+				} elseif ($website === 'UAE') {
+					$orderNumber = 1001;
+				} else {
+					$orderNumber = 101;
+				}
+			}
 
 			$order = Order::create([
-				'order_number' => 'ORD-' . strtoupper(Str::random(8)),
-				'customer_id' => auth()->id() ?? $request->customer_id,
+				'order_number' => $orderNumber,
+				'customer_id' => auth()->id(),
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $request->shipping_charge,
 				'total_amount' => $totalAmount,
@@ -236,6 +252,9 @@ class OrderController extends BaseController
 				'status' => 'Order Created',
 				'description' => 'Order has been successfully created',
 			]);
+
+			$customer = auth()->user();
+			$customer->notify(new OrderPlacedMail($order));
 
 			DB::commit();
 
