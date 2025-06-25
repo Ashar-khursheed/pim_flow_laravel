@@ -54,12 +54,17 @@
 </head>
 
 <body>
+	<!-- Preheader text: hidden but visible in email previews -->
+	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
+		Thank you! We’ve received your order and will start processing it shortly.
+	</span>
+
 	<div style=" font-family: 'Poppins', sans-serif;  width:100%; background:#f8f8f8; padding:20px 0;">
 		<div class="container" style=" font-family: 'Poppins', sans-serif;  max-width:600px; margin:0 auto; background:#ffffff; padding:30px; border:1px solid #eaeaea; box-sizing:border-box;">
 
 			<!-- Logo -->
 			<div style=" font-family: 'Poppins', sans-serif;  margin-bottom:20px;">
-                <img src="{{ $logoUrl }}" alt="HORECA Logo" style="width: 120px;" />
+				<img src="{{ $logoUrl }}" alt="HORECA Logo" style="width: 120px;" />
 			</div>
 
 			<!-- Greeting -->
@@ -68,11 +73,11 @@
 			</p>
 
 			<p style=" font-family: 'Poppins', sans-serif;  font-size:14px; margin:0 0 20px; line-height: 20px;">
-				You’ll receive a separate confirmation email shortly with updated delivery details and next steps. If you’d like to view the status of your order or make changes, visit:
+				You’ll receive a separate confirmation email shortly with updated delivery details and next steps.
 			</p>
 
 			<a href="{{ $orderUrl }}" class="order-button" style=" font-family: 'Poppins', sans-serif;  background:#186737; color:#fff; padding:12px 24px; font-size:14px; text-decoration:none; border-radius:5px; display:inline-block;">
-				Your Orders
+				View Your Orders
 			</a>
 
 			<!-- Order Summary & Shipping Address -->
@@ -124,17 +129,19 @@
 					<td style=" font-family: 'Poppins', sans-serif;  text-align:center;">Quantity</td>
 					<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">Total</td>
 				</tr>
+				@foreach($products as $product)
 				<tr style=" font-family: 'Poppins', sans-serif;  border-bottom:1px solid #ddd;">
-					<td style=" font-family: 'Poppins', sans-serif;  width:60px;"><img src="product.png" alt="Product" style=" font-family: 'Poppins', sans-serif;  width:50px;"></td>
+					<td style=" font-family: 'Poppins', sans-serif;  width:60px;"><img src="{{ $product->image }}" alt="Product" style=" font-family: 'Poppins', sans-serif;  width:50px;"></td>
 					<td style=" font-family: 'Poppins', sans-serif;  line-height: 20px;">
-						<strong>TMS DB800-350 Double Door Chest Freezer</strong><br>
+						<strong>{{ $product->name }}</strong><br>
 						<strong style=" font-family: 'Poppins', sans-serif;  color:#186737;"> Shipping Tomorrow, Sunday 6
 						Oct</strong><br>
-						<span style=" font-family: 'Poppins', sans-serif;  color:red;">AED 3,778.99 | Save 15%</span>
+						<span style=" font-family: 'Poppins', sans-serif;  color:red;">AED {{ $product->price }}{{ $product->discount ? ' | Save '.$product->discount.'%' : '' }}</span>
 					</td>
-					<td class="quantity" style=" font-family: 'Poppins', sans-serif;  text-align:center;">01</td>
-					<td class="total" style=" font-family: 'Poppins', sans-serif;  text-align:right;">3,778.99</td>
+					<td class="quantity" style=" font-family: 'Poppins', sans-serif;  text-align:center;">{{ $product->quantity }}</td>
+					<td class="total" style=" font-family: 'Poppins', sans-serif;  text-align:right;">{{ $product->total }}</td>
 				</tr>
+				@endforeach
 			</table>
 
 			<!-- Savings Row -->
@@ -142,13 +149,14 @@
 				<tr>
 					<td>
 						<div style=" font-family: 'Poppins', sans-serif;  display:flex; flex-wrap:wrap; justify-content:space-between;">
-
 							<div style=" font-family: 'Poppins', sans-serif;  flex:1; min-width:200px; margin-bottom:10px;">
 								<table cellspacing="0" cellpadding="8" style=" font-family: 'Poppins', sans-serif;  font-size:14px; width:100%;">
+									@if($totalSaved)
 									<tr>
 										<td style=" font-family: 'Poppins', sans-serif;  text-align:left; font-weight:bold;">You Saved</td>
-										<td style=" font-family: 'Poppins', sans-serif;  text-align:right; color:#186737; font-weight:bold;">AED 1,389.486</td>
+										<td style=" font-family: 'Poppins', sans-serif;  text-align:right; color:#186737; font-weight:bold;">AED {{ $totalSaved }}</td>
 									</tr>
+									@endif
 								</table>
 							</div>
 
@@ -156,19 +164,19 @@
 								<table cellspacing="0" cellpadding="8" style=" font-family: 'Poppins', sans-serif;  font-size:14px; width:100%;">
 									<tr>
 										<td style=" font-family: 'Poppins', sans-serif;  text-align:left; font-weight: 500;">Subtotal</td>
-										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED 12,345.55</td>
+										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED {{ $subTotal }}</td>
 									</tr>
 									<tr>
 										<td style=" font-family: 'Poppins', sans-serif;  text-align:left; font-weight: 500;">Shipping</td>
-										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED 5.00</td>
+										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED {{ $shippingCharge }}</td>
 									</tr>
 									<tr>
 										<td style=" font-family: 'Poppins', sans-serif;  text-align:left; font-weight: 500;">VAT (5%)</td>
-										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED 5.00</td>
+										<td style=" font-family: 'Poppins', sans-serif;  text-align:right;">AED {{ $vat }}</td>
 									</tr>
 									<tr style=" font-family: 'Poppins', sans-serif;  font-weight:bold; border-top:1px solid #ccc;">
 										<td style=" font-family: 'Poppins', sans-serif;  text-align:left; font-weight: 500; border-top: 1px solid #ccc; padding-top: 10px;">Total Amount</td>
-										<td style=" font-family: 'Poppins', sans-serif;  text-align:right; color:#186737; border-top: 1px solid #ccc; padding-top: 10px;">AED 13,389.486</td>
+										<td style=" font-family: 'Poppins', sans-serif;  text-align:right; color:#186737; border-top: 1px solid #ccc; padding-top: 10px;">AED {{ $total }}</td>
 									</tr>
 								</table>
 							</div>
@@ -182,7 +190,7 @@
 
 			<!-- View Order Link -->
 			<p style="margin:20px 0 0; font-size:14px;">You can view or update your order anytime by visiting:
-				<a href="#" style="font-weight:bold; text-decoration:none;">Your Orders</a>
+				<a href="{{ $orderUrl }}" style="font-weight:bold; text-decoration:none;">Your Orders</a>
 			</p>
 
 			<p style="font-size:14px; margin:20px 0 0;">Thank you for choosing HorecaStore — where your business gets the best, for less.</p>

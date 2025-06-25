@@ -197,9 +197,26 @@ class OrderController extends BaseController
 				$totalProducts += $product['quantity'];
 				$totalAmount += $product['quantity'] * $product['unit_price'];
 			}
+			/* Get the latest order by ID (most recent) */
+			$latestOrder = Order::orderBy('id', 'desc')->first();
+
+			/* Generate the next order number */
+			if ($latestOrder && is_numeric($latestOrder->order_number)) {
+				$orderNumber = (int) $latestOrder->order_number + 1;
+			} else {
+				$website = config('app.website');
+
+				if ($website === 'US') {
+					$orderNumber = 10001;
+				} elseif ($website === 'UAE') {
+					$orderNumber = 1001;
+				} else {
+					$orderNumber = 101;
+				}
+			}
 
 			$order = Order::create([
-				'order_number' => 'ORD-' . strtoupper(Str::random(8)),
+				'order_number' => $orderNumber,
 				'customer_id' => auth()->id(),
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $request->shipping_charge,

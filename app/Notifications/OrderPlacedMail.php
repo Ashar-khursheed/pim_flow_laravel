@@ -12,12 +12,11 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 {
 	use Queueable;
 
-	public $randomPassword;
+	public $order;
 
 	public function __construct($order)
 	{
-		dd($order->orderProducts->toArray());
-		$this->order = $randomPassword;
+		$this->order = $order;
 	}
 
 	/**
@@ -38,15 +37,18 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$logoUrl = config('app.logo_url');
 		$name = $notifiable->name ?? 'User';
 		$orderUrl = url("/registration/all-orders");
+
 		$paidAmount = $this->order->paid_amount;
 		$orderId = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('d/M/Y');
 		$paymentMethod = "COD";
 
-		$address = $this->order->customerAddress->address ?? '';
-		$city = $this->order->customerAddress->city->name ?? '';
-		$country = $this->order->customerAddress->country->name ?? '';
-		$zipcode = $this->order->customerAddress->zip_code ?? '';
+		/* Defensive null checks */
+		$customerAddress = $this->order->customerAddress;
+		$address = $customerAddress->address ?? '';
+		$city = $customerAddress->city->name ?? '';
+		$country = $customerAddress->country->name ?? '';
+		$zipcode = $customerAddress->zip_code ?? '';
 
 		$products = collect();
 
@@ -56,15 +58,21 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				$product->image = json_decode($productDetail->images)[0] ?? null;
+				/* Ensure images is valid JSON array */
+				$images = json_decode($productDetail->images, true);
+				$product->image = is_array($images) ? ($images[0] ?? null) : null;
+
 				$product->name = $productDetail->name;
-				$product->salePrice = $productDetail->sale_price;
 				$product->price = $productDetail->price;
+				$product->salePrice = $productDetail->sale_price;
+
 				$product->actualPrice = $product->salePrice ?? $product->price;
 				$product->quantity = $orderProduct->quantity;
+
+				$product->priceTotal = $product->price * $product->quantity;
 				$product->total = $product->actualPrice * $product->quantity;
 
-				/* Calculate discount */
+				/* Discount calculation */
 				if ($product->salePrice && $product->price && $product->price > 0) {
 					$product->discount = round((($product->price - $product->salePrice) / $product->price) * 100, 2);
 				} else {
@@ -76,41 +84,38 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		}
 
 		$subTotal = $products->sum('total');
+		$totalPriceWithoutDiscount = $products->sum('priceTotal');
+		$totalSaved = max(0, $totalPriceWithoutDiscount - $subTotal);
+
 		$shippingCharge = $this->order->shipping_charge ?? 0;
 		$vat = round(($subTotal * 0.05), 2);
 		$total = $subTotal + $shippingCharge + $vat;
 
-		$randomPassword = $this->randomPassword ?? 'User';
-		$resetPasswordUrl = url("/");
-		$websiteUrl = url("/");
-
 		$params = [
-				'logoUrl' => $logoUrl,
-				'name' => $name,
-				'orderUrl' => $orderUrl,
-				'paidAmount' => $paidAmount,
-				'orderId' => $orderId,
-				'orderDate' => $orderDate,
-				'paymentMethod' => $paymentMethod,
-				'address' => $address,
-				'city' => $city,
-				'country' => $country,
-				'zipcode' => $zipcode,
-				'products' => $products,
-				'subTotal' => $subTotal,
-				'shippingCharge' => $shippingCharge,
-				'vat' => $vat,
-				'total' => $total,
-				'randomPassword' => $randomPassword,
-				'resetPasswordUrl' => $resetPasswordUrl,
-				'websiteUrl' => $websiteUrl,
-			];
+			'logoUrl' => $logoUrl,
+			'name' => $name,
+			'orderUrl' => $orderUrl,
+			'paidAmount' => $paidAmount,
+			'orderId' => $orderId,
+			'orderDate' => $orderDate,
+			'paymentMethod' => $paymentMethod,
 
-			dd($params);
+			'address' => $address,
+			'city' => $city,
+			'country' => $country,
+			'zipcode' => $zipcode,
+
+			'products' => $products,
+			'totalSaved' => $totalSaved,
+			'subTotal' => $subTotal,
+			'shippingCharge' => $shippingCharge,
+			'vat' => $vat,
+			'total' => $total,
+		];
 
 		return (new MailMessage)
-			->subject('Welcome Email')
-			->markdown('emails.guest-welcome', $params);
+		->subject('✅ Your Horeca Order Has Been Placed Successfully')
+		->markdown('emails.order-placed', $params);
 	}
 
 	/**
