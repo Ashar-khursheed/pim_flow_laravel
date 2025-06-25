@@ -103,18 +103,17 @@ class AuthController extends Controller
             // Get user info
             $email = $payload['email'];
             $name = $payload['name'];
-			$avatar = $payload['picture'];
+			$profileImg = $payload['picture'];
 
             // Find or create the user
 			$user = Customer::firstOrCreate(
 				['email' => $email],
 				[
 					'name' => $name,
-					'avatar' => $avatar,
-					'mobile_number' => 0000000000 // allow null in DB temporarily
+					'profile_img' => $profileImg,  // ✅ correct field name
+					'mobile_number' => null // safer than putting 0000000000
 				]
 			);
-			
 
             // Log in the user
             Auth::login($user);
