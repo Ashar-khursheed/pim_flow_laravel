@@ -39,7 +39,7 @@ if (!function_exists('app_constants')) {
 				'Lifetime Warranty'
 			],
 			'REFUND_PERIODS' => [
-				'Non-returnable'
+				'Non-returnable',
 				'3 Days',
 				'7 Days',
 				'14 Days',
