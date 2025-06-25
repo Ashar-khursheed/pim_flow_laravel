@@ -121,11 +121,12 @@ class ProductController extends BaseController
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
 		$status = $request->input('status');
+		$approved = $request->input('approved');
 		$sortBy = $request->input('sort_by', 'id');
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type' , 'approved'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -141,7 +142,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type' ,'approved']);
 
 		/* Apply search if provided */
 
@@ -149,6 +150,10 @@ class ProductController extends BaseController
 		if ($status !== null) {
 			$query->where('status', $status);
 		}
+		if ($approved !== null) {
+			$query->where('approved', $approved);
+		}
+
 
 		if ($search) {
 			$query->where(function($q) use ($search) {
@@ -180,6 +185,7 @@ class ProductController extends BaseController
 				'id' => $product->id,
 				'name' => $product->name,
 				'gen_type' => $product->gen_type,
+				'approved' => $product->approved,
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
@@ -1984,7 +1990,7 @@ class ProductController extends BaseController
 			"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
 			"variant_barcode", "variant_color_title", "variant_color_value", "vendor_id",
 			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
-			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features" , "gen_type"
+			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
 		];
 
 		unset($input['product_attributes']);

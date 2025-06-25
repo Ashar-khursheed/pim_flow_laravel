@@ -135,7 +135,8 @@ class Product extends Model
 		'variant_3_products' => 'nullable|string',
 		'google_shopping_category',
 		'benefits_features' => 'array',
-		'gen_type' =>  'nullable|integer'
+		'gen_type' =>  'nullable|integer',
+		'approved' =>  'nullable|integer'
 
 	];
 
