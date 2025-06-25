@@ -2094,18 +2094,47 @@ class ProductController extends BaseController
 		}
 		
 
-		/* Handle description field with content writer permission check */
 		if ($request->has('description')) {
 			$descriptionInput = $request->input('description');
+			$hasNewDescriptionData = false;
 		
-			// Force both values to strings for accurate comparison
-			$incomingDescription = is_string($descriptionInput) ? trim($descriptionInput) : '';
-			$existingDescription = is_string($product->description) ? trim($product->description) : '';
+			// Decode new input
+			if (is_string($descriptionInput)) {
+				$decoded = json_decode($descriptionInput, true);
+				if (json_last_error() === JSON_ERROR_NONE) {
+					$newDescription = $decoded;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for description.'
+					], 400);
+				}
+			} elseif (is_array($descriptionInput)) {
+				$newDescription = $descriptionInput;
+			} else {
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid description format. Must be JSON string or array.'
+				], 400);
+			}
 		
-			// Check if actual change attempted
-			$hasNewDescriptionData = $incomingDescription !== $existingDescription;
+			// Ensure it's an array
+			if (!is_array($newDescription)) {
+				$newDescription = [];
+			}
 		
-			// Block only if user tried to change and lacks permission
+			// Get existing saved description
+			$existingDescription = json_decode($product->description, true);
+			if (!is_array($existingDescription)) {
+				$existingDescription = [];
+			}
+		
+			// Check for actual change
+			if ($newDescription !== $existingDescription) {
+				$hasNewDescriptionData = true;
+			}
+		
+			// Restrict update only if change attempted and no permission
 			if ($hasNewDescriptionData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
@@ -2113,11 +2142,12 @@ class ProductController extends BaseController
 				], 403);
 			}
 		
-			// Save only if allowed and changed
+			// If changes are allowed or not needed, process it
 			if ($canModifyContent && $hasNewDescriptionData) {
-				$product->description = $incomingDescription;
+				$product->description = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
 			}
 		
+			// Prevent reprocessing later
 			unset($input['description']);
 		}
 		
