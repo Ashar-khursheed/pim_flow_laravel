@@ -2075,7 +2075,33 @@ class ProductController extends BaseController
 		/* Handle description field with content writer permission check */
 		// Handle description field with content writer permission check
 		// Handle description field with content writer permission check
-s
+			if ($request->has('description')) {
+				$descriptionInputRaw = $request->input('description');
+
+				// Only process if input is a string
+				if (is_string($descriptionInputRaw)) {
+					$descriptionInput = trim($descriptionInputRaw);
+					$existingDescription = is_string($product->description) ? trim($product->description) : '';
+
+					$hasNewDescriptionData = $descriptionInput !== $existingDescription;
+
+					// Only block if user made a real change and lacks permission
+					if ($hasNewDescriptionData && !$canModifyContent) {
+						return response()->json([
+							'success' => false,
+							'message' => 'You do not have permission to modify product description.'
+						], 403);
+					}
+
+					// Save only if change exists or user has permission
+					if ($canModifyContent || !$hasNewDescriptionData) {
+						$product->description = $descriptionInput;
+					}
+				}
+
+				// Remove from input to prevent reprocessing
+				unset($input['description']);
+			}
 
 
 
