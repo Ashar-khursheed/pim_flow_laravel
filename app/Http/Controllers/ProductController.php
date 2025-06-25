@@ -1565,244 +1565,280 @@ class ProductController extends BaseController
 	// 	]);
 	// }
 	public function update(Request $request, $productId)
-{
-	/* Log the incoming request for debugging */
-	\Log::info('Product update request:', $request->all());
-	$unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
+	{
+		/* Log the incoming request for debugging */
+		\Log::info('Product update request:', $request->all());
+		$unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
 
-	$product = Product::find($productId);
+	// 	$product = Product::find($productId);
 
-	if (!$product) {
-		return response()->json([
-			'success' => false,
-			'message' => 'Product does not exist.'
-		]);
-	}
+	// 	if (!$product) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Product does not exist.'
+	// 		]);
+	// 	}
 
-	// Get the authenticated user and their role
-	$user = auth()->user();
-	$userRole = $user ? $user->getRoleNames()->first() : null;
-	$allowedRoles = [
-		'Super Admin', 
-		'Admin', 
-		'Graphic Designer Manager'
-	];  // Define which roles can modify images
-	$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
+	// 	// Get the authenticated user and their role
+	// 	$user = auth()->user();
+	// 	$userRole = $user ? $user->getRoleNames()->first() : null;
+	// 	$allowedRoles = [
+	// 		'Super Admin', 
+	// 		'Admin', 
+	// 		'Graphic Designer Manager'
+	// 	];  // Define which roles can modify images
+	// 	$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
 
-	$contentAllowedRoles = [
-		'Super Admin',
-		'Admin',
-		'Content Writing Manager',
-		'Content Writer'
-	];
-	$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
+		$contentAllowedRoles = [
+			'Super Admin',
+			'Admin',
+			'Content Writing Manager',
+			'Content Writer'
+		];
+		$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
 
-	/* Handle categories - IMPROVED VERSION */
-	if ($request->has('categories')) {
-		// Log incoming data for debugging
-		\Log::info('Categories input:', [
-			'raw' => $request->input('categories'),
-			'type' => gettype($request->input('categories'))
-		]);
+	// 	/* Handle categories - IMPROVED VERSION */
+	// 	if ($request->has('categories')) {
+	// 		// Log incoming data for debugging
+	// 		\Log::info('Categories input:', [
+	// 			'raw' => $request->input('categories'),
+	// 			'type' => gettype($request->input('categories'))
+	// 		]);
 
-		$categories = $request->input('categories');
+	// 		$categories = $request->input('categories');
 
-		// Handle cases where categories might be sent as a JSON string
-		if (is_string($categories) && (
-			strpos($categories, '[') === 0 ||
-			strpos($categories, '{') === 0
-		)) {
-			$categories = json_decode($categories, true);
-		}
-		// Handle comma-separated string format
-		else if (is_string($categories) && strpos($categories, ',') !== false) {
-			$categories = array_map('trim', explode(',', $categories));
-		}
-		// Handle single value
-		else if (is_string($categories) && is_numeric($categories)) {
-			$categories = [(int)$categories];
-		}
+	// 		// Handle cases where categories might be sent as a JSON string
+	// 		if (is_string($categories) && (
+	// 			strpos($categories, '[') === 0 ||
+	// 			strpos($categories, '{') === 0
+	// 		)) {
+	// 			$categories = json_decode($categories, true);
+	// 		}
+	// 		// Handle comma-separated string format
+	// 		else if (is_string($categories) && strpos($categories, ',') !== false) {
+	// 			$categories = array_map('trim', explode(',', $categories));
+	// 		}
+	// 		// Handle single value
+	// 		else if (is_string($categories) && is_numeric($categories)) {
+	// 			$categories = [(int)$categories];
+	// 		}
 
-		// Ensure we have a valid array
-		if (is_array($categories)) {
-			// Convert all values to integers to ensure proper comparison
-			$categories = array_map('intval', array_filter($categories));
-			$product->categories()->sync($categories);
-		} else {
-			return response()->json([
-				'success' => false,
-				'message' => 'Categories must be provided as a valid array of category IDs.'
-			], 400);
-		}
-	}
+	// 		// Ensure we have a valid array
+	// 		if (is_array($categories)) {
+	// 			// Convert all values to integers to ensure proper comparison
+	// 			$categories = array_map('intval', array_filter($categories));
+	// 			$product->categories()->sync($categories);
+	// 		} else {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'Categories must be provided as a valid array of category IDs.'
+	// 			], 400);
+	// 		}
+	// 	}
 
-	if ($request->product_attributes) {
-		$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
+	// 	if ($request->product_attributes) {
+	// 		$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
 
-		if (is_array($productAttributes) && count($productAttributes) > 0) {
-			$productAttributes = array_filter($productAttributes, function ($value) {
-				return !is_null($value) && $value !== '';
-			});
+	// 		if (is_array($productAttributes) && count($productAttributes) > 0) {
+	// 			$productAttributes = array_filter($productAttributes, function ($value) {
+	// 				return !is_null($value) && $value !== '';
+	// 			});
 
-			$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
+	// 			$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
 
-			$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
+	// 			$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
 
-			if (!empty($attributesToDelete)) {
-				$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
-			}
+	// 			if (!empty($attributesToDelete)) {
+	// 				$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+	// 			}
 
-			foreach ($productAttributes as $attributeId => $attributeValue) {
-				$existingAttribute = Attribute::find($attributeId);
-				if (!$existingAttribute) {
+	// 			foreach ($productAttributes as $attributeId => $attributeValue) {
+	// 				$existingAttribute = Attribute::find($attributeId);
+	// 				if (!$existingAttribute) {
+	// 					return response()->json([
+	// 						'success' => false,
+	// 						'message' => "Attribute ID: $attributeId does not exist."
+	// 					]);
+	// 				}
+
+	// 				$value = null;
+	// 				$measurementUnitID = null;
+
+	// 				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+	// 					$value = $attributeValue['value'] ?? null;
+	// 					$measurementUnitID = $attributeValue['measurement_id'] ?? null;
+
+	// 					if (!$value || !$measurementUnitID) {
+	// 						/* Delete attribute if either value or measurement ID is missing */
+	// 						$product->productAttributes()
+	// 						->where('attribute_id', $attributeId)
+	// 						->delete();
+	// 					} else {
+	// 						/* Update or create measurement attribute */
+	// 						$product->productAttributes()->updateOrCreate(
+	// 							['attribute_id' => $attributeId],
+	// 							[
+	// 								'attribute_value' => $value,
+	// 								'measurement_unit_id' => $measurementUnitID
+	// 							]
+	// 						);
+	// 					}
+	// 				} else {
+	// 					$value = $attributeValue;
+
+	// 					if (empty($value)) {
+	// 						/* Delete non-measurement attribute if empty */
+	// 						$product->productAttributes()
+	// 						->where('attribute_id', $attributeId)
+	// 						->delete();
+	// 					} else {
+	// 						/* Update or create normal attribute */
+	// 						$product->productAttributes()->updateOrCreate(
+	// 							['attribute_id' => $attributeId],
+	// 							[
+	// 								'attribute_value' => $value,
+	// 								'measurement_unit_id' => null
+	// 							]
+	// 						);
+	// 					}
+	// 				}
+
+	// 				if ($existingAttribute->type === 'select') {
+	// 					if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+	// 						$existingAttribute->attributeValues()->create([
+	// 							'attribute_value' => $value
+	// 						]);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+		// Handle FAQs with content writer permission check
+		if ($request->has('faqs')) {
+			$faqs = $request->input('faqs', []);
+			$hasNewFaqData = false;
+		
+			// Decode if it's a JSON string
+			if (is_string($faqs)) {
+				$decoded = json_decode($faqs, true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
 					return response()->json([
 						'success' => false,
-						'message' => "Attribute ID: $attributeId does not exist."
-					]);
+						'message' => 'Invalid JSON format for faqs.'
+					], 400);
 				}
-
-				$value = null;
-				$measurementUnitID = null;
-
-				if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
-					$value = $attributeValue['value'] ?? null;
-					$measurementUnitID = $attributeValue['measurement_id'] ?? null;
-
-					if (!$value || !$measurementUnitID) {
-						/* Delete attribute if either value or measurement ID is missing */
-						$product->productAttributes()
-						->where('attribute_id', $attributeId)
-						->delete();
-					} else {
-						/* Update or create measurement attribute */
-						$product->productAttributes()->updateOrCreate(
-							['attribute_id' => $attributeId],
-							[
-								'attribute_value' => $value,
-								'measurement_unit_id' => $measurementUnitID
-							]
-						);
-					}
-				} else {
-					$value = $attributeValue;
-
-					if (empty($value)) {
-						/* Delete non-measurement attribute if empty */
-						$product->productAttributes()
-						->where('attribute_id', $attributeId)
-						->delete();
-					} else {
-						/* Update or create normal attribute */
-						$product->productAttributes()->updateOrCreate(
-							['attribute_id' => $attributeId],
-							[
-								'attribute_value' => $value,
-								'measurement_unit_id' => null
-							]
-						);
-					}
-				}
-
-				if ($existingAttribute->type === 'select') {
-					if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-						$existingAttribute->attributeValues()->create([
-							'attribute_value' => $value
-						]);
-					}
-				}
+				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
 			}
-		}
-	}
-
-	// Handle FAQs with content writer permission check
-	if ($request->has('faqs')) {
-		// Check if user is actually trying to modify FAQs (has actual FAQ data)
-		$faqs = $request->input('faqs', []);
-		$hasNewFaqData = false;
 		
-		// Check if faqs is a string and decode it properly
-		if (is_string($faqs)) {
-			$decoded = json_decode($faqs, true);
-			if (json_last_error() !== JSON_ERROR_NONE) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid JSON format for faqs.'
-				], 400);
-			}
-			$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-		}
-		
-		// Check if there's actual FAQ data being sent
-		if (is_array($faqs) && !empty($faqs)) {
-			foreach ($faqs as $faqData) {
-				if (!empty($faqData['question']) || !empty($faqData['answer'])) {
-					$hasNewFaqData = true;
-					break;
-				}
-			}
-		}
-		
-		// Only check permissions if user is actually modifying FAQ data
-		if ($hasNewFaqData && !$canModifyContent) {
-			return response()->json([
-				'success' => false,
-				'message' => 'You do not have permission to modify product FAQs.'
-			], 403);
-		}
-		
-		// Process FAQs only if user has permission or no actual changes
-		if ($canModifyContent || !$hasNewFaqData) {
-			/* Validate that faqs is an array */
-			if (!is_array($faqs)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The field faqs must be a valid JSON array.'
-				], 400);
-			}
-
-			/* Get all existing FAQ IDs for this product */
-			$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
+			// Fetch existing FAQs for comparison
+			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
 			$processedFaqIds = [];
-
-			/* Process and store FAQs */
-			foreach ($faqs as $faqData) {
-				if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-
-					if (!empty($faqData['id'])) {
-						/* Update existing FAQ */
-						$faq = Faq::where('id', $faqData['id'])
-						->where('product_id', $product->id)
-						->first();
-
-						if ($faq) {
-							$faq->update([
+		
+			// Check if there are actual changes
+			if (is_array($faqs) && !empty($faqs)) {
+				foreach ($faqs as $faqData) {
+					$id = $faqData['id'] ?? null;
+					$question = trim($faqData['question'] ?? '');
+					$answer = trim($faqData['answer'] ?? '');
+		
+					// Create or update
+					if ($id && isset($existingFaqs[$id])) {
+						$existing = $existingFaqs[$id];
+						if (
+							$existing->question !== $question ||
+							$existing->answer !== $answer ||
+							$existing->category_id != ($faqData['category_id'] ?? null)
+						) {
+							$hasNewFaqData = true;
+							break;
+						}
+					} elseif (!empty($question) || !empty($answer)) {
+						$hasNewFaqData = true;
+						break;
+					}
+				}
+			}
+		
+			// If user is trying to modify and has no permission
+			if ($hasNewFaqData && !$canModifyContent) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product FAQs.'
+				], 403);
+			}
+		
+			// If no real changes or user has permission, continue saving
+			if ($canModifyContent && is_array($faqs)) {
+				foreach ($faqs as $faqData) {
+					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+						if (!empty($faqData['id'])) {
+							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+							if ($faq) {
+								$faq->update([
+									'question' => $faqData['question'],
+									'answer' => $faqData['answer'],
+									'category_id' => $faqData['category_id'] ?? null,
+									'status' => 'published',
+								]);
+								$processedFaqIds[] = $faq->id;
+							}
+						} else {
+							$newFaq = Faq::create([
+								'product_id' => $product->id,
 								'question' => $faqData['question'],
 								'answer' => $faqData['answer'],
 								'category_id' => $faqData['category_id'] ?? null,
 								'status' => 'published',
 							]);
-							$processedFaqIds[] = $faq->id;
+							$processedFaqIds[] = $newFaq->id;
 						}
-					} else {
-						/* Create new FAQ */
-						$newFaq = Faq::create([
-							'product_id' => $product->id,
-							'question' => $faqData['question'],
-							'answer' => $faqData['answer'],
-							'category_id' => $faqData['category_id'] ?? null,
-							'status' => 'published',
-						]);
-						$processedFaqIds[] = $newFaq->id;
 					}
 				}
+		
+				// Remove deleted FAQs
+				$existingFaqIds = $existingFaqs->keys()->toArray();
+				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+				if (!empty($faqsToDelete)) {
+					Faq::where('product_id', $product->id)
+						->whereIn('id', $faqsToDelete)
+						->delete();
+				}
 			}
+		}
+		
 
-			/* Delete FAQs that were not included in the update */
-			$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
-			if (!empty($faqsToDelete)) {
-				Faq::where('product_id', $product->id)
-				->whereIn('id', $faqsToDelete)
-				->delete();
+		/* Get all input data except '_method' */
+		$input = $request->except('_method');
+		/* Remove 'faqs' from the input before validation */
+
+		/* Process the new fields if they exist in the request */
+		if ($request->has('cost_per_item')) {
+			$input['cost_per_item'] = $request->input('cost_per_item');
+		}
+
+		if ($request->has('cost_per_item_currency')) {
+			$input['cost_per_item_currency'] = $request->input('cost_per_item_currency');
+		}
+
+		if ($request->has('cost_type')) {
+			$input['cost_type'] = $request->input('cost_type');
+		}
+
+		if ($request->has('additional_cost_percentage')) {
+			$input['additional_cost_percentage'] = $request->input('additional_cost_percentage');
+		}
+
+		if ($request->has('additional_cost_value')) {
+			$input['additional_cost_value'] = $request->input('additional_cost_value');
+		}
+
+		/* Calculate the total cost if it's not already provided */
+		if ($request->has('cost_per_item') && ($request->has('additional_cost_percentage') || $request->has('additional_cost_value'))) {
+			if ($input['cost_type'] === 'percentage' && $request->has('additional_cost_percentage')) {
+				$input['total_cost_per_item'] = $input['cost_per_item'] + ($input['cost_per_item'] * $input['additional_cost_percentage'] / 100);
+			} elseif ($input['cost_type'] === 'value' && $request->has('additional_cost_value')) {
+				$input['total_cost_per_item'] = $input['cost_per_item'] + $input['additional_cost_value'];
 			}
 		}
 	}
@@ -2051,72 +2087,215 @@ class ProductController extends BaseController
 				$hasNewBenefitsData = true;
 			}
 		}
-		
-		// Only check permissions if user is actually modifying benefits_features data
-		if ($hasNewBenefitsData && !$canModifyContent) {
-			return response()->json([
-				'success' => false,
-				'message' => 'You do not have permission to modify product benefits and features.'
-			], 403);
-		}
-		
-		// Process benefits_features only if user has permission or no actual changes
-		if ($canModifyContent || !$hasNewBenefitsData) {
-			/* Decode existing benefits_features if available */
-			$existingBenefits = json_decode($product->benefits_features, true);
 
-			/* Ensure existingBenefits is an array */
-			if (!is_array($existingBenefits)) {
-				$existingBenefits = [];
-			}
-
-			/* Handle different input formats */
+		/* Handle benefits_features field with content writer permission check */
+		if ($request->has('benefits_features')) {
+			$benefitsFeaturesInput = $request->input('benefits_features');
+			$hasNewBenefitsData = false;
+		
+			// Decode new input
 			if (is_string($benefitsFeaturesInput)) {
-				/* Try to decode JSON string */
-				$newBenefits = json_decode($benefitsFeaturesInput, true);
-
-				/* If JSON decode failed, treat as invalid */
-				if (json_last_error() !== JSON_ERROR_NONE) {
+				$decoded = json_decode($benefitsFeaturesInput, true);
+				if (json_last_error() === JSON_ERROR_NONE) {
+					$newBenefits = $decoded;
+				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid benefits_features JSON format.'
+						'message' => 'Invalid JSON format for benefits_features.'
 					], 400);
 				}
 			} elseif (is_array($benefitsFeaturesInput)) {
-				/* Already an array */
 				$newBenefits = $benefitsFeaturesInput;
 			} else {
-				/* Invalid format */
 				return response()->json([
 					'success' => false,
 					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
 				], 400);
 			}
-
-			/* Ensure newBenefits is an array */
+		
+			// Ensure it's an array
 			if (!is_array($newBenefits)) {
 				$newBenefits = [];
 			}
-
-			/* Merge existing benefits with new ones */
-			$mergedBenefits = array_merge($existingBenefits, $newBenefits);
-
-			/* Save back as JSON */
-			$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
+		
+			// Get existing saved benefits
+			$existingBenefits = json_decode($product->benefits_features, true);
+			if (!is_array($existingBenefits)) {
+				$existingBenefits = [];
+			}
+		
+			// Check for actual change
+			if ($newBenefits !== $existingBenefits) {
+				$hasNewBenefitsData = true;
+			}
+		
+			// Restrict update only if change attempted and no permission
+			if ($hasNewBenefitsData && !$canModifyContent) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product benefits and features.'
+				], 403);
+			}
+		
+			// If changes are allowed or not needed, process it
+			if ($canModifyContent && $hasNewBenefitsData) {
+				$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+			}
+		
+			// Prevent reprocessing later
+			unset($input['benefits_features']);
 		}
 		
-		// Remove benefits_features from input to prevent it from being processed again
-		unset($input['benefits_features']);
-	}
 
-	/* Handle description field with content writer permission check */
-	if ($request->has('description')) {
-		// Check if user is actually trying to modify description
-		$descriptionInput = $request->input('description');
-		$hasNewDescriptionData = !empty($descriptionInput) && $descriptionInput !== $product->description;
+		if ($request->has('description')) {
+			$descriptionInput = $request->input('description');
+			$hasNewDescriptionData = false;
 		
-		// Only check permissions if user is actually modifying description data
-		if ($hasNewDescriptionData && !$canModifyContent) {
+			// Decode new input
+			if (is_string($descriptionInput)) {
+				$decoded = json_decode($descriptionInput, true);
+				if (json_last_error() === JSON_ERROR_NONE) {
+					$newDescription = $decoded;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for description.'
+					], 400);
+				}
+			} elseif (is_array($descriptionInput)) {
+				$newDescription = $descriptionInput;
+			} else {
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid description format. Must be JSON string or array.'
+				], 400);
+			}
+		
+			// Ensure it's an array
+			if (!is_array($newDescription)) {
+				$newDescription = [];
+			}
+		
+			// Get existing saved description
+			$existingDescription = json_decode($product->description, true);
+			if (!is_array($existingDescription)) {
+				$existingDescription = [];
+			}
+		
+			// Check for actual change
+			if ($newDescription !== $existingDescription) {
+				$hasNewDescriptionData = true;
+			}
+		
+			// Restrict update only if change attempted and no permission
+			if ($hasNewDescriptionData && !$canModifyContent) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product description.'
+				], 403);
+			}
+		
+			// If changes are allowed or not needed, process it
+			if ($canModifyContent && $hasNewDescriptionData) {
+				$product->description = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
+			}
+		
+			// Prevent reprocessing later
+			unset($input['description']);
+		}
+		
+		
+		/* Stock status validation */
+		$usStockStatusArray = [
+			1 => "in_stock",
+			2 => "out_of_stock",
+			3 => "Pre Order"
+		];
+		if (isset($input['stock_status'])) {
+			if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
+				$rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
+			} else {
+				$product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
+				unset($input['stock_status']); /* Remove processed field */
+			}
+		}
+
+		/* Tax ID validation */
+		if (isset($input['tax_id'])) {
+			$taxArray = Tax::pluck("id")->toArray();
+			if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
+				$rowError[] = "Invalid tax value. Please select a valid tax ID.";
+			} else {
+				$product->tax_id = (int) $input['tax_id'];
+				unset($input['tax_id']); /* Remove processed field */
+			}
+		}
+
+		/* Currency ID validation */
+		if (isset($input['currency_id'])) {
+			$currencyArray = Currency::pluck("id")->toArray();
+			if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
+				$rowError[] = "Invalid currency value. Please select a valid currency ID.";
+			} else {
+				$product->currency_id = (int) $input['currency_id'];
+				unset($input['currency_id']); /* Remove processed field */
+			}
+		}
+
+		/* Unit ID validation for length, weight, and shipping */
+		$lengthUnitArray = [
+			1 => "cm",
+			3 => "inch",
+			11 => "mm",
+		];
+		$weightUnitArray = [
+			5 => "kg",
+			6 => "g",
+			9 => "lbs",
+		];
+
+		if (isset($input['google_shopping_category'])) {
+			$product->google_shopping_category = $input['google_shopping_category'];
+			unset($input['google_shopping_category']);
+		}
+
+		if (isset($input['google_shopping_mpn'])) {
+			$product->google_shopping_mpn = $input['google_shopping_mpn'];
+			unset($input['google_shopping_mpn']);
+		}
+
+		if (isset($input['box_quantity'])) {
+			/* If box_quantity should be an integer */
+			$product->box_quantity = (int)$input['box_quantity'];
+			unset($input['box_quantity']);
+		}
+
+		/* Store ID validation */
+		if (isset($input['vendor_id'])) {
+			$storeArray = Vendor::pluck("id")->toArray();
+			if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
+				$storeList = implode(', ', $storeArray);
+				$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
+			} else {
+				$product->vendor_id = (int) $input['vendor_id'];
+				unset($input['vendor_id']); /* Remove processed field */
+			}
+		}
+
+		/* Brand ID validation */
+		if (isset($input['brand_id'])) {
+			$brandArray = Brand::pluck("id")->toArray();
+			if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
+				$brandList = implode(', ', $brandArray);
+				$rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
+			} else {
+				$product->brand_id = (int) $input['brand_id'];
+				unset($input['brand_id']); /* Remove processed field */
+			}
+		}
+
+		/* If any validation errors exist, return them */
+		if (!empty($rowError)) {
 			return response()->json([
 				'success' => false,
 				'message' => 'You do not have permission to modify product description.'
@@ -2288,22 +2467,7 @@ class ProductController extends BaseController
 			return response()->json(['success' => false, 'message' => 'Failed to save review.']);
 		}
 	}
-
-	/* Save the product */
-	$product->save();
-
-	$product = Product::find($product->id);
-
-	/* Return success response */
-	return response()->json([
-		'success' => true,
-		'message' => 'Product updated successfully.',
-		'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
-		'unitOfMeasurements' => $unitOfMeasurements ,
-		// 'review' => $review ?? null,
-		'faq' => $faqs ?? null,
-	]);
-}
+	
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/product-input",
