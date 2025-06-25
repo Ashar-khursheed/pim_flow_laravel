@@ -1716,9 +1716,10 @@ class ProductController extends BaseController
 
 		// Handle FAQs with content writer permission check
 		if ($request->has('faqs')) {
+			// Check if user is actually trying to modify FAQs (has actual FAQ data)
 			$faqs = $request->input('faqs', []);
 			$hasNewFaqData = false;
-		
+			
 			// Check if faqs is a string and decode it properly
 			if (is_string($faqs)) {
 				$decoded = json_decode($faqs, true);
@@ -1730,48 +1731,49 @@ class ProductController extends BaseController
 				}
 				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
 			}
-		
-			// Check if there's actual FAQ data being sent and if it's changed
+			
+			// Check if there's actual FAQ data being sent
 			if (is_array($faqs) && !empty($faqs)) {
 				foreach ($faqs as $faqData) {
 					if (!empty($faqData['question']) || !empty($faqData['answer'])) {
-						$faq = null;
-						if (!empty($faqData['id'])) {
-							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
-						}
-		
-						if (!$faq || $faq->question !== $faqData['question'] || $faq->answer !== $faqData['answer']) {
-							$hasNewFaqData = true;
-							break;
-						}
+						$hasNewFaqData = true;
+						break;
 					}
 				}
 			}
-		
-			// Only block if user tried to modify and doesn't have permission
+			
+			// Only check permissions if user is actually modifying FAQ data
 			if ($hasNewFaqData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
 					'message' => 'You do not have permission to modify product FAQs.'
 				], 403);
 			}
-		
-			// Process FAQs only if allowed or no change
+			
+			// Process FAQs only if user has permission or no actual changes
 			if ($canModifyContent || !$hasNewFaqData) {
+				/* Validate that faqs is an array */
 				if (!is_array($faqs)) {
 					return response()->json([
 						'success' => false,
 						'message' => 'The field faqs must be a valid JSON array.'
 					], 400);
 				}
-		
+
+				/* Get all existing FAQ IDs for this product */
 				$existingFaqIds = Faq::where('product_id', $product->id)->pluck('id')->toArray();
 				$processedFaqIds = [];
-		
+
+				/* Process and store FAQs */
 				foreach ($faqs as $faqData) {
 					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+
 						if (!empty($faqData['id'])) {
-							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+							/* Update existing FAQ */
+							$faq = Faq::where('id', $faqData['id'])
+							->where('product_id', $product->id)
+							->first();
+
 							if ($faq) {
 								$faq->update([
 									'question' => $faqData['question'],
@@ -1782,6 +1784,7 @@ class ProductController extends BaseController
 								$processedFaqIds[] = $faq->id;
 							}
 						} else {
+							/* Create new FAQ */
 							$newFaq = Faq::create([
 								'product_id' => $product->id,
 								'question' => $faqData['question'],
@@ -1793,10 +1796,13 @@ class ProductController extends BaseController
 						}
 					}
 				}
-		
+
+				/* Delete FAQs that were not included in the update */
 				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
 				if (!empty($faqsToDelete)) {
-					Faq::where('product_id', $product->id)->whereIn('id', $faqsToDelete)->delete();
+					Faq::where('product_id', $product->id)
+					->whereIn('id', $faqsToDelete)
+					->delete();
 				}
 			}
 		}
@@ -2030,80 +2036,101 @@ class ProductController extends BaseController
 
 		/* Handle benefits_features field with content writer permission check */
 		if ($request->has('benefits_features')) {
+			// Check if user is actually trying to modify benefits_features
 			$benefitsFeaturesInput = $request->input('benefits_features');
-		
-			$existingBenefits = json_decode($product->benefits_features, true);
-			$existingBenefits = is_array($existingBenefits) ? $existingBenefits : [];
-		
-			if (is_string($benefitsFeaturesInput)) {
-				$newBenefits = json_decode($benefitsFeaturesInput, true);
-				if (json_last_error() !== JSON_ERROR_NONE) {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid benefits_features JSON format.'
-					], 400);
+			$hasNewBenefitsData = false;
+			
+			// Check if there's actual benefits_features data being sent
+			if (!empty($benefitsFeaturesInput)) {
+				if (is_string($benefitsFeaturesInput)) {
+					$decoded = json_decode($benefitsFeaturesInput, true);
+					if (json_last_error() === JSON_ERROR_NONE && !empty($decoded)) {
+						$hasNewBenefitsData = true;
+					}
+				} elseif (is_array($benefitsFeaturesInput) && !empty($benefitsFeaturesInput)) {
+					$hasNewBenefitsData = true;
 				}
-			} elseif (is_array($benefitsFeaturesInput)) {
-				$newBenefits = $benefitsFeaturesInput;
-			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-				], 400);
 			}
-		
-			$existingJson = json_encode($existingBenefits);
-			$newJson = json_encode($newBenefits);
-			$hasNewBenefitsData = $existingJson !== $newJson;
-		
+			
+			// Only check permissions if user is actually modifying benefits_features data
 			if ($hasNewBenefitsData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
-					'message' => 'You do not have permission to modify benefits features.'
+					'message' => 'You do not have permission to modify product benefits and features.'
 				], 403);
 			}
-		
+			
+			// Process benefits_features only if user has permission or no actual changes
 			if ($canModifyContent || !$hasNewBenefitsData) {
-				$mergedBenefits = array_merge($existingBenefits, $newBenefits);
-				$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
-			}
-		
-			unset($input['benefits_features']);
-		}
-		
+				/* Decode existing benefits_features if available */
+				$existingBenefits = json_decode($product->benefits_features, true);
 
-		/* Handle description field with content writer permission check */
-		// Handle description field with content writer permission check
-		// Handle description field with content writer permission check
-			if ($request->has('description')) {
-				$descriptionInputRaw = $request->input('description');
-
-				// Only process if input is a string
-				if (is_string($descriptionInputRaw)) {
-					$descriptionInput = trim($descriptionInputRaw);
-					$existingDescription = is_string($product->description) ? trim($product->description) : '';
-
-					$hasNewDescriptionData = $descriptionInput !== $existingDescription;
-
-					// Only block if user made a real change and lacks permission
-					if ($hasNewDescriptionData && !$canModifyContent) {
-						return response()->json([
-							'success' => false,
-							'message' => 'You do not have permission to modify product description.'
-						], 403);
-					}
-
-					// Save only if change exists or user has permission
-					if ($canModifyContent || !$hasNewDescriptionData) {
-						$product->description = $descriptionInput;
-					}
+				/* Ensure existingBenefits is an array */
+				if (!is_array($existingBenefits)) {
+					$existingBenefits = [];
 				}
 
-				// Remove from input to prevent reprocessing
-				unset($input['description']);
+				/* Handle different input formats */
+				if (is_string($benefitsFeaturesInput)) {
+					/* Try to decode JSON string */
+					$newBenefits = json_decode($benefitsFeaturesInput, true);
+
+					/* If JSON decode failed, treat as invalid */
+					if (json_last_error() !== JSON_ERROR_NONE) {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid benefits_features JSON format.'
+						], 400);
+					}
+				} elseif (is_array($benefitsFeaturesInput)) {
+					/* Already an array */
+					$newBenefits = $benefitsFeaturesInput;
+				} else {
+					/* Invalid format */
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+					], 400);
+				}
+
+				/* Ensure newBenefits is an array */
+				if (!is_array($newBenefits)) {
+					$newBenefits = [];
+				}
+
+				/* Merge existing benefits with new ones */
+				$mergedBenefits = array_merge($existingBenefits, $newBenefits);
+
+				/* Save back as JSON */
+				$product->benefits_features = json_encode($mergedBenefits, JSON_UNESCAPED_SLASHES);
 			}
+			
+			// Remove benefits_features from input to prevent it from being processed again
+			unset($input['benefits_features']);
+		}
 
-
+		/* Handle description field with content writer permission check */
+		if ($request->has('description')) {
+			// Check if user is actually trying to modify description
+			$descriptionInput = $request->input('description');
+			$hasNewDescriptionData = !empty($descriptionInput) && $descriptionInput !== $product->description;
+			
+			// Only check permissions if user is actually modifying description data
+			if ($hasNewDescriptionData && !$canModifyContent) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product description.'
+				], 403);
+			}
+			
+			// Process description only if user has permission or no actual changes
+			if ($canModifyContent || !$hasNewDescriptionData) {
+				$product->description = $descriptionInput;
+			}
+			
+			// Remove description from input to prevent it from being processed again
+			unset($input['description']);
+		}
 
 		/* Stock status validation */
 		$usStockStatusArray = [
@@ -2277,7 +2304,7 @@ class ProductController extends BaseController
 			'faq' => $faqs ?? null,
 		]);
 	}
-
+	
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/product-input",
