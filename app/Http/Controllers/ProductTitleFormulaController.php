@@ -109,9 +109,7 @@ class ProductTitleFormulaController extends Controller
 			'category_name' => $categoryName,
 			'attribute_names' => implode(', ', $attributeNames),
 			'created_by' => $creatorNames,
-			'locked' => $lock,
-			'created_at' => $created_at,
-			// can return as array or implode
+			'locked' => $lock,			// can return as array or implode
 			// If you want comma-separated creators instead:
 			// 'created_by' => implode(', ', $creatorNames->toArray()),
 		];
