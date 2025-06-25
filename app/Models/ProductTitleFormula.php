@@ -28,8 +28,6 @@ class ProductTitleFormula extends Model
         return $this->belongsTo(Category::class, 'category_id');
     }
 
-    public function attributes()
-{
-    return $this->belongsToMany(Attribute::class);
-}
+  
+    
 }
