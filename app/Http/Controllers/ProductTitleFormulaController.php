@@ -102,12 +102,16 @@ class ProductTitleFormulaController extends Controller
 
 		// Unique creators
 		$creatorNames = $items->pluck('creator.name')->unique()->filter()->values();
-
+		$lock = $items->pluck('locked')->unique()->filter()->values();
+		$created_at= $items->pluck('created_at')->unique()->filter()->values();
 		return [
 			'category_id' => $categoryId,
 			'category_name' => $categoryName,
 			'attribute_names' => implode(', ', $attributeNames),
-			'created_by' => $creatorNames, // can return as array or implode
+			'created_by' => $creatorNames,
+			'locked' => $lock,
+			'created_at' => $created_at,
+			// can return as array or implode
 			// If you want comma-separated creators instead:
 			// 'created_by' => implode(', ', $creatorNames->toArray()),
 		];
