@@ -1722,8 +1722,8 @@ class ProductController extends BaseController
             $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
         }
         
-        // Check if there's actual FAQ modification
-        $hasNewFaqData = $this->hasContentChanges($faqs, 'question', 'answer');
+        // Check if there's actual FAQ modification by comparing with existing data
+        $hasNewFaqData = $this->hasActualFaqChanges($product, $faqs);
         
         if ($hasNewFaqData && !$canModifyContent) {
             return response()->json([
@@ -1732,8 +1732,8 @@ class ProductController extends BaseController
             ], 403);
         }
         
-        // Process FAQs if user has permission
-        if ($canModifyContent) {
+        // Process FAQs only if user has permission AND there are actual changes
+        if ($canModifyContent && $hasNewFaqData) {
             $this->processFaqs($product, $faqs);
         }
     }
@@ -1750,7 +1750,8 @@ class ProductController extends BaseController
             ], 403);
         }
         
-        if ($canModifyContent) {
+        // Only update if user has permission AND there are actual changes
+        if ($canModifyContent && $hasDescriptionChange) {
             $product->description = $descriptionInput;
         }
     }
