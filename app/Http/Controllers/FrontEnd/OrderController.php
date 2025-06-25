@@ -10,6 +10,7 @@ use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use App\Notifications\OrderPlacedMail;
 
 class OrderController extends BaseController
 {
@@ -236,6 +237,9 @@ class OrderController extends BaseController
 				'status' => 'Order Created',
 				'description' => 'Order has been successfully created',
 			]);
+
+			$customer = auth()->user();
+			$customer->notify(new OrderPlacedMail($order));
 
 			DB::commit();
 
