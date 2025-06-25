@@ -138,24 +138,24 @@ class ProductTitleFormulaController extends Controller
 	 {
 		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
 	 
-		 $attributeNames = collect(json_decode($formula->attribute_ids))
+		 // Collect attribute names from the JSON-casted array
+		 $attributeNames = collect($formula->attribute_id) // assuming attribute_id is casted to array in model
 			 ->map(function ($attrId) {
 				 return Attribute::find($attrId)?->name;
 			 })
 			 ->filter()
 			 ->values();
 	 
-		 $response = [
+		 return response()->json([
 			 'id' => $formula->id,
-			 'category' => $formula->category?->name,
+			 'category_id' => $formula->category_id,
+			 'category_name' => $formula->category?->name,
 			 'created_by' => $formula->creator?->name,
+			 'attribute_names' => implode(', ', $attributeNames->toArray()),
 			 'locked' => $formula->locked,
-			 'attribute_names' => $attributeNames,
 			 'created_at' => $formula->created_at,
 			 'updated_at' => $formula->updated_at,
-		 ];
-	 
-		 return response()->json($response);
+		 ]);
 	 }
 	 
 
