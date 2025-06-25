@@ -103,7 +103,7 @@ class AuthController extends Controller
             // Get user info
             $email = $payload['email'];
             $name = $payload['name'];
-            $avatar = $payload['picture'];
+            $avatar = $payload['profile_img'];
 
             // Find or create the user
 			$user = Customer::firstOrCreate(
