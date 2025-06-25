@@ -2098,14 +2098,14 @@ class ProductController extends BaseController
 		if ($request->has('description')) {
 			$descriptionInput = $request->input('description');
 		
-			// Normalize null or empty string to ensure consistent comparison
-			$currentDescription = $product->description ?? '';
-			$incomingDescription = $descriptionInput ?? '';
+			// Force both values to strings for accurate comparison
+			$incomingDescription = is_string($descriptionInput) ? trim($descriptionInput) : '';
+			$existingDescription = is_string($product->description) ? trim($product->description) : '';
 		
-			// Check if there's an actual change
-			$hasNewDescriptionData = trim($incomingDescription) !== trim($currentDescription);
+			// Check if actual change attempted
+			$hasNewDescriptionData = $incomingDescription !== $existingDescription;
 		
-			// Block if trying to modify without permission
+			// Block only if user tried to change and lacks permission
 			if ($hasNewDescriptionData && !$canModifyContent) {
 				return response()->json([
 					'success' => false,
@@ -2118,9 +2118,9 @@ class ProductController extends BaseController
 				$product->description = $incomingDescription;
 			}
 		
-			// Remove from input to prevent reprocessing
 			unset($input['description']);
 		}
+		
 		
 		/* Stock status validation */
 		$usStockStatusArray = [
