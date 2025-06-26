@@ -2,7 +2,7 @@
 // app/Models/Blog.php
 
 namespace App\Models;
-
+use App\Models\FrontEnd\BlogComment;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -49,4 +49,11 @@ class Blog extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    public function comments()
+    {
+        return $this->hasMany(BlogComment::class)
+                    ->whereNull('parent_id')
+                    ->with('replies', 'creator');
+    }
+
 }
