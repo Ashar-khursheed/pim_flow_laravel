@@ -190,10 +190,10 @@ class PermissionSeeder extends Seeder
 			'export product suppliers',
 			'manage product suppliers',
 
-			'Activity Log',
-			'Setting',
-			'quality',
-			'quality-update',
+			'list Activity Log',
+			'list Setting',
+			'list quality',
+			'update quality',
 
 		];
 
