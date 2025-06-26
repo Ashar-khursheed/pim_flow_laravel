@@ -121,85 +121,101 @@ class SaveForLaterController extends Controller
 	 */
 	public function showSaveForLater(Request $request)
 	{
-		// Get the logged-in user
 		$userId = auth()->id();
-
-		// Fetch all saved products for the user
-		$savedProducts = SaveForLater::where('user_id',  $userId)
-									->with('product')  // Assuming `product` is the relationship
-									->get();
-
-									if ($savedProducts->isEmpty()) {
-										return response()->json([
-											'message' => 'No products saved for later.'
-										], 404);
-									}
-
-		// Return the saved products data
-		$productsData = $savedProducts->map(function ($item) {
-			$product = $item->product; // Get the product
-
-			// Calculate the total reviews and average rating
+	
+		// Get wishlist product IDs
+		$wishlistProductIds = DB::table('ec_wish_lists')
+			->where('customer_id', $userId)
+			->pluck('product_id')
+			->map(fn($id) => (int) $id)
+			->toArray();
+	
+		// Fetch all saved products
+		$savedProducts = SaveForLater::where('user_id', $userId)
+			->with([
+				'product.reviews',
+				'product.currency',
+				'product.per_unit_price_attributes.attributeDetails',
+				'product.sellingUnitAttribute'
+			])
+			->get();
+	
+		if ($savedProducts->isEmpty()) {
+			return response()->json([
+				'message' => 'No products saved for later.'
+			], 404);
+		}
+	
+		$productsData = $savedProducts->map(function ($item) use ($wishlistProductIds) {
+			$product = $item->product;
+	
+			if (!$product) return null;
+	
+			// Ratings
 			$totalReviews = $product->reviews->count();
-			$avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-			$product->total_reviews = $totalReviews;
-			$product->avg_rating = $avgRating;
-
-			$product->images = is_string($product->images)
-                 ? json_decode($product->images, true)
-                 : (array) $product->images;
-
-				 $product->original_price = $product->price;
-                 $product->front_sale_price= $product->sale_price ?? $product->price;
-
-			// Add currency details
-			if ($product->currency) {
-				$product->currency_title = $product->currency->is_prefix_symbol
-				? $product->currency->symbol
-				: $product->price . ' ' . $product->currency->symbol;
-			} else {
-				$product->currency_title = $product->price; // Fallback if no currency found
-			}
+			$avgRating = $totalReviews > 0 ? round($product->reviews->avg('star'), 1) : null;
+	
+			// Images
+			$imageUrls = is_string($product->images)
+				? json_decode($product->images, true)
+				: (array) $product->images;
+	
+			// Selling type
 			$sellingType = null;
-
 			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
 				$fullValue = $product->sellingUnitAttribute->attribute_value;
-
 				$attributeUnit = strpos($fullValue, '/') !== false
 					? trim(explode('/', $fullValue)[1])
 					: $fullValue;
-
+	
 				$sellingType = [
-					'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+					'attribute_value' => $fullValue,
 					'attribute_value_unit' => $attributeUnit,
 				];
 			}
-			 // Calculate per unit price
-			 $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-			 $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-			 
-
-			 $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-			 $perUnitPrice = null;
-
-			 if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-				 $unitValue = (float) $unitsPerCase->attribute_value;
-				 if ($unitValue > 0) {
-					 $calculated = round($basePrice / $unitValue, 2);
-					 $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
-				 }
-			 }
-
-			 $product->per_unit_price = $perUnitPrice;
-
-			return $product; // Return the modified product data
-		});
-
+	
+			// Per unit price
+			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
+				$attr->attributeDetails->name === 'Units per Case');
+			$packType = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
+				$attr->attributeDetails->name === 'Pack Type');
+	
+			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+			$perUnitPrice = null;
+			if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+				$unitValue = (float) $unitsPerCase->attribute_value;
+				if ($unitValue > 0) {
+					$calculated = round($basePrice / $unitValue, 2);
+					$perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+				}
+			}
+	
+			return [
+				'id' => $product->id,
+				'name' => $product->name,
+				'sku' => $product->sku,
+				'price' => $product->price,
+				'sale_price' => $product->sale_price,
+				'original_price' => $product->price,
+				'front_sale_price' => $product->sale_price ?? $product->price,
+				'total_reviews' => $totalReviews,
+				'avg_rating' => $avgRating,
+				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
+				'currency' => $product->currency->symbol ?? '',
+				'in_wishlist' => in_array($product->id, $wishlistProductIds),
+				'images' => $imageUrls,
+				'selling_type' => $sellingType,
+				'per_unit_price' => $perUnitPrice,
+			];
+		})->filter()->values(); // Remove nulls
+	
 		return response()->json([
-	    'message' => 'Saved for Later Products retrieved successfully.',
-		'product' => $productsData
+			'success' => true,
+			'message' => 'Saved for Later Products retrieved successfully.',
+			'data' => $productsData
 		], 200);
-    }
+	}
+	
 
 	
 	/**
