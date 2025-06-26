@@ -417,8 +417,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
 
 
-
-
+	Route::prefix('/frontend/blogs')->group(function () {
+		Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
+	});
 
 });
 
@@ -483,8 +484,7 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
-	Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
-	Route::get('/{id}/comment', [F_BlogController::class, 'postComment']);
+	// Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
 	Route::get('/{postId}/comments', [BlogController::class, 'viewComments']);
 
 });
