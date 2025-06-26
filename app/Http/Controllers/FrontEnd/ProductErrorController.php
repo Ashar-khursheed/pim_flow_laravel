@@ -12,7 +12,7 @@ class ProductErrorController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/api/product-errors",
+     *     path="/api/frontend/product-errors",
      *     summary="Create a product error report",
      *     description="Submit an issue related to a specific product",
      *     tags={"Product Errors"},
@@ -110,7 +110,7 @@ class ProductErrorController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/product-errors",
+     *     path="/api/frontend/product-errors",
      *     summary="List all product error reports",
      *     description="Returns a list of all submitted product errors",
      *     tags={"Product Errors"},
@@ -129,7 +129,7 @@ class ProductErrorController extends Controller
 
     /**
      * @OA\Get(
-     *     path="/api/product-errors/{product_id}",
+     *     path="/api/frontend/product-errors/{product_id}",
      *     summary="Get product errors by product ID",
      *     description="Retrieve all error reports associated with a specific product ID",
      *     tags={"Product Errors"},
