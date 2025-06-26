@@ -4,6 +4,8 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\ProductError;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\ProductErrorMail;
 
 class ProductErrorController extends Controller
 {
@@ -50,9 +52,15 @@ class ProductErrorController extends Controller
             'created_by' => 'nullable|integer',
             'updated_by' => 'nullable|integer',
         ]);
-
+    
         $productError = ProductError::create($request->all());
-
+    
+        // Send email only if email is present
+        if ($productError->email) {
+            Notification::route('mail', $productError->email)
+                ->notify(new ProductErrorMail($productError->toArray()));
+        }
+    
         return response()->json([
             'success' => true,
             'message' => 'Product error reported successfully.',
