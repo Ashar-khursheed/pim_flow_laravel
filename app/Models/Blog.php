@@ -51,9 +51,10 @@ class Blog extends Model
     }
     public function comments()
     {
-        return $this->hasMany(BlogComment::class)
+        return $this->hasMany(BlogComment::class, 'post_id') // specify foreign key
                     ->whereNull('parent_id')
                     ->with('replies', 'creator');
     }
+    
 
 }
