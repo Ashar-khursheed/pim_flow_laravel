@@ -418,7 +418,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 	Route::prefix('/frontend/blogs')->group(function () {
-		Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
+		Route::post('/{id}/comment', [F_BlogController::class, 'postComment']);
 	});
 
 });
