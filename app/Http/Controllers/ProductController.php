@@ -2048,62 +2048,110 @@ if ($request->has('images')) {
 		}
 
 		/* Handle benefits_features field with content writer permission check */
-		if ($request->has('benefits_features')) {
-			$benefitsFeaturesInput = $request->input('benefits_features');
-			$hasNewBenefitsData = false;
+		// if ($request->has('benefits_features')) {
+		// 	$benefitsFeaturesInput = $request->input('benefits_features');
+		// 	$hasNewBenefitsData = false;
 		
-			// Decode new input
-			if (is_string($benefitsFeaturesInput)) {
-				$decoded = json_decode($benefitsFeaturesInput, true);
-				if (json_last_error() === JSON_ERROR_NONE) {
-					$newBenefits = $decoded;
+		// 	// Decode new input
+		// 	if (is_string($benefitsFeaturesInput)) {
+		// 		$decoded = json_decode($benefitsFeaturesInput, true);
+		// 		if (json_last_error() === JSON_ERROR_NONE) {
+		// 			$newBenefits = $decoded;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid JSON format for benefits_features.'
+		// 			], 400);
+		// 		}
+		// 	} elseif (is_array($benefitsFeaturesInput)) {
+		// 		$newBenefits = $benefitsFeaturesInput;
+		// 	} else {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+		// 		], 400);
+		// 	}
+		
+		// 	// Ensure it's an array
+		// 	if (!is_array($newBenefits)) {
+		// 		$newBenefits = [];
+		// 	}
+		
+		// 	// Get existing saved benefits
+		// 	$existingBenefits = json_decode($product->benefits_features, true);
+		// 	if (!is_array($existingBenefits)) {
+		// 		$existingBenefits = [];
+		// 	}
+		
+		// 	// Check for actual change
+		// 	if ($newBenefits !== $existingBenefits) {
+		// 		$hasNewBenefitsData = true;
+		// 	}
+		
+		// 	// Restrict update only if change attempted and no permission
+		// 	if ($hasNewBenefitsData && !$canModifyContent) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'You do not have permission to modify product benefits and features.'
+		// 		], 403);
+		// 	}
+		
+		// 	// If changes are allowed or not needed, process it
+		// 	if ($canModifyContent && $hasNewBenefitsData) {
+		// 		$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+		// 	}
+		
+		// 	// Prevent reprocessing later
+		// 	unset($input['benefits_features']);
+		// }
+		if ($request->has('benefits_features')) {
+			$benefitsInput = $request->input('benefits_features');
+			
+			if ($canModifyContent) {
+				// Decode and validate input
+				if (is_string($benefitsInput)) {
+					$decoded = json_decode($benefitsInput, true);
+					if (json_last_error() === JSON_ERROR_NONE) {
+						$newBenefits = $decoded;
+					} else {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for benefits_features.'
+						], 400);
+					}
+				} elseif (is_array($benefitsInput)) {
+					$newBenefits = $benefitsInput;
 				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid JSON format for benefits_features.'
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
 					], 400);
 				}
-			} elseif (is_array($benefitsFeaturesInput)) {
-				$newBenefits = $benefitsFeaturesInput;
+		
+				// Ensure it's an array
+				if (!is_array($newBenefits)) {
+					$newBenefits = [];
+				}
+		
+				// Get existing saved benefits
+				$existingBenefits = json_decode($product->benefits_features, true);
+				if (!is_array($existingBenefits)) {
+					$existingBenefits = [];
+				}
+		
+				// Only save if changed
+				if ($newBenefits !== $existingBenefits) {
+					$input['benefits_features'] = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+				} else {
+					// No change, so ignore it
+					unset($input['benefits_features']);
+				}
 			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-				], 400);
+				// User tried to modify benefits but doesn't have permission
+				unset($input['benefits_features']);
 			}
-		
-			// Ensure it's an array
-			if (!is_array($newBenefits)) {
-				$newBenefits = [];
-			}
-		
-			// Get existing saved benefits
-			$existingBenefits = json_decode($product->benefits_features, true);
-			if (!is_array($existingBenefits)) {
-				$existingBenefits = [];
-			}
-		
-			// Check for actual change
-			if ($newBenefits !== $existingBenefits) {
-				$hasNewBenefitsData = true;
-			}
-		
-			// Restrict update only if change attempted and no permission
-			if ($hasNewBenefitsData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product benefits and features.'
-				], 403);
-			}
-		
-			// If changes are allowed or not needed, process it
-			if ($canModifyContent && $hasNewBenefitsData) {
-				$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
-			}
-		
-			// Prevent reprocessing later
-			unset($input['benefits_features']);
 		}
+		
 		
 
 		if ($request->has('description')) {
