@@ -105,6 +105,7 @@ Route::get('/countries', [LocationController::class, 'getCountryList']);
 Route::get('/states/{countryId}', [LocationController::class, 'getStateList']);
 Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
+Route::apiResource('newsletters', NewsletterController::class);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -253,7 +254,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	// Flash Sale API Routes
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
-	Route::apiResource('newsletters', NewsletterController::class);
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
