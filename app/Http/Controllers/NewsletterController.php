@@ -47,7 +47,6 @@ class NewsletterController extends Controller
      *     path="/api/newsletters",
      *     summary="Subscribe a new email",
      *     tags={"Newsletters"},
-     *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
