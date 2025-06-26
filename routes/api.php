@@ -520,7 +520,7 @@ Route::prefix('/frontend/ccavenue')->group(function () {
     Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
-Route::post('/stripe/create-payment-intent', [StripeController::class, 'createPaymentIntent']);
+Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
 
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
