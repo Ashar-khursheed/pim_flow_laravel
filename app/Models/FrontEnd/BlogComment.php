@@ -10,6 +10,8 @@ use App\Models\Blog;
 
 class BlogComment extends Model
 {
+    protected $table = 'post_comments';
+
 	protected $fillable = [
 		'post_id',
 		'parent_id',
