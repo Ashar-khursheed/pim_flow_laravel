@@ -16798,6 +16798,90 @@
                 }
             }
         },
+        "/api/stripe/create-payment-intent": {
+            "post": {
+                "tags": [
+                    "Stripe"
+                ],
+                "summary": "Create Stripe Payment Intent",
+                "description": "Creates a Stripe PaymentIntent for a one-time payment.",
+                "operationId": "createPaymentIntent",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "amount": {
+                                        "description": "Payment amount in dollars",
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 50
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Client secret for payment intent returned successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "clientSecret": {
+                                            "type": "string",
+                                            "example": "pi_3Nx4x4xxxx_secret_1234"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error (missing or invalid amount)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Stripe error or internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Your card was declined."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/customer-reviews": {
             "get": {
                 "tags": [
@@ -18243,12 +18327,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/newsletters/{id}": {
@@ -27866,6 +27945,10 @@
         {
             "name": "Square Payment",
             "description": "Square Payment"
+        },
+        {
+            "name": "Stripe",
+            "description": "Stripe"
         },
         {
             "name": "Frontend-User Reviews",
