@@ -155,8 +155,8 @@ class SaveForLaterController extends Controller
 			// Add currency details
 			if ($product->currency) {
 				$product->currency_title = $product->currency->is_prefix_symbol
-				? $product->currency->title
-				: $product->price . ' ' . $product->currency->title;
+				? $product->currency->symbol
+				: $product->price . ' ' . $product->currency->symbol;
 			} else {
 				$product->currency_title = $product->price; // Fallback if no currency found
 			}

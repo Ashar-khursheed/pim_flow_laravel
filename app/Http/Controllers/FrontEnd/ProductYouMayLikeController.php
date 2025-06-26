@@ -268,7 +268,7 @@ class ProductYouMayLikeController extends Controller
                     'start_date' => $product->start_date,
                     'end_date' => $product->end_date,
                     'warranty_information' => $product->warranty_information,
-                    'currency' => $productWithRelations->currency?->title,
+                    'currency' => $productWithRelations->currency?->symbol,
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
                     'best_price' => $product->sale_price ?? $product->price,
@@ -276,8 +276,8 @@ class ProductYouMayLikeController extends Controller
                     'leftStock' => $leftStock,
                     'currency_title' => $productWithRelations->currency
                         ? ($productWithRelations->currency->is_prefix_symbol
-                            ? $productWithRelations->currency->title
-                            : ($product->price . ' ' . $productWithRelations->currency->title))
+                            ? $productWithRelations->currency->symbol
+                            : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
                     'in_wishlist' => in_array($product->id, $wishlistProductIds),
                     "selling_type"=> $sellingType,
@@ -596,7 +596,7 @@ class ProductYouMayLikeController extends Controller
                     'start_date' => $product->start_date,
                     'end_date' => $product->end_date,
                     'warranty_information' => $product->warranty_information,
-                    'currency' => $productWithRelations->currency?->title,
+                    'currency' => $productWithRelations->currency?->symbol,
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
                     'best_price' => $product->sale_price ?? $product->price,
@@ -604,8 +604,8 @@ class ProductYouMayLikeController extends Controller
                     'leftStock' => $leftStock,
                     'currency_title' => $productWithRelations->currency
                         ? ($productWithRelations->currency->is_prefix_symbol
-                            ? $productWithRelations->currency->title
-                            : ($product->price . ' ' . $productWithRelations->currency->title))
+                            ? $productWithRelations->currency->symbol
+                            : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
                         "selling_type"=> $sellingType,
                 ];

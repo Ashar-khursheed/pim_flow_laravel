@@ -59,6 +59,8 @@ public function stats(Request $request)
         $categoriesCount = Category::where('created_at', '>=', $date)->count();
         $publishedProducts = Product::where('status', 'published')->where('created_at', '>=', $date)->count();
         $draftProducts = Product::where('status', 'draft')->where('created_at', '>=', $date)->count();
+        $approvedProducts = Product::where('approved', '1')->where('created_at', '>=', $date)->count();
+        $qaProducts = Product::where('approved', '0')->where('created_at', '>=', $date)->count();
     } else {
         // Lifetime counts
         $productsCount = Product::count();
@@ -66,6 +68,8 @@ public function stats(Request $request)
         $categoriesCount = Category::count();
         $publishedProducts = Product::where('status', 'published')->count();
         $draftProducts = Product::where('status', 'draft')->count();
+        $approvedProducts = Product::where('approved', '1')->count();
+        $qaProducts = Product::where('approved', '0')->count();
     }
 
     return response()->json([
@@ -75,6 +79,9 @@ public function stats(Request $request)
         'categories_count' => $categoriesCount,
         'published_products' => $publishedProducts,
         'draft_products' => $draftProducts,
+        'approved_products' =>  $approvedProducts,
+        'qa_products' =>  $qaProducts,
+
     ]);
 }
 }

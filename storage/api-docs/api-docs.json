@@ -8478,12 +8478,12 @@
             }
         },
         "/api/frontend/blogs/{id}/comment": {
-            "post": {
+            "put": {
                 "tags": [
                     "Frontend-Blogs"
                 ],
                 "summary": "Post a comment or reply on a blog",
-                "operationId": "24a58ecc2325b97a8c6fdff0dfc6eccb",
+                "operationId": "854e159c3ddd614005f0261affe9845f",
                 "parameters": [
                     {
                         "name": "id",
@@ -8527,6 +8527,135 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{postId}/comments": {
+            "get": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Get all top-level comments with nested replies for a blog post",
+                "operationId": "918180750b98015bc30ec1ed5805bf19",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "ID of the blog post",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of comments retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Comments retrieved successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "post": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "title": {
+                                                            "type": "string",
+                                                            "example": "My Blog Title"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "comments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "comment": {
+                                                                "type": "string",
+                                                                "example": "Great post!"
+                                                            },
+                                                            "created_by": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "replies": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 11
+                                                                        },
+                                                                        "comment": {
+                                                                            "type": "string",
+                                                                            "example": "Thanks!"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "creator": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 5
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "John Doe"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Blog post not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Post not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -22271,13 +22400,14 @@
                 "tags": [
                     "Product Title Formula"
                 ],
-                "summary": "Get a single product title formula",
+                "summary": "Get a product title formula with category-wide attribute names",
+                "description": "Returns a product title formula and all unique attribute names used by any formula within the same category.",
                 "operationId": "7a8616e4871bbb63e23b0a16b4adfa66",
                 "parameters": [
                     {
                         "name": "id",
                         "in": "path",
-                        "description": "Formula ID",
+                        "description": "The ID of the product title formula",
                         "required": true,
                         "schema": {
                             "type": "integer"
@@ -22286,7 +22416,51 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Formula data"
+                        "description": "Successful response with formula details and category-wide attributes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "id": {
+                                            "type": "integer",
+                                            "example": 9
+                                        },
+                                        "category_id": {
+                                            "type": "integer",
+                                            "example": 3
+                                        },
+                                        "category_name": {
+                                            "type": "string",
+                                            "example": "Mobile Phones"
+                                        },
+                                        "created_by": {
+                                            "type": "string",
+                                            "example": "Admin"
+                                        },
+                                        "attribute_names": {
+                                            "description": "Comma-separated list of attribute names used by all formulas in this category",
+                                            "type": "string",
+                                            "example": "Color, Brand, Battery Life, Screen Size"
+                                        },
+                                        "locked": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-06-15T11:22:00Z"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "example": "2025-06-24T13:45:00Z"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "404": {
                         "description": "Formula not found"
@@ -22302,28 +22476,24 @@
                 "tags": [
                     "Product Title Formula"
                 ],
-                "summary": "Update an existing product title formula",
+                "summary": "Update product title formulas by category (replace existing with new)",
                 "operationId": "9e68472b6f4c469edac7d4c8294fc922",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "description": "Formula ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
+                                "required": [
+                                    "attribute_ids",
+                                    "category_id"
+                                ],
                                 "properties": {
-                                    "attribute_id": {
-                                        "type": "integer",
-                                        "example": 2
+                                    "attribute_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        }
                                     },
                                     "category_id": {
                                         "type": "integer",
@@ -22345,13 +22515,58 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Updated successfully"
-                    },
-                    "404": {
-                        "description": "Formula not found"
-                    },
-                    "422": {
-                        "description": "Validation error"
+                        "description": "Product title formulas updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product title formulas updated successfully."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "attribute_id": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer",
+                                                        "example": 47
+                                                    },
+                                                    "locked": {
+                                                        "type": "boolean",
+                                                        "example": true
+                                                    },
+                                                    "created_by": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2025-06-24T08:12:11.000000Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

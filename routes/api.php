@@ -105,6 +105,7 @@ Route::get('/countries', [LocationController::class, 'getCountryList']);
 Route::get('/states/{countryId}', [LocationController::class, 'getStateList']);
 Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
+Route::apiResource('newsletters', NewsletterController::class);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -253,7 +254,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	// Flash Sale API Routes
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
-	Route::apiResource('newsletters', NewsletterController::class);
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
@@ -330,7 +330,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
-Route::post('/frontend/auth/google', [F_AuthController::class, 'login']);
+Route::post('frontend/auth/google', [F_AuthController::class, 'login']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -417,8 +417,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
 
 
-
-
+	Route::prefix('/frontend/blogs')->group(function () {
+		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
+	});
 
 });
 
@@ -483,8 +484,8 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
-
-
+	// Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
+	Route::get('/{postId}/comments', [F_BlogController::class, 'viewComments']);
 
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
