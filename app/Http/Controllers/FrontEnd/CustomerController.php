@@ -105,6 +105,7 @@ class CustomerController extends BaseController
 				'password' => Hash::make($validated['password']),
 				'type' => $validated['type'] ?? null,
 				'dob' => $validated['dob'] ?? null,
+				'country_code' => $request->input('country_code') ?? null,
 				'mobile_number' => $validated['mobile_number'] ?? null,
 				'profile_img' => $validated['profile_img'] ?? null,
 			]);
