@@ -65,20 +65,24 @@ class NewsletterController extends Controller
      */
     public function store(Request $request)
     {
-        if (!auth()->user()->can('add news letter')) {
-            return response()->json([
-                'success' => false,
-                'message' => "You don't have permission to access this module.",
-            ]);
-        }
         $request->validate([
             'email' => 'required|email|unique:newsletters,email',
             'name' => 'nullable|string|max:120',
             'status' => 'nullable|string|in:subscribed,unsubscribed',
         ]);
-
-        return response()->json(Newsletter::create($request->all()), 201);
+    
+        $newsletter = Newsletter::create($request->all());
+    
+        // Optionally send confirmation email
+        Mail::to($newsletter->email)->send(new NewsletterSubscribed($newsletter->toArray()));
+    
+        return response()->json([
+            'success' => true,
+            'message' => 'You have successfully subscribed.',
+            'data' => $newsletter,
+        ], 201);
     }
+    
 
     /**
      * @OA\Get(
