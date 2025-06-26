@@ -72,7 +72,10 @@ class ProductErrorController extends Controller
 
             switch ($title) {
                 case 'product content':
-                    $bccRecipients[] = 'content@horecastore.ae';
+                    $bccRecipients = [
+                        'content@horecastore.ae',
+                        'webdeveloper01@horecastore.ae'
+                    ];
                     break;
                 case 'product image':
                     $bccRecipients[] = 'creative@horecastore.ae';
