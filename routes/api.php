@@ -483,7 +483,7 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
-
+	Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
 
 
 });
