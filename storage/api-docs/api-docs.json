@@ -14799,7 +14799,7 @@
                 }
             }
         },
-        "/api/product-errors": {
+        "/api/frontend/product-errors": {
             "get": {
                 "tags": [
                     "Product Errors"
@@ -14907,7 +14907,7 @@
                 }
             }
         },
-        "/api/product-errors/{product_id}": {
+        "/api/frontend/product-errors/{product_id}": {
             "get": {
                 "tags": [
                     "Product Errors"
