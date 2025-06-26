@@ -20,21 +20,6 @@ use App\Services\ExcelImporterService;
 
 class ProductSupplierController extends BaseController
 {
-	// /**
-	//  * @OA\Get(
-	//  *     path="/api/product-suppliers",
-	//  *     operationId="getProductSuppliers",
-	//  *     tags={"Product Suppliers"},
-	//  *     summary="Get all product suppliers",
-	//  *     description="Returns a list of all product suppliers",
-	//  *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
-	//  *     security={{"bearerAuth":{}}}
-	//  * )
-	//  */
-	// public function index()
-	// {
-	// 	return ProductSupplier::all();
-	// }
 	/**
 	 * @OA\Get(
 	 *     path="/api/product-suppliers",
@@ -112,9 +97,9 @@ class ProductSupplierController extends BaseController
 	{
 		// Start with a query builder to allow for filtering, sorting and pagination
 		$query = ProductSupplier::query()
-			->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
-			->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-			->select('product_suppliers.*', 'ec_products.sku as product_sku', 'vendors.name as vendor_name');
+		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
+		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
+		->select('product_suppliers.*', 'ec_products.sku as product_sku', 'vendors.name as vendor_name');
 
 		// Apply global search if provided
 		if ($request->has('search') && !empty($request->search)) {
@@ -140,34 +125,34 @@ class ProductSupplierController extends BaseController
 
 		// Handle table prefixing for sort column
 		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item',
-							'additional_cost', 'price', 'sale_price', 'inventory', 'in_stock',
-							'delivery_days', 'warranty_information', 'refund', 'final_cost_price',
-							'margin', 'created_at', 'updated_at'])) {
+			'additional_cost', 'price', 'sale_price', 'inventory', 'in_stock',
+			'delivery_days', 'warranty_information', 'refund', 'final_cost_price',
+			'margin', 'created_at', 'updated_at'])) {
 			$sortBy = "product_suppliers.{$sortBy}";
-		} elseif ($sortBy === 'product_sku') {
-			$sortBy = "ec_products.sku";
-		} elseif ($sortBy === 'vendor_name') {
-			$sortBy = "vendors.name";
-		} else {
+	} elseif ($sortBy === 'product_sku') {
+		$sortBy = "ec_products.sku";
+	} elseif ($sortBy === 'vendor_name') {
+		$sortBy = "vendors.name";
+	} else {
 			// Default to a safe column if the provided sort column is invalid
-			$sortBy = "product_suppliers.created_at";
-		}
+		$sortBy = "product_suppliers.created_at";
+	}
 
 		// Validate sort direction
-		if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-			$sortDirection = 'desc';
-		}
+	if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
+		$sortDirection = 'desc';
+	}
 
-		$query->orderBy($sortBy, $sortDirection);
+	$query->orderBy($sortBy, $sortDirection);
 
 		// Apply pagination
-		$perPage = $request->input('per_page', 15);
+	$perPage = $request->input('per_page', 15);
 
 		// Get paginated results
-		$productSuppliers = $query->paginate($perPage);
+	$productSuppliers = $query->paginate($perPage);
 
-		return response()->json($productSuppliers);
-	}
+	return response()->json($productSuppliers);
+}
 	/**
 	 * @OA\Post(
 	 *     path="/api/product-suppliers",
@@ -215,7 +200,7 @@ class ProductSupplierController extends BaseController
 			'inventory' => 'nullable|integer',
 			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
-			'refund' => ['nullable', Rule::in(app_constants('REFUND_PERIODS'))],
+			'refund' => ['nullable', Rule::in(app_constants('RETURN_POLICY'))],
 		]);
 
 		// Check if a record with the same sku and vendor_id already exists
@@ -410,7 +395,7 @@ class ProductSupplierController extends BaseController
 			'inventory' => 'nullable|integer',
 			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
-			'refund' => ['nullable', Rule::in(app_constants('REFUND_PERIODS'))],
+			'refund' => ['nullable', Rule::in(app_constants('RETURN_POLICY'))],
 		]);
 
 		// Validate price logic
@@ -488,6 +473,7 @@ class ProductSupplierController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"type", "relational_id", "range_from", "range_to"},
+	 *             @OA\Property(property="status", type="string", example="all", description="Status"),
 	 *             @OA\Property(property="type", type="string", example="Category", description="Type should be either 'Brand' or 'Category'"),
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="Relational ID"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting range (must be >= 1)"),
@@ -506,71 +492,89 @@ class ProductSupplierController extends BaseController
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+
 		/* Validate request data */
 		$request->validate([
-			'type' => 'required|string|in:Brand,Category',
+			'status' => 'required|string|in:all,draft,published',
+			'type' => 'required|string|in:Brand,Vendor,Category',
 			'relational_id' => 'required|integer',
 			'range_from' => 'integer|min:1',
-			'range_to' => 'integer|gte:range_from|max:' . ($request->range_from + 2000),
+			'range_to' => 'integer|gte:range_from|max:' . ((int)$request->input('range_from') + 2000),
 		]);
 
 		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
-		$refundPeriods = app_constants('REFUND_PERIODS');
+		$returnPolicies = app_constants('RETURN_POLICY');
+		$inStockOptions = ['Yes', 'No'];
+		$freeShippingOptions = ['Yes', 'No'];
 
-		$query = Product::with([
-			// 'unitOfMeasurement:id,name',
-			'productSuppliers.vendor'
-		]);
+		$query = ProductSupplier::with(['product']);
 
-		/* Apply relational filters */
-		if ($request->type === "Brand") {
-			$query->where('brand_id', $request->relational_id);
-		} elseif ($request->type === "Store") {
-			$query->where('store_id', $request->relational_id);
-		} elseif ($request->type === "Category") {
-			$category = Category::find($request->relational_id);
-			$leafCategories = Category::getLeafCategories($category);
-			$leafCategoryIds = $leafCategories->pluck('id')->toArray();
-
-			$query->whereHas('categories', function ($q) use ($leafCategoryIds) {
-				$q->whereIn('category_id', $leafCategoryIds);
+		/* Filter by product status if not "all" */
+		if ($request->status !== 'all') {
+			$query->whereHas('product', function ($q) use ($request) {
+				$q->where('status', $request->status);
 			});
 		}
 
-		$products = $query->offset($request->range_from - 1)
-		->limit($request->range_to - $request->range_from + 1)
-		->orderBy('id', 'asc')
-		// ->get(['id', 'name', 'sku', 'unit_of_measurement_id', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
-		->get(['id', 'name', 'sku', 'refund', 'refund_policy', 'warranty_information', 'delivery_days']);
+		/* Apply relational filters */
+		if ($request->type === "Brand") {
+			$query->whereHas('product', function ($q) use ($request) {
+				$q->where('brand_id', $request->relational_id);
+			});
+		} elseif ($request->type === "Vendor") {
+			$query->where('vendor_id', $request->relational_id);
+		} elseif ($request->type === "Category") {
+			$category = Category::find($request->relational_id);
 
-		if ($products->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'No product exist.'
-			]);
+			if ($category) {
+				$leafCategories = Category::getLeafCategories($category);
+				$leafCategoryIds = $leafCategories->pluck('id')->toArray();
+
+				$query->whereHas('product.categories', function ($q) use ($leafCategoryIds) {
+					$q->whereIn('categories.id', $leafCategoryIds);
+				});
+			}
 		}
 
-		$header = [
-			'ID',
-			'Product ID',
-			'Product name',
-			'SKU',
-			'Vendor Name',
-			'Vendor SKU',
-			'Cost Per Item',
-			'Selling Type',
-			'Additional Cost',
-			'Price',
-			'Sale Price',
-			'Inventory',
-			'In Stock',
-			'Delivery Days',
-			'Warranty Information',
-			'Refund',
-			'Final Cost Price',
-			'Margin',
+		/* Pagination: offset and limit */
+		$productSuppliers = $query->orderBy('id', 'asc')
+		->offset($request->range_from - 1)
+		->limit($request->range_to - $request->range_from + 1)
+		->get();
+
+		// if ($productSuppliers->isEmpty()) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'No product suppliers found for the given criteria.'
+		// 	], 404);
+		// }
+
+		$supplierFormatArray = [
+			'ID' => 'id',
+			'Product ID' => 'product_id',
+			'Product Name' => 'product_name',
+			'Vendor ID' => 'vendor_id',
+			'Vendor Name' => 'vendor_name',
+			'Vendor SKU' => 'vendor_sku',
+			'List Price' => 'list_price',
+			'Multiple' => 'multiple',
+			'Cost Per Item' => 'cost_per_item',
+			'Surcharge(%)' => 'surcharge',
+			'Additional Cost(%)' => 'additional_cost',
+			'MAP' => 'map',
+			'Sale Price' => 'sale_price',
+			'Price' => 'price',
+			'Inventory' => 'inventory',
+			'In Stock' => 'in_stock',
+			'Delivery Days' => 'delivery_days',
+			'Return Policy' => 'return_policy',
+			'Free Shipping' => 'free_shipping',
+			'Restocking Fees(%)' => 'restocking_fees',
+			'Warranty Information' => 'warranty_information',
 		];
+
+		$header = array_keys($supplierFormatArray);
 
 		/* Initialize spreadsheet */
 		$spreadsheet = $excelRepo->newSpreadsheet();
@@ -582,71 +586,42 @@ class ProductSupplierController extends BaseController
 
 		/* Populate data */
 		$row = 2;
-		foreach ($products as $product) {
+		foreach ($productSuppliers as $supplier) {
 			$col = 'A';
-			if ($product->productSuppliers && $product->productSuppliers->count()) {
-				foreach ($product->productSuppliers as $supplier) {
-					$col = 'A';
-					/* Extract existing values if present in their respective options, else set empty string */
-					$inStockOptions = ['Yes', 'No'];
-					$selectedInStock = $supplier->in_stock === null ? '' : ($supplier->in_stock == 1 ? 'Yes' : 'No');
-					$selectedDeliveryDays = in_array($supplier->delivery_days, $deliveryTimeOptions) ? $supplier->delivery_days : '';
-					$selectedWarranty = in_array($supplier->warranty_information, $warrantyOptions) ? $supplier->warranty_information : '';
-					$selectedRefund = in_array($supplier->refund, $refundPeriods) ? $supplier->refund : '';
+			/* Extract existing values if present in their respective options, else set empty string */
 
-					$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
-					$sheet->setCellValue($col++ . $row, $product->id ?? '');
-					$sheet->setCellValue($col++ . $row, $product->name ?? '');
-					$sheet->setCellValue($col++ . $row, $product->sku ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
-					// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
-					$sheet->setCellValue($col++ . $row, '');
-					$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
+			$selectedInStock = $supplier->in_stock == 1 ? 'Yes' : 'No';
+			$selectedFreeShipping = $supplier->free_shipping == 1 ? 'Yes' : 'No';
 
-					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
-					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
-					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
-					$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+			$selectedDeliveryDays = in_array($supplier->delivery_days, $deliveryTimeOptions) ? $supplier->delivery_days : '';
+			$selectedWarranty = in_array($supplier->warranty_information, $warrantyOptions) ? $supplier->warranty_information : '';
+			$selectedReturnPolicy = in_array($supplier->return_policy, $returnPolicies) ? $supplier->return_policy : '';
 
-					$sheet->setCellValue($col++ . $row, $supplier->final_cost_price ?? '');
-					$sheet->setCellValue($col++ . $row, $supplier->margin ?? '');
-					$row++;
-				}
-			} else {
-				/* Extract existing values if present in their respective options, else set empty string */
-				$selectedDeliveryDays = in_array($product->delivery_days, $deliveryTimeOptions) ? $product->delivery_days : '';
-				$selectedWarranty = in_array($product->warranty_information, $warrantyOptions) ? $product->warranty_information : '';
-				$selectedRefund = in_array($product->refund, $refundPeriods) ? $product->refund : '';
+			$sheet->setCellValue($col++ . $row, $supplier->id ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->product_id ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->product->name ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->vendor_id ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->vendor->name ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->vendor_sku ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->list_price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->multiple ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->cost_per_item ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->surcharge ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->additional_cost ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->map ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->sale_price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->price ?? '');
+			$sheet->setCellValue($col++ . $row, $supplier->inventory ?? '');
 
-				/* Set product details only */
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, $product->id ?? '');
-				$sheet->setCellValue($col++ . $row, $product->name ?? '');
-				$sheet->setCellValue($col++ . $row, $product->sku ?? '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				// $sheet->setCellValue($col++ . $row, $product->unitOfMeasurement->name ?? '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, $selectedInStock);
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, $selectedReturnPolicy);
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, $selectedFreeShipping);
 
-				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', ['Yes', 'No'], '');
-				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, $selectedDeliveryDays);
-				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
-				$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $refundPeriods, $selectedRefund);
+			$sheet->setCellValue($col++ . $row, $supplier->restocking_fees ?? '');
 
-				$sheet->setCellValue($col++ . $row, '');
-				$sheet->setCellValue($col++ . $row, '');
-				$row++;
-			}
+			$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, $selectedWarranty);
+			$row++;
 		}
 
 		$fileName = 'products_suppliers_' . $request->range_from . '-' . $request->range_to . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
@@ -688,25 +663,28 @@ class ProductSupplierController extends BaseController
 		]);
 
 		try {
-			$supplierFormatArray  = [
+			$supplierFormatArray = [
 				'ID' => 'id',
 				'Product ID' => 'product_id',
-				'Product name' => 'product_name',
-				'SKU' => 'sku',
+				'Product Name' => 'product_name',
+				'Vendor ID' => 'vendor_id',
 				'Vendor Name' => 'vendor_name',
 				'Vendor SKU' => 'vendor_sku',
+				'List Price' => 'list_price',
+				'Multiple' => 'multiple',
 				'Cost Per Item' => 'cost_per_item',
-				'Selling Type' => 'selling_type',
-				'Additional Cost' => 'additional_cost',
-				'Price' => 'price',
+				'Surcharge(%)' => 'surcharge',
+				'Additional Cost(%)' => 'additional_cost',
+				'MAP' => 'map',
 				'Sale Price' => 'sale_price',
+				'Price' => 'price',
 				'Inventory' => 'inventory',
 				'In Stock' => 'in_stock',
 				'Delivery Days' => 'delivery_days',
+				'Return Policy' => 'return_policy',
+				'Free Shipping' => 'free_shipping',
+				'Restocking Fees(%)' => 'restocking_fees',
 				'Warranty Information' => 'warranty_information',
-				'Refund' => 'refund',
-				'Final Cost Price' => 'final_cost_price',
-				'Margin' => 'margin',
 			];
 
 			$excelImporter->processExcelImport(
@@ -745,26 +723,36 @@ class ProductSupplierController extends BaseController
 	 */
 	public function downloadTemplate(ExcelRepository $excelRepo)
 	{
-		$header = [
-			'ID',
-			'Product ID',
-			'Product name',
-			'SKU',
-			'Vendor Name',
-			'Vendor SKU',
-			'Cost Per Item',
-			'Selling Type',
-			'Additional Cost',
-			'Price',
-			'Sale Price',
-			'Inventory',
-			'In Stock',
-			'Delivery Days',
-			'Warranty Information',
-			'Refund',
-			'Final Cost Price',
-			'Margin',
+		$supplierFormatArray = [
+			'ID' => 'id',
+			'Product ID' => 'product_id',
+			'Product Name' => 'product_name',
+			'Vendor ID' => 'vendor_id',
+			'Vendor Name' => 'vendor_name',
+			'Vendor SKU' => 'vendor_sku',
+			'List Price' => 'list_price',
+			'Multiple' => 'multiple',
+			'Cost Per Item' => 'cost_per_item',
+			'Surcharge(%)' => 'surcharge',
+			'Additional Cost(%)' => 'additional_cost',
+			'MAP' => 'map',
+			'Sale Price' => 'sale_price',
+			'Price' => 'price',
+			'Inventory' => 'inventory',
+			'In Stock' => 'in_stock',
+			'Delivery Days' => 'delivery_days',
+			'Return Policy' => 'return_policy',
+			'Free Shipping' => 'free_shipping',
+			'Restocking Fees(%)' => 'restocking_fees',
+			'Warranty Information' => 'warranty_information',
 		];
+		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
+		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
+		$returnPolicies = app_constants('RETURN_POLICY');
+		$inStockOptions = ['Yes', 'No'];
+		$freeShippingOptions = ['Yes', 'No'];
+
+		$header = array_keys($supplierFormatArray);
 
 		/* Initialize spreadsheet */
 		$spreadsheet = $excelRepo->newSpreadsheet();
@@ -793,9 +781,12 @@ class ProductSupplierController extends BaseController
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
 		$sheet->setCellValue($col++ . $row, '');
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'in_stock', $inStockOptions, '');
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'delivery_days', $deliveryTimeOptions, '');
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'return_policy', $returnPolicies, '');
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'free_shipping', $freeShippingOptions, '');
 		$sheet->setCellValue($col++ . $row, '');
-		$sheet->setCellValue($col++ . $row, '');
-		$sheet->setCellValue($col++ . $row, '');
+		$excelRepo->setDropdown($spreadsheet, $sheet, $col++ . $row, 'warranty_information', $warrantyOptions, '');
 
 		$fileName = 'products_suppliers_import_template' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 

@@ -56,7 +56,9 @@ class ImportProductSupplierJob implements ShouldQueue
 
 		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
-		$refundPeriods = app_constants('REFUND_PERIODS');
+		$returnPolicies = app_constants('RETURN_POLICY');
+		$inStockOptions = app_constants('IN_STOCK_OPTIONS');
+		$freeShippingOptions = app_constants('FREE_SHIPPING_OPTIONS');
 
 		$errorArray = [];
 		$success = 0;
@@ -84,16 +86,65 @@ class ImportProductSupplierJob implements ShouldQueue
 			}
 
 			/* Basic validation */
-			if (empty($sku)) {
-				$rowErrors[] = 'SKU is required.';
+			if (empty($product_id) && empty($product_name)) {
+				$rowErrors[] = "Either 'Product ID' or 'Product Name' is required.";
+			} else {
+				$product = null;
+
+				if (!empty($product_id)) {
+					$product = Product::find($product_id);
+				} elseif (!empty($product_name)) {
+					$product = Product::where('name', $product_name)->first();
+				}
+
+				if (!$product) {
+					if (!empty($product_id)) {
+						$rowErrors[] = "'Product ID' is not valid.";
+					} elseif (!empty($product_name)) {
+						$rowErrors[] = "'Product Name' is not valid.";
+					}
+				} else {
+					$productID = $product->id;
+				}
 			}
 
-			if (empty($vendor_name)) {
-				$rowErrors[] = 'Vendor name is required.';
+			if (empty($vendor_id) && empty($vendor_name)) {
+				$rowErrors[] = "Either 'Vendor ID' or 'Vendor Name' is required.";
+			} else {
+				$vendor = null;
+
+				if (!empty($vendor_id)) {
+					$vendor = Vendor::find($vendor_id);
+				} elseif (!empty($vendor_name)) {
+					$vendor = Vendor::where('name', $vendor_name)->first();
+				}
+
+				if (!$vendor) {
+					if (!empty($vendor_id)) {
+						$rowErrors[] = "'Vendor ID' is not valid.";
+					} elseif (!empty($vendor_name)) {
+						$rowErrors[] = "'Vendor Name' is not valid.";
+					}
+				} else {
+					$vendorID = $vendor->id;
+				}
 			}
 
-			if (empty($vendor_sku)) {
-				$rowErrors[] = 'Vendor SKU is required.';
+			/* cost_per_item must be provided OR both list_price and multiple must be present */
+			if (empty($cost_per_item) && (empty($list_price) || empty($multiple))) {
+				$rowErrors[] = "Either 'Cost Per Item' or both 'List Price' and 'Multiple' are required.";
+			}
+
+			if (empty($price)) {
+				$rowErrors[] = "'Price' is required.";
+			}
+
+			if (empty($delivery_days)) {
+				$rowErrors[] = "'Delivery Days' are required.";
+			}
+
+			if (empty($return_policy)) {
+				$rowErrors[] = "'Return Policy' is required.";
 			}
 
 			if (!empty($rowErrors)) {
@@ -102,55 +153,45 @@ class ImportProductSupplierJob implements ShouldQueue
 				continue;
 			}
 
-			/* Product existence check */
-			$product = Product::where('sku', $sku)->first();
-			if (!$product) {
-				$rowErrors[] = "No product found with SKU: {$sku}.";
-			} else {
-				$productID = $product->id;
+			/* Validate price logic */
+			if (!empty($multiple) && ($multiple <= 0 || $multiple >= 1)) {
+				$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
 			}
 
-			/* Vendor existence check */
-			$vendor = Vendor::where('name', $vendor_name)->first();
-			if (!$vendor) {
-				$rowErrors[] = "No vendor found with name: {$vendor_name}.";
-			} else {
-				$vendorID = $vendor->id;
+			if (!empty($map) && !empty($sale_price)  && (float)$map > (float)$sale_price)
+			{
+				$rowErrors[] = 'Sale Price cannot be less than MAP.';
 			}
 
 			/* Validate price logic */
-			if (!empty($price) && !empty($sale_price) && (float)$price < (float)$sale_price)
+			if (!empty($sale_price) && (float)$price < (float)$sale_price)
 			{
 				$rowErrors[] = 'Price cannot be less than sale price.';
 			}
 
-			/* If errors exist, log and continue to next row */
-			if (!empty($rowErrors)) {
-				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
-				$failed++;
-				continue;
-			}
-
-			/* Existing supplier check */
-			if (!empty($id)) {
-				$existingSupplier = ProductSupplier::find($id);
-				if (!$existingSupplier) {
-					$rowErrors[] = "Supplier with ID {$id} not found.";
-				}
-			} else {
-				$existingSupplier = ProductSupplier::where('product_id', $productID)->where('vendor_id', $vendorID)->first();
+			if (!empty($map) && (float)$price < (float)$map)
+			{
+				$rowErrors[] = 'Price cannot be less than MAP.';
 			}
 
 			if (!in_array($delivery_days, $deliveryTimeOptions)) {
 				$rowErrors[] = "Invalid Delivery Days: '$delivery_days'.";
 			}
 
-			if (!in_array($warranty_information, $warrantyOptions)) {
-				$rowErrors[] = "Invalid Warranty Information: '$warranty_information'.";
+			if (!in_array($return_policy, $returnPolicies)) {
+				$rowErrors[] = "Invalid Return Policy: '$return_policy'.";
 			}
 
-			if (!in_array($refund, $refundPeriods)) {
-				$rowErrors[] = "Invalid Refund Period: '$refund'.";
+			if (!empty($in_stock) && !in_array($in_stock, $inStockOptions)) {
+				$rowErrors[] = "Invalid In Stock Option: '$in_stock'.";
+			}
+
+			if (!empty($free_shipping) && !in_array($free_shipping, $freeShippingOptions)) {
+				$rowErrors[] = "Invalid Free Shipping Option: '$free_shipping'.";
+			}
+
+			if (!empty($warranty_information) && !in_array($warranty_information, $warrantyOptions)) {
+				$rowErrors[] = "Invalid Warranty Information: '$warranty_information'.";
 			}
 
 			/* If errors exist, log and continue to next row */
@@ -160,18 +201,48 @@ class ImportProductSupplierJob implements ShouldQueue
 				continue;
 			}
 
-			/* Cast to float */
-			$cost_per_item = (float) $cost_per_item;
-			$additional_cost = (float) $additional_cost;
-			$price = (float) $price;
-			$sale_price = (float) $sale_price;
+			/* Check for existing supplier */
+			if (!empty($id)) {
+				$existingSupplier = ProductSupplier::find($id);
+				if (!$existingSupplier) {
+					$rowErrors[] = "Supplier with ID {$id} not found.";
+				}
+			} else {
+				$existingSupplier = ProductSupplier::where('product_id', $productID)
+				->where('vendor_id', $vendorID)
+				->first();
+			}
 
-			$final_cost_price = $cost_per_item + $additional_cost;
+			/* If errors exist, log and continue to next row */
+			if (!empty($rowErrors)) {
+				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+				$failed++;
+				continue;
+			}
 
-			if ($sale_price > 0) {
-				$margin = (($sale_price - $final_cost_price) / $sale_price) * 100;
+			/* Cost calculations */
+			$costPerItem = (!empty($list_price) && !empty($multiple))
+			? (float)$list_price * (float)$multiple
+			: (float)$cost_per_item;
+
+			$additionalCost = !empty($additional_cost)
+			? $costPerItem * ((float)$additional_cost / 100)
+			: 0;
+
+			$surchargeCost = !empty($surcharge)
+			? $costPerItem * ((float)$surcharge / 100)
+			: 0;
+
+			$totalCostPerItem = $costPerItem + $additionalCost + $surchargeCost;
+
+			/* Price and Margin */
+			$price = !empty($price) ? (float)$price : 0;
+			$salePrice = !empty($sale_price) ? (float)$sale_price : 0;
+
+			if ($salePrice > 0) {
+				$margin = (($salePrice - $totalCostPerItem) / $salePrice) * 100;
 			} elseif ($price > 0) {
-				$margin = (($price - $final_cost_price) / $price) * 100;
+				$margin = (($price - $totalCostPerItem) / $price) * 100;
 			} else {
 				$margin = null;
 			}
@@ -180,7 +251,6 @@ class ImportProductSupplierJob implements ShouldQueue
 			DB::beginTransaction();
 
 			try {
-
 				if (!$existingSupplier) {
 					$supplier = new ProductSupplier();
 					$supplier->created_by = $this->userId;
@@ -191,29 +261,44 @@ class ImportProductSupplierJob implements ShouldQueue
 					$supplier->updated_at = now();
 				}
 
-				/* Set required fields */
+				/* Set values */
 				$supplier->product_id = $productID;
 				$supplier->vendor_id = $vendorID;
 				$supplier->vendor_sku = $vendor_sku;
 
-				$supplier->cost_per_item = $cost_per_item;
-				$supplier->additional_cost = $additional_cost;
+				$supplier->list_price = $list_price !== null ? (float)$list_price : null;
+				$supplier->multiple = $multiple !== null ? (float)$multiple : null;
+				$supplier->cost_per_item = $costPerItem;
+				$supplier->surcharge = $surcharge !== null ? (float)$surcharge : null;
+				$supplier->additional_cost = $additional_cost !== null ? (float)$additional_cost : null;
+				$supplier->total_cost_per_item = $totalCostPerItem;
+
+				$supplier->map = $map !== null ? (float)$map : null;
+				$supplier->sale_price = $salePrice;
 				$supplier->price = $price;
-				$supplier->sale_price = $sale_price;
-				$supplier->inventory = $inventory;
-				$supplier->in_stock = strtolower($in_stock) === 'yes' ? 1 : 0;
+
+				$supplier->inventory = !empty($inventory) ? (int)$inventory : null;
+
+				$supplier->in_stock = ($inventory > 0)
+				? 1
+				: (!empty($in_stock) && strtolower($in_stock) === 'yes' ? 1 : 0);
 
 				$supplier->delivery_days = $delivery_days;
-				$supplier->warranty_information = $warranty_information;
-				$supplier->refund = $refund;
-				$supplier->final_cost_price = $final_cost_price;
+				$supplier->return_policy = $return_policy;
+
+				$supplier->free_shipping = (!empty($free_shipping) && strtolower($free_shipping) === 'yes') ? 1 : 0;
 				$supplier->margin = $margin;
+
+				$supplier->restocking_fees = $restocking_fees !== null ? (float)$restocking_fees : null;
+				$supplier->warranty_information = $warranty_information !== null ? (float)$warranty_information : null;
+
 				$supplier->save();
 
 				DB::commit();
 				$success++;
 			} catch (Throwable $e) {
 				DB::rollBack();
+
 				$rowErrors = [
 					'Error processing row: ' . $e->getMessage(),
 					'File: ' . $e->getFile(),
@@ -223,6 +308,7 @@ class ImportProductSupplierJob implements ShouldQueue
 				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 			}
+
 		}
 
 		/* Update Transaction Log */

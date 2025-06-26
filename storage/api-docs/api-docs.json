@@ -21026,7 +21026,7 @@
                                 ],
                                 "properties": {
                                     "status": {
-                                        "description": "Status (e.g., Category, Brand)",
+                                        "description": "Status",
                                         "type": "string",
                                         "example": "all"
                                     },
@@ -22345,6 +22345,11 @@
                                     "range_to"
                                 ],
                                 "properties": {
+                                    "status": {
+                                        "description": "Status",
+                                        "type": "string",
+                                        "example": "all"
+                                    },
                                     "type": {
                                         "description": "Type should be either 'Brand' or 'Category'",
                                         "type": "string",
