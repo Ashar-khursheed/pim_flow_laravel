@@ -454,6 +454,9 @@ class ProductController extends Controller
                             'slug' => $category->slug,
                         ];
                     })->values();
+                        // 👉 Add this
+                    $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
+                    $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
 
                     return $product;
                 });
@@ -808,6 +811,8 @@ class ProductController extends Controller
                             ];
                         })->values();
 
+                        $basePrice = $product->sale_price > 0 ? $product->sale_price : $product->price;
+                        $product->sold = $basePrice < 1000 ? rand(10, 20) : rand(5, 10);
                         return $product;
                         });
                     
