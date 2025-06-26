@@ -313,8 +313,8 @@ use Illuminate\Support\Facades\Auth;
 
 			if ($product->currency) {
 				$product->currency_title = $product->currency->is_prefix_symbol
-				? $product->currency->title . ' '
-				: $product->price . ' ' . $product->currency->title;
+				? $product->currency->symbol . ' '
+				: $product->price . ' ' . $product->currency->symbol;
 			} else {
 				$product->currency_title = $product->price;
 			}
@@ -710,7 +710,7 @@ use Illuminate\Support\Facades\Auth;
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
                 'best_price' => $product->sale_price ?? $product->price,
@@ -718,8 +718,8 @@ use Illuminate\Support\Facades\Auth;
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
                 "selling_type"=> $sellingType,
@@ -1875,7 +1875,7 @@ use Illuminate\Support\Facades\Auth;
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
                 'best_price' => $product->sale_price ?? $product->price,
@@ -1883,8 +1883,8 @@ use Illuminate\Support\Facades\Auth;
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
                 'selling_type'=> $sellingType,
@@ -2513,7 +2513,7 @@ use Illuminate\Support\Facades\Auth;
                     $totalReviews = $details->reviews->count();
                     $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
                     $leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
-                    $currencyTitle = $details->currency->title ?? $details->price;
+                    $currencyTitle = $details->currency->symbol ?? $details->price;
                     $isInWishlist = in_array($details->id, $wishlistProductIds);
 
                     // Process images efficiently
