@@ -42,44 +42,70 @@ class ProductErrorController extends Controller
      *     @OA\Response(response=422, description="Validation Error")
      * )
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'product_id' => 'required|string|max:255',
-            'problem' => 'required|string',
-            'problem_timestamp' => 'nullable|date',
-            'email' => 'nullable|email',
-            'created_by' => 'nullable|integer',
-            'updated_by' => 'nullable|integer',
-        ]);
-    
-        $productError = ProductError::create($request->all());
-    
-        $data = $productError->toArray(); // ✅ define $data for both emails
-    
-        // Send email to user if provided
-        if ($productError->email) {
-            Notification::route('mail', $productError->email)
-                ->notify(new ProductErrorMail($data));
+
+
+        public function store(Request $request)
+        {
+            $request->validate([
+                'title' => 'required|string|max:255',
+                'product_id' => 'required|string|max:255',
+                'problem' => 'required|string',
+                'problem_timestamp' => 'nullable|date',
+                'email' => 'nullable|email',
+                'created_by' => 'nullable|integer',
+                'updated_by' => 'nullable|integer',
+            ]);
+
+            $productError = ProductError::create($request->all());
+
+            $data = $productError->toArray();
+
+            // Send email to user if provided
+            if ($productError->email) {
+                Notification::route('mail', $productError->email)
+                    ->notify(new ProductErrorMail($data));
+            }
+
+            // Determine BCC based on title
+            $title = strtolower(trim($productError->title));
+            $bccRecipients = [];
+
+            switch ($title) {
+                case 'product content':
+                    $bccRecipients[] = 'content@horecastore.ae';
+                    break;
+                case 'product image':
+                    $bccRecipients[] = 'creative@horecastore.ae';
+                    break;
+                case 'product pricing':
+                case 'product specification':
+                    $bccRecipients[] = 'ecommerce@horecastore.ae';
+                    break;
+                case 'all the above':
+                    $bccRecipients = [
+                        'content@horecastore.ae',
+                        'creative@horecastore.ae',
+                        'ecommerce@horecastore.ae',
+                    ];
+                    break;
+            }
+
+            // Send BCC to internal team based on title
+            if (!empty($bccRecipients)) {
+                Mail::send('emails.product_error_reported', ['data' => $data], function ($message) use ($bccRecipients) {
+                    $message->to('nomanpeera@horecastore.ae') // dummy TO
+                            ->bcc($bccRecipients)
+                            ->subject('New Product Error Reported');
+                });
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Product error reported successfully.',
+                'data' => $productError,
+            ], 201);
         }
-    
-        // Send BCC to internal team
-        Mail::send('emails.product_error_reported', ['data' => $data], function ($message) {
-            $message->to('nomanpeera@horecastore.ae') // dummy TO
-                    ->bcc([
-                        'webdeveloper01@horecastore.ae',
-                        'webdeveloper03@horecastore.ae',
-                    ])
-                    ->subject('New Product Error Reported');
-        });
-    
-        return response()->json([
-            'success' => true,
-            'message' => 'Product error reported successfully.',
-            'data' => $productError,
-        ], 201);
-    }
+
     
 
     /**
