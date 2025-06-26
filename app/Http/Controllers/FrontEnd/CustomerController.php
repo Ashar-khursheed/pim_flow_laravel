@@ -64,6 +64,7 @@ class CustomerController extends BaseController
 				'password' => $hashedPassword,
 				'type' => 'Private',
 				'dob' => $request->input('dob'),
+				'country_code' => $request->input('country_code'),
 				'mobile_number' => $request->input('mobile_number'),
 				'profile_img' => $request->input('profile_img'),
 			]);
@@ -104,6 +105,7 @@ class CustomerController extends BaseController
 				'password' => Hash::make($validated['password']),
 				'type' => $validated['type'] ?? null,
 				'dob' => $validated['dob'] ?? null,
+				'country_code' => $request->input('country_code') ?? null,
 				'mobile_number' => $validated['mobile_number'] ?? null,
 				'profile_img' => $validated['profile_img'] ?? null,
 			]);
