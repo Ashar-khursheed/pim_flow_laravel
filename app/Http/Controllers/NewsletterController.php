@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Notifications\NewsLetterMail;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * @OA\Tag(
