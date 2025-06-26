@@ -13,6 +13,7 @@ use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\BlogComment;
+use Illuminate\Support\Facades\Auth;
 
 
 class BlogController extends Controller
@@ -376,41 +377,82 @@ class BlogController extends Controller
      *     )
      * )
      */
-    public function postComment(Request $request, $id) {
-		/* Validate incoming request data*/
-		$validator = Validator::make($request->all(), [
-			'comment' => 'required|string', /* Comment must be a required text*/
-			'parent_id' => 'nullable|integer', /* Parent ID can be null or an integer*/
-			'created_by' => 'required|integer', /* Created by must be a required integer*/
-		]);
+    // public function postComment(Request $request, $id) {
+	// 	/* Validate incoming request data*/
+	// 	$validator = Validator::make($request->all(), [
+	// 		'comment' => 'required|string', /* Comment must be a required text*/
+	// 		'parent_id' => 'nullable|integer', /* Parent ID can be null or an integer*/
+	// 		'created_by' => 'required|integer', /* Created by must be a required integer*/
+	// 	]);
 
-		if ($validator->fails()) {
-			/* Return validation errors as a response*/
-			return response()->json([
-				'status' => 'error',
-				'message' => $validator->errors()->first(),
-				'errors' => $validator->errors(),
-			], Response::HTTP_UNPROCESSABLE_ENTITY);
-		}
+	// 	if ($validator->fails()) {
+	// 		/* Return validation errors as a response*/
+	// 		return response()->json([
+	// 			'status' => 'error',
+	// 			'message' => $validator->errors()->first(),
+	// 			'errors' => $validator->errors(),
+	// 		], Response::HTTP_UNPROCESSABLE_ENTITY);
+	// 	}
 
-		$post = Blog::findOrFail($id); /* Ensure the post exists*/
+	// 	$post = Blog::findOrFail($id); /* Ensure the post exists*/
 
-		/* Add the comment*/
-		$comment = $post->comments()->create([
-			'comment' => $request->comment,
-			'parent_id' => $request->parent_id ?? null,
-			'created_by' => $request->created_by,
-		]);
+	// 	/* Add the comment*/
+	// 	$comment = $post->comments()->create([
+	// 		'comment' => $request->comment,
+	// 		'parent_id' => $request->parent_id ?? null,
+	// 		'created_by' => $request->created_by,
+	// 	]);
 
-		return response()->json([
-			'status' => 'success',
-			'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
-			'data' => [
-				'post' => $post,
-				'comments' => $post->comments,
-			],
-		], Response::HTTP_OK);
-	}
+	// 	return response()->json([
+	// 		'status' => 'success',
+	// 		'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
+	// 		'data' => [
+	// 			'post' => $post,
+	// 			'comments' => $post->comments,
+	// 		],
+	// 	], Response::HTTP_OK);
+	// }
+    public function postComment(Request $request, $id)
+    {
+        // Ensure the user is authenticated
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Please log in to comment.',
+            ], \Illuminate\Http\Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Validate incoming request
+        $validator = Validator::make($request->all(), [
+            'comment' => 'required|string',
+            'parent_id' => 'nullable|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], \Illuminate\Http\Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $post = Blog::findOrFail($id);
+
+        $comment = $post->comments()->create([
+            'comment' => $request->comment,
+            'parent_id' => $request->parent_id ?? null,
+            'created_by' => Auth::id(), // Automatically assign logged-in user
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
+            'data' => [
+                'post' => $post,
+                'comments' => $post->comments,
+            ],
+        ], Response::HTTP_OK);
+    }
 
 
     /**
