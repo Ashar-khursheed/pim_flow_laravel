@@ -2106,62 +2106,89 @@ if ($request->has('video_path')) {
 		}
 		
 
-		if ($request->has('description')) {
-			$descriptionInput = $request->input('description');
-			$hasNewDescriptionData = false;
-		
-			// Decode new input
-			if (is_string($descriptionInput)) {
-				$decoded = json_decode($descriptionInput, true);
-				if (json_last_error() === JSON_ERROR_NONE) {
-					$newDescription = $decoded;
-				} else {
-					return response()->json([
-						'success' => false,
-						'message' => 'Invalid JSON format for description.'
-					], 400);
-				}
-			} elseif (is_array($descriptionInput)) {
-				$newDescription = $descriptionInput;
-			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid description format. Must be JSON string or array.'
-				], 400);
-			}
-		
-			// Ensure it's an array
-			if (!is_array($newDescription)) {
-				$newDescription = [];
-			}
-		
-			// Get existing saved description
-			$existingDescription = json_decode($product->description, true);
-			if (!is_array($existingDescription)) {
-				$existingDescription = [];
-			}
-		
-			// Check for actual change
-			if ($newDescription !== $existingDescription) {
-				$hasNewDescriptionData = true;
-			}
-		
-			// Restrict update only if change attempted and no permission
-			if ($hasNewDescriptionData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product description.'
-				], 403);
-			}
-		
-			// If changes are allowed or not needed, process it
-			if ($canModifyContent && $hasNewDescriptionData) {
-				$product->description = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
-			}
-		
-			// Prevent reprocessing later
-			unset($input['description']);
-		}
+		// Handle description with role-based permission - FIXED VERSION
+if ($request->has('description')) {
+    if ($canModifyContent) {
+        $descriptionInput = $request->input('description');
+        
+        // Decode and validate input
+        if (is_string($descriptionInput)) {
+            $decoded = json_decode($descriptionInput, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $newDescription = $decoded;
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid JSON format for description.'
+                ], 400);
+            }
+        } elseif (is_array($descriptionInput)) {
+            $newDescription = $descriptionInput;
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid description format. Must be JSON string or array.'
+            ], 400);
+        }
+        
+        // Ensure it's an array
+        if (!is_array($newDescription)) {
+            $newDescription = [];
+        }
+        
+        // Save the description
+        $input['description'] = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
+    } else {
+        // User tried to modify description but doesn't have permission
+        $descriptionInput = $request->input('description');
+        $hasNewDescriptionData = false;
+        
+        // Decode new input to compare
+        if (is_string($descriptionInput)) {
+            $decoded = json_decode($descriptionInput, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $newDescription = $decoded;
+            } else {
+                // Invalid JSON - this is an attempt to change, block it
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have permission to modify product description.'
+                ], 403);
+            }
+        } elseif (is_array($descriptionInput)) {
+            $newDescription = $descriptionInput;
+        } else {
+            // Invalid format - this is an attempt to change, block it
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product description.'
+            ], 403);
+        }
+        
+        // Ensure it's an array for comparison
+        if (!is_array($newDescription)) {
+            $newDescription = [];
+        }
+        
+        // Get existing saved description
+        $existingDescription = json_decode($product->description, true);
+        if (!is_array($existingDescription)) {
+            $existingDescription = [];
+        }
+        
+        // Check if user is actually trying to change something
+        if ($newDescription !== $existingDescription) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product description.'
+            ], 403);
+        }
+        
+        // No changes detected, remove from input to prevent overwriting
+        unset($input['description']);
+    }
+}
+// If description not in request at all, existing description is preserved automatically
 		
 		
 		/* Stock status validation */
