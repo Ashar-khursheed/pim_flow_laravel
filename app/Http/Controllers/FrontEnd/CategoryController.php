@@ -2270,7 +2270,7 @@ use Illuminate\Support\Facades\Auth;
     // }
     public function fetchCategories(Request $request)
     {
-        $limit = 14;
+        $limit = 15;
     
         // Get only published leaf categories (no children)
         $leafCategories = Category::where('status', 'published')
