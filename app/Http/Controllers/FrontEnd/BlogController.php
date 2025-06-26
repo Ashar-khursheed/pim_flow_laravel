@@ -391,7 +391,7 @@ class BlogController extends Controller
 			], Response::HTTP_UNPROCESSABLE_ENTITY);
 		}
 
-		$post = Post::findOrFail($id); /* Ensure the post exists*/
+		$post = Blog::findOrFail($id); /* Ensure the post exists*/
 
 		/* Add the comment*/
 		$comment = $post->comments()->create([
@@ -409,6 +409,24 @@ class BlogController extends Controller
 			],
 		], Response::HTTP_OK);
 	}
+
+    public function viewComments($postId)
+    {
+        $post = Blog::with(['comments' => function ($query) {
+            $query->whereNull('parent_id') // Only top-level comments
+                ->with(['replies', 'creator']); // Nested replies and user info if needed
+        }])->findOrFail($postId);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Comments retrieved successfully.',
+            'data' => [
+                'post' => $post->only(['id', 'title']), // Optional: limit fields
+                'comments' => $post->comments,
+            ],
+        ], \Illuminate\Http\Response::HTTP_OK);
+    }
+
 
     
     public function categoryWiseBlogs()
