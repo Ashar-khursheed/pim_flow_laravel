@@ -14799,6 +14799,153 @@
                 }
             }
         },
+        "/api/product-errors": {
+            "get": {
+                "tags": [
+                    "Product Errors"
+                ],
+                "summary": "List all product error reports",
+                "description": "Returns a list of all submitted product errors",
+                "operationId": "getAllProductErrors",
+                "responses": {
+                    "200": {
+                        "description": "Successful retrieval",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Product Errors"
+                ],
+                "summary": "Create a product error report",
+                "description": "Submit an issue related to a specific product",
+                "operationId": "storeProductError",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "product_id",
+                                    "problem"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Image not loading"
+                                    },
+                                    "product_id": {
+                                        "type": "string",
+                                        "example": "12345"
+                                    },
+                                    "problem": {
+                                        "type": "string",
+                                        "example": "Product description is missing"
+                                    },
+                                    "problem_timestamp": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-06-26T12:00:00Z"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "created_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "updated_by": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product error created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product error reported successfully."
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                }
+            }
+        },
+        "/api/product-errors/{product_id}": {
+            "get": {
+                "tags": [
+                    "Product Errors"
+                ],
+                "summary": "Get product errors by product ID",
+                "description": "Retrieve all error reports associated with a specific product ID",
+                "operationId": "getProductErrorByProductId",
+                "parameters": [
+                    {
+                        "name": "product_id",
+                        "in": "path",
+                        "description": "The product ID to retrieve errors for",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product errors retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "No errors found for the given product ID"
+                    }
+                }
+            }
+        },
         "/api/frontend/product-questions": {
             "post": {
                 "tags": [
@@ -27909,6 +28056,10 @@
         {
             "name": "Frontend-Product",
             "description": "Frontend-Product"
+        },
+        {
+            "name": "Product Errors",
+            "description": "Product Errors"
         },
         {
             "name": "Frontend-Product Questions",

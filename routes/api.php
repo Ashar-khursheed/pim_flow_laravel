@@ -91,7 +91,7 @@ use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
 use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
-
+use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -521,3 +521,7 @@ Route::prefix('/frontend/ccavenue')->group(function () {
 });
 
 Route::post('/stripe/create-payment-intent', [StripeController::class, 'createPaymentIntent']);
+
+Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
+Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
+Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);
