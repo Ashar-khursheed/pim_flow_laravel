@@ -90,6 +90,8 @@ use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterContro
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
+use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
+
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -517,3 +519,5 @@ Route::prefix('/frontend/ccavenue')->group(function () {
     Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);  
     Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+
+Route::post('/stripe/create-payment-intent', [StripeController::class, 'createPaymentIntent']);

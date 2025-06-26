@@ -48,5 +48,10 @@ return [
         'environment' => env('SQUARE_ENV', 'sandbox'), // 'sandbox' or 'production'
         'location_id' => env('SQUARE_LOCATION_ID'), // Optional default location
     ],
+    'stripe' => [
+    'key' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_PUBLIC') : env('STRIPE_TEST_PUBLIC'),
+    'secret' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_SECRET') : env('STRIPE_TEST_SECRET'),
+    ],
+
 
 ];
