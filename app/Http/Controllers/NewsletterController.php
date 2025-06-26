@@ -1,7 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
-
+use App\Notification\NewsLetterMail;
 use App\Models\Newsletter;
 use Illuminate\Http\Request;
 
@@ -73,8 +73,9 @@ class NewsletterController extends Controller
     
         $newsletter = Newsletter::create($request->all());
     
-        // Optionally send confirmation email
-        // Mail::to($newsletter->email)->send(new NewsletterSubscribed($newsletter->toArray()));
+        // Send confirmation email using Notification
+        Notification::route('mail', $newsletter->email)
+            ->notify(new NewsLetterMail($newsletter->toArray()));
     
         return response()->json([
             'success' => true,
@@ -82,6 +83,7 @@ class NewsletterController extends Controller
             'data' => $newsletter,
         ], 201);
     }
+    
     
 
     /**

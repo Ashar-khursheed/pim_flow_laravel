@@ -197,6 +197,8 @@ class SaveForLaterController extends Controller
 			  }
 
 			  $product->per_unit_price = $perUnitPrice;
+			  $currencyTitle = $product->currency->symbol ?? $product->price;
+
 	
 			return [
 				'id' => $product->id,
@@ -209,7 +211,7 @@ class SaveForLaterController extends Controller
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
 				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
-				'currency' => $product->currency->symbol ?? '',
+				'currency' =>  $currencyTitle,
 				'in_wishlist' => in_array($product->id, $wishlistProductIds),
 				'images' => $imageUrls,
 				'selling_type' => $sellingType,
