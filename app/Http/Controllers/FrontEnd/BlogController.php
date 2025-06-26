@@ -412,6 +412,73 @@ class BlogController extends Controller
 		], Response::HTTP_OK);
 	}
 
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/blogs/{postId}/comments",
+     *     summary="Get all top-level comments with nested replies for a blog post",
+     *     tags={"Frontend-Blogs"},
+     *     @OA\Parameter(
+     *         name="postId",
+     *         in="path",
+     *         description="ID of the blog post",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of comments retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Comments retrieved successfully."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="post",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="My Blog Title")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="comments",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=10),
+     *                         @OA\Property(property="comment", type="string", example="Great post!"),
+     *                         @OA\Property(property="created_by", type="integer", example=5),
+     *                         @OA\Property(
+     *                             property="replies",
+     *                             type="array",
+     *                             @OA\Items(
+     *                                 type="object",
+     *                                 @OA\Property(property="id", type="integer", example=11),
+     *                                 @OA\Property(property="comment", type="string", example="Thanks!"),
+     *                             )
+     *                         ),
+     *                         @OA\Property(
+     *                             property="creator",
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=5),
+     *                             @OA\Property(property="name", type="string", example="John Doe")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Blog post not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Post not found.")
+     *         )
+     *     )
+     * )
+     */
     public function viewComments($postId)
     {
         $post = Blog::with(['comments' => function ($query) {

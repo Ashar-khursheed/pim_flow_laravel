@@ -8478,12 +8478,12 @@
             }
         },
         "/api/frontend/blogs/{id}/comment": {
-            "post": {
+            "put": {
                 "tags": [
                     "Frontend-Blogs"
                 ],
                 "summary": "Post a comment or reply on a blog",
-                "operationId": "24a58ecc2325b97a8c6fdff0dfc6eccb",
+                "operationId": "854e159c3ddd614005f0261affe9845f",
                 "parameters": [
                     {
                         "name": "id",
@@ -8527,6 +8527,135 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                }
+            }
+        },
+        "/api/frontend/blogs/{postId}/comments": {
+            "get": {
+                "tags": [
+                    "Frontend-Blogs"
+                ],
+                "summary": "Get all top-level comments with nested replies for a blog post",
+                "operationId": "918180750b98015bc30ec1ed5805bf19",
+                "parameters": [
+                    {
+                        "name": "postId",
+                        "in": "path",
+                        "description": "ID of the blog post",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of comments retrieved successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Comments retrieved successfully."
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "post": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "title": {
+                                                            "type": "string",
+                                                            "example": "My Blog Title"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "comments": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "comment": {
+                                                                "type": "string",
+                                                                "example": "Great post!"
+                                                            },
+                                                            "created_by": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "replies": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 11
+                                                                        },
+                                                                        "comment": {
+                                                                            "type": "string",
+                                                                            "example": "Thanks!"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            },
+                                                            "creator": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 5
+                                                                    },
+                                                                    "name": {
+                                                                        "type": "string",
+                                                                        "example": "John Doe"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Blog post not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Post not found."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
