@@ -20,9 +20,9 @@ class BlogComment extends Model
 	];
 
 	public function post()
-	{
-		return $this->belongsTo(Blog::class);
-	}
+{
+    return $this->belongsTo(Blog::class, 'post_id'); // Explicitly tell Laravel the FK column
+}
     public function replies()
     {
         return $this->hasMany(BlogComment::class, 'parent_id')->with('replies');
