@@ -12,6 +12,9 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Str;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
+use App\Models\FrontEnd\BlogComment;
+use Illuminate\Support\Facades\Auth;
+
 
 class BlogController extends Controller
 {
@@ -344,7 +347,7 @@ class BlogController extends Controller
     }
 
      /**
-     * @OA\Post(
+     * @OA\Put(
      *     path="/api/frontend/blogs/{id}/comment",
      *     summary="Post a comment or reply on a blog",
      *     tags={"Frontend-Blogs"},
@@ -374,41 +377,167 @@ class BlogController extends Controller
      *     )
      * )
      */
-    public function postComment(Request $request, $id) {
-		/* Validate incoming request data*/
-		$validator = Validator::make($request->all(), [
-			'comment' => 'required|string', /* Comment must be a required text*/
-			'parent_id' => 'nullable|integer', /* Parent ID can be null or an integer*/
-			'created_by' => 'required|integer', /* Created by must be a required integer*/
-		]);
+    // public function postComment(Request $request, $id) {
+	// 	/* Validate incoming request data*/
+	// 	$validator = Validator::make($request->all(), [
+	// 		'comment' => 'required|string', /* Comment must be a required text*/
+	// 		'parent_id' => 'nullable|integer', /* Parent ID can be null or an integer*/
+	// 		'created_by' => 'required|integer', /* Created by must be a required integer*/
+	// 	]);
 
-		if ($validator->fails()) {
-			/* Return validation errors as a response*/
-			return response()->json([
-				'status' => 'error',
-				'message' => $validator->errors()->first(),
-				'errors' => $validator->errors(),
-			], Response::HTTP_UNPROCESSABLE_ENTITY);
-		}
+	// 	if ($validator->fails()) {
+	// 		/* Return validation errors as a response*/
+	// 		return response()->json([
+	// 			'status' => 'error',
+	// 			'message' => $validator->errors()->first(),
+	// 			'errors' => $validator->errors(),
+	// 		], Response::HTTP_UNPROCESSABLE_ENTITY);
+	// 	}
 
-		$post = Post::findOrFail($id); /* Ensure the post exists*/
+	// 	$post = Blog::findOrFail($id); /* Ensure the post exists*/
 
-		/* Add the comment*/
-		$comment = $post->comments()->create([
-			'comment' => $request->comment,
-			'parent_id' => $request->parent_id ?? null,
-			'created_by' => $request->created_by,
-		]);
+	// 	/* Add the comment*/
+	// 	$comment = $post->comments()->create([
+	// 		'comment' => $request->comment,
+	// 		'parent_id' => $request->parent_id ?? null,
+	// 		'created_by' => $request->created_by,
+	// 	]);
 
-		return response()->json([
-			'status' => 'success',
-			'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
-			'data' => [
-				'post' => $post,
-				'comments' => $post->comments,
-			],
-		], Response::HTTP_OK);
-	}
+	// 	return response()->json([
+	// 		'status' => 'success',
+	// 		'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
+	// 		'data' => [
+	// 			'post' => $post,
+	// 			'comments' => $post->comments,
+	// 		],
+	// 	], Response::HTTP_OK);
+	// }
+    public function postComment(Request $request, $id)
+    {
+        // Ensure the user is authenticated
+        if (!Auth::check()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized. Please log in to comment.',
+            ], \Illuminate\Http\Response::HTTP_UNAUTHORIZED);
+        }
+
+        // Validate incoming request
+        $validator = Validator::make($request->all(), [
+            'comment' => 'required|string',
+            'parent_id' => 'nullable|integer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $validator->errors()->first(),
+                'errors' => $validator->errors(),
+            ], \Illuminate\Http\Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $post = Blog::findOrFail($id);
+
+        $comment = $post->comments()->create([
+            'comment' => $request->comment,
+            'parent_id' => $request->parent_id ?? null,
+            'created_by' => Auth::id(), // Automatically assign logged-in user
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => $request->parent_id ? 'Replied successfully.' : 'Comment added successfully.',
+            'data' => [
+                'post' => $post,
+                'comments' => $post->comments,
+            ],
+        ], Response::HTTP_OK);
+    }
+
+
+    /**
+     * @OA\Get(
+     *     path="/api/frontend/blogs/{postId}/comments",
+     *     summary="Get all top-level comments with nested replies for a blog post",
+     *     tags={"Frontend-Blogs"},
+     *     @OA\Parameter(
+     *         name="postId",
+     *         in="path",
+     *         description="ID of the blog post",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="List of comments retrieved successfully",
+     *         @OA\JsonContent(
+     *             type="object",
+     *             @OA\Property(property="status", type="string", example="success"),
+     *             @OA\Property(property="message", type="string", example="Comments retrieved successfully."),
+     *             @OA\Property(
+     *                 property="data",
+     *                 type="object",
+     *                 @OA\Property(
+     *                     property="post",
+     *                     type="object",
+     *                     @OA\Property(property="id", type="integer", example=1),
+     *                     @OA\Property(property="title", type="string", example="My Blog Title")
+     *                 ),
+     *                 @OA\Property(
+     *                     property="comments",
+     *                     type="array",
+     *                     @OA\Items(
+     *                         type="object",
+     *                         @OA\Property(property="id", type="integer", example=10),
+     *                         @OA\Property(property="comment", type="string", example="Great post!"),
+     *                         @OA\Property(property="created_by", type="integer", example=5),
+     *                         @OA\Property(
+     *                             property="replies",
+     *                             type="array",
+     *                             @OA\Items(
+     *                                 type="object",
+     *                                 @OA\Property(property="id", type="integer", example=11),
+     *                                 @OA\Property(property="comment", type="string", example="Thanks!"),
+     *                             )
+     *                         ),
+     *                         @OA\Property(
+     *                             property="creator",
+     *                             type="object",
+     *                             @OA\Property(property="id", type="integer", example=5),
+     *                             @OA\Property(property="name", type="string", example="John Doe")
+     *                         )
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Blog post not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="string", example="error"),
+     *             @OA\Property(property="message", type="string", example="Post not found.")
+     *         )
+     *     )
+     * )
+     */
+    public function viewComments($postId)
+    {
+        $post = Blog::with(['comments' => function ($query) {
+            $query->whereNull('parent_id') // Only top-level comments
+                ->with(['replies', 'creator']); // Nested replies and user info if needed
+        }])->findOrFail($postId);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Comments retrieved successfully.',
+            'data' => [
+                'post' => $post->only(['id', 'title']), // Optional: limit fields
+                'comments' => $post->comments,
+            ],
+        ], \Illuminate\Http\Response::HTTP_OK);
+    }
+
 
     
     public function categoryWiseBlogs()

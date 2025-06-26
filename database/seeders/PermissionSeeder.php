@@ -189,11 +189,10 @@ class PermissionSeeder extends Seeder
 			'import product suppliers',
 			'export product suppliers',
 			'manage product suppliers',
-			
+
 			'list Setting',
 			'list quality',
 			'update quality',
-
 		];
 
 		$validPermissionIds = [];

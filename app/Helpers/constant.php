@@ -38,8 +38,8 @@ if (!function_exists('app_constants')) {
 				'10 Years',
 				'Lifetime Warranty'
 			],
-			'REFUND_PERIODS' => [
-				'Non-returnable',
+			'RETURN_POLICY' => [
+				'Non-Returnable',
 				'3 Days',
 				'7 Days',
 				'14 Days',
@@ -48,6 +48,10 @@ if (!function_exists('app_constants')) {
 				'90 Days'
 			],
 			'IN_STOCK_OPTIONS' => [
+				1 => 'Yes',
+				0 => 'No',
+			],
+			'FREE_SHIPPING_OPTIONS' => [
 				1 => 'Yes',
 				0 => 'No',
 			],

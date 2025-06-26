@@ -90,6 +90,8 @@ use App\Http\Controllers\FrontEnd\SaveForLaterController as F_SaveForLaterContro
 use App\Http\Controllers\FrontEnd\CcavenueController as F_CcavenueController;
 use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestionController;
 use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
+use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
+use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -105,6 +107,7 @@ Route::get('/countries', [LocationController::class, 'getCountryList']);
 Route::get('/states/{countryId}', [LocationController::class, 'getStateList']);
 Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
+Route::apiResource('newsletters', NewsletterController::class);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
@@ -253,7 +256,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	// Flash Sale API Routes
 	Route::apiResource('flash-sales', FlashSaleController::class);
 
-	Route::apiResource('newsletters', NewsletterController::class);
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
@@ -417,8 +419,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
 
 
-
-
+	Route::prefix('/frontend/blogs')->group(function () {
+		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
+	});
 
 });
 
@@ -483,8 +486,8 @@ Route::prefix('/frontend/blogs')->group(function () {
 	Route::post('/{id}/like', [F_BlogController::class, 'like']);
 	Route::post('/{id}/share', [F_BlogController::class, 'share']);
 	Route::post('/{id}/view', [F_BlogController::class, 'view']);
-
-
+	// Route::put('/{id}/comment', [F_BlogController::class, 'postComment']);
+	Route::get('/{postId}/comments', [F_BlogController::class, 'viewComments']);
 
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
@@ -516,3 +519,9 @@ Route::prefix('/frontend/ccavenue')->group(function () {
     Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);  
     Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
+
+Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);
+
+Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
+Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
+Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);

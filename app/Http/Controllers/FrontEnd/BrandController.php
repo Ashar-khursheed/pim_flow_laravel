@@ -728,7 +728,7 @@ class BrandController extends Controller
     //                     'product_count' => 0
     //                 ];
     //             }
-    //             $categoryCounts[$category->id]['product_count']++;
+    //             $categoryCounts[$category->id]['product_count']++; c
     //         }
     //     }
     

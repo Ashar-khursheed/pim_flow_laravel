@@ -1865,83 +1865,89 @@ class ProductController extends BaseController
 		$reviewImagePath = 'production/reviews';
 
 		// Handle images with role-based permission
-		if ($request->has('images')) {
-			// Check if user is actually trying to modify images (upload new files)
-			$hasNewImageFiles = false;
-			foreach ($request->images as $key => $image) {
-				if ($request->hasFile("images.$key")) {
-					$hasNewImageFiles = true;
-					break;
-				}
-			}
-			
-			// Only check permissions if user is uploading new image files
-			if ($hasNewImageFiles && !$canModifyImages) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product images.'
-				], 403);
-			}
-		
-			$finalImages = [];
-			foreach ($request->images as $key => $image) {
-				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-					// It's a URL, keep it as is
-					$finalImages[] = $image;
-				} elseif ($request->hasFile("images.$key")) {
-					// It's an uploaded file, store it to S3
-					$file = $request->file("images.$key");
-					$path = $file->store($imagePath, 's3');
-					$finalImages[] = Storage::disk('s3')->url($path);
-				}
-				// else ignore invalid inputs
-			}
-		
-			// Save as JSON with unescaped slashes
-			$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
-		} else {
-			// If images are not being updated, preserve existing images
-			$input['images'] = $product->images;
-		}
+		// Handle images with role-based permission - FIXED VERSION
+if ($request->has('images')) {
+    if ($canModifyImages) {
+        $finalImages = [];
+        foreach ($request->images as $key => $image) {
+            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                // It's a URL, keep it as is
+                $finalImages[] = $image;
+            } elseif ($request->hasFile("images.$key")) {
+                // It's an uploaded file, store it to S3
+                $file = $request->file("images.$key");
+                $path = $file->store($imagePath, 's3');
+                $finalImages[] = Storage::disk('s3')->url($path);
+            }
+            // else ignore invalid inputs
+        }
+    
+        // Save as JSON with unescaped slashes
+        $input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+    } else {
+        // User tried to modify images but doesn't have permission - check if they're uploading files
+        $hasNewImageFiles = false;
+        foreach ($request->images as $key => $image) {
+            if ($request->hasFile("images.$key")) {
+                $hasNewImageFiles = true;
+                break;
+            }
+        }
+        
+        if ($hasNewImageFiles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product images.'
+            ], 403);
+        }
+        
+        // Remove from input to prevent overwriting existing images
+        unset($input['images']);
+    }
+}
+// If images not in request at all, existing images are preserved automatically
 
-		// Handle videos with role-based permission
-		if ($request->has('video_path')) {
-			// Check if user is actually trying to modify videos (upload new files)
-			$hasNewVideoFiles = false;
-			$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-			foreach ($videoPaths as $key => $video) {
-				if ($request->hasFile("video_path.$key")) {
-					$hasNewVideoFiles = true;
-					break;
-				}
-			}
-			
-			// Only check permissions if user is uploading new video files
-			if ($hasNewVideoFiles && !$canModifyImages) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product videos.'
-				], 403);
-			}
-		
-			$finalVideos = [];
-			foreach ($videoPaths as $key => $video) {
-				if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
-					// It's a URL, keep as is
-					$finalVideos[] = $video;
-				} elseif ($request->hasFile("video_path.$key")) {
-					// It's an uploaded file, upload to S3
-					$file = $request->file("video_path.$key");
-					$path = $file->store($videoPath, 's3');
-					$finalVideos[] = Storage::disk('s3')->url($path);
-				}
-				// ignore invalid inputs
-			}
-		
-			$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
-		} else {
-			// If videos are not being updated, preserve existing videos
-			$input['video_path'] = $product->video_path;
+// Handle videos with role-based permission - FIXED VERSION
+	if ($request->has('video_path')) {
+    if ($canModifyImages) {
+        $finalVideos = [];
+        $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+        foreach ($videoPaths as $key => $video) {
+            if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+                // It's a URL, keep as is
+                $finalVideos[] = $video;
+            } elseif ($request->hasFile("video_path.$key")) {
+                // It's an uploaded file, upload to S3
+                $file = $request->file("video_path.$key");
+                $path = $file->store($videoPath, 's3');
+                $finalVideos[] = Storage::disk('s3')->url($path);
+            }
+            // ignore invalid inputs
+        }
+    
+        $input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
+    } else {
+        // User tried to modify videos but doesn't have permission - check if they're uploading files
+        $hasNewVideoFiles = false;
+        $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+        foreach ($videoPaths as $key => $video) {
+            if ($request->hasFile("video_path.$key")) {
+                $hasNewVideoFiles = true;
+                break;
+            }
+        }
+        
+        if ($hasNewVideoFiles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product videos.'
+            ], 403);
+        }
+        
+        // Remove from input to prevent overwriting existing videos
+        unset($input['video_path']);
+    }
+
 		}
 		// Handle document upload (keeping existing logic)
 		$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
@@ -2042,120 +2048,151 @@ class ProductController extends BaseController
 		}
 
 		/* Handle benefits_features field with content writer permission check */
-		if ($request->has('benefits_features')) {
-			$benefitsFeaturesInput = $request->input('benefits_features');
-			$hasNewBenefitsData = false;
+		// if ($request->has('benefits_features')) {
+		// 	$benefitsFeaturesInput = $request->input('benefits_features');
+		// 	$hasNewBenefitsData = false;
 		
-			// Decode new input
-			if (is_string($benefitsFeaturesInput)) {
-				$decoded = json_decode($benefitsFeaturesInput, true);
-				if (json_last_error() === JSON_ERROR_NONE) {
-					$newBenefits = $decoded;
+		// 	// Decode new input
+		// 	if (is_string($benefitsFeaturesInput)) {
+		// 		$decoded = json_decode($benefitsFeaturesInput, true);
+		// 		if (json_last_error() === JSON_ERROR_NONE) {
+		// 			$newBenefits = $decoded;
+		// 		} else {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'Invalid JSON format for benefits_features.'
+		// 			], 400);
+		// 		}
+		// 	} elseif (is_array($benefitsFeaturesInput)) {
+		// 		$newBenefits = $benefitsFeaturesInput;
+		// 	} else {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+		// 		], 400);
+		// 	}
+		
+		// 	// Ensure it's an array
+		// 	if (!is_array($newBenefits)) {
+		// 		$newBenefits = [];
+		// 	}
+		
+		// 	// Get existing saved benefits
+		// 	$existingBenefits = json_decode($product->benefits_features, true);
+		// 	if (!is_array($existingBenefits)) {
+		// 		$existingBenefits = [];
+		// 	}
+		
+		// 	// Check for actual change
+		// 	if ($newBenefits !== $existingBenefits) {
+		// 		$hasNewBenefitsData = true;
+		// 	}
+		
+		// 	// Restrict update only if change attempted and no permission
+		// 	if ($hasNewBenefitsData && !$canModifyContent) {
+		// 		return response()->json([
+		// 			'success' => false,
+		// 			'message' => 'You do not have permission to modify product benefits and features.'
+		// 		], 403);
+		// 	}
+		
+		// 	// If changes are allowed or not needed, process it
+		// 	if ($canModifyContent && $hasNewBenefitsData) {
+		// 		$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+		// 	}
+		
+		// 	// Prevent reprocessing later
+		// 	unset($input['benefits_features']);
+		// }
+		if ($request->has('benefits_features')) {
+			$benefitsInput = $request->input('benefits_features');
+			
+			if ($canModifyContent) {
+				// Decode and validate input
+				if (is_string($benefitsInput)) {
+					$decoded = json_decode($benefitsInput, true);
+					if (json_last_error() === JSON_ERROR_NONE) {
+						$newBenefits = $decoded;
+					} else {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for benefits_features.'
+						], 400);
+					}
+				} elseif (is_array($benefitsInput)) {
+					$newBenefits = $benefitsInput;
 				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid JSON format for benefits_features.'
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
 					], 400);
 				}
-			} elseif (is_array($benefitsFeaturesInput)) {
-				$newBenefits = $benefitsFeaturesInput;
+		
+				// Ensure it's an array
+				if (!is_array($newBenefits)) {
+					$newBenefits = [];
+				}
+		
+				// Get existing saved benefits
+				$existingBenefits = json_decode($product->benefits_features, true);
+				if (!is_array($existingBenefits)) {
+					$existingBenefits = [];
+				}
+		
+				// Only save if changed
+				if ($newBenefits !== $existingBenefits) {
+					$input['benefits_features'] = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+				} else {
+					// No change, so ignore it
+					unset($input['benefits_features']);
+				}
 			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-				], 400);
+				// User tried to modify benefits but doesn't have permission
+				unset($input['benefits_features']);
 			}
-		
-			// Ensure it's an array
-			if (!is_array($newBenefits)) {
-				$newBenefits = [];
-			}
-		
-			// Get existing saved benefits
-			$existingBenefits = json_decode($product->benefits_features, true);
-			if (!is_array($existingBenefits)) {
-				$existingBenefits = [];
-			}
-		
-			// Check for actual change
-			if ($newBenefits !== $existingBenefits) {
-				$hasNewBenefitsData = true;
-			}
-		
-			// Restrict update only if change attempted and no permission
-			if ($hasNewBenefitsData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product benefits and features.'
-				], 403);
-			}
-		
-			// If changes are allowed or not needed, process it
-			if ($canModifyContent && $hasNewBenefitsData) {
-				$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
-			}
-		
-			// Prevent reprocessing later
-			unset($input['benefits_features']);
 		}
+		
 		
 
 		if ($request->has('description')) {
-			$descriptionInput = $request->input('description');
-			$hasNewDescriptionData = false;
-		
-			// Decode new input
-			if (is_string($descriptionInput)) {
-				$decoded = json_decode($descriptionInput, true);
-				if (json_last_error() === JSON_ERROR_NONE) {
-					$newDescription = $decoded;
+			if ($canModifyContent) {
+				$descriptionInput = $request->input('description');
+				
+				// Decode and validate input
+				if (is_string($descriptionInput)) {
+					$decoded = json_decode($descriptionInput, true);
+					if (json_last_error() === JSON_ERROR_NONE) {
+						$newDescription = $decoded;
+					} else {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for description.'
+						], 400);
+					}
+				} elseif (is_array($descriptionInput)) {
+					$newDescription = $descriptionInput;
 				} else {
 					return response()->json([
 						'success' => false,
-						'message' => 'Invalid JSON format for description.'
+						'message' => 'Invalid description format. Must be JSON string or array.'
 					], 400);
 				}
-			} elseif (is_array($descriptionInput)) {
-				$newDescription = $descriptionInput;
+				
+				// Ensure it's an array
+				if (!is_array($newDescription)) {
+					$newDescription = [];
+				}
+				
+				// Save the description
+				$input['description'] = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
 			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid description format. Must be JSON string or array.'
-				], 400);
+				// User tried to modify description but doesn't have permission
+				// For now, let's just remove it from input to prevent overwriting
+				// This matches the behavior when no actual change is detected
+				unset($input['description']);
 			}
-		
-			// Ensure it's an array
-			if (!is_array($newDescription)) {
-				$newDescription = [];
-			}
-		
-			// Get existing saved description
-			$existingDescription = json_decode($product->description, true);
-			if (!is_array($existingDescription)) {
-				$existingDescription = [];
-			}
-		
-			// Check for actual change
-			if ($newDescription !== $existingDescription) {
-				$hasNewDescriptionData = true;
-			}
-		
-			// Restrict update only if change attempted and no permission
-			if ($hasNewDescriptionData && !$canModifyContent) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You do not have permission to modify product description.'
-				], 403);
-			}
-		
-			// If changes are allowed or not needed, process it
-			if ($canModifyContent && $hasNewDescriptionData) {
-				$product->description = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
-			}
-		
-			// Prevent reprocessing later
-			unset($input['description']);
 		}
+		// If description not in request at all, existing description is preserved automatically
 		
 		
 		/* Stock status validation */

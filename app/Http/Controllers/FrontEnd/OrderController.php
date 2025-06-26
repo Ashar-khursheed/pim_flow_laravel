@@ -317,8 +317,7 @@ class OrderController extends BaseController
 	 */
 	public function show($id)
 	{
-		$order = Order::find($id);
-
+		$order = Order::where('customer_id', auth()->id())->where('id', $id)->first();
 		if (!$order) {
 			return response()->json([
 				'success' => false,
