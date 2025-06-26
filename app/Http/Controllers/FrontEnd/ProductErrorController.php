@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers\FrontEnd;
+use Illuminate\Support\Facades\Mail;
 use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\ProductError;
 use Illuminate\Http\Request;
@@ -55,11 +56,23 @@ class ProductErrorController extends Controller
     
         $productError = ProductError::create($request->all());
     
-        // Send email only if email is present
+        $data = $productError->toArray(); // ✅ define $data for both emails
+    
+        // Send email to user if provided
         if ($productError->email) {
             Notification::route('mail', $productError->email)
-                ->notify(new ProductErrorMail($productError->toArray()));
+                ->notify(new ProductErrorMail($data));
         }
+    
+        // Send BCC to internal team
+        Mail::send('emails.product_error_reported', ['data' => $data], function ($message) {
+            $message->to('nomanpeera@horecastore.ae') // dummy TO
+                    ->bcc([
+                        'webdeveloper01@horecastore.ae',
+                        'webdeveloper03@horecastore.ae',
+                    ])
+                    ->subject('New Product Error Reported');
+        });
     
         return response()->json([
             'success' => true,
@@ -67,6 +80,7 @@ class ProductErrorController extends Controller
             'data' => $productError,
         ], 201);
     }
+    
 
     /**
      * @OA\Get(
