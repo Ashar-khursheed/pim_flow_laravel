@@ -344,7 +344,7 @@ class BlogController extends Controller
     }
 
      /**
-     * @OA\Post(
+     * @OA\Put(
      *     path="/api/frontend/blogs/{id}/comment",
      *     summary="Post a comment or reply on a blog",
      *     tags={"Frontend-Blogs"},
