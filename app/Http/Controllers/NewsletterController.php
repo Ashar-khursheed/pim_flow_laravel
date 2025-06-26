@@ -74,7 +74,7 @@ class NewsletterController extends Controller
         $newsletter = Newsletter::create($request->all());
     
         // Optionally send confirmation email
-        Mail::to($newsletter->email)->send(new NewsletterSubscribed($newsletter->toArray()));
+        // Mail::to($newsletter->email)->send(new NewsletterSubscribed($newsletter->toArray()));
     
         return response()->json([
             'success' => true,
