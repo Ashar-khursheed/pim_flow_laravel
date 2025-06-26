@@ -904,7 +904,7 @@ use Illuminate\Support\Facades\Auth;
    
    
     // public function getSpecificationFilters1(Request $request)
-    // {
+    //d {
     //     // Existing validation code
     //     $validator = Validator::make($request->all(), [
     //         'category_id' => 'required|integer',
