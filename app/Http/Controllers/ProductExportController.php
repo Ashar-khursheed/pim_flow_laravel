@@ -23,7 +23,7 @@ class ProductExportController extends BaseController
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             required={"type", "relational_id", "range_from", "range_to"},
-	 *             @OA\Property(property="status", type="string", example="all", description="Status (e.g., Category, Brand)"),
+	 *             @OA\Property(property="status", type="string", example="all", description="Status"),
 	 *             @OA\Property(property="type", type="string", example="Category", description="Filter type (e.g., Category, Brand)"),
 	 *             @OA\Property(property="relational_id", type="integer", example=1, description="ID based on selected type (e.g., Category ID)"),
 	 *             @OA\Property(property="range_from", type="integer", example=1, description="Starting product index (must be >= 1)"),
