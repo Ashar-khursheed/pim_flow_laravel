@@ -6513,15 +6513,15 @@
                                         "example": "123 Main Street"
                                     },
                                     "country": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 101
                                     },
                                     "state": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 10
                                     },
                                     "city": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 5
                                     },
                                     "zip_code": {
@@ -6627,15 +6627,15 @@
                                         "example": "456 New Street"
                                     },
                                     "country": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 102
                                     },
                                     "state": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 20
                                     },
                                     "city": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 15
                                     },
                                     "zip_code": {
@@ -12260,15 +12260,15 @@
                                         "example": "123 Main Street"
                                     },
                                     "country": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 101
                                     },
                                     "state": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 10
                                     },
                                     "city": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 5
                                     },
                                     "zip_code": {
@@ -12369,15 +12369,15 @@
                                         "example": "456 New Street"
                                     },
                                     "country": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 102
                                     },
                                     "state": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 20
                                     },
                                     "city": {
-                                        "type": "integer",
+                                        "type": "string",
                                         "example": 15
                                     },
                                     "zip_code": {
