@@ -357,7 +357,7 @@ class CartController extends Controller
             // ✅ Replace `currency` object with just symbol
             $symbol = optional($item->product->currency)->symbol;
         
-            unset($item->product->relations['currency']); // <--- forcibly unsets relation
+            $item->product->unsetRelation('currency');
         
             $item->product->currency = $symbol;
         });
