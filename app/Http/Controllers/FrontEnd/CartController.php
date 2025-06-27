@@ -117,7 +117,7 @@ class CartController extends Controller
                     'product_id' => $cartItem->product_id,
                     'quantity' => $cartItem->quantity,
                     'currency_id' => $cartItem->product->currency->id,
-                    'currency_title' => $cartItem->product->currency->title,
+                    'currency_title' => $cartItem->product->currency->symbol,
                 ],
             ]);
         }
