@@ -56,22 +56,19 @@ class TamaraController extends Controller
             $tamaraResponse = Http::withToken(config('services.tamara.token'))
                 ->post(config('services.tamara.url') . '/checkout', [
                     "order_reference_id" => $data['order_reference_id'] ?? 'ORDER-' . uniqid(),
-                    "total_amount" => [
-                        "amount" => $data['amount'],
-                        "currency" => $data['currency']
+                   'total_amount' => [
+                        'amount' => $data['amount'],
+                        'currency' => $data['currency']
                     ],
                     "consumer" => $data['consumer'],
                     "country_code" => "SA",
                     "payment_type" => "PAY_BY_INSTALMENTS",
-                    "items" => array_map(function ($item) use ($data) {
+                    'items' => array_map(function ($item) {
                         return [
                             "name" => $item['name'],
                             "sku" => $item['sku'],
                             "quantity" => $item['quantity'],
-                            "unit_price" => [
-                                "amount" => $item['unit_price'],
-                                "currency" => $data['currency']
-                            ]
+                            "unit_price" => $item['unit_price'], // already formatted
                         ];
                     }, $data['items']),
                     "success_url" => $data['success_url'],
