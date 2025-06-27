@@ -356,7 +356,7 @@ class CartController extends Controller
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
 
-            $currencyTitle = $product->currency->symbol ?? $product->price;
+            $currencyTitle =  $item->product->currency->symbol ?? $product->price;
         });
 
 
