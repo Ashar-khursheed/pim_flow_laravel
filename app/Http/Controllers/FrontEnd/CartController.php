@@ -371,7 +371,6 @@ class CartController extends Controller
 
         return response()->json([
             'success' => true,
-            'currency' => $currencyTitles,
             'data' => $cartItems,
         ]);
     }
