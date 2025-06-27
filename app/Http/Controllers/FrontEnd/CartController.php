@@ -350,13 +350,14 @@ class CartController extends Controller
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
             $item->product->original_price = $item->product->price;
             $item->product->front_sale_price = $item->product->sale_price ?? $item->product->price;
-
+        
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
-
-            // ✅ Only return currency symbol
-            $item->product->currency = $item->product->currency->symbol ?? null;
+        
+            // Overwrite the currency object with just the symbol
+            $item->product->currency = optional($item->product->currency)->symbol;
         });
+        
 
 
         return response()->json([
