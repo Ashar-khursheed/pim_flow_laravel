@@ -6512,16 +6512,16 @@
                                         "type": "string",
                                         "example": "123 Main Street"
                                     },
-                                    "country_id": {
-                                        "type": "integer",
+                                    "country": {
+                                        "type": "string",
                                         "example": 101
                                     },
-                                    "state_id": {
-                                        "type": "integer",
+                                    "state": {
+                                        "type": "string",
                                         "example": 10
                                     },
-                                    "city_id": {
-                                        "type": "integer",
+                                    "city": {
+                                        "type": "string",
                                         "example": 5
                                     },
                                     "zip_code": {
@@ -6626,16 +6626,16 @@
                                         "type": "string",
                                         "example": "456 New Street"
                                     },
-                                    "country_id": {
-                                        "type": "integer",
+                                    "country": {
+                                        "type": "string",
                                         "example": 102
                                     },
-                                    "state_id": {
-                                        "type": "integer",
+                                    "state": {
+                                        "type": "string",
                                         "example": 20
                                     },
-                                    "city_id": {
-                                        "type": "integer",
+                                    "city": {
+                                        "type": "string",
                                         "example": 15
                                     },
                                     "zip_code": {
@@ -12259,16 +12259,16 @@
                                         "type": "string",
                                         "example": "123 Main Street"
                                     },
-                                    "country_id": {
-                                        "type": "integer",
+                                    "country": {
+                                        "type": "string",
                                         "example": 101
                                     },
-                                    "state_id": {
-                                        "type": "integer",
+                                    "state": {
+                                        "type": "string",
                                         "example": 10
                                     },
-                                    "city_id": {
-                                        "type": "integer",
+                                    "city": {
+                                        "type": "string",
                                         "example": 5
                                     },
                                     "zip_code": {
@@ -12368,16 +12368,16 @@
                                         "type": "string",
                                         "example": "456 New Street"
                                     },
-                                    "country_id": {
-                                        "type": "integer",
+                                    "country": {
+                                        "type": "string",
                                         "example": 102
                                     },
-                                    "state_id": {
-                                        "type": "integer",
+                                    "state": {
+                                        "type": "string",
                                         "example": 20
                                     },
-                                    "city_id": {
-                                        "type": "integer",
+                                    "city": {
+                                        "type": "string",
                                         "example": 15
                                     },
                                     "zip_code": {

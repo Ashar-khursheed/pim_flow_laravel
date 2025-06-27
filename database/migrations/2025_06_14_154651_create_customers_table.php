@@ -33,9 +33,9 @@ return new class extends Migration
 			$table->id();
 			$table->bigInteger('customer_id');
 			$table->enum('type', ['home', 'work', 'other'])->default('home');
-			$table->integer('city_id')->nullable();
-			$table->integer('state_id')->nullable();
-			$table->integer('country_id')->nullable();
+			$table->string('city')->nullable();
+			$table->string('state')->nullable();
+			$table->string('country')->nullable();
 			$table->text('address')->nullable();
 			$table->string('zip_code', 20)->nullable();
 			$table->boolean('is_default')->default(false);

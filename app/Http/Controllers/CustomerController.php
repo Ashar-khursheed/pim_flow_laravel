@@ -165,10 +165,7 @@ class CustomerController extends Controller
 	public function show($id)
 	{
 		$customer = Customer::with([
-			'customerAddress',
-			'customerAddress.country:id,name',
-			'customerAddress.state:id,name',
-			'customerAddress.city:id,name'
+			'customerAddress'
 		])->find($id);
 
 		if (!$customer) {
