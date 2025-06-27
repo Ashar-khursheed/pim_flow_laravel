@@ -53,5 +53,13 @@ return [
     'secret' => env('STRIPE_MODE') === 'live' ? env('STRIPE_LIVE_SECRET') : env('STRIPE_TEST_SECRET'),
     ],
 
+    'tamara' => [
+    'url' => env('TAMARA_API_URL'),
+    'token' => env('TAMARA_API_TOKEN'),
+    'public_key' => env('TAMARA_PUBLIC_KEY'),
+    'notification_token' => env('TAMARA_NOTIFICATION_TOKEN'),
+    ],
+
+
 
 ];
