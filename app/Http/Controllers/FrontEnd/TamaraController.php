@@ -50,44 +50,62 @@ class TamaraController extends Controller
      */
     public function createCheckout(Request $request)
     {
-        $data = $request->all();
+        try {
+            $data = $request->all();
 
-        $response = Http::withToken(env('TAMARA_API_TOKEN'))
-            ->post(env('TAMARA_API_URL') . '/checkout', [
-                "order_reference_id" => $data['order_reference_id'] ?? 'ORDER-' . uniqid(),
-                "total_amount" => [
-                    "amount" => $data['amount'],
-                    "currency" => $data['currency']
-                ],
-                "consumer" => $data['consumer'],
-                "country_code" => "SA",
-                "payment_type" => "PAY_BY_INSTALMENTS",
-                "items" => array_map(function ($item) use ($data) {
-                    return [
-                        "name" => $item['name'],
-                        "sku" => $item['sku'],
-                        "quantity" => $item['quantity'],
-                        "unit_price" => [
-                            "amount" => $item['unit_price'],
-                            "currency" => $data['currency']
-                        ]
-                    ];
-                }, $data['items']),
-                "success_url" => $data['success_url'],
-                "failure_url" => $data['failure_url'],
-                "cancel_url" => $data['cancel_url'],
+            $tamaraResponse = Http::withToken(config('services.tamara.token'))
+                ->post(config('services.tamara.url') . '/checkout', [
+                    "order_reference_id" => $data['order_reference_id'] ?? 'ORDER-' . uniqid(),
+                    "total_amount" => [
+                        "amount" => $data['amount'],
+                        "currency" => $data['currency']
+                    ],
+                    "consumer" => $data['consumer'],
+                    "country_code" => "SA",
+                    "payment_type" => "PAY_BY_INSTALMENTS",
+                    "items" => array_map(function ($item) use ($data) {
+                        return [
+                            "name" => $item['name'],
+                            "sku" => $item['sku'],
+                            "quantity" => $item['quantity'],
+                            "unit_price" => [
+                                "amount" => $item['unit_price'],
+                                "currency" => $data['currency']
+                            ]
+                        ];
+                    }, $data['items']),
+                    "success_url" => $data['success_url'],
+                    "failure_url" => $data['failure_url'],
+                    "cancel_url" => $data['cancel_url'],
+                ]);
+
+            if ($tamaraResponse->successful()) {
+                return response()->json([
+                    'checkout_url' => $tamaraResponse->json()['checkout_url']
+                ]);
+            } else {
+                Log::error('Tamara API Error', [
+                    'status' => $tamaraResponse->status(),
+                    'response' => $tamaraResponse->body(),
+                ]);
+
+                return response()->json([
+                    'error' => 'Tamara API Error',
+                    'status' => $tamaraResponse->status(),
+                    'message' => json_decode($tamaraResponse->body(), true)
+                ], $tamaraResponse->status());
+            }
+        } catch (\Exception $e) {
+            Log::error('Internal Server Error', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-        if ($response->successful()) {
             return response()->json([
-                'checkout_url' => $response->json()['checkout_url']
-            ]);
+                'error' => 'Internal Server Error',
+                'message' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'error' => 'Tamara checkout failed',
-            'details' => $response->body()
-        ], 500);
     }
 
     /**
