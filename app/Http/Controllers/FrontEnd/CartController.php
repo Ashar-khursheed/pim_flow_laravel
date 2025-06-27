@@ -367,7 +367,7 @@ class CartController extends Controller
         
         
 
-        $currencyTitles = $cartItems->pluck('product.currency')->unique()->filter()->values();
+        $currencyTitles = $cartItems->pluck('product.currency_symbol')->unique()->filter()->values();
 
         return response()->json([
             'success' => true,
