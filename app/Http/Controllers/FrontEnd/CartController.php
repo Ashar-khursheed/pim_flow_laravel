@@ -206,14 +206,14 @@ class CartController extends Controller
     $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
     $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
-    $perUnitPrice = null;
-    if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-        $unitValue = (float) $unitsPerCase->attribute_value;
-        if ($unitValue > 0) {
-            $calculated = round($basePrice / $unitValue, 2);
-            $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
-        }
-    }
+    // $perUnitPrice = null;
+    // if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+    //     $unitValue = (float) $unitsPerCase->attribute_value;
+    //     if ($unitValue > 0) {
+    //         $calculated = round($basePrice / $unitValue, 2);
+    //         $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+    //     }
+    // }
 
     $currencyTitle = $product->currency->symbol ?? $product->price;
 
@@ -235,7 +235,7 @@ class CartController extends Controller
             'in_wishlist' => in_array($product->id, $wishlistProductIds),
             'images' => $imageUrls,
             'selling_type' => $sellingType,
-            'per_unit_price' => $perUnitPrice,
+            // 'per_unit_price' => $perUnitPrice,
         ]
     ]);
 }
