@@ -93,6 +93,9 @@ use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManage
 use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
 use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
+use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
+
+
 
 
 
@@ -531,3 +534,5 @@ Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::cl
 
 Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheckout']);
 Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
+
+Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
