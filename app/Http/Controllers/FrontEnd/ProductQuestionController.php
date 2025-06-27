@@ -52,7 +52,7 @@ class ProductQuestionController extends Controller
         ]);
 
         $question = ProductQuestion::create([
-            'customer_id' => auth()->id(),
+            'email' => $request->email,
             'product_id' => $request->product_id,
             'question' => $request->question,
         ]);
@@ -96,7 +96,7 @@ class ProductQuestionController extends Controller
 
     public function index($product_id)
     {
-        $questions = ProductQuestion::with('customer')
+        $questions = ProductQuestion::with('email')
             ->where('product_id', $product_id)
             ->latest()
             ->get();
