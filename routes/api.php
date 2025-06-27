@@ -356,7 +356,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
-	Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
@@ -431,6 +430,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 });
 
+Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
