@@ -347,21 +347,17 @@ class CartController extends Controller
         // Process each cart item
         $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
-        
+
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-        
+
             $item->product->original_price = $item->product->price;
             $item->product->front_sale_price = $item->product->sale_price ?? $item->product->price;
-        
             // Attach all applicable discounts
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
-        
-            $product->per_unit_price = $perUnitPrice;
-			  $currencyTitle = $product->currency->symbol ?? $product->price;
+
+            $currencyTitle = $product->currency->symbol ?? $product->price;
         });
-        
-        
 
 
         return response()->json([
