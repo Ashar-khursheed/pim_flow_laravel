@@ -21,7 +21,7 @@ class ProductSupplier extends Model
 		'inventory',
 		'in_stock',
 		'delivery_days',
-		'return',
+		'return_policy',
 		'free_shipping',
 		'margin',
 		'restocking_fees',

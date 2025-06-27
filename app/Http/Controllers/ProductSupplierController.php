@@ -27,132 +27,93 @@ class ProductSupplierController extends BaseController
 	 *     tags={"Product Suppliers"},
 	 *     summary="Get all product suppliers",
 	 *     description="Returns a list of all product suppliers with pagination, search, and sorting",
-	 *     @OA\Parameter(
-	 *         name="search",
-	 *         in="query",
-	 *         description="Search term for global search",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort_by",
-	 *         in="query",
-	 *         description="Column to sort by",
-	 *         required=false,
-	 *         @OA\Schema(type="string")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="sort_direction",
-	 *         in="query",
-	 *         description="Sort direction (asc or desc)",
-	 *         required=false,
-	 *         @OA\Schema(type="string", enum={"asc", "desc"})
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="per_page",
-	 *         in="query",
-	 *         description="Number of items per page",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", default=15)
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="page",
-	 *         in="query",
-	 *         description="Page number",
-	 *         required=false,
-	 *         @OA\Schema(type="integer", default=1)
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Success",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="data", type="array", @OA\Items(
-	 *                 @OA\Property(property="id", type="integer"),
-	 *                 @OA\Property(property="product_id", type="integer"),
-	 *                 @OA\Property(property="vendor_id", type="integer"),
-	 *                 @OA\Property(property="vendor_sku", type="string"),
-	 *                 @OA\Property(property="cost_per_item", type="string"),
-	 *                 @OA\Property(property="additional_cost", type="string"),
-	 *                 @OA\Property(property="price", type="string"),
-	 *                 @OA\Property(property="sale_price", type="string"),
-	 *                 @OA\Property(property="inventory", type="integer"),
-	 *                 @OA\Property(property="in_stock", type="integer"),
-	 *                 @OA\Property(property="delivery_days", type="string"),
-	 *                 @OA\Property(property="warranty_information", type="string"),
-	 *                 @OA\Property(property="refund", type="string"),
-	 *                 @OA\Property(property="final_cost_price", type="string"),
-	 *                 @OA\Property(property="margin", type="string"),
-	 *                 @OA\Property(property="created_at", type="string", format="date-time"),
-	 *                 @OA\Property(property="updated_at", type="string", format="date-time"),
-	 *                 @OA\Property(property="product_sku", type="string"),
-	 *                 @OA\Property(property="vendor_name", type="string")
-	 *             )),
-	 *             @OA\Property(property="meta", type="object")
-	 *         )
-	 *     ),
+	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="product_id", in="query", description="Filter by product_id.", example="1",  @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="sort_by", in="query", @OA\Schema(type="string", enum={"id", "product_name", "vendor_name", "vendor_sku", "list_price", "multiple", "cost_per_item", "surcharge", "additional_cost", "total_cost_per_item", "sale_price", "price", "margin", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
+	 *     @OA\Response(response=200, description="Suppliers retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function index(Request $request)
 	{
-		// Start with a query builder to allow for filtering, sorting and pagination
-		$query = ProductSupplier::query()
+		$searchableColumns = ['id', 'product_name', 'vendor_name', 'vendor_sku'];
+		$sortableColumns = array_merge(
+			$searchableColumns,
+			[
+				'list_price', 'multiple', 'cost_per_item', 'surcharge',
+				'additional_cost', 'total_cost_per_item', 'sale_price',
+				'price', 'margin', 'created_at', 'updated_at'
+			]
+		);
+
+		$sortBy = in_array($request->input('sort_by'), $sortableColumns)
+		? $request->input('sort_by')
+		: 'id';
+
+		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+		$recordsQuery = ProductSupplier::query()
 		->join('ec_products', 'product_suppliers.product_id', '=', 'ec_products.id')
 		->join('vendors', 'product_suppliers.vendor_id', '=', 'vendors.id')
-		->select('product_suppliers.*', 'ec_products.sku as product_sku', 'vendors.name as vendor_name');
+		->select(
+			'product_suppliers.*',
+			'ec_products.name as product_name',
+			'vendors.name as vendor_name'
+		);
 
-		// Apply global search if provided
-		if ($request->has('search') && !empty($request->search)) {
-			$searchTerm = $request->search;
-			$query->where(function($q) use ($searchTerm) {
-				$q->where('product_suppliers.vendor_sku', 'like', "%{$searchTerm}%")
-				->orWhere('ec_products.sku', 'like', "%{$searchTerm}%")
-				->orWhere('vendors.name', 'like', "%{$searchTerm}%")
-				->orWhere('product_suppliers.delivery_days', 'like', "%{$searchTerm}%")
-				->orWhere('product_suppliers.warranty_information', 'like', "%{$searchTerm}%")
-				->orWhere('product_suppliers.refund', 'like', "%{$searchTerm}%");
+		if ($request->filled('product_id')) {
+			$recordsQuery->where('product_id', $request->input('product_id'));
+		}
+
+		/* Global Search */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+
+			$recordsQuery->where(function ($q) use ($search) {
+				$q->orWhere('product_suppliers.id', 'like', "%$search%")
+				->orWhere('product_suppliers.vendor_sku', 'like', "%$search%")
+				->orWhere('ec_products.name', 'like', "%$search%")
+				->orWhere('vendors.name', 'like', "%$search%");
 			});
 		}
 
-		// Apply sorting if provided
-		$sortBy = $request->input('sort_by');
-		$sortDirection = $request->input('sort_direction', 'desc');
-
-		// Set a default sort column if none is provided or if it's empty
-		if (empty($sortBy)) {
-			$sortBy = 'created_at';
+		/* Sorting */
+		if ($sortBy === 'product_name') {
+			$recordsQuery->orderBy('ec_products.name', $sortDir);
+		} elseif ($sortBy === 'vendor_name') {
+			$recordsQuery->orderBy('vendors.name', $sortDir);
+		} else {
+			$recordsQuery->orderBy("product_suppliers.$sortBy", $sortDir);
 		}
 
-		// Handle table prefixing for sort column
-		if (in_array($sortBy, ['id', 'product_id', 'vendor_id', 'vendor_sku', 'cost_per_item',
-			'additional_cost', 'price', 'sale_price', 'inventory', 'in_stock',
-			'delivery_days', 'warranty_information', 'refund', 'final_cost_price',
-			'margin', 'created_at', 'updated_at'])) {
-			$sortBy = "product_suppliers.{$sortBy}";
-	} elseif ($sortBy === 'product_sku') {
-		$sortBy = "ec_products.sku";
-	} elseif ($sortBy === 'vendor_name') {
-		$sortBy = "vendors.name";
-	} else {
-			// Default to a safe column if the provided sort column is invalid
-		$sortBy = "product_suppliers.created_at";
+		/* Pagination */
+		$length = (int) $request->input('length', 20);
+		$page = max((int) $request->input('page', 1), 1);
+
+		$totalRecords = (clone $recordsQuery)->count();
+		$totalPages = (int) ceil($totalRecords / $length);
+
+		if ($page > $totalPages && $totalPages > 0) {
+			$page = 1;
+		}
+
+		$records = $recordsQuery
+		->offset(($page - 1) * $length)
+		->limit($length)
+		->get();
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $records,
+			'total_pages' => $totalPages,
+			'total_records' => $totalRecords,
+		]);
 	}
 
-		// Validate sort direction
-	if (!in_array(strtolower($sortDirection), ['asc', 'desc'])) {
-		$sortDirection = 'desc';
-	}
-
-	$query->orderBy($sortBy, $sortDirection);
-
-		// Apply pagination
-	$perPage = $request->input('per_page', 15);
-
-		// Get paginated results
-	$productSuppliers = $query->paginate($perPage);
-
-	return response()->json($productSuppliers);
-}
 	/**
 	 * @OA\Post(
 	 *     path="/api/product-suppliers",
@@ -160,24 +121,34 @@ class ProductSupplierController extends BaseController
 	 *     tags={"Product Suppliers"},
 	 *     summary="Create a new product supplier",
 	 *     description="Creates a new product supplier entry",
+	 *     security={{"bearerAuth":{}}},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"vendor_id", "product_id"},
-	 *             @OA\Property(property="product_id", type="integer"),
-	 *             @OA\Property(property="vendor_id", type="integer"),
-	 *             @OA\Property(property="vendor_sku", type="string"),
-	 *             @OA\Property(property="warranty_information", type="string"),
-	 *             @OA\Property(property="refund", type="string"),
-	 *             @OA\Property(property="delivery_days", type="string"),
-	 *             @OA\Property(property="cost_per_item", type="number", format="float"),
-	 *             @OA\Property(property="sale_price", type="number", format="float"),
-	 *             @OA\Property(property="price", type="number", format="float"),
-	 *             @OA\Property(property="margin", type="number", format="float"),
-	 *             @OA\Property(property="additional_cost", type="number", format="float"),
-	 *             @OA\Property(property="final_cost_price", type="number", format="float"),
-	 *             @OA\Property(property="in_stock", type="integer"),
-	 *             @OA\Property(property="inventory", type="integer")
+	 *             required={"product_id", "vendor_id", "vendor_sku", "price", "in_stock", "delivery_days", "return_policy"},
+	 *             @OA\Property(property="product_id", type="integer", example=1),
+	 *             @OA\Property(property="vendor_id", type="integer", example=2),
+	 *             @OA\Property(property="vendor_sku", type="string", example="SKU-1234"),
+
+	 *             @OA\Property(property="list_price", type="number", format="float", nullable=true, example=100.00),
+	 *             @OA\Property(property="multiple", type="number", format="float", nullable=true, example=0.85),
+	 *             @OA\Property(property="cost_per_item", type="number", format="float", nullable=true, example=85.00),
+
+	 *             @OA\Property(property="surcharge", type="number", format="float", nullable=true, example=10),
+	 *             @OA\Property(property="additional_cost", type="number", format="float", nullable=true, example=10),
+
+	 *             @OA\Property(property="map", type="number", format="float", nullable=true, example=110.00),
+	 *             @OA\Property(property="sale_price", type="number", format="float", nullable=true, example=115.00),
+	 *             @OA\Property(property="price", type="number", format="float", example=120.00),
+
+	 *             @OA\Property(property="inventory", type="integer", nullable=true, example=50),
+	 *             @OA\Property(property="in_stock", type="string", enum={"Yes", "No"}, example="Yes"),
+	 *             @OA\Property(property="delivery_days", type="string", example="3-5 days"),
+	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
+	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
+	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
+
+	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=15)
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
@@ -190,38 +161,96 @@ class ProductSupplierController extends BaseController
 			'product_id' => 'required|integer',
 			'vendor_id' => 'required|integer',
 			'vendor_sku' => 'required|string',
-			'cost_per_item' => 'nullable|numeric',
-			'sale_price' => 'nullable|numeric',
-			'price' => 'nullable|numeric',
-			'margin' => 'nullable|numeric',
+
+			'list_price' => 'nullable|numeric|required_without:cost_per_item',
+			'multiple' => 'nullable|numeric|required_without:cost_per_item',
+			'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
+
+			'surcharge' => 'nullable|numeric',
 			'additional_cost' => 'nullable|numeric',
-			'final_cost_price' => 'nullable|numeric',
-			'in_stock' => 'nullable|integer',
+
+			'map' => 'nullable|numeric',
+			'sale_price' => 'nullable|numeric',
+			'price' => 'required|numeric',
+
 			'inventory' => 'nullable|integer',
-			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
+
+			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
+			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
 			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
-			'refund' => ['nullable', Rule::in(app_constants('RETURN_POLICY'))],
+
+			'restocking_fees' => 'nullable|numeric',
 		]);
 
-		// Check if a record with the same sku and vendor_id already exists
+		/* Check if a record with the same sku and vendor_id already exists */
 		$existingEntry = ProductSupplier::where('product_id', $data['product_id'])
 		->where('vendor_id', $data['vendor_id'])
 		->first();
 
 		if ($existingEntry) {
 			return response()->json([
+				'success' => false,
 				'message' => 'A product supplier with the Vendor ID already exists.',
 			], 422);
 		}
 
-		// Validate price logic
-		if (
-			isset($data['price'], $data['sale_price']) &&
-			$data['price'] < $data['sale_price']
-		) {
+		$rowErrors = [];
+
+		/* multiple must be between 0 and 1 */
+		if (!empty($data['multiple']) && ($data['multiple'] <= 0 || $data['multiple'] >= 1)) {
+			$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
+		}
+
+		/* MAP logic */
+		if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
+			$rowErrors[] = 'Sale Price cannot be less than MAP.';
+		}
+
+		if (!empty($data['sale_price']) && !empty($data['price']) && (float)$data['price'] < (float)$data['sale_price']) {
+			$rowErrors[] = 'Price cannot be less than sale price.';
+		}
+
+		if (!empty($data['map']) && !empty($data['price']) && (float)$data['price'] < (float)$data['map']) {
+			$rowErrors[] = 'Price cannot be less than MAP.';
+		}
+
+		if (!empty($rowErrors)) {
 			return response()->json([
-				'message' => 'Price cannot be less than sale price.',
+				'success' => false,
+				'message' => $rowErrors
 			], 422);
+		}
+
+		/* Calculate cost_per_item */
+		$data['cost_per_item'] = (!empty($data['list_price']) && !empty($data['multiple']))
+		? (float)$data['list_price'] * (float)$data['multiple']
+		: (float)($data['cost_per_item'] ?? 0);
+
+		/* Calculate surcharge and additional_cost (as % of cost_per_item) */
+		$data['surcharge'] = !empty($data['surcharge'])
+		? $data['cost_per_item'] * ((float)$data['surcharge'] / 100)
+		: 0;
+
+		$data['additional_cost'] = !empty($data['additional_cost'])
+		? $data['cost_per_item'] * ((float)$data['additional_cost'] / 100)
+		: 0;
+
+		/* Total cost per item */
+		$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
+
+		/* Price & Sale Price fallback */
+		$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
+		$data['price'] = isset($data['price']) ? (float)$data['price'] : 0;
+
+		/* Margin calculation */
+		if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
+			$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
+		} elseif ($data['price'] > 0) {
+			$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
+		} else {
+			$data['margin'] = null;
 		}
 
 		$data['created_by'] = auth()->id();
@@ -237,231 +266,196 @@ class ProductSupplierController extends BaseController
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/product-suppliers/{product_id}",
-	 *     operationId="getProductSupplierByProductId",
+	 *     path="/api/product-suppliers/{id}",
+	 *     operationId="getProductSupplierById",
 	 *     tags={"Product Suppliers"},
-	 *     summary="Get product suppliers by Product ID",
-	 *     description="Returns all product suppliers associated with a specific product ID",
-	 *     @OA\Parameter(
-	 *         name="product_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Product ID",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
+	 *     summary="Get a product supplier by ID",
+	 *     description="Returns the details of a specific product supplier",
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Product Supplier ID", @OA\Schema(type="integer", example=1)),
+	 *     @OA\Response(response=200, description="Details retrieved successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
-	public function show($product_id)
+	public function show($id)
 	{
-		// Fetch all suppliers associated with the given product_id
-		$suppliers = ProductSupplier::with('vendor')->where('product_id', $product_id)->get();
+		$productSupplier = ProductSupplier::with(['product', 'vendor'])->find($id);
 
-		if ($suppliers->isEmpty()) {
-			return response()->json(['message' => 'No product suppliers found for the given product ID'], 404);
+		if (!$productSupplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found.'
+			], 404);
 		}
-
-		// Format the response for all suppliers
-		$response = $suppliers->map(function ($supplier) {
-			return [
-				'id' => $supplier->id,
-				'product_id' => $supplier->product_id,
-				'vendor_id' => $supplier->vendor_id,
-				'vendor_sku' => $supplier->vendor_sku,
-				'vendor_name' => $supplier->vendor ? $supplier->vendor->name : null,
-				'warranty_information' => $supplier->warranty_information,
-				'refund' => $supplier->refund,
-				'delivery_days' => $supplier->delivery_days,
-				'cost_per_item' => $supplier->cost_per_item,
-				'sale_price' => $supplier->sale_price,
-				'price' => $supplier->price,
-				'margin' => $supplier->margin,
-				'inventory' => $supplier->inventory,
-				'additional_cost' => $supplier->additional_cost,
-				'final_cost_price' => $supplier->final_cost_price,
-				'created_at' => $supplier->created_at,
-				'updated_at' => $supplier->updated_at,
-			];
-		});
 
 		return response()->json([
 			'success' => true,
-			'message' => __("msg_rec_dtl"),
-			'data' => $response
+			'message' => 'Product supplier fetched successfully.',
+			'data' => $productSupplier
 		]);
-	}
-
-	/**
-	 * @OA\Get(
-	 *     path="/api/product-suppliers/{product_id}/{vendor_id}",
-	 *     operationId="getProductSupplier",
-	 *     tags={"Product Suppliers"},
-	 *     summary="Get a product supplier by product_id and vendor_id",
-	 *     description="Fetch the details of a product supplier using product_id and vendor_id",
-	 *     @OA\Parameter(
-	 *         name="product_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Product ID associated with the supplier",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="vendor_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Vendor ID associated with the supplier",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function getproductvendor($product_id, $vendor_id)
-	{
-		$supplier = ProductSupplier::where('product_id', $product_id)
-		->where('vendor_id', $vendor_id)
-		->first();
-
-		if (!$supplier) {
-			return response()->json(['message' => 'Product supplier not found'], 404);
-		}
-
-		return response()->json($supplier, 200);
 	}
 
 	/**
 	 * @OA\Put(
-	 *     path="/api/product-suppliers/{product_id}/{vendor_id}",
+	 *     path="/api/product-suppliers/{id}",
 	 *     operationId="updateProductSupplier",
 	 *     tags={"Product Suppliers"},
-	 *     summary="Update a product supplier",
-	 *     description="Updates the details of a product supplier based on product_id and vendor_id",
-	 *     @OA\Parameter(
-	 *         name="product_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Product ID associated with the supplier",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="vendor_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Vendor ID associated with the supplier",
-	 *         @OA\Schema(type="integer")
-	 *     ),
+	 *     summary="Update an existing product supplier",
+	 *     description="Updates the specified product supplier entry",
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(name="id", in="path", description="Product Supplier ID", required=true, @OA\Schema(type="integer", example=1)),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             @OA\Property(property="vendor_sku", type="string"),
-	 *             @OA\Property(property="warranty_information", type="string"),
-	 *             @OA\Property(property="refund", type="string"),
-	 *             @OA\Property(property="delivery_days", type="string"),
-	 *             @OA\Property(property="cost_per_item", type="number", format="float"),
-	 *             @OA\Property(property="sale_price", type="number", format="float"),
-	 *             @OA\Property(property="price", type="number", format="float"),
-	 *             @OA\Property(property="margin", type="number", format="float"),
-	 *             @OA\Property(property="additional_cost", type="number", format="float"),
-	 *             @OA\Property(property="final_cost_price", type="number", format="float"),
-	 *             @OA\Property(property="in_stock", type="integer"),
-	 *             @OA\Property(property="inventory", type="integer")
+	 *             @OA\Property(property="vendor_id", type="integer", example=2),
+	 *             @OA\Property(property="vendor_sku", type="string", example="SKU-5678"),
+	 *             @OA\Property(property="list_price", type="number", format="float", nullable=true, example=100.00),
+	 *             @OA\Property(property="multiple", type="number", format="float", nullable=true, example=0.85),
+	 *             @OA\Property(property="cost_per_item", type="number", format="float", nullable=true, example=85.00),
+	 *             @OA\Property(property="surcharge", type="number", format="float", nullable=true, example=10),
+	 *             @OA\Property(property="additional_cost", type="number", format="float", nullable=true, example=10),
+	 *             @OA\Property(property="map", type="number", format="float", nullable=true, example=110.00),
+	 *             @OA\Property(property="sale_price", type="number", format="float", nullable=true, example=115.00),
+	 *             @OA\Property(property="price", type="number", format="float", example=120.00),
+	 *             @OA\Property(property="inventory", type="integer", nullable=true, example=50),
+	 *             @OA\Property(property="in_stock", type="string", enum={"Yes", "No"}, example="Yes"),
+	 *             @OA\Property(property="delivery_days", type="string", example="3-5 days"),
+	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
+	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
+	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
+	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=320)
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $product_id, $vendor_id)
+	public function update(Request $request, $id)
 	{
-		// Find the product supplier using product_id and vendor_id combination
-		$supplier = ProductSupplier::where('product_id', $product_id)
-		->where('vendor_id', $vendor_id)
-		->first();
+		$supplier = ProductSupplier::find($id);
 
 		if (!$supplier) {
-			return response()->json(['message' => 'Product supplier not found'], 404);
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found.'
+			], 404);
 		}
 
 		$data = $request->validate([
+			'vendor_id' => 'required|integer',
 			'vendor_sku' => 'required|string',
-			'cost_per_item' => 'nullable|numeric',
-			'sale_price' => 'nullable|numeric',
-			'price' => 'nullable|numeric',
-			'margin' => 'nullable|numeric',
+
+			'list_price' => 'nullable|numeric|required_without:cost_per_item',
+			'multiple' => 'nullable|numeric|required_without:cost_per_item',
+			'cost_per_item' => 'nullable|numeric|required_without_all:list_price,multiple',
+
+			'surcharge' => 'nullable|numeric',
 			'additional_cost' => 'nullable|numeric',
-			'final_cost_price' => 'nullable|numeric',
-			'in_stock' => 'nullable|integer',
+
+			'map' => 'nullable|numeric',
+			'sale_price' => 'nullable|numeric',
+			'price' => 'required|numeric',
+
 			'inventory' => 'nullable|integer',
-			'delivery_days' => ['nullable', Rule::in(app_constants('DELIVERY_DAYS'))],
-			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
-			'refund' => ['nullable', Rule::in(app_constants('RETURN_POLICY'))],
+
+			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
+			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
+			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
+			'free_shipping' => ['required', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'warranty_information' => ['required', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+
+			'restocking_fees' => 'nullable|numeric',
 		]);
 
-		// Validate price logic
-		if (
-			isset($data['price'], $data['sale_price']) &&
-			$data['price'] < $data['sale_price']
-		) {
+		/* Business rules */
+		$rowErrors = [];
+
+		if (!empty($data['multiple']) && ($data['multiple'] <= 0 || $data['multiple'] >= 1)) {
+			$rowErrors[] = "'Multiple' must be greater than 0 and less than 1.";
+		}
+
+		if (!empty($data['map']) && !empty($data['sale_price']) && (float)$data['map'] > (float)$data['sale_price']) {
+			$rowErrors[] = 'Sale Price cannot be less than MAP.';
+		}
+
+		if (!empty($data['sale_price']) && (float)$data['price'] < (float)$data['sale_price']) {
+			$rowErrors[] = 'Price cannot be less than sale price.';
+		}
+
+		if (!empty($data['map']) && (float)$data['price'] < (float)$data['map']) {
+			$rowErrors[] = 'Price cannot be less than MAP.';
+		}
+
+		if (!empty($rowErrors)) {
 			return response()->json([
-				'message' => 'Price cannot be less than sale price.',
+				'success' => false,
+				'errors' => $rowErrors
 			], 422);
 		}
 
+		/* Compute cost and margin */
+		$data['cost_per_item'] = (!empty($data['list_price']) && !empty($data['multiple']))
+		? (float)$data['list_price'] * (float)$data['multiple']
+		: (float)($data['cost_per_item'] ?? 0);
+
+		$data['surcharge'] = !empty($data['surcharge'])
+		? $data['cost_per_item'] * ((float)$data['surcharge'] / 100)
+		: 0;
+
+		$data['additional_cost'] = !empty($data['additional_cost'])
+		? $data['cost_per_item'] * ((float)$data['additional_cost'] / 100)
+		: 0;
+
+		$data['total_cost_per_item'] = $data['cost_per_item'] + $data['surcharge'] + $data['additional_cost'];
+
+		$data['sale_price'] = isset($data['sale_price']) ? (float)$data['sale_price'] : null;
+		$data['price'] = isset($data['price']) ? (float)$data['price'] : 0;
+
+		if (!empty($data['sale_price']) && $data['sale_price'] > 0) {
+			$data['margin'] = (($data['sale_price'] - $data['total_cost_per_item']) / $data['sale_price']) * 100;
+		} elseif ($data['price'] > 0) {
+			$data['margin'] = (($data['price'] - $data['total_cost_per_item']) / $data['price']) * 100;
+		} else {
+			$data['margin'] = null;
+		}
+
 		$data['updated_by'] = auth()->id();
-
-		// Update the supplier with new data
 		$supplier->update($data);
-
 
 		return response()->json([
 			'success' => true,
-			'message' => __("msg_update"),
+			'message' => 'Product supplier updated successfully.',
 			'data' => $supplier
-		]);
+		], 200);
 	}
 
 	/**
 	 * @OA\Delete(
-	 *     path="/api/product-suppliers/{product_id}/{vendor_id}",
-	 *     operationId="deleteProductSupplierByProductAndVendor",
+	 *     path="/api/product-suppliers/{id}",
+	 *     operationId="deleteProductSupplier",
 	 *     tags={"Product Suppliers"},
-	 *     summary="Delete a product supplier by product and vendor",
-	 *     description="Deletes a product supplier using product_id and vendor_id",
-	 *     @OA\Parameter(
-	 *         name="product_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Product ID",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="vendor_id",
-	 *         in="path",
-	 *         required=true,
-	 *         description="Vendor ID",
-	 *         @OA\Schema(type="integer")
-	 *     ),
-	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
+	 *     summary="Delete a product supplier",
+	 *     description="Deletes a product supplier by its ID",
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Product Supplier ID", @OA\Schema(type="integer", example=1)),
+	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json"))
 	 * )
 	 */
-	public function destroy($product_id, $vendor_id)
+	public function destroy($id)
 	{
-		$supplier = ProductSupplier::where('product_id', $product_id)
-		->where('vendor_id', $vendor_id)
-		->first();
+		$productSupplier = ProductSupplier::find($id);
 
-		if (!$supplier) {
-			return response()->json(['message' => 'Product supplier not found'], 404);
+		if (!$productSupplier) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Supplier not found.'
+			], 404);
 		}
 
-		$supplier->delete();
+		$productSupplier->delete();
 
 		return response()->json([
 			'success' => true,
-			'message' => __("msg_dlt")
-		], 200);
+			'message' => 'Product supplier deleted successfully.'
+		]);
 	}
 
 	/**

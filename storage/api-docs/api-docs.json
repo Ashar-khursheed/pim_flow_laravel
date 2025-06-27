@@ -22092,138 +22092,85 @@
                 "operationId": "getProductSuppliers",
                 "parameters": [
                     {
-                        "name": "search",
+                        "name": "page",
                         "in": "query",
-                        "description": "Search term for global search",
-                        "required": false,
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "product_id",
+                        "in": "query",
+                        "description": "Filter by product_id.",
+                        "schema": {
+                            "type": "integer"
+                        },
+                        "example": "1"
                     },
                     {
                         "name": "sort_by",
                         "in": "query",
-                        "description": "Column to sort by",
-                        "required": false,
                         "schema": {
-                            "type": "string"
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "product_name",
+                                "vendor_name",
+                                "vendor_sku",
+                                "list_price",
+                                "multiple",
+                                "cost_per_item",
+                                "surcharge",
+                                "additional_cost",
+                                "total_cost_per_item",
+                                "sale_price",
+                                "price",
+                                "margin",
+                                "created_at",
+                                "updated_at"
+                            ]
                         }
                     },
                     {
-                        "name": "sort_direction",
+                        "name": "sort_dir",
                         "in": "query",
                         "description": "Sort direction (asc or desc)",
-                        "required": false,
                         "schema": {
                             "type": "string",
                             "enum": [
                                 "asc",
                                 "desc"
                             ]
-                        }
-                    },
-                    {
-                        "name": "per_page",
-                        "in": "query",
-                        "description": "Number of items per page",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 15
-                        }
-                    },
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
+                        },
+                        "example": "asc"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
+                        "description": "Suppliers retrieved successfully",
                         "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "data": {
-                                            "type": "array",
-                                            "items": {
-                                                "properties": {
-                                                    "id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "product_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "vendor_id": {
-                                                        "type": "integer"
-                                                    },
-                                                    "vendor_sku": {
-                                                        "type": "string"
-                                                    },
-                                                    "cost_per_item": {
-                                                        "type": "string"
-                                                    },
-                                                    "additional_cost": {
-                                                        "type": "string"
-                                                    },
-                                                    "price": {
-                                                        "type": "string"
-                                                    },
-                                                    "sale_price": {
-                                                        "type": "string"
-                                                    },
-                                                    "inventory": {
-                                                        "type": "integer"
-                                                    },
-                                                    "in_stock": {
-                                                        "type": "integer"
-                                                    },
-                                                    "delivery_days": {
-                                                        "type": "string"
-                                                    },
-                                                    "warranty_information": {
-                                                        "type": "string"
-                                                    },
-                                                    "refund": {
-                                                        "type": "string"
-                                                    },
-                                                    "final_cost_price": {
-                                                        "type": "string"
-                                                    },
-                                                    "margin": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "updated_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "product_sku": {
-                                                        "type": "string"
-                                                    },
-                                                    "vendor_name": {
-                                                        "type": "string"
-                                                    }
-                                                },
-                                                "type": "object"
-                                            }
-                                        },
-                                        "meta": {
-                                            "type": "object"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
+                            "application/json": {}
                         }
                     }
                 },
@@ -22246,57 +22193,114 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "product_id",
                                     "vendor_id",
-                                    "product_id"
+                                    "vendor_sku",
+                                    "price",
+                                    "in_stock",
+                                    "delivery_days",
+                                    "return_policy"
                                 ],
                                 "properties": {
                                     "product_id": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 1
                                     },
                                     "vendor_id": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 2
                                     },
                                     "vendor_sku": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "SKU-1234"
                                     },
-                                    "warranty_information": {
-                                        "type": "string"
+                                    "list_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100,
+                                        "nullable": true
                                     },
-                                    "refund": {
-                                        "type": "string"
-                                    },
-                                    "delivery_days": {
-                                        "type": "string"
+                                    "multiple": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0.85,
+                                        "nullable": true
                                     },
                                     "cost_per_item": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 85,
+                                        "nullable": true
                                     },
-                                    "sale_price": {
+                                    "surcharge": {
                                         "type": "number",
-                                        "format": "float"
-                                    },
-                                    "price": {
-                                        "type": "number",
-                                        "format": "float"
-                                    },
-                                    "margin": {
-                                        "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 10,
+                                        "nullable": true
                                     },
                                     "additional_cost": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 10,
+                                        "nullable": true
                                     },
-                                    "final_cost_price": {
+                                    "map": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 110,
+                                        "nullable": true
                                     },
-                                    "in_stock": {
-                                        "type": "integer"
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 115,
+                                        "nullable": true
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 120
                                     },
                                     "inventory": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "in_stock": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
+                                    "delivery_days": {
+                                        "type": "string",
+                                        "example": "3-5 days"
+                                    },
+                                    "return_policy": {
+                                        "type": "string",
+                                        "example": "7 days"
+                                    },
+                                    "free_shipping": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "No",
+                                        "nullable": true
+                                    },
+                                    "warranty_information": {
+                                        "type": "string",
+                                        "example": "6 months",
+                                        "nullable": true
+                                    },
+                                    "restocking_fees": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -22319,71 +22323,29 @@
                 ]
             }
         },
-        "/api/product-suppliers/{product_id}": {
+        "/api/product-suppliers/{id}": {
             "get": {
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Get product suppliers by Product ID",
-                "description": "Returns all product suppliers associated with a specific product ID",
-                "operationId": "getProductSupplierByProductId",
+                "summary": "Get a product supplier by ID",
+                "description": "Returns the details of a specific product supplier",
+                "operationId": "getProductSupplierById",
                 "parameters": [
                     {
-                        "name": "product_id",
+                        "name": "id",
                         "in": "path",
-                        "description": "Product ID",
+                        "description": "Product Supplier ID",
                         "required": true,
                         "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/product-suppliers/{product_id}/{vendor_id}": {
-            "get": {
-                "tags": [
-                    "Product Suppliers"
-                ],
-                "summary": "Get a product supplier by product_id and vendor_id",
-                "description": "Fetch the details of a product supplier using product_id and vendor_id",
-                "operationId": "getProductSupplier",
-                "parameters": [
-                    {
-                        "name": "product_id",
-                        "in": "path",
-                        "description": "Product ID associated with the supplier",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "vendor_id",
-                        "in": "path",
-                        "description": "Vendor ID associated with the supplier",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Success",
+                        "description": "Details retrieved successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -22399,26 +22361,18 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Update a product supplier",
-                "description": "Updates the details of a product supplier based on product_id and vendor_id",
+                "summary": "Update an existing product supplier",
+                "description": "Updates the specified product supplier entry",
                 "operationId": "updateProductSupplier",
                 "parameters": [
                     {
-                        "name": "product_id",
+                        "name": "id",
                         "in": "path",
-                        "description": "Product ID associated with the supplier",
+                        "description": "Product Supplier ID",
                         "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "vendor_id",
-                        "in": "path",
-                        "description": "Vendor ID associated with the supplier",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],
@@ -22428,47 +22382,101 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "vendor_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
                                     "vendor_sku": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "SKU-5678"
                                     },
-                                    "warranty_information": {
-                                        "type": "string"
+                                    "list_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 100,
+                                        "nullable": true
                                     },
-                                    "refund": {
-                                        "type": "string"
-                                    },
-                                    "delivery_days": {
-                                        "type": "string"
+                                    "multiple": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 0.85,
+                                        "nullable": true
                                     },
                                     "cost_per_item": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 85,
+                                        "nullable": true
                                     },
-                                    "sale_price": {
+                                    "surcharge": {
                                         "type": "number",
-                                        "format": "float"
-                                    },
-                                    "price": {
-                                        "type": "number",
-                                        "format": "float"
-                                    },
-                                    "margin": {
-                                        "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 10,
+                                        "nullable": true
                                     },
                                     "additional_cost": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 10,
+                                        "nullable": true
                                     },
-                                    "final_cost_price": {
+                                    "map": {
                                         "type": "number",
-                                        "format": "float"
+                                        "format": "float",
+                                        "example": 110,
+                                        "nullable": true
                                     },
-                                    "in_stock": {
-                                        "type": "integer"
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 115,
+                                        "nullable": true
+                                    },
+                                    "price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 120
                                     },
                                     "inventory": {
-                                        "type": "integer"
+                                        "type": "integer",
+                                        "example": 50,
+                                        "nullable": true
+                                    },
+                                    "in_stock": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "Yes"
+                                    },
+                                    "delivery_days": {
+                                        "type": "string",
+                                        "example": "3-5 days"
+                                    },
+                                    "return_policy": {
+                                        "type": "string",
+                                        "example": "7 days"
+                                    },
+                                    "free_shipping": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Yes",
+                                            "No"
+                                        ],
+                                        "example": "No",
+                                        "nullable": true
+                                    },
+                                    "warranty_information": {
+                                        "type": "string",
+                                        "example": "6 months",
+                                        "nullable": true
+                                    },
+                                    "restocking_fees": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 320,
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -22494,26 +22502,18 @@
                 "tags": [
                     "Product Suppliers"
                 ],
-                "summary": "Delete a product supplier by product and vendor",
-                "description": "Deletes a product supplier using product_id and vendor_id",
-                "operationId": "deleteProductSupplierByProductAndVendor",
+                "summary": "Delete a product supplier",
+                "description": "Deletes a product supplier by its ID",
+                "operationId": "deleteProductSupplier",
                 "parameters": [
                     {
-                        "name": "product_id",
+                        "name": "id",
                         "in": "path",
-                        "description": "Product ID",
+                        "description": "Product Supplier ID",
                         "required": true,
                         "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "vendor_id",
-                        "in": "path",
-                        "description": "Vendor ID",
-                        "required": true,
-                        "schema": {
-                            "type": "integer"
+                            "type": "integer",
+                            "example": 1
                         }
                     }
                 ],

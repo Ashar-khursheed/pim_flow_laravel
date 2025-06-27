@@ -149,19 +149,14 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('customer-address', CustomerAddressController::class);
 
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);
-	Route::get('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'getproductvendor']);
-	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
-
-	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
-	// Bulk operations
-	Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
-	Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
-
-	// Import/Export operations
 	Route::post('/product-suppliers/import', [ProductSupplierController::class, 'import']);
-	Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
 	Route::get('/product-suppliers/template', [ProductSupplierController::class, 'downloadTemplate']);
 	Route::apiResource('product-suppliers', ProductSupplierController::class);
+
+	// Bulk operations
+	// Route::post('/product-suppliers/bulk-delete', [ProductSupplierController::class, 'bulkDelete']);
+	// Route::post('/product-suppliers/batch/export', [ProductSupplierController::class, 'batchExport']);
+	// Route::get('/product-suppliers/import/status/{batch_id}', [ProductSupplierController::class, 'importStatus']);
 
 	Route::apiResource('users', UserController::class);
 
@@ -189,11 +184,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/keywords/import', [AppKeywordController::class, 'import']);
 	Route::post('/keywords/export', [AppKeywordController::class, 'export']);
-
-
-	Route::put('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'update']);
-	Route::delete('product-suppliers/{product_id}/{vendor_id}', [ProductSupplierController::class, 'destroy']);
-	Route::apiResource('product-suppliers', ProductSupplierController::class);
 
 
 	Route::get('/vendors/{vendor_id}/documents/download', [VendorDocumentController::class, 'downloadMediaZip']);
@@ -329,7 +319,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
 
-   
+
 
 });
 
@@ -519,7 +509,7 @@ Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
 Route::prefix('/frontend/ccavenue')->group(function () {
     Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
-    Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);  
+    Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
     Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
