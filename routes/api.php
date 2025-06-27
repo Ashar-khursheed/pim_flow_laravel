@@ -529,5 +529,5 @@ Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store'
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
 Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);
 
-Route::post('frontend/tamara/checkout', [TamaraController::class, 'createCheckout']);
-Route::post('frontend/tamara/webhook', [TamaraController::class, 'handleWebhook']);
+Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheckout']);
+Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
