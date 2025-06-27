@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 
 class TamaraController extends Controller
 {
-    /**
+   /**
      * Create Tamara checkout session
      *
      * @OA\Post(
@@ -18,8 +18,8 @@ class TamaraController extends Controller
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             @OA\Property(property="order_reference_id", type="string", example="ORDER-123456"),
-     *             @OA\Property(property="order_number", type="string", example="INV-00123"),
+     *             @OA\Property(property="order_reference_id", type="string"),
+     *             @OA\Property(property="order_number", type="string"),
      *             @OA\Property(
      *                 property="total_amount",
      *                 type="object",
@@ -29,63 +29,63 @@ class TamaraController extends Controller
      *             @OA\Property(
      *                 property="consumer",
      *                 type="object",
-     *                 @OA\Property(property="first_name", type="string", example="John"),
-     *                 @OA\Property(property="last_name", type="string", example="Doe"),
-     *                 @OA\Property(property="email", type="string", example="john.doe@example.com"),
-     *                 @OA\Property(property="phone_number", type="string", example="566027755")
+     *                 @OA\Property(property="first_name", type="string"),
+     *                 @OA\Property(property="last_name", type="string"),
+     *                 @OA\Property(property="email", type="string"),
+     *                 @OA\Property(property="phone_number", type="string")
      *             ),
      *             @OA\Property(property="country_code", type="string", example="SA"),
      *             @OA\Property(
      *                 property="items",
      *                 type="array",
      *                 @OA\Items(
-     *                     @OA\Property(property="name", type="string", example="Sample Item"),
-     *                     @OA\Property(property="type", type="string", example="Physical"),
-     *                     @OA\Property(property="reference_id", type="string", example="ref-123"),
-     *                     @OA\Property(property="sku", type="string", example="SKU-001"),
-     *                     @OA\Property(property="quantity", type="integer", example=1),
+     *                     @OA\Property(property="name", type="string"),
+     *                     @OA\Property(property="type", type="string"),
+     *                     @OA\Property(property="reference_id", type="string"),
+     *                     @OA\Property(property="sku", type="string"),
+     *                     @OA\Property(property="quantity", type="integer"),
      *                     @OA\Property(
      *                         property="unit_price",
      *                         type="object",
-     *                         @OA\Property(property="amount", type="number", example=100),
-     *                         @OA\Property(property="currency", type="string", example="SAR")
+     *                         @OA\Property(property="amount", type="number"),
+     *                         @OA\Property(property="currency", type="string")
      *                     ),
      *                     @OA\Property(
      *                         property="total_amount",
      *                         type="object",
-     *                         @OA\Property(property="amount", type="number", example=100),
-     *                         @OA\Property(property="currency", type="string", example="SAR")
+     *                         @OA\Property(property="amount", type="number"),
+     *                         @OA\Property(property="currency", type="string")
      *                     ),
      *                     @OA\Property(
      *                         property="discount_amount",
      *                         type="object",
-     *                         @OA\Property(property="amount", type="number", example=0),
-     *                         @OA\Property(property="currency", type="string", example="SAR")
+     *                         @OA\Property(property="amount", type="number"),
+     *                         @OA\Property(property="currency", type="string")
      *                     ),
      *                     @OA\Property(
      *                         property="tax_amount",
      *                         type="object",
-     *                         @OA\Property(property="amount", type="number", example=0),
-     *                         @OA\Property(property="currency", type="string", example="SAR")
+     *                         @OA\Property(property="amount", type="number"),
+     *                         @OA\Property(property="currency", type="string")
      *                     )
      *                 )
      *             ),
      *             @OA\Property(
      *                 property="merchant_url",
      *                 type="object",
-     *                 @OA\Property(property="success", type="string", example="https://yourdomain.com/success"),
-     *                 @OA\Property(property="failure", type="string", example="https://yourdomain.com/failure"),
-     *                 @OA\Property(property="cancel", type="string", example="https://yourdomain.com/cancel"),
-     *                 @OA\Property(property="notification", type="string", example="https://yourdomain.com/api/frontend/tamara/webhook")
+     *                 @OA\Property(property="success", type="string"),
+     *                 @OA\Property(property="failure", type="string"),
+     *                 @OA\Property(property="cancel", type="string"),
+     *                 @OA\Property(property="notification", type="string")
      *             ),
-     *             @OA\Property(property="platform", type="string", example="LaravelReact"),
-     *             @OA\Property(property="is_mobile", type="boolean", example=false),
-     *             @OA\Property(property="locale", type="string", example="en_SA")
+     *             @OA\Property(property="platform", type="string"),
+     *             @OA\Property(property="is_mobile", type="boolean"),
+     *             @OA\Property(property="locale", type="string")
      *         )
      *     ),
      *     @OA\Response(response=200, description="Tamara checkout URL returned"),
-     *     @OA\Response(response=400, description="Invalid Payload or Tamara API Error"),
-     *     @OA\Response(response=500, description="Internal Server Error")
+     *     @OA\Response(response=500, description="Internal Server Error"),
+     *     @OA\Response(response=400, description="Bad Request or Invalid Payload")
      * )
      */
     public function createCheckout(Request $request)
@@ -93,24 +93,23 @@ class TamaraController extends Controller
         try {
             $data = $request->all();
 
-            $payload = [
-                'order_reference_id' => $data['order_reference_id'] ?? 'ORDER-' . uniqid(),
-                'order_number' => $data['order_number'] ?? ('ORDER-' . uniqid()),
-                'total_amount' => $data['total_amount'],
-                'consumer' => $data['consumer'],
-                'country_code' => $data['country_code'] ?? 'SA',
-                'items' => $data['items'],
-                'merchant_url' => $data['merchant_url'],
-                'platform' => $data['platform'] ?? 'LaravelReact',
-                'is_mobile' => $data['is_mobile'] ?? false,
-                'locale' => $data['locale'] ?? 'en_SA',
-            ];
-
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-                'Accept' => 'application/json',
-            ])->withToken(config('services.tamara.token'))
-                ->post(config('services.tamara.url') . '/checkout', $payload);
+            $response = Http::withToken(config('services.tamara.token'))
+                ->withHeaders([
+                    'Content-Type' => 'application/json',
+                    'Accept' => 'application/json',
+                ])
+                ->post(config('services.tamara.url') . '/checkout', [
+                    "order_reference_id" => $data['order_reference_id'],
+                    "order_number" => $data['order_number'],
+                    "total_amount" => $data['total_amount'],
+                    "consumer" => $data['consumer'],
+                    "country_code" => $data['country_code'],
+                    "items" => $data['items'],
+                    "merchant_url" => $data['merchant_url'],
+                    "platform" => $data['platform'] ?? 'LaravelReact',
+                    "is_mobile" => $data['is_mobile'] ?? false,
+                    "locale" => $data['locale'] ?? 'en_SA'
+                ]);
 
             if ($response->successful()) {
                 return response()->json([
@@ -118,10 +117,9 @@ class TamaraController extends Controller
                 ]);
             }
 
-            // Log and return Tamara API error response
-            Log::error('Tamara API Error', [
+            Log::error('Tamara API Failed', [
                 'status' => $response->status(),
-                'response' => $response->body(),
+                'body' => $response->body()
             ]);
 
             return response()->json([
@@ -129,10 +127,11 @@ class TamaraController extends Controller
                 'status' => $response->status(),
                 'message' => json_decode($response->body(), true)
             ], $response->status());
+
         } catch (\Exception $e) {
             Log::error('Tamara Exception', [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([
@@ -141,6 +140,7 @@ class TamaraController extends Controller
             ], 500);
         }
     }
+
 
 
     /**
