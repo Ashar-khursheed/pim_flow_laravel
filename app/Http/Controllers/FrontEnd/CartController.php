@@ -73,60 +73,173 @@ class CartController extends Controller
      *     security={{"bearerAuth": {}}}
      * )
      */
+    // public function addToCart(Request $request)
+    // {
+    //     $request->validate([
+    //         'product_id' => 'required|exists:ec_products,id',
+    //         'quantity' => 'required|integer|min:1',
+    //     ]);
+
+    //     $productId = $request->input('product_id');
+    //     $quantity = $request->input('quantity');
+
+    //     if (Auth::check()) {
+    //         $userId = Auth::id();
+
+    //         // Check if the user has already added this product
+    //         $cartItem = Cart::where('user_id', $userId)
+    //                         ->where('product_id', $productId)
+    //                         ->first();
+
+    //         if ($cartItem) {
+    //             \Log::info('Cart item already exists', ['cartItem' => $cartItem]);
+
+    //             // Update the quantity by adding the new quantity
+    //             \Log::info('Updating cart item with added quantity', ['old_quantity' => $cartItem->quantity, 'added_quantity' => $quantity]);
+    //             $cartItem->quantity += $quantity;
+    //             $cartItem->save();
+    //         } else {
+    //             \Log::info('No cart item found, creating new');
+    //             $cartItem = Cart::create([
+    //                 'user_id' => $userId,
+    //                 'product_id' => $productId,
+    //                 'quantity' => $quantity,
+    //             ]);
+    //         }
+
+    //         $cartItem = Cart::with('product.currency')->find($cartItem->id);
+
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => [
+    //                 'id' => $cartItem->id,
+    //                 'user_id' => $cartItem->user_id,
+    //                 'product_id' => $cartItem->product_id,
+    //                 'quantity' => $cartItem->quantity,
+    //                 'currency_id' => $cartItem->product->currency->id,
+    //                 'currency_title' => $cartItem->product->currency->title,
+    //             ],
+    //         ]);
+    //     }
+
+    //     return response()->json([
+    //         'success' => false,
+    //         'message' => 'Unauthorized user',
+    //     ], 200);
+    // }
     public function addToCart(Request $request)
-    {
-        $request->validate([
-            'product_id' => 'required|exists:ec_products,id',
-            'quantity' => 'required|integer|min:1',
-        ]);
+{
+    $request->validate([
+        'product_id' => 'required|exists:ec_products,id',
+        'quantity' => 'required|integer|min:1',
+    ]);
 
-        $productId = $request->input('product_id');
-        $quantity = $request->input('quantity');
+    $productId = $request->input('product_id');
+    $quantity = $request->input('quantity');
 
-        if (Auth::check()) {
-            $userId = Auth::id();
-
-            // Check if the user has already added this product
-            $cartItem = Cart::where('user_id', $userId)
-                            ->where('product_id', $productId)
-                            ->first();
-
-            if ($cartItem) {
-                \Log::info('Cart item already exists', ['cartItem' => $cartItem]);
-
-                // Update the quantity by adding the new quantity
-                \Log::info('Updating cart item with added quantity', ['old_quantity' => $cartItem->quantity, 'added_quantity' => $quantity]);
-                $cartItem->quantity += $quantity;
-                $cartItem->save();
-            } else {
-                \Log::info('No cart item found, creating new');
-                $cartItem = Cart::create([
-                    'user_id' => $userId,
-                    'product_id' => $productId,
-                    'quantity' => $quantity,
-                ]);
-            }
-
-            $cartItem = Cart::with('product.currency')->find($cartItem->id);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'id' => $cartItem->id,
-                    'user_id' => $cartItem->user_id,
-                    'product_id' => $cartItem->product_id,
-                    'quantity' => $cartItem->quantity,
-                    'currency_id' => $cartItem->product->currency->id,
-                    'currency_title' => $cartItem->product->currency->title,
-                ],
-            ]);
-        }
-
+    if (!Auth::check()) {
         return response()->json([
             'success' => false,
             'message' => 'Unauthorized user',
         ], 200);
     }
+
+    $userId = Auth::id();
+
+    $cartItem = Cart::where('user_id', $userId)
+        ->where('product_id', $productId)
+        ->first();
+
+    if ($cartItem) {
+        $cartItem->quantity += $quantity;
+        $cartItem->save();
+    } else {
+        $cartItem = Cart::create([
+            'user_id' => $userId,
+            'product_id' => $productId,
+            'quantity' => $quantity,
+        ]);
+    }
+
+    $cartItem->load('product.reviews', 'product.currency', 'product.sellingUnitAttribute', 'product.per_unit_price_attributes.attributeDetails');
+
+    $product = $cartItem->product;
+    if (!$product) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product not found',
+        ]);
+    }
+
+    // Wishlist check
+    $wishlistProductIds = DB::table('ec_wish_lists')
+        ->where('customer_id', $userId)
+        ->pluck('product_id')
+        ->map(fn($id) => (int) $id)
+        ->toArray();
+
+    // Reviews
+    $totalReviews = $product->reviews->count();
+    $avgRating = $totalReviews > 0 ? round($product->reviews->avg('star'), 1) : null;
+
+    // Images
+    $imageUrls = is_string($product->images)
+        ? json_decode($product->images, true)
+        : (array) $product->images;
+
+    // Selling Type
+    $sellingType = null;
+    if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+        $fullValue = $product->sellingUnitAttribute->attribute_value;
+        $attributeUnit = strpos($fullValue, '/') !== false
+            ? trim(explode('/', $fullValue)[1])
+            : $fullValue;
+
+        $sellingType = [
+            'attribute_value' => $fullValue,
+            'attribute_value_unit' => $attributeUnit,
+        ];
+    }
+
+    // Per Unit Price
+    $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+    $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+    $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+
+    $perUnitPrice = null;
+    if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+        $unitValue = (float) $unitsPerCase->attribute_value;
+        if ($unitValue > 0) {
+            $calculated = round($basePrice / $unitValue, 2);
+            $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+        }
+    }
+
+    $currencyTitle = $product->currency->symbol ?? $product->price;
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Product added to cart successfully.',
+        'data' => [
+            'id' => $product->id,
+            'name' => $product->name,
+            'sku' => $product->sku,
+            'price' => $product->price,
+            'sale_price' => $product->sale_price,
+            'original_price' => $product->price,
+            'front_sale_price' => $product->sale_price ?? $product->price,
+            'total_reviews' => $totalReviews,
+            'avg_rating' => $avgRating,
+            'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
+            'currency' => $currencyTitle,
+            'in_wishlist' => in_array($product->id, $wishlistProductIds),
+            'images' => $imageUrls,
+            'selling_type' => $sellingType,
+            'per_unit_price' => $perUnitPrice,
+        ]
+    ]);
+}
+
 
     /**
      * @OA\Get(
