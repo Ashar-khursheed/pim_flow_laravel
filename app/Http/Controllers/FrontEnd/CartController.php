@@ -202,9 +202,9 @@ class CartController extends Controller
     }
 
     // Per Unit Price
-    $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-    $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-    $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+    // $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+    // $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+    // $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
     // $perUnitPrice = null;
     // if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
