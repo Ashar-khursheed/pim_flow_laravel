@@ -355,8 +355,11 @@ class CartController extends Controller
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
         
             // Overwrite the currency object with just the symbol
-            $item->product->currency = optional($item->product->currency)->symbol;
-        });
+            if ($item->product->relationLoaded('currency')) {
+                $item->product->currency_symbol = $item->product->currency->symbol ?? null;
+                unset($item->product->currency); // ✅ remove the full currency object
+            }
+                    });
         
 
 
