@@ -357,20 +357,12 @@ class CartController extends Controller
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
         
-            // Extract only currency symbol and override the field
-            if (isset($item->product->currency)) {
-                $symbol = $item->product->currency->symbol;
-                unset($item->product->relations['currency']); // important: removes Eloquent relationship
-                $item->product->currency = $symbol;
-            } else {
-                $item->product->currency = null;
-            }
+            $product->per_unit_price = $perUnitPrice;
+			  $currencyTitle = $product->currency->symbol ?? $product->price;
         });
         
         
-        
 
-        $currencyTitles = $cartItems->pluck('product.currency')->unique()->filter()->values();
 
         return response()->json([
             'success' => true,
