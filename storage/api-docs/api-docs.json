@@ -22744,6 +22744,10 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
+                                    "product_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
                                     "vendor_id": {
                                         "type": "integer",
                                         "example": 2
@@ -22837,7 +22841,7 @@
                                     "restocking_fees": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 320,
+                                        "example": 20,
                                         "nullable": true
                                     }
                                 },

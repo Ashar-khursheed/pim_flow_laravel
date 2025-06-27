@@ -158,8 +158,8 @@ class ProductSupplierController extends BaseController
 	public function store(Request $request)
 	{
 		$data = $request->validate([
-			'product_id' => 'required|integer',
-			'vendor_id' => 'required|integer',
+			'product_id' => 'required|integer|exists:ec_products,id',
+			'vendor_id' => 'required|integer|exists:vendors,id',
 			'vendor_sku' => 'required|string',
 
 			'list_price' => 'nullable|numeric|required_without:cost_per_item',
@@ -253,6 +253,9 @@ class ProductSupplierController extends BaseController
 			$data['margin'] = null;
 		}
 
+		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
+		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
+
 		$data['created_by'] = auth()->id();
 
 		$record = ProductSupplier::create($data);
@@ -278,7 +281,7 @@ class ProductSupplierController extends BaseController
 	 */
 	public function show($id)
 	{
-		$productSupplier = ProductSupplier::with(['product', 'vendor'])->find($id);
+		$productSupplier = ProductSupplier::with(['product:id,name', 'vendor:id,name'])->find($id);
 
 		if (!$productSupplier) {
 			return response()->json([
@@ -306,6 +309,7 @@ class ProductSupplierController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
+	 *             @OA\Property(property="product_id", type="integer", example=1),
 	 *             @OA\Property(property="vendor_id", type="integer", example=2),
 	 *             @OA\Property(property="vendor_sku", type="string", example="SKU-5678"),
 	 *             @OA\Property(property="list_price", type="number", format="float", nullable=true, example=100.00),
@@ -322,7 +326,7 @@ class ProductSupplierController extends BaseController
 	 *             @OA\Property(property="return_policy", type="string", example="7 days"),
 	 *             @OA\Property(property="free_shipping", type="string", nullable=true, enum={"Yes", "No"}, example="No"),
 	 *             @OA\Property(property="warranty_information", type="string", nullable=true, example="6 months"),
-	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=320)
+	 *             @OA\Property(property="restocking_fees", type="number", format="float", nullable=true, example=20)
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
@@ -340,7 +344,8 @@ class ProductSupplierController extends BaseController
 		}
 
 		$data = $request->validate([
-			'vendor_id' => 'required|integer',
+			'product_id' => 'required|integer|exists:ec_products,id',
+			'vendor_id' => 'required|integer|exists:vendors,id',
 			'vendor_sku' => 'required|string',
 
 			'list_price' => 'nullable|numeric|required_without:cost_per_item',
@@ -359,8 +364,8 @@ class ProductSupplierController extends BaseController
 			'in_stock' => ['required', Rule::in(app_constants('IN_STOCK_OPTIONS'))],
 			'delivery_days' => ['required', Rule::in(app_constants('DELIVERY_DAYS'))],
 			'return_policy' => ['required', Rule::in(app_constants('RETURN_POLICY'))],
-			'free_shipping' => ['required', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
-			'warranty_information' => ['required', Rule::in(app_constants('WARRANTY_OPTIONS'))],
+			'free_shipping' => ['nullable', Rule::in(app_constants('FREE_SHIPPING_OPTIONS'))],
+			'warranty_information' => ['nullable', Rule::in(app_constants('WARRANTY_OPTIONS'))],
 
 			'restocking_fees' => 'nullable|numeric',
 		]);
@@ -416,6 +421,9 @@ class ProductSupplierController extends BaseController
 		} else {
 			$data['margin'] = null;
 		}
+
+		$data['in_stock'] = ($data['inventory'] > 0) ? 1 : (!empty($data['in_stock']) && strtolower($data['in_stock']) === 'yes' ? 1 : 0);
+		$data['free_shipping'] = !empty($data['free_shipping']) && strtolower($data['free_shipping']) === 'yes' ? 1 : 0;
 
 		$data['updated_by'] = auth()->id();
 		$supplier->update($data);
