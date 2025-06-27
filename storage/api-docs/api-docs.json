@@ -12774,6 +12774,90 @@
                 }
             }
         },
+        "/api/frontend/location-info": {
+            "get": {
+                "tags": [
+                    "Geolocation"
+                ],
+                "summary": "Get location information by ZIP/postal code",
+                "operationId": "b4801215dee65f401f36a5325634ec91",
+                "parameters": [
+                    {
+                        "name": "zip",
+                        "in": "query",
+                        "description": "The ZIP or postal code to look up",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "122851"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response with location details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "zip": {
+                                            "type": "string",
+                                            "example": "122851"
+                                        },
+                                        "city": {
+                                            "type": "string",
+                                            "example": "Dubai"
+                                        },
+                                        "state": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "country": {
+                                            "type": "string",
+                                            "example": "United Arab Emirates"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The zip field is required."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to fetch location info",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unable to fetch location"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/frontend/location": {
             "get": {
                 "tags": [
@@ -17044,16 +17128,18 @@
                             "schema": {
                                 "properties": {
                                     "order_reference_id": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "abd12331-a123-1234-4567-fbde34ae"
                                     },
                                     "order_number": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "A123125"
                                     },
                                     "total_amount": {
                                         "properties": {
                                             "amount": {
                                                 "type": "number",
-                                                "example": 100
+                                                "example": 300
                                             },
                                             "currency": {
                                                 "type": "string",
@@ -17062,53 +17148,87 @@
                                         },
                                         "type": "object"
                                     },
-                                    "consumer": {
+                                    "shipping_amount": {
                                         "properties": {
-                                            "first_name": {
-                                                "type": "string"
+                                            "amount": {
+                                                "type": "number",
+                                                "example": 1
                                             },
-                                            "last_name": {
-                                                "type": "string"
-                                            },
-                                            "email": {
-                                                "type": "string"
-                                            },
-                                            "phone_number": {
-                                                "type": "string"
+                                            "currency": {
+                                                "type": "string",
+                                                "example": "SAR"
                                             }
                                         },
                                         "type": "object"
                                     },
-                                    "country_code": {
-                                        "type": "string",
-                                        "example": "SA"
+                                    "tax_amount": {
+                                        "properties": {
+                                            "amount": {
+                                                "type": "number",
+                                                "example": 1
+                                            },
+                                            "currency": {
+                                                "type": "string",
+                                                "example": "SAR"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "discount": {
+                                        "properties": {
+                                            "name": {
+                                                "type": "string",
+                                                "example": "Voucher A"
+                                            },
+                                            "amount": {
+                                                "properties": {
+                                                    "amount": {
+                                                        "type": "number",
+                                                        "example": 0
+                                                    },
+                                                    "currency": {
+                                                        "type": "string",
+                                                        "example": "SAR"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
                                     "items": {
                                         "type": "array",
                                         "items": {
                                             "properties": {
                                                 "name": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Lego City 8601"
                                                 },
                                                 "type": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Digital"
                                                 },
                                                 "reference_id": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "123"
                                                 },
                                                 "sku": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "SA-12436"
                                                 },
                                                 "quantity": {
-                                                    "type": "integer"
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
                                                 "unit_price": {
                                                     "properties": {
                                                         "amount": {
-                                                            "type": "number"
+                                                            "type": "number",
+                                                            "example": 490
                                                         },
                                                         "currency": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "example": "SAR"
                                                         }
                                                     },
                                                     "type": "object"
@@ -17116,10 +17236,12 @@
                                                 "total_amount": {
                                                     "properties": {
                                                         "amount": {
-                                                            "type": "number"
+                                                            "type": "number",
+                                                            "example": 100
                                                         },
                                                         "currency": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "example": "SAR"
                                                         }
                                                     },
                                                     "type": "object"
@@ -17127,10 +17249,12 @@
                                                 "discount_amount": {
                                                     "properties": {
                                                         "amount": {
-                                                            "type": "number"
+                                                            "type": "number",
+                                                            "example": 100
                                                         },
                                                         "currency": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "example": "SAR"
                                                         }
                                                     },
                                                     "type": "object"
@@ -17138,10 +17262,12 @@
                                                 "tax_amount": {
                                                     "properties": {
                                                         "amount": {
-                                                            "type": "number"
+                                                            "type": "number",
+                                                            "example": 10
                                                         },
                                                         "currency": {
-                                                            "type": "string"
+                                                            "type": "string",
+                                                            "example": "SAR"
                                                         }
                                                     },
                                                     "type": "object"
@@ -17150,31 +17276,267 @@
                                             "type": "object"
                                         }
                                     },
+                                    "consumer": {
+                                        "properties": {
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "Mona"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "Lisa"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "customer@email.com"
+                                            },
+                                            "phone_number": {
+                                                "type": "string",
+                                                "example": "566027755"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "SA"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Enter order description here."
+                                    },
                                     "merchant_url": {
                                         "properties": {
                                             "success": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "http://example.com/#/success"
                                             },
                                             "failure": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "http://example.com/#/fail"
                                             },
                                             "cancel": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "http://example.com/#/cancel"
                                             },
                                             "notification": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "https://example.com/notifications"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "billing_address": {
+                                        "properties": {
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Riyadh"
+                                            },
+                                            "country_code": {
+                                                "type": "string",
+                                                "example": "SA"
+                                            },
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "Mona"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "Lisa"
+                                            },
+                                            "line1": {
+                                                "type": "string",
+                                                "example": "3764 Al Urubah Rd"
+                                            },
+                                            "line2": {
+                                                "type": "string",
+                                                "example": "string"
+                                            },
+                                            "phone_number": {
+                                                "type": "string",
+                                                "example": "532298658"
+                                            },
+                                            "region": {
+                                                "type": "string",
+                                                "example": "As Sulimaniyah"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "shipping_address": {
+                                        "properties": {
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Riyadh"
+                                            },
+                                            "country_code": {
+                                                "type": "string",
+                                                "example": "SA"
+                                            },
+                                            "first_name": {
+                                                "type": "string",
+                                                "example": "Mona"
+                                            },
+                                            "last_name": {
+                                                "type": "string",
+                                                "example": "Lisa"
+                                            },
+                                            "line1": {
+                                                "type": "string",
+                                                "example": "3764 Al Urubah Rd"
+                                            },
+                                            "line2": {
+                                                "type": "string",
+                                                "example": "string"
+                                            },
+                                            "phone_number": {
+                                                "type": "string",
+                                                "example": "532298658"
+                                            },
+                                            "region": {
+                                                "type": "string",
+                                                "example": "As Sulimaniyah"
                                             }
                                         },
                                         "type": "object"
                                     },
                                     "platform": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "LaravelReact"
                                     },
                                     "is_mobile": {
-                                        "type": "boolean"
+                                        "type": "boolean",
+                                        "example": false
                                     },
                                     "locale": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "example": "ar_SA"
+                                    },
+                                    "risk_assessment": {
+                                        "properties": {
+                                            "customer_age": {
+                                                "type": "integer",
+                                                "example": 21
+                                            },
+                                            "customer_dob": {
+                                                "type": "string",
+                                                "example": "01-12-2000"
+                                            },
+                                            "customer_gender": {
+                                                "type": "string",
+                                                "example": "Female"
+                                            },
+                                            "customer_nationality": {
+                                                "type": "string",
+                                                "example": "SA"
+                                            },
+                                            "is_premium_customer": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "is_existing_customer": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "is_guest_user": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "account_creation_date": {
+                                                "type": "string",
+                                                "example": "12-06-2020"
+                                            },
+                                            "platform_account_creation_date": {
+                                                "type": "string",
+                                                "example": "12-06-2020"
+                                            },
+                                            "date_of_first_transaction": {
+                                                "type": "string",
+                                                "example": "12-06-2020"
+                                            },
+                                            "is_card_on_file": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "is_COD_customer": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "has_delivered_order": {
+                                                "type": "boolean",
+                                                "example": true
+                                            },
+                                            "is_phone_verified": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "is_fraudulent_customer": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "total_ltv": {
+                                                "type": "number",
+                                                "example": 200
+                                            },
+                                            "total_order_count": {
+                                                "type": "integer",
+                                                "example": 15
+                                            },
+                                            "order_amount_last3months": {
+                                                "type": "number",
+                                                "example": 2000
+                                            },
+                                            "order_count_last3months": {
+                                                "type": "integer",
+                                                "example": 10
+                                            },
+                                            "last_order_date": {
+                                                "type": "string",
+                                                "example": "12-06-2020"
+                                            },
+                                            "last_order_amount": {
+                                                "type": "number",
+                                                "example": 2000
+                                            },
+                                            "reward_program_enrolled": {
+                                                "type": "boolean",
+                                                "example": false
+                                            },
+                                            "reward_program_points": {
+                                                "type": "number",
+                                                "example": 2000
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "additional_data": {
+                                        "properties": {
+                                            "delivery_method": {
+                                                "type": "string",
+                                                "example": "Home Delivery"
+                                            },
+                                            "pickup_store": {
+                                                "type": "string",
+                                                "example": "Store A"
+                                            },
+                                            "store_code": {
+                                                "type": "string",
+                                                "example": "Branch A"
+                                            },
+                                            "vendor_amount": {
+                                                "type": "number",
+                                                "example": 0
+                                            },
+                                            "merchant_settlement_amount": {
+                                                "type": "number",
+                                                "example": 0
+                                            },
+                                            "vendor_reference_code": {
+                                                "type": "string",
+                                                "example": "AZ1234"
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -17186,11 +17548,11 @@
                     "200": {
                         "description": "Tamara checkout URL returned"
                     },
-                    "500": {
-                        "description": "Internal Server Error"
-                    },
                     "400": {
                         "description": "Bad Request or Invalid Payload"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
                     }
                 }
             }
@@ -28247,6 +28609,10 @@
         {
             "name": "Frontend - FAQs",
             "description": "Frontend - FAQs"
+        },
+        {
+            "name": "Geolocation",
+            "description": "Geolocation"
         },
         {
             "name": "Frontend-Location",

@@ -60,6 +60,11 @@ return [
     'notification_token' => env('TAMARA_NOTIFICATION_TOKEN'),
     ],
 
+    'google_maps' => [
+    'key' => env('GOOGLE_MAPS_API_KEY'),
+    ],
+
+
 
 
 ];

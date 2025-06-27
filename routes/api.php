@@ -93,6 +93,9 @@ use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManage
 use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
 use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
+use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
+
+
 
 
 
@@ -343,7 +346,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
 
-	Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
@@ -418,6 +420,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 });
 
+Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
 
 Route::get('/category-random-products/{categoryId}', [F_ProductController::class, 'getCategoryWiseRandomProducts']);
@@ -521,3 +524,5 @@ Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::cl
 
 Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheckout']);
 Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
+
+Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
