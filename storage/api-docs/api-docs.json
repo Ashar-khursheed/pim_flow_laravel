@@ -17044,61 +17044,163 @@
                             "schema": {
                                 "properties": {
                                     "order_reference_id": {
-                                        "type": "string"
-                                    },
-                                    "amount": {
-                                        "type": "number",
-                                        "example": 100
-                                    },
-                                    "currency": {
                                         "type": "string",
-                                        "example": "SAR"
+                                        "example": "ORDER-123456"
+                                    },
+                                    "order_number": {
+                                        "type": "string",
+                                        "example": "INV-00123"
+                                    },
+                                    "total_amount": {
+                                        "properties": {
+                                            "amount": {
+                                                "type": "number",
+                                                "example": 100
+                                            },
+                                            "currency": {
+                                                "type": "string",
+                                                "example": "SAR"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
                                     "consumer": {
                                         "properties": {
                                             "first_name": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "John"
                                             },
                                             "last_name": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "Doe"
                                             },
                                             "email": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "john.doe@example.com"
                                             },
                                             "phone_number": {
-                                                "type": "string"
+                                                "type": "string",
+                                                "example": "566027755"
                                             }
                                         },
                                         "type": "object"
+                                    },
+                                    "country_code": {
+                                        "type": "string",
+                                        "example": "SA"
                                     },
                                     "items": {
                                         "type": "array",
                                         "items": {
                                             "properties": {
                                                 "name": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Sample Item"
+                                                },
+                                                "type": {
+                                                    "type": "string",
+                                                    "example": "Physical"
+                                                },
+                                                "reference_id": {
+                                                    "type": "string",
+                                                    "example": "ref-123"
                                                 },
                                                 "sku": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "SKU-001"
                                                 },
                                                 "quantity": {
-                                                    "type": "integer"
+                                                    "type": "integer",
+                                                    "example": 1
                                                 },
                                                 "unit_price": {
-                                                    "type": "number"
+                                                    "properties": {
+                                                        "amount": {
+                                                            "type": "number",
+                                                            "example": 100
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "SAR"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "total_amount": {
+                                                    "properties": {
+                                                        "amount": {
+                                                            "type": "number",
+                                                            "example": 100
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "SAR"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "discount_amount": {
+                                                    "properties": {
+                                                        "amount": {
+                                                            "type": "number",
+                                                            "example": 0
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "SAR"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "tax_amount": {
+                                                    "properties": {
+                                                        "amount": {
+                                                            "type": "number",
+                                                            "example": 0
+                                                        },
+                                                        "currency": {
+                                                            "type": "string",
+                                                            "example": "SAR"
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"
                                         }
                                     },
-                                    "success_url": {
-                                        "type": "string"
+                                    "merchant_url": {
+                                        "properties": {
+                                            "success": {
+                                                "type": "string",
+                                                "example": "https://yourdomain.com/success"
+                                            },
+                                            "failure": {
+                                                "type": "string",
+                                                "example": "https://yourdomain.com/failure"
+                                            },
+                                            "cancel": {
+                                                "type": "string",
+                                                "example": "https://yourdomain.com/cancel"
+                                            },
+                                            "notification": {
+                                                "type": "string",
+                                                "example": "https://yourdomain.com/api/frontend/tamara/webhook"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
-                                    "failure_url": {
-                                        "type": "string"
+                                    "platform": {
+                                        "type": "string",
+                                        "example": "LaravelReact"
                                     },
-                                    "cancel_url": {
-                                        "type": "string"
+                                    "is_mobile": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "locale": {
+                                        "type": "string",
+                                        "example": "en_SA"
                                     }
                                 },
                                 "type": "object"
@@ -17108,10 +17210,13 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Checkout URL"
+                        "description": "Tamara checkout URL returned"
+                    },
+                    "400": {
+                        "description": "Invalid Payload or Tamara API Error"
                     },
                     "500": {
-                        "description": "Tamara Checkout Failed"
+                        "description": "Internal Server Error"
                     }
                 }
             }
