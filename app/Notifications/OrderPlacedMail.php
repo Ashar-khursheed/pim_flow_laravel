@@ -46,8 +46,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		/* Defensive null checks */
 		$customerAddress = $this->order->customerAddress;
 		$address = $customerAddress->address ?? '';
-		$city = $customerAddress->city->name ?? '';
-		$country = $customerAddress->country->name ?? '';
+		$city = $customerAddress->city ?? '';
+		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
 
 		$products = collect();

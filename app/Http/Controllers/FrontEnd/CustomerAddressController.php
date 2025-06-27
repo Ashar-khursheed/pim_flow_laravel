@@ -29,8 +29,7 @@ class CustomerAddressController extends Controller
 			]);
 		}
 
-		$addresses = CustomerAddress::with(['country:id,name', 'state:id,name', 'city:id,name'])
-		->where('customer_id', $customerId)
+		$addresses = CustomerAddress::where('customer_id', $customerId)
 		->get();
 
 		if ($addresses->isEmpty()) {
@@ -57,9 +56,9 @@ class CustomerAddressController extends Controller
 	 *             required={"type", "address"},
 	 *             @OA\Property(property="type", type="string", example="home"),
 	 *             @OA\Property(property="address", type="string", example="123 Main Street"),
-	 *             @OA\Property(property="country_id", type="integer", example=101),
-	 *             @OA\Property(property="state_id", type="integer", example=10),
-	 *             @OA\Property(property="city_id", type="integer", example=5),
+	 *             @OA\Property(property="country", type="string", example=101),
+	 *             @OA\Property(property="state", type="string", example=10),
+	 *             @OA\Property(property="city", type="string", example=5),
 	 *             @OA\Property(property="zip_code", type="string", example="123456"),
 	 *             @OA\Property(property="is_default", type="boolean", example=true),
 	 *         )
@@ -73,20 +72,24 @@ class CustomerAddressController extends Controller
 		$validated = $request->validate([
 			'type' => 'required|in:home,work,other',
 			'address' => 'required|string',
-			'country_id' => 'nullable|integer',
-			'state_id' => 'nullable|integer',
-			'city_id' => 'nullable|integer',
+			'country' => 'nullable|string',
+			'state' => 'nullable|string',
+			'city' => 'nullable|string',
 			'zip_code' => 'nullable|string|max:20',
 			'is_default' => 'nullable|boolean',
 		]);
+
+		if (!empty($validated['is_default']) && $validated['is_default']) {
+			CustomerAddress::where('customer_id', auth()->id())->update(['is_default' => false]);
+		}
 
 		$address = CustomerAddress::create([
 			'customer_id' => auth()->id(),
 			'type' => $validated['type'],
 			'address' => $validated['address'],
-			'country_id' => $validated['country_id'],
-			'state_id' => $validated['state_id'],
-			'city_id' => $validated['city_id'],
+			'country' => $validated['country'],
+			'state' => $validated['state'],
+			'city' => $validated['city'],
 			'zip_code' => $validated['zip_code'] ?? null,
 			'is_default' => $validated['is_default'] ?? false,
 			'created_by' => auth()->id(),
@@ -112,7 +115,7 @@ class CustomerAddressController extends Controller
 	 */
 	public function show($id)
 	{
-		$address = CustomerAddress::with(['country:id,name', 'state:id,name', 'city:id,name'])->where('customer_id', auth()->id())->where('id', $id)->first();
+		$address = CustomerAddress::where('customer_id', auth()->id())->where('id', $id)->first();
 
 		if (!$address) {
 			return response()->json([
@@ -139,9 +142,9 @@ class CustomerAddressController extends Controller
 	 *             required={"type", "address"},
 	 *             @OA\Property(property="type", type="string", example="home"),
 	 *             @OA\Property(property="address", type="string", example="456 New Street"),
-	 *             @OA\Property(property="country_id", type="integer", example=102),
-	 *             @OA\Property(property="state_id", type="integer", example=20),
-	 *             @OA\Property(property="city_id", type="integer", example=15),
+	 *             @OA\Property(property="country", type="string", example=102),
+	 *             @OA\Property(property="state", type="string", example=20),
+	 *             @OA\Property(property="city", type="string", example=15),
 	 *             @OA\Property(property="zip_code", type="string", example="123123"),
 	 *             @OA\Property(property="is_default", type="boolean", example=false)
 	 *         )
@@ -164,12 +167,16 @@ class CustomerAddressController extends Controller
 		$validated = $request->validate([
 			'type' => 'nullable|in:home,work,other',
 			'address' => 'nullable|string|max:191',
-			'country_id' => 'nullable|integer',
-			'state_id' => 'nullable|integer',
-			'city_id' => 'nullable|integer',
+			'country' => 'nullable|string',
+			'state' => 'nullable|string',
+			'city' => 'nullable|string',
 			'zip_code' => 'nullable|string|max:20',
 			'is_default' => 'nullable|boolean',
 		]);
+
+		if (!empty($validated['is_default']) && $validated['is_default']) {
+			CustomerAddress::where('customer_id', auth()->id())->update(['is_default' => false]);
+		}
 
 		$address->update($validated);
 

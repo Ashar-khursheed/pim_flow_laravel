@@ -15,9 +15,9 @@ class CustomerAddress extends Model
 	protected $fillable = [
 		'customer_id',
 		'type',
-		'country_id',
-		'state_id',
-		'city_id',
+		'country',
+		'state',
+		'city',
 		'address',
 		'zip_code',
 		'is_default',
@@ -34,20 +34,20 @@ class CustomerAddress extends Model
 		return $this->belongsTo(User::class, 'created_by');
 	}
 
-	public function country()
-	{
-		return $this->belongsTo(Country::class, 'country_id');
-	}
+	// public function country()
+	// {
+	// 	return $this->belongsTo(Country::class, 'country_id');
+	// }
 
-	public function state()
-	{
-		return $this->belongsTo(State::class, 'state_id');
-	}
+	// public function state()
+	// {
+	// 	return $this->belongsTo(State::class, 'state_id');
+	// }
 
-	public function city()
-	{
-		return $this->belongsTo(City::class, 'city_id');
-	}
+	// public function city()
+	// {
+	// 	return $this->belongsTo(City::class, 'city_id');
+	// }
 
 	/**
 	 * Prepare a date for array / JSON serialization.

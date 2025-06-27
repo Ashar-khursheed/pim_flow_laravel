@@ -6512,15 +6512,15 @@
                                         "type": "string",
                                         "example": "123 Main Street"
                                     },
-                                    "country_id": {
+                                    "country": {
                                         "type": "integer",
                                         "example": 101
                                     },
-                                    "state_id": {
+                                    "state": {
                                         "type": "integer",
                                         "example": 10
                                     },
-                                    "city_id": {
+                                    "city": {
                                         "type": "integer",
                                         "example": 5
                                     },
@@ -6626,15 +6626,15 @@
                                         "type": "string",
                                         "example": "456 New Street"
                                     },
-                                    "country_id": {
+                                    "country": {
                                         "type": "integer",
                                         "example": 102
                                     },
-                                    "state_id": {
+                                    "state": {
                                         "type": "integer",
                                         "example": 20
                                     },
-                                    "city_id": {
+                                    "city": {
                                         "type": "integer",
                                         "example": 15
                                     },
@@ -12259,15 +12259,15 @@
                                         "type": "string",
                                         "example": "123 Main Street"
                                     },
-                                    "country_id": {
+                                    "country": {
                                         "type": "integer",
                                         "example": 101
                                     },
-                                    "state_id": {
+                                    "state": {
                                         "type": "integer",
                                         "example": 10
                                     },
-                                    "city_id": {
+                                    "city": {
                                         "type": "integer",
                                         "example": 5
                                     },
@@ -12368,15 +12368,15 @@
                                         "type": "string",
                                         "example": "456 New Street"
                                     },
-                                    "country_id": {
+                                    "country": {
                                         "type": "integer",
                                         "example": 102
                                     },
-                                    "state_id": {
+                                    "state": {
                                         "type": "integer",
                                         "example": 20
                                     },
-                                    "city_id": {
+                                    "city": {
                                         "type": "integer",
                                         "example": 15
                                     },
