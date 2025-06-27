@@ -17029,6 +17029,133 @@
                 }
             }
         },
+        "/api/frontend/tamara/checkout": {
+            "post": {
+                "tags": [
+                    "Tamara"
+                ],
+                "summary": "Create Tamara Checkout",
+                "description": "Create Tamara checkout session",
+                "operationId": "21c03cf3ed9e5832d76a0262ab3be522",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_reference_id": {
+                                        "type": "string"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "currency": {
+                                        "type": "string",
+                                        "example": "SAR"
+                                    },
+                                    "consumer": {
+                                        "properties": {
+                                            "first_name": {
+                                                "type": "string"
+                                            },
+                                            "last_name": {
+                                                "type": "string"
+                                            },
+                                            "email": {
+                                                "type": "string"
+                                            },
+                                            "phone_number": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "sku": {
+                                                    "type": "string"
+                                                },
+                                                "quantity": {
+                                                    "type": "integer"
+                                                },
+                                                "unit_price": {
+                                                    "type": "number"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "success_url": {
+                                        "type": "string"
+                                    },
+                                    "failure_url": {
+                                        "type": "string"
+                                    },
+                                    "cancel_url": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Checkout URL"
+                    },
+                    "500": {
+                        "description": "Tamara Checkout Failed"
+                    }
+                }
+            }
+        },
+        "/api/frontend/tamara/webhook": {
+            "post": {
+                "tags": [
+                    "Tamara"
+                ],
+                "summary": "Tamara Webhook Listener",
+                "description": "Handle Tamara Webhook",
+                "operationId": "0d6daf7b0ed8fb7cd799743205fc4f9a",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "order_reference_id": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string"
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Webhook received"
+                    },
+                    "401": {
+                        "description": "Unauthorized webhook"
+                    }
+                }
+            }
+        },
         "/api/customer-reviews": {
             "get": {
                 "tags": [
@@ -28105,6 +28232,10 @@
         {
             "name": "Stripe",
             "description": "Stripe"
+        },
+        {
+            "name": "Tamara",
+            "description": "Tamara"
         },
         {
             "name": "Frontend-User Reviews",

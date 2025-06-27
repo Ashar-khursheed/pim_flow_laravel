@@ -92,6 +92,9 @@ use App\Http\Controllers\FrontEnd\ProductQuestionController as F_ProductQuestion
 use App\Http\Controllers\FrontEnd\PaymentManagementController as F_PaymentManagementController;
 use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
 use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
+use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
+
+
 
 
 // Route::get('/transactions', [PaymentController::class, 'getAllTransactions']);
@@ -525,3 +528,6 @@ Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'create
 Route::post('frontend/product-errors', [F_ProductErrorController::class, 'store']);
 Route::get('frontend/product-errors', [F_ProductErrorController::class, 'index']);
 Route::get('frontend/product-errors/{product_id}', [F_ProductErrorController::class, 'show']);
+
+Route::post('frontend/tamara/checkout', [TamaraController::class, 'createCheckout']);
+Route::post('frontend/tamara/webhook', [TamaraController::class, 'handleWebhook']);
