@@ -55,6 +55,7 @@ class ProductQuestionController extends Controller
             'email' => $request->email,
             'product_id' => $request->product_id,
             'question' => $request->question,
+            'type' => $request->type,
         ]);
 
         return response()->json(['message' => 'Question submitted successfully', 'data' => $question], 201);
