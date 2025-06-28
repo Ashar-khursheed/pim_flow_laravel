@@ -69,7 +69,7 @@ class CustomerAddressController extends Controller
 	{
 		$validated = $request->validate([
 			'customer_id' => 'required|exists:customers,id',
-			'type' => 'required|in:home,work,other',
+			'type' => 'nullable',
 			'address' => 'required|string',
 			'country' => 'nullable|string',
 			'state' => 'nullable|string',
@@ -165,7 +165,7 @@ class CustomerAddressController extends Controller
 		}
 
 		$validated = $request->validate([
-			'type' => 'nullable|in:home,work,other',
+			'type' => 'nullable',
 			'address' => 'nullable|string|max:191',
 			'country' => 'nullable|string',
 			'state' => 'nullable|string',
