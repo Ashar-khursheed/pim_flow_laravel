@@ -358,7 +358,8 @@ class OrderController extends Controller
 			'orderProducts:id,order_id,product_id,vendor_id,quantity',
 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 			'orderProducts.product.brand:id,name',
-			'tracking'
+			'tracking',
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
 
 		/* Mutate the data for each order product */

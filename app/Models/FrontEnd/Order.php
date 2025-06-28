@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\FrontEnd\Customer;
 use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
-use App\Models\FrontEnd\Payment;
+use App\Models\PaymentManagement;
 use App\Models\User;
 
 class Order extends Model
@@ -63,7 +63,7 @@ class Order extends Model
 
     public function payments()
     {
-        return $this->hasMany(Payment::class);
+        return $this->hasMany(PaymentManagement::class);
     }
 
 	public function shipments()
