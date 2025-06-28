@@ -128,6 +128,13 @@ class Category extends Model
 		return $parents;
 	}
 
-
-
+	public function titleFormulaAttributes()
+	{
+		return $this->belongsToMany(
+			Attribute::class,
+			'product_title_formula',
+			'category_id',
+			'attribute_id'
+		);
+	}
 }

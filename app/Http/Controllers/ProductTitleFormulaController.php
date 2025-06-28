@@ -392,4 +392,84 @@ class ProductTitleFormulaController extends Controller
 
 		return response()->json(['message' => 'Selected records deleted']);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/categories/{category_id}/sample-product-titles",
+	 *     summary="Generate first five product titles according to category attribute formula",
+	 *     tags={"Product Title Formula"},
+	 *     @OA\Parameter(name="category_id", in="path", description="Category ID", required=true, @OA\Schema(type="integer", example=1)),
+	 *     @OA\Response(response=200, description="Genearted successfully", @OA\MediaType(mediaType="application/json")),
+	 * 	   security={{"bearerAuth":{}}},
+	 * )
+	 */
+	public function generateSampleProductTitles($categoryID)
+	{
+		$category = Category::find($categoryID);
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => "category not found."
+			]);
+		}
+
+		if ($category->children()->exists()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf categories are allowed.'
+			]);
+		}
+
+		$formulaAttributes = $category->titleFormulaAttributes;
+		if ($formulaAttributes->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No attributes associated with this category to generate product titles.'
+			]);
+		}
+
+		$formulaAttributeIds = $formulaAttributes->pluck('id')->toArray();
+		$categoryProducts = $category->products()->with('productAttributes')->get();
+
+		if ($categoryProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No products found for this category.'
+			]);
+		}
+
+		$validProducts = collect();
+
+		foreach ($categoryProducts as $product) {
+			$attributeValues = $product->productAttributes->keyBy('attribute_id');
+
+			/* Check if product has all formula attributes */
+			if (collect($formulaAttributeIds)->every(fn($id) => $attributeValues->has($id))) {
+				$generatedTitle = $formulaAttributes->map(function ($attr) use ($attributeValues) {
+					return $attributeValues[$attr->id]->attribute_value;
+				})->implode(' ');
+
+				$validProducts->push([
+					'id' => $product->id,
+					'name' => $product->name,
+					'generated_title' => $generatedTitle
+				]);
+
+				if ($validProducts->count() >= 5) break;
+			}
+		}
+
+		if ($validProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No product has complete attribute data to generate titles.'
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Generated product titles successfully.',
+			'data' => $validProducts
+		]);
+	}
 }
