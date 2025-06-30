@@ -30,7 +30,7 @@ class CreateProductSuppliersTable extends Migration
 			$table->boolean('free_shipping')->default(false);
 			$table->decimal('margin', 10, 2)->nullable();
 			$table->decimal('restocking_fees', 10, 2)->nullable();
-			$table->decimal('warranty_information', 10, 2)->nullable();
+			$table->string('warranty_information')->nullable();
 			$table->integer('created_by')->index();
 			$table->integer('updated_by')->nullable();
 			$table->timestamps();
