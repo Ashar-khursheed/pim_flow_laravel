@@ -13,31 +13,59 @@ class LookupController extends Controller
         $validator = Validator::make($request->all(), [
             'phone' => 'required|string',
         ]);
-
+    
         if ($validator->fails()) {
-            return response()->json(['error' => 'Phone number is required.'], 400);
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed.',
+                'errors' => $validator->errors()
+            ], 422);
         }
-
+    
         $sid = env('TWILIO_SID');
         $token = env('TWILIO_AUTH_TOKEN');
-        $twilio = new Client($sid, $token);
-
+    
+        if (!$sid || !$token) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Twilio credentials are missing.'
+            ], 500);
+        }
+    
         try {
+            $twilio = new Client($sid, $token);
+    
             $number = $twilio->lookups
                 ->v1
                 ->phoneNumbers($request->phone)
-                ->fetch(["type" => ["carrier", "caller-name"]]); // Add/remove types as needed
-
+                ->fetch(["type" => ["carrier", "caller-name"]]);
+    
             return response()->json([
-                'valid' => true,
-                'phone_number' => $number->phoneNumber,
-                'national_format' => $number->nationalFormat,
-                'carrier' => $number->carrier ?? null,
-                'caller_name' => $number->callerName['caller_name'] ?? null,
+                'success' => true,
+                'message' => 'Phone number lookup successful.',
+                'data' => [
+                    'valid' => true,
+                    'phone_number' => $number->phoneNumber,
+                    'national_format' => $number->nationalFormat,
+                    'carrier' => $number->carrier ?? null,
+                    'caller_name' => $number->callerName['caller_name'] ?? null,
+                ]
             ]);
-
+    
+        } catch (\Twilio\Exceptions\RestException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Twilio Lookup API error.',
+                'error' => $e->getMessage()
+            ], $e->getStatusCode() ?? 400);
+    
         } catch (\Exception $e) {
-            return response()->json(['valid' => false, 'error' => $e->getMessage()], 422);
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
+    
 }
