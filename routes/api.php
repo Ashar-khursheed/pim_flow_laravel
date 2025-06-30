@@ -94,6 +94,8 @@ use App\Http\Controllers\FrontEnd\StripeController as F_StripeController;
 use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorController;
 use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
 use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
+use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
+
 
 
 
@@ -527,3 +529,5 @@ Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheck
 Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
+
+Route::get('frontend/lookup', [LookupController::class, 'lookup']);
