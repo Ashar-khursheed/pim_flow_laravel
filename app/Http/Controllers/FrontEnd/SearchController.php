@@ -309,7 +309,7 @@ class SearchController extends Controller
                 'name' => $product->name,
                 'url' => $product->url,
                 'sku' => $product->sku,
-                'images' => json_decode($product->images)[0] ?? null,
+                'images' => json_decode($product->images) ?? [],
                 'original_price' => $product->price,
                 'front_sale_price' => $product->sale_price,
                 'vendor_id' => $product->vendor_id,
