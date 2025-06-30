@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 use App\Models\Attribute;
+use App\Models\Category;
 use App\Models\ProductTitleFormula;
 use Illuminate\Http\Request;
 
