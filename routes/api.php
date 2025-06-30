@@ -530,4 +530,4 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 
-Route::get('frontend/lookup', [LookupController::class, 'lookup']);
+Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
