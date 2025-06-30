@@ -103,6 +103,187 @@ class SearchController extends Controller
      * )
      */
 
+    // public function search(Request $request)
+    // {
+    //     $query = $request->input('query');
+    //     $defaultImage = asset('images/default-thumbnail.jpg'); // Set your default image path here
+    
+    //     // Helper for image URL
+    //     $imageUrl = function ($img) use ($defaultImage) {
+    //         if (!$img) {
+    //             return $defaultImage;
+    //         }
+    
+    //         $imagePath = public_path('storage/' . ltrim($img, '/'));
+    
+    //         return File::exists($imagePath)
+    //             ? asset('storage/' . ltrim($img, '/'))
+    //             : $defaultImage;
+    //     };
+    
+    //     if (empty($query)) {
+    //         return Cache::remember('search_default_data', 60, function () use ($imageUrl) {
+    //             $products = Product::with('slug')
+    //                 ->where('status', 'published')
+    //                 ->inRandomOrder()->take(4)->get()
+    //                 ->map(fn($product) => [
+    //                     'id' => $product->id,
+    //                     'name' => $product->name,
+    //                     'url' => $product->url,
+    //                    'image' => json_decode($product->images)[0] ?? null,
+    //                 ]);
+    
+    //             $categories = Category::with([
+    //                     'slug',
+    //                     'parent.slug',
+    //                     'parent.parent.slug',
+    //                     'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug') // ✅ filter applied here
+
+    //                 ])
+    //                 ->where('status', 'published') // ✅ Only published categories
+    //                 ->inRandomOrder()->take(4)
+    //                 ->with(['products' => fn($q) => $q->where('status', 'published')->take(4)])
+    //                 ->get()->map(function ($cat) use ($imageUrl) {
+    //                     return [
+    //                         'id' => $cat->id,
+    //                         'name' => $cat->name,
+    //                         'slug' => $cat->slug,
+    //                         'url' => $cat->url,
+    //                         'image' =>$cat->image,
+    //                         'parent_id' => $cat->parent_id,
+    //                         'parent_slug' => $cat->parent?->slug,
+    //                         'parent_parent_slug' => $cat->parent?->parent?->slug,
+    //                         'products' => $cat->products->map(fn($p) => [
+    //                             'id' => $p->id,
+    //                             'name' => $p->name,
+    //                             'slug' => optional($p->slug)->key,
+    //                            'image' => json_decode($p->images)[0] ?? null,
+    //                             'price' => $p->price,
+    //                             'sale_price' => $p->sale_price,
+    //                         ]),
+    //                     ];
+    //                 });
+    
+    //                 $brands = Brand::with([
+    //                     'slug',
+    //                     'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug') // ✅ filter applied here
+    //                 ])
+    //                 ->where('status', 'published') // ✅ Only published brands
+    //                 ->inRandomOrder()->take(4)
+    //                 ->with(['products' => fn($q) => $q->where('status', 'published')->take(4)])
+    //                 ->get()->map(function ($brand) use ($imageUrl) {
+    //                     return [
+    //                         'id' => $brand->id,
+    //                         'name' => $brand->name,
+    //                         'url' => $brand->url,
+    //                         'slug' => optional($brand->slug)->key,
+    //                         'image' => $brand->logo,
+    //                         'products' => $brand->products->map(fn($p) => [
+    //                             'id' => $p->id,
+    //                             'name' => $p->name,
+    //                             'slug' => optional($p->slug)->key,
+    //                             'image' =>  json_decode($p->images)[0] ?? null,
+    //                             'price' => $p->price,
+    //                             'sale_price' => $p->sale_price,
+    //                         ]),
+    //                     ];
+    //                 });
+    
+    //             return response()->json([
+    //                 'products' => $products,
+    //                 'categories' => $categories,
+    //                 'brands' => $brands,
+    //             ]);
+    //         });
+    //     }
+    
+    //     // Query search logic
+    //     $products = Product::with('slug')
+    //         ->where('status', 'published')
+    //         ->where(function ($q) use ($query) {
+    //             $q->where('name', 'LIKE', "%{$query}%")
+    //               ->orWhere('sku', 'LIKE', "%{$query}%")
+    //               ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
+    //         })
+    //         ->take(5)->get()
+    //         ->map(fn($p) => [
+    //             'id' => $p->id,
+    //             'name' => $p->name,
+    //            'image' => json_decode($p->images)[0] ?? null,
+    //             'slug' => optional($p->slug)->key,
+    //             'price' => $p->price,
+    //             'sale_price' => $p->sale_price,
+    //         ]);
+    
+    //     $categories = Category::with([
+    //             'slug',
+    //             'parent.slug',
+    //             'parent.parent.slug',
+    //             'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug') // ✅ filter applied here
+    //         ])
+    //         ->where('status', 'published') // ✅ Only published categories
+    //         ->where(function ($q) use ($query) {
+    //             $q->where('name', 'LIKE', "%{$query}%")
+    //               ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
+    //         })
+    //         ->take(5)->get()
+    //         ->map(function ($cat) use ($imageUrl) {
+    //             return [
+    //                 'id' => $cat->id,
+    //                 'name' => $cat->name,
+    //                 'slug' => $cat->slug,
+    //                 'url' => $cat->url,
+    //                 'image' => $imageUrl($cat->image),
+    //                 'parent_id' => $cat->parent_id,
+    //                 'parent_slug' => $cat->slug,
+    //                 'parent_parent_slug' => $cat->parent?->parent?->slug,
+    //                 'products' => $cat->products->map(fn($p) => [
+    //                     'id' => $p->id,
+    //                     'name' => $p->name,
+    //                     'slug' => optional($p->slug)->key,
+    //                     'image' =>  json_decode($p->images)[0] ?? null,
+    //                     'price' => $p->price,
+    //                     'sale_price' => $p->sale_price,
+    //                 ]),
+    //             ];
+    //         });
+    
+    //         $brands = Brand::with([
+    //             'slug',
+    //             'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug') // ✅ filter applied here
+    //         ])
+    //         ->where('status', 'published') // ✅ Only published brands
+    //         ->where(function ($q) use ($query) {
+    //             $q->where('name', 'LIKE', "%{$query}%")
+    //               ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
+    //         })
+    //         ->take(5)
+    //         ->with(['products' => fn($q) => $q->where('status', 'published')->take(4)])
+    //         ->get()
+    //         ->map(function ($brand) use ($imageUrl) {
+    //             return [
+    //                 'id' => $brand->id,
+    //                 'name' => $brand->name,
+    //                 'slug' => optional($brand->slug)->key,
+    //                 'url' => $brand->url,
+    //                 'image' => $brand->logo,
+    //                 'products' => $brand->products->map(fn($p) => [
+    //                     'id' => $p->id,
+    //                     'name' => $p->name,
+    //                     'slug' => optional($p->slug)->key,
+    //                     'image' =>  json_decode($p->images)[0] ?? null,
+    //                     'price' => $p->price,
+    //                     'sale_price' => $p->sale_price,
+    //                 ]),
+    //             ];
+    //         });
+    
+    //     return response()->json([
+    //         'products' => $products,
+    //         'categories' => $categories,
+    //         'brands' => $brands,
+    //     ]);
+    // }
     public function search(Request $request)
     {
         $query = $request->input('query');
@@ -121,73 +302,80 @@ class SearchController extends Controller
                 : $defaultImage;
         };
     
+        // Helper function for consistent product mapping
+        $mapProduct = function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'url' => $product->url,
+                'sku' => $product->sku,
+                'images' => json_decode($product->images) ?? [],
+                'original_price' => $product->price,
+                'front_sale_price' => $product->sale_price,
+                'vendor_id' => $product->vendor_id,
+                'currency_title' => $product->currency->symbol ?? null,
+                'brand' => $product->brand ? [
+                    'id' => $product->brand->id,
+                    'name' => $product->brand->name,
+                    'slug' => optional($product->brand->slug)->key,
+                ] : null,
+            ];
+        };
+    
+        // Default brands to show
+        $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
+    
         if (empty($query)) {
-            return Cache::remember('search_default_data', 60, function () use ($imageUrl) {
-                $products = Product::with('slug')
+            return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
+                $products = Product::with(['slug', 'vendor', 'currency', 'brand']) // Added brand relation
                     ->where('status', 'published')
-                    ->inRandomOrder()->take(4)->get()
-                    ->map(fn($product) => [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'url' => $product->url,
-                       'image' => json_decode($product->images)[0] ?? null,
-                    ]);
+                    ->inRandomOrder()
+                    ->take(4)
+                    ->get()
+                    ->map($mapProduct);
     
                 $categories = Category::with([
-                        'slug',
-                        'parent.slug',
-                        'parent.parent.slug',
-                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
-
-                    ])
-                    ->where('status', 'published') // ✅ Only published categories
-                    ->inRandomOrder()->take(4)
-                    ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
-                    ->get()->map(function ($cat) use ($imageUrl) {
-                        return [
-                            'id' => $cat->id,
-                            'name' => $cat->name,
-                            'slug' => $cat->slug,
-                            'url' => $cat->url,
-                            'image' =>$cat->image,
-                            'parent_id' => $cat->parent_id,
-                            'parent_slug' => $cat->parent?->slug,
-                            'parent_parent_slug' => $cat->parent?->parent?->slug,
-                            'products' => $cat->products->map(fn($p) => [
-                                'id' => $p->id,
-                                'name' => $p->name,
-                                'slug' => optional($p->slug)->key,
-                               'image' => json_decode($p->images)[0] ?? null,
-                                'price' => $p->price,
-                                'sale_price' => $p->sale_price,
-                            ]),
-                        ];
-                    });
+                    'slug',
+                    'parent.slug',
+                    'parent.parent.slug',
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                ])
+                ->where('status', 'published')
+                ->whereHas('products', fn($q) => $q->where('status', 'published'))
+                ->inRandomOrder()
+                ->take(4)
+                ->get()
+                ->map(function ($cat) use ($imageUrl, $mapProduct) {
+                    return [
+                        'id' => $cat->id,
+                        'name' => $cat->name,
+                        'slug' => $cat->slug,
+                        'url' => $cat->url,
+                        'image' => $imageUrl($cat->image),
+                        'parent_id' => $cat->parent_id,
+                        'parent_slug' => $cat->parent?->slug,
+                        'parent_parent_slug' => $cat->parent?->parent?->slug,
+                        'products' => $cat->products->map($mapProduct),
+                    ];
+                });
     
-                    $brands = Brand::with([
-                        'slug',
-                        'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
-                    ])
-                    ->where('status', 'published') // ✅ Only published brands
-                    ->inRandomOrder()->take(4)
-                    ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
-                    ->get()->map(function ($brand) use ($imageUrl) {
-                        return [
-                            'id' => $brand->id,
-                            'name' => $brand->name,
-                            'url' => $brand->url,
-                            'slug' => optional($brand->slug)->key,
-                            'image' => $brand->logo,
-                            'products' => $brand->products->map(fn($p) => [
-                                'id' => $p->id,
-                                'name' => $p->name,
-                                'slug' => optional($p->slug)->key,
-                                'image' =>  json_decode($p->images)[0] ?? null,
-                                'price' => $p->price,
-                                'sale_price' => $p->sale_price,
-                            ]),
-                        ];
-                    });
+                // Show specific default brands with their products
+                $brands = Brand::with([
+                    'slug',
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                ])
+                ->where('status', 'published')
+                ->whereIn('name', $defaultBrands)
+                ->get()->map(function ($brand) use ($imageUrl, $mapProduct) {
+                    return [
+                        'id' => $brand->id,
+                        'name' => $brand->name,
+                        'url' => $brand->url,
+                        'slug' => optional($brand->slug)->key,
+                        'image' => $brand->logo,
+                        'products' => $brand->products->map($mapProduct),
+                    ];
+                });
     
                 return response()->json([
                     'products' => $products,
@@ -197,94 +385,159 @@ class SearchController extends Controller
             });
         }
     
-        // Query search logic
-        $products = Product::with('slug')
+        // Enhanced query search logic with comprehensive SKU search
+        $products = Product::with(['slug', 'brand', 'vendor', 'currency']) // Added vendor and currency relations
             ->where('status', 'published')
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
                   ->orWhere('sku', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', '=', $query) // Exact SKU match for better accuracy
                   ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
             })
-            ->take(5)->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-               'image' => json_decode($p->images)[0] ?? null,
-                'slug' => optional($p->slug)->key,
-                'price' => $p->price,
-                'sale_price' => $p->sale_price,
-            ]);
+            ->orderByRaw("
+                CASE 
+                    WHEN sku = ? THEN 1
+                    WHEN sku LIKE ? THEN 2
+                    WHEN name LIKE ? THEN 3
+                    ELSE 4
+                END
+            ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
+            ->take(10) // Increased limit for better SKU search results
+            ->get()
+            ->map($mapProduct);
     
         $categories = Category::with([
-                'slug',
-                'parent.slug',
-                'parent.parent.slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
-            ])
-            ->where('status', 'published') // ✅ Only published categories
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
-            })
-            ->take(5)->get()
-            ->map(function ($cat) use ($imageUrl) {
-                return [
-                    'id' => $cat->id,
-                    'name' => $cat->name,
-                    'slug' => $cat->slug,
-                    'url' => $cat->url,
-                    'image' => $imageUrl($cat->image),
-                    'parent_id' => $cat->parent_id,
-                    'parent_slug' => $cat->slug,
-                    'parent_parent_slug' => $cat->parent?->parent?->slug,
-                    'products' => $cat->products->map(fn($p) => [
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'slug' => optional($p->slug)->key,
-                        'image' =>  json_decode($p->images)[0] ?? null,
-                        'price' => $p->price,
-                        'sale_price' => $p->sale_price,
-                    ]),
-                ];
-            });
+            'slug',
+            'parent.slug',
+            'parent.parent.slug',
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'vendor', 'currency'])
+        ])
+        ->where('status', 'published')
+        ->whereHas('products', fn($q) => $q->where('status', 'published'))
+        ->where(function ($q) use ($query) {
+            $q->where('name', 'LIKE', "%{$query}%")
+              ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
+              ->orWhereHas('products', function ($q) use ($query) {
+                  // Also search categories by their products' SKUs
+                  $q->where('status', 'published')
+                    ->where(function ($subQ) use ($query) {
+                        $subQ->where('sku', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', '=', $query);
+                    });
+              });
+        })
+        ->take(5)
+        ->get()
+        ->map(function ($cat) use ($imageUrl, $mapProduct) {
+            return [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'slug' => $cat->slug,
+                'url' => $cat->url,
+                'image' => $imageUrl($cat->image),
+                'parent_id' => $cat->parent_id,
+                'parent_slug' => $cat->parent?->slug,
+                'parent_parent_slug' => $cat->parent?->parent?->slug,
+                'products' => $cat->products->map($mapProduct),
+            ];
+        });
     
-            $brands = Brand::with([
+        // Enhanced brand search - show brands that match query OR have products matching query (including SKU)
+        $brands = Brand::with([
+            'slug',
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+        ])
+        ->where('status', 'published')
+        ->where(function ($q) use ($query) {
+            $q->where('name', 'LIKE', "%{$query}%")
+              ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
+              ->orWhereHas('products', function ($q) use ($query) {
+                  $q->where('status', 'published')
+                    ->where(function ($subQ) use ($query) {
+                        $subQ->where('name', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', '=', $query) // Exact SKU match
+                             ->orWhereHas('slug', fn($slugQ) => $slugQ->where('key', 'LIKE', "%{$query}%"));
+                    });
+              });
+        })
+        ->take(5)
+        ->get()
+        ->map(function ($brand) use ($imageUrl, $mapProduct) {
+            return [
+                'id' => $brand->id,
+                'name' => $brand->name,
+                'slug' => optional($brand->slug)->key,
+                'url' => $brand->url,
+                'image' => $brand->logo,
+                'products' => $brand->products->map($mapProduct),
+            ];
+        });
+    
+        // Get related brands for searched products (enhanced with SKU consideration)
+        $relatedBrands = collect();
+        if ($products->isNotEmpty()) {
+            $productBrandIds = $products->pluck('brand.id')->filter()->unique();
+            
+            $additionalBrands = Brand::with([
                 'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(3)->with('slug') // ✅ filter applied here
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
             ])
-            ->where('status', 'published') // ✅ Only published brands
-            ->where(function ($q) use ($query) {
-                $q->where('name', 'LIKE', "%{$query}%")
-                  ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
-            })
-            ->take(5)
-            ->with(['products' => fn($q) => $q->where('status', 'published')->take(3)])
+            ->where('status', 'published')
+            ->whereIn('id', $productBrandIds)
+            ->whereNotIn('id', $brands->pluck('id'))
+            ->take(4)
             ->get()
-            ->map(function ($brand) use ($imageUrl) {
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
                 return [
                     'id' => $brand->id,
                     'name' => $brand->name,
                     'slug' => optional($brand->slug)->key,
                     'url' => $brand->url,
                     'image' => $brand->logo,
-                    'products' => $brand->products->map(fn($p) => [
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'slug' => optional($p->slug)->key,
-                        'image' =>  json_decode($p->images)[0] ?? null,
-                        'price' => $p->price,
-                        'sale_price' => $p->sale_price,
-                    ]),
+                    'products' => $brand->products->map($mapProduct),
                 ];
             });
+    
+            $brands = $brands->merge($additionalBrands);
+        }
+    
+        // Get brands related to searched categories (enhanced with SKU consideration)
+        if ($categories->isNotEmpty()) {
+            $categoryIds = $categories->pluck('id');
+            
+            $categoryBrands = Brand::with([
+                'slug',
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+            ])
+            ->where('status', 'published')
+            ->whereHas('products', function ($q) use ($categoryIds) {
+                $q->where('status', 'published')
+                  ->whereHas('categories', fn($catQ) => $catQ->whereIn('categories.id', $categoryIds));
+            })
+            ->whereNotIn('id', $brands->pluck('id'))
+            ->take(4)
+            ->get()
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
+                return [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                    'slug' => optional($brand->slug)->key,
+                    'url' => $brand->url,
+                    'image' => $brand->logo,
+                    'products' => $brand->products->map($mapProduct),
+                ];
+            });
+    
+            $brands = $brands->merge($categoryBrands);
+        }
     
         return response()->json([
             'products' => $products,
             'categories' => $categories,
-            'brands' => $brands,
+            'brands' => $brands->take(8), // Limit total brands shown
         ]);
     }
-
     /**
      * @OA\Get(
      *     path="/api/frontend/search-categories",
