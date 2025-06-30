@@ -302,34 +302,50 @@ class SearchController extends Controller
                 : $defaultImage;
         };
     
+        // Helper function for consistent product mapping
+        $mapProduct = function ($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'url' => $product->url,
+                'sku' => $product->sku,
+                'images' => json_decode($product->images)[0] ?? null,
+                'original_price' => $product->price,
+                'front_sale_price' => $product->sale_price,
+                'vendor_id' => $product->vendor_id,
+                'currency_title' => $product->currency->symbol ?? null,
+                'brand' => $product->brand ? [
+                    'id' => $product->brand->id,
+                    'name' => $product->brand->name,
+                    'slug' => optional($product->brand->slug)->key,
+                ] : null,
+            ];
+        };
+    
         // Default brands to show
         $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
     
         if (empty($query)) {
-            return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands) {
-                $products = Product::with('slug')
+            return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
+                $products = Product::with(['slug', 'vendor', 'currency', 'brand']) // Added brand relation
                     ->where('status', 'published')
-                    ->inRandomOrder()->take(4)->get()
-                    ->map(fn($product) => [
-                        'id' => $product->id,
-                        'name' => $product->name,
-                        'url' => $product->url,
-                        'sku' => $product->sku, // Added SKU to response
-                        'image' => json_decode($product->images)[0] ?? null,
-                    ]);
+                    ->inRandomOrder()
+                    ->take(4)
+                    ->get()
+                    ->map($mapProduct);
     
                 $categories = Category::with([
                     'slug',
                     'parent.slug',
                     'parent.parent.slug',
-                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug')
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
                 ])
                 ->where('status', 'published')
                 ->whereHas('products', fn($q) => $q->where('status', 'published'))
                 ->inRandomOrder()
                 ->take(4)
                 ->get()
-                ->map(function ($cat) use ($imageUrl) {
+                ->map(function ($cat) use ($imageUrl, $mapProduct) {
                     return [
                         'id' => $cat->id,
                         'name' => $cat->name,
@@ -339,41 +355,25 @@ class SearchController extends Controller
                         'parent_id' => $cat->parent_id,
                         'parent_slug' => $cat->parent?->slug,
                         'parent_parent_slug' => $cat->parent?->parent?->slug,
-                        'products' => $cat->products->map(fn($p) => [
-                            'id' => $p->id,
-                            'name' => $p->name,
-                            'slug' => optional($p->slug)->key,
-                            'sku' => $p->sku, // Added SKU to response
-                            'image' => json_decode($p->images)[0] ?? null,
-                            'price' => $p->price,
-                            'sale_price' => $p->sale_price,
-                        ]),
+                        'products' => $cat->products->map($mapProduct),
                     ];
                 });
     
                 // Show specific default brands with their products
                 $brands = Brand::with([
                     'slug',
-                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug')
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
                 ])
                 ->where('status', 'published')
                 ->whereIn('name', $defaultBrands)
-                ->get()->map(function ($brand) use ($imageUrl) {
+                ->get()->map(function ($brand) use ($imageUrl, $mapProduct) {
                     return [
                         'id' => $brand->id,
                         'name' => $brand->name,
                         'url' => $brand->url,
                         'slug' => optional($brand->slug)->key,
                         'image' => $brand->logo,
-                        'products' => $brand->products->map(fn($p) => [
-                            'id' => $p->id,
-                            'name' => $p->name,
-                            'slug' => optional($p->slug)->key,
-                            'sku' => $p->sku, // Added SKU to response
-                            'image' => json_decode($p->images)[0] ?? null,
-                            'price' => $p->price,
-                            'sale_price' => $p->sale_price,
-                        ]),
+                        'products' => $brand->products->map($mapProduct),
                     ];
                 });
     
@@ -386,7 +386,7 @@ class SearchController extends Controller
         }
     
         // Enhanced query search logic with comprehensive SKU search
-        $products = Product::with(['slug', 'brand'])
+        $products = Product::with(['slug', 'brand', 'vendor', 'currency']) // Added vendor and currency relations
             ->where('status', 'published')
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
@@ -404,26 +404,13 @@ class SearchController extends Controller
             ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
             ->take(10) // Increased limit for better SKU search results
             ->get()
-            ->map(fn($p) => [
-                'id' => $p->id,
-                'name' => $p->name,
-                'sku' => $p->sku, // Added SKU to response
-                'image' => json_decode($p->images)[0] ?? null,
-                'slug' => optional($p->slug)->key,
-                'price' => $p->price,
-                'sale_price' => $p->sale_price,
-                'brand' => $p->brand ? [
-                    'id' => $p->brand->id,
-                    'name' => $p->brand->name,
-                    'slug' => optional($p->brand->slug)->key,
-                ] : null,
-            ]);
+            ->map($mapProduct);
     
         $categories = Category::with([
             'slug',
             'parent.slug',
             'parent.parent.slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand'])
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'vendor', 'currency'])
         ])
         ->where('status', 'published')
         ->whereHas('products', fn($q) => $q->where('status', 'published'))
@@ -441,7 +428,7 @@ class SearchController extends Controller
         })
         ->take(5)
         ->get()
-        ->map(function ($cat) use ($imageUrl) {
+        ->map(function ($cat) use ($imageUrl, $mapProduct) {
             return [
                 'id' => $cat->id,
                 'name' => $cat->name,
@@ -449,29 +436,16 @@ class SearchController extends Controller
                 'url' => $cat->url,
                 'image' => $imageUrl($cat->image),
                 'parent_id' => $cat->parent_id,
-                'parent_slug' => $cat->parent?->slug, // Fixed: was using $cat->slug instead of parent slug
+                'parent_slug' => $cat->parent?->slug,
                 'parent_parent_slug' => $cat->parent?->parent?->slug,
-                'products' => $cat->products->map(fn($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => optional($p->slug)->key,
-                    'sku' => $p->sku, // Added SKU to response
-                    'image' => json_decode($p->images)[0] ?? null,
-                    'price' => $p->price,
-                    'sale_price' => $p->sale_price,
-                    'brand' => $p->brand ? [
-                        'id' => $p->brand->id,
-                        'name' => $p->brand->name,
-                        'slug' => optional($p->brand->slug)->key,
-                    ] : null, // Fixed: removed extra 's' character
-                ]),
+                'products' => $cat->products->map($mapProduct),
             ];
         });
     
         // Enhanced brand search - show brands that match query OR have products matching query (including SKU)
         $brands = Brand::with([
             'slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug')
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
         ])
         ->where('status', 'published')
         ->where(function ($q) use ($query) {
@@ -489,22 +463,14 @@ class SearchController extends Controller
         })
         ->take(5)
         ->get()
-        ->map(function ($brand) use ($imageUrl) {
+        ->map(function ($brand) use ($imageUrl, $mapProduct) {
             return [
                 'id' => $brand->id,
                 'name' => $brand->name,
                 'slug' => optional($brand->slug)->key,
                 'url' => $brand->url,
                 'image' => $brand->logo,
-                'products' => $brand->products->map(fn($p) => [
-                    'id' => $p->id,
-                    'name' => $p->name,
-                    'slug' => optional($p->slug)->key,
-                    'sku' => $p->sku, // Added SKU to response
-                    'image' => json_decode($p->images)[0] ?? null,
-                    'price' => $p->price,
-                    'sale_price' => $p->sale_price,
-                ]),
+                'products' => $brand->products->map($mapProduct),
             ];
         });
     
@@ -515,29 +481,21 @@ class SearchController extends Controller
             
             $additionalBrands = Brand::with([
                 'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug')
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
             ])
             ->where('status', 'published')
             ->whereIn('id', $productBrandIds)
             ->whereNotIn('id', $brands->pluck('id'))
             ->take(4)
             ->get()
-            ->map(function ($brand) use ($imageUrl) {
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
                 return [
                     'id' => $brand->id,
                     'name' => $brand->name,
                     'slug' => optional($brand->slug)->key,
                     'url' => $brand->url,
                     'image' => $brand->logo,
-                    'products' => $brand->products->map(fn($p) => [
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'slug' => optional($p->slug)->key,
-                        'sku' => $p->sku, // Added SKU to response
-                        'image' => json_decode($p->images)[0] ?? null,
-                        'price' => $p->price,
-                        'sale_price' => $p->sale_price,
-                    ]),
+                    'products' => $brand->products->map($mapProduct),
                 ];
             });
     
@@ -550,7 +508,7 @@ class SearchController extends Controller
             
             $categoryBrands = Brand::with([
                 'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with('slug')
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
             ])
             ->where('status', 'published')
             ->whereHas('products', function ($q) use ($categoryIds) {
@@ -560,22 +518,14 @@ class SearchController extends Controller
             ->whereNotIn('id', $brands->pluck('id'))
             ->take(4)
             ->get()
-            ->map(function ($brand) use ($imageUrl) {
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
                 return [
                     'id' => $brand->id,
                     'name' => $brand->name,
                     'slug' => optional($brand->slug)->key,
                     'url' => $brand->url,
                     'image' => $brand->logo,
-                    'products' => $brand->products->map(fn($p) => [
-                        'id' => $p->id,
-                        'name' => $p->name,
-                        'slug' => optional($p->slug)->key,
-                        'sku' => $p->sku, // Added SKU to response
-                        'image' => json_decode($p->images)[0] ?? null,
-                        'price' => $p->price,
-                        'sale_price' => $p->sale_price,
-                    ]),
+                    'products' => $brand->products->map($mapProduct),
                 ];
             });
     
