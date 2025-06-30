@@ -16,6 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\OrderPlacedMail;
+use App\Notifications\OrderConfirmationMail;
 
 class OrderController extends Controller
 {
@@ -283,6 +285,9 @@ class OrderController extends Controller
 				'description' => 'Order has been successfully created',
 			]);
 
+			$customer = $order->customer;
+			$customer->notify(new OrderPlacedMail($order));
+
 			DB::commit();
 
 			/* Load relationships */
@@ -464,6 +469,11 @@ class OrderController extends Controller
 			'status' => $request->status,
 			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
 		]);
+
+		if ($request->status == 'Confirmed') {
+			$customer = $order->customer;
+			$customer->notify(new OrderConfirmationMail($order));
+		}
 
 		return response()->json([
 			'success' => true,
