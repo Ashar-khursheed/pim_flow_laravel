@@ -1,10 +1,20 @@
 <?php
 
 namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Bus\Batch;
+use Illuminate\Support\Facades\Bus;
+
 use App\Models\Attribute;
 use App\Models\Category;
 use App\Models\ProductTitleFormula;
-use Illuminate\Http\Request;
+use App\Models\TransactionLog;
+use App\Models\Product;
+
+use App\Jobs\UpdateProductTitleJob;
+use Throwable;
 
 class ProductTitleFormulaController extends Controller
 {
@@ -471,6 +481,104 @@ class ProductTitleFormulaController extends Controller
 			'success' => true,
 			'message' => 'Generated product titles successfully.',
 			'data' => $validProducts
+		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/categories/{category_id}/finalize-product-titles",
+	 *     summary="Start background job to finalize product titles",
+	 *     tags={"Product Title Formula"},
+	 *     @OA\Parameter(name="category_id", in="path", description="Category ID", required=true, @OA\Schema(type="integer", example=1)),
+	 *     @OA\Response(response=200, description="Batch started successfully"),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function finalizeProductTitles($categoryID)
+	{
+		$category = Category::find($categoryID);
+		if (!$category) {
+			return response()->json(['success' => false, 'message' => 'Category not found.']);
+		}
+
+		if ($category->children()->exists()) {
+			return response()->json(['success' => false, 'message' => 'Only leaf categories are allowed.']);
+		}
+
+		$formulaAttributes = $category->titleFormulaAttributes;
+		if ($formulaAttributes->isEmpty()) {
+			return response()->json(['success' => false, 'message' => 'No attributes associated with this category.']);
+		}
+
+		$formulaAttributeIds = $formulaAttributes->pluck('id')->toArray();
+		$totalRecords = $category->products()->count();
+
+		if ($totalRecords === 0) {
+			return response()->json(['success' => false, 'message' => 'No products found for this category.']);
+		}
+
+		$createdBy = auth()->id();
+		$log = TransactionLog::create([
+			'module' => 'Product Title',
+			'action' => 'Update Job',
+			'status' => 'Pending',
+			'created_by' => $createdBy,
+			'created_at' => now(),
+		]);
+		$logId = $log->id;
+
+		$batch = Bus::batch([])
+			->before(function (Batch $batch) use ($logId, $totalRecords) {
+				TransactionLog::where('id', $logId)->update([
+					'identifier' => $batch->id,
+					'status' => 'In-progress',
+					'description' => json_encode([
+						"Total Product Count" => $totalRecords,
+						"Success Count" => 0,
+						"Failed Count" => 0,
+						"Errors" => []
+					], JSON_UNESCAPED_UNICODE)
+				]);
+			})
+			->catch(function (Batch $batch, Throwable $e) {
+				TransactionLog::where('identifier', $batch->id)->update([
+					'status' => 'Failed',
+					'description' => json_encode([
+						"Total Count" => 0,
+						"Success Count" => 0,
+						"Failed Count" => 0,
+						"Errors" => [
+							"Error: " . $e->getMessage(),
+							"File: " . $e->getFile(),
+							"Line: " . $e->getLine()
+						]
+					], JSON_UNESCAPED_UNICODE)
+				]);
+			})
+			->finally(function (Batch $batch) {
+				TransactionLog::where('identifier', $batch->id)->update([
+					'status' => 'Completed'
+				]);
+			})
+			->name('Update Product Titles')
+			->dispatch();
+
+		// Chunk products and add job to batch
+		$category->products()->select('id', 'name')->chunk(100, function ($chunk) use ($batch, $formulaAttributes, $formulaAttributeIds, $createdBy) {
+			$products = Product::with('productAttributes')->whereIn('id', $chunk->pluck('id'))->get(['id', 'name']);
+			if ($products->isNotEmpty()) {
+				$batch->add(new UpdateProductTitleJob([
+					'products' => $products,
+					'formulaAttributes' => $formulaAttributes,
+					'formulaAttributeIds' => $formulaAttributeIds,
+					'userId' => $createdBy
+				]));
+			}
+		});
+
+		return response()->json([
+			'success' => true,
+			'message' => 'The import process has been scheduled successfully. Please track it under import log.'
 		]);
 	}
 }

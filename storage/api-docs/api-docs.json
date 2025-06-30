@@ -23487,6 +23487,37 @@
                 ]
             }
         },
+        "/api/categories/{category_id}/finalize-product-titles": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Start background job to finalize product titles",
+                "operationId": "2a022a74f2c4237cbc71245694e6e14c",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Batch started successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [

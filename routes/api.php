@@ -319,6 +319,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
 
+	Route::get('/categories/{category_id}/finalize-product-titles', [ProductTitleFormulaController::class, 'finalizeProductTitles']);
 	Route::get('/categories/{category_id}/sample-product-titles', [ProductTitleFormulaController::class, 'generateSampleProductTitles']);
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
