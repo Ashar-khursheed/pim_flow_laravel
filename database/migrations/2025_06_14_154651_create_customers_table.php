@@ -32,7 +32,7 @@ return new class extends Migration
 		Schema::create('customer_addresses', function (Blueprint $table) {
 			$table->id();
 			$table->bigInteger('customer_id');
-			$table->enum('type', ['home', 'work', 'other'])->default('home');
+			$table->string('type')->nullable();
 			$table->string('city')->nullable();
 			$table->string('state')->nullable();
 			$table->string('country')->nullable();

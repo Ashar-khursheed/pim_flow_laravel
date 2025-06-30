@@ -71,58 +71,54 @@ class ProductTitleFormulaController extends Controller
 	// 	]);
 	// }
 	public function index(Request $request)
-{
-	$query = ProductTitleFormula::with(['category', 'creator']);
+	{
+		$query = ProductTitleFormula::with(['category', 'creator']);
 
-	// Apply search
-	if ($search = $request->input('search')) {
-		$query->where(function ($q) use ($search) {
-			$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
+		// Apply search
+		if ($search = $request->input('search')) {
+			$query->where(function ($q) use ($search) {
+				$q->whereHas('category', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
 				->orWhereHas('creator', fn($q2) => $q2->where('name', 'like', "%{$search}%"))
 				->orWhere('attribute_id', 'like', "%{$search}%");
-		});
+			});
+		}
+
+		// Sorting
+		$sortBy = $request->input('sort_by', 'id');
+		$sortOrder = $request->input('sort_order', 'desc');
+		if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
+			$query->orderBy($sortBy, $sortOrder);
+		}
+
+		// Fetch all results
+		$formulas = $query->get();
+
+		$grouped = $formulas->groupBy('category_id')->map(function ($items, $categoryId) {
+			$categoryName = optional($items->first()->category)->name;
+
+			// Unique attribute IDs
+			$attributeIds = $items->pluck('attribute_id')->flatten()->unique()->filter();
+			$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
+
+			// Unique creators
+			$creatorNames = $items->pluck('creator.name')->unique()->filter()->values();
+			$lock = $items->pluck('locked')->unique()->filter()->values();
+			$created_at= $items->pluck('created_at')->unique()->filter()->values();
+			return [
+				'category_id' => $categoryId,
+				'category_name' => $categoryName,
+				'attribute_names' => implode(', ', $attributeNames),
+				'created_by' => $creatorNames,
+				'locked' => $lock,			// can return as array or implode
+				// If you want comma-separated creators instead:
+				// 'created_by' => implode(', ', $creatorNames->toArray()),
+			];
+		})->values();
+
+		return response()->json([
+			'data' => $grouped,
+		]);
 	}
-
-	// Sorting
-	$sortBy = $request->input('sort_by', 'id');
-	$sortOrder = $request->input('sort_order', 'desc');
-	if (in_array($sortBy, ['id', 'category_id', 'created_by', 'locked']) && in_array($sortOrder, ['asc', 'desc'])) {
-		$query->orderBy($sortBy, $sortOrder);
-	}
-
-	// Fetch all results
-	$formulas = $query->get();
-
-	$grouped = $formulas->groupBy('category_id')->map(function ($items, $categoryId) {
-		$categoryName = optional($items->first()->category)->name;
-
-		// Unique attribute IDs
-		$attributeIds = $items->pluck('attribute_id')->flatten()->unique()->filter();
-		$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
-
-		// Unique creators
-		$creatorNames = $items->pluck('creator.name')->unique()->filter()->values();
-		$lock = $items->pluck('locked')->unique()->filter()->values();
-		$created_at= $items->pluck('created_at')->unique()->filter()->values();
-		return [
-			'category_id' => $categoryId,
-			'category_name' => $categoryName,
-			'attribute_names' => implode(', ', $attributeNames),
-			'created_by' => $creatorNames,
-			'locked' => $lock,			// can return as array or implode
-			// If you want comma-separated creators instead:
-			// 'created_by' => implode(', ', $creatorNames->toArray()),
-		];
-	})->values();
-
-	return response()->json([
-		'data' => $grouped,
-	]);
-}
-
-
-
-
 
 	/**
 	 * @OA\Get(
@@ -164,37 +160,34 @@ class ProductTitleFormulaController extends Controller
 	 *     )
 	 * )
 	 */
+	public function show($id)
+	{
+		// Load the requested formula with its category and creator
+		$formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
 
-	 public function show($id)
-	 {
-		 // Load the requested formula with its category and creator
-		 $formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
-	 
-		 // Get all formulas under the same category
-		 $formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
-	 
-		 // Collect unique attribute IDs across all formulas in this category
-		 $attributeIds = $formulasInSameCategory->pluck('attribute_id')
-			 ->flatten()
-			 ->unique()
-			 ->filter();
-	 
-		 // Get attribute names
-		 $attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
-	 
-		 return response()->json([
-			 'id' => $formula->id,
-			 'category_id' => $formula->category_id,
-			 'category_name' => $formula->category?->name,
-			 'created_by' => $formula->creator?->name,
-			 'attribute_names' => implode(', ', $attributeNames),
-			 'locked' => $formula->locked,
-			 'created_at' => $formula->created_at,
-			 'updated_at' => $formula->updated_at,
-		 ]);
-	 }
-	 
-	 
+		// Get all formulas under the same category
+		$formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
+
+		// Collect unique attribute IDs across all formulas in this category
+		$attributeIds = $formulasInSameCategory->pluck('attribute_id')
+		->flatten()
+		->unique()
+		->filter();
+
+		// Get attribute names
+		$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
+
+		return response()->json([
+			'id' => $formula->id,
+			'category_id' => $formula->category_id,
+			'category_name' => $formula->category?->name,
+			'created_by' => $formula->creator?->name,
+			'attribute_names' => implode(', ', $attributeNames),
+			'locked' => $formula->locked,
+			'created_at' => $formula->created_at,
+			'updated_at' => $formula->updated_at,
+		]);
+	}
 
 	/**
 	 * @OA\Post(
@@ -268,47 +261,47 @@ class ProductTitleFormulaController extends Controller
 
 	/**
 	 * @OA\Put(
-		*     path="/api/product-title-formula/{id}",
-	    *     summary="Update product title formulas by category (replace existing with new)",
-		*     tags={"Product Title Formula"},
-		*     security={{"bearerAuth":{}}},
-		*     @OA\RequestBody(
-		*         required=true,
-		*         @OA\JsonContent(
-		*             required={"attribute_ids", "category_id"},
-		*             @OA\Property(
-		*                 property="attribute_ids",
-		*                 type="array",
-		*                 @OA\Items(type="integer", example=1)
-		*             ),
-		*             @OA\Property(property="category_id", type="integer", example=47),
-		*             @OA\Property(property="locked", type="boolean", example=true),
-		*             @OA\Property(property="created_by", type="integer", example=1)
-		*         )
-		*     ),
-		*     @OA\Response(
-		*         response=200,
-		*         description="Product title formulas updated successfully",
-		*         @OA\JsonContent(
-		*             @OA\Property(property="message", type="string", example="Product title formulas updated successfully."),
-		*             @OA\Property(
-		*                 property="data",
-		*                 type="array",
-		*                 @OA\Items(
-		*                     type="object",
-		*                     @OA\Property(property="id", type="integer", example=1),
-		*                     @OA\Property(property="attribute_id", type="integer", example=3),
-		*                     @OA\Property(property="category_id", type="integer", example=47),
-		*                     @OA\Property(property="locked", type="boolean", example=true),
-		*                     @OA\Property(property="created_by", type="integer", example=1),
-		*                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z"),
-		*                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z")
-		*                 )
-		*             )
-		*         )
-		*     )
-		* )
-		*/
+	 *     path="/api/product-title-formula/{id}",
+	 *     summary="Update product title formulas by category (replace existing with new)",
+	 *     tags={"Product Title Formula"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"attribute_ids", "category_id"},
+	 *             @OA\Property(
+	 *                 property="attribute_ids",
+	 *                 type="array",
+	 *                 @OA\Items(type="integer", example=1)
+	 *             ),
+	 *             @OA\Property(property="category_id", type="integer", example=47),
+	 *             @OA\Property(property="locked", type="boolean", example=true),
+	 *             @OA\Property(property="created_by", type="integer", example=1)
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Product title formulas updated successfully",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="message", type="string", example="Product title formulas updated successfully."),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     type="object",
+	 *                     @OA\Property(property="id", type="integer", example=1),
+	 *                     @OA\Property(property="attribute_id", type="integer", example=3),
+	 *                     @OA\Property(property="category_id", type="integer", example=47),
+	 *                     @OA\Property(property="locked", type="boolean", example=true),
+	 *                     @OA\Property(property="created_by", type="integer", example=1),
+	 *                     @OA\Property(property="created_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z"),
+	 *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2025-06-24T08:12:11.000000Z")
+	 *                 )
+	 *             )
+	 *         )
+	 *     )
+	 * )
+	 */
 	public function update(Request $request, $id)
 	{
 		$validated = $request->validate([
@@ -318,14 +311,14 @@ class ProductTitleFormulaController extends Controller
 			'locked' => 'boolean',
 			'created_by' => 'nullable|integer',
 		]);
-	
+
 		// Start DB transaction for atomicity
 		DB::beginTransaction();
-	
+
 		try {
 			// Delete existing formulas in the given category
 			ProductTitleFormula::where('category_id', $validated['category_id'])->delete();
-	
+
 			// Insert new formulas
 			$newFormulas = [];
 			foreach ($validated['attribute_ids'] as $attributeId) {
@@ -336,16 +329,16 @@ class ProductTitleFormulaController extends Controller
 					'created_by' => $validated['created_by'] ?? null,
 				]);
 			}
-	
+
 			DB::commit();
-	
+
 			return response()->json([
 				'message' => 'Product title formulas updated successfully.',
 				'data' => $newFormulas,
 			]);
 		} catch (\Exception $e) {
 			DB::rollBack();
-	
+
 			return response()->json([
 				'message' => 'Failed to update product title formulas.',
 				'error' => $e->getMessage(),
@@ -364,7 +357,6 @@ class ProductTitleFormulaController extends Controller
 	 *     @OA\Response(response=404, description="Formula not found")
 	 * )
 	 */
-
 	public function destroy($id)
 	{
 		$formula = ProductTitleFormula::findOrFail($id);
@@ -388,8 +380,7 @@ class ProductTitleFormulaController extends Controller
 	 *     @OA\Response(response=200, description="Records deleted"),
 	 *     @OA\Response(response=422, description="Validation error")
 	 * )
-	*/
-
+	 */
 	public function destroyMultiple(Request $request)
 	{
 		$request->validate([
@@ -400,5 +391,85 @@ class ProductTitleFormulaController extends Controller
 		ProductTitleFormula::whereIn('id', $request->ids)->delete();
 
 		return response()->json(['message' => 'Selected records deleted']);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/categories/{category_id}/sample-product-titles",
+	 *     summary="Generate first five product titles according to category attribute formula",
+	 *     tags={"Product Title Formula"},
+	 *     @OA\Parameter(name="category_id", in="path", description="Category ID", required=true, @OA\Schema(type="integer", example=1)),
+	 *     @OA\Response(response=200, description="Genearted successfully", @OA\MediaType(mediaType="application/json")),
+	 * 	   security={{"bearerAuth":{}}},
+	 * )
+	 */
+	public function generateSampleProductTitles($categoryID)
+	{
+		$category = Category::find($categoryID);
+		if (!$category) {
+			return response()->json([
+				'success' => false,
+				'message' => "category not found."
+			]);
+		}
+
+		if ($category->children()->exists()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Only leaf categories are allowed.'
+			]);
+		}
+
+		$formulaAttributes = $category->titleFormulaAttributes;
+		if ($formulaAttributes->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No attributes associated with this category to generate product titles.'
+			]);
+		}
+
+		$formulaAttributeIds = $formulaAttributes->pluck('id')->toArray();
+		$categoryProducts = $category->products()->with('productAttributes')->get();
+
+		if ($categoryProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No products found for this category.'
+			]);
+		}
+
+		$validProducts = collect();
+
+		foreach ($categoryProducts as $product) {
+			$attributeValues = $product->productAttributes->keyBy('attribute_id');
+
+			/* Check if product has all formula attributes */
+			if (collect($formulaAttributeIds)->every(fn($id) => $attributeValues->has($id))) {
+				$generatedTitle = $formulaAttributes->map(function ($attr) use ($attributeValues) {
+					return $attributeValues[$attr->id]->attribute_value;
+				})->implode(' ');
+
+				$validProducts->push([
+					'id' => $product->id,
+					'name' => $product->name,
+					'generated_title' => $generatedTitle
+				]);
+
+				if ($validProducts->count() >= 5) break;
+			}
+		}
+
+		if ($validProducts->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'No product has complete attribute data to generate titles.'
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Generated product titles successfully.',
+			'data' => $validProducts
+		]);
 	}
 }

@@ -23453,6 +23453,40 @@
                 ]
             }
         },
+        "/api/categories/{category_id}/sample-product-titles": {
+            "get": {
+                "tags": [
+                    "Product Title Formula"
+                ],
+                "summary": "Generate first five product titles according to category attribute formula",
+                "operationId": "5447ec5df70e80e8732229ad48534722",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "Category ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Genearted successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
