@@ -149,7 +149,7 @@
 				<tr>
 					<td>
 						<div style=" font-family: 'Poppins', sans-serif;  display:flex; flex-wrap:wrap; justify-content:space-between;">
-							<div style=" font-family: 'Poppins', sans-serif;  flex:1; min-width:200px; margin-bottom:10px;">
+							<div style=" font-family: 'Poppins', sans-serif;  flex:1; min-width:200px; margin-bottom:10px; visibility: <?= $totalSaved ? 'visible' : 'hidden' ?>;">
 								<table cellspacing="0" cellpadding="8" style=" font-family: 'Poppins', sans-serif;  font-size:14px; width:100%;">
 									@if($totalSaved)
 									<tr>
