@@ -95,6 +95,8 @@ use App\Http\Controllers\FrontEnd\ProductErrorController as F_ProductErrorContro
 use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
 use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
+use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
+
 
 
 
@@ -532,3 +534,6 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
+
+Route::post('frontend/tax/rate', [F_TaxController::class, 'getRate']);
+Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);

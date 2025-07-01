@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "614565886af4d9be9837ce53e9503b74",
+    "content-hash": "2a0e7d563f2090a3049eb2abda13d471",
     "packages": [
         {
             "name": "apimatic/core",
@@ -7617,6 +7617,56 @@
                 }
             ],
             "time": "2025-04-04T10:10:33+00:00"
+        },
+        {
+            "name": "taxjar/taxjar-php",
+            "version": "v2.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/taxjar/taxjar-php.git",
+                "reference": "ba3eb2a67b1fe7b7d2d7a7032f12d8cb33ce2631"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/taxjar/taxjar-php/zipball/ba3eb2a67b1fe7b7d2d7a7032f12d8cb33ce2631",
+                "reference": "ba3eb2a67b1fe7b7d2d7a7032f12d8cb33ce2631",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.2",
+                "php": "^8.0"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "TaxJar\\": "lib/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "TaxJar"
+                }
+            ],
+            "description": "Sales Tax API Client for PHP 8.0+",
+            "homepage": "https://www.taxjar.com/",
+            "keywords": [
+                "api",
+                "sales tax",
+                "taxjar"
+            ],
+            "support": {
+                "issues": "https://github.com/taxjar/taxjar-php/issues",
+                "source": "https://github.com/taxjar/taxjar-php/tree/v2.0.1"
+            },
+            "time": "2025-05-08T21:01:24+00:00"
         },
         {
             "name": "tijsverkoyen/css-to-inline-styles",
