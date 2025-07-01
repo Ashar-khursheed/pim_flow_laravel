@@ -42,7 +42,7 @@ class OrderController extends BaseController
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
-			$recordsQuery->with(['orderProducts:id,order_id,product_id,vendor_id,quantity',
+			$recordsQuery->with(['orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name', 'payments', 'shipments']);
 
@@ -260,7 +260,7 @@ class OrderController extends BaseController
 
 			/* Load relationships */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name',
 				'tracking'
@@ -482,7 +482,7 @@ class OrderController extends BaseController
 
 			/* Reload updated order data */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name',
 				'tracking'
