@@ -282,7 +282,7 @@ class ProductYouMayLikeController extends Controller
                     'front_sale_price' => (float) $firstSupplier->sale_price,
                      "best_price"=>  (float) $firstSupplier->price,
                      "selling_type"=> $sellingType,
-                     "per_unit_price"=>   $details->per_unit_price,
+                     "per_unit_price"=>   $product->per_unit_price,
                      'vendor_id' => $firstSupplier->vendor_id ?? null,
                      'map' => (float) $firstSupplier->map ?? null,
                      'inventory' => $firstSupplier->inventory ?? null,
