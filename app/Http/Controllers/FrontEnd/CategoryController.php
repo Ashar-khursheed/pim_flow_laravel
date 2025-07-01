@@ -2635,7 +2635,7 @@ use Illuminate\Support\Facades\Auth;
               }
 
               $product->per_unit_price = $perUnitPrice;
-              $firstSupplier = $product->product->first();
+              $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
