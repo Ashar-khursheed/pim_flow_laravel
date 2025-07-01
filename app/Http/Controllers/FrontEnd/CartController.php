@@ -357,9 +357,10 @@ class CartController extends Controller
             $symbol = optional($item->product->currency)->symbol;
         
             $item->product->unsetRelation('currency');
-        
+             
             $item->product->currency = $symbol;
             $firstSupplier =$item->product->productSuppliers->first();
+            
              $item->product->vendor_sku = $firstSupplier->vendor_sku;
              $item->product->price = (float) $firstSupplier->price;
              $item->product->sale_price = (float) $firstSupplier->sale_price;
