@@ -349,7 +349,6 @@ class BrandController extends Controller
                         }
                         $firstSupplier = $product->productSuppliers->first();
 
-
                         return [
                             "id" => $product->id,
                             "name" => $product->name,
@@ -363,22 +362,23 @@ class BrandController extends Controller
                             "selling_type" => $sellingType,
                             "per_unit_price" => $perUnitPrice,
                             'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                            'price' =>  (float) $firstSupplier->price,
-                            "sale_price" => (float) $firstSupplier->sale_price,
-                            "original_price"=>  (float) $firstSupplier->price,
-                            'front_sale_price' => (float) $firstSupplier->sale_price,
-                             "best_price"=>  (float) $firstSupplier->price,
-                             "selling_type"=> $sellingType,
-                             "per_unit_price"=>   $product->per_unit_price,
-                             'vendor_id' => $firstSupplier->vendor_id ?? null,
-                             'map' => (float) $firstSupplier->map ?? null,
-                             'inventory' => $firstSupplier->inventory ?? null,
-                             'in_stock' => $firstSupplier->in_stock ?? null,
-                             'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                             'return_policy' => $firstSupplier->return_policy ?? null,
-                             'free_shipping' => $firstSupplier->free_shipping ?? null,
-                             'warranty_information' => $firstSupplier->warranty_information ?? null,
+                            'price' => (float) ($firstSupplier->price ?? 0),
+                            "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                            "original_price"=> (float) ($firstSupplier->price ?? 0),
+                            'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                            "best_price"=> (float) ($firstSupplier->price ?? 0),
+                            "selling_type"=> $sellingType,
+                            "per_unit_price"=> $product->per_unit_price,
+                            'vendor_id' => $firstSupplier->vendor_id ?? null,
+                            'map' => (float) ($firstSupplier->map ?? 0),
+                            'inventory' => $firstSupplier->inventory ?? null,
+                            'in_stock' => $firstSupplier->in_stock ?? null,
+                            'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                            'return_policy' => $firstSupplier->return_policy ?? null,
+                            'free_shipping' => $firstSupplier->free_shipping ?? null,
+                            'warranty_information' => $firstSupplier->warranty_information ?? null,
                         ];
+                        
                     })
                 ];
             }),
@@ -590,7 +590,6 @@ class BrandController extends Controller
                         $details->per_unit_price = $perUnitPrice;
                         $firstSupplier = $details->productSuppliers->first();
 
-    
                         return [
                             'id' => $details->id,
                             'name' => $details->name,
@@ -600,26 +599,24 @@ class BrandController extends Controller
                             'left_stock' => $leftStock,
                             'currency' => $currencyTitle,
                             'images' => $imageUrls,
-                            'selling_type'=> $sellingType,
-                            'vendor_id' => $details->vendor_id,
-                            'per_unit_price' =>  $details->per_unit_price,
+                            'selling_type' => $sellingType,
+                            'vendor_id' => $firstSupplier->vendor_id ?? null,
+                            'per_unit_price' => $details->per_unit_price,
                             'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                            'price' =>  (float) $firstSupplier->price,
-                            "sale_price" => (float) $firstSupplier->sale_price,
-                            "original_price"=>  (float) $firstSupplier->price,
-                            'front_sale_price' => (float) $firstSupplier->sale_price,
-                             "best_price"=>  (float) $firstSupplier->price,
-                             "selling_type"=> $sellingType,
-                             "per_unit_price"=>   $details->per_unit_price,
-                             'vendor_id' => $firstSupplier->vendor_id ?? null,
-                             'map' => (float) $firstSupplier->map ?? null,
-                             'inventory' => $firstSupplier->inventory ?? null,
-                             'in_stock' => $firstSupplier->in_stock ?? null,
-                             'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                             'return_policy' => $firstSupplier->return_policy ?? null,
-                             'free_shipping' => $firstSupplier->free_shipping ?? null,
-                             'warranty_information' => $firstSupplier->warranty_information ?? null,
+                            'price' => (float) ($firstSupplier->price ?? 0),
+                            'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                            'original_price' => (float) ($firstSupplier->price ?? 0),
+                            'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                            'best_price' => (float) ($firstSupplier->price ?? 0),
+                            'map' => (float) ($firstSupplier->map ?? 0),
+                            'inventory' => $firstSupplier->inventory ?? null,
+                            'in_stock' => $firstSupplier->in_stock ?? null,
+                            'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                            'return_policy' => $firstSupplier->return_policy ?? null,
+                            'free_shipping' => $firstSupplier->free_shipping ?? null,
+                            'warranty_information' => $firstSupplier->warranty_information ?? null,
                         ];
+                        
                     })->values(),
                 ];
             }),
