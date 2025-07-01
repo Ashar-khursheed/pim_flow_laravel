@@ -51,33 +51,59 @@ class ReturnOrderProductController extends BaseController
 			]);
 		}
 
+		if ($orderProduct->status === 'Request Return' || $orderProduct->status === 'Partial Request Return') {
+			return response()->json([
+				'success' => false,
+				'message' => 'Return request has already been initiated for this product.'
+			]);
+		}
+
 		if ($orderProduct->status !== 'Delivered') {
 			return response()->json([
 				'success' => false,
-				'message' => 'Only delivered products can be returned.'
+				'message' => 'Only delivered products are eligible for return.'
+			]);
+		}
+
+		// if ($orderProduct->status === 'Request Return') {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'A return request has already been initiated for this product.'
+		// 	]);
+		// }
+
+		// if (!in_array($orderProduct->status, ['Delivered', 'Partial Request Return'])) {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'Only delivered products are eligible for return.'
+		// 	]);
+		// }
+
+		$shippedQuantity = $orderProduct->shipmentProducts->sum('quantity');
+		$returnedQuantity = $orderProduct->returnOrderProducts->sum('quantity');
+		$remainingReturnable = $shippedQuantity - $returnedQuantity;
+
+		if ($request->quantity > $remainingReturnable) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Return quantity exceeds the remaining delivered quantity.'
 			]);
 		}
 
 		$request->validate([
-			'quantity' => 'required|integer|min:1|max:' . $orderProduct->shipped_quantity,
+			'quantity' => 'required|integer|min:1|max:' . $remainingReturnable,
 			'reason' => 'required|string',
+			'description' => 'nullable|string',
 			'product_images' => 'nullable|array',
 			'product_videos' => 'nullable|array',
 			'product_images.*' => 'nullable|file|mimes:jpeg,png,jpg,webp|max:2048',
 			'product_videos.*' => 'nullable|file|mimes:mp4,mov,avi,webm|max:10240',
-			'description' => 'nullable|string',
 		]);
-		/* Upload media files and convert to array of URLs */
-		$productImages = [];
 
+		/* Upload media files */
+		$productImages = [];
 		if ($request->hasFile('product_images')) {
 			foreach ($request->file('product_images') as $index => $imageFile) {
-				/*
-				|------------------------------------------------------------
-				| We need to temporarily rebind each image file to a Request
-				| input key for the helper to process it correctly.
-				|------------------------------------------------------------
-				*/
 				$tempRequest = new \Illuminate\Http\Request();
 				$tempRequest->files->set('product_image_single', $imageFile);
 
@@ -89,13 +115,13 @@ class ReturnOrderProductController extends BaseController
 			}
 		}
 
-
 		$productVideos = [];
 		if ($request->hasFile('product_videos')) {
 			foreach ($request->file('product_videos') as $video) {
 				$productVideos[] = uploadFileToS3($video, env('STORAGE_ENV') . '/returns/videos');
 			}
 		}
+
 		$return = ReturnOrderProduct::create([
 			'refund_number' => 'R-' . strtoupper(Str::random(10)),
 			'order_product_id' => $orderProduct->id,
@@ -107,9 +133,17 @@ class ReturnOrderProductController extends BaseController
 			'status' => 'requested',
 		]);
 
+		/* Update order product status */
+		$totalRequested = $returnedQuantity + $request->quantity;
+		if ($totalRequested >= $shippedQuantity) {
+			$orderProduct->update(['status' => 'Request Return']);
+		} else {
+			$orderProduct->update(['status' => 'Partial Request Return']);
+		}
+
 		return response()->json([
 			'success' => true,
-			'message' => 'Return request created successfully',
+			'message' => 'Return request created successfully.',
 			'data' => $return
 		]);
 	}
