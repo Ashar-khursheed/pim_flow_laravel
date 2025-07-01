@@ -559,7 +559,7 @@ class ProductYouMayLikeController extends Controller
     
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency', 'specifications'])
+            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers'])
                 ->get()
                 ->keyBy('id');
     
