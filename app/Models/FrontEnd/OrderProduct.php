@@ -39,7 +39,7 @@ class OrderProduct extends Model
 
 	public function shipmentProducts()
 	{
-		return $this->hasMany(ShipmentProduct::class);
+		return $this->hasMany(ShipmentProduct::class, 'order_product_id');
 	}
 
 	/* Accessor: Fully Shipped */
@@ -54,11 +54,10 @@ class OrderProduct extends Model
 		return $this->quantity - $this->shipped_quantity;
 	}
 
-	public function returnRequests()
+	public function returnOrderProducts()
 	{
-		return $this->hasMany(ReturnOrderProduct::class);
+		return $this->hasMany(ReturnOrderProduct::class, 'order_product_id');
 	}
-
 
 	/**
 	 * Prepare a date for array / JSON serialization.
