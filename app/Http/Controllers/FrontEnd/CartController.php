@@ -362,19 +362,19 @@ class CartController extends Controller
             $firstSupplier =$item->product->productSuppliers->first();
 
              $item->product->vendor_sku = $firstSupplier->vendor_sku  ?? null;
-             $item->product->price = (float) $firstSupplier->price;
-             $item->product->sale_price = (float) $firstSupplier->sale_price;
-             $item->product->original_price = (float) $firstSupplier->price;
-             $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-             $item->product->best_price = (float) $firstSupplier->price;
-             $item->product->vendor_id = $firstSupplier->vendor_id;
-             $item->product->map = (float) $firstSupplier->map;
-             $item->product->inventory = $firstSupplier->inventory;
-             $item->product->in_stock = $firstSupplier->in_stock;
-            $item->product->delivery_date = $firstSupplier->delivery_days;
-             $item->product->return_policy = $firstSupplier->return_policy;
-             $item->product->free_shipping = $firstSupplier->free_shipping;
-             $item->product->warranty_information = $firstSupplier->warranty_information;
+             $item->product->price = (float) $firstSupplier->price  ?? null;
+             $item->product->sale_price = (float) $firstSupplier->sale_price  ?? null;
+             $item->product->original_price = (float) $firstSupplier->price  ?? null;
+             $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price)  ?? null;
+             $item->product->best_price = (float) $firstSupplier->price  ?? null;
+             $item->product->vendor_id = $firstSupplier->vendor_id  ?? null;
+             $item->product->map = (float) $firstSupplier->map  ?? null;
+             $item->product->inventory = $firstSupplier->inventory  ?? null;
+             $item->product->in_stock = $firstSupplier->in_stock ?? null;
+            $item->product->delivery_date = $firstSupplier->delivery_days ?? null;
+             $item->product->return_policy = $firstSupplier->return_policy ?? null;
+             $item->product->free_shipping = $firstSupplier->free_shipping ?? null;
+             $item->product->warranty_information = $firstSupplier->warranty_information ?? null;
 
 
         });
