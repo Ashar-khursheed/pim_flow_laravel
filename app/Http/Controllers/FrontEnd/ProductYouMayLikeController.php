@@ -206,7 +206,7 @@ class ProductYouMayLikeController extends Controller
             // Load additional relationships for paginated products
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency', 'specifications' ,'productSuppliers'])
+                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
                 ->get()
                 ->keyBy('id');
 
