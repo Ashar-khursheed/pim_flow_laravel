@@ -252,7 +252,6 @@ class ProductYouMayLikeController extends Controller
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-                $item->product->front_sale_price;
                 $firstSupplier = $product->productSuppliers->first();
 
                 return [
