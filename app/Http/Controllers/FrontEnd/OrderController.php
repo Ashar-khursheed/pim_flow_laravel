@@ -327,7 +327,7 @@ class OrderController extends BaseController
 
 		/* Load relationships */
 		$order->load([
-			'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 			'orderProducts.product.brand:id,name',
 			'tracking',
