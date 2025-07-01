@@ -136,7 +136,7 @@ class SaveForLaterController extends Controller
 				'product.reviews',
 				'product.currency',
 				'product.sellingUnitAttribute',
-				'productSuppliers',
+				'product.productSuppliers',
 			])
 			->get();
 	
