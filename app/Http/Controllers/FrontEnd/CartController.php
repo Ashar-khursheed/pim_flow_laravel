@@ -361,7 +361,7 @@ class CartController extends Controller
             $item->product->currency = $symbol;
             $firstSupplier =$item->product->productSuppliers->first();
 
-             $item->product->vendor_sku = $firstSupplier->vendor_sku;
+             $item->product->vendor_sku = $firstSupplier->vendor_sku  ?? null;
              $item->product->price = (float) $firstSupplier->price;
              $item->product->sale_price = (float) $firstSupplier->sale_price;
              $item->product->original_price = (float) $firstSupplier->price;
