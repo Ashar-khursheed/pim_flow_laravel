@@ -2570,7 +2570,7 @@ use Illuminate\Support\Facades\Auth;
         // Fetching products based on filters
         $products = Product::whereIn('id', $filteredProductIds)
             ->where('status', 'published')
-            ->with(['currency', 'reviews', 'brand' ,   'productAttributes' => function ($query) {
+            ->with(['currency', 'reviews', 'productSuppliers', 'brand' ,   'productAttributes' => function ($query) {
                 $query->whereHas('attributeDetails', function ($q) {
                     $q->whereIn('name', ['Units per Case', 'Pack Type']);
                 });
@@ -2635,7 +2635,8 @@ use Illuminate\Support\Facades\Auth;
               }
 
               $product->per_unit_price = $perUnitPrice;
-            
+              $firstSupplier = $details->product->first();
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -2643,18 +2644,11 @@ use Illuminate\Support\Facades\Auth;
                 'video_url' => $product->video_url,
                 'video_path' => is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []),
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
                 'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null,
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
@@ -2664,6 +2658,20 @@ use Illuminate\Support\Facades\Auth;
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
                 'selling_type'=> $sellingType,
                 'per_unit_price' =>  $product->per_unit_price,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price ?? (float) $firstSupplier->price,
+                "best_price"=>  (float) $firstSupplier->price,
+                'vendor_id' => $firstSupplier->vendor_id ?? null,
+                'map' => $firstSupplier->map ?? null,
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
 
             ];
         });
@@ -3021,34 +3029,6 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
-    // public function fetchCategories(Request $request)
-    // {
-    //     // Limit to 14 categories
-    //     $limit = 13;
-
-    //     // Fetch parent categories
-    //     $parentCategories = Category::where('parent_id', 0)
-    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-    //     // Fetch child categories
-    //     $childCategories = Category::whereIn('parent_id', $parentCategories->pluck('id'))
-    //         ->get(['id', 'name', 'slug', 'parent_id', 'image']); // Select necessary fields
-
-    //     // Merge parent and child categories
-    //     $allCategories = $parentCategories->merge($childCategories);
-
-    //     // Limit the combined result to 14 categories
-    //     $limitedCategories = $allCategories->take($limit);
-
-    //     // Add product count and adjust image URLs
-    //     foreach ($limitedCategories as $category) {
-    //         $category->productCount = $category->products()->count(); // Count related products
-    //         $category->image; // Adjust image URL
-    //     }
-
-    //     // Return categories with their details
-    //     return response()->json($limitedCategories);
-    // }
     public function fetchCategories(Request $request)
     {
         $limit = 15;
@@ -3127,7 +3107,7 @@ use Illuminate\Support\Facades\Auth;
      * )
      */
 
-     public function fetchAllCategories(Request $request)
+    public function fetchAllCategories(Request $request)
      {
          // Fetch published parent categories
          $parentCategories = Category::where('parent_id', 0)
@@ -3232,139 +3212,7 @@ use Illuminate\Support\Facades\Auth;
      *     )
      * )
     */
-    // public function getAllFeaturedProductsByCategory(Request $request)
-    // {
-    //     $userId = Auth::id();
-    //     $isUserLoggedIn = $userId !== null;
-
-    //     // Fetch wishlist product IDs for logged-in users or guests
-    //     $wishlistProductIds = $isUserLoggedIn
-    //         ? DB::table('ec_wish_lists')
-    //             ->where('customer_id', $userId)
-    //             ->pluck('product_id')
-    //             ->map(fn($id) => (int) $id)
-    //             ->toArray()
-    //         : session()->get('guest_wishlist', []);
-
-    //     // Get only third-level child categories that have featured products
-    //     $categories = Category::whereHas('products', function ($query) {
-    //         $query->where('is_featured', 1)
-    //               ->where('status', 'published');
-    //     }, '>=', 5)
-    //     ->whereHas('parent.parent') // Ensures only third-level child categories
-    //     ->with(['products' => function ($query) {
-    //         $query->where('is_featured', 1)
-    //             ->where('status', 'published')
-    //             ->select('id', 'name', 'sku', 'price', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
-    //     }])
-    //     ->take(5)
-    //     ->get();
-
-    //     // Subquery for best price and delivery days
-    //     $subQuery = Product::select('sku')
-    //         ->selectRaw('MIN(price) as best_price')
-    //         ->selectRaw('MIN(delivery_days) as best_delivery_date')
-    //         ->groupBy('sku');
-
-    //     // Process categories and products
-    //     $categories = $categories->map(function ($category) use ($subQuery, $wishlistProductIds) {
-    //         $featuredProducts = $category->products->take(10);
-
-    //         // Fetch all product details in one query
-    //         $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-    //                 $join->on('ec_products.sku', '=', 'best_products.sku')
-    //                     ->whereColumn('ec_products.price', 'best_products.best_price');
-    //             })
-    //             ->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-    //             ->with(['reviews', 'currency' ,   'productAttributes' => function ($query) {
-    //                 $query->whereHas('attributeDetails', function ($q) {
-    //                     $q->whereIn('name', ['Units per Case', 'Pack Type']);
-    //                 });
-    //             },
-    //             ]) // Eager load relationships
-    //             ->get()
-    //             ->keyBy('id'); // Use keyBy to quickly fetch by ID later
-
-    //         return [
-    //             'category_name' => $category->name,
-    //             'featured_products' => $featuredProducts->map(function ($product) use ($productDetails, $wishlistProductIds) {
-    //                 $details = $productDetails[$product->id] ?? null;
-    //                 if (!$details) return null; // Skip if no details found
-
-    //                 $totalReviews = $details->reviews->count();
-    //                 $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-    //                 $leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
-    //                 $currencyTitle = $details->currency->symbol ?? $details->price;
-    //                 $isInWishlist = in_array($details->id, $wishlistProductIds);
-
-    //                 // Process images efficiently
-    //                 $imageUrls = is_string($details->images)
-    //                 ? json_decode($details->images, true)
-    //                 : (array) $details->images;
-
-    //                 $sellingType = null;
-
-    //                 if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
-    //                     $fullValue = $details->sellingUnitAttribute->attribute_value;
-
-    //                     $attributeUnit = strpos($fullValue, '/') !== false
-    //                         ? trim(explode('/', $fullValue)[1])
-    //                         : $fullValue;
-
-    //                     $sellingType = [
-    //                         'attribute_value' => $details->sellingUnitAttribute->attribute_value,
-    //                         'attribute_value_unit' => $attributeUnit,
-    //                     ];
-    //                 }
-
-    //                   // Calculate per unit price
-    //                   $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-    //                   $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-                      
-
-    //                   $basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
-    //                   $perUnitPrice = null;
-
-    //                   if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-    //                       $unitValue = (float) $unitsPerCase->attribute_value;
-    //                       if ($unitValue > 0) {
-    //                           $calculated = round($basePrice / $unitValue, 2);
-    //                           $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
-    //                       }
-    //                   }
-
-    //                   $details->per_unit_price = $perUnitPrice;
-        
-                
-    //                 return [
-    //                     'id' => $details->id,
-    //                     'name' => $details->name,
-    //                     'sku' => $details->sku,
-    //                     'price' => $details->best_price ?? $details->price,
-    //                     "sale_price" => $details->sale_price,
-    //                     'best_delivery_date' => $details->best_delivery_date,
-    //                     'total_reviews' => $totalReviews,
-    //                     'avg_rating' => $avgRating,
-    //                     'left_stock' => $leftStock,
-    //                     'currency' => $currencyTitle,
-    //                     'in_wishlist' => $isInWishlist,
-    //                     'images' => $imageUrls,
-    //                     "original_price"=> $details->price,
-    //                     "front_sale_price"=> $details->price,
-    //                     "best_price"=> $details->price,
-    //                     "selling_type"=> $sellingType,
-    //                     "per_unit_price"=>   $details->per_unit_price,
-
-    //                 ];
-    //             })->filter()->values(), // Remove null values and reset array keys
-    //         ];
-    //     });
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => $categories,
-    //     ]);
-    // }
+    
     public function getAllFeaturedProductsByCategory(Request $request)
     {
         $userId = Auth::id();
@@ -3477,7 +3325,6 @@ use Illuminate\Support\Facades\Auth;
                         'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                         'price' =>  (float) $firstSupplier->price,
                         "sale_price" => (float) $firstSupplier->sale_price,
-                        'best_delivery_date' => $details->best_delivery_date,
                         'total_reviews' => $totalReviews,
                         'avg_rating' => $avgRating,
                         'left_stock' => $leftStock,
@@ -3493,13 +3340,10 @@ use Illuminate\Support\Facades\Auth;
                         'map' => $firstSupplier->map ?? null,
                         'inventory' => $firstSupplier->inventory ?? null,
                         'in_stock' => $firstSupplier->in_stock ?? null,
-                        'delivery_days' => $firstSupplier->delivery_days ?? null,
+                        'best_delivery_date' => $firstSupplier->delivery_days ?? null,
                         'return_policy' => $firstSupplier->return_policy ?? null,
                         'free_shipping' => $firstSupplier->free_shipping ?? null,
                         'warranty_information' => $firstSupplier->warranty_information ?? null,
-    
-    
-
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
@@ -3593,7 +3437,7 @@ use Illuminate\Support\Facades\Auth;
                         ->whereColumn('ec_products.price', 'best_products.best_price');
                 })
                 ->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-                ->with(['reviews', 'currency' , 'vendor' ,  'productAttributes' => function ($query) {
+                ->with(['reviews', 'currency' ,'productSuppliers', 'vendor' ,  'productAttributes' => function ($query) {
                     $query->whereHas('attributeDetails', function ($q) {
                         $q->whereIn('name', ['Units per Case', 'Pack Type']);
                     });
@@ -3649,26 +3493,34 @@ use Illuminate\Support\Facades\Auth;
 
                       $details->per_unit_price = $perUnitPrice;
                     
-
+                      $firstSupplier = $details->productSuppliers->first();
 
                     return [
                         'id' => $details->id,
                         'name' => $details->name,
                         'sku' => $details->sku,
-                        'price' => $details->best_price ?? $details->price,
-                        "sale_price" => $details->sale_price,
-                        'best_delivery_date' => $details->best_delivery_date,
+                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                        'price' =>  (float) $firstSupplier->price,
+                        "sale_price" => (float) $firstSupplier->sale_price,
                         'total_reviews' => $totalReviews,
                         'avg_rating' => $avgRating,
                         'left_stock' => $leftStock,
                         'currency' => $currencyTitle,
+                        'in_wishlist' => $isInWishlist,
                         'images' => $imageUrls,
-                        "original_price"=> $details->price,
-                        "front_sale_price"=> $details->price,
-                        "best_price"=> $details->price,
+                        "original_price"=>  (float) $firstSupplier->price,
+                       'front_sale_price' => (float) $firstSupplier->sale_price,
+                        "best_price"=>  (float) $firstSupplier->price,
                         "selling_type"=> $sellingType,
-                        'vendor_id' => $details->vendor_id,
-                        'per_unit_price' =>  $details->per_unit_price,
+                        "per_unit_price"=>   $details->per_unit_price,
+                        'vendor_id' => $firstSupplier->vendor_id ?? null,
+                        'map' => $firstSupplier->map ?? null,
+                        'inventory' => $firstSupplier->inventory ?? null,
+                        'in_stock' => $firstSupplier->in_stock ?? null,
+                        'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                        'return_policy' => $firstSupplier->return_policy ?? null,
+                        'free_shipping' => $firstSupplier->free_shipping ?? null,
+                        'warranty_information' => $firstSupplier->warranty_information ?? null,
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
             ];
@@ -3725,49 +3577,5 @@ use Illuminate\Support\Facades\Auth;
 		return $branch;
 	}
 
-    	// public function store(Request $request)
-	// {
-	// 	$validated = $request->validate([
-	// 		'name' => 'required|string|max:255',
-	// 		'parent_id' => 'nullable|exists:categories,id',
-	// 		'description' => 'nullable|string',
-	// 		'status' => 'required|boolean',
-	// 		'image' => 'nullable|string',
-	// 		'is_featured' => 'required|boolean',
-	// 		'icon' => 'nullable|string',
-	// 		'icon_image' => 'nullable|string',
-	// 		'order' => 'nullable|integer',
-	// 	]);
-
-	// 	$category = Category::create($validated);
-	// 	return response()->json($category, 201);
-	// }
-
-	// public function update(Request $request, $id)
-	// {
-	// 	$validated = $request->validate([
-	// 		'name' => 'required|string|max:255',
-	// 		'parent_id' => 'nullable|exists:categories,id',
-	// 		'description' => 'nullable|string',
-	// 		'status' => 'required|boolean',
-	// 		'image' => 'nullable|string',
-	// 		'is_featured' => 'required|boolean',
-	// 		'icon' => 'nullable|string',
-	// 		'icon_image' => 'nullable|string',
-	// 		'order' => 'nullable|integer',
-	// 	]);
-
-	// 	$category = Category::findOrFail($id);
-	// 	$category->update($validated);
-	// 	return response()->json($category);
-	// }
-
-	// public function destroy($id)
-	// {
-	// 	$category = Category::findOrFail($id);
-	// 	$category->delete();
-	// 	return response()->json(['message' => 'Category deleted successfully']);
-	// }
-  
-
+    
 }
