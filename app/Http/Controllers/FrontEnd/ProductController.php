@@ -92,7 +92,7 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' , 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews'])
                     ->where('status', 'published');
 
                                     
@@ -155,6 +155,7 @@ class ProductController extends Controller
                     },
                     'currency' ,
                     'categories',
+                    'productSuppliers',
                     'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -966,7 +967,7 @@ class ProductController extends Controller
             ->limit(20)
             ->with([
                 'reviews:id,product_id,star',
-                'currency'            ])
+                'currency' ,   'productSuppliers'    ])
             ->get();
 
         $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
@@ -1125,7 +1126,7 @@ class ProductController extends Controller
         // Get paginated products with relationships
         $products = $brand->products()
             ->where('status', 'published')
-            ->with(['reviews:id,product_id,star', 'currency'])
+            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
             ->paginate($perPage);
 
         // Transform each product
@@ -1280,7 +1281,7 @@ class ProductController extends Controller
             ->where('status', 'published')
             ->whereNotNull('sale_price')
             ->where('sale_price', '>', 0)
-            ->with(['reviews:id,product_id,star', 'currency'])
+            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers'])
             ->paginate($perPage);
 
         $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
