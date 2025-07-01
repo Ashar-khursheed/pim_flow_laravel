@@ -3232,6 +3232,139 @@ use Illuminate\Support\Facades\Auth;
      *     )
      * )
     */
+    // public function getAllFeaturedProductsByCategory(Request $request)
+    // {
+    //     $userId = Auth::id();
+    //     $isUserLoggedIn = $userId !== null;
+
+    //     // Fetch wishlist product IDs for logged-in users or guests
+    //     $wishlistProductIds = $isUserLoggedIn
+    //         ? DB::table('ec_wish_lists')
+    //             ->where('customer_id', $userId)
+    //             ->pluck('product_id')
+    //             ->map(fn($id) => (int) $id)
+    //             ->toArray()
+    //         : session()->get('guest_wishlist', []);
+
+    //     // Get only third-level child categories that have featured products
+    //     $categories = Category::whereHas('products', function ($query) {
+    //         $query->where('is_featured', 1)
+    //               ->where('status', 'published');
+    //     }, '>=', 5)
+    //     ->whereHas('parent.parent') // Ensures only third-level child categories
+    //     ->with(['products' => function ($query) {
+    //         $query->where('is_featured', 1)
+    //             ->where('status', 'published')
+    //             ->select('id', 'name', 'sku', 'price', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
+    //     }])
+    //     ->take(5)
+    //     ->get();
+
+    //     // Subquery for best price and delivery days
+    //     $subQuery = Product::select('sku')
+    //         ->selectRaw('MIN(price) as best_price')
+    //         ->selectRaw('MIN(delivery_days) as best_delivery_date')
+    //         ->groupBy('sku');
+
+    //     // Process categories and products
+    //     $categories = $categories->map(function ($category) use ($subQuery, $wishlistProductIds) {
+    //         $featuredProducts = $category->products->take(10);
+
+    //         // Fetch all product details in one query
+    //         $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
+    //                 $join->on('ec_products.sku', '=', 'best_products.sku')
+    //                     ->whereColumn('ec_products.price', 'best_products.best_price');
+    //             })
+    //             ->whereIn('ec_products.id', $featuredProducts->pluck('id'))
+    //             ->with(['reviews', 'currency' ,   'productAttributes' => function ($query) {
+    //                 $query->whereHas('attributeDetails', function ($q) {
+    //                     $q->whereIn('name', ['Units per Case', 'Pack Type']);
+    //                 });
+    //             },
+    //             ]) // Eager load relationships
+    //             ->get()
+    //             ->keyBy('id'); // Use keyBy to quickly fetch by ID later
+
+    //         return [
+    //             'category_name' => $category->name,
+    //             'featured_products' => $featuredProducts->map(function ($product) use ($productDetails, $wishlistProductIds) {
+    //                 $details = $productDetails[$product->id] ?? null;
+    //                 if (!$details) return null; // Skip if no details found
+
+    //                 $totalReviews = $details->reviews->count();
+    //                 $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
+    //                 $leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
+    //                 $currencyTitle = $details->currency->symbol ?? $details->price;
+    //                 $isInWishlist = in_array($details->id, $wishlistProductIds);
+
+    //                 // Process images efficiently
+    //                 $imageUrls = is_string($details->images)
+    //                 ? json_decode($details->images, true)
+    //                 : (array) $details->images;
+
+    //                 $sellingType = null;
+
+    //                 if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
+    //                     $fullValue = $details->sellingUnitAttribute->attribute_value;
+
+    //                     $attributeUnit = strpos($fullValue, '/') !== false
+    //                         ? trim(explode('/', $fullValue)[1])
+    //                         : $fullValue;
+
+    //                     $sellingType = [
+    //                         'attribute_value' => $details->sellingUnitAttribute->attribute_value,
+    //                         'attribute_value_unit' => $attributeUnit,
+    //                     ];
+    //                 }
+
+    //                   // Calculate per unit price
+    //                   $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+    //                   $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                      
+
+    //                   $basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
+    //                   $perUnitPrice = null;
+
+    //                   if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+    //                       $unitValue = (float) $unitsPerCase->attribute_value;
+    //                       if ($unitValue > 0) {
+    //                           $calculated = round($basePrice / $unitValue, 2);
+    //                           $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+    //                       }
+    //                   }
+
+    //                   $details->per_unit_price = $perUnitPrice;
+        
+                
+    //                 return [
+    //                     'id' => $details->id,
+    //                     'name' => $details->name,
+    //                     'sku' => $details->sku,
+    //                     'price' => $details->best_price ?? $details->price,
+    //                     "sale_price" => $details->sale_price,
+    //                     'best_delivery_date' => $details->best_delivery_date,
+    //                     'total_reviews' => $totalReviews,
+    //                     'avg_rating' => $avgRating,
+    //                     'left_stock' => $leftStock,
+    //                     'currency' => $currencyTitle,
+    //                     'in_wishlist' => $isInWishlist,
+    //                     'images' => $imageUrls,
+    //                     "original_price"=> $details->price,
+    //                     "front_sale_price"=> $details->price,
+    //                     "best_price"=> $details->price,
+    //                     "selling_type"=> $sellingType,
+    //                     "per_unit_price"=>   $details->per_unit_price,
+
+    //                 ];
+    //             })->filter()->values(), // Remove null values and reset array keys
+    //         ];
+    //     });
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $categories,
+    //     ]);
+    // }
     public function getAllFeaturedProductsByCategory(Request $request)
     {
         $userId = Auth::id();
@@ -3276,7 +3409,7 @@ use Illuminate\Support\Facades\Auth;
                         ->whereColumn('ec_products.price', 'best_products.best_price');
                 })
                 ->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-                ->with(['reviews', 'currency' ,   'productAttributes' => function ($query) {
+                ->with(['reviews', 'currency', 'productSuppliers', 'productAttributes' => function ($query) {
                     $query->whereHas('attributeDetails', function ($q) {
                         $q->whereIn('name', ['Units per Case', 'Pack Type']);
                     });
@@ -3335,13 +3468,15 @@ use Illuminate\Support\Facades\Auth;
 
                       $details->per_unit_price = $perUnitPrice;
         
-                
+                      $firstSupplier = $details->productSuppliers->first();
+
                     return [
                         'id' => $details->id,
                         'name' => $details->name,
                         'sku' => $details->sku,
-                        'price' => $details->best_price ?? $details->price,
-                        "sale_price" => $details->sale_price,
+                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                        'price' => $details->best_price ?? $supplier->price,
+                        "sale_price" =>$supplier->sale_price,
                         'best_delivery_date' => $details->best_delivery_date,
                         'total_reviews' => $totalReviews,
                         'avg_rating' => $avgRating,
@@ -3349,11 +3484,21 @@ use Illuminate\Support\Facades\Auth;
                         'currency' => $currencyTitle,
                         'in_wishlist' => $isInWishlist,
                         'images' => $imageUrls,
-                        "original_price"=> $details->price,
-                        "front_sale_price"=> $details->price,
-                        "best_price"=> $details->price,
+                        "original_price"=> $supplier->price,
+                        "front_sale_price"=> $supplier->price,
+                        "best_price"=> $supplier->price,
                         "selling_type"=> $sellingType,
                         "per_unit_price"=>   $details->per_unit_price,
+                        'vendor_id' => $firstSupplier->vendor_id ?? null,
+                        'map' => $firstSupplier->map ?? null,
+                        'inventory' => $firstSupplier->inventory ?? null,
+                        'in_stock' => $firstSupplier->in_stock ?? null,
+                        'delivery_days' => $firstSupplier->delivery_days ?? null,
+                        'return_policy' => $firstSupplier->return_policy ?? null,
+                        'free_shipping' => $firstSupplier->free_shipping ?? null,
+                        'warranty_information' => $firstSupplier->warranty_information ?? null,
+    
+    
 
                     ];
                 })->filter()->values(), // Remove null values and reset array keys
