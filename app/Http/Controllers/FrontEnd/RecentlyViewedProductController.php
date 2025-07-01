@@ -192,25 +192,36 @@ class RecentlyViewedProductController extends Controller
                             'attribute_value_unit' => $attributeUnit,
                         ];
                     }
+                    $firstSupplier = $product->productSuppliers->first();
 
             
                     return [
                         'product_id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
-                        'price' => $product->price,
-                        'sale_price' => $product->sale_price,
-                        'best_delivery_date' => $product->best_delivery_date,
                         'total_reviews' => $product->reviews->count(),
                         'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                         'left_stock' => $product->left_stock ?? 0,
                         'currency' => $product->currency->symbol ?? '$',
                         'in_wishlist' => in_array($product->id, $wishlistIds),
                         'images' =>$cleanedImages,
-                        'original_price' => $product->price,
-                        'front_sale_price' => $product->price,
-                        'best_price' => $product->price,
                         "selling_type"=> $sellingType,
+                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                        'price' =>  (float) $firstSupplier->price,
+                        "sale_price" => (float) $firstSupplier->sale_price,
+                        "original_price"=>  (float) $firstSupplier->price,
+                        'front_sale_price' => (float) $firstSupplier->sale_price,
+                         "best_price"=>  (float) $firstSupplier->price,
+                         "selling_type"=> $sellingType,
+                         "per_unit_price"=>   $details->per_unit_price,
+                         'vendor_id' => $firstSupplier->vendor_id ?? null,
+                         'map' => (float) $firstSupplier->map ?? null,
+                         'inventory' => $firstSupplier->inventory ?? null,
+                         'in_stock' => $firstSupplier->in_stock ?? null,
+                         'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                         'return_policy' => $firstSupplier->return_policy ?? null,
+                         'free_shipping' => $firstSupplier->free_shipping ?? null,
+                         'warranty_information' => $firstSupplier->warranty_information ?? null,
                     ];
                 })->filter(), // Filter out null values
             ]);
@@ -379,7 +390,7 @@ class RecentlyViewedProductController extends Controller
 
      private function getGuestRecentlyViewedData(string $guestToken): array
 {
-    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
+    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'productSuppliers')
         ->where('guest_token', $guestToken)
         ->latest()
         ->take(5)
@@ -413,25 +424,36 @@ class RecentlyViewedProductController extends Controller
                 'attribute_value_unit' => $attributeUnit,
             ];
         }
+        $firstSupplier = $product->productSuppliers->first();
 
 
         $data[] = [
             'product_id' => $product->id,
             'name' => $product->name,
             'sku' => $product->sku,
-            'price' => $product->price,
-            'sale_price' => $product->sale_price,
-            'best_delivery_date' => $product->best_delivery_date,
             'total_reviews' => $product->reviews->count(),
             'avg_rating' => $product->reviews->avg('star'),
             'left_stock' => $product->left_stock ?? 0,
             'currency' => $product->currency->symbol ?? '$',
             'in_wishlist' => false,
             'images' => $cleanedImages,
-            'original_price' => $product->price,
-            'front_sale_price' => $product->price,
-            'best_price' => $product->price,
             "selling_type"=> $sellingType,
+            'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+            'price' =>  (float) $firstSupplier->price,
+            "sale_price" => (float) $firstSupplier->sale_price,
+            "original_price"=>  (float) $firstSupplier->price,
+            'front_sale_price' => (float) $firstSupplier->sale_price,
+             "best_price"=>  (float) $firstSupplier->price,
+             "selling_type"=> $sellingType,
+             "per_unit_price"=>   $details->per_unit_price,
+             'vendor_id' => $firstSupplier->vendor_id ?? null,
+             'map' => (float) $firstSupplier->map ?? null,
+             'inventory' => $firstSupplier->inventory ?? null,
+             'in_stock' => $firstSupplier->in_stock ?? null,
+             'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+             'return_policy' => $firstSupplier->return_policy ?? null,
+             'free_shipping' => $firstSupplier->free_shipping ?? null,
+             'warranty_information' => $firstSupplier->warranty_information ?? null,
         ];
     }
 
