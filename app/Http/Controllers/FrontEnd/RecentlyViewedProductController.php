@@ -145,7 +145,8 @@ class RecentlyViewedProductController extends Controller
 
         if ($userId) {
             // Fetch recently viewed products for the logged-in user, eager load the related product data
-            $recentlyViewed = RecentlyViewedProduct::with('product') // Ensure 'product' relationship is loaded
+            RecentlyViewedProduct::with(['product.productSuppliers', 'product.reviews', 'product.currency', 'product.sellingUnitAttribute', 'product.productAttributes.attributeDetails'])
+            // Ensure 'product' relationship is loaded
                 ->where('customer_id', $userId)
                 ->latest()  // Order by most recently viewed
                 ->take(5)   // Limit to the last 5 viewed products
@@ -213,7 +214,7 @@ class RecentlyViewedProductController extends Controller
                         'front_sale_price' => (float) $firstSupplier->sale_price,
                          "best_price"=>  (float) $firstSupplier->price,
                          "selling_type"=> $sellingType,
-                         "per_unit_price"=>   $details->per_unit_price,
+                         "per_unit_price"=>   $product->per_unit_price,
                          'vendor_id' => $firstSupplier->vendor_id ?? null,
                          'map' => (float) $firstSupplier->map ?? null,
                          'inventory' => $firstSupplier->inventory ?? null,
