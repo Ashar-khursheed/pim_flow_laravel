@@ -971,7 +971,6 @@ class BrandController extends Controller
                  ->with([
                      'reviews:id,product_id,star',
                      'currency',
-                     'specifications',
                      'productSuppliers'
                  ])
                  ->get()
