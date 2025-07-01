@@ -18,7 +18,7 @@ return new class extends Migration
 			$table->integer('customer_id');
 			$table->text('customer_address_id');
 			$table->enum('status', [
-				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled'
+				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Out for delivery', 'Delivered', 'Partially Delivered', 'Completed', 'Re-Attempt', 'Returned', 'Cancelled'
 			])->default('Pending');
 
 			$table->decimal('shipping_charge', 10, 2);
@@ -52,7 +52,7 @@ return new class extends Migration
 			$table->decimal('unit_price', 10, 2);
 			$table->decimal('total_amount', 10, 2);
 			$table->enum('status', [
-				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Partially Pickups', 'Out for delivery', 'Partially Out for delivery', 'Delivered', 'Partially Delivered', 'Re-Attempt', 'Returned', 'Cancelled', 'Out of Stock'
+				'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship', 'Pickups', 'Partially Pickups', 'Out for delivery', 'Partially Out for delivery', 'Delivered', 'Partially Delivered', 'Completed', 'Re-Attempt', 'Request Return', 'Partial Request Return', 'Partial Returned', 'Returned', 'Cancelled', 'Out of Stock'
 			])->default('Pending');
 			$table->timestamps();
 		});
