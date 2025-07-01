@@ -3506,7 +3506,6 @@ use Illuminate\Support\Facades\Auth;
                         'avg_rating' => $avgRating,
                         'left_stock' => $leftStock,
                         'currency' => $currencyTitle,
-                        'in_wishlist' => $isInWishlist,
                         'images' => $imageUrls,
                         "original_price"=>  (float) $firstSupplier->price,
                        'front_sale_price' => (float) $firstSupplier->sale_price,
