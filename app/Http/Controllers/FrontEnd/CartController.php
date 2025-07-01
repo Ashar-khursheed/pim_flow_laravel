@@ -360,7 +360,7 @@ class CartController extends Controller
              
             $item->product->currency = $symbol;
             $firstSupplier =$item->product->productSuppliers->first();
-            
+
              $item->product->vendor_sku = $firstSupplier->vendor_sku;
              $item->product->price = (float) $firstSupplier->price;
              $item->product->sale_price = (float) $firstSupplier->sale_price;
@@ -371,7 +371,7 @@ class CartController extends Controller
              $item->product->map = (float) $firstSupplier->map;
              $item->product->inventory = $firstSupplier->inventory;
              $item->product->in_stock = $firstSupplier->in_stock;
-             $item->productt->delivery_date = $firstSupplier->delivery_days;
+            $item->product->delivery_date = $firstSupplier->delivery_days;
              $item->product->return_policy = $firstSupplier->return_policy;
              $item->product->free_shipping = $firstSupplier->free_shipping;
              $item->product->warranty_information = $firstSupplier->warranty_information;
