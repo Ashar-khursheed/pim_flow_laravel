@@ -398,6 +398,42 @@ class ProductController extends Controller
                         $product->leftStock = $leftStock;
                         $product->in_wishlist = in_array($product->id, $wishlistProductIds);
 
+                        $firstSupplier = $product->productSuppliers->first();
+
+                        if ($firstSupplier) {
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->delivery_date = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
+                        } else {
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->best_delivery_date = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
+                        }
+                        
+
                         // Handle currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
@@ -514,7 +550,7 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews'])
                     ->where('status', 'published');
 
                 
@@ -576,7 +612,7 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories' ,  'productAttributes' => function ($query) {
+                    'currency',  'categories' , 'productSuppliers', 'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
@@ -647,10 +683,6 @@ class ProductController extends Controller
                                 $product->description = [$product->description];
                             }
                         }
-                        
-                        
-                        
-                        
                         
                         
                     
@@ -760,6 +792,43 @@ class ProductController extends Controller
                         $product->total_reviews = $totalReviews;
                         $product->avg_rating = $avgRating;
                         $product->leftStock = $leftStock;
+
+                        $firstSupplier = $product->productSuppliers->first();
+
+                        if ($firstSupplier) {
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->delivery_date = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
+                        } else {
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->delivery_date = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
+                        }
+                        
+                        
                     
                         // Currency
                         if ($product->currency) {
