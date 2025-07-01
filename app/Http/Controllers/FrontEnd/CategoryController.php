@@ -2443,20 +2443,35 @@ class CategoryController extends Controller
 		}
 	
 		// Get brands for the filtered products
+		$selectedBrandIds = $request->brand_id ?? [];
+
+		// Get brands from all category products (not filtered) to show all available brands
 		$brands = DB::table('ec_products as p')
 			->join('ec_brands as b', 'b.id', '=', 'p.brand_id')
-			->whereIn('p.id', $filteredProductIds)
+			->whereIn('p.id', $allCategoryProductIds) // Use all category products instead of filtered
 			->where('p.status', 'published')
-			->select('b.id', 'b.name', DB::raw('COUNT(DISTINCT p.id) as product_count'))
+			->select('b.id', 'b.name')
 			->groupBy('b.id', 'b.name')
 			->orderBy('b.name')
 			->get()
-			->map(function($brand) {
+			->map(function($brand) use ($filteredProductIds, $selectedBrandIds) {
+				// Count products for this brand from filtered results
+				$productCount = DB::table('ec_products')
+					->where('brand_id', $brand->id)
+					->whereIn('id', $filteredProductIds)
+					->where('status', 'published')
+					->count();
+				
+				// Show all brands but with their actual count from filtered results
+				// If brand is selected, show it even if count is 0
+				$isSelected = in_array($brand->id, $selectedBrandIds);
+				
 				return [
 					'id' => $brand->id,
 					'name' => $brand->name,
-					'product_count' => $brand->product_count,
-					'display_name' => $brand->name . ' (' . $brand->product_count . ')'
+					'product_count' => $productCount,
+					'display_name' => $brand->name . ' (' . $productCount . ')',
+					'is_selected' => $isSelected
 				];
 			})
 			->toArray();
