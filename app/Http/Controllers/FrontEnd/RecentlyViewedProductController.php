@@ -391,7 +391,7 @@ class RecentlyViewedProductController extends Controller
 
      private function getGuestRecentlyViewedData(string $guestToken): array
 {
-    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'productSuppliers')
+    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers')
         ->where('guest_token', $guestToken)
         ->latest()
         ->take(5)
@@ -446,7 +446,7 @@ class RecentlyViewedProductController extends Controller
             'front_sale_price' => (float) $firstSupplier->sale_price,
              "best_price"=>  (float) $firstSupplier->price,
              "selling_type"=> $sellingType,
-             "per_unit_price"=>   $details->per_unit_price,
+             "per_unit_price"=>   $product->per_unit_price,
              'vendor_id' => $firstSupplier->vendor_id ?? null,
              'map' => (float) $firstSupplier->map ?? null,
              'inventory' => $firstSupplier->inventory ?? null,
