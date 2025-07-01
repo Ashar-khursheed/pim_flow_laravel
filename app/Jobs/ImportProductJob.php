@@ -646,7 +646,7 @@ class ImportProductJob implements ShouldQueue
 
 		if (!in_array($categoryId, $existingCategories)) {
 			/* Clear existing specs if the category is different */
-			$product->specifications()->delete();
+			$product->productAttributes()->delete();
 		}
 
 		/* Step 2: Prepare the category for syncing */

@@ -283,7 +283,7 @@ class ProductController extends BaseController
 
 		if (!in_array($categoryId, $existingCategories)) {
 			/* Clear existing specs if the category is different */
-			$product->specifications()->delete();
+			$product->productAttributes()->delete();
 		}
 
 		/* Step 2: Prepare the category for syncing */
@@ -900,7 +900,7 @@ class ProductController extends BaseController
 	*     security={{"bearerAuth":{}}}
 	* )
 	*/
-	
+
 	// public function update(Request $request, $productId)
 	// {
 	// 	/* Log the incoming request for debugging */
@@ -920,8 +920,8 @@ class ProductController extends BaseController
 	// 	$user = auth()->user();
 	// 	$userRole = $user ? $user->getRoleNames()->first() : null;
 	// 	$allowedRoles = [
-	// 		'Super Admin', 
-	// 		'Admin', 
+	// 		'Super Admin',
+	// 		'Admin',
 	// 		'Graphic Designer Manager'
 	// 	];  // Define which roles can modify images
 	// 	$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
@@ -933,7 +933,7 @@ class ProductController extends BaseController
 	// 		'Content Writer'
 	// 	];
 	// 	$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
-	
+
 
 	// 	/* Handle categories - IMPROVED VERSION */
 	// 	if ($request->has('categories')) {
@@ -1052,7 +1052,7 @@ class ProductController extends BaseController
 	// 		}
 	// 	}
 
-		
+
 	// 	$faqs = $request->input('faqs', []); /* Default to an empty array if not provided */
 
 	// 	/* Check if faqs is a string and decode it properly */
@@ -1183,7 +1183,7 @@ class ProductController extends BaseController
 	// 				break;
 	// 			}
 	// 		}
-			
+
 	// 		// Only check permissions if user is uploading new image files
 	// 		if ($hasNewImageFiles && !$canModifyImages) {
 	// 			return response()->json([
@@ -1191,7 +1191,7 @@ class ProductController extends BaseController
 	// 				'message' => 'You do not have permission to modify product images.'
 	// 			], 403);
 	// 		}
-		
+
 	// 		$finalImages = [];
 	// 		foreach ($request->images as $key => $image) {
 	// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
@@ -1205,7 +1205,7 @@ class ProductController extends BaseController
 	// 			}
 	// 			// else ignore invalid inputs
 	// 		}
-		
+
 	// 		// Save as JSON with unescaped slashes
 	// 		$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
 	// 	} else {
@@ -1224,7 +1224,7 @@ class ProductController extends BaseController
 	// 				break;
 	// 			}
 	// 		}
-			
+
 	// 		// Only check permissions if user is uploading new video files
 	// 		if ($hasNewVideoFiles && !$canModifyImages) {
 	// 			return response()->json([
@@ -1232,7 +1232,7 @@ class ProductController extends BaseController
 	// 				'message' => 'You do not have permission to modify product videos.'
 	// 			], 403);
 	// 		}
-		
+
 	// 		$finalVideos = [];
 	// 		foreach ($videoPaths as $key => $video) {
 	// 			if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
@@ -1246,7 +1246,7 @@ class ProductController extends BaseController
 	// 			}
 	// 			// ignore invalid inputs
 	// 		}
-		
+
 	// 		$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
 	// 	} else {
 	// 		// If videos are not being updated, preserve existing videos
@@ -1589,8 +1589,8 @@ class ProductController extends BaseController
 		$user = auth()->user();
 		$userRole = $user ? $user->getRoleNames()->first() : null;
 		$allowedRoles = [
-			'Super Admin', 
-			'Admin', 
+			'Super Admin',
+			'Admin',
 			'Graphic Designer Manager'
 		];  // Define which roles can modify images
 		$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
@@ -1724,7 +1724,7 @@ class ProductController extends BaseController
 		if ($request->has('faqs')) {
 			$faqs = $request->input('faqs', []);
 			$hasNewFaqData = false;
-		
+
 			// Decode if it's a JSON string
 			if (is_string($faqs)) {
 				$decoded = json_decode($faqs, true);
@@ -1736,18 +1736,18 @@ class ProductController extends BaseController
 				}
 				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
 			}
-		
+
 			// Fetch existing FAQs for comparison
 			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
 			$processedFaqIds = [];
-		
+
 			// Check if there are actual changes
 			if (is_array($faqs) && !empty($faqs)) {
 				foreach ($faqs as $faqData) {
 					$id = $faqData['id'] ?? null;
 					$question = trim($faqData['question'] ?? '');
 					$answer = trim($faqData['answer'] ?? '');
-		
+
 					// Create or update
 					if ($id && isset($existingFaqs[$id])) {
 						$existing = $existingFaqs[$id];
@@ -1765,7 +1765,7 @@ class ProductController extends BaseController
 					}
 				}
 			}
-		
+
 			// If user is trying to modify and has no permission
 			if ($hasNewFaqData && !$canModifyContent) {
 				return response()->json([
@@ -1773,7 +1773,7 @@ class ProductController extends BaseController
 					'message' => 'You do not have permission to modify product FAQs.'
 				], 403);
 			}
-		
+
 			// If no real changes or user has permission, continue saving
 			if ($canModifyContent && is_array($faqs)) {
 				foreach ($faqs as $faqData) {
@@ -1801,7 +1801,7 @@ class ProductController extends BaseController
 						}
 					}
 				}
-		
+
 				// Remove deleted FAQs
 				$existingFaqIds = $existingFaqs->keys()->toArray();
 				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
@@ -1812,7 +1812,7 @@ class ProductController extends BaseController
 				}
 			}
 		}
-		
+
 
 		/* Get all input data except '_method' */
 		$input = $request->except('_method');
@@ -1881,7 +1881,7 @@ if ($request->has('images')) {
             }
             // else ignore invalid inputs
         }
-    
+
         // Save as JSON with unescaped slashes
         $input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
     } else {
@@ -1893,14 +1893,14 @@ if ($request->has('images')) {
                 break;
             }
         }
-        
+
         if ($hasNewImageFiles) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to modify product images.'
             ], 403);
         }
-        
+
         // Remove from input to prevent overwriting existing images
         unset($input['images']);
     }
@@ -1924,7 +1924,7 @@ if ($request->has('images')) {
             }
             // ignore invalid inputs
         }
-    
+
         $input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
     } else {
         // User tried to modify videos but doesn't have permission - check if they're uploading files
@@ -1936,14 +1936,14 @@ if ($request->has('images')) {
                 break;
             }
         }
-        
+
         if ($hasNewVideoFiles) {
             return response()->json([
                 'success' => false,
                 'message' => 'You do not have permission to modify product videos.'
             ], 403);
         }
-        
+
         // Remove from input to prevent overwriting existing videos
         unset($input['video_path']);
     }
@@ -2051,7 +2051,7 @@ if ($request->has('images')) {
 		// if ($request->has('benefits_features')) {
 		// 	$benefitsFeaturesInput = $request->input('benefits_features');
 		// 	$hasNewBenefitsData = false;
-		
+
 		// 	// Decode new input
 		// 	if (is_string($benefitsFeaturesInput)) {
 		// 		$decoded = json_decode($benefitsFeaturesInput, true);
@@ -2071,23 +2071,23 @@ if ($request->has('images')) {
 		// 			'message' => 'Invalid benefits_features format. Must be JSON string or array.'
 		// 		], 400);
 		// 	}
-		
+
 		// 	// Ensure it's an array
 		// 	if (!is_array($newBenefits)) {
 		// 		$newBenefits = [];
 		// 	}
-		
+
 		// 	// Get existing saved benefits
 		// 	$existingBenefits = json_decode($product->benefits_features, true);
 		// 	if (!is_array($existingBenefits)) {
 		// 		$existingBenefits = [];
 		// 	}
-		
+
 		// 	// Check for actual change
 		// 	if ($newBenefits !== $existingBenefits) {
 		// 		$hasNewBenefitsData = true;
 		// 	}
-		
+
 		// 	// Restrict update only if change attempted and no permission
 		// 	if ($hasNewBenefitsData && !$canModifyContent) {
 		// 		return response()->json([
@@ -2095,18 +2095,18 @@ if ($request->has('images')) {
 		// 			'message' => 'You do not have permission to modify product benefits and features.'
 		// 		], 403);
 		// 	}
-		
+
 		// 	// If changes are allowed or not needed, process it
 		// 	if ($canModifyContent && $hasNewBenefitsData) {
 		// 		$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
 		// 	}
-		
+
 		// 	// Prevent reprocessing later
 		// 	unset($input['benefits_features']);
 		// }
 		if ($request->has('benefits_features')) {
 			$benefitsInput = $request->input('benefits_features');
-			
+
 			if ($canModifyContent) {
 				// Decode and validate input
 				if (is_string($benefitsInput)) {
@@ -2127,18 +2127,18 @@ if ($request->has('images')) {
 						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
 					], 400);
 				}
-		
+
 				// Ensure it's an array
 				if (!is_array($newBenefits)) {
 					$newBenefits = [];
 				}
-		
+
 				// Get existing saved benefits
 				$existingBenefits = json_decode($product->benefits_features, true);
 				if (!is_array($existingBenefits)) {
 					$existingBenefits = [];
 				}
-		
+
 				// Only save if changed
 				if ($newBenefits !== $existingBenefits) {
 					$input['benefits_features'] = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
@@ -2151,13 +2151,13 @@ if ($request->has('images')) {
 				unset($input['benefits_features']);
 			}
 		}
-		
-		
+
+
 
 		if ($request->has('description')) {
 			if ($canModifyContent) {
 				$descriptionInput = $request->input('description');
-				
+
 				// Decode and validate input
 				if (is_string($descriptionInput)) {
 					$decoded = json_decode($descriptionInput, true);
@@ -2177,12 +2177,12 @@ if ($request->has('images')) {
 						'message' => 'Invalid description format. Must be JSON string or array.'
 					], 400);
 				}
-				
+
 				// Ensure it's an array
 				if (!is_array($newDescription)) {
 					$newDescription = [];
 				}
-				
+
 				// Save the description
 				$input['description'] = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
 			} else {
@@ -2193,8 +2193,8 @@ if ($request->has('images')) {
 			}
 		}
 		// If description not in request at all, existing description is preserved automatically
-		
-		
+
+
 		/* Stock status validation */
 		$usStockStatusArray = [
 			1 => "in_stock",
@@ -2367,7 +2367,7 @@ if ($request->has('images')) {
 			'faq' => $faqs ?? null,
 		]);
 	}
-	
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/product-input",
