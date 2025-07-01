@@ -20,7 +20,7 @@ use App\Models\Slug;
 use App\Models\TransactionLog;
 use App\Models\Faq;
 use App\Models\Attribute;
-use App\Models\UnitOfMeasurement;
+// use App\Models\UnitOfMeasurement;
 use Illuminate\Support\Facades\DB;
 use App\Jobs\ImportProductJob;
 use App\Services\ExcelImporterService;
@@ -350,7 +350,7 @@ class ProductController extends BaseController
 
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
-			'Pricing & Sales' => ['currency:id,title' ,'unitOfMeasurement:id,name'],
+			'Pricing & Sales' => ['currency:id,title' ],
 			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
 			'Store & Vendor Information' => ['vendor:id,name', 'brand:id,name', 'creator:id,name'],
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
@@ -1574,7 +1574,7 @@ class ProductController extends BaseController
 	{
 		/* Log the incoming request for debugging */
 		\Log::info('Product update request:', $request->all());
-		$unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
+		// $unitOfMeasurements = UnitOfMeasurement::all(['id', 'name']);
 
 		$product = Product::find($productId);
 
@@ -2362,7 +2362,7 @@ if ($request->has('images')) {
 			'success' => true,
 			'message' => 'Product updated successfully.',
 			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
-			'unitOfMeasurements' => $unitOfMeasurements ,
+			// 'unitOfMeasurements' => $unitOfMeasurements ,
 			// 'review' => $review ?? null,
 			'faq' => $faqs ?? null,
 		]);
