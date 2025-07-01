@@ -412,7 +412,7 @@ class ProductController extends Controller
                             $product->map = (float) $firstSupplier->map;
                             $product->inventory = $firstSupplier->inventory;
                             $product->in_stock = $firstSupplier->in_stock;
-                            $product->delivery_date = $firstSupplier->delivery_days;
+                            $product->delivery_days = $firstSupplier->delivery_days;
                             $product->return_policy = $firstSupplier->return_policy;
                             $product->free_shipping = $firstSupplier->free_shipping;
                             $product->warranty_information = $firstSupplier->warranty_information;
@@ -428,7 +428,7 @@ class ProductController extends Controller
                             $product->map = 0;
                             $product->inventory = null;
                             $product->in_stock = null;
-                            $product->best_delivery_date = null;
+                            $product->delivery_days = null;
                             $product->return_policy = null;
                             $product->free_shipping = null;
                             $product->warranty_information = null;
@@ -807,7 +807,7 @@ class ProductController extends Controller
                             $product->map = (float) $firstSupplier->map;
                             $product->inventory = $firstSupplier->inventory;
                             $product->in_stock = $firstSupplier->in_stock;
-                            $product->delivery_date = $firstSupplier->delivery_days;
+                            $product->delivery_days = $firstSupplier->delivery_days;
                             $product->return_policy = $firstSupplier->return_policy;
                             $product->free_shipping = $firstSupplier->free_shipping;
                             $product->warranty_information = $firstSupplier->warranty_information;
@@ -823,7 +823,7 @@ class ProductController extends Controller
                             $product->map = 0;
                             $product->inventory = null;
                             $product->in_stock = null;
-                            $product->delivery_date = null;
+                            $product->delivery_days = null;
                             $product->return_policy = null;
                             $product->free_shipping = null;
                             $product->warranty_information = null;
