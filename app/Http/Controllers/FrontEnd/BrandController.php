@@ -970,6 +970,7 @@ class BrandController extends Controller
                      'reviews:id,product_id,star',
                      'currency',
                      'specifications',
+                     'productSuppliers'
                  ])
                  ->get()
                  ->keyBy('id');
