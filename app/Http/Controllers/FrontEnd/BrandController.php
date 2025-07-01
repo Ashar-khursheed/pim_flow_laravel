@@ -12,6 +12,8 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
+use Illuminate\Support\Facades\Log;
+
 
 class BrandController extends Controller
 {
