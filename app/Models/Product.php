@@ -168,11 +168,6 @@ class Product extends Model
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
 
-	public function specifications()
-	{
-		return $this->hasMany(Specification::class);
-	}
-
 	public function slug()
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');

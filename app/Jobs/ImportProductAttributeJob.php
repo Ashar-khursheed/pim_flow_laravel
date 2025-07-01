@@ -68,16 +68,16 @@ class ImportProductAttributeJob implements ShouldQueue
 				continue;
 			}
 
-			/* Validate Required Specifications */
+			/* Validate Required Attribute */
 			$productCategoryAttributes = $product->productCategoryAttributes()
 			->reject(fn($attribute) => $attribute['type'] === 'multiselect')
 			->values();
 
 			$productCategoryAttributeNames = $productCategoryAttributes->pluck('name')->toArray();
-			$missingSpecifications = array_diff($productCategoryAttributeNames, $this->header);
+			$missingAttributes = array_diff($productCategoryAttributeNames, $this->header);
 
-			if (!empty($missingSpecifications)) {
-				$rowError[] = "Missing specifications: " . implode(', ', $missingSpecifications);
+			if (!empty($missingAttributes)) {
+				$rowError[] = "Missing Attributes: " . implode(', ', $missingAttributes);
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;
@@ -372,6 +372,6 @@ class ImportProductAttributeJob implements ShouldQueue
 	public function failed(Throwable $exception): void
 	{
 		$error = $exception->getMessage() . "\n" . $exception->getTraceAsString();
-		Log::error("Product Specification Import Error: " . $error);
+		Log::error("Product Attribute Import Error: " . $error);
 	}
 }
