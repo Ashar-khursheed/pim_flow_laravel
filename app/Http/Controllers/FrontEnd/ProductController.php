@@ -401,37 +401,38 @@ class ProductController extends Controller
                         $firstSupplier = $product->productSuppliers->first();
 
                         if ($firstSupplier) {
-                            $product->supplier_vendor_sku = $firstSupplier->vendor_sku;
-                            $product->supplier_price = (float) $firstSupplier->price;
-                            $product->supplier_sale_price = (float) $firstSupplier->sale_price;
-                            $product->supplier_original_price = (float) $firstSupplier->price;
-                            $product->supplier_front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-                            $product->supplier_best_price = (float) $firstSupplier->price;
-                            $product->supplier_vendor_id = $firstSupplier->vendor_id;
-                            $product->supplier_map = (float) $firstSupplier->map;
-                            $product->supplier_inventory = $firstSupplier->inventory;
-                            $product->supplier_in_stock = $firstSupplier->in_stock;
-                            $product->supplier_best_delivery_date = $firstSupplier->delivery_days;
-                            $product->supplier_return_policy = $firstSupplier->return_policy;
-                            $product->supplier_free_shipping = $firstSupplier->free_shipping;
-                            $product->supplier_warranty_information = $firstSupplier->warranty_information;
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->best_delivery_date = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
                         } else {
-                            // Set null/defaults if no supplier found
-                            $product->supplier_vendor_sku = null;
-                            $product->supplier_price = 0;
-                            $product->supplier_sale_price = 0;
-                            $product->supplier_original_price = 0;
-                            $product->supplier_front_sale_price = 0;
-                            $product->supplier_best_price = 0;
-                            $product->supplier_vendor_id = null;
-                            $product->supplier_map = 0;
-                            $product->supplier_inventory = null;
-                            $product->supplier_in_stock = null;
-                            $product->supplier_best_delivery_date = null;
-                            $product->supplier_return_policy = null;
-                            $product->supplier_free_shipping = null;
-                            $product->supplier_warranty_information = null;
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->best_delivery_date = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
                         }
+                        
 
                         // Handle currency
                         if ($product->currency) {
@@ -795,37 +796,38 @@ class ProductController extends Controller
                         $firstSupplier = $product->productSuppliers->first();
 
                         if ($firstSupplier) {
-                            $product->supplier_vendor_sku = $firstSupplier->vendor_sku;
-                            $product->supplier_price = (float) $firstSupplier->price;
-                            $product->supplier_sale_price = (float) $firstSupplier->sale_price;
-                            $product->supplier_original_price = (float) $firstSupplier->price;
-                            $product->supplier_front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-                            $product->supplier_best_price = (float) $firstSupplier->price;
-                            $product->supplier_vendor_id = $firstSupplier->vendor_id;
-                            $product->supplier_map = (float) $firstSupplier->map;
-                            $product->supplier_inventory = $firstSupplier->inventory;
-                            $product->supplier_in_stock = $firstSupplier->in_stock;
-                            $product->supplier_best_delivery_date = $firstSupplier->delivery_days;
-                            $product->supplier_return_policy = $firstSupplier->return_policy;
-                            $product->supplier_free_shipping = $firstSupplier->free_shipping;
-                            $product->supplier_warranty_information = $firstSupplier->warranty_information;
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->best_delivery_date = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
                         } else {
-                            // Set null/defaults if no supplier found
-                            $product->supplier_vendor_sku = null;
-                            $product->supplier_price = 0;
-                            $product->supplier_sale_price = 0;
-                            $product->supplier_original_price = 0;
-                            $product->supplier_front_sale_price = 0;
-                            $product->supplier_best_price = 0;
-                            $product->supplier_vendor_id = null;
-                            $product->supplier_map = 0;
-                            $product->supplier_inventory = null;
-                            $product->supplier_in_stock = null;
-                            $product->supplier_best_delivery_date = null;
-                            $product->supplier_return_policy = null;
-                            $product->supplier_free_shipping = null;
-                            $product->supplier_warranty_information = null;
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->best_delivery_date = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
                         }
+                        
                         
                     
                         // Currency
