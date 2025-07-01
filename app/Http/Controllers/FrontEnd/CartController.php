@@ -321,8 +321,8 @@ class CartController extends Controller
 
         // Fetch cart items with product and currency details
         $cartItems = Auth::check()
-            ? Cart::where('user_id', $userId)->with('product.currency')->get()
-            : Cart::where('session_id', $request->session()->getId())->with('product.currency')->get();
+            ? Cart::where('user_id', $userId)->with('product.currency' ,'productSuppliers')->get()
+            : Cart::where('session_id', $request->session()->getId())->with('product.currency','productSuppliers')->get();
 
         // Fetch applicable discounts for the user
         $userDiscountIds = DB::table('ec_discount_customers')
@@ -348,8 +348,7 @@ class CartController extends Controller
         $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-            $item->product->original_price = $item->product->price;
-            $item->product->front_sale_price = $item->product->sale_price ?? $item->product->price;
+        
         
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
@@ -360,6 +359,23 @@ class CartController extends Controller
             $item->product->unsetRelation('currency');
         
             $item->product->currency = $symbol;
+            $firstSupplier =$item->product->productSuppliers->first();
+             $item->product->vendor_sku = $firstSupplier->vendor_sku;
+             $item->product->price = (float) $firstSupplier->price;
+             $item->product->sale_price = (float) $firstSupplier->sale_price;
+             $item->product->original_price = (float) $firstSupplier->price;
+             $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+             $item->product->best_price = (float) $firstSupplier->price;
+             $item->product->vendor_id = $firstSupplier->vendor_id;
+             $item->product->map = (float) $firstSupplier->map;
+             $item->product->inventory = $firstSupplier->inventory;
+             $item->product->in_stock = $firstSupplier->in_stock;
+             $item->productt->delivery_date = $firstSupplier->delivery_days;
+             $item->product->return_policy = $firstSupplier->return_policy;
+             $item->product->free_shipping = $firstSupplier->free_shipping;
+             $item->product->warranty_information = $firstSupplier->warranty_information;
+
+
         });
         
         
