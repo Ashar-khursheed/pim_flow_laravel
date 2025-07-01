@@ -3475,7 +3475,7 @@ use Illuminate\Support\Facades\Auth;
                         'name' => $details->name,
                         'sku' => $details->sku,
                         'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                        'price' => $details->best_price ?? $firstSupplier->price,
+                        'price' => $firstSupplier->price,
                         "sale_price" =>$firstSupplier->sale_price,
                         'best_delivery_date' => $details->best_delivery_date,
                         'total_reviews' => $totalReviews,
