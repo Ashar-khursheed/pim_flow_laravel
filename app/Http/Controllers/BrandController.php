@@ -764,7 +764,7 @@ public function store(Request $request)
 
 			// Cache all categories and stores in a single query to avoid N+1
 			$categories = Category::pluck('name', 'id');
-			$stores = Store::pluck('name', 'id');
+			$stores = Vendor::pluck('name', 'id');
 
 			$transformed = $brands->getCollection()->transform(function ($brand) use ($categories, $stores) {
 				$categoryIds = $brand->products->flatMap(function ($product) {
