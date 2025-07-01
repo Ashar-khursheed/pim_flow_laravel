@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Brand;
 use App\Models\Category;
-use App\Models\Store;
+use App\Models\Vendor;
 use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Http;
@@ -741,7 +741,7 @@ public function store(Request $request)
 			->withCount('products')
 			->with([
 				'products' => function ($query) {
-					$query->select('id', 'brand_id', 'store_id')->with('categories:id,name');
+					$query->select('id', 'brand_id', 'vendor_id')->with('categories:id,name');
 				}
 			]);
 
@@ -775,7 +775,7 @@ public function store(Request $request)
 					return $categories[$id] ?? null;
 				})->filter()->values();
 
-				$storeIds = $brand->products->pluck('store_id')->unique();
+				$storeIds = $brand->products->pluck('vendor_id')->unique();
 
 				$storeNames = $storeIds->map(function ($id) use ($stores) {
 					return $stores[$id] ?? null;
