@@ -1535,23 +1535,23 @@ class ProductController extends Controller
                 "currency" => $product->currency->symbol ?? '$',
                 "images" => $cleanedImages,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                'price' =>  (float) $firstSupplier->price,
-                "sale_price" => (float) $firstSupplier->sale_price,
-                "original_price"=>  (float) $firstSupplier->price,
-                'front_sale_price' => (float) $firstSupplier->sale_price,
-                 "best_price"=>  (float) $firstSupplier->price,
-                 "selling_type"=> $sellingType,
-                 "per_unit_price"=>   $details->per_unit_price,
-                 'vendor_id' => $firstSupplier->vendor_id ?? null,
-                 'map' => (float) $firstSupplier->map ?? null,
-                 'inventory' => $firstSupplier->inventory ?? null,
-                 'in_stock' => $firstSupplier->in_stock ?? null,
-                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                 'return_policy' => $firstSupplier->return_policy ?? null,
-                 'free_shipping' => $firstSupplier->free_shipping ?? null,
-                 'warranty_information' => $firstSupplier->warranty_information ?? null,
-                 
+                'price' => (float) ($firstSupplier->price ?? 0),
+                "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                "original_price"=> (float) ($firstSupplier->price ?? 0),
+                'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                "best_price"=> (float) ($firstSupplier->price ?? 0),
+                "selling_type"=> $sellingType ?? null, // ⚠️ also undefined in your code
+                "per_unit_price"=> $details->per_unit_price ?? null, // ⚠️ also undefined in your code
+                'vendor_id' => $firstSupplier->vendor_id ?? null,
+                'map' => (float) ($firstSupplier->map ?? 0),
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
+            
         });
 
         return response()->json([
