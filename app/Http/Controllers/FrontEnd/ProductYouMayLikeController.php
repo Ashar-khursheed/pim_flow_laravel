@@ -253,7 +253,7 @@ class ProductYouMayLikeController extends Controller
                     ];
                 }
                 $item->product->front_sale_price;
-                $firstSupplier = $item->product->productSuppliers->first();
+                $firstSupplier = $product->productSuppliers->first();
 
                 return [
                     'id' => $product->id,
