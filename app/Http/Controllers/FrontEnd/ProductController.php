@@ -437,8 +437,8 @@ class ProductController extends Controller
                         // Handle currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
-                                ? $product->currency->title
-                                : $product->price . ' ' . $product->currency->title;
+                                ? $product->currency->symbol
+                                : $product->price . ' ' . $product->currency->symbol;
                         } else {
                             $product->currency_title = $product->price;
                         }
@@ -833,8 +833,8 @@ class ProductController extends Controller
                         // Currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
-                                ? $product->currency->title
-                                : $product->price . ' ' . $product->currency->title;
+                                ? $product->currency->symbol
+                                : $product->price . ' ' . $product->currency->symbol;
                         } else {
                             $product->currency_title = $product->price;
                         }
@@ -1003,6 +1003,9 @@ class ProductController extends Controller
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
 
+            $firstSupplier = $product->productSuppliers->first();
+
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -1010,25 +1013,35 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
                 'currency' => $product->currency?->title,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null, // optional to calculate
+              
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1140,6 +1153,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1148,25 +1162,34 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null,
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1274,6 +1297,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1282,25 +1306,34 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null,
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1489,21 +1522,34 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+            $firstSupplier = $product->productSuppliers->first();
+
             return [
                 "id" => $product->id,
                 "name" => $product->name,
                 "sku" => $product->sku,
-                "price" => $product->price,
-                "sale_price" => $product->sale_price,
-                "best_delivery_date" => $product->best_delivery_date,
                 "total_reviews" => $product->reviews->count(),
                 "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                 "left_stock" => $product->left_stock ?? 0,
-                "currency" => $product->currency->symbol ?? 'USD',
+                "currency" => $product->currency->symbol ?? '$',
                 "images" => $cleanedImages,
-                "original_price" => $product->price,
-                "front_sale_price" => $product->price,
-                "best_price" => $product->price,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
+                 
             ];
         });
 
@@ -1635,6 +1681,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1643,14 +1690,11 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
+
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
                 'best_price' => $product->sale_price ?? $product->price,
@@ -1658,10 +1702,26 @@ class ProductController extends Controller
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
