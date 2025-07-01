@@ -145,11 +145,16 @@ class RecentlyViewedProductController extends Controller
 
         if ($userId) {
             // Fetch recently viewed products for the logged-in user, eager load the related product data
-            RecentlyViewedProduct::with(['product.productSuppliers', 'product.reviews', 'product.currency', 'product.sellingUnitAttribute', 'product.productAttributes.attributeDetails'])
-            // Ensure 'product' relationship is loaded
+            $recentlyViewed = RecentlyViewedProduct::with([
+                'product.productSuppliers',
+                'product.reviews',
+                'product.currency',
+                'product.sellingUnitAttribute',
+                'product.productAttributes.attributeDetails'
+            ])
                 ->where('customer_id', $userId)
-                ->latest()  // Order by most recently viewed
-                ->take(5)   // Limit to the last 5 viewed products
+                ->latest()
+                ->take(5)
                 ->get();
 
             // Get wishlist product IDs
