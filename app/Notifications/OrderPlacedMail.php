@@ -114,7 +114,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('✅ Your Horeca Order Has Been Placed Successfully')
+		->subject('Your Horeca Order Has Been Placed Successfully')
 		->markdown('emails.order-placed', $params);
 	}
 
