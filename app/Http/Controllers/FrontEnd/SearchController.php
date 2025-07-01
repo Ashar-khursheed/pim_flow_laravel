@@ -402,7 +402,7 @@ class SearchController extends Controller
                     ELSE 4
                 END
             ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
-            ->take(10) // Increased limit for better SKU search results
+            ->take(4) // Increased limit for better SKU search results
             ->get()
             ->map($mapProduct);
     
@@ -594,7 +594,7 @@ class SearchController extends Controller
                     });
                 })
                 ->with(['slug', 'parent.slug'])
-                ->take(10)
+                ->take(4)
                 ->get()
                 ->map(function ($category) {
                     return [
