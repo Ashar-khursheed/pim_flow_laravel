@@ -56,7 +56,7 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name', 'payments', 'shipments', 'creator', 'updator']);
 
@@ -292,7 +292,7 @@ class OrderController extends Controller
 
 			/* Load relationships */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name',
 				'tracking'
@@ -360,7 +360,7 @@ class OrderController extends Controller
 
 		/* Load relationships */
 		$order->load([
-			'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 			'orderProducts.product.brand:id,name',
 			'tracking',
