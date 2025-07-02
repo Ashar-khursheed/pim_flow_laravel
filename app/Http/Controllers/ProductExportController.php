@@ -128,8 +128,6 @@ class ProductExportController extends BaseController
 		->orderBy('id', 'asc')
 		->get();
 
-		dd($products->toArray());
-
 		/* Return message if products empty */
 		if ($products->isEmpty()) {
 			return response()->json([
