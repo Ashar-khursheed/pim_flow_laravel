@@ -310,12 +310,10 @@ class CustomerController extends BaseController
     $randomPassword = null;
 
     if (!$customer) {
-        // Prepare input values (optionally fallback to request if needed)
         $dob = $request->input('dob');
         $countryCode = $request->input('country_code');
         $mobileNumber = $request->input('mobile_number');
 
-        // Upload Google image to S3 or keep original link (depending on your logic)
         $profileImg = $googleProfileImg;
 
         try {
@@ -326,11 +324,9 @@ class CustomerController extends BaseController
                 );
             }
 
-            // Generate password
             $randomPassword = Str::random(8);
             $hashedPassword = Hash::make($randomPassword);
 
-            // Create user
             $customer = Customer::create([
                 'name' => $name,
                 'email' => $email,
@@ -342,7 +338,6 @@ class CustomerController extends BaseController
                 'profile_img' => $profileImg,
             ]);
 
-            // Notify with password
             $customer->notify(new GuestWelcomeMail($randomPassword));
         } catch (\Exception $e) {
             \Log::error('Google Login Registration Failed: ' . $e->getMessage());
@@ -353,28 +348,16 @@ class CustomerController extends BaseController
         }
     }
 
-    // Attempt login
-    $loginPassword = $randomPassword ?? $request->input('fallback_password');
-//     if (Auth::guard('front-end-api')->attempt([
-//         'email' => $email,
-//         'password' => $loginPassword
-//     ])) {
-//         $user = Auth::guard('front-end-api')->user();
-//         $token = $user->createToken('google-auth')->plainTextToken;
+    return response()->json([
+        'success' => true,
+        'message' => $customer->wasRecentlyCreated
+            ? 'User registered successfully using Google.'
+            : 'User already exists with this Google account.',
+        'email' => $customer->email,
+        'plain_password' => $randomPassword, // only non-null for newly registered
+        'user' => $customer,
+    ]);
+}
 
-//         return response()->json([
-//             'success' => true,
-//             'message' => 'User logged in successfully.',
-//             'user' => $user,
-//             'token' => $token,
-//             'plain_password' => $randomPassword,
-//         ]);
-//     }
-
-//     return response()->json([
-//         'success' => false,
-//         'message' => 'Login failed. Please try manually logging in.'
-//     ], 500);
- }
 
 }
