@@ -56,7 +56,7 @@ class OrderController extends Controller
 			}
 
 			/* Eager load relationships */
-			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			$recordsQuery->with(['customer:id,name', 'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name', 'payments', 'shipments', 'creator', 'updator']);
 
@@ -292,7 +292,7 @@ class OrderController extends Controller
 
 			/* Load relationships */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 				'orderProducts.product.brand:id,name',
 				'tracking'
@@ -360,7 +360,7 @@ class OrderController extends Controller
 
 		/* Load relationships */
 		$order->load([
-			'orderProducts:id,order_id,product_id,vendor_id,quantity',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
 			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
 			'orderProducts.product.brand:id,name',
 			'tracking',
@@ -648,13 +648,21 @@ class OrderController extends Controller
 			], 404);
 		}
 
-		/* Prevent status update before order is confirmed */
+		/* Prevent shipment creation before the order is confirmed */
 		if ($order->status === 'Pending') {
 			return response()->json([
 				'success' => false,
-				'message' => "Shipment cannot be created until the order is confirmed."
+				'message' => 'Shipment cannot be created while the order is still pending confirmation.'
 			]);
 		}
+
+		/* Allow shipment creation only when the order is "Ready to ship" */
+		// if ($order->status !== 'Ready to ship') {
+		// 	return response()->json([
+		// 		'success' => false,
+		// 		'message' => 'Shipment can only be created when the order status is "Ready to ship".'
+		// 	]);
+		// }
 
 		/* Validate input */
 		$request->validate([

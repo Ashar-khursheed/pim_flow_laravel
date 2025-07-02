@@ -304,16 +304,27 @@ class SearchController extends Controller
     
         // Helper function for consistent product mapping
         $mapProduct = function ($product) {
+            $firstSupplier = $product->productSuppliers->first();
+        
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'url' => $product->url,
                 'sku' => $product->sku,
                 'images' => json_decode($product->images) ?? [],
-                'original_price' => $product->price,
-                'front_sale_price' => $product->sale_price,
-                'vendor_id' => $product->vendor_id,
+                'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
+                'vendor_id' => $firstSupplier?->vendor_id ?? $product->vendor_id,
                 'currency_title' => $product->currency->symbol ?? null,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'sale_price' => $firstSupplier->sale_price ?? null,
+                'map' => $firstSupplier->map ?? null,
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'delivery_days' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
                     'name' => $product->brand->name,
@@ -402,7 +413,7 @@ class SearchController extends Controller
                     ELSE 4
                 END
             ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
-            ->take(10) // Increased limit for better SKU search results
+            ->take(4) // Increased limit for better SKU search results
             ->get()
             ->map($mapProduct);
     
@@ -410,7 +421,7 @@ class SearchController extends Controller
             'slug',
             'parent.slug',
             'parent.parent.slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'vendor', 'currency'])
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'vendor', 'currency', 'productSuppliers'])
         ])
         ->where('status', 'published')
         ->whereHas('products', fn($q) => $q->where('status', 'published'))
@@ -594,7 +605,7 @@ class SearchController extends Controller
                     });
                 })
                 ->with(['slug', 'parent.slug'])
-                ->take(10)
+                ->take(4)
                 ->get()
                 ->map(function ($category) {
                     return [

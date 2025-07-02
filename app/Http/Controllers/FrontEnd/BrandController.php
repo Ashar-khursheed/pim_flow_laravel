@@ -12,10 +12,12 @@ use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Annotations as OA;
+use Illuminate\Support\Facades\Log;
+
 
 class BrandController extends Controller
 {
- 
+
     private function getWishlistProductIds()
     {
         $userId = Auth::id();
@@ -114,8 +116,8 @@ class BrandController extends Controller
      *         )
      *     )
      * )
-     */   
-  
+     */
+
     // public function getAllHomeBrandProducts(Request $request)
     // {
     //     $wishlistIds = $this->getWishlistProductIds();
@@ -144,7 +146,7 @@ class BrandController extends Controller
     //         ->take(5)
     //         ->get();
 
-                    
+
 
     //     return response()->json([
     //         'success' => true,
@@ -168,7 +170,7 @@ class BrandController extends Controller
     //                         ->havingRaw('AVG(star) >= ?', [$request->input('rating')]);
     //                 });
     //             })
-          
+
     //             ->take(10)
     //             ->get(); // Only get product IDs
 
@@ -186,7 +188,7 @@ class BrandController extends Controller
 
     //                        // Step 1: Make sure it's an array
     //                        $imageArray = is_array($rawImageData) ? $rawImageData : json_decode($rawImageData, true);
-   
+
     //                        // Step 2: Decode the nested JSON strings (if any)
     //                        $cleanedImages = collect($imageArray)->map(function ($item) {
     //                            // Check if it's a string and a valid JSON array
@@ -196,7 +198,7 @@ class BrandController extends Controller
     //                            }
     //                            return [$item]; // already a normal value
     //                        })->flatten()->filter()->values(); // remove nulls and reindex
-   
+
     //                        // Output
     //                        $imageUrls = $cleanedImages;
 
@@ -217,11 +219,11 @@ class BrandController extends Controller
     //                       // Calculate per unit price
     //                       $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
     //                       $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-                          
-  
+
+
     //                       $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
     //                       $perUnitPrice = null;
-  
+
     //                       if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
     //                           $unitValue = (float) $unitsPerCase->attribute_value;
     //                           if ($unitValue > 0) {
@@ -229,7 +231,7 @@ class BrandController extends Controller
     //                               $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
     //                           }
     //                       }
-  
+
     //                       $product->per_unit_price = $perUnitPrice;
 
 
@@ -285,7 +287,8 @@ class BrandController extends Controller
                     ->with([
                         'productAttributes.attributeDetails:id,name',
                         'reviews:id,product_id,star',
-                        'currency:id,symbol'
+                        'currency:id,symbol',
+                        'productSuppliers',
                     ]);
             }])
             ->orderBy('created_at', 'desc')
@@ -344,26 +347,39 @@ class BrandController extends Controller
                                 $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
                             }
                         }
+                        $firstSupplier = $product->productSuppliers->first();
 
                         return [
                             "id" => $product->id,
                             "name" => $product->name,
                             "sku" => $product->sku,
-                            "price" => $product->price,
-                            "sale_price" => $product->sale_price,
-                            "best_delivery_date" => $product->best_delivery_date,
                             "total_reviews" => $product->reviews->count(),
                             "avg_rating" => $product->reviews->avg('star'),
                             "left_stock" => $product->left_stock ?? 0,
                             "currency" => $product->currency->symbol ?? '$',
                             "in_wishlist" => in_array($product->id, $wishlistIds),
                             "images" => $imageUrls,
-                            "original_price" => $product->price,
-                            "front_sale_price" => $product->price,
-                            "best_price" => $product->price,
                             "selling_type" => $sellingType,
                             "per_unit_price" => $perUnitPrice,
+                            'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                            'price' => (float) ($firstSupplier->price ?? 0),
+                            "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                            "original_price"=> (float) ($firstSupplier->price ?? 0),
+                            'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                            "best_price"=> (float) ($firstSupplier->price ?? 0),
+                            "selling_type"=> $sellingType,
+                            "per_unit_price"=> $product->per_unit_price,
+                            'vendor_id' => $firstSupplier->vendor_id ?? null,
+                            'map' => (float) ($firstSupplier->map ?? 0),
+                            'inventory' => $firstSupplier->inventory ?? null,
+                            'in_stock' => $firstSupplier->in_stock ?? null,
+                            'best_delivery_days' => $firstSupplier->delivery_days ?? null,
+                            'delivery_days' => $firstSupplier->delivery_days ?? null,
+                            'return_policy' => $firstSupplier->return_policy ?? null,
+                            'free_shipping' => $firstSupplier->free_shipping ?? null,
+                            'warranty_information' => $firstSupplier->warranty_information ?? null,
                         ];
+
                     })
                 ];
             }),
@@ -453,7 +469,7 @@ class BrandController extends Controller
             ->selectRaw('MIN(delivery_days) as best_delivery_date')
             ->where('status', 'published') // Add this line
             ->groupBy('sku');
-    
+
            // Preload brands with featured flag and 10+ published products
         $brands = Brand::where('is_featured', 1)
         ->whereHas('products', function ($query) {
@@ -474,8 +490,8 @@ class BrandController extends Controller
         ->orderBy('created_at', 'desc')
         ->take(5)
         ->get();
-            
-                
+
+
         return response()->json([
             'success' => true,
             'data' => $brands->map(function ($brand) use ($request, $subQuery) {
@@ -500,7 +516,7 @@ class BrandController extends Controller
                     })
                     ->take(10)
                     ->pluck('id'); // Only get product IDs
-    
+
                 // Fetch product details with joined best_price and eager load (only published)
                 $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
                         $join->on('ec_products.sku', '=', 'best_products.sku')
@@ -508,14 +524,14 @@ class BrandController extends Controller
                     })
                     ->whereIn('ec_products.id', $products)
                     ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
-                    ->with(['reviews', 'currency' , 'vendor' ,   'productAttributes' => function ($query) {
+                    ->with(['reviews', 'currency', 'productSuppliers' , 'vendor' ,   'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },])
                     ->get()
                     ->keyBy('id');
-    
+
                 return [
                     'brand_name' => $brand->name,
                     'products' => $productDetails->map(function ($details) {
@@ -523,13 +539,13 @@ class BrandController extends Controller
                         $avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
                         $leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
                         $currencyTitle = $details->currency->symbol ?? $details->price;
-    
+
                            // Assuming $details->images is already decoded once and looks like:
                            $rawImageData = $details->images;
-    
+
                            // Step 1: Make sure it's an array
                            $imageArray = is_array($rawImageData) ? $rawImageData : json_decode($rawImageData, true);
-    
+
                            // Step 2: Decode the nested JSON strings (if any)
                            $cleanedImages = collect($imageArray)->map(function ($item) {
                                // Check if it's a string and a valid JSON array
@@ -539,10 +555,10 @@ class BrandController extends Controller
                                }
                                return [$item]; // already a normal value
                            })->flatten()->filter()->values(); // remove nulls and reindex
-    
+
                            // Output
                            $imageUrls = $cleanedImages;
-                           
+
                            $sellingType=null;
                            if ($details->sellingUnitAttribute && $details->sellingUnitAttribute->attribute_value) {
                             $fullValue = $details->sellingUnitAttribute->attribute_value;
@@ -559,7 +575,7 @@ class BrandController extends Controller
                         // Calculate per unit price
                         $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
                         $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-                        
+
 
                         $basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
                         $perUnitPrice = null;
@@ -573,27 +589,36 @@ class BrandController extends Controller
                         }
 
                         $details->per_unit_price = $perUnitPrice;
+                        $firstSupplier = $details->productSuppliers->first();
 
-    
                         return [
                             'id' => $details->id,
                             'name' => $details->name,
                             'sku' => $details->sku,
-                            'price' => $details->best_price ?? $details->price,
-                            'original_price' => $details->price,
-                            'sale_price' => $details->sale_price,
-                            'best_delivery_date' => $details->best_delivery_date,
                             'total_reviews' => $totalReviews,
                             'avg_rating' => $avgRating,
                             'left_stock' => $leftStock,
                             'currency' => $currencyTitle,
                             'images' => $imageUrls,
-                            'front_sale_price' => $details->price,
-                            'best_price' => $details->best_price ?? $details->price,
-                            'selling_type'=> $sellingType,
-                            'vendor_id' => $details->vendor_id,
-                            'per_unit_price' =>  $details->per_unit_price
+                            'selling_type' => $sellingType,
+                            'vendor_id' => $firstSupplier->vendor_id ?? null,
+                            'per_unit_price' => $details->per_unit_price,
+                            'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                            'price' => (float) ($firstSupplier->price ?? 0),
+                            'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                            'original_price' => (float) ($firstSupplier->price ?? 0),
+                            'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                            'best_price' => (float) ($firstSupplier->price ?? 0),
+                            'map' => (float) ($firstSupplier->map ?? 0),
+                            'inventory' => $firstSupplier->inventory ?? null,
+                            'in_stock' => $firstSupplier->in_stock ?? null,
+                            'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                            'delivery_days' => $firstSupplier->delivery_days ?? null,
+                            'return_policy' => $firstSupplier->return_policy ?? null,
+                            'free_shipping' => $firstSupplier->free_shipping ?? null,
+                            'warranty_information' => $firstSupplier->warranty_information ?? null,
                         ];
+
                     })->values(),
                 ];
             }),
@@ -714,10 +739,10 @@ class BrandController extends Controller
     // public function getCategories($id)
     // {
     //     $brand = Brand::with(['products.categories'])->findOrFail($id);
-    
+
     //     // Count the number of products per category for this brand
     //     $categoryCounts = [];
-    
+
     //     foreach ($brand->products as $product) {
     //         foreach ($product->categories as $category) {
     //             if (!isset($categoryCounts[$category->id])) {
@@ -731,10 +756,10 @@ class BrandController extends Controller
     //             $categoryCounts[$category->id]['product_count']++; c
     //         }
     //     }
-    
+
     //     // Reindex array and return as values
     //     $categories = array_values($categoryCounts);
-    
+
     //     return response()->json([
     //         'success' => true,
     //         'brand_id' => $id,
@@ -753,20 +778,20 @@ class BrandController extends Controller
                 $query->where('status', 'published');
             }
         ])->findOrFail($id);
-    
+
         $categoryCounts = [];
-    
+
         foreach ($brand->products as $product) {
             foreach ($product->categories as $category) {
                 // Check if this category is a published leaf
                 $hasPublishedChildren = Category::where('parent_id', $category->id)
                                                 ->where('status', 'published')
                                                 ->exists();
-    
+
                 if ($hasPublishedChildren) {
                     continue; // Skip non-leaf categories
                 }
-    
+
                 if (!isset($categoryCounts[$category->id])) {
                     $categoryCounts[$category->id] = [
                         'id' => $category->id,
@@ -775,27 +800,27 @@ class BrandController extends Controller
                         'product_count' => 0
                     ];
                 }
-    
+
                 $categoryCounts[$category->id]['product_count']++;
             }
         }
-    
+
         // Keep response structure same
         $categories = array_values($categoryCounts);
-    
+
         return response()->json([
             'success' => true,
             'brand_id' => $id,
             'categories' => $categories
         ]);
     }
-    
 
 
-    
-    
-    
-  
+
+
+
+
+
      /**
      * @OA\Get(
      *     path="/api/frontend/products/brand/{brandId}/category/{categoryId?}",
@@ -897,12 +922,12 @@ class BrandController extends Controller
      *     )
      * )
      */
-    
+
      public function getProductsByBrandAndCategory(Request $request, $brandId, $categoryId = null)
      {
          try {
              $searchTerm = strtolower($request->input('search'));
-     
+
              $brand = Brand::with([
                 'products' => function ($query) {
                     $query->where('status', 'published')
@@ -914,22 +939,22 @@ class BrandController extends Controller
                     $query->where('status', 'published');
                 }
             ])->findOrFail($brandId);
-            
-     
+
+
              // Filter by category
              $filteredProducts = is_null($categoryId)
                  ? $brand->products
                  : $brand->products->filter(function ($product) use ($categoryId) {
                      return $product->categories->contains('id', $categoryId);
                  })->values();
-     
+
              // Filter by search term if provided
              if (!empty($searchTerm)) {
                  $filteredProducts = $filteredProducts->filter(function ($product) use ($searchTerm) {
                      return stripos($product->name, $searchTerm) !== false;
                  })->values();
              }
-     
+
              if ($filteredProducts->isEmpty()) {
                  return response()->json([
                      'success' => true,
@@ -938,29 +963,29 @@ class BrandController extends Controller
                      'pagination' => $this->emptyPagination(),
                  ]);
              }
-     
+
              $productIds = $filteredProducts->pluck('id')->toArray();
-     
+
              $productsWithRelations = Product::whereIn('id', $productIds)
                  ->with([
                      'reviews:id,product_id,star',
                      'currency',
-                     'specifications',
+                     'productSuppliers'
                  ])
                  ->get()
                  ->keyBy('id');
-     
+
              $perPage = 50;
              $page = max(1, (int) $request->input('page', 1));
              $total = count($productIds);
              $offset = ($page - 1) * $perPage;
              $paginatedProducts = $filteredProducts->slice($offset, $perPage);
-     
+
              $pagination = $this->buildPagination($page, $perPage, $total);
-     
+
              $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
                  $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
-     
+
                  $cleanedImages = is_string($product->images)
                  ? json_decode($product->images, true)
                  : (array) $product->images;
@@ -968,12 +993,12 @@ class BrandController extends Controller
                  $videos = is_string($product->video_path)
                  ? json_decode($product->video_path, true) ?? []
                  : ($product->video_path ?? []);
-             
-                
-     
+
+
+
                  $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
                  $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
-     
+
                  $quantity = $product->quantity ?? 0;
                  $unitsSold = $product->units_sold ?? 0;
                  $leftStock = $quantity - $unitsSold;
@@ -992,8 +1017,10 @@ class BrandController extends Controller
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
+                $firstSupplier = $product->productSuppliers->first();
 
-     
+
+
                  return [
                      'id' => $product->id,
                      'name' => $product->name,
@@ -1001,28 +1028,38 @@ class BrandController extends Controller
                      'video_url' => $videos,
                      'video_path' => $videos,
                      'sku' => $product->sku,
-                     'original_price' => $product->price,
-                     'front_sale_price' => $product->price,
-                     'sale_price' => $product->sale_price,
-                     'price' => $product->price,
                      'start_date' => $product->start_date,
                      'end_date' => $product->end_date,
-                     'warranty_information' => $product->warranty_information,
                      'currency' => $productWithRelations->currency?->symbol,
                      'total_reviews' => $totalReviews,
                      'avg_rating' => $avgRating,
-                     'best_price' => $product->sale_price ?? $product->price,
-                     'best_delivery_date' => null,
                      'leftStock' => $leftStock,
                      'currency_title' => $productWithRelations->currency
                          ? ($productWithRelations->currency->is_prefix_symbol
                              ? $productWithRelations->currency->symbol
                              : ($product->price . ' ' . $productWithRelations->currency->symbol))
                          : $product->price,
-                         "selling_type"=> $sellingType,
+                    "selling_type"=> $sellingType,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'price' =>  (float) $firstSupplier->price,
+                    "sale_price" => (float) $firstSupplier->sale_price,
+                    "original_price"=>  (float) $firstSupplier->price,
+                    'front_sale_price' => (float) $firstSupplier->sale_price,
+                    "best_price"=>  (float) $firstSupplier->price,
+                    "selling_type"=> $sellingType,
+                    "per_unit_price"=>   $product->per_unit_price,
+                    'vendor_id' => $firstSupplier->vendor_id ?? null,
+                    'map' => (float) $firstSupplier->map ?? null,
+                    'inventory' => $firstSupplier->inventory ?? null,
+                    'in_stock' => $firstSupplier->in_stock ?? null,
+                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'delivery_days' => $firstSupplier->delivery_days ?? null,
+                    'return_policy' => $firstSupplier->return_policy ?? null,
+                    'free_shipping' => $firstSupplier->free_shipping ?? null,
+                    'warranty_information' => $firstSupplier->warranty_information ?? null,
                  ];
              });
-     
+
              return response()->json([
                  'success' => true,
                  'data' => $transformedProducts->values(),
@@ -1039,8 +1076,8 @@ class BrandController extends Controller
          }
      }
 
-     
-   
+
+
      protected function emptyPagination()
     {
             return [
@@ -1051,7 +1088,7 @@ class BrandController extends Controller
             ];
     }
 
-    
+
     protected function buildPagination($page, $perPage, $total)
         {
             return [
@@ -1070,7 +1107,7 @@ class BrandController extends Controller
         return $media ? url($media) : null;
     }
 
-    
+
     /**
      * @OA\Get(
      *     path="/api/frontend/brands/alphabetical",
@@ -1107,27 +1144,27 @@ class BrandController extends Controller
      *     )
      * )
      */
-    
+
      public function getAllBrandsAlphabetically(Request $request): JsonResponse
      {
          $letter = strtoupper($request->query('letter')); // e.g. ?letter=B
- 
+
          $brandsQuery = Brand::where('status', 'published')
              ->whereNotNull('thumbnail') // Only include brands with a thumbnail
              ->select('id', 'name', 'logo', 'thumbnail', 'ar_thumbnail')
              ->orderBy('name');
- 
+
          if ($letter) {
              $brandsQuery->where('name', 'LIKE', $letter . '%');
          }
- 
+
          $brands = $brandsQuery->get()->map(function ($brand) {
              $brand->logo = $brand->logo ? asset($brand->logo) : null;
              $brand->thumbnail = $brand->thumbnail ? asset($brand->thumbnail) : null;
              $brand->ar_thumbnail = $brand->ar_thumbnail ? asset($brand->ar_thumbnail) : null;
              return $brand;
          });
- 
+
          if ($letter) {
              return response()->json([
                  'success' => true,
@@ -1138,7 +1175,7 @@ class BrandController extends Controller
              $grouped = $brands->groupBy(function ($brand) {
                  return strtoupper(substr($brand->name, 0, 1));
              })->sortKeys();
- 
+
              return response()->json([
                  'success' => true,
                  'message' => 'Brands grouped alphabetically.',
@@ -1146,8 +1183,8 @@ class BrandController extends Controller
              ]);
          }
      }
- 
 
 
-    
+
+
 }

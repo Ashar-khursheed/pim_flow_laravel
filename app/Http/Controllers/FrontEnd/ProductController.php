@@ -92,7 +92,7 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' , 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews'])
                     ->where('status', 'published');
 
                                     
@@ -155,6 +155,7 @@ class ProductController extends Controller
                     },
                     'currency' ,
                     'categories',
+                    'productSuppliers',
                     'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -398,11 +399,47 @@ class ProductController extends Controller
                         $product->leftStock = $leftStock;
                         $product->in_wishlist = in_array($product->id, $wishlistProductIds);
 
+                        $firstSupplier = $product->productSuppliers->first();
+
+                        if ($firstSupplier) {
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->delivery_days = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
+                        } else {
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->delivery_days = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
+                        }
+                        
+
                         // Handle currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
-                                ? $product->currency->title
-                                : $product->price . ' ' . $product->currency->title;
+                                ? $product->currency->symbol
+                                : $product->price . ' ' . $product->currency->symbol;
                         } else {
                             $product->currency_title = $product->price;
                         }
@@ -514,7 +551,7 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews'])
                     ->where('status', 'published');
 
                 
@@ -576,7 +613,7 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories' ,  'productAttributes' => function ($query) {
+                    'currency',  'categories' , 'productSuppliers', 'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
@@ -647,10 +684,6 @@ class ProductController extends Controller
                                 $product->description = [$product->description];
                             }
                         }
-                        
-                        
-                        
-                        
                         
                         
                     
@@ -760,12 +793,49 @@ class ProductController extends Controller
                         $product->total_reviews = $totalReviews;
                         $product->avg_rating = $avgRating;
                         $product->leftStock = $leftStock;
+
+                        $firstSupplier = $product->productSuppliers->first();
+
+                        if ($firstSupplier) {
+                            $product->vendor_sku = $firstSupplier->vendor_sku;
+                            $product->price = (float) $firstSupplier->price;
+                            $product->sale_price = (float) $firstSupplier->sale_price;
+                            $product->original_price = (float) $firstSupplier->price;
+                            $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                            $product->best_price = (float) $firstSupplier->price;
+                            $product->vendor_id = $firstSupplier->vendor_id;
+                            $product->map = (float) $firstSupplier->map;
+                            $product->inventory = $firstSupplier->inventory;
+                            $product->in_stock = $firstSupplier->in_stock;
+                            $product->delivery_days = $firstSupplier->delivery_days;
+                            $product->return_policy = $firstSupplier->return_policy;
+                            $product->free_shipping = $firstSupplier->free_shipping;
+                            $product->warranty_information = $firstSupplier->warranty_information;
+                        } else {
+                            // Defaults if no supplier exists
+                            $product->vendor_sku = null;
+                            $product->price = 0;
+                            $product->sale_price = 0;
+                            $product->original_price = 0;
+                            $product->front_sale_price = 0;
+                            $product->best_price = 0;
+                            $product->vendor_id = null;
+                            $product->map = 0;
+                            $product->inventory = null;
+                            $product->in_stock = null;
+                            $product->delivery_days = null;
+                            $product->return_policy = null;
+                            $product->free_shipping = null;
+                            $product->warranty_information = null;
+                        }
+                        
+                        
                     
                         // Currency
                         if ($product->currency) {
                             $product->currency_title = $product->currency->is_prefix_symbol
-                                ? $product->currency->title
-                                : $product->price . ' ' . $product->currency->title;
+                                ? $product->currency->symbol
+                                : $product->price . ' ' . $product->currency->symbol;
                         } else {
                             $product->currency_title = $product->price;
                         }
@@ -897,7 +967,7 @@ class ProductController extends Controller
             ->limit(20)
             ->with([
                 'reviews:id,product_id,star',
-                'currency'            ])
+                'currency' ,   'productSuppliers'    ])
             ->get();
 
         $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
@@ -934,6 +1004,9 @@ class ProductController extends Controller
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
 
+            $firstSupplier = $product->productSuppliers->first();
+
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
@@ -941,25 +1014,35 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
                 'currency' => $product->currency?->title,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null, // optional to calculate
+              
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1043,7 +1126,7 @@ class ProductController extends Controller
         // Get paginated products with relationships
         $products = $brand->products()
             ->where('status', 'published')
-            ->with(['reviews:id,product_id,star', 'currency'])
+            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
             ->paginate($perPage);
 
         // Transform each product
@@ -1071,6 +1154,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1079,25 +1163,34 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null,
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1188,7 +1281,7 @@ class ProductController extends Controller
             ->where('status', 'published')
             ->whereNotNull('sale_price')
             ->where('sale_price', '>', 0)
-            ->with(['reviews:id,product_id,star', 'currency'])
+            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers'])
             ->paginate($perPage);
 
         $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
@@ -1205,6 +1298,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1213,25 +1307,34 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
-                'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
-                'best_price' => $product->sale_price ?? $product->price,
-                'best_delivery_date' => null,
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 
@@ -1420,22 +1523,35 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+            $firstSupplier = $product->productSuppliers->first();
+
             return [
                 "id" => $product->id,
                 "name" => $product->name,
                 "sku" => $product->sku,
-                "price" => $product->price,
-                "sale_price" => $product->sale_price,
-                "best_delivery_date" => $product->best_delivery_date,
                 "total_reviews" => $product->reviews->count(),
                 "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                 "left_stock" => $product->left_stock ?? 0,
-                "currency" => $product->currency->symbol ?? 'USD',
+                "currency" => $product->currency->symbol ?? '$',
                 "images" => $cleanedImages,
-                "original_price" => $product->price,
-                "front_sale_price" => $product->price,
-                "best_price" => $product->price,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' => (float) ($firstSupplier->price ?? 0),
+                "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                "original_price"=> (float) ($firstSupplier->price ?? 0),
+                'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                "best_price"=> (float) ($firstSupplier->price ?? 0),
+                "selling_type"=> $sellingType ?? null, // ⚠️ also undefined in your code
+                "per_unit_price"=> $details->per_unit_price ?? null, // ⚠️ also undefined in your code
+                'vendor_id' => $firstSupplier->vendor_id ?? null,
+                'map' => (float) ($firstSupplier->map ?? 0),
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
+            
         });
 
         return response()->json([
@@ -1566,6 +1682,7 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $firstSupplier = $product->productSuppliers->first();
 
             return [
                 'id' => $product->id,
@@ -1574,14 +1691,11 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-                'original_price' => $product->price,
-                'sale_price' => $product->sale_price,
-                'front_sale_price' => $product->sale_price ?? $product->price,
-                'price' => $product->price,
+
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,
-                'currency' => $product->currency?->title,
+                'currency' => $product->currency?->symbol,
                 'total_reviews' => $totalReviews,
                 'avg_rating' => $avgRating,
                 'best_price' => $product->sale_price ?? $product->price,
@@ -1589,10 +1703,26 @@ class ProductController extends Controller
                 'leftStock' => $leftStock,
                 'currency_title' => $product->currency
                     ? ($product->currency->is_prefix_symbol
-                        ? $product->currency->title
-                        : ($product->price . ' ' . $product->currency->title))
+                        ? $product->currency->symbol
+                        : ($product->price . ' ' . $product->currency->symbol))
                     : $product->price,
                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' =>  (float) $firstSupplier->price,
+                "sale_price" => (float) $firstSupplier->sale_price,
+                "original_price"=>  (float) $firstSupplier->price,
+                'front_sale_price' => (float) $firstSupplier->sale_price,
+                 "best_price"=>  (float) $firstSupplier->price,
+                 "selling_type"=> $sellingType,
+                 "per_unit_price"=>   $details->per_unit_price,
+                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+                 'map' => (float) $firstSupplier->map ?? null,
+                 'inventory' => $firstSupplier->inventory ?? null,
+                 'in_stock' => $firstSupplier->in_stock ?? null,
+                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                 'return_policy' => $firstSupplier->return_policy ?? null,
+                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+                 'warranty_information' => $firstSupplier->warranty_information ?? null,
             ];
         });
 

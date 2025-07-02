@@ -145,10 +145,16 @@ class RecentlyViewedProductController extends Controller
 
         if ($userId) {
             // Fetch recently viewed products for the logged-in user, eager load the related product data
-            $recentlyViewed = RecentlyViewedProduct::with('product') // Ensure 'product' relationship is loaded
+            $recentlyViewed = RecentlyViewedProduct::with([
+                'product.productSuppliers',
+                'product.reviews',
+                'product.currency',
+                'product.sellingUnitAttribute',
+                'product.productAttributes.attributeDetails'
+            ])
                 ->where('customer_id', $userId)
-                ->latest()  // Order by most recently viewed
-                ->take(5)   // Limit to the last 5 viewed products
+                ->latest()
+                ->take(5)
                 ->get();
 
             // Get wishlist product IDs
@@ -192,25 +198,36 @@ class RecentlyViewedProductController extends Controller
                             'attribute_value_unit' => $attributeUnit,
                         ];
                     }
+                    $firstSupplier = $product->productSuppliers->first();
 
             
                     return [
                         'product_id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
-                        'price' => $product->price,
-                        'sale_price' => $product->sale_price,
-                        'best_delivery_date' => $product->best_delivery_date,
                         'total_reviews' => $product->reviews->count(),
                         'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                         'left_stock' => $product->left_stock ?? 0,
                         'currency' => $product->currency->symbol ?? '$',
                         'in_wishlist' => in_array($product->id, $wishlistIds),
                         'images' =>$cleanedImages,
-                        'original_price' => $product->price,
-                        'front_sale_price' => $product->price,
-                        'best_price' => $product->price,
                         "selling_type"=> $sellingType,
+                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                        'price' =>  (float) $firstSupplier->price,
+                        "sale_price" => (float) $firstSupplier->sale_price,
+                        "original_price"=>  (float) $firstSupplier->price,
+                        'front_sale_price' => (float) $firstSupplier->sale_price,
+                         "best_price"=>  (float) $firstSupplier->price,
+                         "selling_type"=> $sellingType,
+                         "per_unit_price"=>   $product->per_unit_price,
+                         'vendor_id' => $firstSupplier->vendor_id ?? null,
+                         'map' => (float) $firstSupplier->map ?? null,
+                         'inventory' => $firstSupplier->inventory ?? null,
+                         'in_stock' => $firstSupplier->in_stock ?? null,
+                         'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                         'return_policy' => $firstSupplier->return_policy ?? null,
+                         'free_shipping' => $firstSupplier->free_shipping ?? null,
+                         'warranty_information' => $firstSupplier->warranty_information ?? null,
                     ];
                 })->filter(), // Filter out null values
             ]);
@@ -377,66 +394,76 @@ class RecentlyViewedProductController extends Controller
          ]);
      }
 
-     private function getGuestRecentlyViewedData(string $guestToken): array
-{
-    $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency')
-        ->where('guest_token', $guestToken)
-        ->latest()
-        ->take(5)
-        ->get();
+      private function getGuestRecentlyViewedData(string $guestToken): array
+        {
+            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers')
+                ->where('guest_token', $guestToken)
+                ->latest()
+                ->take(5)
+                ->get();
 
-    $data = [];
+            $data = [];
 
-    foreach ($recentlyViewed as $viewed) {
-        $product = $viewed->product;
-        if (!$product) continue;
+            foreach ($recentlyViewed as $viewed) {
+                $product = $viewed->product;
+                if (!$product) continue;
 
-        $images = $product->images;
-        if (is_string($images)) {
-            $images = json_decode($images, true);
+                $images = $product->images;
+                if (is_string($images)) {
+                    $images = json_decode($images, true);
+                }
+                if (!is_array($images)) {
+                    $images = [];
+                }
+
+                $cleanedImages = collect($images)->flatten()->filter()->values();
+                $sellingType = null;
+                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
+
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
+                    ];
+                }
+                $firstSupplier = $product->productSuppliers->first();
+
+
+                $data[] = [
+                    'product_id' => $product->id,
+                    'name' => $product->name,
+                    'sku' => $product->sku,
+                    'total_reviews' => $product->reviews->count(),
+                    'avg_rating' => $product->reviews->avg('star'),
+                    'left_stock' => $product->left_stock ?? 0,
+                    'currency' => $product->currency->symbol ?? '$',
+                    'in_wishlist' => false,
+                    'images' => $cleanedImages,
+                    "selling_type"=> $sellingType,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'price' => (float) ($firstSupplier->price ?? 0),
+                    "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
+                    "original_price"=> (float) ($firstSupplier->price ?? 0),
+                    'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
+                    "best_price"=> (float) ($firstSupplier->price ?? 0),
+                    "per_unit_price"=> $product->per_unit_price ?? null,
+                    'vendor_id' => $firstSupplier->vendor_id ?? null,
+                    'map' => (float) ($firstSupplier->map ?? 0),
+                    'inventory' => $firstSupplier->inventory ?? null,
+                    'in_stock' => $firstSupplier->in_stock ?? null,
+                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'return_policy' => $firstSupplier->return_policy ?? null,
+                    'free_shipping' => $firstSupplier->free_shipping ?? null,
+                    'warranty_information' => $firstSupplier->warranty_information ?? null,
+                ];
+            }
+
+            return $data;
         }
-        if (!is_array($images)) {
-            $images = [];
-        }
-
-        $cleanedImages = collect($images)->flatten()->filter()->values();
-        $sellingType = null;
-        if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-            $fullValue = $product->sellingUnitAttribute->attribute_value;
-
-            $attributeUnit = strpos($fullValue, '/') !== false
-                ? trim(explode('/', $fullValue)[1])
-                : $fullValue;
-
-            $sellingType = [
-                'attribute_value' => $product->sellingUnitAttribute->attribute_value,
-                'attribute_value_unit' => $attributeUnit,
-            ];
-        }
-
-
-        $data[] = [
-            'product_id' => $product->id,
-            'name' => $product->name,
-            'sku' => $product->sku,
-            'price' => $product->price,
-            'sale_price' => $product->sale_price,
-            'best_delivery_date' => $product->best_delivery_date,
-            'total_reviews' => $product->reviews->count(),
-            'avg_rating' => $product->reviews->avg('star'),
-            'left_stock' => $product->left_stock ?? 0,
-            'currency' => $product->currency->symbol ?? '$',
-            'in_wishlist' => false,
-            'images' => $cleanedImages,
-            'original_price' => $product->price,
-            'front_sale_price' => $product->price,
-            'best_price' => $product->price,
-            "selling_type"=> $sellingType,
-        ];
-    }
-
-    return $data;
-}
 
      
 

@@ -62,7 +62,6 @@ use App\Models\SeoSecondaryKeyword;
 use App\Models\SimpleSlider;
 use App\Models\SimpleSliderItem;
 use App\Models\Slug;
-use App\Models\Specification;
 use App\Models\Store;
 use App\Models\SubCategory;
 use App\Models\Tag;
@@ -154,7 +153,6 @@ class AppServiceProvider extends ServiceProvider
 		// SimpleSlider::observe(TransactionLogObserver::class);
 		// SimpleSliderItem::observe(TransactionLogObserver::class);
 		// Slug::observe(TransactionLogObserver::class);
-		// Specification::observe(TransactionLogObserver::class);
 		// Store::observe(TransactionLogObserver::class);
 		// SubCategory::observe(TransactionLogObserver::class);
 		// Tag::observe(TransactionLogObserver::class);

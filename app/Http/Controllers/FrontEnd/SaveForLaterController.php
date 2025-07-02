@@ -135,7 +135,8 @@ class SaveForLaterController extends Controller
 			->with([
 				'product.reviews',
 				'product.currency',
-				'product.sellingUnitAttribute'
+				'product.sellingUnitAttribute',
+				'product.productSuppliers',
 			])
 			->get();
 	
@@ -198,16 +199,13 @@ class SaveForLaterController extends Controller
 
 			  $product->per_unit_price = $perUnitPrice;
 			  $currencyTitle = $product->currency->symbol ?? $product->price;
+			  $firstSupplier = $product->productSuppliers->first();
 
 	
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
-				'price' => $product->price,
-				'sale_price' => $product->sale_price,
-				'original_price' => $product->price,
-				'front_sale_price' => $product->sale_price ?? $product->price,
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
 				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),
@@ -216,6 +214,22 @@ class SaveForLaterController extends Controller
 				'images' => $imageUrls,
 				'selling_type' => $sellingType,
 				'per_unit_price' => $product->per_unit_price ,
+				'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+				'price' =>  (float) $firstSupplier->price,
+				"sale_price" => (float) $firstSupplier->sale_price,
+				"original_price"=>  (float) $firstSupplier->price,
+				'front_sale_price' => (float) $firstSupplier->sale_price,
+				 "best_price"=>  (float) $firstSupplier->price,
+				 "selling_type"=> $sellingType,
+				 "per_unit_price"=>   $product->per_unit_price,
+				 'vendor_id' => $firstSupplier->vendor_id ?? null,
+				 'map' => (float) $firstSupplier->map ?? null,
+				 'inventory' => $firstSupplier->inventory ?? null,
+				 'in_stock' => $firstSupplier->in_stock ?? null,
+				 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+				 'return_policy' => $firstSupplier->return_policy ?? null,
+				 'free_shipping' => $firstSupplier->free_shipping ?? null,
+				 'warranty_information' => $firstSupplier->warranty_information ?? null,
 			];
 		})->filter()->values(); // Remove nulls
 	

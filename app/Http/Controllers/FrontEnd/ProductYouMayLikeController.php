@@ -206,7 +206,7 @@ class ProductYouMayLikeController extends Controller
             // Load additional relationships for paginated products
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency', 'specifications'])
+                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
                 ->get()
                 ->keyBy('id');
 
@@ -252,7 +252,7 @@ class ProductYouMayLikeController extends Controller
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-
+                $firstSupplier = $product->productSuppliers->first();
 
                 return [
                     'id' => $product->id,
@@ -261,18 +261,11 @@ class ProductYouMayLikeController extends Controller
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,
-                    'original_price' => $product->price,
-                    'front_sale_price' => $product->price,
-                    'sale_price' => $product->sale_price,
-                    'price' => $product->price,
                     'start_date' => $product->start_date,
                     'end_date' => $product->end_date,
-                    'warranty_information' => $product->warranty_information,
                     'currency' => $productWithRelations->currency?->symbol,
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
-                    'best_price' => $product->sale_price ?? $product->price,
-                    'best_delivery_date' => null,
                     'leftStock' => $leftStock,
                     'currency_title' => $productWithRelations->currency
                         ? ($productWithRelations->currency->is_prefix_symbol
@@ -281,6 +274,22 @@ class ProductYouMayLikeController extends Controller
                         : $product->price,
                     'in_wishlist' => in_array($product->id, $wishlistProductIds),
                     "selling_type"=> $sellingType,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'price' =>  (float) $firstSupplier->price,
+                    "sale_price" => (float) $firstSupplier->sale_price,
+                    "original_price"=>  (float) $firstSupplier->price,
+                    'front_sale_price' => (float) $firstSupplier->sale_price,
+                     "best_price"=>  (float) $firstSupplier->price,
+                     "selling_type"=> $sellingType,
+                     "per_unit_price"=>   $product->per_unit_price,
+                     'vendor_id' => $firstSupplier->vendor_id ?? null,
+                     'map' => (float) $firstSupplier->map ?? null,
+                     'inventory' => $firstSupplier->inventory ?? null,
+                     'in_stock' => $firstSupplier->in_stock ?? null,
+                     'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                     'return_policy' => $firstSupplier->return_policy ?? null,
+                     'free_shipping' => $firstSupplier->free_shipping ?? null,
+                     'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
             });
 
@@ -549,7 +558,7 @@ class ProductYouMayLikeController extends Controller
     
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency', 'specifications'])
+            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers'])
                 ->get()
                 ->keyBy('id');
     
@@ -581,6 +590,8 @@ class ProductYouMayLikeController extends Controller
                     ];
                 }
 
+                $firstSupplier = $product->productSuppliers->first();
+
     
                 return [
                     'id' => $product->id,
@@ -589,13 +600,8 @@ class ProductYouMayLikeController extends Controller
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,
-                    'original_price' => $product->price,
-                    'front_sale_price' => $product->price,
-                    'sale_price' => $product->sale_price,
-                    'price' => $product->price,
                     'start_date' => $product->start_date,
                     'end_date' => $product->end_date,
-                    'warranty_information' => $product->warranty_information,
                     'currency' => $productWithRelations->currency?->symbol,
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
@@ -608,6 +614,22 @@ class ProductYouMayLikeController extends Controller
                             : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
                         "selling_type"=> $sellingType,
+                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                        'price' =>  (float) $firstSupplier->price,
+                        "sale_price" => (float) $firstSupplier->sale_price,
+                        "original_price"=>  (float) $firstSupplier->price,
+                        'front_sale_price' => (float) $firstSupplier->sale_price,
+                         "best_price"=>  (float) $firstSupplier->price,
+                         "selling_type"=> $sellingType,
+                         "per_unit_price"=>   $product->per_unit_price,
+                         'vendor_id' => $firstSupplier->vendor_id ?? null,
+                         'map' => (float) $firstSupplier->map ?? null,
+                         'inventory' => $firstSupplier->inventory ?? null,
+                         'in_stock' => $firstSupplier->in_stock ?? null,
+                         'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                         'return_policy' => $firstSupplier->return_policy ?? null,
+                         'free_shipping' => $firstSupplier->free_shipping ?? null,
+                         'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
             });
     
