@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\FrontEnd\Customer;
 use Google_Client;
-
+use App\Notifications\GuestWelcomeMail;
+use App\Notifications\WelcomeMail;
 
 class AuthController extends Controller
 {
