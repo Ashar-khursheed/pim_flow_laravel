@@ -107,7 +107,7 @@ class Product extends Model
 	{
 		return $this->belongsToMany(
 			Category::class,
-			'ec_product_category_product',
+			'product_categories',
 			'product_id',
 			'category_id'
 		);
@@ -222,15 +222,15 @@ class Product extends Model
 	/* Get the latest category associated with the product */
 	public function latestChildCategory()
 	{
-		return $this->categories()->whereDoesntHave('children')->orderByDesc('ec_product_category_product.created_at')->orderByDesc('ec_product_category_product.category_id')->first();
+		return $this->categories()->whereDoesntHave('children')->orderByDesc('product_categories.created_at')->orderByDesc('product_categories.category_id')->first();
 	}
 
 	public function latestChildCategoryRelation()
 	{
-		return $this->belongsToMany(Category::class, 'ec_product_category_product', 'product_id', 'category_id')
+		return $this->belongsToMany(Category::class, 'product_categories', 'product_id', 'category_id')
 		->whereDoesntHave('children')
-		->orderByDesc('ec_product_category_product.created_at')
-		->orderByDesc('ec_product_category_product.category_id')
+		->orderByDesc('product_categories.created_at')
+		->orderByDesc('product_categories.category_id')
 		->limit(1); // This returns a relation, usable in `with()`
 	}
 

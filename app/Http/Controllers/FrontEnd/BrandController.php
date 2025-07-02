@@ -645,7 +645,7 @@ class BrandController extends Controller
     public function brandsByCategory($id): JsonResponse
     {
         $brandIds = Product::whereHas('categories', function ($query) use ($id) {
-            $query->where('ec_product_category_product.category_id', $id);
+            $query->where('product_categories.category_id', $id);
         })->pluck('brand_id')->unique()->filter();
 
         if ($brandIds->isEmpty()) {
