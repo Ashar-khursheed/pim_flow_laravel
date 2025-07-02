@@ -338,7 +338,7 @@ class SearchController extends Controller
     
         if (empty($query)) {
             return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
-                $products = Product::with(['slug', 'vendor', 'currency', 'brand']) // Added brand relation
+                $products = Product::with(['slug', 'currency', 'brand']) // Added brand relation
                     ->where('status', 'published')
                     ->inRandomOrder()
                     ->take(4)
@@ -349,7 +349,7 @@ class SearchController extends Controller
                     'slug',
                     'parent.slug',
                     'parent.parent.slug',
-                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
                 ])
                 ->where('status', 'published')
                 ->whereHas('products', fn($q) => $q->where('status', 'published'))
@@ -373,7 +373,7 @@ class SearchController extends Controller
                 // Show specific default brands with their products
                 $brands = Brand::with([
                     'slug',
-                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
                 ])
                 ->where('status', 'published')
                 ->whereIn('name', $defaultBrands)
@@ -397,7 +397,7 @@ class SearchController extends Controller
         }
     
         // Enhanced query search logic with comprehensive SKU search
-        $products = Product::with(['slug', 'brand', 'vendor', 'currency']) // Added vendor and currency relations
+        $products = Product::with(['slug', 'brand', 'currency']) // Added vendor and currency relations
             ->where('status', 'published')
             ->where(function ($q) use ($query) {
                 $q->where('name', 'LIKE', "%{$query}%")
@@ -421,7 +421,7 @@ class SearchController extends Controller
             'slug',
             'parent.slug',
             'parent.parent.slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'vendor', 'currency', 'productSuppliers'])
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'productSuppliers'])
         ])
         ->where('status', 'published')
         ->whereHas('products', fn($q) => $q->where('status', 'published'))
@@ -456,7 +456,7 @@ class SearchController extends Controller
         // Enhanced brand search - show brands that match query OR have products matching query (including SKU)
         $brands = Brand::with([
             'slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
         ])
         ->where('status', 'published')
         ->where(function ($q) use ($query) {
@@ -492,7 +492,7 @@ class SearchController extends Controller
             
             $additionalBrands = Brand::with([
                 'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
             ])
             ->where('status', 'published')
             ->whereIn('id', $productBrandIds)
@@ -519,7 +519,7 @@ class SearchController extends Controller
             
             $categoryBrands = Brand::with([
                 'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'vendor', 'currency', 'brand'])
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
             ])
             ->where('status', 'published')
             ->whereHas('products', function ($q) use ($categoryIds) {
