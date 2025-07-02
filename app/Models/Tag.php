@@ -8,12 +8,12 @@ class Tag extends Model
 {
     use HasFactory;
 
-    protected $table = 'ec_product_tags'; // Define the correct table name
+    protected $table = 'tags'; // Define the correct table name
 
     protected $fillable = ['name'];
 
     public function products()
     {
-        return $this->belongsToMany(Product::class, 'ec_product_tag_product', 'tag_id', 'product_id');
+        return $this->belongsToMany(Product::class, 'product_tags', 'tag_id', 'product_id');
     }
 }
