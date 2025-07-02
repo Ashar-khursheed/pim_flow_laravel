@@ -292,63 +292,89 @@ class CustomerController extends BaseController
 
 
 	public function googleLogin(Request $request)
-	{
-		$idToken = $request->input('credential');
+{
+    $idToken = $request->input('credential');
 
-		$client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
-		$payload = $client->verifyIdToken($idToken);
+    $client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
+    $payload = $client->verifyIdToken($idToken);
 
-		if ($payload) {
-			$email = $payload['email'];
-			$name = $payload['name'] ?? 'Guest';
-			$profileImg = $payload['picture'] ?? null;
+    if (!$payload) {
+        return response()->json(['success' => false, 'message' => 'Invalid Google token'], 401);
+    }
 
-			$customer = Customer::where('email', $email)->first();
-			$randomPassword = null;
+    $email = $payload['email'];
+    $name = $payload['name'] ?? 'Guest';
+    $googleProfileImg = $payload['picture'] ?? null;
 
-			if (!$customer) {
-				// Generate random password
-				$randomPassword = Str::random(8);
-				$hashedPassword = Hash::make($randomPassword);
+    $customer = Customer::where('email', $email)->first();
+    $randomPassword = null;
 
-				// Create user
-				$customer = Customer::create([
-					'name' => $name,
-					'email' => $email,
-					'password' => $hashedPassword,
-					'type' => 'Private',
-					'profile_img' => $profileImg,
-					'mobile_number' => null,
-				]);
+    if (!$customer) {
+        // Prepare input values (optionally fallback to request if needed)
+        $dob = $request->input('dob');
+        $countryCode = $request->input('country_code');
+        $mobileNumber = $request->input('mobile_number');
 
-				// Send email with the plain password
-				$customer->notify(new GuestWelcomeMail($randomPassword));
-			}
+        // Upload Google image to S3 or keep original link (depending on your logic)
+        $profileImg = $googleProfileImg;
 
-			// If newly registered, login using random password
-			$loginPassword = $randomPassword ?? $request->input('fallback_password'); // fallback not needed here
-			if (Auth::guard('front-end-api')->attempt([
-				'email' => $email,
-				'password' => $loginPassword
-			])) {
-				$user = Auth::guard('front-end-api')->user();
-				$token = $user->createToken('google-auth')->plainTextToken;
+        try {
+            if ($profileImg && filter_var($profileImg, FILTER_VALIDATE_URL)) {
+                $profileImg = uploadImageToWebpS3FromUrl(
+                    $profileImg,
+                    env('STORAGE_ENV') . '/customer/profile_img'
+                );
+            }
 
-				return response()->json([
-					'success' => true,
-					'message' => 'User logged in successfully.',
-					'user' => $user,
-					'token' => $token,
-					'plain_password' => $randomPassword, // only sent if newly registered
-				]);
-			} else {
-				return response()->json([
-					'success' => false,
-					'message' => 'Login failed. Please try manually logging in.'
-				], 500);
-			}
-		}
+            // Generate password
+            $randomPassword = Str::random(8);
+            $hashedPassword = Hash::make($randomPassword);
 
-		return response()->json(['success' => false, 'message' => 'Invalid Google token'], 401);
-	}
+            // Create user
+            $customer = Customer::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => $hashedPassword,
+                'type' => 'Private',
+                'dob' => $dob,
+                'country_code' => $countryCode,
+                'mobile_number' => $mobileNumber,
+                'profile_img' => $profileImg,
+            ]);
+
+            // Notify with password
+            $customer->notify(new GuestWelcomeMail($randomPassword));
+        } catch (\Exception $e) {
+            \Log::error('Google Login Registration Failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please try again later.'
+            ], 500);
+        }
+    }
+
+    // Attempt login
+    $loginPassword = $randomPassword ?? $request->input('fallback_password');
+    if (Auth::guard('front-end-api')->attempt([
+        'email' => $email,
+        'password' => $loginPassword
+    ])) {
+        $user = Auth::guard('front-end-api')->user();
+        $token = $user->createToken('google-auth')->plainTextToken;
+
+        return response()->json([
+            'success' => true,
+            'message' => 'User logged in successfully.',
+            'user' => $user,
+            'token' => $token,
+            'plain_password' => $randomPassword,
+        ]);
+    }
+
+    return response()->json([
+        'success' => false,
+        'message' => 'Login failed. Please try manually logging in.'
+    ], 500);
+}
+
 }
