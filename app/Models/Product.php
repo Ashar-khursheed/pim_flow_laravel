@@ -55,7 +55,7 @@ class Product extends Model
 		'name',
 		'website_id',
 		'description',
-		'content',
+		// 'content',
 		'images',
 		'sku',
 		'order',
@@ -64,38 +64,38 @@ class Product extends Model
 		'brand_id',
 		'quote_available',
 		'is_variation',
-		'price',
-		'sale_price',
+		// 'price',
+		// 'sale_price',
 		'tax_id',
 		'views',
 		'stock_status',
 		'barcode',
-		'cost_per_item',
+		// 'cost_per_item',
 		'specs_sheet_heading',
 		'specs_sheet',
 		'documents',
 		'video_path',
-		'warranty_information',
-		'vendor_id',
-		'refund_policy',
-		'delivery_days',
-		'box_quantity',
+		// 'warranty_information',
+		// 'vendor_id',
+		// 'refund_policy',
+		// 'delivery_days',
+		// 'box_quantity',
 		'frequently_bought_together' => 'array',
-		'variant_1_title' => 'nullable|string|max:255',
-		'variant_1_value' => 'nullable|string|max:255',
-		'variant_1_products' => 'nullable|string',
+		// 'variant_1_title' => 'nullable|string|max:255',
+		// 'variant_1_value' => 'nullable|string|max:255',
+		// 'variant_1_products' => 'nullable|string',
 
-		' variant_color_title' => 'nullable|string|max:255',
-		'variant_color_value' => 'nullable|string|max:255',
-		'variant_color_products' => 'nullable|string',
+		// ' variant_color_title' => 'nullable|string|max:255',
+		// 'variant_color_value' => 'nullable|string|max:255',
+		// 'variant_color_products' => 'nullable|string',
 
-		'variant_2_title' => 'nullable|string|max:255',
-		'variant_2_value' => 'nullable|string|max:255',
-		'variant_2_products' => 'nullable|string',
+		// 'variant_2_title' => 'nullable|string|max:255',
+		// 'variant_2_value' => 'nullable|string|max:255',
+		// 'variant_2_products' => 'nullable|string',
 
-		'variant_3_title' => 'nullable|string|max:255',
-		'variant_3_value' => 'nullable|string|max:255',
-		'variant_3_products' => 'nullable|string',
+		// 'variant_3_title' => 'nullable|string|max:255',
+		// 'variant_3_value' => 'nullable|string|max:255',
+		// 'variant_3_products' => 'nullable|string',
 		'google_shopping_category',
 		'benefits_features' => 'array',
 		'gen_type' =>  'nullable|integer',
@@ -138,9 +138,9 @@ class Product extends Model
 		return $this->belongsTo(Store::class, 'store_id');
 	}
 
-	public function vendor()
+	public function vendors()
 	{
-		return $this->belongsTo(Vendor::class, 'vendor_id');
+		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id');
 	}
 
 	public function brand()
@@ -173,10 +173,10 @@ class Product extends Model
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
 	}
 
-	public function arTranslations()
-	{
-		return $this->hasOne(ProductTranslation::class, 'ec_products_id')->where('lang_code', 'ar');
-	}
+	// public function arTranslations()
+	// {
+	// 	return $this->hasOne(ProductTranslation::class, 'ec_products_id')->where('lang_code', 'ar');
+	// }
 
 	public function productAttributes()
 	{
