@@ -10,7 +10,7 @@ use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Str;
 use App\Notifications\GuestWelcomeMail;
 use App\Notifications\WelcomeMail;
-
+use Illuminate\Support\Facades\Auth;
 class CustomerController extends BaseController
 {
 	/**
