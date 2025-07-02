@@ -237,7 +237,7 @@ class ProductGroupController extends Controller
     }
 
     // First, find product IDs that belong to the requested category
-    $productIdsInCategory = DB::table('ec_product_category_product')
+    $productIdsInCategory = DB::table('product_categories')
         ->where('category_id', $categoryId)
         ->pluck('product_id')
         ->toArray();
@@ -556,7 +556,7 @@ class ProductGroupController extends Controller
 
         $query = DB::table('ec_products as p')
             ->join('ec_brands as b', 'p.brand_id', '=', 'b.id')
-            ->join('ec_product_category_product as pcp', 'p.id', '=', 'pcp.product_id')
+            ->join('product_categories as pcp', 'p.id', '=', 'pcp.product_id')
             ->join('categories as c', 'pcp.category_id', '=', 'c.id')
             ->leftJoin('categories as sub', 'c.id', '=', 'sub.parent_id')
             ->whereNull('sub.id') // Only leaf categories

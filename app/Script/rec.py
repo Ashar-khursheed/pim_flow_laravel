@@ -155,7 +155,7 @@ class DBConfig:
 #                         )
 #                     ), 'Unknown') AS taxonomy_path
 #                 FROM ec_products p
-#                 INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
+#                 INNER JOIN product_categories cp ON p.id = cp.product_id
 #                 INNER JOIN categories c ON cp.category_id = c.id
 #                 LEFT JOIN ec_brands b ON p.brand_id = b.id
 #                 WHERE p.id IN %s AND p.status = 'published'
@@ -495,7 +495,7 @@ def get_product_data(child_ids):
                         )
                     ), 'Unknown') AS taxonomy_path
                 FROM ec_products p
-                LEFT JOIN ec_product_category_product cp ON p.id = cp.product_id
+                LEFT JOIN product_categories cp ON p.id = cp.product_id
                 LEFT JOIN categories c ON cp.category_id = c.id
                 LEFT JOIN ec_brands b ON p.brand_id = b.id
                 WHERE p.id IN %s
