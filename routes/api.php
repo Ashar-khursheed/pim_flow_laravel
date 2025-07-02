@@ -338,10 +338,12 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
+Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
 
 
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
 
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
@@ -424,7 +426,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
-	Route::post('frontend/auth/google', [F_CustomerController::class, 'login']);
+
 
 });
 

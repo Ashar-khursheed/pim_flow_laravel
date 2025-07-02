@@ -290,44 +290,65 @@ class CustomerController extends BaseController
 		], 200);
 	}
 
-	public function login(Request $request)
+
+	public function googleLogin(Request $request)
 	{
 		$idToken = $request->input('credential');
-	
-		$client = new Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
+
+		$client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
 		$payload = $client->verifyIdToken($idToken);
-	
+
 		if ($payload) {
 			$email = $payload['email'];
-			$name = $payload['name'];
-			$profileImg = $payload['picture'];
-	
-			$user = Customer::where('email', $email)->first();
-	
-			if (!$user) {
+			$name = $payload['name'] ?? 'Guest';
+			$profileImg = $payload['picture'] ?? null;
+
+			$customer = Customer::where('email', $email)->first();
+			$randomPassword = null;
+
+			if (!$customer) {
+				// Generate random password
 				$randomPassword = Str::random(8);
 				$hashedPassword = Hash::make($randomPassword);
-	
-				$user = Customer::create([
+
+				// Create user
+				$customer = Customer::create([
 					'name' => $name,
 					'email' => $email,
-					'profile_img' => $profileImg,
 					'password' => $hashedPassword,
 					'type' => 'Private',
+					'profile_img' => $profileImg,
 					'mobile_number' => null,
 				]);
-	
-				$user->notify(new GuestWelcomeMail($randomPassword));
+
+				// Send email with the plain password
+				$customer->notify(new GuestWelcomeMail($randomPassword));
 			}
-	
-			// ✅ Don't call Auth::login — return Sanctum token instead
-			return response()->json([
-				'message' => 'Logged in successfully',
-				'user' => $user,
-				'token' => $user->createToken('google-auth')->plainTextToken,
-			]);
-		} else {
-			return response()->json(['error' => 'Invalid ID token'], 401);
+
+			// If newly registered, login using random password
+			$loginPassword = $randomPassword ?? $request->input('fallback_password'); // fallback not needed here
+			if (Auth::guard('front-end-api')->attempt([
+				'email' => $email,
+				'password' => $loginPassword
+			])) {
+				$user = Auth::guard('front-end-api')->user();
+				$token = $user->createToken('google-auth')->plainTextToken;
+
+				return response()->json([
+					'success' => true,
+					'message' => 'User logged in successfully.',
+					'user' => $user,
+					'token' => $token,
+					'plain_password' => $randomPassword, // only sent if newly registered
+				]);
+			} else {
+				return response()->json([
+					'success' => false,
+					'message' => 'Login failed. Please try manually logging in.'
+				], 500);
+			}
 		}
+
+		return response()->json(['success' => false, 'message' => 'Invalid Google token'], 401);
 	}
 }
