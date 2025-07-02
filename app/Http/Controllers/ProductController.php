@@ -126,7 +126,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type' , 'approved'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id' , 'status' , 'price' , 'sale_price' , 'gen_type' , 'approved'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -138,11 +138,10 @@ class ProductController extends BaseController
 
 		$query = Product::with([
 			'brand:id,name',
-			'vendor:id,name',
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'vendor_id', 'status' , 'price' , 'sale_price' , 'gen_type' ,'approved']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'price' , 'sale_price' , 'gen_type' ,'approved']);
 
 		/* Apply search if provided */
 
@@ -162,9 +161,7 @@ class ProductController extends BaseController
 				->orWhereHas('brand', function($brandQuery) use ($search) {
 					$brandQuery->where('name', 'like', "%{$search}%");
 				})
-				->orWhereHas('vendor', function($storeQuery) use ($search) {
-					$storeQuery->where('name', 'like', "%{$search}%");
-				})
+			
 				->orWhereHas('categories', function($categoryQuery) use ($search) {
 					$categoryQuery->where('name', 'like', "%{$search}%");
 				});
@@ -189,8 +186,8 @@ class ProductController extends BaseController
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
-				'vendor_id' => $product->vendor_id,
-				'vendor' => optional($product->vendor)->name,
+				// 'vendor_id' => $product->vendor_id,
+				// 'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
 				'price'=> $product->price,
 				'sale_price'=> $product->sale_price,
@@ -339,7 +336,7 @@ class ProductController extends BaseController
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
-			'Store & Vendor Information' => ['vendor_id', 'brand_id'],
+			'Store & Vendor Information' => [ 'brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'box_quantity', 'delivery_days' , 'website_ids'],
@@ -352,7 +349,7 @@ class ProductController extends BaseController
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title' ],
 			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
-			'Store & Vendor Information' => ['vendor:id,name', 'brand:id,name', 'creator:id,name'],
+			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
 			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
 		];
@@ -549,11 +546,11 @@ class ProductController extends BaseController
 					'name' => $product->brand->name
 				]] : null;
 				break;
-				case 'vendor_id':
-				$formattedProduct['vendor'] = $product->vendor ? [[
-					'id' => $product->vendor->id,
-					'name' => $product->vendor->name
-				]] : null;
+				// case 'vendor_id':
+				// $formattedProduct['vendor'] = $product->vendor ? [[
+				// 	'id' => $product->vendor->id,
+				// 	'name' => $product->vendor->name
+				// ]] : null;
 				break;
 
 				// case 'shipping_length_id':
@@ -1994,7 +1991,7 @@ if ($request->has('images')) {
 			"cost_type", "additional_cost_percentage", "additional_cost_value",
 			"total_cost_per_item", "tax_id", "currency_id", "name", "description", "images",
 			"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
-			"variant_barcode", "variant_color_title", "variant_color_value", "vendor_id",
+			"variant_barcode", "variant_color_title", "variant_color_value",
 			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
 			"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
 		];
@@ -2260,17 +2257,17 @@ if ($request->has('images')) {
 			unset($input['box_quantity']);
 		}
 
-		/* Store ID validation */
-		if (isset($input['vendor_id'])) {
-			$storeArray = Vendor::pluck("id")->toArray();
-			if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
-				$storeList = implode(', ', $storeArray);
-				$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
-			} else {
-				$product->vendor_id = (int) $input['vendor_id'];
-				unset($input['vendor_id']); /* Remove processed field */
-			}
-		}
+		// /* Store ID validation */
+		// if (isset($input['vendor_id'])) {
+		// 	$storeArray = Vendor::pluck("id")->toArray();
+		// 	if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
+		// 		$storeList = implode(', ', $storeArray);
+		// 		$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
+		// 	} else {
+		// 		$product->vendor_id = (int) $input['vendor_id'];
+		// 		unset($input['vendor_id']); /* Remove processed field */
+		// 	}
+		// }
 
 		/* Brand ID validation */
 		if (isset($input['brand_id'])) {
@@ -2522,7 +2519,6 @@ if ($request->has('images')) {
 			"variant_barcode",
 			"variant_color_title",
 			"variant_color_value",
-			"vendor_id",
 			"brand_id",
 			"views",
 			"units_sold",
