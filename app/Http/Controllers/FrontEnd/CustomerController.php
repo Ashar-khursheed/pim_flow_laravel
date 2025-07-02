@@ -314,16 +314,7 @@ class CustomerController extends BaseController
         $countryCode = $request->input('country_code');
         $mobileNumber = $request->input('mobile_number');
 
-        $profileImg = $googleProfileImg;
-
         try {
-            if ($profileImg && filter_var($profileImg, FILTER_VALIDATE_URL)) {
-                $profileImg = uploadImageToWebpS3FromUrl(
-                    $profileImg,
-                    env('STORAGE_ENV') . '/customer/profile_img'
-                );
-            }
-
             $randomPassword = Str::random(8);
             $hashedPassword = Hash::make($randomPassword);
 
@@ -335,7 +326,7 @@ class CustomerController extends BaseController
                 'dob' => $dob,
                 'country_code' => $countryCode,
                 'mobile_number' => $mobileNumber,
-                'profile_img' => $profileImg,
+                'profile_img' => $googleProfileImg, // just store the URL directly
             ]);
 
             $customer->notify(new GuestWelcomeMail($randomPassword));
@@ -354,10 +345,11 @@ class CustomerController extends BaseController
             ? 'User registered successfully using Google.'
             : 'User already exists with this Google account.',
         'email' => $customer->email,
-        'plain_password' => $randomPassword, // only non-null for newly registered
+        'plain_password' => $randomPassword, // only non-null for new users
         'user' => $customer,
     ]);
 }
+
 
 
 }
