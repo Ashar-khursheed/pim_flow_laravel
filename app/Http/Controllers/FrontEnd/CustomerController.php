@@ -5,7 +5,7 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-
+use Google_Client;
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Str;
 use App\Notifications\GuestWelcomeMail;
@@ -288,5 +288,46 @@ class CustomerController extends BaseController
 			'success' => true,
 			'coupons' => $coupons
 		], 200);
+	}
+
+	public function login(Request $request)
+	{
+		$idToken = $request->input('credential');
+	
+		$client = new Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
+		$payload = $client->verifyIdToken($idToken);
+	
+		if ($payload) {
+			$email = $payload['email'];
+			$name = $payload['name'];
+			$profileImg = $payload['picture'];
+	
+			$user = Customer::where('email', $email)->first();
+	
+			if (!$user) {
+				$randomPassword = Str::random(8);
+				$hashedPassword = Hash::make($randomPassword);
+	
+				$user = Customer::create([
+					'name' => $name,
+					'email' => $email,
+					'profile_img' => $profileImg,
+					'password' => $hashedPassword,
+					'type' => 'Private',
+					'mobile_number' => null,
+				]);
+	
+				$user->notify(new GuestWelcomeMail($randomPassword));
+			}
+	
+			// ✅ Don't call Auth::login — return Sanctum token instead
+			return response()->json([
+				'message' => 'Logged in successfully',
+				'user' => $user,
+				'token' => $user->createToken('google-auth')->plainTextToken,
+			]);
+		} else {
+			return response()->json(['error' => 'Invalid ID token'], 401);
+		}
 	}
 }
