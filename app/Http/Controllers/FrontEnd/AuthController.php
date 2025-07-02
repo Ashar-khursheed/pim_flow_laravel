@@ -106,15 +106,12 @@ class AuthController extends Controller
 			$name = $payload['name'];
 			$profileImg = $payload['picture'];
 	
-			// Check if the customer already exists
 			$user = Customer::where('email', $email)->first();
 	
 			if (!$user) {
-				// Generate random password for first-time Google login users
 				$randomPassword = Str::random(8);
 				$hashedPassword = Hash::make($randomPassword);
 	
-				// Create new user
 				$user = Customer::create([
 					'name' => $name,
 					'email' => $email,
@@ -124,17 +121,14 @@ class AuthController extends Controller
 					'mobile_number' => null,
 				]);
 	
-				// Optional: Notify user with random password
 				$user->notify(new GuestWelcomeMail($randomPassword));
 			}
 	
-			// Log in the user
-			Auth::login($user);
-	
+			// ✅ Don't call Auth::login — return Sanctum token instead
 			return response()->json([
 				'message' => 'Logged in successfully',
 				'user' => $user,
-				'token' => $user->createToken('google-auth')->plainTextToken
+				'token' => $user->createToken('google-auth')->plainTextToken,
 			]);
 		} else {
 			return response()->json(['error' => 'Invalid ID token'], 401);
