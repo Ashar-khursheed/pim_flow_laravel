@@ -47,7 +47,7 @@ def main(category_id):
                         s_store.name AS store,
                         c.name AS product_family
                     FROM ec_products p
-                    INNER JOIN ec_product_category_product cp ON p.id = cp.product_id
+                    INNER JOIN product_categories cp ON p.id = cp.product_id
                     INNER JOIN categories c ON cp.category_id = c.id
                     LEFT JOIN ec_brands b ON p.brand_id = b.id
                     LEFT JOIN mp_stores s_store ON p.store_id = s_store.id
