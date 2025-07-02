@@ -56,7 +56,6 @@ class ImportProductJob implements ShouldQueue
 	public function handle()
 	{
 		$brandIdNames = Brand::pluck('name', 'id')->all();
-		// $storeIdNames = Store::pluck('name', 'id')->all();
 		$vendorIDNames = Vendor::pluck('name', 'id')->all();
 
 		$this->categoryIdNames = Category::whereDoesntHave('children')->pluck('name', 'id')->all();
@@ -320,21 +319,6 @@ class ImportProductJob implements ShouldQueue
 					$stockStatus = null;
 				}
 
-				/* With storehouse management validation (Check for 0 if empty) */
-				// if ($withStorehouseManagement !== '' && (!is_numeric($withStorehouseManagement) || !in_array($withStorehouseManagement, [0, 1]))) {
-				// 	$rowError[] = "With storehouse management should be numeric and either 1 for Yes, or 0 for No.";
-				// } else {
-				// 	$withStorehouseManagement = $withStorehouseManagement !== '' ? (int) $withStorehouseManagement : 0;
-				// }
-
-				/* Unit of measurement validation */
-				// $usUnitOfMeasurementArray = UnitOfMeasurement::pluck('name', 'id')->all();
-				// if ($unitOfMeasurement && (!is_numeric($unitOfMeasurement) || !array_key_exists((int) $unitOfMeasurement, $usUnitOfMeasurementArray))) {
-				// 	$rowError[] = "Unit of measurement should be numeric and either 1 for Each, 2 for Dozen, 3 for Box, or 4 for Case.";
-				// } else {
-				// 	$unitOfMeasurementID = $unitOfMeasurement ? $unitOfMeasurement : null;
-				// }
-
 				/* Variant requires shipping validation (Check for 0 if empty) */
 				if ($variantRequiresShipping !== '' && (!is_numeric($variantRequiresShipping) || !in_array($variantRequiresShipping, [0, 1]))) {
 					$rowError[] = "Variant requires shipping should be numeric and either 1 for Yes, or 0 for No.";
@@ -361,58 +345,12 @@ class ImportProductJob implements ShouldQueue
 					$isFeatured = $isFeatured !== '' ? (int) $isFeatured : 0;
 				}
 
-				/* Weight option validation */
-				// $usWeightArray = [
-				// 	5 => "kg",
-				// 	6 => "g",
-				// 	9 => "lbs",
-				// ];
-				// if ($weightOption && !in_array($weightOption, ['lbs', 'kg', 'g'])) {
-				// 	$rowError[] = "Weight option should be 'lbs', 'kg', or 'g'.";
-				// } else {
-				// 	$weightOption = $weightOption ? array_search($weightOption, $usWeightArray) : 9;
-				// }
-
-				/* Dimension option validation */
-				// $usDimensionArray = [
-				// 	1 => "cm",
-				// 	3 => "inch",
-				// 	11 => "mm",
-				// ];
-				// if ($dimensionOption && !in_array($dimensionOption, ['inch', 'cm', 'mm'])) {
-				// 	$rowError[] = "Dimension option should be 'inch', 'cm', or 'mm'.";
-				// } else {
-				// 	$dimensionOption = $dimensionOption ? array_search($dimensionOption, $usDimensionArray) : 3;
-				// }
-
-				/* Shipping weight option validation */
-				// if ($shippingWeightOption && !in_array($shippingWeightOption, ['lbs', 'kg', 'g'])) {
-				// 	$rowError[] = "Shipping weight option should be 'lbs', 'kg', or 'g'.";
-				// } else {
-				// 	$shippingWeightOption = $shippingWeightOption ? $shippingWeightOption : 'lbs';
-				// }
-
-				/* Shipping dimension option validation */
-				// if ($shippingDimensionOption && !in_array($shippingDimensionOption, ['inch', 'cm', 'mm'])) {
-				// 	$rowError[] = "Shipping dimension option should be 'inch', 'cm', or 'mm'.";
-				// } else {
-				// 	$shippingDimensionOption = $shippingDimensionOption ? $shippingDimensionOption : 'inch';
-				// }
-
 				$frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
 				if ($frequentlyBoughtTogether) {
 					$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
 				} else {
 					$frequentlyBoughtTogether = null;
 				}
-
-				// $compareProducts = trim($rowData['Compare Products']);
-				// if ($compareProducts) {
-				// 	$compareProductsArray = array_unique(array_map(fn($value) => trim($value), explode(',', $compareProducts)));
-				// 	$compareProducts = !empty($compareProductsArray) ? json_encode($compareProductsArray) : null;
-				// } else {
-				// 	$compareProducts = null;
-				// }
 
 				if ($price && $salePrice && $price < $salePrice) {
 					$rowError[] = "The sale price must be less than the price.";
@@ -429,15 +367,6 @@ class ImportProductJob implements ShouldQueue
 
 				/* Process Images */
 				$fetchedImages = $this->getImageURLs((array) $images ?? []);
-
-
-				/* Get Sale Type */
-				// $saleType = ($startDateSalePrice || $endDateSalePrice) ? 1 : 0;
-
-				/* Set Quantity */
-				// if (!$withStorehouseManagement) {
-				// 	$quantity = null;
-				// }
 			}
 
 			if ($rowError) {
@@ -498,35 +427,13 @@ class ImportProductJob implements ShouldQueue
 					$product->is_featured = $isFeatured;
 					$product->brand_id = $brandId;
 					$product->images = json_encode($fetchedImages);
-					// $product->image = $fetchedImages[0] ?? null;
 					$product->video_path = $uploadVideo;
 					$product->stock_status = $stockStatus;
-					// $product->with_storehouse_management = $withStorehouseManagement;
-					// $product->unit_of_measurement_id = $unitOfMeasurementID;
 					$product->quantity = !empty($quantity) ? $quantity : null;
 					$product->cost_per_item = !empty($costPerItem) ? $costPerItem : null;
 					$product->price = !empty($price) ? $price : null;
 					$product->sale_price = !empty($salePrice) ? $salePrice : null;
-					// $product->start_date = !empty($startDateSalePrice) ? Carbon::parse($startDateSalePrice) : null;
-					// $product->end_date = !empty($endDateSalePrice) ? Carbon::parse($endDateSalePrice) : null;
-					// $product->sale_type = $saleType;
-					// $product->weight = !empty($weight) ? $weight : null;
-					// $product->weight_unit_id = $weightOption;
-					// $product->length = !empty($length) ? $length : null;
-					// $product->length_unit_id = $dimensionOption;
-					// $product->width = !empty($width) ? $width : null;
-					// $product->height = !empty($height) ? $height : null;
-					// $product->depth = !empty($depth) ? $depth : null;
-					// $product->shipping_weight_option = $shippingWeightOption;
-					// $product->shipping_weight = !empty($shippingWeight) ? $shippingWeight : null;
-					// $product->shipping_dimension_option = $shippingDimensionOption;
-					// $product->shipping_width = !empty($shippingWidth) ? $shippingWidth : null;
-					// $product->shipping_depth = !empty($shippingDepth) ? $shippingDepth : null;
-					// $product->shipping_height = !empty($shippingHeight) ? $shippingHeight : null;
-					// $product->shipping_length = !empty($shippingLength) ? $shippingLength : null;
 					$product->frequently_bought_together = $frequentlyBoughtTogether;
-					// $product->compare_type = !empty($compareType) ? $compareType : null;
-					// $product->compare_products = $compareProducts;
 					$product->refund = $refundPolicy;
 					$product->currency_id = 1;
 					$product->variant_1_title = !empty($variant1Title) ? $variant1Title : null;
@@ -542,7 +449,6 @@ class ImportProductJob implements ShouldQueue
 					$product->variant_color_value = !empty($variantColorValue) ? $variantColorValue : null;
 					$product->variant_color_products = !empty($variantColorProducts) ? $variantColorProducts : null;
 					$product->barcode = !empty($barcode) ? $barcode : null;
-					// $product->minimum_order_quantity = !empty($minimumOrderQuantity) ? $minimumOrderQuantity : 0;
 					$product->variant_requires_shipping = $variantRequiresShipping;
 					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;
 					$product->google_shopping_mpn = !empty($googleShoppingMpn) ? $googleShoppingMpn : null;
@@ -552,20 +458,14 @@ class ImportProductJob implements ShouldQueue
 					$product->created_at = $product->id ? $product->created_at : now();
 					$product->updated_at = now();
 					$product->created_by = $this->userId;
-					// $product->created_by_id = $this->userId;
-					// $product->created_by_type = User::class;
 					Product::$observerUserId = $this->userId;
 					$product->save();
 					Product::$observerUserId = null;
 
 					$SKUs[$product->id] = $sku;
 
-					// $this->saveProductProductType($product, $productTypes);
-					// $categoryIdArray = $this->changeCategoryNameToId($categories);
-					// $this->saveProductCategory($product, $categoryIdArray);
 					$this->saveProductCategory($product, $categoryId);
 					$this->saveProductTag($product, $tags);
-					// $this->saveSeoMetaData($product, $seoTitle, $seoDescription);
 					$this->saveSlugData($product, $url);
 					$this->saveTranslation($product, $rowData);
 					$this->saveDiscount($product, $rowData);
