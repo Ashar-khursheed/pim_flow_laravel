@@ -355,26 +355,26 @@ class CustomerController extends BaseController
 
     // Attempt login
     $loginPassword = $randomPassword ?? $request->input('fallback_password');
-    if (Auth::guard('front-end-api')->attempt([
-        'email' => $email,
-        'password' => $loginPassword
-    ])) {
-        $user = Auth::guard('front-end-api')->user();
-        $token = $user->createToken('google-auth')->plainTextToken;
+//     if (Auth::guard('front-end-api')->attempt([
+//         'email' => $email,
+//         'password' => $loginPassword
+//     ])) {
+//         $user = Auth::guard('front-end-api')->user();
+//         $token = $user->createToken('google-auth')->plainTextToken;
 
-        return response()->json([
-            'success' => true,
-            'message' => 'User logged in successfully.',
-            'user' => $user,
-            'token' => $token,
-            'plain_password' => $randomPassword,
-        ]);
-    }
+//         return response()->json([
+//             'success' => true,
+//             'message' => 'User logged in successfully.',
+//             'user' => $user,
+//             'token' => $token,
+//             'plain_password' => $randomPassword,
+//         ]);
+//     }
 
-    return response()->json([
-        'success' => false,
-        'message' => 'Login failed. Please try manually logging in.'
-    ], 500);
-}
+//     return response()->json([
+//         'success' => false,
+//         'message' => 'Login failed. Please try manually logging in.'
+//     ], 500);
+ }
 
 }
