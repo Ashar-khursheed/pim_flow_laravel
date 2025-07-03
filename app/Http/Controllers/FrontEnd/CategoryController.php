@@ -3574,7 +3574,6 @@ class CategoryController extends Controller
 						"selling_type"=> $sellingType,
 						"per_unit_price"=>   $details->per_unit_price,
 						'vendor_id' => $firstSupplier->vendor_id ?? null,
-						'map' => (float) $firstSupplier->map ?? null,
 						'map' => $firstSupplier ? (float) $firstSupplier->map : null,
 						'inventory' => $firstSupplier->inventory ?? null,
 						'in_stock' => $firstSupplier->in_stock ?? null,
