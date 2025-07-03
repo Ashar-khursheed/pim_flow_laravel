@@ -304,12 +304,6 @@ class BrandController extends Controller
                     if ($request->has('search') && !str_contains(strtolower($product->name), strtolower($request->input('search')))) {
                         return false;
                     }
-                    if ($request->has('price_min') && $product->price < $request->price_min) {
-                        return false;
-                    }
-                    if ($request->has('price_max') && $product->price > $request->price_max) {
-                        return false;
-                    }
                     if ($request->has('rating') && $product->reviews->avg('star') < $request->rating) {
                         return false;
                     }
@@ -334,11 +328,11 @@ class BrandController extends Controller
                                 'attribute_value_unit' => $unit,
                             ];
                         }
-
+                        $firstSupplier = $product->productSuppliers->first();
                         // Per unit price
                         $unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
                         $packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
-                        $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                        $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
                         $perUnitPrice = null;
                         if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
                             $unitValue = (float) $unitsPerCase->attribute_value;
@@ -347,7 +341,7 @@ class BrandController extends Controller
                                 $perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
                             }
                         }
-                        $firstSupplier = $product->productSuppliers->first();
+                      
 
                         return [
                             "id" => $product->id,
@@ -501,12 +495,7 @@ class BrandController extends Controller
                     ->when($request->has('search'), function ($query) use ($request) {
                         $query->where('name', 'like', '%' . $request->input('search') . '%');
                     })
-                    ->when($request->has('price_min'), function ($query) use ($request) {
-                        $query->where('price', '>=', $request->input('price_min'));
-                    })
-                    ->when($request->has('price_max'), function ($query) use ($request) {
-                        $query->where('price', '<=', $request->input('price_max'));
-                    })
+
                     ->when($request->has('rating'), function ($query) use ($request) {
                         $query->whereHas('reviews', function ($q) use ($request) {
                             $q->selectRaw('AVG(star) as avg_rating')
@@ -572,12 +561,14 @@ class BrandController extends Controller
                                 'attribute_value_unit' => $attributeUnit,
                             ];
                         }
+                        $firstSupplier = $details->productSuppliers->first();
+
                         // Calculate per unit price
                         $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
                         $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
 
-                        $basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
+                        $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
                         $perUnitPrice = null;
 
                         if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
@@ -589,8 +580,7 @@ class BrandController extends Controller
                         }
 
                         $details->per_unit_price = $perUnitPrice;
-                        $firstSupplier = $details->productSuppliers->first();
-
+                       
                         return [
                             'id' => $details->id,
                             'name' => $details->name,

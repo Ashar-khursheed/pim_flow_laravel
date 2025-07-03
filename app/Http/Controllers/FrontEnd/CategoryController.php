@@ -1994,7 +1994,7 @@ class CategoryController extends Controller
 			$min = $request->input('price_min', 0);
 			$max = $request->input('price_max', PHP_INT_MAX);
 	
-			$priceFilteredIds = Product::whereIn('id', $filteredProductIds)
+			$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds)
 				->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
 				->pluck('id');
 	
@@ -2102,12 +2102,13 @@ class CategoryController extends Controller
 					'attribute_value_unit' => $attributeUnit,
 				];
 			}
+			$firstSupplier = $product->productSuppliers->first();
 	
 			// Calculate per unit price
 			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 			$packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 	
-			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+			$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
 			$perUnitPrice = null;
 	
 			if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
@@ -2121,7 +2122,6 @@ class CategoryController extends Controller
 			$product->per_unit_price = $perUnitPrice;
 	
 			// FIX: Add null check for firstSupplier
-			$firstSupplier = $product->productSuppliers->first();
 	
 			return [
 				'id' => $product->id,
@@ -3712,12 +3712,13 @@ return response()->json([
 							'attribute_value_unit' => $attributeUnit,
 						];
 					}
+					$firstSupplier = $details->productSuppliers->first();
 					  // Calculate per unit price
 					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
 
-					$basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
+					$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
 					$perUnitPrice = null;
 
 					if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
@@ -3730,7 +3731,7 @@ return response()->json([
 
 					$details->per_unit_price = $perUnitPrice;
 
-					$firstSupplier = $details->productSuppliers->first();
+					
 
 					return [
 						'id' => $details->id,
