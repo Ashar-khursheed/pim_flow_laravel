@@ -1,8 +1,9 @@
 <?php
+// app/Services/TaxJarService.php
 
 namespace App\Services;
 
-use TaxJar\TaxJar;
+use TaxJar\Client;
 
 class TaxJarService
 {
@@ -10,24 +11,22 @@ class TaxJarService
 
     public function __construct()
     {
-        $this->client = TaxJar::withApiKey(env('TAXJAR_API_KEY'));
+        $this->client = Client::withApiKey(env('TAXJAR_API_KEY'));
     }
 
-    // Get tax rate for a location
+    /**
+     * Get tax rate by ZIP code or full address.
+     */
     public function getTaxRate($zip, $params = [])
     {
         return $this->client->ratesForLocation($zip, $params);
     }
 
-    // Calculate sales tax for an order
-    public function calculateTax(array $orderData)
+    /**
+     * Calculate sales tax for an order.
+     */
+    public function calculateSalesTax(array $order)
     {
-        return $this->client->taxForOrder($orderData);
-    }
-
-    // Example: Create transaction (optional)
-    public function createTransaction(array $transactionData)
-    {
-        return $this->client->createOrder($transactionData);
+        return $this->client->taxForOrder($order);
     }
 }

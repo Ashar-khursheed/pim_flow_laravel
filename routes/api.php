@@ -506,6 +506,7 @@ Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandS
 
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
+Route::get('/frontend/search/products', [F_SearchController::class, 'getProductsOnly']);
 
 Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
 
@@ -536,6 +537,5 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
-
-Route::post('frontend/tax/rate', [F_TaxController::class, 'getRate']);
+Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);

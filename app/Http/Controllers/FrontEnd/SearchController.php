@@ -644,6 +644,67 @@ class SearchController extends Controller
         return implode('/', $slugPath);
     }
 
+    
+    public function getProductsOnly(Request $request)
+    {
+        $query = $request->input('query');
+        $defaultImage = asset('images/default-thumbnail.jpg');
+
+        // Helper for image URL
+        $imageUrl = function ($img) use ($defaultImage) {
+            if (!$img) return $defaultImage;
+            $imagePath = public_path('storage/' . ltrim($img, '/'));
+            return File::exists($imagePath) ? asset('storage/' . ltrim($img, '/')) : $defaultImage;
+        };
+
+        // Map function for product formatting
+        $mapProduct = function ($product) {
+            $firstSupplier = $product->productSuppliers->first();
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'url' => $product->url,
+                'sku' => $product->sku,
+                'images' => json_decode($product->images) ?? [],
+                'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
+                'vendor_id' => $firstSupplier?->vendor_id,
+                'currency_title' => $product->currency->symbol ?? null,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'sale_price' => $firstSupplier->sale_price ?? null,
+                'map' => $firstSupplier->map ?? null,
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'delivery_days' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
+                'brand' => $product->brand ? [
+                    'id' => $product->brand->id,
+                    'name' => $product->brand->name,
+                    'slug' => optional($product->brand->slug)->key,
+                ] : null,
+            ];
+        };
+
+        // Query logic
+        $products = Product::with(['slug', 'brand', 'currency', 'productSuppliers'])
+        ->where('status', 'published')
+        ->where(function ($q) use ($query) {
+            $q->where('name', 'LIKE', "%{$query}%")
+                ->orWhere('sku', 'LIKE', "%{$query}%")
+                ->orWhere('sku', '=', $query)
+                ->orWhereHas('slug', fn($s) => $s->where('key', 'LIKE', "%{$query}%"))
+                ->orWhereHas('brand', fn($b) => $b->where('name', 'LIKE', "%{$query}%")); // 🔥 add this
+        })
+        ->take(20)
+        ->get()
+        ->map($mapProduct);
+    
+
+        return response()->json(['products' => $products]);
+    }
   
     
 
