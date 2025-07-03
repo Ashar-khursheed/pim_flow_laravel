@@ -506,6 +506,7 @@ Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandS
 
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
+Route::get('/frontend/search/products', [F_SearchController::class, 'getProductsOnly']);
 
 Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
 
