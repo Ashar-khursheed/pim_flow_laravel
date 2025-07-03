@@ -690,17 +690,18 @@ class SearchController extends Controller
 
             // Query logic
             $products = Product::with(['slug', 'brand', 'currency', 'productSuppliers'])
-                ->where('status', 'published')
-                ->when($query, function ($q) use ($query) {
-                    $q->where('name', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', 'LIKE', "%{$query}%")
-                    ->orWhere('sku', '=', $query)
-                    ->orWhereHas('slug', fn($s) => $s->where('key', 'LIKE', "%{$query}%"));
-                })
-                ->orderBy('id', 'desc')
-                ->take(20)
-                ->get()
-                ->map($mapProduct);
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', '=', $query)
+                  ->orWhereHas('slug', fn($s) => $s->where('key', 'LIKE', "%{$query}%"))
+                  ->orWhereHas('brand', fn($b) => $b->where('name', 'LIKE', "%{$query}%")); // 🔥 add this
+            })
+            ->take(20)
+            ->get()
+            ->map($mapProduct);
+        
 
             return response()->json(['products' => $products]);
         }
