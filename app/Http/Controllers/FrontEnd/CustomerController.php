@@ -5,12 +5,12 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-
+use Google_Client;
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Str;
 use App\Notifications\GuestWelcomeMail;
 use App\Notifications\WelcomeMail;
-
+use Illuminate\Support\Facades\Auth;
 class CustomerController extends BaseController
 {
 	/**
@@ -289,4 +289,67 @@ class CustomerController extends BaseController
 			'coupons' => $coupons
 		], 200);
 	}
+
+
+	public function googleLogin(Request $request)
+{
+    $idToken = $request->input('credential');
+
+    $client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
+    $payload = $client->verifyIdToken($idToken);
+
+    if (!$payload) {
+        return response()->json(['success' => false, 'message' => 'Invalid Google token'], 401);
+    }
+
+    $email = $payload['email'];
+    $name = $payload['name'] ?? 'Guest';
+    $googleProfileImg = $payload['picture'] ?? null;
+
+    $customer = Customer::where('email', $email)->first();
+    $randomPassword = null;
+
+    if (!$customer) {
+        $dob = $request->input('dob');
+        $countryCode = $request->input('country_code');
+        $mobileNumber = $request->input('mobile_number');
+
+        try {
+            $randomPassword = Str::random(8);
+            $hashedPassword = Hash::make($randomPassword);
+
+            $customer = Customer::create([
+                'name' => $name,
+                'email' => $email,
+                'password' => $hashedPassword,
+                'type' => 'Private',
+                'dob' => $dob,
+                'country_code' => $countryCode,
+                'mobile_number' => $mobileNumber,
+                'profile_img' => $googleProfileImg, // just store the URL directly
+            ]);
+
+            $customer->notify(new GuestWelcomeMail($randomPassword));
+        } catch (\Exception $e) {
+            \Log::error('Google Login Registration Failed: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Registration failed. Please try again later.'
+            ], 500);
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => $customer->wasRecentlyCreated
+            ? 'User registered successfully using Google.'
+            : 'User already exists with this Google account.',
+        'email' => $customer->email,
+        'plain_password' => $randomPassword, // only non-null for new users
+        'user' => $customer,
+    ]);
+}
+
+
+
 }

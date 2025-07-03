@@ -3738,16 +3738,16 @@ return response()->json([
 						'name' => $details->name,
 						'sku' => $details->sku,
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-						'price' =>  (float) $firstSupplier->price,
-						"sale_price" => (float) $firstSupplier->sale_price,
+						'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
+						"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,
 						'total_reviews' => $totalReviews,
 						'avg_rating' => $avgRating,
 						'left_stock' => $leftStock,
 						'currency' => $currencyTitle,
 						'images' => $imageUrls,
-						"original_price"=>  (float) $firstSupplier->price,
-						'front_sale_price' => (float) $firstSupplier->sale_price,
-						"best_price"=>  (float) $firstSupplier->price,
+						"original_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
+						'front_sale_price' => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : (float) $details->price,
+						"best_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
 						"selling_type"=> $sellingType,
 						"per_unit_price"=>   $details->per_unit_price,
 						'vendor_id' => $firstSupplier->vendor_id ?? null,
@@ -3764,11 +3764,11 @@ return response()->json([
 				];
 			});
 
-return response()->json([
-	'success' => true,
-	'data' => $categories,
-]);
-}
+		return response()->json([
+			'success' => true,
+			'data' => $categories,
+		]);
+	}
 
 
 	// Recursive function to modify images for children and all sub-level categories

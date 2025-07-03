@@ -93,16 +93,15 @@ class ProductExportController extends BaseController
 		$query = Product::with([
 			'categories:id,name',
 			'brand:id,name',
-			'vendor:id,name',
+			'vendors:id,name',
 			'tags:id,name',
 			'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
 			'seoManagement:id,meta_title,meta_description',
 			'slug:id,reference_id,key',
-			'arTranslations',
+			// 'arTranslations',
 			'latestChildCategoryRelation:id,name',
-		])
-		;
+		]);
 
 		/* Apply relational filters */
 		if ($request->status != "all") {
@@ -112,7 +111,9 @@ class ProductExportController extends BaseController
 		if ($request->type == "Brand") {
 			$query->where('brand_id', $request->relational_id);
 		} elseif ($request->type == "Vendor") {
-			$query->where('vendor_id', $request->relational_id);
+			$query->whereHas('vendors', function ($q) use ($request) {
+				$q->where('vendor_id', $request->relational_id);
+			});
 		} elseif ($request->type == "Category") {
 			$category = Category::find($request->relational_id);
 			$leafCategories = Category::getLeafCategories($category);
@@ -204,7 +205,7 @@ class ProductExportController extends BaseController
 
 		$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
 		$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-		$refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
+		// $refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
 		$skipFields = [
 			'discount1', 'start_date1', 'end_date1',
 			'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
@@ -219,7 +220,7 @@ class ProductExportController extends BaseController
 			"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
 			"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
 			"meta_description",
-			'description_ar', 'content_ar', 'warranty_information_ar'
+			// 'description_ar', 'content_ar', 'warranty_information_ar'
 		];
 
 		$rowIndex = 2;
@@ -240,7 +241,7 @@ class ProductExportController extends BaseController
 
 			$faqs = $product->faqs->take(10);
 			$discounts = $product->discounts->take(3);
-			$arTranslations = $product->arTranslations ?? [];
+			// $arTranslations = $product->arTranslations ?? [];
 
 			foreach ($allFields as $field) {
 				if (in_array($field, $skipFields)) continue;
@@ -334,12 +335,12 @@ class ProductExportController extends BaseController
 					$row[] = $product->seoManagement->meta_description ?? '';
 					break;
 
-					case 'name_ar':
-					$row[] = $arTranslations['name'] ?? '';
-					$row[] = $arTranslations['description'] ?? '';
-					$row[] = $arTranslations['content'] ?? '';
-					$row[] = $arTranslations['warranty_information'] ?? '';
-					break;
+					// case 'name_ar':
+					// $row[] = $arTranslations['name'] ?? '';
+					// $row[] = $arTranslations['description'] ?? '';
+					// $row[] = $arTranslations['content'] ?? '';
+					// $row[] = $arTranslations['warranty_information'] ?? '';
+					// break;
 
 					default:
 					$row[] = $product->$field ?? '';
