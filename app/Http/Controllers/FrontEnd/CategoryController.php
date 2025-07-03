@@ -2202,10 +2202,14 @@ class CategoryController extends Controller
 					  // Calculate per unit price
 					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+					$firstSupplier = $details->productSuppliers->first();
 
-
-					$basePrice = ($details->sale_price > 0) ? $details->sale_price : $details->price;
-					$perUnitPrice = null;
+					
+					$basePrice = null;
+					if ($firstSupplier) {
+						$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					}
+							$perUnitPrice = null;
 
 					if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
 						$unitValue = (float) $unitsPerCase->attribute_value;
@@ -2217,7 +2221,7 @@ class CategoryController extends Controller
 
 					$details->per_unit_price = $perUnitPrice;
 
-					$firstSupplier = $details->productSuppliers->first();
+				
 
 					return [
 						'id' => $details->id,
@@ -2381,8 +2385,12 @@ return response()->json([
 					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
+					$basePrice = null;
+					if ($firstSupplier) {
+						$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					}
 
-					$basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+					// $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
 					$perUnitPrice = null;
 
 					if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
