@@ -19,8 +19,8 @@ class TaxJarService
         $this->cacheTtl = config('services.taxjar.cache_ttl', 3600); // 1 hour default
         
         // Set sandbox mode if enabled
-        if (config('services.taxjar.sandbox', false)) {
-            $this->client->setApiConfig('api_url', 'https://api.sandbox.taxjar.com');
+        if (config('services.taxjar', false)) {
+            $this->client->setApiConfig('api_url', 'https://api.taxjar.com');
         }
     }
 
