@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use TaxJar\TaxJar;
+use TaxJar\Client;
 
 class TaxJarService
 {
@@ -10,7 +10,9 @@ class TaxJarService
 
     public function __construct()
     {
-        $this->client = TaxJar::withApiKey(env('TAXJAR_API_KEY'));
+        $this->client = Client::factory([
+            'api_key' => env('TAXJAR_API_KEY'),
+        ]);
     }
 
     // Get tax rate for a location
@@ -25,7 +27,7 @@ class TaxJarService
         return $this->client->taxForOrder($orderData);
     }
 
-    // Example: Create transaction (optional)
+    // Create a transaction (optional)
     public function createTransaction(array $transactionData)
     {
         return $this->client->createOrder($transactionData);
