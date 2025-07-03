@@ -67,6 +67,8 @@ return [
         'api_key' => env('TAXJAR_API_KEY'),
         'api_url' => env('TAXJAR_API_URL', 'https://api.taxjar.com'),
         'sandbox' => env('TAXJAR_SANDBOX', false),
+        'cache_enabled' => env('TAXJAR_CACHE_ENABLED', true),
+        'cache_ttl' => env('TAXJAR_CACHE_TTL', 3600), // 1 hour
     ],
 
 
