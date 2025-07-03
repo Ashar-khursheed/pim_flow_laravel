@@ -539,12 +539,3 @@ Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 
 Route::post('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
-Route::prefix('frontend/tax')->group(function () {
-    Route::post('rate', [F_TaxController::class, 'getRate']);
-    Route::post('calculate', [F_TaxController::class, 'calculateTax']);
-    Route::post('transaction', [F_TaxController::class, 'createTransaction']);
-    Route::put('transaction/{id}', [F_TaxController::class, 'updateTransaction']);
-    Route::delete('transaction/{id}', [F_TaxController::class, 'deleteTransaction']);
-    Route::get('transactions', [F_TaxController::class, 'listTransactions']);
-    Route::post('validate-address', [F_TaxController::class, 'validateAddress']);
-});

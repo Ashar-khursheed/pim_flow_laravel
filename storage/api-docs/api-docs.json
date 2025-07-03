@@ -17597,6 +17597,165 @@
                 }
             }
         },
+        "/api/frontend/tax/rate": {
+            "get": {
+                "tags": [
+                    "Tax"
+                ],
+                "summary": "Get tax rate by ZIP and optional address",
+                "operationId": "getTaxRate",
+                "parameters": [
+                    {
+                        "name": "zip",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "country",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "US"
+                        }
+                    },
+                    {
+                        "name": "state",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "city",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "street",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tax rate retrieved successfully"
+                    },
+                    "400": {
+                        "description": "TaxJar error"
+                    }
+                }
+            }
+        },
+        "api/frontend/tax/calculate": {
+            "post": {
+                "tags": [
+                    "Tax"
+                ],
+                "summary": "Calculate sales tax for an order",
+                "operationId": "calculateTax",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "from_country",
+                                    "from_zip",
+                                    "to_country",
+                                    "to_zip",
+                                    "amount",
+                                    "shipping"
+                                ],
+                                "properties": {
+                                    "from_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "from_zip": {
+                                        "type": "string",
+                                        "example": "92093"
+                                    },
+                                    "from_state": {
+                                        "type": "string",
+                                        "example": "CA"
+                                    },
+                                    "from_city": {
+                                        "type": "string",
+                                        "example": "San Diego"
+                                    },
+                                    "from_street": {
+                                        "type": "string",
+                                        "example": "9500 Gilman Drive"
+                                    },
+                                    "to_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "to_zip": {
+                                        "type": "string",
+                                        "example": "90002"
+                                    },
+                                    "to_state": {
+                                        "type": "string",
+                                        "example": "CA"
+                                    },
+                                    "to_city": {
+                                        "type": "string",
+                                        "example": "Los Angeles"
+                                    },
+                                    "to_street": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
+                                    "shipping": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 1.5
+                                    },
+                                    "nexus_addresses": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "line_items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Tax calculated successfully"
+                    },
+                    "400": {
+                        "description": "Tax calculation failed"
+                    }
+                }
+            }
+        },
         "/api/customer-reviews": {
             "get": {
                 "tags": [
@@ -28750,6 +28909,10 @@
         {
             "name": "Tamara",
             "description": "Tamara"
+        },
+        {
+            "name": "Tax",
+            "description": "Tax"
         },
         {
             "name": "Frontend-User Reviews",
