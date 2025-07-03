@@ -4,6 +4,7 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product;
+use App\Models\ProductSupplier;
 
 class OrderProduct extends Model
 {
@@ -37,10 +38,17 @@ class OrderProduct extends Model
 		return $this->belongsTo(Product::class);
 	}
 
-	public function vendorProductSupplier()
+	// public function vendorProductSupplier()
+	// {
+	// 	return $this->hasOne(ProductSupplier::class, 'product_id', 'product_id')
+	// 	->where('vendor_id', $this->vendor_id);
+	// }
+
+	public function getVendorProductSupplierAttribute()
 	{
-		return $this->hasOne(ProductSupplier::class, 'product_id', 'product_id')
-		->where('vendor_id', $this->vendor_id);
+		return ProductSupplier::where('product_id', $this->product_id)
+			->where('vendor_id', $this->vendor_id)
+			->first();
 	}
 
 	public function shipmentProducts()

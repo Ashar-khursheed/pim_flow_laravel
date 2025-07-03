@@ -327,9 +327,12 @@ class OrderController extends BaseController
 
 		/* Load relationships */
 		$order->load([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerAddress',
 			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-			'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
+			'orderProducts.product.currency:id,symbol',
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
@@ -347,8 +350,16 @@ class OrderController extends BaseController
 					$product->brand_name = $product->brand->name;
 				}
 
-				unset($product->brand); /* Remove full brand object */
+				/* Replace currency relation with currency_symbol */
+				if ($product->brand) {
+					$product->currency_symbol = $product->currency->symbol;
+				}
+
+				unset($product->brand, $product->currency); /* Remove full brand object */
 			}
+
+			/* Add vendorProductSupplier dynamically */
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 		}
 
 		return response()->json([
