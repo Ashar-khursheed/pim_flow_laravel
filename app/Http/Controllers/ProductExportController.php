@@ -82,14 +82,6 @@ class ProductExportController extends BaseController
 			}
 		}
 
-		/* Final filtering with DB columns */
-		if (!empty($selectedFields)) {
-			$fieldsToSelect = array_intersect($selectedFields, $baseFields);
-			$fieldsToSelect = empty($fieldsToSelect) ? ['*'] : array_values($fieldsToSelect);
-		} else {
-			$fieldsToSelect = ['*'];
-		}
-
 		$query = Product::with([
 			'categories:id,name',
 			'brand:id,name',
@@ -149,11 +141,6 @@ class ProductExportController extends BaseController
 		/* Initialize header map */
 		$headerMap = [];
 
-		/* Helper to decide if a section should be included */
-		$includeSection = function ($key) use ($selectedFields) {
-			return empty($selectedFields) || in_array($key, $selectedFields);
-		};
-
 		/* Always filter headerMap1 and headerMap2 based on selected fields if provided */
 		$filteredHeaderMap1 = empty($selectedFields) ? $headerMap1 : array_intersect_key($headerMap1, array_flip($selectedFields));
 		$filteredHeaderMap2 = empty($selectedFields) ? $headerMap2 : array_intersect_key($headerMap2, array_flip($selectedFields));
@@ -161,35 +148,39 @@ class ProductExportController extends BaseController
 		/* Start building final header map */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap1);
 
-		/* Include description if requested or blank */
-		if ($includeSection('description')) {
+		/* Include description if requested or all fields */
+		if (empty($selectedFields) || in_array('description', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $descriptionColumns);
 		}
 
-		/* Include benefits_features if requested or blank */
-		if ($includeSection('benefits_features')) {
+		/* Include benefits_features if requested or all fields */
+		if (empty($selectedFields) || in_array('benefits_features', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $benifitsFeaturesColumns);
 		}
 
-		/* Include benefits_features if requested or blank */
-		if ($includeSection('faq_section')) {
+		/* Include faq_section if requested or all fields */
+		if (empty($selectedFields) || in_array('faq_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $faqColumns);
 		}
 
 		/* Add remaining fields */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
 
-		if ($includeSection('seo_section')) {
+		/* Include seo_section if requested or all fields */
+		if (empty($selectedFields) || in_array('seo_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $seoSection);
 		}
 
-		if ($includeSection('discount_section')) {
+		/* Include discount_section if requested or all fields */
+		if (empty($selectedFields) || in_array('discount_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $discountSection);
 		}
 
-		if ($includeSection('translation_section')) {
+		/* Include translation_section if requested or all fields */
+		if (empty($selectedFields) || in_array('translation_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $translationSection);
 		}
+
 
 		$allFields = array_keys($headerMap);
 
