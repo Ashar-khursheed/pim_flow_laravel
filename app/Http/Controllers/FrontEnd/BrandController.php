@@ -332,7 +332,10 @@ class BrandController extends Controller
                         // Per unit price
                         $unitsPerCase = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
                         $packType = $product->productAttributes->firstWhere(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
-                        $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+                        $basePrice = null;
+                        if ($firstSupplier) {
+                            $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+                        }
                         $perUnitPrice = null;
                         if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
                             $unitValue = (float) $unitsPerCase->attribute_value;
