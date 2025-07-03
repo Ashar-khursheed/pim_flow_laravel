@@ -63,6 +63,11 @@ return [
     'google_maps' => [
     'key' => env('GOOGLE_MAPS_API_KEY'),
     ],
+    'taxjar' => [
+        'api_key' => env('TAXJAR_API_KEY'),
+        'api_url' => env('TAXJAR_API_URL', 'https://api.taxjar.com'),
+        'sandbox' => env('TAXJAR_SANDBOX', false),
+    ],
 
 
 
