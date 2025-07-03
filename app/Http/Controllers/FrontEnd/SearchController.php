@@ -284,581 +284,195 @@ class SearchController extends Controller
     //         'brands' => $brands,
     //     ]);
     // }
-    // public function search(Request $request)
-    // {
-    //     $query = $request->input('query');
-    //     $defaultImage = asset('images/default-thumbnail.jpg'); // Set your default image path here
-    
-    //     // Helper for image URL
-    //     $imageUrl = function ($img) use ($defaultImage) {
-    //         if (!$img) {
-    //             return $defaultImage;
-    //         }
-    
-    //         $imagePath = public_path('storage/' . ltrim($img, '/'));
-    
-    //         return File::exists($imagePath)
-    //             ? asset('storage/' . ltrim($img, '/'))
-    //             : $defaultImage;
-    //     };
-    
-    //     // Helper function for consistent product mapping
-    //     $mapProduct = function ($product) {
-    //         $firstSupplier = $product->productSuppliers->first();
-        
-    //         return [
-    //             'id' => $product->id,
-    //             'name' => $product->name,
-    //             'url' => $product->url,
-    //             'sku' => $product->sku,
-    //             'images' => json_decode($product->images) ?? [],
-    //             'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-    //             'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
-    //             'vendor_id' => $firstSupplier?->vendor_id,
-    //             'currency_title' => $product->currency->symbol ?? null,
-    //             'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-    //             'sale_price' => $firstSupplier->sale_price ?? null,
-    //             'map' => $firstSupplier->map ?? null,
-    //             'inventory' => $firstSupplier->inventory ?? null,
-    //             'in_stock' => $firstSupplier->in_stock ?? null,
-    //             'delivery_days' => $firstSupplier->delivery_days ?? null,
-    //             'return_policy' => $firstSupplier->return_policy ?? null,
-    //             'free_shipping' => $firstSupplier->free_shipping ?? null,
-    //             'warranty_information' => $firstSupplier->warranty_information ?? null,
-    //             'brand' => $product->brand ? [
-    //                 'id' => $product->brand->id,
-    //                 'name' => $product->brand->name,
-    //                 'slug' => optional($product->brand->slug)->key,
-    //             ] : null,
-    //         ];
-    //     };
-    
-    //     // Default brands to show
-    //     $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
-    
-    //     if (empty($query)) {
-    //         return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
-    //             $products = Product::with(['slug', 'currency', 'brand']) // Added brand relation
-    //                 ->where('status', 'published')
-    //                 ->inRandomOrder()
-    //                 ->take(4)
-    //                 ->get()
-    //                 ->map($mapProduct);
-    
-    //             $categories = Category::with([
-    //                 'slug',
-    //                 'parent.slug',
-    //                 'parent.parent.slug',
-    //                 'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
-    //             ])
-    //             ->where('status', 'published')
-    //             ->whereHas('products', fn($q) => $q->where('status', 'published'))
-    //             ->inRandomOrder()
-    //             ->take(4)
-    //             ->get()
-    //             ->map(function ($cat) use ($imageUrl, $mapProduct) {
-    //                 return [
-    //                     'id' => $cat->id,
-    //                     'name' => $cat->name,
-    //                     'slug' => $cat->slug,
-    //                     'url' => $cat->url,
-    //                     'image' => $imageUrl($cat->image),
-    //                     'parent_id' => $cat->parent_id,
-    //                     'parent_slug' => $cat->parent?->slug,
-    //                     'parent_parent_slug' => $cat->parent?->parent?->slug,
-    //                     'products' => $cat->products->map($mapProduct),
-    //                 ];
-    //             });
-    
-    //             // Show specific default brands with their products
-    //             $brands = Brand::with([
-    //                 'slug',
-    //                 'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
-    //             ])
-    //             ->where('status', 'published')
-    //             ->whereIn('name', $defaultBrands)
-    //             ->get()->map(function ($brand) use ($imageUrl, $mapProduct) {
-    //                 return [
-    //                     'id' => $brand->id,
-    //                     'name' => $brand->name,
-    //                     'url' => $brand->url,
-    //                     'slug' => optional($brand->slug)->key,
-    //                     'image' => $brand->logo,
-    //                     'products' => $brand->products->map($mapProduct),
-    //                 ];
-    //             });
-    
-    //             return response()->json([
-    //                 'products' => $products,
-    //                 'categories' => $categories,
-    //                 'brands' => $brands,
-    //             ]);
-    //         });
-    //     }
-    
-    //     // Enhanced query search logic with comprehensive SKU search
-    //     $products = Product::with(['slug', 'brand', 'currency']) // Added vendor and currency relations
-    //         ->where('status', 'published')
-    //         ->where(function ($q) use ($query) {
-    //             $q->where('name', 'LIKE', "%{$query}%")
-    //               ->orWhere('sku', 'LIKE', "%{$query}%")
-    //               ->orWhere('sku', '=', $query) // Exact SKU match for better accuracy
-    //               ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
-    //         })
-    //         ->orderByRaw("
-    //             CASE 
-    //                 WHEN sku = ? THEN 1
-    //                 WHEN sku LIKE ? THEN 2
-    //                 WHEN name LIKE ? THEN 3
-    //                 ELSE 4
-    //             END
-    //         ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
-    //         ->take(4) // Increased limit for better SKU search results
-    //         ->get()
-    //         ->map($mapProduct);
-    
-    //     $categories = Category::with([
-    //         'slug',
-    //         'parent.slug',
-    //         'parent.parent.slug',
-    //         'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'productSuppliers'])
-    //     ])
-    //     ->where('status', 'published')
-    //     ->whereHas('products', fn($q) => $q->where('status', 'published'))
-    //     ->where(function ($q) use ($query) {
-    //         $q->where('name', 'LIKE', "%{$query}%")
-    //           ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
-    //           ->orWhereHas('products', function ($q) use ($query) {
-    //               // Also search categories by their products' SKUs
-    //               $q->where('status', 'published')
-    //                 ->where(function ($subQ) use ($query) {
-    //                     $subQ->where('sku', 'LIKE', "%{$query}%")
-    //                          ->orWhere('sku', '=', $query);
-    //                 });
-    //           });
-    //     })
-    //     ->take(5)
-    //     ->get()
-    //     ->map(function ($cat) use ($imageUrl, $mapProduct) {
-    //         return [
-    //             'id' => $cat->id,
-    //             'name' => $cat->name,
-    //             'slug' => $cat->slug,
-    //             'url' => $cat->url,
-    //             'image' => $imageUrl($cat->image),
-    //             'parent_id' => $cat->parent_id,
-    //             'parent_slug' => $cat->parent?->slug,
-    //             'parent_parent_slug' => $cat->parent?->parent?->slug,
-    //             'products' => $cat->products->map($mapProduct),
-    //         ];
-    //     });
-    
-    //     // Enhanced brand search - show brands that match query OR have products matching query (including SKU)
-    //     $brands = Brand::with([
-    //         'slug',
-    //         'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
-    //     ])
-    //     ->where('status', 'published')
-    //     ->where(function ($q) use ($query) {
-    //         $q->where('name', 'LIKE', "%{$query}%")
-    //           ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
-    //           ->orWhereHas('products', function ($q) use ($query) {
-    //               $q->where('status', 'published')
-    //                 ->where(function ($subQ) use ($query) {
-    //                     $subQ->where('name', 'LIKE', "%{$query}%")
-    //                          ->orWhere('sku', 'LIKE', "%{$query}%")
-    //                          ->orWhere('sku', '=', $query) // Exact SKU match
-    //                          ->orWhereHas('slug', fn($slugQ) => $slugQ->where('key', 'LIKE', "%{$query}%"));
-    //                 });
-    //           });
-    //     })
-    //     ->take(5)
-    //     ->get()
-    //     ->map(function ($brand) use ($imageUrl, $mapProduct) {
-    //         return [
-    //             'id' => $brand->id,
-    //             'name' => $brand->name,
-    //             'slug' => optional($brand->slug)->key,
-    //             'url' => $brand->url,
-    //             'image' => $brand->logo,
-    //             'products' => $brand->products->map($mapProduct),
-    //         ];
-    //     });
-    
-    //     // Get related brands for searched products (enhanced with SKU consideration)
-    //     $relatedBrands = collect();
-    //     if ($products->isNotEmpty()) {
-    //         $productBrandIds = $products->pluck('brand.id')->filter()->unique();
-            
-    //         $additionalBrands = Brand::with([
-    //             'slug',
-    //             'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
-    //         ])
-    //         ->where('status', 'published')
-    //         ->whereIn('id', $productBrandIds)
-    //         ->whereNotIn('id', $brands->pluck('id'))
-    //         ->take(4)
-    //         ->get()
-    //         ->map(function ($brand) use ($imageUrl, $mapProduct) {
-    //             return [
-    //                 'id' => $brand->id,
-    //                 'name' => $brand->name,
-    //                 'slug' => optional($brand->slug)->key,
-    //                 'url' => $brand->url,
-    //                 'image' => $brand->logo,
-    //                 'products' => $brand->products->map($mapProduct),
-    //             ];
-    //         });
-    
-    //         $brands = $brands->merge($additionalBrands);
-    //     }
-    
-    //     // Get brands related to searched categories (enhanced with SKU consideration)
-    //     if ($categories->isNotEmpty()) {
-    //         $categoryIds = $categories->pluck('id');
-            
-    //         $categoryBrands = Brand::with([
-    //             'slug',
-    //             'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
-    //         ])
-    //         ->where('status', 'published')
-    //         ->whereHas('products', function ($q) use ($categoryIds) {
-    //             $q->where('status', 'published')
-    //               ->whereHas('categories', fn($catQ) => $catQ->whereIn('categories.id', $categoryIds));
-    //         })
-    //         ->whereNotIn('id', $brands->pluck('id'))
-    //         ->take(4)
-    //         ->get()
-    //         ->map(function ($brand) use ($imageUrl, $mapProduct) {
-    //             return [
-    //                 'id' => $brand->id,
-    //                 'name' => $brand->name,
-    //                 'slug' => optional($brand->slug)->key,
-    //                 'url' => $brand->url,
-    //                 'image' => $brand->logo,
-    //                 'products' => $brand->products->map($mapProduct),
-    //             ];
-    //         });
-    
-    //         $brands = $brands->merge($categoryBrands);
-    //     }
-    
-    //     return response()->json([
-    //         'products' => $products,
-    //         'categories' => $categories,
-    //         'brands' => $brands->take(8), // Limit total brands shown
-    //     ]);
-    // }
     public function search(Request $request)
-{
-    $query = $request->input('query');
-    $defaultImage = asset('images/default-thumbnail.jpg'); // Set your default image path here
-
-    // Helper for image URL
-    $imageUrl = function ($img) use ($defaultImage) {
-        if (!$img) {
-            return $defaultImage;
-        }
-
-        $imagePath = public_path('storage/' . ltrim($img, '/'));
-
-        return File::exists($imagePath)
-            ? asset('storage/' . ltrim($img, '/'))
-            : $defaultImage;
-    };
-
-    // Helper function for consistent product mapping
-    $mapProduct = function ($product) {
-        $firstSupplier = $product->productSuppliers->first();
+    {
+        $query = $request->input('query');
+        $defaultImage = asset('images/default-thumbnail.jpg'); // Set your default image path here
     
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'url' => $product->url,
-            'sku' => $product->sku,
-            'images' => json_decode($product->images) ?? [],
-            'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-            'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
-            'vendor_id' => $firstSupplier?->vendor_id,
-            'currency_title' => $product->currency->symbol ?? null,
-            'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-            'sale_price' => $firstSupplier->sale_price ?? null,
-            'map' => $firstSupplier->map ?? null,
-            'inventory' => $firstSupplier->inventory ?? null,
-            'in_stock' => $firstSupplier->in_stock ?? null,
-            'delivery_days' => $firstSupplier->delivery_days ?? null,
-            'return_policy' => $firstSupplier->return_policy ?? null,
-            'free_shipping' => $firstSupplier->free_shipping ?? null,
-            'warranty_information' => $firstSupplier->warranty_information ?? null,
-            'brand' => $product->brand ? [
-                'id' => $product->brand->id,
-                'name' => $product->brand->name,
-                'slug' => optional($product->brand->slug)->key,
-            ] : null,
-        ];
-    };
-
-    // Helper function for fuzzy search keywords
-    $generateFuzzyKeywords = function ($searchTerm) {
-        $keywords = [];
-        $words = explode(' ', $searchTerm);
-        
-        foreach ($words as $word) {
-            if (strlen($word) >= 3) {
-                // Add original word
-                $keywords[] = $word;
-                
-                // Add partial matches (minimum 3 characters)
-                for ($i = 3; $i <= strlen($word); $i++) {
-                    $keywords[] = substr($word, 0, $i);
-                }
-                
-                // Add common misspelling patterns
-                $keywords = array_merge($keywords, $this->generateMisspellingVariations($word));
+        // Helper for image URL
+        $imageUrl = function ($img) use ($defaultImage) {
+            if (!$img) {
+                return $defaultImage;
             }
-        }
+    
+            $imagePath = public_path('storage/' . ltrim($img, '/'));
+    
+            return File::exists($imagePath)
+                ? asset('storage/' . ltrim($img, '/'))
+                : $defaultImage;
+        };
+    
+        // Helper function for consistent product mapping
+        $mapProduct = function ($product) {
+            $firstSupplier = $product->productSuppliers->first();
         
-        return array_unique($keywords);
-    };
-
-    // Default brands to show
-    $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
-
-    if (empty($query)) {
-        return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
-            $products = Product::with(['slug', 'currency', 'brand']) // Added brand relation
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'url' => $product->url,
+                'sku' => $product->sku,
+                'images' => json_decode($product->images) ?? [],
+                'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
+                'vendor_id' => $firstSupplier?->vendor_id,
+                'currency_title' => $product->currency->symbol ?? null,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'sale_price' => $firstSupplier->sale_price ?? null,
+                'map' => $firstSupplier->map ?? null,
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'delivery_days' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
+                'brand' => $product->brand ? [
+                    'id' => $product->brand->id,
+                    'name' => $product->brand->name,
+                    'slug' => optional($product->brand->slug)->key,
+                ] : null,
+            ];
+        };
+    
+        // Default brands to show
+        $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
+    
+        if (empty($query)) {
+            return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {
+                $products = Product::with(['slug', 'currency', 'brand']) // Added brand relation
+                    ->where('status', 'published')
+                    ->inRandomOrder()
+                    ->take(4)
+                    ->get()
+                    ->map($mapProduct);
+    
+                $categories = Category::with([
+                    'slug',
+                    'parent.slug',
+                    'parent.parent.slug',
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
+                ])
                 ->where('status', 'published')
+                ->whereHas('products', fn($q) => $q->where('status', 'published'))
                 ->inRandomOrder()
                 ->take(4)
                 ->get()
-                ->map($mapProduct);
-
-            $categories = Category::with([
-                'slug',
-                'parent.slug',
-                'parent.parent.slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
-            ])
-            ->where('status', 'published')
-            ->whereHas('products', fn($q) => $q->where('status', 'published'))
-            ->inRandomOrder()
-            ->take(4)
-            ->get()
-            ->map(function ($cat) use ($imageUrl, $mapProduct) {
-                return [
-                    'id' => $cat->id,
-                    'name' => $cat->name,
-                    'slug' => $cat->slug,
-                    'url' => $cat->url,
-                    'image' => $imageUrl($cat->image),
-                    'parent_id' => $cat->parent_id,
-                    'parent_slug' => $cat->parent?->slug,
-                    'parent_parent_slug' => $cat->parent?->parent?->slug,
-                    'products' => $cat->products->map($mapProduct),
-                ];
-            });
-
-            // Show specific default brands with their products
-            $brands = Brand::with([
-                'slug',
-                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
-            ])
-            ->where('status', 'published')
-            ->whereIn('name', $defaultBrands)
-            ->get()->map(function ($brand) use ($imageUrl, $mapProduct) {
-                return [
-                    'id' => $brand->id,
-                    'name' => $brand->name,
-                    'url' => $brand->url,
-                    'slug' => optional($brand->slug)->key,
-                    'image' => $brand->logo,
-                    'products' => $brand->products->map($mapProduct),
-                ];
-            });
-
-            return response()->json([
-                'products' => $products,
-                'categories' => $categories,
-                'brands' => $brands,
-            ]);
-        });
-    }
-
-    // Generate fuzzy search keywords
-    $fuzzyKeywords = $generateFuzzyKeywords($query);
+                ->map(function ($cat) use ($imageUrl, $mapProduct) {
+                    return [
+                        'id' => $cat->id,
+                        'name' => $cat->name,
+                        'slug' => $cat->slug,
+                        'url' => $cat->url,
+                        'image' => $imageUrl($cat->image),
+                        'parent_id' => $cat->parent_id,
+                        'parent_slug' => $cat->parent?->slug,
+                        'parent_parent_slug' => $cat->parent?->parent?->slug,
+                        'products' => $cat->products->map($mapProduct),
+                    ];
+                });
     
-    // Enhanced query search logic with fuzzy matching
-    $products = Product::with(['slug', 'brand', 'currency'])
+                // Show specific default brands with their products
+                $brands = Brand::with([
+                    'slug',
+                    'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
+                ])
+                ->where('status', 'published')
+                ->whereIn('name', $defaultBrands)
+                ->get()->map(function ($brand) use ($imageUrl, $mapProduct) {
+                    return [
+                        'id' => $brand->id,
+                        'name' => $brand->name,
+                        'url' => $brand->url,
+                        'slug' => optional($brand->slug)->key,
+                        'image' => $brand->logo,
+                        'products' => $brand->products->map($mapProduct),
+                    ];
+                });
+    
+                return response()->json([
+                    'products' => $products,
+                    'categories' => $categories,
+                    'brands' => $brands,
+                ]);
+            });
+        }
+    
+        // Enhanced query search logic with comprehensive SKU search
+        $products = Product::with(['slug', 'brand', 'currency']) // Added vendor and currency relations
+            ->where('status', 'published')
+            ->where(function ($q) use ($query) {
+                $q->where('name', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', 'LIKE', "%{$query}%")
+                  ->orWhere('sku', '=', $query) // Exact SKU match for better accuracy
+                  ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
+            })
+            ->orderByRaw("
+                CASE 
+                    WHEN sku = ? THEN 1
+                    WHEN sku LIKE ? THEN 2
+                    WHEN name LIKE ? THEN 3
+                    ELSE 4
+                END
+            ", [$query, "{$query}%", "{$query}%"]) // Prioritize exact SKU matches
+            ->take(4) // Increased limit for better SKU search results
+            ->get()
+            ->map($mapProduct);
+    
+        $categories = Category::with([
+            'slug',
+            'parent.slug',
+            'parent.parent.slug',
+            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'productSuppliers'])
+        ])
         ->where('status', 'published')
-        ->where(function ($q) use ($query, $fuzzyKeywords) {
-            // Exact matches (highest priority)
+        ->whereHas('products', fn($q) => $q->where('status', 'published'))
+        ->where(function ($q) use ($query) {
             $q->where('name', 'LIKE', "%{$query}%")
-              ->orWhere('sku', 'LIKE', "%{$query}%")
-              ->orWhere('sku', '=', $query)
-              ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"));
-            
-            // Fuzzy matches for product names
-            foreach ($fuzzyKeywords as $keyword) {
-                if (strlen($keyword) >= 3) {
-                    $q->orWhere('name', 'LIKE', "%{$keyword}%");
-                }
-            }
-            
-            // MySQL SOUNDS LIKE for phonetic matching (if available)
-            if (config('database.default') === 'mysql') {
-                $q->orWhereRaw("SOUNDS LIKE(name, ?)", [$query]);
-            }
+              ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
+              ->orWhereHas('products', function ($q) use ($query) {
+                  // Also search categories by their products' SKUs
+                  $q->where('status', 'published')
+                    ->where(function ($subQ) use ($query) {
+                        $subQ->where('sku', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', '=', $query);
+                    });
+              });
         })
-        ->orderByRaw("
-            CASE 
-                WHEN sku = ? THEN 1
-                WHEN sku LIKE ? THEN 2
-                WHEN name LIKE ? THEN 3
-                WHEN name LIKE ? THEN 4
-                ELSE 5
-            END
-        ", [$query, "{$query}%", "{$query}%", "%{$query}%"])
-        ->take(8) // Increased limit for better fuzzy search results
+        ->take(5)
         ->get()
-        ->map($mapProduct);
-
-    // Enhanced category search with fuzzy matching
-    $categories = Category::with([
-        'slug',
-        'parent.slug',
-        'parent.parent.slug',
-        'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'brand', 'currency', 'productSuppliers'])
-    ])
-    ->where('status', 'published')
-    ->whereHas('products', fn($q) => $q->where('status', 'published'))
-    ->where(function ($q) use ($query, $fuzzyKeywords) {
-        // Exact matches
-        $q->where('name', 'LIKE', "%{$query}%")
-          ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
-          ->orWhereHas('products', function ($q) use ($query) {
-              $q->where('status', 'published')
-                ->where(function ($subQ) use ($query) {
-                    $subQ->where('sku', 'LIKE', "%{$query}%")
-                         ->orWhere('sku', '=', $query);
-                });
-          });
-        
-        // Fuzzy matches for category names
-        foreach ($fuzzyKeywords as $keyword) {
-            if (strlen($keyword) >= 3) {
-                $q->orWhere('name', 'LIKE', "%{$keyword}%");
-            }
-        }
-        
-        // MySQL SOUNDS LIKE for phonetic matching
-        if (config('database.default') === 'mysql') {
-            $q->orWhereRaw("SOUNDS LIKE(name, ?)", [$query]);
-        }
-    })
-    ->take(5)
-    ->get()
-    ->map(function ($cat) use ($imageUrl, $mapProduct) {
-        return [
-            'id' => $cat->id,
-            'name' => $cat->name,
-            'slug' => $cat->slug,
-            'url' => $cat->url,
-            'image' => $imageUrl($cat->image),
-            'parent_id' => $cat->parent_id,
-            'parent_slug' => $cat->parent?->slug,
-            'parent_parent_slug' => $cat->parent?->parent?->slug,
-            'products' => $cat->products->map($mapProduct),
-        ];
-    });
-
-    // Enhanced brand search with fuzzy matching
-    $brands = Brand::with([
-        'slug',
-        'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
-    ])
-    ->where('status', 'published')
-    ->where(function ($q) use ($query, $fuzzyKeywords) {
-        // Exact matches
-        $q->where('name', 'LIKE', "%{$query}%")
-          ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
-          ->orWhereHas('products', function ($q) use ($query) {
-              $q->where('status', 'published')
-                ->where(function ($subQ) use ($query) {
-                    $subQ->where('name', 'LIKE', "%{$query}%")
-                         ->orWhere('sku', 'LIKE', "%{$query}%")
-                         ->orWhere('sku', '=', $query)
-                         ->orWhereHas('slug', fn($slugQ) => $slugQ->where('key', 'LIKE', "%{$query}%"));
-                });
-          });
-        
-        // Fuzzy matches for brand names
-        foreach ($fuzzyKeywords as $keyword) {
-            if (strlen($keyword) >= 3) {
-                $q->orWhere('name', 'LIKE', "%{$keyword}%");
-            }
-        }
-        
-        // MySQL SOUNDS LIKE for phonetic matching
-        if (config('database.default') === 'mysql') {
-            $q->orWhereRaw("SOUNDS LIKE(name, ?)", [$query]);
-        }
-    })
-    ->take(5)
-    ->get()
-    ->map(function ($brand) use ($imageUrl, $mapProduct) {
-        return [
-            'id' => $brand->id,
-            'name' => $brand->name,
-            'slug' => optional($brand->slug)->key,
-            'url' => $brand->url,
-            'image' => $brand->logo,
-            'products' => $brand->products->map($mapProduct),
-        ];
-    });
-
-    // Get related brands for searched products
-    $relatedBrands = collect();
-    if ($products->isNotEmpty()) {
-        $productBrandIds = $products->pluck('brand.id')->filter()->unique();
-        
-        $additionalBrands = Brand::with([
+        ->map(function ($cat) use ($imageUrl, $mapProduct) {
+            return [
+                'id' => $cat->id,
+                'name' => $cat->name,
+                'slug' => $cat->slug,
+                'url' => $cat->url,
+                'image' => $imageUrl($cat->image),
+                'parent_id' => $cat->parent_id,
+                'parent_slug' => $cat->parent?->slug,
+                'parent_parent_slug' => $cat->parent?->parent?->slug,
+                'products' => $cat->products->map($mapProduct),
+            ];
+        });
+    
+        // Enhanced brand search - show brands that match query OR have products matching query (including SKU)
+        $brands = Brand::with([
             'slug',
             'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
         ])
         ->where('status', 'published')
-        ->whereIn('id', $productBrandIds)
-        ->whereNotIn('id', $brands->pluck('id'))
-        ->take(4)
-        ->get()
-        ->map(function ($brand) use ($imageUrl, $mapProduct) {
-            return [
-                'id' => $brand->id,
-                'name' => $brand->name,
-                'slug' => optional($brand->slug)->key,
-                'url' => $brand->url,
-                'image' => $brand->logo,
-                'products' => $brand->products->map($mapProduct),
-            ];
-        });
-
-        $brands = $brands->merge($additionalBrands);
-    }
-
-    // Get brands related to searched categories
-    if ($categories->isNotEmpty()) {
-        $categoryIds = $categories->pluck('id');
-        
-        $categoryBrands = Brand::with([
-            'slug',
-            'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
-        ])
-        ->where('status', 'published')
-        ->whereHas('products', function ($q) use ($categoryIds) {
-            $q->where('status', 'published')
-              ->whereHas('categories', fn($catQ) => $catQ->whereIn('categories.id', $categoryIds));
+        ->where(function ($q) use ($query) {
+            $q->where('name', 'LIKE', "%{$query}%")
+              ->orWhereHas('slug', fn($q) => $q->where('key', 'LIKE', "%{$query}%"))
+              ->orWhereHas('products', function ($q) use ($query) {
+                  $q->where('status', 'published')
+                    ->where(function ($subQ) use ($query) {
+                        $subQ->where('name', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', 'LIKE', "%{$query}%")
+                             ->orWhere('sku', '=', $query) // Exact SKU match
+                             ->orWhereHas('slug', fn($slugQ) => $slugQ->where('key', 'LIKE', "%{$query}%"));
+                    });
+              });
         })
-        ->whereNotIn('id', $brands->pluck('id'))
-        ->take(4)
+        ->take(5)
         ->get()
         ->map(function ($brand) use ($imageUrl, $mapProduct) {
             return [
@@ -870,94 +484,71 @@ class SearchController extends Controller
                 'products' => $brand->products->map($mapProduct),
             ];
         });
-
-        $brands = $brands->merge($categoryBrands);
-    }
-
-    return response()->json([
-        'products' => $products,
-        'categories' => $categories,
-        'brands' => $brands->take(8),
-    ]);
-}
-
-// Helper method to generate common misspelling variations
-private function generateMisspellingVariations($word)
-{
-    $variations = [];
-    $word = strtolower($word);
     
-    if (strlen($word) < 3) {
-        return $variations;
-    }
+        // Get related brands for searched products (enhanced with SKU consideration)
+        $relatedBrands = collect();
+        if ($products->isNotEmpty()) {
+            $productBrandIds = $products->pluck('brand.id')->filter()->unique();
+            
+            $additionalBrands = Brand::with([
+                'slug',
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug',  'currency', 'brand'])
+            ])
+            ->where('status', 'published')
+            ->whereIn('id', $productBrandIds)
+            ->whereNotIn('id', $brands->pluck('id'))
+            ->take(4)
+            ->get()
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
+                return [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                    'slug' => optional($brand->slug)->key,
+                    'url' => $brand->url,
+                    'image' => $brand->logo,
+                    'products' => $brand->products->map($mapProduct),
+                ];
+            });
     
-    // Common letter substitutions
-    $substitutions = [
-        'a' => ['e', 'o'],
-        'e' => ['a', 'i'],
-        'i' => ['e', 'y'],
-        'o' => ['a', 'u'],
-        'u' => ['o', 'i'],
-        'y' => ['i'],
-        'c' => ['k', 's'],
-        'k' => ['c', 'q'],
-        's' => ['c', 'z'],
-        'z' => ['s'],
-        'f' => ['ph', 'v'],
-        'ph' => ['f'],
-        'v' => ['f', 'w'],
-        'w' => ['v'],
-        'b' => ['p'],
-        'p' => ['b'],
-        'd' => ['t'],
-        't' => ['d'],
-        'g' => ['j'],
-        'j' => ['g'],
-        'n' => ['m'],
-        'm' => ['n'],
-    ];
-    
-    // Generate substitution variations
-    for ($i = 0; $i < strlen($word); $i++) {
-        $char = $word[$i];
-        if (isset($substitutions[$char])) {
-            foreach ($substitutions[$char] as $substitute) {
-                $variation = substr_replace($word, $substitute, $i, 1);
-                $variations[] = $variation;
-            }
+            $brands = $brands->merge($additionalBrands);
         }
-    }
     
-    // Generate deletion variations (remove one character)
-    for ($i = 0; $i < strlen($word); $i++) {
-        $variation = substr($word, 0, $i) . substr($word, $i + 1);
-        if (strlen($variation) >= 3) {
-            $variations[] = $variation;
+        // Get brands related to searched categories (enhanced with SKU consideration)
+        if ($categories->isNotEmpty()) {
+            $categoryIds = $categories->pluck('id');
+            
+            $categoryBrands = Brand::with([
+                'slug',
+                'products' => fn($q) => $q->where('status', 'published')->take(4)->with(['slug', 'currency', 'brand'])
+            ])
+            ->where('status', 'published')
+            ->whereHas('products', function ($q) use ($categoryIds) {
+                $q->where('status', 'published')
+                  ->whereHas('categories', fn($catQ) => $catQ->whereIn('categories.id', $categoryIds));
+            })
+            ->whereNotIn('id', $brands->pluck('id'))
+            ->take(4)
+            ->get()
+            ->map(function ($brand) use ($imageUrl, $mapProduct) {
+                return [
+                    'id' => $brand->id,
+                    'name' => $brand->name,
+                    'slug' => optional($brand->slug)->key,
+                    'url' => $brand->url,
+                    'image' => $brand->logo,
+                    'products' => $brand->products->map($mapProduct),
+                ];
+            });
+    
+            $brands = $brands->merge($categoryBrands);
         }
-    }
     
-    // Generate insertion variations (add one character)
-    $commonChars = ['a', 'e', 'i', 'o', 'u', 'r', 'n', 't', 's', 'l'];
-    for ($i = 0; $i <= strlen($word); $i++) {
-        foreach ($commonChars as $char) {
-            $variation = substr($word, 0, $i) . $char . substr($word, $i);
-            if (strlen($variation) <= 20) { // Prevent overly long variations
-                $variations[] = $variation;
-            }
-        }
+        return response()->json([
+            'products' => $products,
+            'categories' => $categories,
+            'brands' => $brands->take(8), // Limit total brands shown
+        ]);
     }
-    
-    // Generate transposition variations (swap adjacent characters)
-    for ($i = 0; $i < strlen($word) - 1; $i++) {
-        $variation = substr($word, 0, $i) . 
-                    $word[$i + 1] . 
-                    $word[$i] . 
-                    substr($word, $i + 2);
-        $variations[] = $variation;
-    }
-    
-    return array_unique($variations);
-}
     /**
      * @OA\Get(
      *     path="/api/frontend/search-categories",
