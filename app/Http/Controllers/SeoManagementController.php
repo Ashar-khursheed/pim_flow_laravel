@@ -130,6 +130,7 @@ class SeoManagementController extends Controller
 				'google_shopping_feed_title' => 'nullable|string',
 				'google_shopping_feed_description' => 'nullable|string',
 				'short_title_variant' => 'nullable|string',
+				'gen_type' => 'nullable|integer',
 			]);
 
 			/* Prepare the data for creating the SEO management record */
@@ -409,6 +410,7 @@ class SeoManagementController extends Controller
 				'google_shopping_feed_title' => 'nullable|string',
 				'google_shopping_feed_description' => 'nullable|string',
 				'short_title_variant' => 'nullable|string',
+				'gen_type' => 'nullable|integer',
 				
 			]);
 
