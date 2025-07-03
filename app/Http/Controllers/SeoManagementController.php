@@ -127,6 +127,9 @@ class SeoManagementController extends Controller
 				'paragraph_3' => 'nullable|string',
 				'paragraph_4' => 'nullable|string',
 				'popular_tags' => 'nullable',
+				'google_shopping_feed_title' => 'nullable|string',
+				'google_shopping_feed_description' => 'nullable|string',
+				'short_title_variant' => 'nullable|string',
 			]);
 
 			/* Prepare the data for creating the SEO management record */
@@ -403,6 +406,10 @@ class SeoManagementController extends Controller
 				'paragraph_3' => 'nullable|string',
 				'paragraph_4' => 'nullable|string',
 				'popular_tags' => 'nullable|string', /* Expecting array like ["tag1", "tag2"] */
+				'google_shopping_feed_title' => 'nullable|string',
+				'google_shopping_feed_description' => 'nullable|string',
+				'short_title_variant' => 'nullable|string',
+				
 			]);
 
 			/* Find the existing SEO record by ID */
@@ -741,7 +748,7 @@ class SeoManagementController extends Controller
 			'Og Image URL',
 			'Og Image Alt Text',
 			'Og Image Name',
-			'Tags(Separated By |)',
+			'Tags(Separated By |)'
 		];
 		$excelRepo->setHeader($sheet, $headers);
 
@@ -775,7 +782,7 @@ class SeoManagementController extends Controller
 						$record->og_image_url,
 						$record->og_image_alt_text,
 						$record->og_image_name,
-						$record->tags,
+						$record->tags
 						// $record->paragraph_1,
 						// $record->paragraph_2,
 						// $record->paragraph_3,
@@ -805,7 +812,7 @@ class SeoManagementController extends Controller
 					$record->og_image_url,
 					$record->og_image_alt_text,
 					$record->og_image_name,
-					$record->tags,
+					$record->tags
 					// $record->paragraph_1,
 					// $record->paragraph_2,
 					// $record->paragraph_3,

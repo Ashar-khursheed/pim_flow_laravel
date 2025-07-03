@@ -35,6 +35,9 @@ class SeoManagement extends Model
 		'paragraph_3',
 		'paragraph_4',
 		'popular_tags',
+		'google_shopping_feed_title',
+		'google_shopping_feed_description',
+		'short_title_variant',
 	];
 
 	public function relational()
