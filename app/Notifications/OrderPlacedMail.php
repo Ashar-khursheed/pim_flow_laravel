@@ -37,13 +37,13 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$logoUrl = config('app.logo_url');
 		$name = $notifiable->name ?? 'User';
 		$orderUrl = url("/registration/all-orders");
+		$currency = env('APP_WEBSITE') == 'UAE' ? 'AED' : 'USD';
 
-		$paidAmount = $this->order->paid_amount;
-		$orderId = $this->order->order_number;
+		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', '');
+		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('d/M/Y');
 		$paymentMethod = "COD";
 
-		/* Defensive null checks */
 		$customerAddress = $this->order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
@@ -53,50 +53,57 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$products = collect();
 
 		foreach ($this->order->orderProducts as $orderProduct) {
+			$productSupplierDetail = $orderProduct->vendorProductSupplier;
 			$productDetail = $orderProduct->product;
 
 			if ($productDetail) {
 				$product = new \stdClass();
 
-				/* Ensure images is valid JSON array */
 				$images = json_decode($productDetail->images, true);
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
 				$product->name = $productDetail->name;
-				$product->price = $productDetail->price;
-				$product->salePrice = $productDetail->sale_price;
-
-				$product->actualPrice = $product->salePrice ?? $product->price;
 				$product->quantity = $orderProduct->quantity;
 
-				$product->priceTotal = $product->price * $product->quantity;
-				$product->total = $product->actualPrice * $product->quantity;
+				$price = $productSupplierDetail->price ?? 0;
+				$salePrice = $productSupplierDetail->sale_price ?? null;
 
-				/* Discount calculation */
-				if ($product->salePrice && $product->price && $product->price > 0) {
-					$product->discount = round((($product->price - $product->salePrice) / $product->price) * 100, 2);
+				$product->price = number_format($price, 2, '.', '');
+				$product->salePrice = $salePrice !== null ? number_format($salePrice, 2, '.', '') : null;
+
+				$product->actualPrice = number_format($salePrice ?? $price, 2, '.', '');
+
+				$product->priceTotal = number_format($price * $product->quantity, 2, '.', '');
+				$product->total = number_format(($salePrice ?? $price) * $product->quantity, 2, '.', '');
+
+				if ($salePrice && $price > 0) {
+					$product->discount = number_format((($price - $salePrice) / $price) * 100, 2);
 				} else {
 					$product->discount = 0;
 				}
+
+				$product->expectedShippingDate = $productSupplierDetail
+					? getDateRange($this->order->created_at, $productSupplierDetail->delivery_days)
+					: null;
 
 				$products->push($product);
 			}
 		}
 
-		$subTotal = $products->sum('total');
-		$totalPriceWithoutDiscount = $products->sum('priceTotal');
-		$totalSaved = max(0, $totalPriceWithoutDiscount - $subTotal);
+		$subTotal = number_format($products->sum('total'), 2, '.', '');
+		$totalPriceWithoutDiscount = number_format($products->sum('priceTotal'), 2, '.', '');
+		$totalSaved = number_format(max(0, $totalPriceWithoutDiscount - $subTotal), 2, '.', '');
 
-		$shippingCharge = $this->order->shipping_charge ?? 0;
-		$vat = round(($subTotal * 0.05), 2);
-		$total = $subTotal + $shippingCharge + $vat;
+		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', '');
+		$vat = number_format(((float) $subTotal * 0.05), 2, '.', '');
+		$total = number_format((float) $subTotal + (float) $shippingCharge + (float) $vat, 2, '.', '');
 
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
 			'orderUrl' => $orderUrl,
 			'paidAmount' => $paidAmount,
-			'orderId' => $orderId,
+			'orderNumber' => $orderNumber,
 			'orderDate' => $orderDate,
 			'paymentMethod' => $paymentMethod,
 
@@ -114,9 +121,10 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('Your Horeca Order Has Been Placed Successfully')
-		->markdown('emails.order-placed', $params);
+			->subject('Your Horeca Order Has Been Placed Successfully')
+			->markdown('emails.order-placed', $params);
 	}
+
 
 	/**
 	 * Get the array representation of the notification.

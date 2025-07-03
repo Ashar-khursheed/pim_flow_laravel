@@ -37,6 +37,12 @@ class OrderProduct extends Model
 		return $this->belongsTo(Product::class);
 	}
 
+	public function vendorProductSupplier()
+	{
+		return $this->hasOne(ProductSupplier::class, 'product_id', 'product_id')
+		->where('vendor_id', $this->vendor_id);
+	}
+
 	public function shipmentProducts()
 	{
 		return $this->hasMany(ShipmentProduct::class, 'order_product_id');

@@ -433,3 +433,58 @@ function uploadFileToS3($file, $path)
 	$filename = time() . '_' . uniqid() . '.' . $file->getClientOriginalExtension();
 	return Storage::disk('s3')->putFileAs($path, $file, $filename, 'public') ? Storage::disk('s3')->url("$path/$filename") : null;
 }
+
+if (!function_exists('getDateRange')) {
+	function getDateRange(Carbon\Carbon|string $createdAt, string $deliveryDays): string
+	{
+		$createdAt = $createdAt instanceof \Carbon\Carbon
+		? $createdAt->copy()
+		: \Carbon\Carbon::parse($createdAt);
+
+		$deliveryDays = trim($deliveryDays);
+		$isWeekFormat = str_contains($deliveryDays, 'Week');
+		$isRange = str_contains($deliveryDays, ' to ');
+
+		if ($isWeekFormat) {
+			$range = explode(' to ', str_replace([' Weeks', ' Week'], '', $deliveryDays));
+
+			if (count($range) === 1) {
+				$minDays = $maxDays = ((int) $range[0]) * 7;
+			} else {
+				$minDays = ((int) $range[0]) * 7;
+				$maxDays = ((int) $range[1]) * 7;
+			}
+
+			$startDate = $createdAt->copy()->addDays($minDays);
+			$endDate = $createdAt->copy()->addDays($maxDays);
+		} else {
+			$range = explode(' to ', str_replace(' Days', '', $deliveryDays));
+
+			if (count($range) === 1) {
+				$minDays = $maxDays = (int) $range[0];
+			} else {
+				$minDays = (int) $range[0];
+				$maxDays = (int) $range[1];
+			}
+
+			$addBusinessDays = function ($date, $days) {
+				$businessDaysAdded = 0;
+				while ($businessDaysAdded < $days) {
+					$date->addDay();
+					if (!in_array($date->dayOfWeek, [Carbon\Carbon::SATURDAY, Carbon\Carbon::SUNDAY])) {
+						$businessDaysAdded++;
+					}
+				}
+				return $date;
+			};
+
+			$startDate = $addBusinessDays(clone $createdAt, $minDays);
+			$endDate = $addBusinessDays(clone $createdAt, $maxDays);
+		}
+
+		return $isRange
+		? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
+		: $startDate->format('D, F j');
+	}
+}
+
