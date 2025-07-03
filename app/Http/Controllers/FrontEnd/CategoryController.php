@@ -3675,14 +3675,13 @@ return response()->json([
 				->whereColumn('ec_products.price', 'best_products.best_price');
 			})
 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-			->with(['reviews', 'currency' ,'productSuppliers', 'vendor' ,  'productAttributes' => function ($query) {
+			->with(['reviews', 'currency' ,'productSuppliers', 'vendors' ,  'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
 					$q->whereIn('name', ['Units per Case', 'Pack Type']);
 				});
 				},]) // Eager load relationships
 			->get()
 				->keyBy('id'); // Use keyBy to quickly fetch by ID later
-
 				return [
 					'category_name' => $category->name,
 					'featured_products' => $featuredProducts->map(function ($product) use ($productDetails) {
