@@ -1,4 +1,7 @@
 <?php
+namespace App\Http\Controllers\FrontEnd;
+
+use App\Http\Controllers\Controller;
 use App\Services\TaxJarService;
 
 class TaxController extends Controller
