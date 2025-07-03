@@ -536,6 +536,5 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
-
-Route::post('frontend/tax/rate', [F_TaxController::class, 'getRate']);
+Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
