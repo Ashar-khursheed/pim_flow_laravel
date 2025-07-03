@@ -596,7 +596,7 @@ class BrandController extends Controller
                             'per_unit_price' => $details->per_unit_price,
                             'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                             'price' => (float) ($firstSupplier->price ?? 0),
-                            'sale_price' => (float) ($firstSupplier->sale_price ?? 0),
+                            'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : 0,
                             'original_price' => (float) ($firstSupplier->price ?? 0),
                             'front_sale_price' => (float) ($firstSupplier->sale_price ?? $firstSupplier->price ?? 0),
                             'best_price' => (float) ($firstSupplier->price ?? 0),
