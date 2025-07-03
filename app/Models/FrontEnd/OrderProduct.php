@@ -44,8 +44,6 @@ class OrderProduct extends Model
 	// 	->where('vendor_id', $this->vendor_id);
 	// }
 
-	// Inside OrderProduct model
-
 	public function getVendorProductSupplierAttribute()
 	{
 		return ProductSupplier::where('product_id', $this->product_id)
