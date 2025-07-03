@@ -1,8 +1,10 @@
 <?php
+
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use App\Services\TaxJarService;
+use Illuminate\Http\Request;
 
 class TaxController extends Controller
 {
