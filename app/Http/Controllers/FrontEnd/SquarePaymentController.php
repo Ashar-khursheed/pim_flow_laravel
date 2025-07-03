@@ -11,6 +11,8 @@ use Square\Types\Money;
 use Square\Types\Currency;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
+use Square\Environment;
+
 // class SquarePaymentController extends Controller
 // {
 //     // protected SquareClient $client;
@@ -142,15 +144,21 @@ class SquarePaymentController extends Controller
 
     public function __construct()
     {
-       
-        $environment = env('SQUARE_ENV') === 'production'
+        // $this->client = new SquareClient(
+        //     token: env('SQUARE_ACCESS_TOKEN'),
+        //     options: [
+        //         'baseUrl' => Environments::Sandbox->value,
+        //     ]
+        // );
+        $environment = config('services.square.environment') === 'production'
         ? Environment::PRODUCTION
         : Environment::SANDBOX;
 
         $this->client = new SquareClient([
-        'accessToken' => env('SQUARE_ACCESS_TOKEN'),
-        'environment' => $environment,
+            'accessToken' => config('services.square.access_token'),
+            'environment' => $environment,
         ]);
+            
     }
 
     /**
