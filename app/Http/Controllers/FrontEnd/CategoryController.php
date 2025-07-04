@@ -773,7 +773,7 @@ if ($request->has('price_min') || $request->has('price_max')) {
 			
 			$productIds = $products->pluck('id');
 
-		$products = Product::with('reviews')
+			$products = Product::with('reviews')
 			->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
 			->select('ec_products.*',
 				DB::raw('MIN(CASE 
@@ -785,7 +785,8 @@ if ($request->has('price_min') || $request->has('price_max')) {
 			->whereIn('ec_products.id', $productIds)
 			->groupBy('ec_products.id')
 			->orderBy('best_price', $sortByType)
-			->get();
+			->paginate(20); // 👈 set your desired per-page count
+		
 
 		} else {
 			// For other sorting (created_at, name, etc.)
