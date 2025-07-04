@@ -30,7 +30,7 @@ class BlogComment extends Model
 
     public function creator()
     {
-        return $this->belongsTo(\App\Models\Customer::class, 'created_by'); // or your correct User model path
+        return $this->belongsTo(Customer::class, 'created_by'); // or your correct User model path
     }
 
 }
