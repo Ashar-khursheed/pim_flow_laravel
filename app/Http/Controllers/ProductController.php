@@ -171,9 +171,10 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
-		$firstSupplier = $product->productSuppliers->first();
+	
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
+			$firstSupplier = $product->productSuppliers->first();
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
 			$marginPercent = $product->sale_price > 0
 			? (($firstSupplier->sale_price - $firstSupplier->price) / $firstSupplier->sale_price) * 100
