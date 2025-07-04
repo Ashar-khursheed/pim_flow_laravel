@@ -681,36 +681,38 @@ class CategoryController extends Controller
 		// }
 		// Replace the price filtering section (around line 200-220)
 		// Apply price filter before rating filter
-		if ($request->has('price_min') || $request->has('price_max')) {
-			$min = $request->input('price_min', 0);
-		$max = $request->input('price_max', PHP_INT_MAX);
+		if ($request->has('price_min') || $request->has('price_max')) 
+{
+	$min = $request->input('price_min', 0);
+	$max = $request->input('price_max', PHP_INT_MAX);
 
-		// Get product IDs that match the price range from product_suppliers
-		$priceFilteredIds = DB::table('product_suppliers')
-			->whereIn('product_id', $filteredProductIds->toArray())
-			->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-			->pluck('product_id')
-			->unique(); // Add unique to avoid duplicates
+	// Get product IDs that match the price range from product_suppliers
+	$priceFilteredIds = DB::table('product_suppliers')
+		->whereIn('product_id', $filteredProductIds->toArray())
+		->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+		->pluck('product_id')
+		->unique();
 
-		$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+	$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 
-		if ($filteredProductIds->isEmpty()) {
-			return response()->json([
-				'success' => true,
-            'filters' => [],
-            'products' => [],
-            'brands' => [],
-            'price_min' => 0,
-            'price_max' => 0,
-            'rating_filter' => [
-                'filter_name' => 'Rating',
-                'filter_type' => 'rating',
-                'filter_values' => [5, 4, 3, 2, 1],
-            ],
-            'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
-        ]);
-    	}
-		}
+	if ($filteredProductIds->isEmpty()) {
+		return response()->json([
+			'success' => true,
+			'filters' => [],
+			'products' => [],
+			'brands' => [],
+			'price_min' => 0,
+			'price_max' => 0,
+			'rating_filter' => [
+				'filter_name' => 'Rating',
+				'filter_type' => 'rating',
+				'filter_values' => [5, 4, 3, 2, 1],
+			],
+			'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
+		]);
+	}
+}
+
 	
 		// If a rating filter is applied, filter the already filtered product IDs
 		if ($request->has('rating') && $request->rating) {
