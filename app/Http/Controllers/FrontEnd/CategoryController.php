@@ -756,22 +756,30 @@ if ($request->has('price_min') || $request->has('price_max')) {
 	
 		// Apply sorting
 		$sortBy = $request->input('sort_by', 'created_at');
-		$sortByType = $request->input('sort_by_type', 'desc');
+$sortByType = $request->input('sort_by_type', 'desc');
 
-		// Handle price_order parameter
-		if ($request->has('price_order')) {
-			$priceOrder = $request->input('price_order');
-			$sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
-			$sortBy = 'price';
-		}
+// Handle price_order parameter - this takes precedence over sort_by
+if ($request->has('price_order')) {
+    $priceOrder = $request->input('price_order');
+    $sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
+    $sortBy = 'price';
+}
 
-		if ($sortBy == 'price') {
-			$products = $products->join('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
-				->orderByRaw("COALESCE(ps.sale_price, ps.price) $sortByType")
-				->select('ec_products.*');
-		} else {
-			$products = $products->orderBy($sortBy, $sortByType);
-		}
+if ($sortBy == 'price') {
+    // For price sorting, we need to get the best price for each product
+    $products = $products->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+        ->select('ec_products.*', 
+            DB::raw('MIN(CASE 
+                WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
+                THEN ps.sale_price 
+                ELSE ps.price 
+            END) as best_price'))
+        ->groupBy('ec_products.id')
+        ->orderBy('best_price', $sortByType);
+} else {
+    // For other sorting (created_at, name, etc.)
+    $products = $products->orderBy($sortBy, $sortByType);
+}
 	
 		$paginatedProducts = $products->paginate($perPage);
 	
