@@ -52,7 +52,6 @@ use App\Models\ProductCategory;
 use App\Models\ProductGroup;
 use App\Models\ProductGroupItem;
 use App\Models\ProductSupplier;
-use App\Models\ProductTranslation;
 use App\Models\RedirectLink;
 use App\Models\Review;
 use App\Models\Role;
@@ -141,7 +140,6 @@ class AppServiceProvider extends ServiceProvider
 		// ProductGroup::observe(TransactionLogObserver::class);
 		// ProductGroupItem::observe(TransactionLogObserver::class);
 		// ProductSupplier::observe(TransactionLogObserver::class);
-		// ProductTranslation::observe(TransactionLogObserver::class);
 		// RedirectLink::observe(TransactionLogObserver::class);
 		// Review::observe(TransactionLogObserver::class);
 		// Role::observe(TransactionLogObserver::class);

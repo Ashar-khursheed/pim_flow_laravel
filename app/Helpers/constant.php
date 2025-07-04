@@ -152,12 +152,6 @@ if (!function_exists('product_constants')) {
 				"start_date3" => "Start Date3",
 				"end_date3" => "End Date3",
 			],
-			'TRANSLATION_SECTION' => [
-				// "name_ar" => "Name (AR)",
-				// "description_ar" => "Description (AR)",
-				// "content_ar" => "Content (AR)",
-				// "warranty_information_ar" => "Warranty Information (AR)"
-			],
 		];
 
 		return $key ? ($constants[$key] ?? []) : $constants;
@@ -267,13 +261,6 @@ if (!function_exists('product_import_constants')) {
 				'Discount3' => 'discount3',
 				'Start Date3' => 'startDate3',
 				'End Date3' => 'endDate3',
-			],
-
-			'TRANSLATION_SECTION' => [
-				// 'Name (AR)' => 'nameAr',
-				// 'Description (AR)' => 'descriptionAr',
-				// 'Content (AR)' => 'contentAr',
-				// 'Warranty Information (AR)' => 'warrantyInformationAr',
 			],
 		];
 

@@ -2032,7 +2032,6 @@ class ProductController extends BaseController
 			$advanceFieldArray = product_import_constants('ADVANCED_FIELDS');
 			$seoSection = product_import_constants('SEO_SECTION');
 			$discountSectionArray = product_import_constants('DISCOUNT_SECTION');
-			$translationSectionArray = product_import_constants('TRANSLATION_SECTION');
 
 			$userRole = auth()->user()->getRoleNames()->first() ?? null;
 
@@ -2047,7 +2046,6 @@ class ProductController extends BaseController
 					$advanceFieldArray,
 					$seoSection,
 					$discountSectionArray,
-					$translationSectionArray
 				);
 			} elseif (in_array($userRole, ['Ecommerce Manager', 'Ecommerce Specialist'])) {
 				$productFileFormatArray = array_merge(

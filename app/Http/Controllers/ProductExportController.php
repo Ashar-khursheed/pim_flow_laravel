@@ -149,7 +149,6 @@ class ProductExportController extends BaseController
 		$headerMap2 = product_constants('HEADER_MAP2');
 		$seoSection = product_constants('SEO_SECTION');
 		$discountSection = product_constants('DISCOUNT_SECTION');
-		$translationSection = product_constants('TRANSLATION_SECTION');
 
 		/* Initialize header map */
 		$headerMap = [];
@@ -193,12 +192,6 @@ class ProductExportController extends BaseController
 		if ($includeAll || in_array('discount_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $discountSection);
 		}
-
-		/* Translation section */
-		if ($includeAll || in_array('translation_section', $selectedFields)) {
-			$headerMap = array_merge($headerMap, $translationSection);
-		}
-
 
 		$allFields = array_keys($headerMap);
 
@@ -248,7 +241,6 @@ class ProductExportController extends BaseController
 
 			$faqs = $product->faqs->take(10);
 			$discounts = $product->discounts->take(3);
-			// $arTranslations = $product->arTranslations ?? [];
 
 			foreach ($allFields as $field) {
 				if (in_array($field, $skipFields)) continue;
@@ -332,13 +324,6 @@ class ProductExportController extends BaseController
 					$row[] = $product->seoManagement->meta_title ?? '';
 					$row[] = $product->seoManagement->meta_description ?? '';
 					break;
-
-					// case 'name_ar':
-					// $row[] = $arTranslations['name'] ?? '';
-					// $row[] = $arTranslations['description'] ?? '';
-					// $row[] = $arTranslations['content'] ?? '';
-					// $row[] = $arTranslations['warranty_information'] ?? '';
-					// break;
 
 					default:
 					$row[] = $product->$field ?? '';

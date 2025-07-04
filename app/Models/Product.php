@@ -129,11 +129,6 @@ class Product extends Model
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
 	}
 
-	// public function arTranslations()
-	// {
-	// 	return $this->hasOne(ProductTranslation::class, 'ec_products_id')->where('lang_code', 'ar');
-	// }
-
 	public function productAttributes()
 	{
 		return $this->hasMany(ProductAttribute::class);
