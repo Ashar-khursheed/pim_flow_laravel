@@ -1985,12 +1985,12 @@ class ProductController extends BaseController
 
 			/* List of valid fields allowed for updating */
 			$validArray = [
-				"sku", "status", "barcode", "warranty_information", "refund", "quantity",
+				"sku", "status", "barcode",
 				"stock_status", "tax_id", "currency_id", "name", "description", "images",
-				"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
+				"image", "video_path", "videos", "documents",
 				"variant_barcode",
 				"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
-				"box_quantity",  "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
+				  "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
 			];
 
 			unset($input['product_attributes']);
