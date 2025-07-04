@@ -368,10 +368,10 @@ class ProductController extends BaseController
 		$relations = [
 			'General' => ['categories:id,name,parent_id'],
 			'Pricing & Sales' => ['currency:id,title' ],
-			'Shipping & Dimensions' => ['lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol'],
+			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
-			'SEO' => ['seoMetaData:id,reference_id,meta_value'],
-			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'lengthUnit:id,symbol', 'weightUnit:id,symbol', 'shippingLengthUnit:id,symbol', 'store:id,name', 'brand:id,name', 'creator:id,name', 'seoMetaData:id,reference_id,meta_value']
+			'SEO' => [],
+			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
 		$attrType = $request->attr_type ?? 'All';
