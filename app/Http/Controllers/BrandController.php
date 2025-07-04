@@ -814,7 +814,7 @@ public function store(Request $request)
 					'status' => $brand->status,
 					'products_count' => $brand->products_count,
 					'category_name' => $categoryNames,
-					'store_name' => $storeNames,
+					'store_name' => "",
 					'created_at' => $brand->created_at,
 					'updated_at' => $brand->updated_at,
 				];
