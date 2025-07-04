@@ -2142,16 +2142,23 @@ class CategoryController extends Controller
 		->with(['products' => function ($query) {
 			$query->where('is_featured', 1)
 			->where('status', 'published')
-				->select('id', 'name', 'sku', 'price', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
+				->select('id', 'name', 'sku', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
 			}])
 		->take(5)
 		->get();
 
 		// Subquery for best price and delivery days
-		$subQuery = Product::select('sku')
-		->selectRaw('MIN(price) as best_price')
-		->selectRaw('MIN(delivery_days) as best_delivery_date')
-		->groupBy('sku');
+		// $subQuery = Product::select('sku')
+		// ->selectRaw('MIN(price) as best_price')
+		// ->selectRaw('MIN(delivery_days) as best_delivery_date')
+		// ->groupBy('sku');
+		$subQuery = DB::table('product_suppliers as ps')
+		->join('ec_products as p', 'ps.product_id', '=', 'p.id')
+		->select('p.sku')
+		->selectRaw('MIN(COALESCE(ps.sale_price, ps.price)) as best_price')
+		->selectRaw('MIN(ps.delivery_days) as best_delivery_date')
+		->groupBy('p.sku');
+
 
 		// Process categories and products
 		$categories = $categories->map(function ($category) use ($subQuery, $wishlistProductIds) {
@@ -2159,9 +2166,13 @@ class CategoryController extends Controller
 
 			// Fetch all product details in one query
 			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-				$join->on('ec_products.sku', '=', 'best_products.sku')
-				->whereColumn('ec_products.price', 'best_products.best_price');
+				$join->on('ec_products.sku', '=', 'best_products.sku');
 			})
+			->select(
+				'ec_products.*',
+				DB::raw('best_products.best_price as price'),
+				DB::raw('best_products.best_sale_price as sale_price')
+			)		
 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
 			->with(['reviews', 'currency', 'productSuppliers', 'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
@@ -2327,7 +2338,7 @@ return response()->json([
 		->with(['products' => function ($query) {
 			$query->where('is_featured', 1)
 			->where('status', 'published')
-				->select('id', 'name', 'sku', 'price', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
+				->select('id', 'name', 'sku', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
 			}])
 		->take(5)
 		->get();
@@ -2344,9 +2355,13 @@ return response()->json([
 
 			// Fetch all product details in one query
 			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-				$join->on('ec_products.sku', '=', 'best_products.sku')
-				->whereColumn('ec_products.price', 'best_products.best_price');
+				$join->on('ec_products.sku', '=', 'best_products.sku');
 			})
+			->select(
+				'ec_products.*',
+				DB::raw('best_products.best_price as price'),
+				DB::raw('best_products.best_sale_price as sale_price')
+			)		
 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
 			->with(['reviews', 'currency' ,'productSuppliers', 'vendors' ,  'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
@@ -2364,7 +2379,7 @@ return response()->json([
 					$totalReviews = $details->reviews->count();
 					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
 					$leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
-					$currencyTitle = $details->currency->symbol ?? $details->price;
+					$currencyTitle = $details->currency->symbol;
 
 					// Process images efficiently
 					$imageUrls = is_string($details->images)
