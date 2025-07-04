@@ -112,18 +112,7 @@ class ProductController extends Controller
                 $filteredProductIds = $query->pluck('id');
 
                 // Calculate min-max values only for filtered products
-                $priceMin = Product::whereIn('id', $filteredProductIds)->min('sale_price');
-                $priceMax = Product::whereIn('id', $filteredProductIds)->max('sale_price');
-
-                $DeliveryMin = Product::whereIn('id', $filteredProductIds)
-                    ->whereNotNull('delivery_days')
-                    ->selectRaw('MIN(CAST(delivery_days AS UNSIGNED)) as min_delivery_days')
-                    ->value('min_delivery_days');
-
-                $DeliveryMax = Product::whereIn('id', $filteredProductIds)
-                    ->whereNotNull('delivery_days')
-                    ->selectRaw('MAX(CAST(delivery_days AS UNSIGNED)) as max_delivery_days')
-                    ->value('max_delivery_days');
+   
 
                 // Get sort parameter
                 $sortBy = $request->input('sort_by', 'created_at');
@@ -134,8 +123,6 @@ class ProductController extends Controller
 
                 // Subquery for best price and delivery date
                 $subQuery = Product::select('sku')
-                    ->selectRaw('MIN(price) as best_price')
-                    ->selectRaw('MIN(delivery_days) as best_delivery_date')
                     ->whereIn('id', $filteredProductIds)
                     ->groupBy('sku');
 
@@ -143,17 +130,12 @@ class ProductController extends Controller
                 $perPage = 50;
                 $page = $request->input('page', 1);
 
-                $products = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-                    $join->on('ec_products.sku', '=', 'best_products.sku')
-                        ->whereColumn('ec_products.price', 'best_products.best_price');
-                })
-                ->whereIn('id', $filteredProductIds)
-                ->select('ec_products.*', 'best_products.best_price', 'best_products.best_delivery_date')
+                $products = Product::whereIn('id', $filteredProductIds)
                 ->with([
-                    'reviews' => function($query) {
+                    'reviews' => function ($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency' ,
+                    'currency',
                     'categories',
                     'productSuppliers',
                     'productAttributes' => function ($query) {
@@ -161,9 +143,10 @@ class ProductController extends Controller
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
-                     ])
+                ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
+            
 
                 // Add query parameters to pagination
                 $products->appends($request->all());
