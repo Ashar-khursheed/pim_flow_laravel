@@ -755,7 +755,8 @@ if ($request->has('price_min') || $request->has('price_max')) {
 			}]);
 	
 		// Apply sorting
-		$sortBy = $request->input('sort_by', 'created_at');
+		// Apply sorting
+$sortBy = $request->input('sort_by', 'created_at');
 $sortByType = $request->input('sort_by_type', 'desc');
 
 // Handle price_order parameter - this takes precedence over sort_by
@@ -767,18 +768,28 @@ if ($request->has('price_order')) {
 
 if ($sortBy == 'price') {
     // For price sorting, we need to get the best price for each product
-    $products = $products->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+    // First get the base query results, then apply price sorting
+    $productIds = $products->pluck('ec_products.id');
+    
+    $products = DB::table('ec_products')
+        ->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
         ->select('ec_products.*', 
             DB::raw('MIN(CASE 
                 WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
                 THEN ps.sale_price 
                 ELSE ps.price 
             END) as best_price'))
+        ->whereIn('ec_products.id', $productIds)
         ->groupBy('ec_products.id')
         ->orderBy('best_price', $sortByType);
 } else {
     // For other sorting (created_at, name, etc.)
-    $products = $products->orderBy($sortBy, $sortByType);
+    // Make sure to prefix the column with table name if needed
+    $orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
+        ? "ec_products.{$sortBy}" 
+        : $sortBy;
+    
+    $products = $products->orderBy($orderColumn, $sortByType);
 }
 	
 		$paginatedProducts = $products->paginate($perPage);
