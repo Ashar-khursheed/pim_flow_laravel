@@ -466,8 +466,6 @@ class BrandController extends Controller
     {
         // Subquery for best price and delivery days by SKU (only published products)
         $subQuery = Product::select('sku')
-            ->selectRaw('MIN(price) as best_price')
-            ->selectRaw('MIN(delivery_days) as best_delivery_date')
             ->where('status', 'published') // Add this line
             ->groupBy('sku');
 
