@@ -180,7 +180,7 @@ class ProductController extends BaseController
 				return [
 					'product_id' => $product->id,
 					'name' => $product->name,
-					'sale_price' => $product->sale_price,
+					'sale_price' => $firstSupplier->sale_price,
 					'margin' => null,
 					'margin_percent' => null,
 					// add other product fields as needed
