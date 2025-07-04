@@ -89,7 +89,7 @@ class ProductExportController extends BaseController
 			'tags:id,name',
 			'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
-			'seoManagement:id,meta_title,meta_description',
+			'seoManagement:id,relational_id,relational_type,meta_title,meta_description',
 			'slug:id,reference_id,key',
 			// 'arTranslations',
 			'latestChildCategoryRelation:id,name',
