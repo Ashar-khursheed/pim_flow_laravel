@@ -1678,6 +1678,37 @@ class ProductController extends Controller
             $quantity = $product->quantity ?? 0;
             $unitsSold = $product->units_sold ?? 0;
             $leftStock = $quantity - $unitsSold;
+            $sellingType = null;
+            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $product->sellingUnitAttribute->attribute_value;
+                if (strpos($fullValue, '/') !== false) {
+                    $parts = explode('/', $fullValue);
+                    $product->sellingUnitAttribute->attribute_value_unit = trim($parts[1]);
+                } else {
+                    $product->sellingUnitAttribute->attribute_value_unit = $fullValue;
+                }
+            }
+            if ($product->ingredientsAttribute && $product->ingredientsAttribute->attribute_value) {
+                $fullValue = $product->ingredientsAttribute->attribute_value;
+            }
+
+            // Calculate per unit price
+            $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+            $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+            
+
+                $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+                $perUnitPrice = null;
+
+                if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+                    $unitValue = (float) $unitsPerCase->attribute_value;
+                    if ($unitValue > 0) {
+                        $calculated = round($basePrice / $unitValue, 2);
+                        $perUnitPrice = $calculated .  '/' . ($packType?->attribute_value ?? '');
+                    }
+                }
+
+                $product->per_unit_price = $perUnitPrice;
             $firstSupplier = $product->productSuppliers->first();
 
             return [
