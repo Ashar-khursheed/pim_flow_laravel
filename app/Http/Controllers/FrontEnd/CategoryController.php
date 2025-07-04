@@ -680,23 +680,23 @@ class CategoryController extends Controller
 		// 	}
 		// }
 		// Replace the price filtering section (around line 200-220)
-// Apply price filter before rating filter
-if ($request->has('price_min') || $request->has('price_max')) {
-    $min = $request->input('price_min', 0);
-    $max = $request->input('price_max', PHP_INT_MAX);
+		// Apply price filter before rating filter
+		if ($request->has('price_min') || $request->has('price_max')) {
+			$min = $request->input('price_min', 0);
+		$max = $request->input('price_max', PHP_INT_MAX);
 
-    // Get product IDs that match the price range from product_suppliers
-    $priceFilteredIds = DB::table('product_suppliers')
-        ->whereIn('product_id', $filteredProductIds->toArray())
-        ->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-        ->pluck('product_id')
-        ->unique(); // Add unique to avoid duplicates
+		// Get product IDs that match the price range from product_suppliers
+		$priceFilteredIds = DB::table('product_suppliers')
+			->whereIn('product_id', $filteredProductIds->toArray())
+			->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+			->pluck('product_id')
+			->unique(); // Add unique to avoid duplicates
 
-    $filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+		$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 
-    if ($filteredProductIds->isEmpty()) {
-        return response()->json([
-            'success' => true,
+		if ($filteredProductIds->isEmpty()) {
+			return response()->json([
+				'success' => true,
             'filters' => [],
             'products' => [],
             'brands' => [],
@@ -709,8 +709,8 @@ if ($request->has('price_min') || $request->has('price_max')) {
             ],
             'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
         ]);
-    }
-}
+    	}
+		}
 	
 		// If a rating filter is applied, filter the already filtered product IDs
 		if ($request->has('rating') && $request->rating) {
@@ -756,49 +756,55 @@ if ($request->has('price_min') || $request->has('price_max')) {
 	
 		// Apply sorting
 		// Apply sorting
-		$sortBy = $request->input('sort_by', 'created_at');
-		$sortByType = $request->input('sort_by_type', 'desc');
+		// Apply sorting
+$sortBy = $request->input('sort_by', 'created_at');
+$sortByType = $request->input('sort_by_type', 'desc');
 
-		// Handle price_order parameter - this takes precedence over sort_by
-		if ($request->has('price_order')) {
-			$priceOrder = $request->input('price_order');
-			$sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
-			$sortBy = 'price';
-		}
+// Handle price_order parameter - this takes precedence over sort_by
+if ($request->has('price_order')) {
+    $priceOrder = $request->input('price_order');
+    $sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
+    $sortBy = 'price';
+}
 
-		if ($sortBy == 'price') {
-			// For price sorting, we need to get the best price for each product
-			// First get the base query results, then apply price sorting
-			$productIds = $products->pluck('ec_products.id');
-			
-			$productIds = $products->pluck('id');
-
-			$products = Product::with('reviews')
-			->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
-			->select('ec_products.*',
-				DB::raw('MIN(CASE 
-					WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
-					THEN ps.sale_price 
-					ELSE ps.price 
-				END) as best_price')
-			)
-			->whereIn('ec_products.id', $productIds)
-			->groupBy('ec_products.id')
-			->orderBy('best_price', $sortByType)
-			->paginate(12); // ✅ Fix is here
+if ($sortBy == 'price') {
+    // For price sorting, we need to get the best price for each product
+    // Get the filtered product IDs
+    $productIds = $filteredProductIds->toArray();
+    
+    // Build a fresh query for price sorting
+    $products = Product::with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
+            $query->whereHas('attributeDetails', function ($q) {
+                $q->whereIn('name', ['Units per Case', 'Pack Type']);
+            });
+        }])
+        ->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+        ->select('ec_products.*',
+            DB::raw('MIN(CASE 
+                WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
+                THEN ps.sale_price 
+                ELSE ps.price 
+            END) as best_price')
+        )
+        ->whereIn('ec_products.id', $productIds)
+        ->where('ec_products.status', 'published')
+        ->groupBy('ec_products.id')
+        ->orderBy('best_price', $sortByType);
+        
+   	 // Now paginate the query
+		$paginatedProducts = $products->paginate($perPage);
 		
+	} else {
+		// For other sorting (created_at, name, etc.)
+		// Make sure to prefix the column with table name if needed
+		$orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
+			? "ec_products.{$sortBy}" 
+			: $sortBy;
 		
-
-		} else {
-			// For other sorting (created_at, name, etc.)
-			// Make sure to prefix the column with table name if needed
-			$orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
-				? "ec_products.{$sortBy}" 
-				: $sortBy;
-			
-			$products = $products->orderBy($orderColumn, $sortByType);
-		}
-	
+		$products = $products->orderBy($orderColumn, $sortByType);
+		$paginatedProducts = $products->paginate($perPage);
+	}
+		
 		$paginatedProducts = $products->paginate($perPage);
 	
 		// Get wishlist product IDs
@@ -1219,119 +1225,119 @@ if ($request->has('price_min') || $request->has('price_max')) {
 				// Debug the price range query
 			// Replace the price range calculation section with this enhanced debugging version
 
-// Get price range for the filtered products
-$productIdsArray = $filteredProductIds->toArray();
+		// Get price range for the filtered products
+		$productIdsArray = $filteredProductIds->toArray();
 
-// First, let's check if we have any product suppliers for these products
-$supplierExists = DB::table('product_suppliers')
-    ->whereIn('product_id', $productIdsArray)
-    ->exists();
+		// First, let's check if we have any product suppliers for these products
+		$supplierExists = DB::table('product_suppliers')
+			->whereIn('product_id', $productIdsArray)
+			->exists();
 
-$debugInfo['supplier_exists'] = $supplierExists;
+		$debugInfo['supplier_exists'] = $supplierExists;
 
-if ($supplierExists) {
-    // Let's get detailed information about the supplier data
-    $detailedSuppliers = DB::table('product_suppliers')
-        ->whereIn('product_id', $productIdsArray)
-        ->select('product_id', 'price', 'sale_price', 
-                DB::raw('COALESCE(sale_price, price) as effective_price'))
-        ->get();
+		if ($supplierExists) {
+			// Let's get detailed information about the supplier data
+			$detailedSuppliers = DB::table('product_suppliers')
+				->whereIn('product_id', $productIdsArray)
+				->select('product_id', 'price', 'sale_price', 
+						DB::raw('COALESCE(sale_price, price) as effective_price'))
+				->get();
     
-    $debugInfo['detailed_suppliers'] = $detailedSuppliers->toArray();
-    
-    // Count how many have non-zero prices
-    $nonZeroPrices = $detailedSuppliers->filter(function($supplier) {
-        return $supplier->price > 0 || $supplier->sale_price > 0;
-    });
-    
-    $debugInfo['non_zero_price_count'] = $nonZeroPrices->count();
-    $debugInfo['total_supplier_records'] = $detailedSuppliers->count();
-    
-    // Get some sample non-zero prices if they exist
-    $sampleNonZero = $nonZeroPrices->take(5)->toArray();
-    $debugInfo['sample_non_zero_prices'] = $sampleNonZero;
-    
-    // Try different approaches to get the price range
-    
-    // Approach 1: Using COALESCE (current approach)
-    $priceRange1 = DB::table('product_suppliers')
+		$debugInfo['detailed_suppliers'] = $detailedSuppliers->toArray();
+		
+		// Count how many have non-zero prices
+		$nonZeroPrices = $detailedSuppliers->filter(function($supplier) {
+			return $supplier->price > 0 || $supplier->sale_price > 0;
+		});
+		
+		$debugInfo['non_zero_price_count'] = $nonZeroPrices->count();
+		$debugInfo['total_supplier_records'] = $detailedSuppliers->count();
+		
+		// Get some sample non-zero prices if they exist
+		$sampleNonZero = $nonZeroPrices->take(5)->toArray();
+		$debugInfo['sample_non_zero_prices'] = $sampleNonZero;
+		
+		// Try different approaches to get the price range
+		
+		// Approach 1: Using COALESCE (current approach)
+		$priceRange1 = DB::table('product_suppliers')
         ->whereIn('product_id', $productIdsArray)
         ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
         ->first();
     
-    // Approach 2: Using CASE WHEN
-    $priceRange2 = DB::table('product_suppliers')
-        ->whereIn('product_id', $productIdsArray)
-        ->selectRaw('MIN(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as min_price, 
-                     MAX(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as max_price')
-        ->first();
+		// Approach 2: Using CASE WHEN
+		$priceRange2 = DB::table('product_suppliers')
+			->whereIn('product_id', $productIdsArray)
+			->selectRaw('MIN(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as min_price, 
+						MAX(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as max_price')
+			->first();
+		
+		// Approach 3: Only where prices are greater than 0
+		$priceRange3 = DB::table('product_suppliers')
+			->whereIn('product_id', $productIdsArray)
+			->where(function($query) {
+				$query->where('price', '>', 0)
+					->orWhere('sale_price', '>', 0);
+			})
+			->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+			->first();
+		
+		$debugInfo['price_range_approaches'] = [
+			'approach_1_coalesce' => $priceRange1,
+			'approach_2_case_when' => $priceRange2,
+			'approach_3_non_zero_only' => $priceRange3
+		];
     
-    // Approach 3: Only where prices are greater than 0
-    $priceRange3 = DB::table('product_suppliers')
-        ->whereIn('product_id', $productIdsArray)
-        ->where(function($query) {
-            $query->where('price', '>', 0)
-                  ->orWhere('sale_price', '>', 0);
-        })
-        ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-        ->first();
-    
-    $debugInfo['price_range_approaches'] = [
-        'approach_1_coalesce' => $priceRange1,
-        'approach_2_case_when' => $priceRange2,
-        'approach_3_non_zero_only' => $priceRange3
-    ];
-    
-    // Use the approach that gives us non-zero results
-    $priceRange = $priceRange3 && ($priceRange3->min_price > 0 || $priceRange3->max_price > 0) 
-                  ? $priceRange3 
-                  : ($priceRange2 && ($priceRange2->min_price > 0 || $priceRange2->max_price > 0) 
-                     ? $priceRange2 
-                     : $priceRange1);
-    
-    $debugInfo['price_source'] = 'product_suppliers';
-    $debugInfo['selected_approach'] = $priceRange === $priceRange3 ? 'approach_3' : 
-                                     ($priceRange === $priceRange2 ? 'approach_2' : 'approach_1');
-    
-} else {
-    // Fallback to products table if no suppliers found
-    $priceRange = DB::table('ec_products')
-        ->whereIn('id', $filteredProductIds)
-        ->where('status', 'published')
-        ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-        ->first();
-    
-    $debugInfo['price_source'] = 'ec_products';
-}
+		// Use the approach that gives us non-zero results
+		$priceRange = $priceRange3 && ($priceRange3->min_price > 0 || $priceRange3->max_price > 0) 
+					? $priceRange3 
+					: ($priceRange2 && ($priceRange2->min_price > 0 || $priceRange2->max_price > 0) 
+						? $priceRange2 
+						: $priceRange1);
+		
+		$debugInfo['price_source'] = 'product_suppliers';
+		$debugInfo['selected_approach'] = $priceRange === $priceRange3 ? 'approach_3' : 
+										($priceRange === $priceRange2 ? 'approach_2' : 'approach_1');
+		
+			} else {
+				// Fallback to products table if no suppliers found
+				$priceRange = DB::table('ec_products')
+					->whereIn('id', $filteredProductIds)
+					->where('status', 'published')
+					->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+					->first();
+				
+				$debugInfo['price_source'] = 'ec_products';
+		}
 
-// Additional debugging to see what's happening
-$debugInfo['price_range_query'] = [
-    'filtered_product_ids_count' => count($filteredProductIds),
-    'price_range_result' => $priceRange,
-    'raw_min' => $priceRange ? $priceRange->min_price : 'null',
-    'raw_max' => $priceRange ? $priceRange->max_price : 'null'
-];
+		// Additional debugging to see what's happening
+		$debugInfo['price_range_query'] = [
+			'filtered_product_ids_count' => count($filteredProductIds),
+			'price_range_result' => $priceRange,
+			'raw_min' => $priceRange ? $priceRange->min_price : 'null',
+			'raw_max' => $priceRange ? $priceRange->max_price : 'null'
+		];
 
-$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
-$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
+		$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
+		$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
 
-$debugInfo['final_price_min'] = $priceMin;
-$debugInfo['final_price_max'] = $priceMax;
+		$debugInfo['final_price_min'] = $priceMin;
+		$debugInfo['final_price_max'] = $priceMax;
 
-// If we still have zero prices, let's check the actual data structure
-if ($priceMin == 0 && $priceMax == 0) {
-    // Check if products have prices in the main products table
-    $productPrices = DB::table('ec_products')
-        ->whereIn('id', array_slice($productIdsArray, 0, 5))
-        ->select('id', 'price', 'sale_price')
-        ->get();
-    
-    $debugInfo['sample_product_prices'] = $productPrices->toArray();
-    
-    // Check table structure
-    $supplierColumns = DB::select("DESCRIBE product_suppliers");
-    $debugInfo['supplier_table_structure'] = $supplierColumns;
-}
+		// If we still have zero prices, let's check the actual data structure
+		if ($priceMin == 0 && $priceMax == 0) {
+			// Check if products have prices in the main products table
+			$productPrices = DB::table('ec_products')
+				->whereIn('id', array_slice($productIdsArray, 0, 5))
+				->select('id', 'price', 'sale_price')
+				->get();
+			
+			$debugInfo['sample_product_prices'] = $productPrices->toArray();
+			
+			// Check table structure
+			$supplierColumns = DB::select("DESCRIBE product_suppliers");
+			$debugInfo['supplier_table_structure'] = $supplierColumns;
+		}
 		// Rating filter
 		$ratingFilter = [
 			'filter_name' => 'Rating',
