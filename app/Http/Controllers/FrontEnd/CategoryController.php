@@ -1142,11 +1142,16 @@ class CategoryController extends Controller
 			->toArray();
 	
 		// Get price range for the filtered products
-		$priceRange = DB::table('ec_products')
-			->whereIn('id', $filteredProductIds)
-			->where('status', 'published')
-			->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-			->first();
+		// $priceRange = DB::table('ec_products')
+		// 	->whereIn('id', $filteredProductIds)
+		// 	->where('status', 'published')
+		// 	->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+		// 	->first();
+		$priceRange = DB::table('product_suppliers')
+		->whereIn('product_id', $filteredProductIds)
+		->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+		->first();
+
 	
 		$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
 		$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
