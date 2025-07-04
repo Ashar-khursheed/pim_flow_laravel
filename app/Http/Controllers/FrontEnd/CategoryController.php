@@ -655,10 +655,11 @@ class CategoryController extends Controller
 			$min = $request->input('price_min', 0);
 			$max = $request->input('price_max', PHP_INT_MAX);
 	
-			$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds)
-				->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-				->pluck('id');
-	
+			// NEW CODE (CORRECT):
+		$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds)
+		->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+		->pluck('product_id'); // Changed from 'id' to 'product_id'
+			
 			$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 	
 			if ($filteredProductIds->isEmpty()) {
@@ -724,8 +725,18 @@ class CategoryController extends Controller
 		// Apply sorting
 		$sortBy = $request->input('sort_by', 'created_at');
 		$sortByType = $request->input('sort_by_type', 'desc');
+
+		// Handle price_order parameter
+		if ($request->has('price_order')) {
+			$priceOrder = $request->input('price_order');
+			$sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
+			$sortBy = 'price';
+		}
+
 		if ($sortBy == 'price') {
-			$products = $products->orderByRaw("COALESCE(sale_price, price) $sortByType");
+			$products = $products->join('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+				->orderByRaw("COALESCE(ps.sale_price, ps.price) $sortByType")
+				->select('ec_products.*');
 		} else {
 			$products = $products->orderBy($sortBy, $sortByType);
 		}
