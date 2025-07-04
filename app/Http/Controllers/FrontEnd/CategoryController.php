@@ -2149,7 +2149,6 @@ class CategoryController extends Controller
 
 		// Subquery for best price and delivery days
 		$subQuery = Product::select('sku')
-		->selectRaw('MIN(delivery_days) as best_delivery_date')
 		->groupBy('sku');
 
 		// Process categories and products
