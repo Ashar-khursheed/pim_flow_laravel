@@ -757,30 +757,30 @@ class CategoryController extends Controller
 		// Apply sorting
 		// Apply sorting
 		// Apply sorting
-$sortBy = $request->input('sort_by', 'created_at');
-$sortByType = $request->input('sort_by_type', 'desc');
+		$sortBy = $request->input('sort_by', 'created_at');
+		$sortByType = $request->input('sort_by_type', 'desc');
 
-// Handle price_order parameter - this takes precedence over sort_by
-if ($request->has('price_order')) {
-    $priceOrder = $request->input('price_order');
-    $sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
-    $sortBy = 'price';
-}
+		// Handle price_order parameter - this takes precedence over sort_by
+		if ($request->has('price_order')) {
+			$priceOrder = $request->input('price_order');
+			$sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
+			$sortBy = 'price';
+		}
 
-if ($sortBy == 'price') {
-    // For price sorting, we need to get the best price for each product
-    // Get the filtered product IDs
-    $productIds = $filteredProductIds->toArray();
-    
-    // Build a fresh query for price sorting
-    $products = Product::with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
-            $query->whereHas('attributeDetails', function ($q) {
-                $q->whereIn('name', ['Units per Case', 'Pack Type']);
-            });
-        }])
-        ->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
-        ->select('ec_products.*',
-            DB::raw('MIN(CASE 
+		if ($sortBy == 'price') {
+			// For price sorting, we need to get the best price for each product
+			// Get the filtered product IDs
+			$productIds = $filteredProductIds->toArray();
+			
+			// Build a fresh query for price sorting
+			$products = Product::with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
+					$query->whereHas('attributeDetails', function ($q) {
+						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+					});
+				}])
+				->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+				->select('ec_products.*',
+					DB::raw('MIN(CASE 
                 WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
                 THEN ps.sale_price 
                 ELSE ps.price 
@@ -792,19 +792,20 @@ if ($sortBy == 'price') {
         ->orderBy('best_price', $sortByType);
         
    	 // Now paginate the query
+
 		$paginatedProducts = $products->paginate($perPage);
 		
-	} else {
-		// For other sorting (created_at, name, etc.)
-		// Make sure to prefix the column with table name if needed
-		$orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
-			? "ec_products.{$sortBy}" 
-			: $sortBy;
-		
-		$products = $products->orderBy($orderColumn, $sortByType);
-		$paginatedProducts = $products->paginate($perPage);
-	}
-		
+		} else {
+			// For other sorting (created_at, name, etc.)
+			// Make sure to prefix the column with table name if needed
+			$orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
+				? "ec_products.{$sortBy}" 
+				: $sortBy;
+			
+			$products = $products->orderBy($orderColumn, $sortByType);
+			$paginatedProducts = $products->paginate($perPage);
+		}
+			
 		$paginatedProducts = $products->paginate($perPage);
 	
 		// Get wishlist product IDs
@@ -2389,8 +2390,16 @@ if ($sortBy == 'price') {
 
 					  // Calculate per unit price
 					
-					  $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-					  $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+					  $unitsPerCase = null;
+					  $packType = null;
+					  
+					  if (!empty($details->per_unit_price_attributes)) {
+						  $unitsPerCase = collect($details->per_unit_price_attributes)
+							  ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+						  $packType = collect($details->per_unit_price_attributes)
+							  ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+					  }
+					  
 					  $firstSupplier = $details->productSuppliers->first();
 					
 					$basePrice = null;
@@ -2443,11 +2452,11 @@ if ($sortBy == 'price') {
 				];
 			});
 
-return response()->json([
-	'success' => true,
-	'data' => $categories,
-]);
-}
+		return response()->json([
+			'success' => true,
+			'data' => $categories,
+		]);
+	}
 
 
 	/**
