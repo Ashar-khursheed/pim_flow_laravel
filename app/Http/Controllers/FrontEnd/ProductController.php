@@ -572,7 +572,7 @@ class ProductController extends Controller
                     $join->on('ec_products.sku', '=', 'best_products.sku');
                 })
                 ->whereIn('id', $filteredProductIds)
-                ->select('ec_products.*', 'best_products.best_price', 'best_products.best_delivery_date')
+                ->select('ec_products.*')
                 ->with([
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
@@ -588,7 +588,6 @@ class ProductController extends Controller
                      ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
-
                 // Add query parameters to pagination
                 $products->appends($request->all());
 
