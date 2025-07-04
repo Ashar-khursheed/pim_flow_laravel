@@ -336,7 +336,6 @@ class ProductController extends BaseController
 			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
-			'Product Variations' => ['is_variation', 'variant_requires_shipping'],
 			'Store & Vendor Information' => [ 'brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
