@@ -2594,8 +2594,8 @@ class CategoryController extends Controller
 					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 
 					  // Calculate per unit price
-					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+					$unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+					$packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
 					$basePrice = null;
 					if ($firstSupplier) {
