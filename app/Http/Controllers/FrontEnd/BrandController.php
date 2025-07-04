@@ -517,7 +517,7 @@ class BrandController extends Controller
                     })
                     ->whereIn('ec_products.id', $products)
                     ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
-                    ->with(['reviews', 'currency', 'productSuppliers' , 'vendors' ,   'productAttributes' => function ($query) {
+                    ->with(['reviews', 'currency', 'productSuppliers' , 'vendor' ,   'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
@@ -572,8 +572,8 @@ class BrandController extends Controller
                         // $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
 
-                        $unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-                        $packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        $unitsPerCase = optional($details->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+                        $packType = optional($details->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 
                         $basePrice = null;
                         if ($firstSupplier) {
