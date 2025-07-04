@@ -351,8 +351,16 @@ class ProductController extends Controller
                         }
 
                         // Calculate per unit price
-                        $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-                        $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        $unitsPerCase = null;
+                        $packType = null;
+                        
+                        if (!empty($details->per_unit_price_attributes)) {
+                            $unitsPerCase = collect($details->per_unit_price_attributes)
+                                ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+                            $packType = collect($details->per_unit_price_attributes)
+                                ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+                        }
+                        
                         
 
                             $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
@@ -731,8 +739,16 @@ class ProductController extends Controller
                         }
 
                         // Calculate per unit price
-                        $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-                        $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+                        $unitsPerCase = null;
+                        $packType = null;
+                        
+                        if (!empty($details->per_unit_price_attributes)) {
+                            $unitsPerCase = collect($details->per_unit_price_attributes)
+                                ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+                            $packType = collect($details->per_unit_price_attributes)
+                                ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+                        }
+                        
                         
 
                         $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
