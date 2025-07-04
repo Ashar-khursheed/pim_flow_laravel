@@ -332,7 +332,7 @@ class ProductController extends BaseController
 		$attributeGroup = [
 			'General' => ['sku', 'barcode', 'status' , 'approved' ],
 
-			'Inventory & Stock Management' => ['quantity', 'stock_status'],
+			'Inventory & Stock Management' => [ 'stock_status'],
 			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
