@@ -561,8 +561,6 @@ class ProductController extends Controller
 
                 // Subquery for best price and delivery date
                 $subQuery = Product::select('sku')
-                    ->selectRaw('MIN(price) as best_price')
-                    ->selectRaw('MIN(delivery_days) as best_delivery_date')
                     ->whereIn('id', $filteredProductIds)
                     ->groupBy('sku');
 
@@ -571,8 +569,7 @@ class ProductController extends Controller
                 $page = $request->input('page', 1);
 
                 $products = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-                    $join->on('ec_products.sku', '=', 'best_products.sku')
-                        ->whereColumn('ec_products.price', 'best_products.best_price');
+                    $join->on('ec_products.sku', '=', 'best_products.sku');
                 })
                 ->whereIn('id', $filteredProductIds)
                 ->select('ec_products.*', 'best_products.best_price', 'best_products.best_delivery_date')
@@ -580,12 +577,15 @@ class ProductController extends Controller
                     'reviews' => function($query) {
                         $query->select('id', 'product_id', 'star');
                     },
-                    'currency',  'categories' , 'productSuppliers', 'productAttributes' => function ($query) {
+                    'currency' ,
+                    'categories',
+                    'productSuppliers',
+                    'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
                         });
                     },
-                ])
+                     ])
                 ->orderBy($sortBy, 'desc')
                 ->paginate($perPage);
 
