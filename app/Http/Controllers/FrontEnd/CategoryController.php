@@ -748,7 +748,7 @@ class CategoryController extends Controller
 				: (array) $product->images;
 	
 			// Calculate left stock
-			$leftStock = $product->quantity ?? 0;
+			
 	
 			$sellingType = null;
 			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
@@ -764,6 +764,7 @@ class CategoryController extends Controller
 				];
 			}
 			$firstSupplier = $product->productSuppliers->first();
+			$leftStock = $firstSupplier->quantity ?? 0;
 	
 			// Calculate per unit price
 			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
@@ -2142,7 +2143,7 @@ class CategoryController extends Controller
 		->with(['products' => function ($query) {
 			$query->where('is_featured', 1)
 			->where('status', 'published')
-				->select('id', 'name', 'sku', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
+				->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
 			}])
 		->take(5)
 		->get();
@@ -2191,7 +2192,7 @@ class CategoryController extends Controller
 
 					$totalReviews = $details->reviews->count();
 					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-					$leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
+				
 					$currencyTitle = $details->currency->symbol ?? $details->price;
 					$isInWishlist = in_array($details->id, $wishlistProductIds);
 
@@ -2219,7 +2220,7 @@ class CategoryController extends Controller
 					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
 					$firstSupplier = $details->productSuppliers->first();
-
+					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 					
 					$basePrice = null;
 					if ($firstSupplier) {
@@ -2338,7 +2339,7 @@ return response()->json([
 		->with(['products' => function ($query) {
 			$query->where('is_featured', 1)
 			->where('status', 'published')
-				->select('id', 'name', 'sku', 'currency_id', 'quantity', 'units_sold'); // Select only necessary fields
+				->select('id', 'name', 'sku', 'currency_id', 'units_sold'); // Select only necessary fields
 			}])
 		->take(5)
 		->get();
@@ -2378,7 +2379,7 @@ return response()->json([
 
 					$totalReviews = $details->reviews->count();
 					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-					$leftStock = ($details->quantity ?? 0) - ($details->units_sold ?? 0);
+					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 					$currencyTitle = $details->currency->symbol;
 
 					// Process images efficiently
