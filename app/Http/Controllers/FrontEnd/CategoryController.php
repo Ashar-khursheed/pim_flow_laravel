@@ -842,8 +842,16 @@ class CategoryController extends Controller
 			$firstSupplier = $product->productSuppliers->first();
 	
 			// Calculate per unit price
-			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-			$packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+							$unitsPerCase = null;
+				$packType = null;
+
+				if (!empty($details->per_unit_price_attributes)) {
+					$unitsPerCase = collect($details->per_unit_price_attributes)
+						->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+					$packType = collect($details->per_unit_price_attributes)
+						->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+				}
+
 	
 			$basePrice = null;
 			if ($firstSupplier) {
@@ -2415,6 +2423,7 @@ class CategoryController extends Controller
 							$perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
 						}
 					}
+					
 
 					$details->per_unit_price = $perUnitPrice;
 
