@@ -1518,9 +1518,9 @@ class ProductController extends Controller
             }
 
             // Calculate per unit price
-            $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-            $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-            
+            $unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+            $packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+
 
                 $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
                 $perUnitPrice = null;
@@ -1709,9 +1709,9 @@ class ProductController extends Controller
             }
 
             // Calculate per unit price
-            $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-            $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-            
+           $unitsPerCase = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+            $packType = optional($product->per_unit_price_attributes)->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+
 
                 $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
                 $perUnitPrice = null;
