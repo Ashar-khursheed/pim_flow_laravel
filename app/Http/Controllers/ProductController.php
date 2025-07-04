@@ -139,7 +139,8 @@ class ProductController extends BaseController
 		$query = Product::with([
 			'brand:id,name',
 			'categories:id,name',
-			'slug:id,key,reference_id'
+			'slug:id,key,reference_id',
+			'productSuppliers', 
 		])
 		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'gen_type' ,'approved']);
 
@@ -178,19 +179,28 @@ class ProductController extends BaseController
 		
 			if (!$firstSupplier) {
 				return [
-					'product_id' => $product->id,
+					'id' => $product->id,
 					'name' => $product->name,
+					'gen_type' => $product->gen_type,
+					'approved' => $product->approved,
+					'sku' => $product->sku,
+					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
+					'brand' => optional($product->brand)->name,
+					'status' => $product->status,
+					'price'=> null,
+					'sale_price'=> null,
 					'margin' => null,
 					'margin_percent' => null,
-					// add other product fields as needed
+					'product_family' => $product->categories->pluck('name')->toArray(),
+					'taxonomy_path' => optional($product->slug)->key ?? '',
 				];
 			}
 		
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
-		
-			$marginPercent = $product->sale_price > 0
-				? (($firstSupplier->sale_price - $firstSupplier->price) / $firstSupplier->sale_price) * 100
+			$marginPercent = $firstSupplier->sale_price > 0
+				? ($margin / $firstSupplier->sale_price) * 100
 				: 0;
+		
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -199,17 +209,16 @@ class ProductController extends BaseController
 				'sku' => $product->sku,
 				'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 				'brand' => optional($product->brand)->name,
-				// 'vendor_id' => $product->vendor_id,
-				// 'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
 				'price'=> $firstSupplier->price,
 				'sale_price'=> $firstSupplier->sale_price,
 				'margin' => $margin,
-				'margin_percent' => round($marginPercent, 2), // round to 2 decimals
+				'margin_percent' => round($marginPercent, 2),
 				'product_family' => $product->categories->pluck('name')->toArray(),
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
+		
 
 		return response()->json([
 			'success' => true,
