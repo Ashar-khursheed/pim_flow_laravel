@@ -1997,13 +1997,14 @@ class ProductController extends BaseController
 			unset($input['vendor_id']);
 
 			/* Check for invalid fields */
-			$invalidFields = array_diff(array_keys($input), $validArray);
-			if (!empty($invalidFields)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
-				]);
-			}
+			// $invalidFields = array_diff(array_keys($input), $validArray);
+			// if (!empty($invalidFields)) {
+			// 	return response()->json([
+			// 		'success' => false,
+			// 		'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
+			// 	]);
+			// }
+			$input = array_intersect_key($input, array_flip($validArray));
 
 			/* Initialize an error array to store validation errors */
 			$rowError = [];
@@ -2509,23 +2510,15 @@ class ProductController extends BaseController
 			"shipping_height",
 			"shipping_length",
 			"shipping_length_id",
-			"is_variation",
-			"variant_grams",
-			"variant_requires_shipping",
 			"variant_barcode",
-			"variant_color_title",
-			"variant_color_value",
 			"brand_id",
 			"views",
 			"units_sold",
 			"frequently_bought_together",
-			"compare_type",
-			"compare_products",
 			"google_shopping_category",
 			"google_shopping_mpn",
 			"order",
 			"box_quantity",
-			"delivery_days",
 			/* "created_by_id", */
 			/* "created_by_type", */
 		];
