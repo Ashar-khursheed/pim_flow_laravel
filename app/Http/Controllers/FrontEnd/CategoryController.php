@@ -748,7 +748,7 @@ class CategoryController extends Controller
 				: (array) $product->images;
 	
 			// Calculate left stock
-			
+			$leftStock = $firstSupplier->quantity ?? 0;
 	
 			$sellingType = null;
 			if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
@@ -764,7 +764,6 @@ class CategoryController extends Controller
 				];
 			}
 			$firstSupplier = $product->productSuppliers->first();
-			$leftStock = $firstSupplier->quantity ?? 0;
 	
 			// Calculate per unit price
 			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
@@ -2149,17 +2148,9 @@ class CategoryController extends Controller
 		->get();
 
 		// Subquery for best price and delivery days
-		// $subQuery = Product::select('sku')
-		// ->selectRaw('MIN(price) as best_price')
-		// ->selectRaw('MIN(delivery_days) as best_delivery_date')
-		// ->groupBy('sku');
-		$subQuery = DB::table('product_suppliers as ps')
-		->join('ec_products as p', 'ps.product_id', '=', 'p.id')
-		->select('p.sku')
-		->selectRaw('MIN(COALESCE(ps.sale_price, ps.price)) as best_price')
-		->selectRaw('MIN(ps.delivery_days) as best_delivery_date')
-		->groupBy('p.sku');
-
+		$subQuery = Product::select('sku')
+		->selectRaw('MIN(delivery_days) as best_delivery_date')
+		->groupBy('sku');
 
 		// Process categories and products
 		$categories = $categories->map(function ($category) use ($subQuery, $wishlistProductIds) {
@@ -2169,21 +2160,20 @@ class CategoryController extends Controller
 			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
 				$join->on('ec_products.sku', '=', 'best_products.sku');
 			})
-			->select(
-				'ec_products.*',
-				DB::raw('best_products.best_price as price'),
-				DB::raw('best_products.best_sale_price as sale_price')
-			)		
 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-			->with(['reviews', 'currency', 'productSuppliers', 'productAttributes' => function ($query) {
-				$query->whereHas('attributeDetails', function ($q) {
-					$q->whereIn('name', ['Units per Case', 'Pack Type']);
-				});
-			},
-				]) // Eager load relationships
+			->with([
+				'reviews',
+				'currency',
+				'productSuppliers',
+				'productAttributes' => function ($query) {
+					$query->whereHas('attributeDetails', function ($q) {
+						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+					});
+				},
+			])
 			->get()
-				->keyBy('id'); // Use keyBy to quickly fetch by ID later
-
+			->keyBy('id');
+			
 				return [
 					'category_name' => $category->name,
 					'featured_products' => $featuredProducts->map(function ($product) use ($productDetails, $wishlistProductIds) {
@@ -2192,8 +2182,8 @@ class CategoryController extends Controller
 
 					$totalReviews = $details->reviews->count();
 					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-				
-					$currencyTitle = $details->currency->symbol ?? $details->price;
+					
+					$currencyTitle = $details->currency->symbol;
 					$isInWishlist = in_array($details->id, $wishlistProductIds);
 
 					// Process images efficiently
@@ -2217,10 +2207,10 @@ class CategoryController extends Controller
 					}
 
 					  // Calculate per unit price
-					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-					$firstSupplier = $details->productSuppliers->first();
-					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+					
+					  $unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
+					  $packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
+					  $firstSupplier = $details->productSuppliers->first();
 					
 					$basePrice = null;
 					if ($firstSupplier) {
@@ -2238,7 +2228,7 @@ class CategoryController extends Controller
 
 					$details->per_unit_price = $perUnitPrice;
 
-				
+					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
 
 					return [
 						'id' => $details->id,
@@ -2346,8 +2336,6 @@ return response()->json([
 
 		// Subquery for best price and delivery days
 		$subQuery = Product::select('sku')
-		->selectRaw('MIN(price) as best_price')
-		->selectRaw('MIN(delivery_days) as best_delivery_date')
 		->groupBy('sku');
 
 		// Process categories and products
@@ -2358,18 +2346,19 @@ return response()->json([
 			$productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
 				$join->on('ec_products.sku', '=', 'best_products.sku');
 			})
-			->select(
-				'ec_products.*',
-				DB::raw('best_products.best_price as price'),
-				DB::raw('best_products.best_sale_price as sale_price')
-			)		
 			->whereIn('ec_products.id', $featuredProducts->pluck('id'))
-			->with(['reviews', 'currency' ,'productSuppliers', 'vendors' ,  'productAttributes' => function ($query) {
-				$query->whereHas('attributeDetails', function ($q) {
-					$q->whereIn('name', ['Units per Case', 'Pack Type']);
-				});
-				},]) // Eager load relationships
-			->get()
+			->with([
+				'reviews',
+				'currency',
+				'productSuppliers',
+				'vendors',
+				'productAttributes' => function ($query) {
+					$query->whereHas('attributeDetails', function ($q) {
+						$q->whereIn('name', ['Units per Case', 'Pack Type']);
+					});
+				},
+			]) // Eager load relationships
+			->get()			
 				->keyBy('id'); // Use keyBy to quickly fetch by ID later
 				return [
 					'category_name' => $category->name,
@@ -2379,8 +2368,7 @@ return response()->json([
 
 					$totalReviews = $details->reviews->count();
 					$avgRating = $totalReviews > 0 ? $details->reviews->avg('star') : null;
-					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
-					$currencyTitle = $details->currency->symbol;
+					$currencyTitle = $details->currency->symbol ;
 
 					// Process images efficiently
 					$imageUrls = is_string($details->images)
@@ -2402,6 +2390,8 @@ return response()->json([
 						];
 					}
 					$firstSupplier = $details->productSuppliers->first();
+					$leftStock = ($firstSupplier->quantity ?? 0) - ($details->units_sold ?? 0);
+
 					  // Calculate per unit price
 					$unitsPerCase = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
 					$packType = $details->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
