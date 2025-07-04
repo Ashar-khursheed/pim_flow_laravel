@@ -1158,14 +1158,44 @@ class CategoryController extends Controller
 		// 	->where('status', 'published')
 		// 	->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
 		// 	->first();
+				// Debug the price range query
 		$priceRange = DB::table('product_suppliers')
 		->whereIn('product_id', $filteredProductIds)
 		->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
 		->first();
 
-	
+		// Add debug info
+		$debugInfo['price_range_query'] = [
+		'filtered_product_ids_count' => count($filteredProductIds),
+		'price_range_result' => $priceRange,
+		'raw_min' => $priceRange ? $priceRange->min_price : 'null',
+		'raw_max' => $priceRange ? $priceRange->max_price : 'null'
+		];
+
+		// Check if we have any product suppliers for these products
+		$supplierCount = DB::table('product_suppliers')
+		->whereIn('product_id', $filteredProductIds)
+		->count();
+
+		$debugInfo['supplier_count'] = $supplierCount;
+
+		// If no suppliers found, try getting price from products table instead
+		if ($supplierCount === 0) {
+		$priceRange = DB::table('ec_products')
+			->whereIn('id', $filteredProductIds)
+			->where('status', 'published')
+			->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+			->first();
+
+		$debugInfo['fallback_to_products_table'] = true;
+		$debugInfo['products_price_range'] = $priceRange;
+		}
+
 		$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
 		$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
+
+		$debugInfo['final_price_min'] = $priceMin;
+		$debugInfo['final_price_max'] = $priceMax;
 	
 		// Rating filter
 		$ratingFilter = [
