@@ -42,9 +42,14 @@ class OrderController extends BaseController
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
-			$recordsQuery->with(['orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
-				'orderProducts.product.brand:id,name', 'payments', 'shipments']);
+			$recordsQuery->with([
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'orderProducts.product.brand:id,name',
+				'orderProducts.product.currency:id,symbol',
+				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
+				'shipments'
+			]);
 
 			/* Filter by status */
 			if ($request->has('status')) {
@@ -108,10 +113,21 @@ class OrderController extends BaseController
 							$product->images = json_decode($product->images, true);
 						}
 
-						/* Replace brand relation with just brand_name */
-						$product->brand_name = $product->brand->name ?? null;
-						unset($product->brand);
+						/* Replace brand relation with brand_name */
+						if ($product->brand) {
+							$product->brand_name = $product->brand->name;
+						}
+
+						/* Replace currency relation with currency_symbol */
+						if ($product->currency) {
+							$product->currency_symbol = $product->currency->symbol;
+						}
+
+						unset($product->brand, $product->currency); /* Remove full brand object */
 					}
+
+					/* Add vendorProductSupplier dynamically */
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 				}
 
 				return $record;
@@ -261,9 +277,11 @@ class OrderController extends BaseController
 			/* Load relationships */
 			$order->load([
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
-				'orderProducts.product:id,name,images,sku,brand_id,price,sale_price,product_type,barcode,warranty_information,brand_id',
+				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
-				'tracking'
+				'orderProducts.product.currency:id,symbol',
+				'tracking',
+				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 			]);
 
 			/* Mutate the data for each order product */
@@ -279,8 +297,16 @@ class OrderController extends BaseController
 						$product->brand_name = $product->brand->name;
 					}
 
-					unset($product->brand); /* Remove full brand object */
+					/* Replace currency relation with currency_symbol */
+					if ($product->currency) {
+						$product->currency_symbol = $product->currency->symbol;
+					}
+
+					unset($product->brand, $product->currency); /* Remove full brand object */
 				}
+
+				/* Add vendorProductSupplier dynamically */
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 			}
 
 			return response()->json([
@@ -351,7 +377,7 @@ class OrderController extends BaseController
 				}
 
 				/* Replace currency relation with currency_symbol */
-				if ($product->brand) {
+				if ($product->currency) {
 					$product->currency_symbol = $product->currency->symbol;
 				}
 
