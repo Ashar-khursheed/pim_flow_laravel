@@ -71,7 +71,21 @@ class ProductExportController extends BaseController
 		if (!empty($userRole) && in_array($userRole, ['Content Writing Manager', 'Content Writer'])) {
 			$validFields = [
 				"id", "sku", "name", "brand", "categories",
-				"description", "benefits_features", "faq_section", "seo_section"
+				"description", "benefits_features", "faq_section"
+			];
+
+			/* If no selectedFields given, use all valid fields */
+			if (empty($selectedFields)) {
+				$selectedFields = $validFields;
+			} else {
+				$selectedFields = array_intersect($validFields, $selectedFields);
+			}
+		}
+
+		/* If role is in 'Content Writing Manager', 'Content Writer', enforce valid fields */
+		if (!empty($userRole) && in_array($userRole, ['Ecommerce Manager', 'Ecommerce Specialist'])) {
+			$validFields = [
+				"id", "name", "sku", "brand", "categories", "header_map2"
 			];
 
 			/* If no selectedFields given, use all valid fields */
@@ -91,7 +105,6 @@ class ProductExportController extends BaseController
 			'faqs:id,product_id,question,answer',
 			'seoManagement:id,relational_id,relational_type,meta_title,meta_description',
 			'slug:id,reference_id,key',
-			// 'arTranslations',
 			'latestChildCategoryRelation:id,name',
 		]);
 
@@ -134,53 +147,45 @@ class ProductExportController extends BaseController
 		$benifitsFeaturesColumns = product_constants('BENIFITS_FEATURES_COLUMNS');
 		$faqColumns = product_constants('FAQ_COLUMNS');
 		$headerMap2 = product_constants('HEADER_MAP2');
-		$seoSection = product_constants('SEO_SECTION');
 		$discountSection = product_constants('DISCOUNT_SECTION');
-		$translationSection = product_constants('TRANSLATION_SECTION');
 
 		/* Initialize header map */
 		$headerMap = [];
 
-		/* Always filter headerMap1 and headerMap2 based on selected fields if provided */
-		$filteredHeaderMap1 = empty($selectedFields) ? $headerMap1 : array_intersect_key($headerMap1, array_flip($selectedFields));
-		$filteredHeaderMap2 = empty($selectedFields) ? $headerMap2 : array_intersect_key($headerMap2, array_flip($selectedFields));
+		/* Determine if full header maps should be used */
+		$includeAll = empty($selectedFields);
+		$includeHeaderMap1 = $includeAll || in_array('header_map1', $selectedFields);
+		$includeHeaderMap2 = $includeAll || in_array('header_map2', $selectedFields);
 
-		/* Start building final header map */
+		/* Apply filters based on $selectedFields */
+		$filteredHeaderMap1 = $includeHeaderMap1 ? $headerMap1 : array_intersect_key($headerMap1, array_flip($selectedFields));
+		$filteredHeaderMap2 = $includeHeaderMap2 ? $headerMap2 : array_intersect_key($headerMap2, array_flip($selectedFields));
+
+		/* Merge primary headers */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap1);
 
 		/* Include description if requested or all fields */
-		if (empty($selectedFields) || in_array('description', $selectedFields)) {
+		if ($includeAll || in_array('description', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $descriptionColumns);
 		}
 
 		/* Include benefits_features if requested or all fields */
-		if (empty($selectedFields) || in_array('benefits_features', $selectedFields)) {
+		if ($includeAll || in_array('benefits_features', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $benifitsFeaturesColumns);
 		}
 
-		/* Include faq_section if requested or all fields */
-		if (empty($selectedFields) || in_array('faq_section', $selectedFields)) {
+		/* Include FAQ section */
+		if ($includeAll || in_array('faq_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $faqColumns);
 		}
 
-		/* Add remaining fields */
+		/* Merge secondary headers */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
 
-		/* Include seo_section if requested or all fields */
-		if (empty($selectedFields) || in_array('seo_section', $selectedFields)) {
-			$headerMap = array_merge($headerMap, $seoSection);
-		}
-
-		/* Include discount_section if requested or all fields */
-		if (empty($selectedFields) || in_array('discount_section', $selectedFields)) {
+		/* Discount section */
+		if ($includeAll || in_array('discount_section', $selectedFields)) {
 			$headerMap = array_merge($headerMap, $discountSection);
 		}
-
-		/* Include translation_section if requested or all fields */
-		if (empty($selectedFields) || in_array('translation_section', $selectedFields)) {
-			$headerMap = array_merge($headerMap, $translationSection);
-		}
-
 
 		$allFields = array_keys($headerMap);
 
@@ -196,7 +201,6 @@ class ProductExportController extends BaseController
 
 		$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
 		$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
-		// $refundMap = ['Non-Refundable' => 1, '15 Days Refund' => 2, '90 Days Refund' => 3];
 		$skipFields = [
 			'discount1', 'start_date1', 'end_date1',
 			'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
@@ -210,8 +214,7 @@ class ProductExportController extends BaseController
 			"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
 			"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
 			"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
-			"meta_description",
-			// 'description_ar', 'content_ar', 'warranty_information_ar'
+			"meta_description"
 		];
 
 		$rowIndex = 2;
@@ -232,7 +235,6 @@ class ProductExportController extends BaseController
 
 			$faqs = $product->faqs->take(10);
 			$discounts = $product->discounts->take(3);
-			// $arTranslations = $product->arTranslations ?? [];
 
 			foreach ($allFields as $field) {
 				if (in_array($field, $skipFields)) continue;
@@ -250,13 +252,8 @@ class ProductExportController extends BaseController
 					$row[] = $statusMap[$product->status] ?? 2;
 					break;
 
-					case 'variant_requires_shipping':
 					case 'is_featured':
 					$row[] = $product->$field ? 1 : 0;
-					break;
-
-					case 'refund_policy':
-					$row[] = $refundMap[$product->refund_policy] ?? '';
 					break;
 
 					case 'tags':
@@ -267,10 +264,6 @@ class ProductExportController extends BaseController
 					$brandData = is_array($product->brand) ? $product->brand :
 					(json_decode($product->brand, true) ?: (is_object($product->brand) ? $product->brand->toArray() : []));
 					$row[] = $brandData['name'] ?? '';
-					break;
-
-					case 'vendor':
-					$row[] = $product->vendor->name ?? '';
 					break;
 
 					case 'images':
@@ -325,13 +318,6 @@ class ProductExportController extends BaseController
 					$row[] = $product->seoManagement->meta_title ?? '';
 					$row[] = $product->seoManagement->meta_description ?? '';
 					break;
-
-					// case 'name_ar':
-					// $row[] = $arTranslations['name'] ?? '';
-					// $row[] = $arTranslations['description'] ?? '';
-					// $row[] = $arTranslations['content'] ?? '';
-					// $row[] = $arTranslations['warranty_information'] ?? '';
-					// break;
 
 					default:
 					$row[] = $product->$field ?? '';
