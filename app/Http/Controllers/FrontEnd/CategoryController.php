@@ -785,7 +785,8 @@ if ($request->has('price_min') || $request->has('price_max')) {
 			->whereIn('ec_products.id', $productIds)
 			->groupBy('ec_products.id')
 			->orderBy('best_price', $sortByType)
-			->paginate(20); // 👈 set your desired per-page count
+			->paginate(12); // ✅ Fix is here
+		
 		
 
 		} else {
