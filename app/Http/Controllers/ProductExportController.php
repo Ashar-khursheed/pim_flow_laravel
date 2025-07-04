@@ -147,7 +147,6 @@ class ProductExportController extends BaseController
 		$benifitsFeaturesColumns = product_constants('BENIFITS_FEATURES_COLUMNS');
 		$faqColumns = product_constants('FAQ_COLUMNS');
 		$headerMap2 = product_constants('HEADER_MAP2');
-		$seoSection = product_constants('SEO_SECTION');
 		$discountSection = product_constants('DISCOUNT_SECTION');
 
 		/* Initialize header map */
@@ -182,11 +181,6 @@ class ProductExportController extends BaseController
 
 		/* Merge secondary headers */
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
-
-		/* SEO section */
-		if ($includeAll || in_array('seo_section', $selectedFields)) {
-			$headerMap = array_merge($headerMap, $seoSection);
-		}
 
 		/* Discount section */
 		if ($includeAll || in_array('discount_section', $selectedFields)) {

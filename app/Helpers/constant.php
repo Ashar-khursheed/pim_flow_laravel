@@ -134,10 +134,6 @@ if (!function_exists('product_constants')) {
 				"is_featured" => "Is Featured",
 				"frequently_bought_together" => "Frequently Bought Together",
 			],
-			'SEO_SECTION' => [
-				"meta_title" => "Meta Title",
-				"meta_description" => "Meta Description",
-			],
 			'DISCOUNT_SECTION' => [
 				"buying_quantity1" => "Buying Quantity1",
 				"discount1" => "Discount1",
@@ -241,11 +237,6 @@ if (!function_exists('product_import_constants')) {
 				'Google Shopping Mpn' => 'googleShoppingMpn',
 				'Is Featured' => 'isFeatured',
 				'Frequently Bought Together' => 'frequentlyBoughtTogether',
-			],
-
-			'SEO_SECTION' => [
-				"Meta Title" => "meta_title",
-				"Meta Description" => "meta_description",
 			],
 
 			'DISCOUNT_SECTION' => [
