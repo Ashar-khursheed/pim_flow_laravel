@@ -101,9 +101,9 @@ class ProductExportController extends BaseController
 			'brand:id,name',
 			'vendors:id,name',
 			'tags:id,name',
-			'discounts:id,product_quantity,value,start_date,end_date',
+			// 'discounts:id,product_quantity,value,start_date,end_date',
 			'faqs:id,product_id,question,answer',
-			'seoManagement:id,relational_id,relational_type,meta_title,meta_description',
+			// 'seoManagement:id,relational_id,relational_type,meta_title,meta_description',
 			'slug:id,reference_id,key',
 			'latestChildCategoryRelation:id,name',
 		]);
@@ -147,7 +147,7 @@ class ProductExportController extends BaseController
 		$benifitsFeaturesColumns = product_constants('BENIFITS_FEATURES_COLUMNS');
 		$faqColumns = product_constants('FAQ_COLUMNS');
 		$headerMap2 = product_constants('HEADER_MAP2');
-		$discountSection = product_constants('DISCOUNT_SECTION');
+		// $discountSection = product_constants('DISCOUNT_SECTION');
 
 		/* Initialize header map */
 		$headerMap = [];
@@ -183,9 +183,9 @@ class ProductExportController extends BaseController
 		$headerMap = array_merge($headerMap, $filteredHeaderMap2);
 
 		/* Discount section */
-		if ($includeAll || in_array('discount_section', $selectedFields)) {
-			$headerMap = array_merge($headerMap, $discountSection);
-		}
+		// if ($includeAll || in_array('discount_section', $selectedFields)) {
+		// 	$headerMap = array_merge($headerMap, $discountSection);
+		// }
 
 		$allFields = array_keys($headerMap);
 
@@ -202,9 +202,9 @@ class ProductExportController extends BaseController
 		$stockMap = ['in_stock' => 1, 'Out of Stock' => 2, 'Pre Order' => 3];
 		$statusMap = ['published' => 1, 'draft' => 2, 'pending' => 3];
 		$skipFields = [
-			'discount1', 'start_date1', 'end_date1',
-			'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
-			'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
+			// 'discount1', 'start_date1', 'end_date1',
+			// 'buying_quantity2', 'discount2', 'start_date2', 'end_date2',
+			// 'buying_quantity3', 'discount3', 'start_date3', 'end_date3',
 			'feature1', 'benefit2', 'feature2', 'benefit3', 'feature3',
 			'description2', 'description3', 'description4',
 			'benefit4', 'feature4', 'benefit5', 'feature5',
@@ -214,7 +214,7 @@ class ProductExportController extends BaseController
 			"faq_answer1", "faq_question2", "faq_answer2", "faq_question3", "faq_answer3", "faq_question4", "faq_answer4",
 			"faq_question5", "faq_answer5", "faq_question6", "faq_answer6", "faq_question7", "faq_answer7", "faq_question8",
 			"faq_answer8", "faq_question9", "faq_answer9", "faq_question10", "faq_answer10",
-			"meta_description"
+			// "meta_description"
 		];
 
 		$rowIndex = 2;
@@ -234,7 +234,7 @@ class ProductExportController extends BaseController
 			}
 
 			$faqs = $product->faqs->take(10);
-			$discounts = $product->discounts->take(3);
+			// $discounts = $product->discounts->take(3);
 
 			foreach ($allFields as $field) {
 				if (in_array($field, $skipFields)) continue;
@@ -283,15 +283,15 @@ class ProductExportController extends BaseController
 					$row[] = $product->slug && $product->slug->key ? "https://thehorecastore.co/products/{$product->slug->key}" : '';
 					break;
 
-					case 'buying_quantity1':
-					for ($i = 0; $i < 3; $i++) {
-						$discount = $discounts[$i] ?? null;
-						$row[] = $discount->product_quantity ?? '';
-						$row[] = $discount->value ?? '';
-						$row[] = $discount->start_date ?? '';
-						$row[] = $discount->end_date ?? '';
-					}
-					break;
+					// case 'buying_quantity1':
+					// for ($i = 0; $i < 3; $i++) {
+					// 	$discount = $discounts[$i] ?? null;
+					// 	$row[] = $discount->product_quantity ?? '';
+					// 	$row[] = $discount->value ?? '';
+					// 	$row[] = $discount->start_date ?? '';
+					// 	$row[] = $discount->end_date ?? '';
+					// }
+					// break;
 
 					case 'description1':
 					for ($i = 0; $i < 4; $i++) {
@@ -312,11 +312,6 @@ class ProductExportController extends BaseController
 						$row[] = $faq->question ?? '';
 						$row[] = $faq->answer ?? '';
 					}
-					break;
-
-					case 'meta_title':
-					$row[] = $product->seoManagement->meta_title ?? '';
-					$row[] = $product->seoManagement->meta_description ?? '';
 					break;
 
 					default:

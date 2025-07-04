@@ -23,8 +23,8 @@ use App\Models\Category;
 use App\Models\Tag;
 use App\Models\MetaBox;
 use App\Models\Slug;
-use App\Models\Discount;
-use App\Models\DiscountProduct;
+// use App\Models\Discount;
+// use App\Models\DiscountProduct;
 use App\Models\TransactionLog;
 use App\Models\Faq;
 
@@ -333,6 +333,38 @@ class ImportProductJob implements ShouldQueue
 					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
 					$product->save();
 					Product::$observerUserId = null;
+
+					$submittedQuestions = [];
+					/* Fetch existing FAQs for this product */
+					$existingFaqs = $product->faqs()->get()->keyBy('question');
+
+					for ($i = 1; $i <= 10; $i++) {
+						$faqQuestion = trim(${'faq_question' . $i} ?? '');
+						$faqAnswer = trim(${'faq_answer' . $i} ?? '');
+
+						if (!empty($faqQuestion)) {
+							$submittedQuestions[] = $faqQuestion;
+
+							if ($existingFaqs->has($faqQuestion)) {
+								/* Update */
+								$existingFaqs[$faqQuestion]->update([
+									'answer' => $faqAnswer,
+								]);
+							} else {
+								/* Create */
+								Faq::create([
+									'product_id' => $product->id,
+									'category_id' => 4,
+									'question' => $faqQuestion,
+									'answer' => $faqAnswer,
+									'status' => 'published',
+								]);
+							}
+						}
+					}
+
+					/* Delete FAQs not in current submission */
+					$product->faqs()->whereNotIn('question', $submittedQuestions)->delete();
 				} else {
 					$product->name = $name;
 					$product->sku = $sku;
@@ -370,37 +402,6 @@ class ImportProductJob implements ShouldQueue
 				// 	]);
 				// }
 
-				$submittedQuestions = [];
-				/* Fetch existing FAQs for this product */
-				$existingFaqs = $product->faqs()->get()->keyBy('question');
-
-				for ($i = 1; $i <= 10; $i++) {
-					$faqQuestion = trim(${'faq_question' . $i} ?? '');
-					$faqAnswer = trim(${'faq_answer' . $i} ?? '');
-
-					if (!empty($faqQuestion)) {
-						$submittedQuestions[] = $faqQuestion;
-
-						if ($existingFaqs->has($faqQuestion)) {
-							/* Update */
-							$existingFaqs[$faqQuestion]->update([
-								'answer' => $faqAnswer,
-							]);
-						} else {
-							/* Create */
-							Faq::create([
-								'product_id' => $product->id,
-								'category_id' => 4,
-								'question' => $faqQuestion,
-								'answer' => $faqAnswer,
-								'status' => 'published',
-							]);
-						}
-					}
-				}
-
-				/* Delete FAQs not in current submission */
-				$product->faqs()->whereNotIn('question', $submittedQuestions)->delete();
 
 				DB::commit();
 

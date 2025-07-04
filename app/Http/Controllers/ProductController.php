@@ -2039,7 +2039,7 @@ class ProductController extends BaseController
 			$benefitSectionArray = product_import_constants('BENEFIT_SECTION');
 			$faqSectionArray = product_import_constants('FAQ_SECTION');
 			$advanceFieldArray = product_import_constants('ADVANCED_FIELDS');
-			$discountSectionArray = product_import_constants('DISCOUNT_SECTION');
+			// $discountSectionArray = product_import_constants('DISCOUNT_SECTION');
 
 			$userRole = auth()->user()->getRoleNames()->first() ?? null;
 
@@ -2052,7 +2052,7 @@ class ProductController extends BaseController
 					$benefitSectionArray,
 					$faqSectionArray,
 					$advanceFieldArray,
-					$discountSectionArray,
+					// $discountSectionArray,
 				);
 			} elseif (in_array($userRole, ['Ecommerce Manager', 'Ecommerce Specialist'])) {
 				$productFileFormatArray = array_merge(
