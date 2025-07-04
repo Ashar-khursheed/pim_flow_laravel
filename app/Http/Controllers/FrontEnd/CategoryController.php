@@ -656,9 +656,9 @@ class CategoryController extends Controller
 			$max = $request->input('price_max', PHP_INT_MAX);
 	
 			// NEW CODE (CORRECT):
-		$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds)
-		->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-		->pluck('product_id'); // Changed from 'id' to 'product_id'
+			$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds->toArray())
+			->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+			->pluck('product_id');
 			
 			$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 	
@@ -1133,10 +1133,10 @@ class CategoryController extends Controller
 			->map(function($brand) use ($filteredProductIds, $selectedBrandIds) {
 				// Count products for this brand from filtered results
 				$productCount = DB::table('ec_products')
-					->where('brand_id', $brand->id)
-					->whereIn('id', $filteredProductIds)
-					->where('status', 'published')
-					->count();
+				->where('brand_id', $brand->id)
+				->whereIn('id', $filteredProductIds->toArray())
+				->where('status', 'published')
+				->count();
 				
 				// Show all brands but with their actual count from filtered results
 				// If brand is selected, show it even if count is 0
@@ -1159,10 +1159,12 @@ class CategoryController extends Controller
 		// 	->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
 		// 	->first();
 				// Debug the price range query
-		$priceRange = DB::table('product_suppliers')
-		->whereIn('product_id', $filteredProductIds)
-		->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-		->first();
+				$productIdsArray = $filteredProductIds->toArray();
+
+				$priceRange = DB::table('product_suppliers')
+					->whereIn('product_id', $productIdsArray)
+					->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+					->first();
 
 		// Add debug info
 		$debugInfo['price_range_query'] = [
