@@ -651,34 +651,66 @@ class CategoryController extends Controller
 		}
 	
 		// Apply price filter before rating filter
-		if ($request->has('price_min') || $request->has('price_max')) {
-			$min = $request->input('price_min', 0);
-			$max = $request->input('price_max', PHP_INT_MAX);
+		// if ($request->has('price_min') || $request->has('price_max')) {
+		// 	$min = $request->input('price_min', 0);
+		// 	$max = $request->input('price_max', PHP_INT_MAX);
 	
-			// NEW CODE (CORRECT):
-			$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds->toArray())
-			->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-			->pluck('product_id');
+		// 	// NEW CODE (CORRECT):
+		// 	$priceFilteredIds = ProductSupplier::whereIn('product_id', $filteredProductIds->toArray())
+		// 	->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+		// 	->pluck('product_id');
 			
-			$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+		// 	$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 	
-			if ($filteredProductIds->isEmpty()) {
-				return response()->json([
-					'success' => true,
-					'filters' => [],
-					'products' => [],
-					'brands' => [],
-					'price_min' => 0,
-					'price_max' => 0,
-					'rating_filter' => [
-						'filter_name' => 'Rating',
-						'filter_type' => 'rating',
-						'filter_values' => [5, 4, 3, 2, 1],
-					],
-					'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
-				]);
-			}
-		}
+		// 	if ($filteredProductIds->isEmpty()) {
+		// 		return response()->json([
+		// 			'success' => true,
+		// 			'filters' => [],
+		// 			'products' => [],
+		// 			'brands' => [],
+		// 			'price_min' => 0,
+		// 			'price_max' => 0,
+		// 			'rating_filter' => [
+		// 				'filter_name' => 'Rating',
+		// 				'filter_type' => 'rating',
+		// 				'filter_values' => [5, 4, 3, 2, 1],
+		// 			],
+		// 			'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
+		// 		]);
+		// 	}
+		// }
+		// Replace the price filtering section (around line 200-220)
+// Apply price filter before rating filter
+if ($request->has('price_min') || $request->has('price_max')) {
+    $min = $request->input('price_min', 0);
+    $max = $request->input('price_max', PHP_INT_MAX);
+
+    // Get product IDs that match the price range from product_suppliers
+    $priceFilteredIds = DB::table('product_suppliers')
+        ->whereIn('product_id', $filteredProductIds->toArray())
+        ->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
+        ->pluck('product_id')
+        ->unique(); // Add unique to avoid duplicates
+
+    $filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+
+    if ($filteredProductIds->isEmpty()) {
+        return response()->json([
+            'success' => true,
+            'filters' => [],
+            'products' => [],
+            'brands' => [],
+            'price_min' => 0,
+            'price_max' => 0,
+            'rating_filter' => [
+                'filter_name' => 'Rating',
+                'filter_type' => 'rating',
+                'filter_values' => [5, 4, 3, 2, 1],
+            ],
+            'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
+        ]);
+    }
+}
 	
 		// If a rating filter is applied, filter the already filtered product IDs
 		if ($request->has('rating') && $request->rating) {
@@ -1160,45 +1192,52 @@ class CategoryController extends Controller
 		// 	->first();
 				// Debug the price range query
 				$productIdsArray = $filteredProductIds->toArray();
+				$supplierExists = DB::table('product_suppliers')
+    ->whereIn('product_id', $productIdsArray)
+    ->exists();
 
-				$priceRange = DB::table('product_suppliers')
-					->whereIn('product_id', $productIdsArray)
-					->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-					->first();
+$debugInfo['supplier_exists'] = $supplierExists;
 
-		// Add debug info
-		$debugInfo['price_range_query'] = [
-		'filtered_product_ids_count' => count($filteredProductIds),
-		'price_range_result' => $priceRange,
-		'raw_min' => $priceRange ? $priceRange->min_price : 'null',
-		'raw_max' => $priceRange ? $priceRange->max_price : 'null'
-		];
+if ($supplierExists) {
+    // Get price range from product_suppliers table
+    $priceRange = DB::table('product_suppliers')
+        ->whereIn('product_id', $productIdsArray)
+        ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+        ->first();
+    
+    $debugInfo['price_source'] = 'product_suppliers';
+} else {
+    // Fallback to products table if no suppliers found
+    $priceRange = DB::table('ec_products')
+        ->whereIn('id', $filteredProductIds)
+        ->where('status', 'published')
+        ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+        ->first();
+    
+    $debugInfo['price_source'] = 'ec_products';
+}
 
-		// Check if we have any product suppliers for these products
-		$supplierCount = DB::table('product_suppliers')
-		->whereIn('product_id', $filteredProductIds)
-		->count();
+// Additional debugging to see what's happening
+$debugInfo['price_range_query'] = [
+    'filtered_product_ids_count' => count($filteredProductIds),
+    'price_range_result' => $priceRange,
+    'raw_min' => $priceRange ? $priceRange->min_price : 'null',
+    'raw_max' => $priceRange ? $priceRange->max_price : 'null'
+];
 
-		$debugInfo['supplier_count'] = $supplierCount;
+// Also let's check a few sample records to debug
+$sampleSuppliers = DB::table('product_suppliers')
+    ->whereIn('product_id', array_slice($productIdsArray, 0, 5)) // First 5 products
+    ->select('product_id', 'price', 'sale_price')
+    ->get();
 
-		// If no suppliers found, try getting price from products table instead
-		if ($supplierCount === 0) {
-		$priceRange = DB::table('ec_products')
-			->whereIn('id', $filteredProductIds)
-			->where('status', 'published')
-			->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-			->first();
+$debugInfo['sample_suppliers'] = $sampleSuppliers->toArray();
 
-		$debugInfo['fallback_to_products_table'] = true;
-		$debugInfo['products_price_range'] = $priceRange;
-		}
+$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
+$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
 
-		$priceMin = $priceRange ? (float)$priceRange->min_price : 0;
-		$priceMax = $priceRange ? (float)$priceRange->max_price : 0;
-
-		$debugInfo['final_price_min'] = $priceMin;
-		$debugInfo['final_price_max'] = $priceMax;
-	
+$debugInfo['final_price_min'] = $priceMin;
+$debugInfo['final_price_max'] = $priceMax;
 		// Rating filter
 		$ratingFilter = [
 			'filter_name' => 'Rating',
