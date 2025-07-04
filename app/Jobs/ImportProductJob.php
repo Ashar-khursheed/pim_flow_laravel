@@ -21,14 +21,11 @@ use App\Models\User;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Tag;
-// use App\Models\Store;
-use App\Models\Vendor;
 use App\Models\MetaBox;
 use App\Models\Slug;
 use App\Models\Discount;
 use App\Models\DiscountProduct;
 use App\Models\TransactionLog;
-use App\Models\UnitOfMeasurement;
 use App\Models\Faq;
 
 class ImportProductJob implements ShouldQueue
@@ -51,13 +48,12 @@ class ImportProductJob implements ShouldQueue
 		$this->userId = $data['userId'];
 		$this->productFileFormatArray = $data['fileFormatArray'];
 		$this->userRole = $data['userRole'];
+
 	}
 
 	public function handle()
 	{
 		$brandIdNames = Brand::pluck('name', 'id')->all();
-		// $vendorIDNames = Vendor::pluck('name', 'id')->all();
-
 		$this->categoryIdNames = Category::whereDoesntHave('children')->pluck('name', 'id')->all();
 		$this->tagIdNames = Tag::pluck('name', 'id')->all();
 		$SKUs = Product::pluck('sku', 'id')->all();
@@ -105,9 +101,6 @@ class ImportProductJob implements ShouldQueue
 					$rowError[] = 'SKU is missing';
 				}
 			} else {
-				if (empty($url)) {
-					$rowError[] = 'URL is missing';
-				}
 				if (empty($name)) {
 					$rowError[] = 'Name is missing';
 				}
@@ -117,9 +110,6 @@ class ImportProductJob implements ShouldQueue
 				if (empty($brand)) {
 					$rowError[] = 'Brand is missing';
 				}
-				// if (empty($vendor)) {
-				// 	$rowError[] = 'Vendor is missing';
-				// }
 				if (empty($category)) {
 					$rowError[] = 'Category is missing';
 				}
@@ -176,93 +166,77 @@ class ImportProductJob implements ShouldQueue
 				}
 			}
 
-			$descriptionFields = [$description1, $description2, $description3, $description4];
-			foreach ($descriptionFields as $index => $desc) {
-				if (!empty($desc) && strlen($desc) > 500) {
-					$rowError[] = 'Maximum 500 characters allowed in Description' . ($index + 1);
-				}
-			}
-
-			/* Validate Benefit1 to Benefit10 and Feature1 to Feature10 */
-			for ($i = 1; $i <= 10; $i++) {
-				$benefit = ${'benefit' . $i} ?? '';
-				$feature = ${'feature' . $i} ?? '';
-
-				/* Max length validations */
-				if (!empty($benefit) && strlen($benefit) > 40) {
-					$rowError[] = "Maximum 40 characters allowed in Benefit{$i}";
-				}
-				if (!empty($feature) && strlen($feature) > 200) {
-					$rowError[] = "Maximum 200 characters allowed in Feature{$i}";
-				}
-			}
-
-			/* Validate FAQ fields*/
-			for ($i = 1; $i <= 10; $i++) {
-				$faqQuestion = ${'faq_question' . $i} ?? '';
-				$faqAnswer = ${'faq_answer' . $i} ?? '';
-
-				/* Max length validations */
-				if (!empty($faqQuestion) && strlen($faqQuestion) > 300) {
-					$rowError[] = "Maximum 300 characters allowed in Benefit{$i}";
-				}
-				if (!empty($faqAnswer) && strlen($faqAnswer) > 500) {
-					$rowError[] = "Maximum 500 characters allowed in Feature{$i}";
-				}
-			}
-
-			if (!empty($meta_title)) {
-				if (strlen($meta_title) > 60) {
-					$rowError[] = "Maximum 60 characters allowed in Meta Title{$i}.";
-				}
-
-				if (!$product || !$product->seoManagement()->exists()) {
-					$rowError[] = "Meta Title should be blank because no SEO details exist for this product.";
-				}
-			}
-
-			if (!empty($meta_description)) {
-				if (strlen($meta_description) > 160) {
-					$rowError[] = "Maximum 160 characters allowed in Meta Description{$i}.";
-				}
-
-				if (!$product || !$product->seoManagement()->exists()) {
-					$rowError[] = "Meta Description should be blank because no SEO details exist for this product.";
-				}
-			}
-
 
 			if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
-				/* Validate Description Fields */
-				if (empty($description1)) {
-					$rowError[] = 'Description1 is required';
-				}
 
-				/* First 5 benefits and features are required */
-				for ($i = 1; $i <=5; $i++) {
-					$benefit = ${'benefit' . $i} ?? '';
-					$feature = ${'feature' . $i} ?? '';
-
-					if (empty($benefit)) {
-						$rowError[] = "Benefit{$i} is required";
+				/* Description validations */
+				for ($i = 1; $i <= 4; $i++) {
+					$desc = ${"description$i"} ?? '';
+					if (!empty($desc) && strlen($desc) > 500) {
+						$rowError[] = "Maximum 500 characters allowed in Description$i";
 					}
-					if (empty($feature)) {
-						$rowError[] = "Feature{$i} is required";
+					if ($i === 1 && empty($desc)) {
+						$rowError[] = "Description1 is required";
 					}
 				}
 
-				/* First 5 faq questions and faq answers are required */
-				for ($i = 1; $i <= 5; $i++) {
-					$faqQuestion = ${'faq_question' . $i} ?? '';
-					$faqAnswer = ${'faq_answer' . $i} ?? '';
+				/* Benefit & Feature validations */
+				for ($i = 1; $i <= 10; $i++) {
+					$benefit = ${"benefit$i"} ?? '';
+					$feature = ${"feature$i"} ?? '';
 
-					if (empty($faqQuestion)) {
-						$rowError[] = "FAQ Question{$i} is required";
+					if (!empty($benefit) && strlen($benefit) > 40) {
+						$rowError[] = "Maximum 40 characters allowed in Benefit$i";
 					}
-					if (empty($faqAnswer)) {
-						$rowError[] = "FAQ Answer{$i} is required";
+					if (!empty($feature) && strlen($feature) > 200) {
+						$rowError[] = "Maximum 200 characters allowed in Feature$i";
+					}
+
+					if ($i <= 5) {
+						if (empty($benefit)) $rowError[] = "Benefit$i is required";
+						if (empty($feature)) $rowError[] = "Feature$i is required";
 					}
 				}
+
+				/* FAQ validations */
+				for ($i = 1; $i <= 10; $i++) {
+					$faqQ = ${"faq_question$i"} ?? '';
+					$faqA = ${"faq_answer$i"} ?? '';
+
+					if (!empty($faqQ) && strlen($faqQ) > 300) {
+						$rowError[] = "Maximum 300 characters allowed in FAQ Question$i";
+					}
+					if (!empty($faqA) && strlen($faqA) > 500) {
+						$rowError[] = "Maximum 500 characters allowed in FAQ Answer$i";
+					}
+
+					if ($i <= 5) {
+						if (empty($faqQ)) $rowError[] = "FAQ Question$i is required";
+						if (empty($faqA)) $rowError[] = "FAQ Answer$i is required";
+					}
+				}
+
+				/* Group Descriptions */
+				$description = [];
+				for ($i = 1; $i <= 4; $i++) {
+					if (!empty(${"description$i"})) {
+						$description[] = ${"description$i"};
+					}
+				}
+
+				/* Group Benefits & Features */
+				$benefitsFeatures = [];
+				for ($i = 1; $i <= 10; $i++) {
+					$b = ${"benefit$i"} ?? '';
+					$f = ${"feature$i"} ?? '';
+					if (!empty($b) && !empty($f)) {
+						$benefitsFeatures[] = ['benefit' => $b, 'feature' => $f];
+					}
+				}
+
+				/* Convert to JSON */
+				$jsonDescription = json_encode($description);
+				$jsonBenefitsFeatures = json_encode($benefitsFeatures);
 			} else {
 				/* Brand validation */
 				if (!in_array($brand, array_values($brandIdNames))) {
@@ -270,13 +244,6 @@ class ImportProductJob implements ShouldQueue
 				} else {
 					$brandId = array_search($brand, $brandIdNames);
 				}
-
-				/* Vendor validation */
-				// if (!in_array($vendor, array_values($vendorIDNames))) {
-				// 	$rowError[] = "$vendor vendor does not exist.";
-				// } else {
-				// 	$vendorId = array_search($vendor, $vendorIDNames);
-				// }
 
 				/* Category validation */
 				$lowercaseCategory = strtolower($category);
@@ -300,8 +267,6 @@ class ImportProductJob implements ShouldQueue
 					$status = $usStatusArray[$status];
 				}
 
-				/* Additional field validations */
-
 				/* Stock status validation */
 				$usStockStatusArray = [
 					1 => "in_stock",
@@ -319,25 +284,6 @@ class ImportProductJob implements ShouldQueue
 					$stockStatus = null;
 				}
 
-				/* Variant requires shipping validation (Check for 0 if empty) */
-				// if ($variantRequiresShipping !== '' && (!is_numeric($variantRequiresShipping) || !in_array($variantRequiresShipping, [0, 1]))) {
-				// 	$rowError[] = "Variant requires shipping should be numeric and either 1 for Yes, or 0 for No.";
-				// } else {
-				// 	$variantRequiresShipping = $variantRequiresShipping !== '' ? (int) $variantRequiresShipping : null;
-				// }
-
-				/* Refund policy validation */
-				// $usRefundPolicyArray = [
-				// 	1 => "non-refundable",
-				// 	2 => "15 days",
-				// 	3 => "90 days"
-				// ];
-				// if ($refundPolicy && (!is_numeric($refundPolicy) || !in_array($refundPolicy, [1, 2, 3]))) {
-				// 	$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-				// } else {
-				// 	$refundPolicy = $refundPolicy ? $usRefundPolicyArray[$refundPolicy] ?? null : null;
-				// }
-
 				/* Is featured validation (Check for 0 if empty) */
 				if ($isFeatured !== '' && (!is_numeric($isFeatured) || !in_array($isFeatured, [0, 1]))) {
 					$rowError[] = "Is featured should be numeric and either 1 for Enable, or 0 for Disable.";
@@ -351,10 +297,6 @@ class ImportProductJob implements ShouldQueue
 				} else {
 					$frequentlyBoughtTogether = null;
 				}
-
-				// if ($price && $salePrice && $price < $salePrice) {
-				// 	$rowError[] = "The sale price must be less than the price.";
-				// }
 
 				if ($rowError) {
 					$errorArray[] = [
@@ -378,83 +320,33 @@ class ImportProductJob implements ShouldQueue
 				continue;
 			}
 
-			/* Grouping descriptions */
-			$description = [];
-			for ($i = 1; $i <= 4; $i++) {
-				$descriptionVar = "description$i";
-				if (!empty($$descriptionVar)) {
-					$description[] = $$descriptionVar;
-				}
-			}
-
-			/* Grouping benefit-feature pairs */
-			$benefitsFeatures = [];
-
-			for ($i = 1; $i <= 10; $i++) {
-				$benefitVar = "benefit$i";
-				$featureVar = "feature$i";
-				if (!empty($$benefitVar) && !empty($$featureVar)) {
-					$benefitsFeatures[] = [
-						'benefit' => $$benefitVar,
-						'feature' => $$featureVar,
-					];
-				}
-			}
-
-			/* Optional: convert to JSON */
-			$jsonDescription = json_encode($description);
-			$jsonBenefitsFeatures = json_encode($benefitsFeatures);
-
 			// Wrap in a transaction
 			DB::beginTransaction();
 
 			try {
 				/*************/
-				$product->description = $jsonDescription;
-				$product->benefits_features = $jsonBenefitsFeatures;
 
 				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
+					$product->description = $jsonDescription;
+					$product->benefits_features = $jsonBenefitsFeatures;
 					Product::$observerUserId = $this->userId;
+					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
 					$product->save();
 					Product::$observerUserId = null;
 				} else {
 					$product->name = $name;
 					$product->sku = $sku;
-					// $product->content = !empty($content) ? $content : null;
-					// $product->warranty_information = !empty($warrantyInformation) ? $warrantyInformation : null;
-					$product->status = $status;
-					// $product->delivery_days = !empty($deliveryDays) ? $deliveryDays : null;
+					$product->status = $product->id ? $status : 2;
 					$product->is_featured = $isFeatured;
 					$product->brand_id = $brandId;
 					$product->images = json_encode($fetchedImages);
 					$product->video_path = $uploadVideo;
 					$product->stock_status = $stockStatus;
-					// $product->quantity = !empty($quantity) ? $quantity : null;
-					// $product->cost_per_item = !empty($costPerItem) ? $costPerItem : null;
-					// $product->price = !empty($price) ? $price : null;
-					// $product->sale_price = !empty($salePrice) ? $salePrice : null;
 					$product->frequently_bought_together = $frequentlyBoughtTogether;
-					// $product->refund = $refundPolicy;
-					$product->currency_id = 1;
-					// $product->variant_1_title = !empty($variant1Title) ? $variant1Title : null;
-					// $product->variant_1_value = !empty($variant1Value) ? $variant1Value : null;
-					// $product->variant_1_products = !empty($variant1Products) ? $variant1Products : null;
-					// $product->variant_2_title = !empty($variant2Title) ? $variant2Title : null;
-					// $product->variant_2_value = !empty($variant2Value) ? $variant2Value : null;
-					// $product->variant_2_products = !empty($variant2Products) ? $variant2Products : null;
-					// $product->variant_3_title = !empty($variant3Title) ? $variant3Title : null;
-					// $product->variant_3_value = !empty($variant3Value) ? $variant3Value : null;
-					// $product->variant_3_products = !empty($variant3Products) ? $variant3Products : null;
-					// $product->variant_color_title = !empty($variantColorTitle) ? $variantColorTitle : null;
-					// $product->variant_color_value = !empty($variantColorValue) ? $variantColorValue : null;
-					// $product->variant_color_products = !empty($variantColorProducts) ? $variantColorProducts : null;
+					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
-					// $product->variant_requires_shipping = $variantRequiresShipping;
 					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;
 					$product->google_shopping_mpn = !empty($googleShoppingMpn) ? $googleShoppingMpn : null;
-					// $product->box_quantity = !empty($boxQuantity) ? $boxQuantity : null;
-
-					// $product->vendor_id = $vendorId;
 					$product->created_at = $product->id ? $product->created_at : now();
 					$product->updated_at = now();
 					$product->created_by = $this->userId;
@@ -466,17 +358,17 @@ class ImportProductJob implements ShouldQueue
 
 					$this->saveProductCategory($product, $categoryId);
 					$this->saveProductTag($product, $tags);
-					$this->saveSlugData($product, $url);
+					// $this->saveSlugData($product, $url);
 					// $this->saveTranslation($product, $rowData);
-					$this->saveDiscount($product, $rowData);
+					// $this->saveDiscount($product, $rowData);
 				}
 
-				if (!empty($meta_title) && !empty($meta_description) && $product->seoManagement) {
-					$product->seoManagement->update([
-						'meta_title' => $meta_title,
-						'meta_description' => $meta_description,
-					]);
-				}
+				// if (!empty($meta_title) && !empty($meta_description) && $product->seoManagement) {
+				// 	$product->seoManagement->update([
+				// 		'meta_title' => $meta_title,
+				// 		'meta_description' => $meta_description,
+				// 	]);
+				// }
 
 				$submittedQuestions = [];
 				/* Fetch existing FAQs for this product */
@@ -582,61 +474,61 @@ class ImportProductJob implements ShouldQueue
 		$product->tags()->sync($tagIds);
 	}
 
-	private function saveSeoMetaData($product, $seoTitle, $seoDescription)
-	{
-		/* Retrieve or create the SEO metadata */
-		$seoMetaData = $product->seoMetaData ?: new MetaBox([
-			'meta_key' => 'seo_meta',
-			'reference_id' => $product->id,
-			'reference_type' => Product::class,
-		]);
+	// private function saveSeoMetaData($product, $seoTitle, $seoDescription)
+	// {
+	// 	/* Retrieve or create the SEO metadata */
+	// 	$seoMetaData = $product->seoMetaData ?: new MetaBox([
+	// 		'meta_key' => 'seo_meta',
+	// 		'reference_id' => $product->id,
+	// 		'reference_type' => Product::class,
+	// 	]);
 
-		/* Decode existing meta_value if present */
-		$existingMetaValue = is_array($seoMetaData->meta_value)
-		? $seoMetaData->meta_value
-		: (json_decode($seoMetaData->meta_value, true) ?? []);
+	// 	/* Decode existing meta_value if present */
+	// 	$existingMetaValue = is_array($seoMetaData->meta_value)
+	// 	? $seoMetaData->meta_value
+	// 	: (json_decode($seoMetaData->meta_value, true) ?? []);
 
-		/* Ensure $existingMetaValue is an array */
-		if (!is_array($existingMetaValue)) {
-			$existingMetaValue = [];
-		}
+	// 	/* Ensure $existingMetaValue is an array */
+	// 	if (!is_array($existingMetaValue)) {
+	// 		$existingMetaValue = [];
+	// 	}
 
-		$updatedMetaValue = [];
-		if (!empty($seoTitle)) {
-			$updatedMetaValue['seo_title'] = $seoTitle;
-		}
+	// 	$updatedMetaValue = [];
+	// 	if (!empty($seoTitle)) {
+	// 		$updatedMetaValue['seo_title'] = $seoTitle;
+	// 	}
 
-		if (!empty($seoDescription)) {
-			$updatedMetaValue['seo_description'] = $seoDescription;
-		}
-		$updatedMetaValue['index'] = $existingMetaValue['index'] ?? 'index';
+	// 	if (!empty($seoDescription)) {
+	// 		$updatedMetaValue['seo_description'] = $seoDescription;
+	// 	}
+	// 	$updatedMetaValue['index'] = $existingMetaValue['index'] ?? 'index';
 
-		/* Store the updated meta value as an array */
-		$seoMetaData->meta_value = [$updatedMetaValue];
+	// 	/* Store the updated meta value as an array */
+	// 	$seoMetaData->meta_value = [$updatedMetaValue];
 
-		/* Save the updated meta data */
-		$seoMetaData->save();
-	}
+	// 	/* Save the updated meta data */
+	// 	$seoMetaData->save();
+	// }
 
-	private function saveSlugData($product, $url)
-	{
-		if (strpos($url, '/products/') !== false) {
-			$urlParts = explode('/products/', $url);
-			$outputUrl = $urlParts[1];
-		} else {
-			$outputUrl = null; // Handle the case where "/products/" is not found
-		}
-		/* Retrieve or create the slug data */
-		$slugData = $product->slugData ?: new Slug([
-			'prefix' => 'products',
-			'reference_id' => $product->id,
-			'reference_type' => Product::class,
-		]);
+	// private function saveSlugData($product, $url)
+	// {
+	// 	if (strpos($url, '/products/') !== false) {
+	// 		$urlParts = explode('/products/', $url);
+	// 		$outputUrl = $urlParts[1];
+	// 	} else {
+	// 		$outputUrl = null; // Handle the case where "/products/" is not found
+	// 	}
+	// 	/* Retrieve or create the slug data */
+	// 	$slugData = $product->slugData ?: new Slug([
+	// 		'prefix' => 'products',
+	// 		'reference_id' => $product->id,
+	// 		'reference_type' => Product::class,
+	// 	]);
 
-		$slugData->key = $outputUrl;
+	// 	$slugData->key = $outputUrl;
 
-		$slugData->save();
-	}
+	// 	$slugData->save();
+	// }
 
 	// private function saveTranslation($product, $rowData)
 	// {
@@ -663,54 +555,54 @@ class ImportProductJob implements ShouldQueue
 	// 	}
 	// }
 
-	private function saveDiscount($product, $rowData)
-	{
-		$requiredFieldValues = [
-			'quantity1' => $rowData['Buying Quantity1'] ?? null,
-			'value1' => $rowData['Discount1'] ?? null,
-			'start_date1' => $rowData['Start Date1'] ?? null,
-			'quantity2' => $rowData['Buying Quantity2'] ?? null,
-			'value2' => $rowData['Discount2'] ?? null,
-			'start_date2' => $rowData['Start Date2'] ?? null,
-		];
+	// private function saveDiscount($product, $rowData)
+	// {
+	// 	$requiredFieldValues = [
+	// 		'quantity1' => $rowData['Buying Quantity1'] ?? null,
+	// 		'value1' => $rowData['Discount1'] ?? null,
+	// 		'start_date1' => $rowData['Start Date1'] ?? null,
+	// 		'quantity2' => $rowData['Buying Quantity2'] ?? null,
+	// 		'value2' => $rowData['Discount2'] ?? null,
+	// 		'start_date2' => $rowData['Start Date2'] ?? null,
+	// 	];
 
-		$requiredFieldsProvided = !empty($requiredFieldValues['quantity1']) && !empty($requiredFieldValues['value1']) && !empty($requiredFieldValues['start_date1']) && !empty($requiredFieldValues['quantity2']) && !empty($requiredFieldValues['value2']) && !empty($requiredFieldValues['start_date2']);
-		if ($requiredFieldsProvided) {
-			for ($i = 1; $i <= 3; $i++) {
-				// Check if the current iteration is optional (3rd discount)
-				$isOptional = ($i === 3);
+	// 	$requiredFieldsProvided = !empty($requiredFieldValues['quantity1']) && !empty($requiredFieldValues['value1']) && !empty($requiredFieldValues['start_date1']) && !empty($requiredFieldValues['quantity2']) && !empty($requiredFieldValues['value2']) && !empty($requiredFieldValues['start_date2']);
+	// 	if ($requiredFieldsProvided) {
+	// 		for ($i = 1; $i <= 3; $i++) {
+	// 			// Check if the current iteration is optional (3rd discount)
+	// 			$isOptional = ($i === 3);
 
-				// Required fields for discounts
-				$requiredFields = [
-					'quantity' => $rowData['Buying Quantity' . $i] ?? null,
-					'value' => $rowData['Discount' . $i] ?? null,
-					'start_date' => $rowData['Start Date' . $i] ?? null,
-				];
+	// 			// Required fields for discounts
+	// 			$requiredFields = [
+	// 				'quantity' => $rowData['Buying Quantity' . $i] ?? null,
+	// 				'value' => $rowData['Discount' . $i] ?? null,
+	// 				'start_date' => $rowData['Start Date' . $i] ?? null,
+	// 			];
 
-				// Check if all required fields are non-empty
-				$allFieldsProvided = !empty($requiredFields['quantity']) && !empty($requiredFields['value']) && !empty($requiredFields['start_date']);
+	// 			// Check if all required fields are non-empty
+	// 			$allFieldsProvided = !empty($requiredFields['quantity']) && !empty($requiredFields['value']) && !empty($requiredFields['start_date']);
 
-				// Validate required fields for discounts
-				if ($allFieldsProvided) {
-					$discount = new Discount();
-					$discount->product_quantity = $requiredFields['quantity'];
-					$discount->title = $discount->product_quantity . ' products';
-					$discount->type_option = 'percentage';
-					$discount->type = 'promotion';
-					$discount->value = $requiredFields['value'];
-					$discount->start_date = !empty($requiredFields['start_date']) ? Carbon::parse($requiredFields['start_date']) : null;
-					$discount->end_date = !empty($rowData['End Date' . $i]) ? Carbon::parse($rowData['End Date' . $i]) : null;
-					$discount->save();
+	// 			// Validate required fields for discounts
+	// 			if ($allFieldsProvided) {
+	// 				$discount = new Discount();
+	// 				$discount->product_quantity = $requiredFields['quantity'];
+	// 				$discount->title = $discount->product_quantity . ' products';
+	// 				$discount->type_option = 'percentage';
+	// 				$discount->type = 'promotion';
+	// 				$discount->value = $requiredFields['value'];
+	// 				$discount->start_date = !empty($requiredFields['start_date']) ? Carbon::parse($requiredFields['start_date']) : null;
+	// 				$discount->end_date = !empty($rowData['End Date' . $i]) ? Carbon::parse($rowData['End Date' . $i]) : null;
+	// 				$discount->save();
 
-					// Associate the discount with the product
-					$discountProduct = new DiscountProduct();
-					$discountProduct->discount_id = $discount->id;
-					$discountProduct->product_id = $product->id;
-					$discountProduct->save();
-				}
-			}
-		}
-	}
+	// 				// Associate the discount with the product
+	// 				$discountProduct = new DiscountProduct();
+	// 				$discountProduct->discount_id = $discount->id;
+	// 				$discountProduct->product_id = $product->id;
+	// 				$discountProduct->save();
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	protected function getImageURLs(array $images): array
 	{

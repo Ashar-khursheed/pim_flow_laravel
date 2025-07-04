@@ -67,8 +67,6 @@ use App\Models\SubCategory;
 use App\Models\Tag;
 use App\Models\Tax;
 use App\Models\TransactionLog;
-use App\Models\Unit;
-use App\Models\UnitOfMeasurement;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\VendorContact;
@@ -158,8 +156,6 @@ class AppServiceProvider extends ServiceProvider
 		// Tag::observe(TransactionLogObserver::class);
 		// Tax::observe(TransactionLogObserver::class);
 		// TransactionLog::observe(TransactionLogObserver::class);
-		// Unit::observe(TransactionLogObserver::class);
-		// UnitOfMeasurement::observe(TransactionLogObserver::class);
 		// User::observe(TransactionLogObserver::class);
 		// Vendor::observe(TransactionLogObserver::class);
 		// VendorContact::observe(TransactionLogObserver::class);
