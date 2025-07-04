@@ -513,8 +513,7 @@ class BrandController extends Controller
 
                 // Fetch product details with joined best_price and eager load (only published)
                 $productDetails = Product::leftJoinSub($subQuery, 'best_products', function ($join) {
-                        $join->on('ec_products.sku', '=', 'best_products.sku')
-                            ->whereColumn('ec_products.price', 'best_products.best_price');
+                        $join->on('ec_products.sku', '=', 'best_products.sku');
                     })
                     ->whereIn('ec_products.id', $products)
                     ->where('ec_products.status', 'published') // Add this line - IMPORTANT!
