@@ -126,7 +126,7 @@ class ProductController extends BaseController
 		$sortDirection = $request->input('sort_direction', 'desc');
 
 		// Validate sort columns to prevent SQL injection
-		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id' , 'status' , 'price' , 'sale_price' , 'gen_type' , 'approved'];
+		$allowedSortColumns = ['id', 'name', 'sku', 'brand_id' , 'status' , 'gen_type' , 'approved'];
 		if (!in_array($sortBy, $allowedSortColumns)) {
 			$sortBy = 'id'; // Default to id if invalid column
 		}
@@ -141,7 +141,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id'
 		])
-		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'price' , 'sale_price' , 'gen_type' ,'approved']);
+		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'gen_type' ,'approved']);
 
 		/* Apply search if provided */
 
@@ -171,12 +171,12 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
-
+		$firstSupplier = $product->productSuppliers->first();
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
-			$margin = $product->sale_price - $product->price;
+			$margin = $firstSupplier->sale_price - $firstSupplier->price;
 			$marginPercent = $product->sale_price > 0
-			? (($product->sale_price - $product->price) / $product->sale_price) * 100
+			? (($firstSupplier->sale_price - $firstSupplier->price) / $firstSupplier->sale_price) * 100
 			: 0;
 			return [
 				'id' => $product->id,
@@ -189,8 +189,8 @@ class ProductController extends BaseController
 				// 'vendor_id' => $product->vendor_id,
 				// 'vendor' => optional($product->vendor)->name,
 				'status' => $product->status,
-				'price'=> $product->price,
-				'sale_price'=> $product->sale_price,
+				'price'=> $firstSupplier->price,
+				'sale_price'=> $firstSupplier->sale_price,
 				'margin' => $margin,
 				'margin_percent' => round($marginPercent, 2), // round to 2 decimals
 				'product_family' => $product->categories->pluck('name')->toArray(),
@@ -329,17 +329,17 @@ class ProductController extends BaseController
 	public function show($productId, Request $request)
 	{
 		$attributeGroup = [
-			'General' => ['sku', 'barcode', 'warranty_information', 'refund' , 'status' , 'approved' ],
+			'General' => ['sku', 'barcode', 'status' , 'approved' ],
 
 			'Inventory & Stock Management' => ['quantity', 'stock_status'],
-			'Pricing & Sales' => ['price', 'sale_price', 'cost_per_item', 'tax_id', 'currency_id', 'approved_by', 'cost_per_item_currency'],
+			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
-			'Product Variations' => ['is_variation', 'variant_requires_shipping', 'variant_color_title', 'variant_color_value'],
+			'Product Variations' => ['is_variation', 'variant_requires_shipping'],
 			'Store & Vendor Information' => [ 'brand_id'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
-			'Other' => ['order', 'box_quantity', 'delivery_days' , 'website_ids'],
+			'Other' => ['order', 'website_ids'],
 			'All' => []
 		];
 
@@ -1986,14 +1986,11 @@ class ProductController extends BaseController
 			/* List of valid fields allowed for updating */
 			$validArray = [
 				"sku", "status", "barcode", "warranty_information", "refund", "quantity",
-				"stock_status", "price",
-				"sale_price", "cost_per_item", "cost_per_item_currency",
-				"cost_type", "additional_cost_percentage", "additional_cost_value",
-				"total_cost_per_item", "tax_id", "currency_id", "name", "description", "images",
+				"stock_status", "tax_id", "currency_id", "name", "description", "images",
 				"image", "video_path", "videos", "documents", "is_variation", "variant_requires_shipping",
-				"variant_barcode", "variant_color_title", "variant_color_value",
+				"variant_barcode",
 				"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
-				"box_quantity", "delivery_days", "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
+				"box_quantity",  "unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
 			];
 
 			unset($input['product_attributes']);
@@ -2012,19 +2009,19 @@ class ProductController extends BaseController
 			$rowError = [];
 
 			/* Refund policy validation */
-			$usRefundPolicyArray = [
-				1 => "non-refundable",
-				2 => "15 days",
-				3 => "90 days"
-			];
-			if (isset($input['refund'])) {
-				if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
-					$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-				} else {
-					$product->refund = $usRefundPolicyArray[(int) $input['refund']];
-					unset($input['refund']); /* Remove processed field */
-				}
-			}
+			// $usRefundPolicyArray = [
+			// 	1 => "non-refundable",
+			// 	2 => "15 days",
+			// 	3 => "90 days"
+			// ];
+			// if (isset($input['refund'])) {
+			// 	if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
+			// 		$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
+			// 	} else {
+			// 		$product->refund = $usRefundPolicyArray[(int) $input['refund']];
+			// 		unset($input['refund']); /* Remove processed field */
+			// 	}
+			// }
 
 			if (isset($input['status'])) {
 				$validStatuses = ['draft', 'published', 'pending']; /* Define allowed statuses */
@@ -2252,11 +2249,11 @@ class ProductController extends BaseController
 				unset($input['google_shopping_mpn']);
 			}
 
-			if (isset($input['box_quantity'])) {
-				/* If box_quantity should be an integer */
-				$product->box_quantity = (int)$input['box_quantity'];
-				unset($input['box_quantity']);
-			}
+			// if (isset($input['box_quantity'])) {
+			// 	/* If box_quantity should be an integer */
+			// 	$product->box_quantity = (int)$input['box_quantity'];
+			// 	unset($input['box_quantity']);
+			// }
 
 			// /* Store ID validation */
 			// if (isset($input['vendor_id'])) {
@@ -2483,8 +2480,6 @@ class ProductController extends BaseController
 			"variant_inventory_quantity",
 			"variant_inventory_policy",
 			"variant_fulfillment_service",
-			"price",
-			"sale_price",
 			"sale_type",
 			"cost_per_item",
 			"tax_id",
