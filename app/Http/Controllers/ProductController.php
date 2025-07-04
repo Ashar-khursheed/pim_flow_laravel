@@ -175,10 +175,23 @@ class ProductController extends BaseController
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 			$firstSupplier = $product->productSuppliers->first();
+		
+			if (!$firstSupplier) {
+				return [
+					'product_id' => $product->id,
+					'name' => $product->name,
+					'sale_price' => $product->sale_price,
+					'margin' => null,
+					'margin_percent' => null,
+					// add other product fields as needed
+				];
+			}
+		
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
+		
 			$marginPercent = $product->sale_price > 0
-			? (($firstSupplier->sale_price - $firstSupplier->price) / $firstSupplier->sale_price) * 100
-			: 0;
+				? (($firstSupplier->sale_price - $firstSupplier->price) / $firstSupplier->sale_price) * 100
+				: 0;
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
