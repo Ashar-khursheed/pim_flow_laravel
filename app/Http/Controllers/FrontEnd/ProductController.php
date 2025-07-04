@@ -483,9 +483,7 @@ class ProductController extends Controller
                     return response()->json([
                         'success' => true,
                         'data' => $products,
-                        'pagination' => $pagination,
-                        'price_min' => $priceMin,
-                        'price_max' => $priceMax
+                        'pagination' => $pagination
             
                     ]);
     }
@@ -552,21 +550,7 @@ class ProductController extends Controller
                 // Get filtered IDs efficiently
                 $filteredProductIds = $query->pluck('id');
 
-                // Calculate min-max values only for filtered products
-                $priceMin = Product::whereIn('id', $filteredProductIds)->min('sale_price');
-                $priceMax = Product::whereIn('id', $filteredProductIds)->max('sale_price');
-              
-
-                $DeliveryMin = Product::whereIn('id', $filteredProductIds)
-                    ->whereNotNull('delivery_days')
-                    ->selectRaw('MIN(CAST(delivery_days AS UNSIGNED)) as min_delivery_days')
-                    ->value('min_delivery_days');
-
-                $DeliveryMax = Product::whereIn('id', $filteredProductIds)
-                    ->whereNotNull('delivery_days')
-                    ->selectRaw('MAX(CAST(delivery_days AS UNSIGNED)) as max_delivery_days')
-                    ->value('max_delivery_days');
-
+             
                 // Get sort parameter
                 $validSortOptions = ['created_at', 'price', 'name'];
                 $sortBy = $request->input('sort_by', 'created_at');
@@ -874,9 +858,7 @@ class ProductController extends Controller
                         'success' => true,
                         'data' => $products,
                         'pagination' => $pagination,
-                        'price_min' => $priceMin,
-                        'price_max' => $priceMax
-        
+             
                     ]);
     }
 
