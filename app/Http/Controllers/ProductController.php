@@ -356,7 +356,7 @@ class ProductController extends BaseController
 			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
-			'Store & Vendor Information' => [ 'brand_id'],
+			'Store & Vendor Information' => [ 'brand_id' , 'vendor_id'],
 			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'website_ids'],
@@ -567,11 +567,13 @@ class ProductController extends BaseController
 					'name' => $product->brand->name
 				]] : null;
 				break;
-				// case 'vendor_id':
-				// $formattedProduct['vendor'] = $product->vendor ? [[
-				// 	'id' => $product->vendor->id,
-				// 	'name' => $product->vendor->name
-				// ]] : null;
+				case 'vendor_id':
+				$formattedProduct['vendors'] = $product->vendors ? [[
+					'id' => $product->vendors->id,
+					'name' => $product->vendors->name,
+					'price' => $product->vendors->price,
+					'sale_price' => $product->vendors->sale_price,
+				]] : null;
 				break;
 
 				// case 'shipping_length_id':
