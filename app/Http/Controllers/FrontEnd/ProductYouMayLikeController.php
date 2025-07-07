@@ -273,24 +273,24 @@ class ProductYouMayLikeController extends Controller
                             : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
                     'in_wishlist' => in_array($product->id, $wishlistProductIds),
-                    "selling_type"=> $sellingType,
+                    'selling_type' => $sellingType,
                     'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                    'price' =>  (float) $firstSupplier->price,
-                    "sale_price" => (float) $firstSupplier->sale_price,
-                    "original_price"=>  (float) $firstSupplier->price,
-                    'front_sale_price' => (float) $firstSupplier->sale_price,
-                     "best_price"=>  (float) $firstSupplier->price,
-                     "selling_type"=> $sellingType,
-                     "per_unit_price"=>   $product->per_unit_price,
-                     'vendor_id' => $firstSupplier->vendor_id ?? null,
-                     'map' => (float) $firstSupplier->map ?? null,
-                     'inventory' => $firstSupplier->inventory ?? null,
-                     'in_stock' => $firstSupplier->in_stock ?? null,
-                     'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                     'return_policy' => $firstSupplier->return_policy ?? null,
-                     'free_shipping' => $firstSupplier->free_shipping ?? null,
-                     'warranty_information' => $firstSupplier->warranty_information ?? null,
+                    'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'per_unit_price' => $product->per_unit_price,
+                    'vendor_id' => $firstSupplier->vendor_id ?? null,
+                    'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+                    'inventory' => $firstSupplier->inventory ?? null,
+                    'in_stock' => $firstSupplier->in_stock ?? null,
+                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'return_policy' => $firstSupplier->return_policy ?? null,
+                    'free_shipping' => $firstSupplier->free_shipping ?? null,
+                    'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
+                
             });
 
             Log::info('Returning products:', [
@@ -592,7 +592,6 @@ class ProductYouMayLikeController extends Controller
 
                 $firstSupplier = $product->productSuppliers->first();
 
-    
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -605,32 +604,31 @@ class ProductYouMayLikeController extends Controller
                     'currency' => $productWithRelations->currency?->symbol,
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
-                    'best_price' => $product->sale_price ?? $product->price,
-                    'best_delivery_date' => null,
                     'leftStock' => $leftStock,
                     'currency_title' => $productWithRelations->currency
                         ? ($productWithRelations->currency->is_prefix_symbol
                             ? $productWithRelations->currency->symbol
                             : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
-                        "selling_type"=> $sellingType,
-                        'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                        'price' =>  (float) $firstSupplier->price,
-                        "sale_price" => (float) $firstSupplier->sale_price,
-                        "original_price"=>  (float) $firstSupplier->price,
-                        'front_sale_price' => (float) $firstSupplier->sale_price,
-                         "best_price"=>  (float) $firstSupplier->price,
-                         "selling_type"=> $sellingType,
-                         "per_unit_price"=>   $product->per_unit_price,
-                         'vendor_id' => $firstSupplier->vendor_id ?? null,
-                         'map' => (float) $firstSupplier->map ?? null,
-                         'inventory' => $firstSupplier->inventory ?? null,
-                         'in_stock' => $firstSupplier->in_stock ?? null,
-                         'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                         'return_policy' => $firstSupplier->return_policy ?? null,
-                         'free_shipping' => $firstSupplier->free_shipping ?? null,
-                         'warranty_information' => $firstSupplier->warranty_information ?? null,
+                    'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                    'selling_type' => $sellingType,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'per_unit_price' => $product->per_unit_price,
+                    'vendor_id' => $firstSupplier->vendor_id ?? null,
+                    'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+                    'inventory' => $firstSupplier->inventory ?? null,
+                    'in_stock' => $firstSupplier->in_stock ?? null,
+                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'return_policy' => $firstSupplier->return_policy ?? null,
+                    'free_shipping' => $firstSupplier->free_shipping ?? null,
+                    'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
+                
             });
     
             Log::info('Returning products:', [
