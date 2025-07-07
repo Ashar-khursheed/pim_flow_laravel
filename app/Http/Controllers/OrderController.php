@@ -416,6 +416,190 @@ class OrderController extends Controller
 
 	/**
 	 * @OA\Put(
+	 *     path="/api/orders/{id}",
+	 *     summary="Update an existing order (if not yet confirmed)",
+	 *     tags={"FrontEnd-Orders"},
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"customer_address_id", "tax_percentage", "products"},
+	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="tax_percentage", type="number", example=5),
+	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
+	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
+	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
+	 *             @OA\Property(
+	 *                 property="products",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     @OA\Property(property="product_id", type="integer", example=101),
+	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
+	 *                     @OA\Property(property="quantity", type="integer", example=5),
+	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
+	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                 )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function update(Request $request, $orderId)
+	{
+		$order = Order::with('orderProducts')->find($orderId);
+
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found'
+			], 404);
+		}
+
+		$allowedStatuses = [
+			'Pending', 'Confirmed', 'Supplier Delivery', 'International', 'Export', 'On hold', 'Ready to ship'
+		];
+
+		if (!in_array($order->status, $allowedStatuses)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This order has already been shipped or delivered. You can no longer update it.'
+			], 400);
+		}
+
+		$request->validate([
+			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'tax_percentage' => 'required|numeric|min:0',
+			'ship_all_at_once' => 'nullable|boolean',
+			'separate_deliveries' => 'nullable|boolean',
+			'products' => 'required|array|min:1',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.unit_price' => 'required|numeric|min:0',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+		]);
+
+		$customerId = $order->customer_id;
+
+		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
+
+		DB::beginTransaction();
+
+		try {
+			$totalProducts = 0;
+			$orderAmount = 0;
+			$orderShipping = 0;
+
+			foreach ($request->products as $product) {
+				$totalProducts += $product['quantity'];
+				$orderAmount += $product['quantity'] * $product['unit_price'];
+				$orderShipping += $product['shipping_charge'];
+			}
+
+			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$paidAmount = $request->paid_amount ?? 0;
+			$pendingAmount = $totalAmount - $paidAmount;
+
+			$order->update([
+				'customer_address_id' => $request->customer_address_id,
+				'shipping_charge' => $orderShipping,
+				'amount' => $orderAmount,
+				'tax_percentage' => $request->tax_percentage,
+				'tax_amount' => $taxAmount,
+				'total_amount' => $totalAmount,
+				'total_products' => $totalProducts,
+				'ship_all_at_once' => $request->get('ship_all_at_once', true),
+				'separate_deliveries' => $request->get('separate_deliveries', false),
+				'paid_amount' => $paidAmount,
+				'is_paid' => $pendingAmount <= 0,
+				'pending_amount' => $pendingAmount
+			]);
+
+			/* Delete existing products and re-insert */
+			OrderProduct::where('order_id', $order->id)->delete();
+
+			foreach ($request->products as $product) {
+				$total = $product['quantity'] * $product['unit_price'];
+				OrderProduct::create([
+					'order_id' => $order->id,
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'shipped_quantity' => 0,
+					'remaining_quantity' => $product['quantity'],
+					'unit_price' => $product['unit_price'],
+					'amount' => $total,
+					'shipping_charge' => $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'],
+					'status' => 'Pending',
+				]);
+			}
+
+			OrderTracking::create([
+				'order_id' => $order->id,
+				'status' => 'Order Updated By Backend Panel',
+				'description' => 'Order has been successfully updated',
+			]);
+
+			DB::commit();
+
+			/* Load relationships */
+			$order->load([
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'orderProducts.product.brand:id,name',
+				'orderProducts.product.currency:id,symbol',
+				'tracking',
+				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+			]);
+
+			/* Mutate the data for each order product */
+			foreach ($order->orderProducts as $orderProduct) {
+				$product = $orderProduct->product;
+				if ($product) {
+					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
+					unset($product->brand, $product->currency);
+				}
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+			}
+
+			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				if (isset($order->$key)) {
+					$order->$key = number_format($order->$key, 2, '.', '');
+				}
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Order updated successfully',
+				'data' => $order
+			], 200);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update order: ' . $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
+	 * @OA\Put(
 	 *     path="/api/orders/{id}/status",
 	 *     summary="Update order status",
 	 *     tags={"Orders"},
