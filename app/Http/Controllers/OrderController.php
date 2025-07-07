@@ -233,12 +233,12 @@ class OrderController extends Controller
 		DB::beginTransaction();
 
 		try {
-			$orderProducts = 0;
+			$totalProducts = 0;
 			$orderAmount = 0;
 			$orderShipping = 0;
 
 			foreach ($request->products as $product) {
-				$orderProducts += $product['quantity'];
+				$totalProducts += $product['quantity'];
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
