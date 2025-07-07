@@ -131,26 +131,26 @@ class OrderController extends Controller
 			/* Transform results */
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
-
 				$record->created_by = $record->creator->name ?? null;
-				unset($record->creator);
-
 				$record->updated_by = $record->updator->name ?? null;
-				unset($record->updator);
+
+				unset($record->creator, $record->updator);
 
 				/* Process each product in order products */
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
-
 					if ($product) {
-						/* Decode image JSON only if it's a string */
-						if (is_string($product->images)) {
-							$product->images = json_decode($product->images, true);
-						}
-
-						/* Replace brand relation with just brand_name */
+						$product->images = json_decode($product->images);
 						$product->brand_name = $product->brand->name ?? null;
-						unset($product->brand);
+						$product->currency_symbol = $product->currency->symbol ?? null;
+						unset($product->brand, $product->currency);
+					}
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				}
+
+				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+					if (isset($record->$key)) {
+						$record->$key = number_format($record->$key, 2, '.', '');
 					}
 				}
 
@@ -326,6 +326,12 @@ class OrderController extends Controller
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 			}
 
+			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				if (isset($order->$key)) {
+					$order->$key = number_format($order->$key, 2, '.', '');
+				}
+			}
+
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
@@ -391,6 +397,12 @@ class OrderController extends Controller
 				unset($product->brand, $product->currency);
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+		}
+
+		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			if (isset($order->$key)) {
+				$order->$key = number_format($order->$key, 2, '.', '');
+			}
 		}
 
 		return response()->json([
