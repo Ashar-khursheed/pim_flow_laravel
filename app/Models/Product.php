@@ -96,7 +96,7 @@ class Product extends Model
 
 	public function vendors()
 	{
-		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id');
+		return $this->belongsToMany(Vendor::class, 'product_suppliers', 'product_id', 'vendor_id')->withPivot(['price', 'sale_price']);;
 	}
 
 	public function brand()

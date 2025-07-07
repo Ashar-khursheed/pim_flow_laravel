@@ -371,7 +371,7 @@ class ProductController extends BaseController
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
 			'SEO' => [],
-			'Pricing' => ['vendors:id,price,sale_price'],
+			'Pricing' => ['vendors:id,name,price,sale_price'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
@@ -388,6 +388,11 @@ class ProductController extends BaseController
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
+				// Extract first vendor's price and sale_price
+		$firstVendor = $product->vendors->first();
+		$productPrice = $firstVendor?->pivot?->price ?? null;
+		$productSalePrice = $firstVendor?->pivot?->sale_price ?? null;
+
 		$formattedCategories = [];
 
 		foreach ($product->categories as $category) {
@@ -482,6 +487,9 @@ class ProductController extends BaseController
 
 		$formattedProduct['categories'] = $formattedCategories;
 
+		$formattedProduct['price'] = $productPrice;
+		$formattedProduct['sale_price'] = $productSalePrice;
+		
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
 
@@ -569,14 +577,16 @@ class ProductController extends BaseController
 				]] : null;
 				break;
 				case 'vendor':
-				$formattedProduct['vendors'] = $product->vendors ? [[
-					'id' => $product->vendors->id,
-					'name' => $product->vendors->name,
-					'price' => $product->vendors->price,
-					'sale_price' => $product->vendors->sale_price,
-				]] : null;
-				break;
-			
+					$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
+						return [
+							'id' => $vendor->id,
+							'name' => $vendor->name,
+							'price' => $vendor->pivot->price ?? null,
+							'sale_price' => $vendor->pivot->sale_price ?? null,
+						];
+					});
+					break;
+				
 
 				// case 'shipping_length_id':
 				// $formattedProduct['shipping_length'] = [
