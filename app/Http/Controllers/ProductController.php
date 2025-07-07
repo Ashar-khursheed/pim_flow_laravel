@@ -383,7 +383,8 @@ class ProductController extends BaseController
 			'categories:id,name,parent_id',
 			'categories.parent:id,name,parent_id',
 			'categories.parent.parent:id,name,parent_id',
-			'categories.children:id,name,parent_id'
+			'categories.children:id,name,parent_id',
+			'vendors' 
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
@@ -727,10 +728,11 @@ class ProductController extends BaseController
 				'faq' => $faqs ?? [],
 
 			]);
-		}
+	}
 
 
-	/**
+
+		/**
 	 * @OA\Post(
 	 *     path="/api/products/{product}",
 	 *     summary="Update a product using POST with _method=PUT",
