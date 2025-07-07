@@ -13195,7 +13195,7 @@
                             "schema": {
                                 "required": [
                                     "customer_address_id",
-                                    "shipping_charge",
+                                    "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
@@ -13203,10 +13203,9 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
-                                    "shipping_charge": {
+                                    "tax_percentage": {
                                         "type": "number",
-                                        "format": "float",
-                                        "example": 50
+                                        "example": 5
                                     },
                                     "ship_all_at_once": {
                                         "type": "boolean",
@@ -13216,6 +13215,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "paid_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 199.99
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
@@ -13223,7 +13227,8 @@
                                                 "product_id",
                                                 "vendor_id",
                                                 "quantity",
-                                                "unit_price"
+                                                "unit_price",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -13242,6 +13247,11 @@
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 199.99
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -19465,10 +19475,9 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
-                                    "shipping_charge": {
+                                    "tax_percentage": {
                                         "type": "number",
-                                        "format": "float",
-                                        "example": 50
+                                        "example": 5
                                     },
                                     "ship_all_at_once": {
                                         "type": "boolean",
@@ -19478,6 +19487,11 @@
                                         "type": "boolean",
                                         "example": false
                                     },
+                                    "paid_amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 199.99
+                                    },
                                     "products": {
                                         "type": "array",
                                         "items": {
@@ -19485,7 +19499,8 @@
                                                 "product_id",
                                                 "vendor_id",
                                                 "quantity",
-                                                "unit_price"
+                                                "unit_price",
+                                                "shipping_charge"
                                             ],
                                             "properties": {
                                                 "product_id": {
@@ -19504,6 +19519,11 @@
                                                     "type": "number",
                                                     "format": "float",
                                                     "example": 199.99
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
                                                 }
                                             },
                                             "type": "object"
@@ -19517,7 +19537,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Order created successfully",
+                        "description": "Created successfully",
                         "content": {
                             "application/json": {}
                         }

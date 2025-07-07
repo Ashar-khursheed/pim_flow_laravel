@@ -43,12 +43,12 @@ class OrderController extends BaseController
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
 			$recordsQuery->with([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
-				'shipments'
+				'shipments',
 			]);
 
 			/* Filter by status */
@@ -106,27 +106,12 @@ class OrderController extends BaseController
 				/* Process each product in order products */
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
-
 					if ($product) {
-						/* Decode image JSON only if it's a string */
-						if (is_string($product->images)) {
-							$product->images = json_decode($product->images, true);
-						}
-
-						/* Replace brand relation with brand_name */
-						if ($product->brand) {
-							$product->brand_name = $product->brand->name;
-						}
-
-						/* Replace currency relation with currency_symbol */
-						if ($product->currency) {
-							$product->currency_symbol = $product->currency->symbol;
-						}
-
-						unset($product->brand, $product->currency); /* Remove full brand object */
+						$product->images = json_decode($product->images);
+						$product->brand_name = $product->brand->name ?? null;
+						$product->currency_symbol = $product->currency->symbol ?? null;
+						unset($product->brand, $product->currency);
 					}
-
-					/* Add vendorProductSupplier dynamically */
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 				}
 
@@ -156,20 +141,22 @@ class OrderController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"customer_address_id", "shipping_charge", "products"},
+	 *             required={"customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="shipping_charge", type="number", format="float", example=50.00),
+	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
+	 *             @OA\Property(property="paid_amount", type="number", format="float", example=199.99),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
 	 *                 @OA\Items(
-	 *                     required={"product_id", "vendor_id", "quantity", "unit_price"},
+	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
 	 *                     @OA\Property(property="product_id", type="integer", example=101),
 	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
 	 *                     @OA\Property(property="quantity", type="integer", example=5),
-	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99)
+	 *                     @OA\Property(property="unit_price", type="number", format="float", example=199.99),
+	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
 	 *                 )
 	 *             )
 	 *         )
@@ -182,7 +169,7 @@ class OrderController extends BaseController
 	{
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'shipping_charge' => 'required|numeric|min:0',
+			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
 			'products' => 'required|array|min:1',
@@ -190,6 +177,7 @@ class OrderController extends BaseController
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
 			'products.*.quantity' => 'required|integer|min:1',
 			'products.*.unit_price' => 'required|numeric|min:0',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
 		$customerId = auth()->id();
@@ -206,12 +194,14 @@ class OrderController extends BaseController
 		DB::beginTransaction();
 
 		try {
-			$totalProducts = 0;
-			$totalAmount = 0;
+			$orderProducts = 0;
+			$orderAmount = 0;
+			$orderShipping = 0;
 
 			foreach ($request->products as $product) {
-				$totalProducts += $product['quantity'];
-				$totalAmount += $product['quantity'] * $product['unit_price'];
+				$orderProducts += $product['quantity'];
+				$orderAmount += $product['quantity'] * $product['unit_price'];
+				$orderShipping += $product['shipping_charge'];
 			}
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('id', 'desc')->first();
@@ -221,31 +211,31 @@ class OrderController extends BaseController
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
 				$website = config('app.website');
-
-				if ($website === 'US') {
-					$orderNumber = 10001;
-				} elseif ($website === 'UAE') {
-					$orderNumber = 1001;
-				} else {
-					$orderNumber = 101;
-				}
+				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
 			}
+
+			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$paidAmount = $request->paid_amount ?? 0;
+			$pendingAmount = $totalAmount - $paidAmount;
 
 			$order = Order::create([
 				'order_number' => $orderNumber,
-				'customer_id' => auth()->id(),
+				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $request->shipping_charge,
+				'shipping_charge' => $orderShipping,
+				'amount' => $orderAmount,
+				'tax_percentage' => $request->tax_percentage,
+				'tax_amount' => $taxAmount,
 				'total_amount' => $totalAmount,
 				'total_products' => $totalProducts,
 				'ship_all_at_once' => $request->get('ship_all_at_once', true),
 				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'is_paid' => false,
-				'paid_amount' => 0,
-				'pending_amount' => $totalAmount,
+				'paid_amount' => $paidAmount,
+				'is_paid' => $pendingAmount <= 0,
+				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'created_by' => 0,
-				'updated_by' => null,
 			]);
 
 			foreach ($request->products as $product) {
@@ -258,7 +248,9 @@ class OrderController extends BaseController
 					'shipped_quantity' => 0,
 					'remaining_quantity' => $product['quantity'],
 					'unit_price' => $product['unit_price'],
-					'total_amount' => $total,
+					'amount' => $total,
+					'shipping_charge' => $product['shipping_charge'],
+					'total_amount' => $total + $product['shipping_charge'],
 					'status' => 'Pending',
 				]);
 			}
@@ -269,14 +261,13 @@ class OrderController extends BaseController
 				'description' => 'Order has been successfully created',
 			]);
 
-			$customer = auth()->user();
-			$customer->notify(new OrderPlacedMail($order));
+			auth()->user()->notify(new OrderPlacedMail($order));
 
 			DB::commit();
 
 			/* Load relationships */
 			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'orderProducts.product.brand:id,name',
 				'orderProducts.product.currency:id,symbol',
@@ -287,25 +278,12 @@ class OrderController extends BaseController
 			/* Mutate the data for each order product */
 			foreach ($order->orderProducts as $orderProduct) {
 				$product = $orderProduct->product;
-
 				if ($product) {
-					/* Decode images JSON string */
 					$product->images = json_decode($product->images);
-
-					/* Replace brand relation with brand_name */
-					if ($product->brand) {
-						$product->brand_name = $product->brand->name;
-					}
-
-					/* Replace currency relation with currency_symbol */
-					if ($product->currency) {
-						$product->currency_symbol = $product->currency->symbol;
-					}
-
-					unset($product->brand, $product->currency); /* Remove full brand object */
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
+					unset($product->brand, $product->currency);
 				}
-
-				/* Add vendorProductSupplier dynamically */
 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 			}
 
@@ -355,7 +333,7 @@ class OrderController extends BaseController
 		$order->load([
 			'customer:id,name,email,type,country_code,mobile_number',
 			'customerAddress',
-			'orderProducts:id,order_id,product_id,vendor_id,quantity,status',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
@@ -366,25 +344,12 @@ class OrderController extends BaseController
 		/* Mutate the data for each order product */
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
-
 			if ($product) {
-				/* Decode images JSON string */
 				$product->images = json_decode($product->images);
-
-				/* Replace brand relation with brand_name */
-				if ($product->brand) {
-					$product->brand_name = $product->brand->name;
-				}
-
-				/* Replace currency relation with currency_symbol */
-				if ($product->currency) {
-					$product->currency_symbol = $product->currency->symbol;
-				}
-
-				unset($product->brand, $product->currency); /* Remove full brand object */
+				$product->brand_name = $product->brand->name ?? null;
+				$product->currency_symbol = $product->currency->symbol ?? null;
+				unset($product->brand, $product->currency);
 			}
-
-			/* Add vendorProductSupplier dynamically */
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 		}
 
