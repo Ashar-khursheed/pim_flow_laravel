@@ -692,12 +692,12 @@ class CategoryController extends Controller
 		$debugInfo['price_filter_applied'] = [
 			'min' => $min,
 			'max' => $max,
-			'input_product_count' => $filteredProductIds->count()
+			'input_product_count' => $allCategoryProductIds->count()
 		];
 
 		// First, let's check what price data we have
 		$priceCheckQuery = DB::table('product_suppliers as ps')
-			->whereIn('ps.product_id', $filteredProductIds->toArray())
+			->whereIn('ps.product_id', $allCategoryProductIds->toArray())
 			->select('ps.product_id', 'ps.price', 'ps.sale_price',
 					DB::raw('CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END as effective_price'))
 			->get();
@@ -707,7 +707,7 @@ class CategoryController extends Controller
 
 		// Filter products based on price range
 		$priceFilteredIds = DB::table('product_suppliers as ps')
-			->whereIn('ps.product_id', $filteredProductIds->toArray())
+			->whereIn('ps.product_id', $allCategoryProductIds->toArray())
 			->where(function($query) use ($min, $max) {
 				$query->whereRaw("CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END BETWEEN ? AND ?", [$min, $max]);
 			})
@@ -718,10 +718,11 @@ class CategoryController extends Controller
 		$debugInfo['price_filtered_sample'] = $priceFilteredIds->take(5)->toArray();
 
 		// If no results, try alternative approach
-    if ($priceFilteredIds->isEmpty()) {
+    
+		if ($priceFilteredIds->isEmpty()) {
 				// Try using COALESCE instead
 				$priceFilteredIds = DB::table('product_suppliers as ps')
-					->whereIn('ps.product_id', $filteredProductIds->toArray())
+					->whereIn('ps.product_id', $allCategoryProductIds->toArray())
 					->whereRaw("COALESCE(ps.sale_price, ps.price) BETWEEN ? AND ?", [$min, $max])
 					->pluck('ps.product_id')
 					->unique();
@@ -731,7 +732,7 @@ class CategoryController extends Controller
 				// If still no results, try checking the products table directly
 				if ($priceFilteredIds->isEmpty()) {
 					$priceFilteredIds = DB::table('ec_products as p')
-						->whereIn('p.id', $filteredProductIds->toArray())
+						->whereIn('p.id', $allCategoryProductIds->toArray())
 						->whereRaw("COALESCE(p.sale_price, p.price) BETWEEN ? AND ?", [$min, $max])
 						->pluck('p.id')
 						->unique();
@@ -759,7 +760,7 @@ class CategoryController extends Controller
 					'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
 				]);
 			}
-		}
+	}
 
 	
 		// If a rating filter is applied, filter the already filtered product IDs
