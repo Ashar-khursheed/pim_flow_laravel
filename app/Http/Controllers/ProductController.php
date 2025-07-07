@@ -353,7 +353,7 @@ class ProductController extends BaseController
 			'General' => ['sku', 'barcode', 'status' , 'approved' ],
 
 			'Inventory & Stock Management' => [ 'stock_status'],
-			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by'],
+			'Pricing & Sales' => [ 'tax_id', 'currency_id', 'approved_by' ,  'vendors' ],
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Store & Vendor Information' => [ 'brand_id' ],
@@ -568,7 +568,7 @@ class ProductController extends BaseController
 					'name' => $product->brand->name
 				]] : null;
 				break;
-				case 'vendor':
+				case 'vendors':
 				$formattedProduct['vendors'] = $product->vendors ? [[
 					'id' => $product->vendors->id,
 					'name' => $product->vendors->name,
