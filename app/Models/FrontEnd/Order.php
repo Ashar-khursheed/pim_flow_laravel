@@ -18,8 +18,10 @@ class Order extends Model
 		'order_number',
 		'customer_id',
 		'customer_address_id',
-		'status',
 		'shipping_charge',
+		'amount',
+		'tax_percentage',
+		'tax_amount',
 		'total_amount',
 		'total_products',
 		'ship_all_at_once',
@@ -27,6 +29,7 @@ class Order extends Model
 		'is_paid',
 		'paid_amount',
 		'pending_amount',
+		'status',
 		'created_by',
 		'updated_by',
 	];
@@ -61,10 +64,10 @@ class Order extends Model
 		return $this->hasMany(OrderTracking::class);
 	}
 
-    public function payments()
-    {
-        return $this->hasMany(PaymentManagement::class);
-    }
+	public function payments()
+	{
+		return $this->hasMany(PaymentManagement::class);
+	}
 
 	public function shipments()
 	{

@@ -13,10 +13,12 @@ class OrderProduct extends Model
 		'product_id',
 		'vendor_id',
 		'quantity',
+		'unit_price',
+		'amount',
+		'shipping_charge',
+		'total_amount',
 		'shipped_quantity',
 		'remaining_quantity',
-		'unit_price',
-		'total_amount',
 		'status',
 	];
 
@@ -47,8 +49,8 @@ class OrderProduct extends Model
 	public function getVendorProductSupplierAttribute()
 	{
 		return ProductSupplier::where('product_id', $this->product_id)
-			->where('vendor_id', $this->vendor_id)
-			->first();
+		->where('vendor_id', $this->vendor_id)
+		->first();
 	}
 
 	public function shipmentProducts()
