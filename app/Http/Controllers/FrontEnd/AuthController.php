@@ -7,11 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\FrontEnd\Customer;
-
 use App\Notifications\GuestWelcomeMail;
 use App\Notifications\WelcomeMail;
 use Illuminate\Support\Str;
-
+use Firebase\JWT\JWT;
+use Firebase\JWT\JWK;
+use Illuminate\Support\Facades\Http;
 
 
 class AuthController extends Controller
@@ -96,5 +97,76 @@ class AuthController extends Controller
 		]);
 	}
 
+	public function appleLogin(Request $request)
+	{
+		$request->validate([
+			'identity_token' => 'required|string',
+			'email' => 'nullable|email',
+			'name'  => 'nullable|string',
+		]);
+	
+		$identityToken = $request->input('identity_token');
+	
+		try {
+			// Decode JWT header
+			$jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
+			$kid = $jwtHeader['kid'];
+	
+			// Get Apple public keys
+			$appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
+			$publicKeys = JWK::parseKeySet($appleKeys);
+	
+			// Decode token using Apple’s public key
+			$decoded = JWT::decode($identityToken, $publicKeys[$kid]);
+			$email = $decoded->email ?? $request->email;
+			$appleSub = $decoded->sub;
+	
+			if (!$appleSub) {
+				return response()->json(['message' => 'Apple token does not contain a valid sub.'], 422);
+			}
+	
+			// Try to find user by apple_id first
+			$customer = Customer::where('apple_id', $appleSub)->first();
+	
+			// If not found by apple_id, try email fallback
+			if (!$customer && $email) {
+				$customer = Customer::where('email', $email)->first();
+			}
+	
+			// If still not found, create new
+			if (!$customer) {
+				$customer = Customer::create([
+					'apple_id' => $appleSub,
+					'email' => $email,
+					'name' => $request->name ?? 'Apple User',
+					'password' => Hash::make(Str::random(32)),
+					'is_social_login' => true,
+					'created_by' => 'apple',
+					'dob' => null,
+					'country_code' => null,
+					'mobile_number' => null,
+					'profile_img' => null,
+				]);
+			} else {
+				// Update apple_id if missing
+				if (!$customer->apple_id) {
+					$customer->update(['apple_id' => $appleSub]);
+				}
+			}
+	
+			$token = $customer->createToken('apple-login')->plainTextToken;
+	
+			return response()->json([
+				'user' => $customer,
+				'token' => $token,
+			]);
+		} catch (\Exception $e) {
+			return response()->json([
+				'message' => 'Apple login failed',
+				'error' => $e->getMessage(),
+			], 401);
+		}
+	}
+	
 	
 }
