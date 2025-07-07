@@ -681,37 +681,85 @@ class CategoryController extends Controller
 		// }
 		// Replace the price filtering section (around line 200-220)
 		// Apply price filter before rating filter
-		if ($request->has('price_min') || $request->has('price_max')) 
-{
-	$min = $request->input('price_min', 0);
-	$max = $request->input('price_max', PHP_INT_MAX);
+		// Replace the price filtering section (around line 230-250)
+		// Apply price filter before rating filter
+	if ($request->has('price_min') || $request->has('price_max')) 
+	{
+		$min = $request->input('price_min', 0);
+		$max = $request->input('price_max', PHP_INT_MAX);
 
-	// Get product IDs that match the price range from product_suppliers
-	$priceFilteredIds = DB::table('product_suppliers')
-		->whereIn('product_id', $filteredProductIds->toArray())
-		->whereRaw("COALESCE(sale_price, price) BETWEEN ? AND ?", [$min, $max])
-		->pluck('product_id')
-		->unique();
+		// Debug the price filtering
+		$debugInfo['price_filter_applied'] = [
+			'min' => $min,
+			'max' => $max,
+			'input_product_count' => $filteredProductIds->count()
+		];
 
-	$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+		// First, let's check what price data we have
+		$priceCheckQuery = DB::table('product_suppliers as ps')
+			->whereIn('ps.product_id', $filteredProductIds->toArray())
+			->select('ps.product_id', 'ps.price', 'ps.sale_price',
+					DB::raw('CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END as effective_price'))
+			->get();
 
-	if ($filteredProductIds->isEmpty()) {
-		return response()->json([
-			'success' => true,
-			'filters' => [],
-			'products' => [],
-			'brands' => [],
-			'price_min' => 0,
-			'price_max' => 0,
-			'rating_filter' => [
-				'filter_name' => 'Rating',
-				'filter_type' => 'rating',
-				'filter_values' => [5, 4, 3, 2, 1],
-			],
-			'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
-		]);
-	}
-}
+		$debugInfo['price_check_sample'] = $priceCheckQuery->take(5)->toArray();
+		$debugInfo['price_check_count'] = $priceCheckQuery->count();
+
+		// Filter products based on price range
+		$priceFilteredIds = DB::table('product_suppliers as ps')
+			->whereIn('ps.product_id', $filteredProductIds->toArray())
+			->where(function($query) use ($min, $max) {
+				$query->whereRaw("CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END BETWEEN ? AND ?", [$min, $max]);
+			})
+			->pluck('ps.product_id')
+			->unique();
+
+		$debugInfo['price_filtered_count'] = $priceFilteredIds->count();
+		$debugInfo['price_filtered_sample'] = $priceFilteredIds->take(5)->toArray();
+
+		// If no results, try alternative approach
+    if ($priceFilteredIds->isEmpty()) {
+				// Try using COALESCE instead
+				$priceFilteredIds = DB::table('product_suppliers as ps')
+					->whereIn('ps.product_id', $filteredProductIds->toArray())
+					->whereRaw("COALESCE(ps.sale_price, ps.price) BETWEEN ? AND ?", [$min, $max])
+					->pluck('ps.product_id')
+					->unique();
+				
+				$debugInfo['price_filtered_coalesce_count'] = $priceFilteredIds->count();
+				
+				// If still no results, try checking the products table directly
+				if ($priceFilteredIds->isEmpty()) {
+					$priceFilteredIds = DB::table('ec_products as p')
+						->whereIn('p.id', $filteredProductIds->toArray())
+						->whereRaw("COALESCE(p.sale_price, p.price) BETWEEN ? AND ?", [$min, $max])
+						->pluck('p.id')
+						->unique();
+					
+					$debugInfo['price_filtered_products_table_count'] = $priceFilteredIds->count();
+					$debugInfo['used_products_table_for_price'] = true;
+				}
+			}
+
+			$filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+
+			if ($filteredProductIds->isEmpty()) {
+				return response()->json([
+					'success' => true,
+					'filters' => [],
+					'products' => [],
+					'brands' => [],
+					'price_min' => 0,
+					'price_max' => 0,
+					'rating_filter' => [
+						'filter_name' => 'Rating',
+						'filter_type' => 'rating',
+						'filter_values' => [5, 4, 3, 2, 1],
+					],
+					'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
+				]);
+			}
+		}
 
 	
 		// If a rating filter is applied, filter the already filtered product IDs
