@@ -107,7 +107,7 @@ class OrderController extends BaseController
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
 					if ($product) {
-						$product->images = json_decode($product->images);
+						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 						$product->brand_name = $product->brand->name ?? null;
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
@@ -284,7 +284,7 @@ class OrderController extends BaseController
 			foreach ($order->orderProducts as $orderProduct) {
 				$product = $orderProduct->product;
 				if ($product) {
-					$product->images = json_decode($product->images);
+					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
@@ -356,7 +356,7 @@ class OrderController extends BaseController
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {
-				$product->images = json_decode($product->images);
+				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
