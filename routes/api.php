@@ -407,6 +407,9 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
 	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
+	Route::post('/frontend/update-profile', [F_CustomerController::class, 'updateProfile']);
+	
+
 
 	Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
 	Route::get('/frontend/products/{id}/related', [F_ProductController::class, 'relatedProducts']);
