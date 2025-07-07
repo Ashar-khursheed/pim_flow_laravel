@@ -140,6 +140,7 @@ class ProductController extends BaseController
 			'categories:id,name',
 			'slug:id,key,reference_id',
 			'productSuppliers', 
+			'vendors'
 		])
 		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'gen_type' ,'approved']);
 
@@ -186,8 +187,9 @@ class ProductController extends BaseController
 					'image' => ($imageUrls = json_decode($product->images, true)) && isset($imageUrls[0]) ? $imageUrls[0] : null,
 					'brand' => optional($product->brand)->name,
 					'status' => $product->status,
-					'price'=> null,
-					'sale_price'=> null,
+					'price'=> $firstSupplier->price,
+					'sale_price'=> $firstSupplier->price,
+					'vendor_id'=> $firstSupplier->vendor_id,
 					'margin' => null,
 					'margin_percent' => null,
 					'product_family' => $product->categories->pluck('name')->toArray(),

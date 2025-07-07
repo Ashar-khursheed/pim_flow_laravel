@@ -363,6 +363,63 @@ class CustomerController extends BaseController
 		]);
 	}
 	
+	public function updateProfile(Request $request)
+	{
+		$user = auth()->user(); // Adjust for your guard
+
+		$request->validate([
+			'name'          => 'sometimes|string|max:255',
+			'email'         => 'sometimes|email|unique:users,email,' . $user->id,
+			'password'      => 'sometimes|string|min:6|confirmed',
+			'type'          => 'sometimes|string',
+			'dob'           => 'sometimes|date',
+			'country_code'  => 'sometimes|string|max:10',
+			'mobile_number' => 'sometimes|string|max:20',
+			'profile_img'   => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
+     	]);
+
+		$user->fill($request->only([
+			'name',
+			'email',
+			'type',
+			'dob',
+			'country_code',
+			'mobile_number',
+		]));
+
+		if ($request->filled('password')) {
+			$user->password = bcrypt($request->password);
+		}
+
+		// S3 upload in "production/customer/" folder
+		if ($request->hasFile('profile_img')) {
+			$image = $request->file('profile_img');
+
+			// Unique filename
+			$filename = time() . '_' . uniqid() . '.' . $image->getClientOriginalExtension();
+
+			// Upload to S3 inside production/customer/
+			$path = $image->storeAs('production/customer', $filename, 's3');
+
+			// Make it public (optional)
+			\Storage::disk('s3')->setVisibility($path, 'public');
+
+			// Get S3 full URL
+			$url = \Storage::disk('s3')->url($path);
+
+			// Save URL in database
+			$user->profile_img = $url;
+		}
+
+		$user->save();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Profile updated successfully',
+			'data' => $user,
+		]);
+	}
+
 
 
 }
