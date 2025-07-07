@@ -610,7 +610,6 @@ class ProductYouMayLikeController extends Controller
                             ? $productWithRelations->currency->symbol
                             : ($product->price . ' ' . $productWithRelations->currency->symbol))
                         : $product->price,
-                    'in_wishlist' => in_array($product->id, $wishlistProductIds),
                     'selling_type' => $sellingType,
                     'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                     'price' => $firstSupplier ? (float) $firstSupplier->price : null,
