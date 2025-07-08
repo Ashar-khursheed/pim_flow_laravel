@@ -183,7 +183,7 @@ class AuthController extends Controller
 					'name' => $request->name ?? 'Apple User',
 					'password' => Hash::make(Str::random(32)),
 					'is_social_login' => true,
-					'created_by' => 'apple',
+					'created_by' => null,
 					'dob' => null,
 					'country_code' => null,
 					'mobile_number' => null,
