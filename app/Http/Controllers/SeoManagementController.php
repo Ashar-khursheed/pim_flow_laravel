@@ -467,12 +467,14 @@ class SeoManagementController extends Controller
 				}
 			}
 
-			/* Update the SEO record if there is any change */
+		/* Update the SEO record if there is any change */
 			foreach ($seoData as $key => $value) {
-				if (!empty($value)) {
+				if ($value !== null) {
 					$seo->$key = $value;
 				}
 			}
+
+
 
 			/* Generate schema and add it to the data (as an array) */
 			$schemaArray = $this->generateSchema($seo);
