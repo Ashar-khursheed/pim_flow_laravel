@@ -140,75 +140,83 @@ class AuthController extends Controller
 	}
 
 	public function appleLogin(Request $request)
-	{
-		$request->validate([
-			'identity_token' => 'required|string',
-			'email' => 'nullable|email',
-			'name'  => 'nullable|string',
-		]);
-	
-		$identityToken = $request->input('identity_token');
-	
-		try {
-			// Decode JWT header
-			$jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
-			$kid = $jwtHeader['kid'];
-	
-			// Get Apple public keys
-			$appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
-			$publicKeys = JWK::parseKeySet($appleKeys);
-	
-			// Decode token using Apple’s public key
-			$decoded = JWT::decode($identityToken, $publicKeys[$kid]);
-			$email = $decoded->email ?? $request->email;
-			$appleSub = $decoded->sub;
-	
-			if (!$appleSub) {
-				return response()->json(['message' => 'Apple token does not contain a valid sub.'], 422);
-			}
-	
-			// Try to find user by apple_id first
-			$customer = Customer::where('apple_id', $appleSub)->first();
-	
-			// If not found by apple_id, try email fallback
-			if (!$customer && $email) {
-				$customer = Customer::where('email', $email)->first();
-			}
-	
-			// If still not found, create new
-			if (!$customer) {
-				$customer = Customer::create([
-					'apple_id' => $appleSub,
-					'email' => $email,
-					'name' => $request->name ?? 'Apple User',
-					'password' => Hash::make(Str::random(32)),
-					'is_social_login' => true,
-					'created_by' => null,
-					'dob' => null,
-					'country_code' => null,
-					'mobile_number' => null,
-					'profile_img' => null,
-				]);
-			} else {
-				// Update apple_id if missing
-				if (!$customer->apple_id) {
-					$customer->update(['apple_id' => $appleSub]);
-				}
-			}
-	
-			$token = $customer->createToken('apple-login')->plainTextToken;
-	
-			return response()->json([
-				'user' => $customer,
-				'token' => $token,
-			]);
-		} catch (\Exception $e) {
-			return response()->json([
-				'message' => 'Apple login failed',
-				'error' => $e->getMessage(),
-			], 401);
-		}
-	}
+{
+    $request->validate([
+        'identity_token' => 'required|string',
+        'email' => 'nullable|email',
+        'name'  => 'nullable|string',
+    ]);
+
+    $identityToken = $request->input('identity_token');
+
+    try {
+        // Decode JWT header
+        $jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
+        $kid = $jwtHeader['kid'];
+
+        // Get Apple public keys
+        $appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
+        $publicKeys = JWK::parseKeySet($appleKeys);
+
+        // Decode token using Apple’s public key
+        $decoded = JWT::decode($identityToken, $publicKeys[$kid]);
+        $email = $decoded->email ?? $request->email;
+        $appleSub = $decoded->sub;
+
+        if (!$appleSub) {
+            return response()->json(['message' => 'Apple token does not contain a valid sub.'], 422);
+        }
+
+        // Try to find user by apple_id first
+        $customer = Customer::where('apple_id', $appleSub)->first();
+
+        // If not found by apple_id, try email fallback
+        if (!$customer && $email) {
+            $customer = Customer::where('email', $email)->first();
+        }
+
+        // Prepare name if not provided
+        $name = $request->input('name');
+        if (!$name && $email) {
+            $username = explode('@', $email)[0]; // e.g. "nomanpeera"
+            $name = ucwords(preg_replace('/[^a-zA-Z\s]/', '', preg_replace('/([a-z])([A-Z])/', '$1 $2', $username)));
+        }
+
+        // If still not found, create new
+        if (!$customer) {
+            $customer = Customer::create([
+                'apple_id' => $appleSub,
+                'email' => $email,
+                'name' => $name ?? 'Apple User',
+                'password' => Hash::make(Str::random(32)),
+                'is_social_login' => true,
+                'created_by' => null,
+                'dob' => null,
+                'country_code' => null,
+                'mobile_number' => null,
+                'profile_img' => null,
+            ]);
+        } else {
+            // Update apple_id if missing
+            if (!$customer->apple_id) {
+                $customer->update(['apple_id' => $appleSub]);
+            }
+        }
+
+        $token = $customer->createToken('apple-login')->plainTextToken;
+
+        return response()->json([
+            'user' => $customer,
+            'token' => $token,
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'message' => 'Apple login failed',
+            'error' => $e->getMessage(),
+        ], 401);
+    }
+}
+
 	// 	public function appleLogin(Request $request)
 	// {
 	// 	$request->validate([
