@@ -418,7 +418,7 @@ class OrderController extends Controller
 	 * @OA\Put(
 	 *     path="/api/orders/{id}",
 	 *     summary="Update an existing order (if not yet confirmed)",
-	 *     tags={"FrontEnd-Orders"},
+	 *     tags={"Orders"},
 	 *     @OA\Parameter(name="id", in="path", required=true, description="Order ID", @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(
 	 *         required=true,

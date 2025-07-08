@@ -142,7 +142,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/blogs/{id}', [BlogController::class, 'update']);
 	Route::apiResource('blogs', BlogController::class);
 
-    Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
+	Route::get('/product-questions/{product_id}', [ProductQuestionController::class, 'index']);
 
 	Route::post('/calculate-grade', [GradingController::class, 'calculate']);
 	Route::get('/grading/view/{product_id}', [GradingController::class, 'viewByProduct']);
@@ -294,16 +294,10 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
-	Route::prefix('orders')->group(function () {
-		Route::get('/', [OrderController::class, 'index']);
-		Route::post('/', [OrderController::class, 'store']);
-		Route::get('/statistics', [OrderController::class, 'statistics']);
-		Route::get('/{id}', [OrderController::class, 'show']);
-		Route::put('/{id}/status', [OrderController::class, 'updateStatus']);
-		Route::put('/{id}/payment', [OrderController::class, 'updatePayment']);
-		Route::put('/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
-		Route::post('/{id}/shipments', [OrderController::class, 'createShipment']);
-	});
+	Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+	Route::put('orders/{orderId}/products/{productId}/status', [OrderController::class, 'updateProductStatus']);
+	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
+	Route::apiResource('orders', OrderController::class);
 
 
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
@@ -408,7 +402,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/coupons/customer', [F_CustomerController::class, 'getCustomerCoupons']);
 	Route::get('/frontend/coupons/search', [F_CustomerController::class, 'searchCustomerCoupons']);
 	Route::post('/frontend/update-profile', [F_CustomerController::class, 'updateProfile']);
-	
+
 
 
 	Route::get('/frontend/products', [F_ProductController::class, 'getAllProducts']);
@@ -525,9 +519,9 @@ Route::get('/category-pages/{category}', [CategoryPageController::class, 'show']
 Route::get('/category-pages', [CategoryPageController::class, 'index']);
 
 Route::prefix('/frontend/ccavenue')->group(function () {
-    Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
-    Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
-    Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
+	Route::post('/initiate-payment', [F_CCavenueController::class, 'initiatePayment']);
+	Route::post('/handle-response', [F_CCavenueController::class, 'handleResponse']);
+	Route::get('/payment-status/{orderId}', [F_CCavenueController::class, 'getPaymentStatus']);
 });
 
 Route::post('/stripe/create-payment-intent', [F_StripeController::class, 'createPaymentIntent']);

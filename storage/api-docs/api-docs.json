@@ -19584,7 +19584,7 @@
             },
             "put": {
                 "tags": [
-                    "FrontEnd-Orders"
+                    "Orders"
                 ],
                 "summary": "Update an existing order (if not yet confirmed)",
                 "operationId": "6a7029f5510ca08e28a2d58a5fe19439",
