@@ -176,11 +176,19 @@ class AuthController extends Controller
         }
 
         // Prepare name if not provided
-        $name = $request->input('name');
-        if (!$name && $email) {
-            $username = explode('@', $email)[0]; // e.g. "nomanpeera"
-            $name = ucwords(preg_replace('/[^a-zA-Z\s]/', '', preg_replace('/([a-z])([A-Z])/', '$1 $2', $username)));
-        }
+       // Generate name from email if not provided
+			$name = $request->input('name');
+
+			if (empty($name) && $email) {
+				$emailPrefix = explode('@', $email)[0]; // e.g., "noman.peera" or "noman_peera"
+				
+				// Replace dots, underscores, or hyphens with space
+				$cleaned = preg_replace('/[\.\_\-]+/', ' ', $emailPrefix);
+				
+				// Capitalize each word
+				$name = ucwords(strtolower($cleaned)); // e.g., "Noman Peera"
+			}
+
 
         // If still not found, create new
         if (!$customer) {
