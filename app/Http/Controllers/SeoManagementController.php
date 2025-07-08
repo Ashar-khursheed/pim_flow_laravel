@@ -425,7 +425,20 @@ class SeoManagementController extends Controller
 			$seo = SeoManagement::findOrFail($id);
 
 			/* Prepare the data for updating the SEO management record */
-			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+			// $seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+			$seoData = $validated;
+
+			$optionalParagraphs = ['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'];
+			
+			foreach ($optionalParagraphs as $field) {
+				if (!$request->has($field)) {
+					$seoData[$field] = ''; // force empty if not sent at all
+				}
+			}
+			
+			// Remove any keys we still want to skip
+			$seoData = collect($seoData)->except(['secondary_keywords', 'og_image_file'])->toArray();
+			
 
 			/* Convert indexing boolean */
 			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
