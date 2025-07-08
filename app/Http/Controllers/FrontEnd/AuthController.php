@@ -177,33 +177,36 @@ class AuthController extends Controller
 
         // Prepare name if not provided
        // Generate name from email if not provided
-			$name = $request->input('name');
+			// Get email and requested name
+			$email = $decoded->email ?? $request->email;
+			$rawName = $request->input('name');
 
-			if (empty($name) && $email) {
-				$emailPrefix = explode('@', $email)[0]; // e.g., "noman.peera" or "noman_peera"
-				
-				// Replace dots, underscores, or hyphens with space
-				$cleaned = preg_replace('/[\.\_\-]+/', ' ', $emailPrefix);
-				
-				// Capitalize each word
-				$name = ucwords(strtolower($cleaned)); // e.g., "Noman Peera"
+			// If name is not provided, extract from email
+			if (empty($rawName) && !empty($email)) {
+				$emailPrefix = explode('@', $email)[0]; // e.g. "noman.peera" or "noman_peera"
+				$emailPrefix = preg_replace('/[\.\_\-]+/', ' ', $emailPrefix); // Replace . _ - with space
+				$emailPrefix = preg_replace('/[^a-zA-Z\s]/', '', $emailPrefix); // Remove numbers and special chars
+				$rawName = ucwords(strtolower(trim($emailPrefix))); // Capitalize: "noman peera" => "Noman Peera"
 			}
 
+			$nameToUse = $rawName ?: 'Apple User'; // Final fallback
 
-        // If still not found, create new
-        if (!$customer) {
-            $customer = Customer::create([
-                'apple_id' => $appleSub,
-                'email' => $email,
-                'name' => $name ?? 'Apple User',
-                'password' => Hash::make(Str::random(32)),
-                'is_social_login' => true,
-                'created_by' => null,
-                'dob' => null,
-                'country_code' => null,
-                'mobile_number' => null,
-                'profile_img' => null,
-            ]);
+			// Now create user
+			if (!$customer) {
+				$customer = Customer::create([
+					'apple_id' => $appleSub,
+					'email' => $email,
+					'name' => $nameToUse,
+					'password' => Hash::make(Str::random(32)),
+					'is_social_login' => true,
+					'created_by' => null,
+					'dob' => null,
+					'country_code' => null,
+					'mobile_number' => null,
+					'profile_img' => null,
+				]);
+
+
         } else {
             // Update apple_id if missing
             if (!$customer->apple_id) {
