@@ -243,7 +243,7 @@ class SeoManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function show($relation_id)
+	public function show($relation_id, Request $request)
 	{
 		if (!auth()->user()->can('show seo mgmt')) {
 			return response()->json([
@@ -251,17 +251,23 @@ class SeoManagementController extends Controller
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+	
+		$relationalType = $request->query('relational_type');
+	
 		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
-		->where('relational_id', $relation_id)
-		->first();
-
+			->where('relational_id', $relation_id)
+			->when($relationalType, function ($query, $relationalType) {
+				return $query->where('relational_type', $relationalType);
+			})
+			->first();
+	
 		if (!$seoRecord) {
 			return response()->json([
 				'success' => false,
-				'message' => 'SEO record not found for the given relation ID.'
+				'message' => 'SEO record not found for the given relation ID and type.'
 			], 404);
 		}
-
+	
 		$schema = [
 			"@context" => "https://schema.org",
 			"@type" => "Product",
@@ -293,15 +299,16 @@ class SeoManagementController extends Controller
 			],
 			"availability" => "https://schema.org/InStock"
 		];
-
+	
 		$cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-
+	
 		return response()->json([
 			'success' => true,
 			'data' => $seoRecord,
 			'schema' => $cleanedSchema
 		], 200);
 	}
+	
 
 	/**
 	 * @OA\Post(

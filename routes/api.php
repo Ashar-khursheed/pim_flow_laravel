@@ -334,7 +334,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
-Route::post('/auth/apple', [F_AuthController::class, 'appleLogin']);
+Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
