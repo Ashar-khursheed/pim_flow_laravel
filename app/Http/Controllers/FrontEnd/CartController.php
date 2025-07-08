@@ -702,14 +702,14 @@ class CartController extends Controller
         }
     
         // Decrease the quantity and check if it should be removed
-        $cartItem->quantity -= $quantityToDecrease;
-    
-        if ($cartItem->quantity <= 0) {
+       // Prevent over-decreasing: cap to actual quantity
+        if ($quantityToDecrease >= $cartItem->quantity) {
             $cartItem->delete();
             return response()->json(['success' => true, 'message' => 'Item removed from cart.']);
         } else {
+            $cartItem->quantity -= $quantityToDecrease;
             $cartItem->save();
-    
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -723,6 +723,7 @@ class CartController extends Controller
                 ],
             ]);
         }
+
     }
 
 
