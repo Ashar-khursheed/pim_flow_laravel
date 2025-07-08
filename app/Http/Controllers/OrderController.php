@@ -260,7 +260,7 @@ class OrderController extends Controller
 
 			$order = Order::create([
 				'order_number' => $orderNumber,
-				'customer_id' => $customerId,
+				'customer_id' => $request->customer_id,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
 				'amount' => $orderAmount,
