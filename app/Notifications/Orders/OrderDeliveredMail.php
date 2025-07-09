@@ -37,6 +37,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 
 		$name = $notifiable->name ?? 'User';
+		$orderNumber = $this->order->order_number;
 
 		$products = collect();
 		foreach ($this->order->orderProducts as $orderProduct) {
@@ -59,8 +60,11 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
+			'orderNumber' => $orderNumber,
 			'products' => $products,
 			'rightPngURL' => $rightPngURL,
+
+			'checkoutURL' => $checkoutURL,
 			'orderDetailUrl' => $orderDetailUrl,
 
 			'siteEmail' => $siteEmail,
@@ -68,7 +72,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 
 		return (new MailMessage)
 		->subject('Your Horeca Order Has Been Delivered')
-		->markdown('emails.orders.partial-order-cancelled', $params);
+		->markdown('emails.orders.order-delivered', $params);
 	}
 
 
