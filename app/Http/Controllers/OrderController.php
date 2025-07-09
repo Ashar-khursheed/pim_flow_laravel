@@ -20,6 +20,7 @@ use App\Notifications\Orders\OrderPlacedMail;
 use App\Notifications\Orders\OrderConfirmationMail;
 use App\Notifications\Orders\OutForDeliveryMail;
 use App\Notifications\Orders\OrderDeliveredMail;
+use App\Notifications\Orders\PartialOrderCancelledMail;
 
 class OrderController extends Controller
 {
@@ -818,6 +819,11 @@ class OrderController extends Controller
 				'new_status' => $request->status
 			]
 		]);
+
+		if ($request->status == 'Cancelled') {
+			$orderProducts = OrderProduct::where('id', $orderProduct->id)->get();
+			$order->customer->notify(new PartialOrderCancelledMail($order, $orderProducts, $request->notes));
+		}
 
 		return response()->json([
 			'success' => true,
