@@ -19,7 +19,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 	public function __construct($order, $cancelledOrderProducts, $cancellationReason)
 	{
 		$this->order = $order;
-		$this->cancelledOrderProducts = collect($cancelledOrderProducts);
+		$this->cancelledOrderProducts = $cancelledOrderProducts;
 		$this->cancellationReason = $cancellationReason;
 	}
 
@@ -117,7 +117,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 			'pendingItems' => $pendingItems,
 
 			'orderUrl' => $orderListUrl,
-			'checkoutURL' => $checkoutUrl,
+			'checkoutUrl' => $checkoutUrl,
 		];
 
 		return (new MailMessage)
