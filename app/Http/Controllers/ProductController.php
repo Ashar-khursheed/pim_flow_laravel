@@ -373,7 +373,7 @@ class ProductController extends BaseController
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
 			'SEO' => [],
-			'Pricing' => ['vendors:id,name,price,sale_price'],
+			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
@@ -394,7 +394,7 @@ class ProductController extends BaseController
 		$firstVendor = $product->vendors->first();
 		$productPrice = $firstVendor?->pivot?->price ?? null;
 		$productSalePrice = $firstVendor?->pivot?->sale_price ?? null;
-
+		$productDelivery_days = $firstVendor?->pivot?->delivery_days ?? null;
 		$formattedCategories = [];
 
 		foreach ($product->categories as $category) {
@@ -491,6 +491,7 @@ class ProductController extends BaseController
 
 		$formattedProduct['price'] = $productPrice;
 		$formattedProduct['sale_price'] = $productSalePrice;
+		$formattedProduct['delivery_days'] = $productDelivery_days;
 		
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
