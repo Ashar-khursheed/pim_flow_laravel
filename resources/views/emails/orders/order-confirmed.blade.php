@@ -76,12 +76,20 @@
 					<span style="display: flex; align-items: center;">
 						<span style="font-size: 14px; margin-right: 8px;">📞</span>
 						<span style="color: #8B4513;">{{ $siteName }} Toll-Free:</span>&nbsp;
-						{!! $siteTollFreeContact !!}
+						@if($siteName == 'UAE')
+							<span style="color: #8B4513;">800</span> &nbsp;<span style="color: #26683A;">- HORECA (467-322)</span>
+						@else
+							{!! $siteTollFreeContact !!}
+						@endif
 					</span>
 					<span style="display: flex; align-items: center;">
 						<span style="font-size: 14px; margin-right: 8px;">🌐</span>
 						<span style="color: #8B4513;">International:</span>&nbsp;
-						{!! $siteInternationalContact !!}
+						@if($siteName == 'UAE')
+							<span style="color: #26683A;">+971 </span>&nbsp; <span style="color: #8B4513;">4 224 5818</span>
+						@else
+							{!! $siteInternationalContact !!}
+						@endif
 					</span>
 				</p>
 			</div>
