@@ -16,8 +16,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use App\Notifications\OrderPlacedMail;
-use App\Notifications\OrderConfirmationMail;
+use App\Notifications\Orders\OrderPlacedMail;
+use App\Notifications\Orders\OrderConfirmationMail;
+use App\Notifications\Orders\OutForDeliveryMail;
+use App\Notifications\Orders\OrderDeliveredMail;
 
 class OrderController extends Controller
 {
@@ -678,9 +680,17 @@ class OrderController extends Controller
 			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
 		]);
 
+		$customer = $order->customer;
 		if ($request->status == 'Confirmed') {
-			$customer = $order->customer;
 			$customer->notify(new OrderConfirmationMail($order));
+		}
+
+		if ($request->status == 'Out for delivery') {
+			$customer->notify(new OutForDeliveryMail($order));
+		}
+
+		if ($request->status == 'Delivered') {
+			$customer->notify(new OrderDeliveredMail($order));
 		}
 
 		return response()->json([

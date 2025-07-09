@@ -40,7 +40,9 @@ class ResetPasswordNotification extends Notification implements ShouldQueue
 		$name = $notifiable->name ?? 'User';
 		$resetUrl = url("/reset-password?token={$this->token}&email={$this->email}&type={$this->type}");
 		$finalUrl = $url ?? config('app.url');
-		$logoUrl = config('app.logo_url');
+
+		$backendURL = config('app.backend_url');
+		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 
 		return (new MailMessage)
 		->subject('Reset Your Password')

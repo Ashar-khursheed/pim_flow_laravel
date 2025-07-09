@@ -26,7 +26,8 @@ class WelcomeMail extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
-		$logoUrl = config('app.logo_url');
+		$backendURL = config('app.backend_url');
+		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
 		$websiteUrl = url("/");
 
