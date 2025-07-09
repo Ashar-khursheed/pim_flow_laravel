@@ -1,5 +1,25 @@
 <?php
 
+$website = env('APP_WEBSITE', 'US');
+
+switch ($website) {
+	case 'UAE':
+		$url = 'https://uae.thehorecastore.co';
+		$backendUrl = 'https://pimflow.thehorecastore.co';
+		break;
+
+	case 'TEST':
+		$url = 'https://test.d2gutus2i9fewc.amplifyapp.com';
+		$backendUrl = 'https://tespim.thehorecastore.co';
+		break;
+
+	case 'US':
+	default:
+		$url = 'https://thehorecastore.co';
+		$backendUrl = 'https://pim.thehorecastore.co';
+		break;
+}
+
 return [
 
 	/*
@@ -52,10 +72,9 @@ return [
 	|
 	*/
 
-	'url' => env('APP_URL', 'http://localhost'),
-	'website' => env('APP_WEBSITE', 'US'),
-	'logo_url' => env('LOGO_URL', 'http://localhost'),
-
+	'website' => $website,
+	'url' => $url,
+	'backend_url' => $backendUrl,
 
 	/*
 	|--------------------------------------------------------------------------

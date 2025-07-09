@@ -16,8 +16,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use App\Notifications\OrderPlacedMail;
-use App\Notifications\OrderConfirmationMail;
+use App\Notifications\Orders\OrderPlacedMail;
+use App\Notifications\Orders\OrderConfirmationMail;
 
 class OrderController extends Controller
 {

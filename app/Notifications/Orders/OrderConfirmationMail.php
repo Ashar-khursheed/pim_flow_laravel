@@ -1,12 +1,11 @@
 <?php
 
-namespace App\Notifications;
+namespace App\Notifications\Orders;
 
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
-use Carbon\Carbon;
 
 class OrderConfirmationMail extends Notification implements ShouldQueue
 {
@@ -34,27 +33,36 @@ class OrderConfirmationMail extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
-		$logoUrl = config('app.logo_url');
+		$backendURL = config('app.backend_url');
+		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $this->order->order_number;
+
+		$rightPngURL = $backendURL. '/right.png';
+
 		$orderUrl = url("/registration/all-orders");
-		$siteName = env('APP_WEBSITE') == 'UAE' ? 'UAE':'USA';
-		$siteContact = env('APP_WEBSITE') == 'UAE' ? '800 Horeca (467322)':'866-4HORECA';
-		$siteEmail = env('APP_WEBSITE') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+		$siteName = config('app.website') == 'UAE' ? 'UAE':'USA';
+		$siteTollFreeContact = config('app.website') == 'UAE' ? '<span style="color: #8B4513;">800</span> &nbsp;<span style="color: #26683A;">- HORECA (467-322)</span>':'866-4HORECA';
+		$siteInternationalContact = config('app.website') == 'UAE' ? '<span style="color: #26683A;">+971 </span>&nbsp; <span style="color: #8B4513;">4 224 5818</span>':'866-4HORECA';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
 			'orderNumber' => $orderNumber,
+
+			'rightPngURL' => $rightPngURL,
+
 			'orderUrl' => $orderUrl,
 			'siteName' => $siteName,
-			'siteContact' => $siteContact,
+			'siteTollFreeContact' => $siteTollFreeContact,
+			'siteInternationalContact' => $siteInternationalContact,
 			'siteEmail' => $siteEmail,
 		];
 
 		return (new MailMessage)
 		->subject('Your Horeca Order is Confirmed')
-		->markdown('emails.order-confirmed', $params);
+		->markdown('emails.orders.order-confirmed', $params);
 	}
 
 	/**

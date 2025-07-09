@@ -10,7 +10,7 @@ use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Notifications\OrderPlacedMail;
+use App\Notifications\Orders\OrderPlacedMail;
 
 class OrderController extends BaseController
 {
