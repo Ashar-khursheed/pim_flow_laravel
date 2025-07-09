@@ -154,7 +154,6 @@ class RecentlyViewedProductController extends Controller
             ])
                 ->where('customer_id', $userId)
                 ->latest()
-                ->take(5)
                 ->get();
 
             // Get wishlist product IDs
@@ -399,7 +398,6 @@ class RecentlyViewedProductController extends Controller
             $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers')
                 ->where('guest_token', $guestToken)
                 ->latest()
-                ->take(5)
                 ->get();
 
             $data = [];
