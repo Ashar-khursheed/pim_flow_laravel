@@ -628,7 +628,7 @@ class SearchController extends Controller
         };
     
         // Default brands to show
-        $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air', 'Midea', 'Serv-ware', 'Manitowoc', 'Hoshizaki'];
+        $defaultBrands = ['Atosa', 'BakeMax', 'True', 'Beverage-Air'];
     
         if (empty($query)) {
             return Cache::remember('search_default_data', 60, function () use ($imageUrl, $defaultBrands, $mapProduct) {

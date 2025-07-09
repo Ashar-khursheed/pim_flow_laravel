@@ -14,7 +14,7 @@ class CategoryMenuController extends Controller
 {
 
 
-        /**
+    /**
      * @OA\Get(
      *     path="/api/frontend/category-with-slug/{slug}",
      *     operationId="getCategoryBySlug",

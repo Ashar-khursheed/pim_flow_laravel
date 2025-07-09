@@ -250,6 +250,8 @@ public function index(Request $request)
             'blog_category_id' => 'nullable|exists:blog_categories,id',
             'status' => 'required|in:draft,published',
             'is_featured' => 'nullable|boolean',
+            'author_designation' => 'nullable|string',
+            'author_desc' => 'nullable|string',
 
             // Corrected validation for the new fields
             'written_by' => 'nullable|string',
@@ -281,11 +283,14 @@ public function index(Request $request)
             'status' => $request->status,
             'is_featured' => $request->is_featured ?? false,
             'created_by' => auth()->id(),
+            'author_designation' => $request->author_designation,
+            'author_desc' =>  $request->author_desc,
 
             // Added new fields
             'written_by' => $request->written_by,
             'created_date' => $request->created_date,
             'image' => $uploadToS3($request->file('image')),
+
         ];
 
         $blog = Blog::create($data);
@@ -454,6 +459,9 @@ public function index(Request $request)
             'blog_category_id' => 'nullable|exists:blog_categories,id',
             'status' => 'required|in:draft,published',
             'is_featured' => 'nullable|boolean',
+            'author_designation' => 'nullable|string',
+            'author_desc' => 'nullable|string',
+
 
             // New fields
             'written_by' => 'nullable|string',
@@ -481,6 +489,8 @@ public function index(Request $request)
             'blog_category_id' => $request->blog_category_id ?? $blog->blog_category_id,
             'status' => $request->status,
             'is_featured' => $request->is_featured ?? $blog->is_featured,
+            'author_designation' => $request->author_designation,
+            'author_desc' =>  $request->author_desc,
 
             // New fields
             'written_by' => $request->written_by ?? $blog->written_by,
