@@ -3,7 +3,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
-
+use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\AlternateProduct;
 
