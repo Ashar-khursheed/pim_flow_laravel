@@ -253,6 +253,25 @@ class AlternateProductController extends Controller
             ], 500);
         }
     }
-    
+    protected function normalizeMediaUrls($media)
+    {
+        if (empty($media)) {
+            return [];
+        }
+
+        if (is_string($media)) {
+            $decoded = json_decode($media, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                return is_array($decoded) ? $decoded : [];
+            }
+            return [];
+        }
+
+        if (is_array($media)) {
+            return $media;
+        }
+
+        return [];
+    }
     
 }
