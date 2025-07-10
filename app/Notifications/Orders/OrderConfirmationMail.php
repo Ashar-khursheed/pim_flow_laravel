@@ -42,8 +42,9 @@ class OrderConfirmationMail extends Notification implements ShouldQueue
 
 		$orderUrl = url("/registration/all-orders");
 		$siteName = config('app.website') == 'UAE' ? 'UAE':'USA';
-		$siteTollFreeContact = config('app.website') == 'UAE' ? '800 - HORECA (467-322)':'866-4HORECA';
-		$siteInternationalContact = config('app.website') == 'UAE' ? '+971 4 224 5818':'866-4HORECA';
+		$siteTollFreeContact = config('app.website') == 'UAE' ? '800 - HORECA (467-322)':'866-4 HORECA';
+		$siteInternationalContact = config('app.website') == 'UAE' ? '+971 4 224 5818':'';
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		$params = [
@@ -57,6 +58,7 @@ class OrderConfirmationMail extends Notification implements ShouldQueue
 			'siteName' => $siteName,
 			'siteTollFreeContact' => $siteTollFreeContact,
 			'siteInternationalContact' => $siteInternationalContact,
+			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 

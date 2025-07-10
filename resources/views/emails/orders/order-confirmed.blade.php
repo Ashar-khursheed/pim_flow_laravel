@@ -77,7 +77,7 @@
 							<table cellpadding="0" cellspacing="0" border="0" width="100%">
 								<tr>
 									<td style="color: #26683A; font-weight: 500; padding-bottom: 8px;">
-										📞 <span style="color:#8B4513;">{{ $siteName }} Toll-Free:</span>
+										📞 <span style="color:#8B4513;">{{ $siteName == 'UAE' ? 'UAE Toll-Free:' : 'Toll-Free:' }}</span>
 										@if($siteName == 'UAE')
 											<span style="color:#8B4513;">800</span> <span style="color:#26683A;">- HORECA (467-322)</span>
 										@else
@@ -86,16 +86,14 @@
 									</td>
 								</tr>
 
+								@if($siteName == 'UAE')
 								<tr>
 									<td style="color: #26683A; font-weight: 500;">
 										🌐 <span style="color:#8B4513;">International:</span>
-										@if($siteName == 'UAE')
 											<span style="color:#26683A;">+971 </span><span style="color:#8B4513;">4 224 5818</span>
-										@else
-											{!! $siteInternationalContact !!}
-										@endif
 									</td>
 								</tr>
+								@endif
 							</table>
 						</td>
 					</tr>
@@ -111,7 +109,7 @@
 				<table border="0" cellpadding="0" cellspacing="0" width="600" style="border-top: 2px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3);">
 					<tr>
 						<td align="left" style="padding: 20px; font-size: 12px; color:#3F3F3F;">
-							<p style="margin: 0;">©2025 HorecaStore.ae. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
+							<p style="margin: 0;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
 							<p style="margin: 8px 0 0;">This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
 						</td>
 					</tr>
