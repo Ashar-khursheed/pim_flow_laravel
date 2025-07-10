@@ -175,7 +175,7 @@ class AlternateProductController extends Controller
                 ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
     
             // Transform response
-            $transformedProducts = $products->map(function ($product) use ($wishlistProductIds) {
+            $transformedProducts = $products->map(function ($product){
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
     
