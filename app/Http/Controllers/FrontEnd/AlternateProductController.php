@@ -6,7 +6,8 @@ use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Models\FrontEnd\AlternateProduct;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 class AlternateProductController extends Controller
 {
     public function getAlternateProducts(Request $request, $productId = null)
