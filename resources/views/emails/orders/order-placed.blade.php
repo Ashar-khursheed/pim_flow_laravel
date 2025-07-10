@@ -131,10 +131,12 @@
 									<!-- You Saved (Left Side) -->
 									<td valign="top" width="50%" style="padding: 0;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="background-color:#DEF9EC; font-size:14px; font-weight:bold; color:#26683A;">
+											@if($totalSaved>0)
 											<tr>
 												<td style="font-weight: bold;">You Saved</td>
 												<td align="right" style="font-weight: bold;">{{ $currency }} {{ $totalSaved }}</td>
 											</tr>
+											@endif
 										</table>
 									</td>
 
@@ -172,7 +174,7 @@
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
 									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px;">
-										You can view or update your order anytime by visiting the "Orders" section under your account profile.
+										You can view or update your order anytime by visiting the Orders section under your account profile.
 									</td>
 								</tr>
 								<tr>
