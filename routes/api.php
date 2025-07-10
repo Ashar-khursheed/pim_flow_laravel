@@ -97,6 +97,31 @@ use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
+use Illuminate\Support\Facades\Http;
+
+Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
+    $url = $request->query('url');
+
+    if (!$url) {
+        abort(400, 'URL is required');
+    }
+
+    try {
+        $response = Http::timeout(10)->get($url);
+
+        if (!$response->successful()) {
+            abort(404, 'Image not found');
+        }
+
+        return response($response->body(), 200)
+            ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
+            ->header('Cache-Control', 'public, max-age=86400')
+            ->header('Access-Control-Allow-Origin', '*');
+    } catch (\Exception $e) {
+        abort(500, 'Proxy failed: ' . $e->getMessage());
+    }
+});
+
 
 
 
