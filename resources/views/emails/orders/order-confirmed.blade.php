@@ -85,7 +85,7 @@
 										@endif
 									</td>
 								</tr>
-								<br/>
+
 								<tr>
 									<td style="color: #26683A; font-weight: 500;">
 										🌐 <span style="color:#8B4513;">International:</span>

@@ -25,20 +25,20 @@
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f8f8f8;">
 		<tr>
 			<td align="center">
-				<table class="container" width="600" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #eaeaea;">
+				<table class="container" width="650" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #eaeaea;">
 					<tr>
 						<td style="padding: 20px;">
 							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120" />
 						</td>
 					</tr>
 					<tr>
-						<td style="padding: 0 20px 20px 20px; font-family: 'Noto Sans', sans-serif; font-size: 16px; color: #000;">
+						<td style="padding: 0 20px 10px 20px; font-family: 'Noto Sans', sans-serif; font-size: 16px; color: #000;">
 							<p>Hello <strong style="color: #26683A;">{{ $name }}</strong>!</p>
 							<p>Your HorecaStore order <strong style="color: #26683A;">#{{ $orderNumber }}</strong> containing the items below has been successfully delivered! We hope everything arrived just the way you expected.</p>
 						</td>
 					</tr>
 					<tr>
-						<td style="padding: 0 20px 20px 20px;">
+						<td style="padding: 0 20px 10px 20px;">
 							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
 								<tr style="background-color: #FAFAFA; border-bottom: 1px solid #26683A;">
 									<th colspan="2" align="left" style="padding: 10px; font-size: 16px; font-weight: 500;">Items Ordered</th>
@@ -47,9 +47,9 @@
 								@foreach($products as $product)
 								<tr>
 									<td style="padding: 10px 0;">
-										<img src="{{ $product->image }}" alt="product" width="50" style="border: 0.5px solid #DFDFDF; border-radius: 3px;">
+										<img src="{{ $product->image }}" alt="product" width="50" style="border: 0.5px solid #DFDFDF; border-radius: 3px;   margin-right: 10px;">
 									</td>
-									<td style="padding: 10px 0; font-size: 14px; font-weight: 500; color: #000;">
+									<td style="padding: 10px 0; font-size: 14px; font-weight: 500; color: #000; width: 60%;">
 										{{ $product->name }}
 									</td>
 									<td align="right" style="padding: 10px 0; font-size: 14px; font-weight: 500; color: #000;">
@@ -61,10 +61,10 @@
 						</td>
 					</tr>
 					<tr>
-						<td style="padding: 20px; ">
+						<td style="padding: 10px 20px; ">
 							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-top: 3px solid #E2E8F0;" >
 								<tr>
-									<td colspan="2" style=" padding-top: 20px; font-weight: bold; font-size: 16px; padding-bottom: 10px; font-family: 'Noto Sans', sans-serif; color: #000;"> What’s next?</td>
+									<td colspan="2" style=" padding-top: 10px; font-weight: bold; font-size: 16px; padding-bottom: 10px; font-family: 'Noto Sans', sans-serif; color: #000;"> What’s next?</td>
 								</tr>
 								<tr>
 									<td align="center" style="font-size: 14px; padding-bottom: 4px; width: 0;">
@@ -105,8 +105,8 @@
 								</tr>
 
 							</table>
-							<p style="font-weight: 500; font-size: 14px; color: #000; padding-top: 20px; border-top: 3px solid #E2E8F0;">Thank you for choosing HorecaStore - we're proud to be a small part of your big journey.</p>
-							<p style="color: #26683A; font-weight: 500; font-size: 14px;">&ndash; Team HorecaStore</p>
+							<p style="font-weight: 500;font-size: 14px;color: #000;padding-top: 15px;border-top: 3px solid #E2E8F0;margin: 10px 0 0 0;">Thank you for choosing HorecaStore - we're proud to be a small part of your big journey.</p>
+							<p style="padding: 5px 0;color: #26683A;font-weight: 500;font-size: 14px;margin: 0;">&ndash; Team HorecaStore</p>
 						</td>
 					</tr>
 					<tr>

@@ -42,7 +42,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
 		$currency = config('app.website') == 'UAE' ? 'AED' : 'USD';
-		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', '');
+		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
 		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
 		$customerAddress = $this->order->customerAddress;
@@ -70,8 +70,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
 
-				$product->priceBeforeDiscount = number_format($originalPrice, 2, '.', '');
-				$product->unitPrice = number_format($orderProduct->unit_price, 2, '.', '');
+				$product->priceBeforeDiscount = number_format($originalPrice, 2, '.', ',');
+				$product->unitPrice = number_format($orderProduct->unit_price, 2, '.', ',');
 
 				if (
 					$productSupplierDetail &&
@@ -88,7 +88,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				}
 
 				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = number_format($orderProduct->amount, 2, '.', '');
+				$product->total = number_format($orderProduct->amount, 2, '.', ',');
 
 				$products->push($product);
 			}
@@ -97,17 +97,17 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		/* Total price before discount */
 		$totalPriceWithoutDiscount = number_format($products->sum(function ($p) {
 			return (float) $p->priceBeforeDiscount * $p->quantity;
-		}), 2, '.', '');
+		}), 2, '.', ',');
 
 		/* Total saved = original total - actual subtotal */
 		$totalSaved = number_format(
-			max(0, $totalPriceWithoutDiscount - ($this->order->amount ?? 0)), 2, '.', ''
+			max(0, $totalPriceWithoutDiscount - ($this->order->amount ?? 0)), 2, '.', ','
 		);
 
-		$subTotal = number_format($this->order->amount ?? 0, 2, '.', '');
-		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', '');
-		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', '');
-		$total = number_format($this->order->total_amount ?? 0, 2, '.', '');
+		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
+		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
+		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
+		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');
 
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
