@@ -45,7 +45,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
 		$currency = config('app.website') === 'UAE' ? 'AED' : 'USD';
-		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', '');
+		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
 		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
 		$cancelledItems = collect();

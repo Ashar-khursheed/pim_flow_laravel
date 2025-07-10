@@ -19859,6 +19859,11 @@
                                     },
                                     "notes": {
                                         "type": "string"
+                                    },
+                                    "estimated_delivery_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-09"
                                     }
                                 },
                                 "type": "object"
