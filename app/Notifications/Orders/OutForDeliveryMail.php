@@ -59,6 +59,7 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 		$orderDetailUrl = url("/order-details/{$this->order->id}");
 		$rightPngURL = $backendURL. '/right.png';
 
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		$params = [
@@ -76,6 +77,7 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 			'orderDetailUrl' => $orderDetailUrl,
 			'rightPngURL' => $rightPngURL,
 
+			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 

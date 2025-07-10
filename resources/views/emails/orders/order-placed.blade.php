@@ -138,7 +138,6 @@
 										</table>
 									</td>
 
-									<!-- Subtotal, Shipping, VAT, Total (Right Side) -->
 									<td valign="top" width="50%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px;">
 											<tr>
@@ -150,7 +149,7 @@
 												<td align="right">{{ $currency }} {{ $shippingCharge }}</td>
 											</tr>
 											<tr>
-												<td>VAT (5%)</td>
+												<td>{{ $taxName }} ({{ $taxPercent }}%)</td>
 												<td align="right">{{ $currency }} {{ $taxAmount }}</td>
 											</tr>
 											<tr>
@@ -194,7 +193,7 @@
 				<table width="650" cellspacing="0" cellpadding="20" border="0" style="border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
-							<p>© 2025 HorecaStore.ae. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
+							<p>©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
 							<p>This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
 						</td>
 					</tr>

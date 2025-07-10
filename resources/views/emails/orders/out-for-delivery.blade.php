@@ -93,7 +93,7 @@
 				<table class="footer-note" width="650" cellpadding="20" cellspacing="0" border="0" style="border-top: 3px solid #E2E8F0; background-color: rgba(226,232,240,0.3); font-size: 12px; color: #3F3F3F;">
 					<tr>
 						<td style="font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0;">&copy;2025 HorecaStore.ae. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
+							<p style="margin: 0;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
 							<br />
 							<p style="margin: 0;">This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at <a href="mailto:{{ $siteEmail }}" style="color: #3F3F3F; text-decoration: none;">{{ $siteEmail }}</a></p>
 						</td>

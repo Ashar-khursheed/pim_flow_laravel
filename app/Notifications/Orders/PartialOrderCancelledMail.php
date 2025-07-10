@@ -44,7 +44,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
-		$currency = config('app.website') === 'UAE' ? 'AED' : 'USD';
+		$currency = config('app.website') === 'UAE' ? 'AED' : '$';
 		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
 		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
@@ -102,6 +102,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 
 		$orderListUrl = url("/registration/all-orders");
 		$checkoutUrl = url("/checkout");
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,
@@ -118,6 +119,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 
 			'orderUrl' => $orderListUrl,
 			'checkoutUrl' => $checkoutUrl,
+			'siteUrl' => $siteUrl,
 		];
 
 		return (new MailMessage)

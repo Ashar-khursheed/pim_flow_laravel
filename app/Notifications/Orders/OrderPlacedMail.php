@@ -41,7 +41,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
-		$currency = config('app.website') == 'UAE' ? 'AED' : 'USD';
+		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
 		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
 		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
@@ -106,9 +106,12 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
 		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
+		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
+		$taxPercent = $this->order->tax_percentage;
 		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
 		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');
 
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		$params = [
@@ -132,8 +135,12 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
+			'taxName' => $taxName,
+			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
 			'total' => $total,
+
+			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
 
