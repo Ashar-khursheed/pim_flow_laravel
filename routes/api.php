@@ -96,10 +96,7 @@ use App\Http\Controllers\FrontEnd\TamaraController as F_TamaraController;
 use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
-
-
-
-
+use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
 
 
 
@@ -339,6 +336,9 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
+	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
+
+
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
 
@@ -426,6 +426,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 
 });
+
+Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
 
 Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
