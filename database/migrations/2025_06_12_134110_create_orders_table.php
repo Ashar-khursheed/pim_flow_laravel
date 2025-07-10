@@ -94,24 +94,6 @@ return new class extends Migration
 			$table->timestamps();
 		});
 
-		Schema::dropIfExists('shipments');
-		Schema::create('shipments', function (Blueprint $table) {
-			$table->id();
-			$table->integer('order_id');
-			$table->string('shipment_number')->unique();
-			$table->string('tracking_number')->nullable();
-			$table->string('carrier')->nullable();
-			$table->enum('status', [
-				'Preparing', 'Shipped', 'In Transit', 'Out for Delivery',
-				'Delivered', 'Failed Delivery', 'Returned'
-			])->default('Preparing');
-			$table->decimal('shipping_cost', 10, 2)->default(0);
-			$table->date('estimated_delivery_date')->nullable();
-			$table->date('actual_delivery_date')->nullable();
-			$table->text('notes')->nullable();
-			$table->timestamps();
-		});
-
 		Schema::dropIfExists('shipment_products');
 		Schema::create('shipment_products', function (Blueprint $table) {
 			$table->id();

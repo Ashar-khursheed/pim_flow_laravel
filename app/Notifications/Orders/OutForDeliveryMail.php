@@ -39,7 +39,7 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 		$name = $notifiable->name ?? 'User';
 		$carrier = optional($this->order->shipments()->latest()->first())->carrier ?? '';
 		$orderNumber = $this->order->order_number;
-		$estimatedDelivery = optional($this->order->payments()->latest()->first())->estimated_delivery_date;
+		$estimatedDelivery = optional($this->order->shipments()->latest()->first())->estimated_delivery_date;
 		if ($estimatedDelivery) {
 			$estimatedDeliveryDate = Carbon::parse($estimatedDelivery);
 

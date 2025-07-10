@@ -672,7 +672,7 @@ class OrderController extends Controller
 			'status' => $request->status,
 		]);
 
-		$order->orderProducts()->update(['status' => $request->status]);
+		$order->orderProducts()->where('status', '!=', 'Cancelled')->update(['status' => $request->status]);
 
 		/* Add tracking */
 		OrderTracking::create([
@@ -853,7 +853,8 @@ class OrderController extends Controller
 	 *             ),
 	 *             @OA\Property(property="tracking_number", type="string"),
 	 *             @OA\Property(property="carrier", type="string"),
-	 *             @OA\Property(property="notes", type="string")
+	 *             @OA\Property(property="notes", type="string"),
+	 *             @OA\Property(property="estimated_delivery_date", type="string", format="date", example="2025-07-09")
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Shipment created successfully", @OA\MediaType(mediaType="application/json")),

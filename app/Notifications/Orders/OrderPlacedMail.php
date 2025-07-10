@@ -109,6 +109,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', '');
 		$total = number_format($this->order->total_amount ?? 0, 2, '.', '');
 
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+
 		$params = [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
@@ -132,6 +134,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			'shippingCharge' => $shippingCharge,
 			'taxAmount' => $taxAmount,
 			'total' => $total,
+			'siteEmail' => $siteEmail,
 		];
 
 		return (new MailMessage)
