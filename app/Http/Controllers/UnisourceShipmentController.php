@@ -97,7 +97,7 @@ class UnisourceShipmentController extends Controller
      */
     public function createShipment(Request $request)
     {
-        // Validate request
+        // 1. Validate request input
         $request->validate([
             'name' => 'required|string',
             'address' => 'required|string',
@@ -111,19 +111,15 @@ class UnisourceShipmentController extends Controller
             'commodities.*.piece_total' => 'required|integer|min:1',
         ]);
     
-        $client = new \GuzzleHttp\Client();
-    
-        $apiKey = env('UNISOURCE_API_KEY');
-        $apiUrl = rtrim(env('UNISOURCE_API_BASE_URL'), '/') . '/Shipments';
-    
+        // 2. Prepare commodities
         $commodities = $request->input('commodities', []);
         $formattedCommodities = [];
     
         foreach ($commodities as $item) {
             $formattedCommodities[] = [
                 'Description'   => $item['description'],
-                'WeightTotal'   => floatval($item['weight']),
-                'PieceTotal'    => intval($item['piece_total']),
+                'WeightTotal'   => (float) $item['weight'],
+                'PieceTotal'    => (int) $item['piece_total'],
                 'PackageType'   => 'BOX',
                 'WeightUnit'    => 'LBS',
                 'FreightClass'  => '92.5',
@@ -131,10 +127,12 @@ class UnisourceShipmentController extends Controller
                     'Length' => $item['length'] ?? 10,
                     'Width'  => $item['width'] ?? 10,
                     'Height' => $item['height'] ?? 10,
-                    'Unit'   => 'IN'
+                    'Unit'   => 'IN',
                 ]
             ];
-        }        
+        }
+    
+        // 3. Prepare full payload
         $payload = [
             'ShipmentDate' => now()->toIso8601String(),
             'CustomerReferenceNumber' => $request->input('order_id'),
@@ -143,7 +141,7 @@ class UnisourceShipmentController extends Controller
                 'AddressLine1'  => '123 Origin St',
                 'City'          => 'New York',
                 'StateProvince' => 'NY',
-                'PostalCode'    => '10001',        // ✅ Required!
+                'PostalCode'    => '10001', // ✅ Make sure this is not null/empty
                 'CountryCode'   => 'US',
             ],
             'DestinationAddress' => [
@@ -151,34 +149,44 @@ class UnisourceShipmentController extends Controller
                 'AddressLine1'  => $request->input('address'),
                 'City'          => $request->input('city'),
                 'StateProvince' => $request->input('state'),
-                'PostalCode'    => $request->input('zip'), // ✅ Must be non-empty
+                'PostalCode'    => $request->input('zip'), // ✅ Make sure this is not null/empty
                 'CountryCode'   => 'US',
             ],
-            'Commodities' => []
+            'Commodities' => $formattedCommodities
         ];
-        
     
+        // 4. Log payload to debug
+        \Log::info('Taicloud payload:', $payload);
+    
+        // 5. Send to Taicloud
         try {
-            // Log payload for debugging
-            \Log::info('Payload sent to Taicloud:', $payload);
+            $client = new \GuzzleHttp\Client();
     
-            $response = $client->post($apiUrl, [
+            $response = $client->post(rtrim(env('UNISOURCE_API_BASE_URL'), '/') . '/Shipments', [
                 'headers' => [
                     'Accept'       => 'application/json',
                     'Content-Type' => 'application/json',
-                    'x-api-key'    => $apiKey,
+                    'x-api-key'    => env('UNISOURCE_API_KEY'),
                 ],
                 'json' => $payload,
             ]);
     
-            $data = json_decode($response->getBody(), true);
-    
             return response()->json([
                 'success' => true,
-                'data' => $data,
+                'data' => json_decode($response->getBody(), true),
             ]);
+    
+        } catch (\GuzzleHttp\Exception\ClientException $e) {
+            $body = $e->getResponse()->getBody()->getContents();
+            \Log::error('Taicloud error: ' . $body);
+    
+            return response()->json([
+                'success' => false,
+                'error' => json_decode($body, true) ?? $body,
+            ], 400);
         } catch (\Exception $e) {
-            \Log::error('Unisource Shipment Error: ' . $e->getMessage());
+            \Log::error('Unexpected error: ' . $e->getMessage());
+    
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage(),
