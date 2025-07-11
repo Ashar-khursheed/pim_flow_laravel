@@ -39,6 +39,7 @@ class SeoManagement extends Model
 		'google_shopping_feed_description',
 		'short_title_variant',
 		'gen_type',
+		'cat_desc',
 	];
 
 	public function relational()

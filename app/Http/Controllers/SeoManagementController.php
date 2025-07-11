@@ -131,6 +131,7 @@ class SeoManagementController extends Controller
 				'google_shopping_feed_description' => 'nullable|string',
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
+				'cat_desc' => 'nullable|string',
 			]);
 			
 
@@ -589,6 +590,7 @@ class SeoManagementController extends Controller
 				'google_shopping_feed_description' => 'nullable|string',
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
+				'cat_desc' => 'nullable|string',
 			]);
 
 			$seo = SeoManagement::findOrFail($id);
