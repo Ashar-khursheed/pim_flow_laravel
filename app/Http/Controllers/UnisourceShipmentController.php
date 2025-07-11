@@ -7,33 +7,30 @@ use Illuminate\Support\Facades\Log;
 
 class UnisourceShipmentController extends Controller
 {
-    /**
-     * Create a new shipment with Unisource API
+       /**
+     * Create a new shipment via Unisource Taicloud API
      *
      * @OA\Post(
-     *     path="/api/unisource/create-shipment",
-     *     operationId="createUnisourceShipment",
+     *     path="/unisource/create-shipment",
      *     tags={"Unisource"},
-     *     security={{"bearerAuth":{}}},
-     *     summary="Create shipment via Unisource API",
-     *     description="Creates a new shipment using Unisource API.",
+     *     summary="Create a shipment",
+     *     description="Creates a shipment through the Unisource Taicloud API",
+     *     operationId="createUnisourceShipment",
+     *
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"order_id", "name", "address", "city", "state", "zip", "phone", "weight", "length", "width", "height"},
-     *             @OA\Property(property="order_id", type="string", example="ORD-123456"),
+     *             required={"name", "address", "city", "state", "zip", "weight", "order_id"},
      *             @OA\Property(property="name", type="string", example="John Doe"),
-     *             @OA\Property(property="address", type="string", example="123 Main Street"),
-     *             @OA\Property(property="city", type="string", example="New York"),
-     *             @OA\Property(property="state", type="string", example="NY"),
-     *             @OA\Property(property="zip", type="string", example="10001"),
-     *             @OA\Property(property="phone", type="string", example="1234567890"),
-     *             @OA\Property(property="weight", type="number", format="float", example=5.0),
-     *             @OA\Property(property="length", type="number", format="float", example=10.0),
-     *             @OA\Property(property="width", type="number", format="float", example=5.0),
-     *             @OA\Property(property="height", type="number", format="float", example=4.0)
+     *             @OA\Property(property="address", type="string", example="456 Destination Rd"),
+     *             @OA\Property(property="city", type="string", example="Los Angeles"),
+     *             @OA\Property(property="state", type="string", example="CA"),
+     *             @OA\Property(property="zip", type="string", example="90001"),
+     *             @OA\Property(property="weight", type="number", format="float", example=15),
+     *             @OA\Property(property="order_id", type="string", example="ORDER-0001")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=200,
      *         description="Shipment successfully created",
@@ -42,52 +39,65 @@ class UnisourceShipmentController extends Controller
      *             @OA\Property(property="data", type="object")
      *         )
      *     ),
+     *
      *     @OA\Response(
      *         response=500,
-     *         description="Error creating shipment",
+     *         description="Internal Server Error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Authentication failed")
+     *             @OA\Property(property="error", type="string", example="Unable to connect to Unisource API")
      *         )
      *     )
      * )
      */
+
     public function createShipment(Request $request)
     {
         $client = new Client();
 
-        $apiUrl = env('UNISOURCE_API_BASE_URL', 'https://api.unisourceworldwide.com/v1/shipments');
-        $apiKey = env('UNISOURCE_API_KEY');
+        $apiUrl = env('UNISOURCE_API_BASE_URL') . '/Shipments';
 
+        // Sample shipment payload - structure this according to their Swagger spec
         $payload = [
-            'order_id' => $request->input('order_id'),
-            'recipient' => [
-                'name'    => $request->input('name'),
-                'address' => $request->input('address'),
-                'city'    => $request->input('city'),
-                'state'   => $request->input('state'),
-                'zip'     => $request->input('zip'),
-                'phone'   => $request->input('phone'),
+            'ShipmentDate' => now()->toIso8601String(),
+            'CustomerReferenceNumber' => $request->input('order_id', 'ORD-' . rand(1000, 9999)),
+            'OriginAddress' => [
+                'CompanyName' => 'Your Warehouse',
+                'AddressLine1' => '123 Origin St',
+                'City' => 'New York',
+                'StateProvince' => 'NY',
+                'PostalCode' => '10001',
+                'CountryCode' => 'US',
             ],
-            'package' => [
-                'weight' => $request->input('weight'),
-                'dimensions' => [
-                    'length' => $request->input('length'),
-                    'width'  => $request->input('width'),
-                    'height' => $request->input('height'),
-                ],
+            'DestinationAddress' => [
+                'CompanyName' => $request->input('name'),
+                'AddressLine1' => $request->input('address'),
+                'City' => $request->input('city'),
+                'StateProvince' => $request->input('state'),
+                'PostalCode' => $request->input('zip'),
+                'CountryCode' => 'US',
             ],
-            // Add more fields as per Unisource API
+            'Commodities' => [
+                [
+                    'Description' => 'Goods',
+                    'Weight' => [
+                        'Value' => $request->input('weight', 10),
+                        'Unit' => 'LBS'
+                    ],
+                    'Quantity' => 1
+                ]
+            ]
         ];
 
         try {
             $response = $client->post($apiUrl, [
                 'headers' => [
-                    'Authorization' => 'Bearer ' . $apiKey,
                     'Accept'        => 'application/json',
                     'Content-Type'  => 'application/json',
+                    // Add this if they require basic auth
+                    'Authorization' => 'Basic ' . base64_encode(env('UNISOURCE_API_USERNAME') . ':' . env('UNISOURCE_API_PASSWORD')),
                 ],
-                'json' => $payload,
+                'json' => $payload
             ]);
 
             $body = json_decode($response->getBody(), true);
@@ -96,7 +106,6 @@ class UnisourceShipmentController extends Controller
                 'success' => true,
                 'data' => $body
             ]);
-
         } catch (\Exception $e) {
             Log::error('Unisource Shipment Error: ' . $e->getMessage());
 

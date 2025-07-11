@@ -26293,13 +26293,13 @@
                 ]
             }
         },
-        "/api/unisource/create-shipment": {
+        "/unisource/create-shipment": {
             "post": {
                 "tags": [
                     "Unisource"
                 ],
-                "summary": "Create shipment via Unisource API",
-                "description": "Creates a new shipment using Unisource API.",
+                "summary": "Create a shipment",
+                "description": "Creates a shipment through the Unisource Taicloud API",
                 "operationId": "createUnisourceShipment",
                 "requestBody": {
                     "required": true,
@@ -26307,66 +26307,43 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "order_id",
                                     "name",
                                     "address",
                                     "city",
                                     "state",
                                     "zip",
-                                    "phone",
                                     "weight",
-                                    "length",
-                                    "width",
-                                    "height"
+                                    "order_id"
                                 ],
                                 "properties": {
-                                    "order_id": {
-                                        "type": "string",
-                                        "example": "ORD-123456"
-                                    },
                                     "name": {
                                         "type": "string",
                                         "example": "John Doe"
                                     },
                                     "address": {
                                         "type": "string",
-                                        "example": "123 Main Street"
+                                        "example": "456 Destination Rd"
                                     },
                                     "city": {
                                         "type": "string",
-                                        "example": "New York"
+                                        "example": "Los Angeles"
                                     },
                                     "state": {
                                         "type": "string",
-                                        "example": "NY"
+                                        "example": "CA"
                                     },
                                     "zip": {
                                         "type": "string",
-                                        "example": "10001"
-                                    },
-                                    "phone": {
-                                        "type": "string",
-                                        "example": "1234567890"
+                                        "example": "90001"
                                     },
                                     "weight": {
                                         "type": "number",
                                         "format": "float",
-                                        "example": 5
+                                        "example": 15
                                     },
-                                    "length": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 10
-                                    },
-                                    "width": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 5
-                                    },
-                                    "height": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 4
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORDER-0001"
                                     }
                                 },
                                 "type": "object"
@@ -26395,7 +26372,7 @@
                         }
                     },
                     "500": {
-                        "description": "Error creating shipment",
+                        "description": "Internal Server Error",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -26406,7 +26383,7 @@
                                         },
                                         "error": {
                                             "type": "string",
-                                            "example": "Authentication failed"
+                                            "example": "Unable to connect to Unisource API"
                                         }
                                     },
                                     "type": "object"
@@ -26414,12 +26391,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/users": {
