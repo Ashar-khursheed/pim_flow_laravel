@@ -26293,7 +26293,7 @@
                 ]
             }
         },
-        "/unisource/create-shipment": {
+        "/api/unisource/create-shipment": {
             "post": {
                 "tags": [
                     "Unisource"
