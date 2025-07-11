@@ -26293,73 +26293,25 @@
                 ]
             }
         },
-        "/api/unisource/authenticate": {
-            "post": {
-                "tags": [
-                    "Unisource"
-                ],
-                "summary": "Authenticate with Unisource API",
-                "description": "Logs in with Unisource credentials from .env and returns a bearer token.",
-                "operationId": "authenticateWithUnisource",
-                "responses": {
-                    "200": {
-                        "description": "Token retrieved successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": true
-                                        },
-                                        "token": {
-                                            "type": "string",
-                                            "example": "eyJhbGciOiJIUz..."
-                                        },
-                                        "raw": {
-                                            "type": "object",
-                                            "example": {
-                                                "expiresIn": 3600,
-                                                "token": "eyJhbGci..."
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Invalid credentials"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        },
         "/api/unisource/create-shipment": {
             "post": {
                 "tags": [
                     "Unisource"
                 ],
                 "summary": "Create a shipment",
-                "description": "Creates a shipment using the Unisource Taicloud API with bearer token authorization.",
-                "operationId": "createShipment",
+                "description": "Creates a shipment using Unisource API with x-api-key",
+                "operationId": "createShipmentWithApiKey",
+                "parameters": [
+                    {
+                        "name": "x-api-key",
+                        "in": "header",
+                        "description": "Your Unisource API key",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -26429,28 +26381,8 @@
                             }
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "type": "string",
-                                            "example": "Unauthorized"
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
-                    },
                     "500": {
-                        "description": "Internal server error",
+                        "description": "Error",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -26460,8 +26392,7 @@
                                             "example": false
                                         },
                                         "error": {
-                                            "type": "string",
-                                            "example": "API error message"
+                                            "type": "string"
                                         }
                                     },
                                     "type": "object"
@@ -26469,12 +26400,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/users": {
