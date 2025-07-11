@@ -41,6 +41,7 @@ class UnisourceShipmentController extends Controller
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
      *     tags={"Unisource"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Create a shipment",
      *     description="Creates a shipment using Unisource API with x-api-key",
      *     operationId="createShipmentWithApiKey",
