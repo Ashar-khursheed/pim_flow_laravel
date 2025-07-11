@@ -295,6 +295,7 @@ class CustomerController extends Controller
 	 *     path="/api/customers/filter-by-date",
 	 *     summary="Filter customers by created_at or updated_at date range",
 	 *     tags={"Customers"},
+	 *     security={{"bearerAuth":{}}},
 	 *     operationId="filterCustomersByDate",
 	 *     @OA\Parameter(
 	 *         name="date_type",
