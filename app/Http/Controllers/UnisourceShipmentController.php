@@ -145,23 +145,23 @@ public function createShipment(Request $request)
     $payload = [
         'ShipmentDate' => now()->toIso8601String(),
         'CustomerReferenceNumber' => $request->input('order_id'),
-        'OriginAddress' => [
-            'CompanyName'   => 'Your Warehouse',
-            'AddressLine1'  => '123 Origin St',
-            'City'          => 'New York',
-            'StateProvince' => 'NY',
-            'PostalCode'    => '10001',
-            'CountryCode'   => 'US',
-        ],
-        'DestinationAddress' => [
-            'CompanyName'   => $request->input('name'),
-            'AddressLine1'  => $request->input('address'),
-            'City'          => $request->input('city'),
-            'StateProvince' => $request->input('state'),
-            'PostalCode'    => $request->input('zip'),
-            'CountryCode'   => 'US',
-        ],
-        'Commodities' => $formattedCommodities
+       'OriginAddress' => [
+        'CompanyName'   => 'Your Warehouse',
+        'AddressLine1'  => '123 Origin St',
+        'City'          => 'New York',
+        'StateProvince' => 'NY',
+        'PostalCode'    => '10001', // ✅ required
+        'CountryCode'   => 'US',
+    ],
+    'DestinationAddress' => [
+        'CompanyName'   => $request->input('name'),
+        'AddressLine1'  => $request->input('address'),
+        'City'          => $request->input('city'),
+        'StateProvince' => $request->input('state'),
+        'PostalCode'    => $request->input('zip'), // ✅ required
+        'CountryCode'   => 'US',
+    ],
+            'Commodities' => $formattedCommodities
     ];
 
     // Log final payload for debugging
