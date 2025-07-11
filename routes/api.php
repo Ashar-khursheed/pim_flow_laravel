@@ -350,12 +350,12 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('product-title-formula', ProductTitleFormulaController::class);
 	Route::post('product-title-formula/delete-multiple', [ProductTitleFormulaController::class, 'destroyMultiple']);
 
-
+	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
+	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
 
 });
 
-Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
-Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
+
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
