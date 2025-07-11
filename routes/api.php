@@ -353,6 +353,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 });
 
 Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
+Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);

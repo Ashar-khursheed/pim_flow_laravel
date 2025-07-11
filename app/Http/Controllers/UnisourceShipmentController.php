@@ -7,16 +7,78 @@ use GuzzleHttp\Client;
 use Illuminate\Support\Facades\Log;
 
 class UnisourceShipmentController extends Controller
-{
-    /**
-     * Create a new shipment via Unisource Taicloud API
+{   
+     /**
+    * Authenticate with Unisource API
+    *
+    * @OA\Post(
+    *     path="/api/unisource/authenticate",
+    *     tags={"Unisource"},
+    *     summary="Authenticate with Unisource API",
+    *     description="Logs in with Unisource credentials and returns an access token.",
+    *     operationId="authenticateWithUnisource",
+    *     @OA\RequestBody(
+    *         required=false,
+    *         @OA\JsonContent()
+    *     ),
+    *     @OA\Response(
+    *         response=200,
+    *         description="Token retrieved successfully",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="success", type="boolean", example=true),
+    *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUz...")
+    *         )
+    *     ),
+    *     @OA\Response(
+    *         response=401,
+    *         description="Unauthorized",
+    *         @OA\JsonContent(
+    *             @OA\Property(property="success", type="boolean", example=false),
+    *             @OA\Property(property="error", type="string", example="Invalid credentials")
+    *         )
+    *     )
+    * )
+    */
+
+    public function authenticateWithUnisource()
+    {
+        $client = new \GuzzleHttp\Client();
+
+        $username = env('UNISOURCE_API_USERNAME');
+        $password = env('UNISOURCE_API_PASSWORD');
+
+        try {
+            $response = $client->post('https://unisourceshipping.taicloud.net/PublicApi/Account/Login', [
+                'json' => [
+                    'username' => $username,
+                    'password' => $password
+                ],
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+
+            return $data['token'] ?? null;
+
+        } catch (\Exception $e) {
+            \Log::error('Unisource Login Error: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+        /**
+     * Create a shipment in Unisource API
      *
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
      *     tags={"Unisource"},
      *     summary="Create a shipment",
-     *     description="Creates a shipment through the Unisource Taicloud API using Basic Auth (username & password from .env)",
-     *     operationId="createUnisourceShipment",
+     *     description="Creates a shipment using the Unisource Taicloud API with bearer token authorization.",
+     *     operationId="createShipment",
+     *     security={{ "bearerAuth": {} }},
      *
      *     @OA\RequestBody(
      *         required=true,
@@ -27,7 +89,7 @@ class UnisourceShipmentController extends Controller
      *             @OA\Property(property="city", type="string", example="Los Angeles"),
      *             @OA\Property(property="state", type="string", example="CA"),
      *             @OA\Property(property="zip", type="string", example="90001"),
-     *             @OA\Property(property="weight", type="number", format="float", example=15),
+     *             @OA\Property(property="weight", type="number", example=15),
      *             @OA\Property(property="order_id", type="string", example="ORDER-0001")
      *         )
      *     ),
@@ -40,35 +102,39 @@ class UnisourceShipmentController extends Controller
      *             @OA\Property(property="data", type="object")
      *         )
      *     ),
-     *
      *     @OA\Response(
-     *         response=500,
-     *         description="Error response",
+     *         response=401,
+     *         description="Unauthorized",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="error", type="string", example="Unauthorized")
      *         )
+     *     ),
+     *     @OA\Response(
+     *         response=500,
+     *         description="Internal server error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="API error message")
+     *         )
      *     )
      * )
      */
+
     public function createShipment(Request $request)
     {
-        $client = new Client();
-
-        $apiUrl = env('UNISOURCE_API_BASE_URL') . '/Shipments';
-
-        // Load from .env
-        $username = env('UNISOURCE_API_USERNAME');
-        $password = env('UNISOURCE_API_PASSWORD');
-
-        // Validate credentials
-        if (!$username || !$password) {
+        $token = $this->authenticateWithUnisource();
+    
+        if (!$token) {
             return response()->json([
                 'success' => false,
-                'error' => 'API credentials are missing in .env file.'
-            ], 500);
+                'error' => 'Unable to authenticate with Unisource API.'
+            ], 401);
         }
-
+    
+        $client = new \GuzzleHttp\Client();
+        $apiUrl = env('UNISOURCE_API_BASE_URL') . '/Shipments';
+    
         $payload = [
             'ShipmentDate' => now()->toIso8601String(),
             'CustomerReferenceNumber' => $request->input('order_id', 'ORD-' . rand(1000, 9999)),
@@ -99,30 +165,32 @@ class UnisourceShipmentController extends Controller
                 ]
             ]
         ];
-
+    
         try {
             $response = $client->post($apiUrl, [
                 'headers' => [
-                    'Accept'        => 'application/json',
-                    'Content-Type'  => 'application/json',
-                    'Authorization' => 'Basic ' . base64_encode("{$username}:{$password}"),
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'Authorization' => 'Bearer ' . $token,
                 ],
-                'json' => $payload
+                'json' => $payload,
             ]);
-
+    
             $body = json_decode($response->getBody(), true);
-
+    
             return response()->json([
                 'success' => true,
-                'data' => $body
+                'data' => $body,
             ]);
+    
         } catch (\Exception $e) {
-            Log::error('Unisource Shipment Error: ' . $e->getMessage());
-
+            \Log::error('Unisource Shipment Error: ' . $e->getMessage());
+    
             return response()->json([
                 'success' => false,
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ], 500);
         }
     }
+    
 }
