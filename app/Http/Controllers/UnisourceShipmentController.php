@@ -37,8 +37,6 @@ class UnisourceShipmentController extends Controller
         }
     }
 
-
-
     /**
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
@@ -166,6 +164,8 @@ class UnisourceShipmentController extends Controller
             'billToAddress.country' => 'required|string',
             'billToAddress.phone' => 'required|string',
             
+            // Origin zip is required - can be standalone or in address
+            'originZip' => 'required_without:originAddress.zipCode|string',
             'originAddress' => 'required|array',
             'originAddress.companyName' => 'required|string',
             'originAddress.streetAddress' => 'required|string',
@@ -176,6 +176,8 @@ class UnisourceShipmentController extends Controller
             'originAddress.country' => 'required|string',
             'originAddress.phone' => 'required|string',
             
+            // Destination zip is required - can be standalone or in address
+            'destinationZip' => 'required_without:destinationAddress.zipCode|string',
             'destinationAddress' => 'required|array',
             'destinationAddress.companyName' => 'required|string',
             'destinationAddress.streetAddress' => 'required|string',
@@ -186,6 +188,7 @@ class UnisourceShipmentController extends Controller
             'destinationAddress.country' => 'required|string',
             'destinationAddress.phone' => 'required|string',
             
+            // At least one commodity is required
             'commodities' => 'required|array|min:1',
             'commodities.*.description' => 'required|string',
             'commodities.*.weight' => 'required|numeric|min:0.1',
@@ -283,12 +286,39 @@ class UnisourceShipmentController extends Controller
                 if (!isset($commodity['pieceTotal']) || $commodity['pieceTotal'] < 1) {
                     $commodity['pieceTotal'] = 1;
                 }
+                
+                // Ensure numeric values are properly formatted
+                if (isset($commodity['weight'])) {
+                    $commodity['weight'] = (float) $commodity['weight'];
+                }
+                if (isset($commodity['length'])) {
+                    $commodity['length'] = (float) $commodity['length'];
+                }
+                if (isset($commodity['width'])) {
+                    $commodity['width'] = (float) $commodity['width'];
+                }
+                if (isset($commodity['height'])) {
+                    $commodity['height'] = (float) $commodity['height'];
+                }
             }
         }
     
+        // Add required top-level zip fields if missing
+        if (!isset($data['originZip']) && isset($data['originAddress']['zipCode'])) {
+            $data['originZip'] = $data['originAddress']['zipCode'];
+        }
+        
+        if (!isset($data['destinationZip']) && isset($data['destinationAddress']['zipCode'])) {
+            $data['destinationZip'] = $data['destinationAddress']['zipCode'];
+        }
+    
+        // Remove empty or null values that might cause issues
+        $data = array_filter($data, function($value) {
+            return $value !== null && $value !== '';
+        });
+    
         return $data;
     }
-     
 
 
 }
