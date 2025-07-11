@@ -356,8 +356,9 @@ class CustomerController extends Controller
     $startDate = Carbon::parse($request->input('start_date'))->startOfSecond();
     $endDate = Carbon::parse($request->input('end_date'))->endOfSecond();
 
-    $customers = Customer::whereBetween($dateType, [$startDate, $endDate])->pluck('id');
-
+	$customers = Customer::whereDate($dateType, '>=', $startDate)
+    ->whereDate($dateType, '<=', $endDate)
+    ->pluck('id');
     if ($customers->isEmpty()) {
         return response()->json([
             'success' => false,
