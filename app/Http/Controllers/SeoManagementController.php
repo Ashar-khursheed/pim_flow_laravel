@@ -927,7 +927,7 @@ class SeoManagementController extends Controller
 
 			/* Fetch the relational name based on relational_type and relational_id */
 			// $relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
-			$modelClass = $request->relational_type; // like 'Category'
+			$relationalName=$modelClass = $request->relational_type; // like 'Category'
 
 			/* Process secondary keywords */
 			if ($record->secondaryKeywordDetails->isNotEmpty()) {

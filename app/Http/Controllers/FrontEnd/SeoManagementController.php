@@ -171,6 +171,7 @@ class SeoManagementController extends Controller
                 'relational_id' => $item->relational_id,
                 'relational_type' => $item->relational_type,
                 'internal_links' => $item->internal_links,
+                'cat_desc' => $item->cat_desc,
                 'paragraph_1' => $item->paragraph_1,
                 'paragraph_2' => $item->paragraph_2,
                 'paragraph_3' => $item->paragraph_3,
