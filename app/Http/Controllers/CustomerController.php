@@ -290,69 +290,94 @@ class CustomerController extends Controller
 	}
 
 	
-	/**
-	 * @OA\Get(
-	 *     path="/api/customers/filter-by-date",
-	 *     summary="Filter customers by created_at or updated_at date range",
-	 *     tags={"Customers"},
-	 *     security={{"bearerAuth":{}}},
-	 *     operationId="filterCustomersByDate",
-	 *     @OA\Parameter(
-	 *         name="date_type",
-	 *         in="query",
-	 *         required=true,
-	 *         description="Field to filter on: created_at or updated_at",
-	 *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="start_date",
-	 *         in="query",
-	 *         required=true,
-	 *         description="Start date in YYYY-MM-DD format",
-	 *         @OA\Schema(type="string", format="date")
-	 *     ),
-	 *     @OA\Parameter(
-	 *         name="end_date",
-	 *         in="query",
-	 *         required=true,
-	 *         description="End date in YYYY-MM-DD format",
-	 *         @OA\Schema(type="string", format="date")
-	 *     ),
-	 *     @OA\Response(
-	 *         response=200,
-	 *         description="Filtered customer IDs",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="success", type="boolean", example=true),
-	 *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
-	 *             @OA\Property(property="data", type="array", @OA\Items(type="integer"))
-	 *         )
-	 *     ),
-	 *     @OA\Response(
-	 *         response=422,
-	 *         description="Validation error"
-	 *     )
-	 * )
-	 */
-	public function filterByDate(Request $request)
-	{
-		$request->validate([
-			'date_type' => 'required|in:created_at,updated_at',
-			'start_date' => 'required|date',
-			'end_date' => 'required|date|after_or_equal:start_date',
-		]);
-	
-		$dateType = $request->input('date_type');
-		$start = Carbon::parse($request->start_date)->toDateString();
-		$end = Carbon::parse($request->end_date)->toDateString();
-	
-		// TEMP: Get all rows that match the condition
-		$customers = Customer::whereDate($dateType, '>=', $start)
-			->whereDate($dateType, '<=', $end)
-			->get();
-	
-		// 👇 Dump everything and stop
-		dd($customers->toArray());
-	}
+/**
+ * @OA\Get(
+ *     path="/api/customers/filter-by-date",
+ *     summary="Filter customers by created_at or updated_at date range",
+ *     tags={"Customers"},
+ *     security={{"bearerAuth":{}}},
+ *     operationId="filterCustomersByDate",
+ *     @OA\Parameter(
+ *         name="date_type",
+ *         in="query",
+ *         required=true,
+ *         description="Field to filter on: created_at or updated_at",
+ *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
+ *     ),
+ *     @OA\Parameter(
+ *         name="start_date",
+ *         in="query",
+ *         required=true,
+ *         description="Start date in YYYY-MM-DD format",
+ *         @OA\Schema(type="string", format="date")
+ *     ),
+ *     @OA\Parameter(
+ *         name="end_date",
+ *         in="query",
+ *         required=true,
+ *         description="End date in YYYY-MM-DD format",
+ *         @OA\Schema(type="string", format="date")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Filtered customer IDs",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
+ *             @OA\Property(property="data", type="array", @OA\Items(type="integer"))
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
+ *     )
+ * )
+ */
+public function filterByDate(Request $request)
+{
+    $request->validate([
+        'date_type' => 'required|in:created_at,updated_at',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
 
+    $dateType = $request->input('date_type');
+    $startDate = $request->input('start_date');
+    $endDate = $request->input('end_date');
+
+    // Debug: Check what we're working with
+    \Log::info('Filter parameters:', [
+        'date_type' => $dateType,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+    ]);
+
+    // Option 1: Use date range with proper datetime handling
+    $customers = Customer::whereBetween($dateType, [
+        Carbon::parse($startDate)->startOfDay(),
+        Carbon::parse($endDate)->endOfDay()
+    ])->get();
+
+    // Alternative Option 2: If you prefer the original approach with fixes
+    /*
+    $customers = Customer::whereDate($dateType, '>=', $startDate)
+        ->whereDate($dateType, '<=', $endDate)
+        ->get();
+    */
+
+    // Debug: Check the query and results
+    \Log::info('Query results:', [
+        'count' => $customers->count(),
+        'first_few' => $customers->take(3)->toArray()
+    ]);
+
+    // Return proper response instead of dd()
+    return response()->json([
+        'success' => true,
+        'message' => 'Customer IDs filtered by date range.',
+        'data' => $customers->pluck('id')->toArray(),
+        'total' => $customers->count()
+    ]);
+}
 
 }
