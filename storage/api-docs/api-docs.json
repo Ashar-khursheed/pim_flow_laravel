@@ -26378,99 +26378,136 @@
                 "tags": [
                     "Unisource"
                 ],
-                "summary": "Create a shipment",
-                "description": "Creates a shipment using Unisource API with x-api-key",
-                "operationId": "createShipmentWithApiKey",
-                "parameters": [
-                    {
-                        "name": "x-api-key",
-                        "in": "header",
-                        "description": "Your Unisource API key",
-                        "required": true,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
+                "summary": "Create a shipment with full payload",
+                "operationId": "dd6a00b14e9f545ce9b95aaef5790aef",
                 "requestBody": {
                     "required": true,
                     "content": {
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "name",
-                                    "address",
-                                    "city",
-                                    "state",
-                                    "zip",
-                                    "order_id",
-                                    "commodities"
+                                    "billToType",
+                                    "billToAccountNumber",
+                                    "billToAddress",
+                                    "priceDetail"
                                 ],
                                 "properties": {
-                                    "name": {
+                                    "billToType": {
                                         "type": "string",
-                                        "example": "John Doe"
+                                        "example": "Third"
                                     },
-                                    "address": {
+                                    "billToAccountNumber": {
                                         "type": "string",
-                                        "example": "456 Destination Rd"
+                                        "example": "123456"
                                     },
-                                    "city": {
-                                        "type": "string",
-                                        "example": "Los Angeles"
+                                    "billToAddress": {
+                                        "properties": {
+                                            "companyName": {
+                                                "type": "string",
+                                                "example": "Company A"
+                                            },
+                                            "streetAddress": {
+                                                "type": "string",
+                                                "example": "123 Main St"
+                                            },
+                                            "streetAddressTwo": {
+                                                "type": "string",
+                                                "example": "Suite 4B"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "New York"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "NY"
+                                            },
+                                            "zipCode": {
+                                                "type": "string",
+                                                "example": "10001"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "billing@company.com"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "fax": {
+                                                "type": "string",
+                                                "example": "123-456-7890"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "123-456-7890"
+                                            }
+                                        },
+                                        "type": "object"
                                     },
-                                    "state": {
-                                        "type": "string",
-                                        "example": "CA"
-                                    },
-                                    "zip": {
-                                        "type": "string",
-                                        "example": "90001"
-                                    },
-                                    "order_id": {
-                                        "type": "string",
-                                        "example": "ORDER-0001"
-                                    },
-                                    "commodities": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "description",
-                                                "weight",
-                                                "piece_total"
-                                            ],
-                                            "properties": {
-                                                "description": {
-                                                    "type": "string",
-                                                    "example": "Box of electronics"
-                                                },
-                                                "weight": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 15
-                                                },
-                                                "piece_total": {
-                                                    "type": "integer",
-                                                    "example": 1
-                                                },
-                                                "length": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 12
-                                                },
-                                                "width": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 10
-                                                },
-                                                "height": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 8
+                                    "priceDetail": {
+                                        "properties": {
+                                            "carrierSCAC": {
+                                                "type": "string"
+                                            },
+                                            "carrierName": {
+                                                "type": "string"
+                                            },
+                                            "tariffDescription": {
+                                                "type": "string"
+                                            },
+                                            "transitTime": {
+                                                "type": "integer"
+                                            },
+                                            "serviceLevel": {
+                                                "type": "string"
+                                            },
+                                            "priceLineHaul": {
+                                                "type": "number"
+                                            },
+                                            "priceFuelSurcharge": {
+                                                "type": "number"
+                                            },
+                                            "priceAccessorials": {
+                                                "type": "array",
+                                                "items": {
+                                                    "properties": {
+                                                        "accessorialCode": {
+                                                            "type": "string"
+                                                        },
+                                                        "accessorialPrice": {
+                                                            "type": "number"
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
-                                            "type": "object"
-                                        }
+                                            "priceInsurance": {
+                                                "type": "number"
+                                            },
+                                            "insuranceQuoteNumber": {
+                                                "type": "string"
+                                            },
+                                            "priceTotal": {
+                                                "type": "number"
+                                            },
+                                            "pricingInstructions": {
+                                                "type": "string"
+                                            },
+                                            "usedLiabilityCoverage": {
+                                                "type": "number"
+                                            },
+                                            "newLiabilityCoverage": {
+                                                "type": "number"
+                                            },
+                                            "tsaCompliance": {
+                                                "type": "string"
+                                            },
+                                            "apiQuoteNumber": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
                                     }
                                 },
                                 "type": "object"
@@ -26480,7 +26517,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Shipment created",
+                        "description": "Shipment created successfully",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -26499,7 +26536,7 @@
                         }
                     },
                     "500": {
-                        "description": "Error",
+                        "description": "Internal Server Error",
                         "content": {
                             "application/json": {
                                 "schema": {
