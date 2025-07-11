@@ -103,7 +103,7 @@ class UnisourceShipmentController extends Controller
             'address' => 'required|string',
             'city' => 'required|string',
             'state' => 'required|string',
-            'zip' => 'required|string',
+            'zip' => 'required|string|min:5', // <- ensures zip exists
             'order_id' => 'required|string',
             'commodities' => 'required|array|min:1',
             'commodities.*.description' => 'required|string',
@@ -137,21 +137,21 @@ class UnisourceShipmentController extends Controller
             'ShipmentDate' => now()->toIso8601String(),
             'CustomerReferenceNumber' => $request->input('order_id'),
             'OriginAddress' => [
-                'CompanyName'   => 'Your Warehouse',
-                'AddressLine1'  => '123 Origin St',
-                'City'          => 'New York',
-                'StateProvince' => 'NY',
-                'PostalCode'    => '10001', // ✅ Make sure this is not null/empty
-                'CountryCode'   => 'US',
-            ],
-            'DestinationAddress' => [
-                'CompanyName'   => $request->input('name'),
-                'AddressLine1'  => $request->input('address'),
-                'City'          => $request->input('city'),
-                'StateProvince' => $request->input('state'),
-                'PostalCode'    => $request->input('zip'), // ✅ Make sure this is not null/empty
-                'CountryCode'   => 'US',
-            ],
+            'CompanyName'   => 'Your Warehouse',
+            'AddressLine1'  => '123 Origin St',
+            'City'          => 'New York',
+            'StateProvince' => 'NY',
+            'PostalCode'    => '10001', // ✅ HARDCODED ZIP — REQUIRED
+            'CountryCode'   => 'US',
+        ],
+        'DestinationAddress' => [
+            'CompanyName'   => $request->input('name'),
+            'AddressLine1'  => $request->input('address'),
+            'City'          => $request->input('city'),
+            'StateProvince' => $request->input('state'),
+            'PostalCode'    => $request->input('zip'), // ✅ zip used here
+            'CountryCode'   => 'US',
+        ],
             'Commodities' => $formattedCommodities
         ];
     
