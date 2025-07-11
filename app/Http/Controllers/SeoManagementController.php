@@ -927,21 +927,7 @@ class SeoManagementController extends Controller
 
 			/* Fetch the relational name based on relational_type and relational_id */
 			// $relationalName = $modelClass::find($record->relational_id)->name ?? 'N/A';
-			$modelMap = [
-				'Product' => \App\Models\Product::class,
-				'Category' => \App\Models\Category::class,
-				'Brand'   => \App\Models\Brand::class,
-				'Blog'    => \App\Models\Blog::class,
-			];
-			
-			$modelClass = $modelMap[$request->relational_type] ?? null;
-			
-			if (!$modelClass || !class_exists($modelClass)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid relational_type provided.',
-				], 422);
-			}
+			$modelClass = $request->relational_type; // like 'Category'
 
 			/* Process secondary keywords */
 			if ($record->secondaryKeywordDetails->isNotEmpty()) {
