@@ -13,6 +13,7 @@ class UnisourceShipmentController extends Controller
      * @OA\Post(
      *     path="/unisource/create-shipment",
      *     tags={"Unisource"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Create a shipment",
      *     description="Creates a shipment through the Unisource Taicloud API",
      *     operationId="createUnisourceShipment",
