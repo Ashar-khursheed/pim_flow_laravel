@@ -113,10 +113,11 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
             abort(404, 'Image not found');
         }
 
-        return response($response->body(), 200)
-            ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
-            ->header('Cache-Control', 'public, max-age=86400')
-            ->header('Access-Control-Allow-Origin', '*');
+		return response($response->body(), 200)
+		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
+		->header('Cache-Control', 'public, max-age=86400')
+		->header('Access-Control-Allow-Origin', '*')
+		->header('Access-Control-Allow-Headers', 'Content-Type');	
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
