@@ -334,40 +334,25 @@ class CustomerController extends Controller
 	 * )
 	 */
 	public function filterByDate(Request $request)
-{
-    $request->validate([
-        'date_type' => 'required|in:created_at,updated_at',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-    ]);
-
-    $dateType = $request->input('date_type');
-    $startDate = Carbon::parse($request->start_date)->toDateString();
-    $endDate = Carbon::parse($request->end_date)->toDateString();
-
-    // Log query for debugging
-    \DB::enableQueryLog();
-
-    $customers = Customer::whereDate($dateType, '>=', $startDate)
-        ->whereDate($dateType, '<=', $endDate)
-        ->pluck('id');
-
-    \Log::info('QueryLog:', \DB::getQueryLog());
-    \Log::info('Customer IDs:', $customers->toArray());
-
-    if ($customers->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Record does not exist',
-        ]);
-    }
-
-    return response()->json([
-        'success' => true,
-        'message' => 'Customer IDs filtered by date range.',
-        'data' => $customers,
-    ]);
-}
+	{
+		$request->validate([
+			'date_type' => 'required|in:created_at,updated_at',
+			'start_date' => 'required|date',
+			'end_date' => 'required|date|after_or_equal:start_date',
+		]);
+	
+		$dateType = $request->input('date_type');
+		$start = Carbon::parse($request->start_date)->toDateString();
+		$end = Carbon::parse($request->end_date)->toDateString();
+	
+		// TEMP: Get all rows that match the condition
+		$customers = Customer::whereDate($dateType, '>=', $start)
+			->whereDate($dateType, '<=', $end)
+			->get();
+	
+		// 👇 Dump everything and stop
+		dd($customers->toArray());
+	}
 
 
 }
