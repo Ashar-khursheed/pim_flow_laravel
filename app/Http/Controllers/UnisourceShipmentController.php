@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -7,15 +8,14 @@ use Illuminate\Support\Facades\Log;
 
 class UnisourceShipmentController extends Controller
 {
-       /**
+    /**
      * Create a new shipment via Unisource Taicloud API
      *
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
      *     tags={"Unisource"},
-     *     security={{"bearerAuth":{}}},
      *     summary="Create a shipment",
-     *     description="Creates a shipment through the Unisource Taicloud API",
+     *     description="Creates a shipment through the Unisource Taicloud API using Basic Auth (username & password from .env)",
      *     operationId="createUnisourceShipment",
      *
      *     @OA\RequestBody(
@@ -34,7 +34,7 @@ class UnisourceShipmentController extends Controller
      *
      *     @OA\Response(
      *         response=200,
-     *         description="Shipment successfully created",
+     *         description="Shipment created",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object")
@@ -43,22 +43,32 @@ class UnisourceShipmentController extends Controller
      *
      *     @OA\Response(
      *         response=500,
-     *         description="Internal Server Error",
+     *         description="Error response",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string", example="Unable to connect to Unisource API")
+     *             @OA\Property(property="error", type="string", example="Unauthorized")
      *         )
      *     )
      * )
      */
-
     public function createShipment(Request $request)
     {
         $client = new Client();
 
         $apiUrl = env('UNISOURCE_API_BASE_URL') . '/Shipments';
 
-        // Sample shipment payload - structure this according to their Swagger spec
+        // Load from .env
+        $username = env('UNISOURCE_API_USERNAME');
+        $password = env('UNISOURCE_API_PASSWORD');
+
+        // Validate credentials
+        if (!$username || !$password) {
+            return response()->json([
+                'success' => false,
+                'error' => 'API credentials are missing in .env file.'
+            ], 500);
+        }
+
         $payload = [
             'ShipmentDate' => now()->toIso8601String(),
             'CustomerReferenceNumber' => $request->input('order_id', 'ORD-' . rand(1000, 9999)),
@@ -95,8 +105,7 @@ class UnisourceShipmentController extends Controller
                 'headers' => [
                     'Accept'        => 'application/json',
                     'Content-Type'  => 'application/json',
-                    // Add this if they require basic auth
-                    'Authorization' => 'Basic ' . base64_encode(env('UNISOURCE_API_USERNAME') . ':' . env('UNISOURCE_API_PASSWORD')),
+                    'Authorization' => 'Basic ' . base64_encode("{$username}:{$password}"),
                 ],
                 'json' => $payload
             ]);

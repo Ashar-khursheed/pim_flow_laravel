@@ -26299,7 +26299,7 @@
                     "Unisource"
                 ],
                 "summary": "Create a shipment",
-                "description": "Creates a shipment through the Unisource Taicloud API",
+                "description": "Creates a shipment through the Unisource Taicloud API using Basic Auth (username & password from .env)",
                 "operationId": "createUnisourceShipment",
                 "requestBody": {
                     "required": true,
@@ -26353,7 +26353,7 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Shipment successfully created",
+                        "description": "Shipment created",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -26372,7 +26372,7 @@
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Error response",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -26383,7 +26383,7 @@
                                         },
                                         "error": {
                                             "type": "string",
-                                            "example": "Unable to connect to Unisource API"
+                                            "example": "Unauthorized"
                                         }
                                     },
                                     "type": "object"
@@ -26391,12 +26391,7 @@
                             }
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/users": {
