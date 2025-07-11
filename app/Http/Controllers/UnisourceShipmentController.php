@@ -8,66 +8,74 @@ use Illuminate\Support\Facades\Log;
 
 class UnisourceShipmentController extends Controller
 {   
-     /**
-    * Authenticate with Unisource API
-    *
-    * @OA\Post(
-    *     path="/api/unisource/authenticate",
-    *     tags={"Unisource"},
-    *     summary="Authenticate with Unisource API",
-    *     description="Logs in with Unisource credentials and returns an access token.",
-    *     operationId="authenticateWithUnisource",
-    *     @OA\RequestBody(
-    *         required=false,
-    *         @OA\JsonContent()
-    *     ),
-    *     @OA\Response(
-    *         response=200,
-    *         description="Token retrieved successfully",
-    *         @OA\JsonContent(
-    *             @OA\Property(property="success", type="boolean", example=true),
-    *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUz...")
-    *         )
-    *     ),
-    *     @OA\Response(
-    *         response=401,
-    *         description="Unauthorized",
-    *         @OA\JsonContent(
-    *             @OA\Property(property="success", type="boolean", example=false),
-    *             @OA\Property(property="error", type="string", example="Invalid credentials")
-    *         )
-    *     )
-    * )
-    */
+    /**
+     * Authenticate with Unisource API
+     *
+     * @OA\Post(
+     *     path="/api/unisource/authenticate",
+     *     tags={"Unisource"},
+     *     summary="Authenticate with Unisource API",
+     *     description="Logs in with Unisource credentials from .env and returns a bearer token.",
+     *     operationId="authenticateWithUnisource",
+     *
+     *     @OA\Response(
+     *         response=200,
+     *         description="Token retrieved successfully",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="token", type="string", example="eyJhbGciOiJIUz..."),
+     *             @OA\Property(property="raw", type="object", example={"expiresIn":3600,"token":"eyJhbGci..."})
+     *         )
+     *     ),
+     *
+     *     @OA\Response(
+     *         response=401,
+     *         description="Unauthorized",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=false),
+     *             @OA\Property(property="error", type="string", example="Invalid credentials")
+     *         )
+     *     )
+     * )
+     */
 
     public function authenticateWithUnisource()
-    {
-        $client = new \GuzzleHttp\Client();
+        {
+            $client = new \GuzzleHttp\Client();
 
-        $username = env('UNISOURCE_API_USERNAME');
-        $password = env('UNISOURCE_API_PASSWORD');
+            $username = env('UNISOURCE_API_USERNAME');
+            $password = env('UNISOURCE_API_PASSWORD');
 
-        try {
-            $response = $client->post('https://unisourceshipping.taicloud.net/PublicApi/Account/Login', [
-                'json' => [
-                    'username' => $username,
-                    'password' => $password
-                ],
-                'headers' => [
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                ],
-            ]);
+            try {
+                $response = $client->post('https://unisourceshipping.taicloud.net/PublicApi/Account/Login', [
+                    'json' => [
+                        'username' => $username,
+                        'password' => $password
+                    ],
+                    'headers' => [
+                        'Accept' => 'application/json',
+                        'Content-Type' => 'application/json',
+                    ],
+                ]);
 
-            $data = json_decode($response->getBody(), true);
+                $data = json_decode($response->getBody(), true);
 
-            return $data['token'] ?? null;
+                return response()->json([
+                    'success' => true,
+                    'token' => $data['token'] ?? null,
+                    'raw' => $data
+                ]);
 
-        } catch (\Exception $e) {
-            \Log::error('Unisource Login Error: ' . $e->getMessage());
-            return null;
+            } catch (\Exception $e) {
+                \Log::error('Unisource Login Error: ' . $e->getMessage());
+
+                return response()->json([
+                    'success' => false,
+                    'error' => $e->getMessage()
+                ], 401);
+            }
         }
-    }
+
 
         /**
      * Create a shipment in Unisource API

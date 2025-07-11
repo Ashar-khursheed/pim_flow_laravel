@@ -26299,16 +26299,8 @@
                     "Unisource"
                 ],
                 "summary": "Authenticate with Unisource API",
-                "description": "Logs in with Unisource credentials and returns an access token.",
+                "description": "Logs in with Unisource credentials from .env and returns a bearer token.",
                 "operationId": "authenticateWithUnisource",
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {}
-                        }
-                    }
-                },
                 "responses": {
                     "200": {
                         "description": "Token retrieved successfully",
@@ -26323,6 +26315,13 @@
                                         "token": {
                                             "type": "string",
                                             "example": "eyJhbGciOiJIUz..."
+                                        },
+                                        "raw": {
+                                            "type": "object",
+                                            "example": {
+                                                "expiresIn": 3600,
+                                                "token": "eyJhbGci..."
+                                            }
                                         }
                                     },
                                     "type": "object"
