@@ -26389,7 +26389,10 @@
                                     "billToType",
                                     "billToAccountNumber",
                                     "billToAddress",
-                                    "priceDetail"
+                                    "priceDetail",
+                                    "originAddress",
+                                    "destinationAddress",
+                                    "commodities"
                                 ],
                                 "properties": {
                                     "billToType": {
@@ -26444,6 +26447,120 @@
                                             }
                                         },
                                         "type": "object"
+                                    },
+                                    "originAddress": {
+                                        "properties": {
+                                            "companyName": {
+                                                "type": "string",
+                                                "example": "Origin Company"
+                                            },
+                                            "streetAddress": {
+                                                "type": "string",
+                                                "example": "789 Origin St"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Origin City"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "zipCode": {
+                                                "type": "string",
+                                                "example": "90210"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "origin@company.com"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "555-123-4567"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "destinationAddress": {
+                                        "properties": {
+                                            "companyName": {
+                                                "type": "string",
+                                                "example": "Destination Company"
+                                            },
+                                            "streetAddress": {
+                                                "type": "string",
+                                                "example": "456 Destination Rd"
+                                            },
+                                            "city": {
+                                                "type": "string",
+                                                "example": "Los Angeles"
+                                            },
+                                            "state": {
+                                                "type": "string",
+                                                "example": "CA"
+                                            },
+                                            "zipCode": {
+                                                "type": "string",
+                                                "example": "90001"
+                                            },
+                                            "email": {
+                                                "type": "string",
+                                                "example": "destination@company.com"
+                                            },
+                                            "country": {
+                                                "type": "string",
+                                                "example": "USA"
+                                            },
+                                            "phone": {
+                                                "type": "string",
+                                                "example": "555-987-6543"
+                                            }
+                                        },
+                                        "type": "object"
+                                    },
+                                    "commodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Box of electronics"
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "example": 15
+                                                },
+                                                "pieceTotal": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "length": {
+                                                    "type": "number",
+                                                    "example": 12
+                                                },
+                                                "width": {
+                                                    "type": "number",
+                                                    "example": 10
+                                                },
+                                                "height": {
+                                                    "type": "number",
+                                                    "example": 8
+                                                },
+                                                "declaredValue": {
+                                                    "type": "number",
+                                                    "example": 100
+                                                },
+                                                "commodityClass": {
+                                                    "type": "string",
+                                                    "example": "92.5"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     },
                                     "priceDetail": {
                                         "properties": {
@@ -26508,6 +26625,20 @@
                                             }
                                         },
                                         "type": "object"
+                                    },
+                                    "shipmentDate": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-15"
+                                    },
+                                    "deliveryDate": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-07-20"
+                                    },
+                                    "specialInstructions": {
+                                        "type": "string",
+                                        "example": "Fragile - Handle with care"
                                     }
                                 },
                                 "type": "object"
@@ -26527,6 +26658,28 @@
                                             "example": true
                                         },
                                         "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string"
+                                        },
+                                        "errors": {
                                             "type": "object"
                                         }
                                     },
