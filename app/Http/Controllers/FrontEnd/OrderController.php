@@ -348,6 +348,7 @@ class OrderController extends BaseController
 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
+			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
