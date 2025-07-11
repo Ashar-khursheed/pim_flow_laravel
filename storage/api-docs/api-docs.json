@@ -7000,6 +7000,103 @@
                 ]
             }
         },
+        "/api/customers/filter-by-date": {
+            "get": {
+                "tags": [
+                    "Customers"
+                ],
+                "summary": "Filter customers by created_at or updated_at date range",
+                "operationId": "filterCustomersByDate",
+                "parameters": [
+                    {
+                        "name": "date_type",
+                        "in": "query",
+                        "description": "Filter by 'created_at' or 'updated_at'",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Start date in YYYY-MM-DD format",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "End date in YYYY-MM-DD format (must be >= start_date)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of customer IDs within date range",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Customer IDs filtered by date range."
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "integer",
+                                                "example": 1
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "date_type": [
+                                                    "The date_type field is required."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/dashboard/stats": {
             "get": {
                 "tags": [

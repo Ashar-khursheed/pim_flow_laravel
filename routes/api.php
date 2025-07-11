@@ -179,6 +179,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/customers/{customer_id}/addresses', [CustomerAddressController::class, 'indexByCustomer']);
 	Route::apiResource('customers', CustomerController::class);
+	Route::get('/customers/filter-by-date', [CustomerController::class, 'filterByDate']);
 	Route::apiResource('customer-address', CustomerAddressController::class);
 
 	Route::post('/product-suppliers/export', [ProductSupplierController::class, 'export']);

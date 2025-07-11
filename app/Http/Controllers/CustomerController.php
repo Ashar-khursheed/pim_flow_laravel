@@ -287,4 +287,85 @@ class CustomerController extends Controller
 			'message' => 'Customer deleted successfully',
 		]);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/customers/filter-by-date",
+	 *     summary="Filter customers by created_at or updated_at date range",
+	 *     tags={"Customers"},
+	 *     operationId="filterCustomersByDate",
+	 *     @OA\Parameter(
+	 *         name="date_type",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Filter by 'created_at' or 'updated_at'",
+	 *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="start_date",
+	 *         in="query",
+	 *         required=true,
+	 *         description="Start date in YYYY-MM-DD format",
+	 *         @OA\Schema(type="string", format="date")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="end_date",
+	 *         in="query",
+	 *         required=true,
+	 *         description="End date in YYYY-MM-DD format (must be >= start_date)",
+	 *         @OA\Schema(type="string", format="date")
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="List of customer IDs within date range",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
+	 *             @OA\Property(
+	 *                 property="data",
+	 *                 type="array",
+	 *                 @OA\Items(type="integer", example=1)
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=422,
+	 *         description="Validation Error",
+	 *         @OA\JsonContent(
+	 *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+	 *             @OA\Property(
+	 *                 property="errors",
+	 *                 type="object",
+	 *                 example={"date_type": {"The date_type field is required."}}
+	 *             )
+	 *         )
+	 *     )
+	 * )
+	 */
+	public function filterByDate(Request $request)
+	{
+		$query = Customer::query();
+
+		$request->validate([
+			'date_type' => 'required|in:created_at,updated_at',
+			'start_date' => 'required|date',
+			'end_date' => 'required|date|after_or_equal:start_date',
+		]);
+
+		$dateType = $request->input('date_type');
+		$startDate = $request->input('start_date');
+		$endDate = $request->input('end_date');
+
+		$query->whereBetween($dateType, [$startDate, $endDate]);
+
+		$customerIds = $query->pluck('id');
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Customer IDs filtered by date range.',
+			'data' => $customerIds,
+		]);
+	}
+
 }
