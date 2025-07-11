@@ -122,11 +122,11 @@ class UnisourceShipmentController extends Controller
         foreach ($commodities as $item) {
             $formattedCommodities[] = [
                 'Description'   => $item['description'],
-                'WeightTotal'   => $item['weight'],
-                'PieceTotal'    => $item['piece_total'],
+                'WeightTotal'   => floatval($item['weight']),
+                'PieceTotal'    => intval($item['piece_total']),
                 'PackageType'   => 'BOX',
                 'WeightUnit'    => 'LBS',
-                'FreightClass'  => '92.5', // Required value (standard class)
+                'FreightClass'  => '92.5',
                 'Dimensions'    => [
                     'Length' => $item['length'] ?? 10,
                     'Width'  => $item['width'] ?? 10,
