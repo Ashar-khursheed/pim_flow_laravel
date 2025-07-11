@@ -7011,7 +7011,7 @@
                     {
                         "name": "date_type",
                         "in": "query",
-                        "description": "Filter by 'created_at' or 'updated_at'",
+                        "description": "Field to filter on: created_at or updated_at",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -7034,7 +7034,7 @@
                     {
                         "name": "end_date",
                         "in": "query",
-                        "description": "End date in YYYY-MM-DD format (must be >= start_date)",
+                        "description": "End date in YYYY-MM-DD format",
                         "required": true,
                         "schema": {
                             "type": "string",
@@ -7044,7 +7044,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of customer IDs within date range",
+                        "description": "Filtered customer IDs",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -7060,8 +7060,7 @@
                                         "data": {
                                             "type": "array",
                                             "items": {
-                                                "type": "integer",
-                                                "example": 1
+                                                "type": "integer"
                                             }
                                         }
                                     },
@@ -7071,35 +7070,9 @@
                         }
                     },
                     "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "properties": {
-                                        "message": {
-                                            "type": "string",
-                                            "example": "The given data was invalid."
-                                        },
-                                        "errors": {
-                                            "type": "object",
-                                            "example": {
-                                                "date_type": [
-                                                    "The date_type field is required."
-                                                ]
-                                            }
-                                        }
-                                    },
-                                    "type": "object"
-                                }
-                            }
-                        }
+                        "description": "Validation error"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/dashboard/stats": {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FrontEnd\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Carbon;
 
 class CustomerController extends Controller
 {
@@ -288,18 +289,18 @@ class CustomerController extends Controller
 		]);
 	}
 
+	
 	/**
 	 * @OA\Get(
 	 *     path="/api/customers/filter-by-date",
 	 *     summary="Filter customers by created_at or updated_at date range",
 	 *     tags={"Customers"},
-	 *     security={{"bearerAuth":{}}},
 	 *     operationId="filterCustomersByDate",
 	 *     @OA\Parameter(
 	 *         name="date_type",
 	 *         in="query",
 	 *         required=true,
-	 *         description="Filter by 'created_at' or 'updated_at'",
+	 *         description="Field to filter on: created_at or updated_at",
 	 *         @OA\Schema(type="string", enum={"created_at", "updated_at"})
 	 *     ),
 	 *     @OA\Parameter(
@@ -313,65 +314,52 @@ class CustomerController extends Controller
 	 *         name="end_date",
 	 *         in="query",
 	 *         required=true,
-	 *         description="End date in YYYY-MM-DD format (must be >= start_date)",
+	 *         description="End date in YYYY-MM-DD format",
 	 *         @OA\Schema(type="string", format="date")
 	 *     ),
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="List of customer IDs within date range",
+	 *         description="Filtered customer IDs",
 	 *         @OA\JsonContent(
-	 *             type="object",
 	 *             @OA\Property(property="success", type="boolean", example=true),
 	 *             @OA\Property(property="message", type="string", example="Customer IDs filtered by date range."),
-	 *             @OA\Property(
-	 *                 property="data",
-	 *                 type="array",
-	 *                 @OA\Items(type="integer", example=1)
-	 *             )
+	 *             @OA\Property(property="data", type="array", @OA\Items(type="integer"))
 	 *         )
 	 *     ),
 	 *     @OA\Response(
 	 *         response=422,
-	 *         description="Validation Error",
-	 *         @OA\JsonContent(
-	 *             @OA\Property(property="message", type="string", example="The given data was invalid."),
-	 *             @OA\Property(
-	 *                 property="errors",
-	 *                 type="object",
-	 *                 example={"date_type": {"The date_type field is required."}}
-	 *             )
-	 *         )
+	 *         description="Validation error"
 	 *     )
 	 * )
 	 */
 	public function filterByDate(Request $request)
-{
-    $request->validate([
-        'date_type' => 'required|in:created_at,updated_at',
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
-    ]);
+	{
+		$request->validate([
+			'date_type'   => 'required|in:created_at,updated_at',
+			'start_date'  => 'required|date',
+			'end_date'    => 'required|date|after_or_equal:start_date',
+		]);
 
-    $dateType = $request->input('date_type');
-    $startDate = Carbon::parse($request->input('start_date'))->startOfSecond();
-    $endDate = Carbon::parse($request->input('end_date'))->endOfSecond();
+		$dateType = $request->input('date_type');
+		$start    = Carbon::parse($request->start_date)->toDateString();
+		$end      = Carbon::parse($request->end_date)->toDateString();
 
-	$customers = Customer::whereDate($dateType, '>=', $startDate)
-    ->whereDate($dateType, '<=', $endDate)
-    ->pluck('id');
-    if ($customers->isEmpty()) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Record does not exist',
-        ]);
-    }
+		$customerIds = Customer::whereDate($dateType, '>=', $start)
+			->whereDate($dateType, '<=', $end)
+			->pluck('id');
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Customer IDs filtered by date range.',
-        'data' => $customers,
-    ]);
-}
+		if ($customerIds->isEmpty()) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Record does not exist',
+			]);
+		}
 
+		return response()->json([
+			'success' => true,
+			'message' => 'Customer IDs filtered by date range.',
+			'data'    => $customerIds,
+		]);
+	}
 
 }
