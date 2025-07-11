@@ -59,6 +59,8 @@ use App\Http\Controllers\ProductQuestionController;
 use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
+use App\Http\Controllers\UnisourceShipmentController;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -97,6 +99,7 @@ use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
+
 use Illuminate\Support\Facades\Http;
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
@@ -113,10 +116,11 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
             abort(404, 'Image not found');
         }
 
-        return response($response->body(), 200)
-            ->header('Content-Type', $response->header('Content-Type', 'image/jpeg'))
-            ->header('Cache-Control', 'public, max-age=86400')
-            ->header('Access-Control-Allow-Origin', '*');
+		return response($response->body(), 200)
+		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
+		->header('Cache-Control', 'public, max-age=86400')
+		->header('Access-Control-Allow-Origin', '*')
+		->header('Access-Control-Allow-Headers', 'Content-Type');	
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
@@ -348,6 +352,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 });
 
+Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);

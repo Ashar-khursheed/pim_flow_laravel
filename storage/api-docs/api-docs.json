@@ -26293,6 +26293,107 @@
                 ]
             }
         },
+        "/api/unisource/create-shipment": {
+            "post": {
+                "tags": [
+                    "Unisource"
+                ],
+                "summary": "Create a shipment",
+                "description": "Creates a shipment through the Unisource Taicloud API using Basic Auth (username & password from .env)",
+                "operationId": "createUnisourceShipment",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "address",
+                                    "city",
+                                    "state",
+                                    "zip",
+                                    "weight",
+                                    "order_id"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "address": {
+                                        "type": "string",
+                                        "example": "456 Destination Rd"
+                                    },
+                                    "city": {
+                                        "type": "string",
+                                        "example": "Los Angeles"
+                                    },
+                                    "state": {
+                                        "type": "string",
+                                        "example": "CA"
+                                    },
+                                    "zip": {
+                                        "type": "string",
+                                        "example": "90001"
+                                    },
+                                    "weight": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 15
+                                    },
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORDER-0001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Shipment created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Error response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Unauthorized"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/users": {
             "get": {
                 "tags": [
@@ -29120,6 +29221,10 @@
         {
             "name": "Supplier Scores",
             "description": "Supplier Scores"
+        },
+        {
+            "name": "Unisource",
+            "description": "Unisource"
         },
         {
             "name": "Users",
