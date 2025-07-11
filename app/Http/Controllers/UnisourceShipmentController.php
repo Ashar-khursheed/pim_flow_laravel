@@ -135,7 +135,6 @@ class UnisourceShipmentController extends Controller
                 ]
             ];
         }        
-    
         $payload = [
             'ShipmentDate' => now()->toIso8601String(),
             'CustomerReferenceNumber' => $request->input('order_id'),
@@ -144,7 +143,7 @@ class UnisourceShipmentController extends Controller
                 'AddressLine1'  => '123 Origin St',
                 'City'          => 'New York',
                 'StateProvince' => 'NY',
-                'PostalCode'    => '10001',
+                'PostalCode'    => '10001',        // ✅ Required!
                 'CountryCode'   => 'US',
             ],
             'DestinationAddress' => [
@@ -152,11 +151,12 @@ class UnisourceShipmentController extends Controller
                 'AddressLine1'  => $request->input('address'),
                 'City'          => $request->input('city'),
                 'StateProvince' => $request->input('state'),
-                'PostalCode'    => $request->input('zip'),
+                'PostalCode'    => $request->input('zip'), // ✅ Must be non-empty
                 'CountryCode'   => 'US',
             ],
-            'Commodities' => $formattedCommodities
+            'Commodities' => []
         ];
+        
     
         try {
             // Log payload for debugging
