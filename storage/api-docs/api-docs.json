@@ -26403,8 +26403,8 @@
                                     "city",
                                     "state",
                                     "zip",
-                                    "weight",
-                                    "order_id"
+                                    "order_id",
+                                    "commodities"
                                 ],
                                 "properties": {
                                     "name": {
@@ -26427,13 +26427,35 @@
                                         "type": "string",
                                         "example": "90001"
                                     },
-                                    "weight": {
-                                        "type": "number",
-                                        "example": 15
-                                    },
                                     "order_id": {
                                         "type": "string",
                                         "example": "ORDER-0001"
+                                    },
+                                    "commodities": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "description",
+                                                "weight",
+                                                "piece_total"
+                                            ],
+                                            "properties": {
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Box of electronics"
+                                                },
+                                                "weight": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15
+                                                },
+                                                "piece_total": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
                                     }
                                 },
                                 "type": "object"
