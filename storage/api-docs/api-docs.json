@@ -26452,6 +26452,21 @@
                                                 "piece_total": {
                                                     "type": "integer",
                                                     "example": 1
+                                                },
+                                                "length": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 12
+                                                },
+                                                "width": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 10
+                                                },
+                                                "height": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 8
                                                 }
                                             },
                                             "type": "object"

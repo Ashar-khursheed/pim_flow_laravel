@@ -47,7 +47,7 @@ class ProductQuestionController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'product_id' => 'required|exists:ec_products,id',
+            'product_id' => 'required|integer',
             'question' => 'required|string',
         ]);
 
