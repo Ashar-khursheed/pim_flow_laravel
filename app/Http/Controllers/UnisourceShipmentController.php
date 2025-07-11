@@ -122,11 +122,9 @@ public function createShipment(Request $request)
     foreach ($commodities as $item) {
         $formattedCommodities[] = [
             'Description' => $item['description'],
-            'Weight' => [
-                'Value' => $item['weight'],
-                'Unit' => 'LBS'
-            ],
-            'Quantity' => $item['piece_total']
+            'Weight' => $item['weight'],
+            'Quantity' => $item['piece_total'],
+            'UnitOfMeasure' => 'LBS'
         ];
     }
 
