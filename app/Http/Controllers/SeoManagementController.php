@@ -881,7 +881,8 @@ class SeoManagementController extends Controller
 		]);
 
 		/* Determine the full class name based on relational_type */
-		$modelClass = 'App\\Models\\' . $request->relational_type;
+		// $modelClass = 'App\\Models\\' . $request->relational_type;
+		$modelClass =  $request->relational_type;
 
 		/* Fetch records with related secondary keywords */
 		$records = SeoManagement::with('secondaryKeywordDetails')
