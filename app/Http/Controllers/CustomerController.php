@@ -334,33 +334,40 @@ class CustomerController extends Controller
 	 * )
 	 */
 	public function filterByDate(Request $request)
-	{
-		$request->validate([
-			'date_type'   => 'required|in:created_at,updated_at',
-			'start_date'  => 'required|date',
-			'end_date'    => 'required|date|after_or_equal:start_date',
-		]);
+{
+    $request->validate([
+        'date_type' => 'required|in:created_at,updated_at',
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
 
-		$dateType = $request->input('date_type');
-		$start    = Carbon::parse($request->start_date)->toDateString();
-		$end      = Carbon::parse($request->end_date)->toDateString();
+    $dateType = $request->input('date_type');
+    $startDate = Carbon::parse($request->start_date)->toDateString();
+    $endDate = Carbon::parse($request->end_date)->toDateString();
 
-		$customerIds = Customer::whereDate($dateType, '>=', $start)
-			->whereDate($dateType, '<=', $end)
-			->pluck('id');
+    // Log query for debugging
+    \DB::enableQueryLog();
 
-		if ($customerIds->isEmpty()) {
-			return response()->json([
-				'success' => false,
-				'message' => 'Record does not exist',
-			]);
-		}
+    $customers = Customer::whereDate($dateType, '>=', $startDate)
+        ->whereDate($dateType, '<=', $endDate)
+        ->pluck('id');
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Customer IDs filtered by date range.',
-			'data'    => $customerIds,
-		]);
-	}
+    \Log::info('QueryLog:', \DB::getQueryLog());
+    \Log::info('Customer IDs:', $customers->toArray());
+
+    if ($customers->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Record does not exist',
+        ]);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Customer IDs filtered by date range.',
+        'data' => $customers,
+    ]);
+}
+
 
 }
