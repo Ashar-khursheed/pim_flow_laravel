@@ -285,7 +285,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
-	Route::post('seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
+	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
 	
 	Route::resource('seo-management', SeoManagementController::class);
 
