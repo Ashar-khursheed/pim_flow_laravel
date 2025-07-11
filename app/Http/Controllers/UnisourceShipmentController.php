@@ -124,10 +124,17 @@ class UnisourceShipmentController extends Controller
                 'Description'   => $item['description'],
                 'WeightTotal'   => $item['weight'],
                 'PieceTotal'    => $item['piece_total'],
-                'PackageType'   => 'BOX',  // Often required by Taicloud
-                'WeightUnit'    => 'LBS'   // Use KG if needed
+                'PackageType'   => 'BOX',
+                'WeightUnit'    => 'LBS',
+                'FreightClass'  => '92.5', // Required value (standard class)
+                'Dimensions'    => [
+                    'Length' => $item['length'] ?? 10,
+                    'Width'  => $item['width'] ?? 10,
+                    'Height' => $item['height'] ?? 10,
+                    'Unit'   => 'IN'
+                ]
             ];
-        }
+        }        
     
         $payload = [
             'ShipmentDate' => now()->toIso8601String(),
