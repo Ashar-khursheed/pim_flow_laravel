@@ -1028,7 +1028,7 @@ class SearchController extends Controller
                 'sku' => $product->sku,
                 'images' => json_decode($product->images) ?? [],
                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
+                'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->price ?? $firstSupplier->price) : null,
                 'vendor_id' => $firstSupplier?->vendor_id,
                 'currency_title' => $product->currency->symbol ?? null,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
