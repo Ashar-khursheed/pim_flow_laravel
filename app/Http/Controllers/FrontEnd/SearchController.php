@@ -582,6 +582,7 @@ class SearchController extends Controller
                 'vendor_id' => $firstSupplier?->vendor_id,
                 'currency_title' => $product->currency->symbol ?? null,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' => $firstSupplier ? (float) $firstSupplier->price : null,
                 'sale_price' => $firstSupplier->sale_price ?? null,
                 'map' => $firstSupplier->map ?? null,
                 'inventory' => $firstSupplier->inventory ?? null,
