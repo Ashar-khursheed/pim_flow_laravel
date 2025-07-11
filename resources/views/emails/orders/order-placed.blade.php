@@ -169,7 +169,7 @@
 										{{ $product->quantity }}
 									</td>
 									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
-										{{ $product->total }}
+										{{ $currency }} {{ $product->total }}
 									</td>
 								</tr>
 								@endforeach
@@ -251,7 +251,7 @@
 					</tr>
 				</table>
 
-				<table width="650" cellspacing="0" cellpadding="20" border="0" style="border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
+				<table width="650" cellspacing="0" cellpadding="0" border="0" style="border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
 							<p style="font-family: 'Noto Sans',  sans-serif">
