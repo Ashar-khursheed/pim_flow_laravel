@@ -26691,6 +26691,14 @@
                                                 },
                                                 "stopType": {
                                                     "type": "string",
+                                                    "enum": [
+                                                        "Pickup",
+                                                        "First Pickup",
+                                                        "Delivery",
+                                                        "Final Delivery",
+                                                        "Drop",
+                                                        "Stop"
+                                                    ],
                                                     "example": "Pickup"
                                                 },
                                                 "shipmentStopReferenceNumbers": {

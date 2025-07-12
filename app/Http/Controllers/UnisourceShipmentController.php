@@ -74,7 +74,7 @@ class UnisourceShipmentController extends Controller
         ]);
     }
 
-    /**
+ /**
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
      *     tags={"Unisource"},
@@ -125,7 +125,7 @@ class UnisourceShipmentController extends Controller
      *                     @OA\Property(property="appointmentCloseDateTime", type="string", format="date-time", example="2025-07-12T15:30:00Z"),
      *                     @OA\Property(property="actualArrivalDateTime", type="string", format="date-time", example="2025-07-12T15:00:00Z"),
      *                     @OA\Property(property="actualDepartureDateTime", type="string", format="date-time", example="2025-07-12T15:45:00Z"),
-     *                     @OA\Property(property="stopType", type="string", example="Pickup"),
+     *                     @OA\Property(property="stopType", type="string", enum={"Pickup", "First Pickup", "Delivery", "Final Delivery", "Drop", "Stop"}, example="Pickup"),
      *                     @OA\Property(property="shipmentStopReferenceNumbers", type="array",
      *                         @OA\Items(
      *                             @OA\Property(property="referenceType", type="string", example="Reference Number"),
@@ -312,7 +312,7 @@ class UnisourceShipmentController extends Controller
             'stops.*.appointmentCloseDateTime' => 'nullable|date_format:Y-m-d\TH:i:s\Z',
             'stops.*.actualArrivalDateTime' => 'nullable|date_format:Y-m-d\TH:i:s\Z',
             'stops.*.actualDepartureDateTime' => 'nullable|date_format:Y-m-d\TH:i:s\Z',
-            'stops.*.stopType' => 'required|string',
+            'stops.*.stopType' => 'required|string|in:Pickup,First Pickup,Delivery,Final Delivery,Drop,Stop',
             'stops.*.shipmentStopReferenceNumbers' => 'nullable|array',
             'stops.*.shipmentStopReferenceNumbers.*.referenceType' => 'required_with:stops.*.shipmentStopReferenceNumbers|string|max:50',
             'stops.*.shipmentStopReferenceNumbers.*.value' => 'required_with:stops.*.shipmentStopReferenceNumbers|string|max:50',
@@ -344,6 +344,12 @@ class UnisourceShipmentController extends Controller
         $validator->after(function ($validator) use ($request) {
             $stops = $request->get('stops', []);
             
+            // Early return if stops is empty or null
+            if (empty($stops)) {
+                $validator->errors()->add('stops', 'At least 2 stops are required.');
+                return;
+            }
+            
             // Debug: Log the stops data
             Log::info('Stops validation debug:', [
                 'stops_count' => count($stops),
@@ -353,26 +359,48 @@ class UnisourceShipmentController extends Controller
             // Check for at least one pickup and one delivery stop
             $hasPickup = false;
             $hasDelivery = false;
+            $validStopTypes = ['Pickup', 'First Pickup', 'Delivery', 'Final Delivery', 'Drop', 'Stop'];
             
             foreach ($stops as $index => $stop) {
-                $stopType = strtolower($stop['stopType'] ?? '');
+                // Check if stop is properly formatted
+                if (!is_array($stop)) {
+                    $validator->errors()->add("stops.{$index}", 'Stop must be an object/array.');
+                    continue;
+                }
+                
+                $stopType = $stop['stopType'] ?? '';
                 
                 Log::info("Stop {$index} validation:", [
-                    'original_stopType' => $stop['stopType'] ?? 'NOT_SET',
-                    'lowercase_stopType' => $stopType
+                    'stopType' => $stopType,
+                    'stop_keys' => array_keys($stop)
                 ]);
                 
-                if (in_array($stopType, ['pickup', 'first pickup'])) {
+                // Validate stopType exists and is valid
+                if (empty($stopType)) {
+                    $validator->errors()->add("stops.{$index}.stopType", 'Stop type is required.');
+                    continue;
+                }
+                
+                if (!in_array($stopType, $validStopTypes)) {
+                    $validator->errors()->add("stops.{$index}.stopType", 'Invalid stop type. Must be one of: ' . implode(', ', $validStopTypes));
+                    continue;
+                }
+                
+                // Check for pickup/delivery types
+                if (in_array($stopType, ['Pickup', 'First Pickup'])) {
                     $hasPickup = true;
                 }
                 
-                if (in_array($stopType, ['delivery', 'final delivery'])) {
+                if (in_array($stopType, ['Delivery', 'Final Delivery'])) {
                     $hasDelivery = true;
                 }
                 
                 // Validate zip code format (basic US zip code validation)
-                if (isset($stop['zipCode']) && !preg_match('/^\d{5}(-\d{4})?$/', $stop['zipCode'])) {
-                    $validator->errors()->add("stops.{$index}.zipCode", 'Invalid zip code format. Use 12345 or 12345-6789 format.');
+                if (isset($stop['zipCode'])) {
+                    $zipCode = trim($stop['zipCode']);
+                    if (!preg_match('/^\d{5}(-\d{4})?$/', $zipCode)) {
+                        $validator->errors()->add("stops.{$index}.zipCode", 'Invalid zip code format. Use 12345 or 12345-6789 format.');
+                    }
                 }
             }
             
@@ -382,12 +410,15 @@ class UnisourceShipmentController extends Controller
                 'total_stops' => count($stops)
             ]);
             
-            if (!$hasPickup) {
-                $validator->errors()->add('stops', 'At least one pickup stop is required.');
-            }
-            
-            if (!$hasDelivery) {
-                $validator->errors()->add('stops', 'At least one delivery stop is required.');
+            // Only check for pickup/delivery if we have valid stops
+            if (count($stops) >= 2) {
+                if (!$hasPickup) {
+                    $validator->errors()->add('stops', 'At least one pickup stop (Pickup or First Pickup) is required.');
+                }
+                
+                if (!$hasDelivery) {
+                    $validator->errors()->add('stops', 'At least one delivery stop (Delivery or Final Delivery) is required.');
+                }
             }
         });
 
@@ -397,122 +428,97 @@ class UnisourceShipmentController extends Controller
     /**
      * Transform the payload to match Unisource API requirements
      */
-  /**
- * Transform the payload to match Unisource API requirements
- */
-/**
- * Transform the payload to match Unisource API requirements
- */
-private function transformPayload(array $data): array
-{
-    // Set default values
-    $payload = [
-        'customerReferenceNumber' => $data['customerReferenceNumber'],
-        'customerStaffId' => $data['customerStaffId'] ?? 1,
-        'tariffDescription' => $data['tariffDescription'] ?? 'Standard',
-        'allowNewShipmentNotifications' => $data['allowNewShipmentNotifications'] ?? true,
-        'isCommitted' => $data['isCommitted'] ?? true,
-        'rateShipment' => $data['rateShipment'] ?? true,
-        'carrierSCAC' => $data['carrierSCAC'],
-        'amount' => (float) $data['amount'],
-        'customerId' => (int) $data['customerId'],
-        'mileage' => $data['mileage'] ?? 0,
-        'shipmentType' => $data['shipmentType'] ?? 'Small Package',
-        'stackable' => $data['stackable'] ?? true,
-        'trailerType' => $data['trailerType'] ?? 'None',
-        'trailerSize' => $data['trailerSize'] ?? 'Full',
-        'weightUnits' => $data['weightUnits'] ?? 'lbs',
-        'dimensionUnits' => $data['dimensionUnits'] ?? 'in',
-        'serviceLevel' => $data['serviceLevel'] ?? 'Normal',
-        'importExport' => $data['importExport'] ?? 'Import',
-    ];
-
-    // Transform stops
-    $payload['stops'] = [];
-    foreach ($data['stops'] as $index => $stop) {
-        // Ensure stopType is present and not empty
-        if (empty($stop['stopType'])) {
-            Log::error("Stop {$index} has empty stopType", ['stop' => $stop]);
-            throw new \Exception("Stop {$index} is missing required stopType");
-        }
-        
-        $transformedStop = [
-            'companyName' => $stop['companyName'],
-            'streetAddress' => $stop['streetAddress'],
-            'city' => $stop['city'],
-            'state' => $stop['state'],
-            'zipCode' => $stop['zipCode'],
-            'country' => $stop['country'],
-            'contactName' => $stop['contactName'],
-            'phone' => $stop['phone'],
-            'email' => $stop['email'],
-            'stopType' => $stop['stopType'], // Keep original stopType for now
+    private function transformPayload(array $data): array
+    {
+        // Set default values
+        $payload = [
+            'customerReferenceNumber' => $data['customerReferenceNumber'],
+            'customerStaffId' => $data['customerStaffId'] ?? 1,
+            'tariffDescription' => $data['tariffDescription'] ?? 'Standard',
+            'allowNewShipmentNotifications' => $data['allowNewShipmentNotifications'] ?? true,
+            'isCommitted' => $data['isCommitted'] ?? true,
+            'rateShipment' => $data['rateShipment'] ?? true,
+            'carrierSCAC' => $data['carrierSCAC'],
+            'amount' => (float) $data['amount'],
+            'customerId' => (int) $data['customerId'],
+            'mileage' => $data['mileage'] ?? 0,
+            'shipmentType' => $data['shipmentType'] ?? 'Small Package',
+            'stackable' => $data['stackable'] ?? true,
+            'trailerType' => $data['trailerType'] ?? 'None',
+            'trailerSize' => $data['trailerSize'] ?? 'Full',
+            'weightUnits' => $data['weightUnits'] ?? 'lbs',
+            'dimensionUnits' => $data['dimensionUnits'] ?? 'in',
+            'serviceLevel' => $data['serviceLevel'] ?? 'Normal',
+            'importExport' => $data['importExport'] ?? 'Import',
         ];
 
-        // Add optional fields if they exist
-        $optionalFields = [
-            'streetAddressTwo', 'fax', 'instructions', 'notes', 'referenceNumber',
-            'estimatedReadyDateTime', 'estimatedCloseDateTime', 'appointmentReadyDateTime',
-            'appointmentCloseDateTime', 'actualArrivalDateTime', 'actualDepartureDateTime',
-            'shipmentStopReferenceNumbers', 'shipmentStopPickupCommodities', 'shipmentStopDeliveryCommodities'
-        ];
-
-        foreach ($optionalFields as $field) {
-            if (isset($stop[$field]) && !empty($stop[$field])) {
-                $transformedStop[$field] = $stop[$field];
+        // Transform stops
+        $payload['stops'] = [];
+        foreach ($data['stops'] as $index => $stop) {
+            // Ensure stopType is present and not empty
+            if (empty($stop['stopType'])) {
+                Log::error("Stop {$index} has empty stopType", ['stop' => $stop]);
+                throw new \Exception("Stop {$index} is missing required stopType");
             }
+            
+            $transformedStop = [
+                'companyName' => $stop['companyName'],
+                'streetAddress' => $stop['streetAddress'],
+                'city' => $stop['city'],
+                'state' => $stop['state'],
+                'zipCode' => $stop['zipCode'],
+                'country' => $stop['country'],
+                'contactName' => $stop['contactName'],
+                'phone' => $stop['phone'],
+                'email' => $stop['email'],
+                'stopType' => $stop['stopType'], // Use exact stopType as provided
+            ];
+
+            // Add optional fields if they exist
+            $optionalFields = [
+                'streetAddressTwo', 'fax', 'instructions', 'notes', 'referenceNumber',
+                'estimatedReadyDateTime', 'estimatedCloseDateTime', 'appointmentReadyDateTime',
+                'appointmentCloseDateTime', 'actualArrivalDateTime', 'actualDepartureDateTime',
+                'shipmentStopReferenceNumbers', 'shipmentStopPickupCommodities', 'shipmentStopDeliveryCommodities'
+            ];
+
+            foreach ($optionalFields as $field) {
+                if (isset($stop[$field]) && !empty($stop[$field])) {
+                    $transformedStop[$field] = $stop[$field];
+                }
+            }
+
+            $payload['stops'][] = $transformedStop;
         }
 
-        $payload['stops'][] = $transformedStop;
+        // Transform commodities
+        $payload['commodities'] = [];
+        foreach ($data['commodities'] as $commodity) {
+            $transformedCommodity = [
+                'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 1,
+                'handlingQuantity' => $commodity['handlingQuantity'] ?? 1,
+                'packagingType' => $commodity['packagingType'],
+                'length' => (float) $commodity['length'],
+                'width' => (float) $commodity['width'],
+                'height' => (float) $commodity['height'],
+                'weightTotal' => (float) $commodity['weightTotal'],
+                'hazardousMaterial' => $commodity['hazardousMaterial'] ?? false,
+                'piecesTotal' => (int) $commodity['piecesTotal'],
+                'freightClass' => $commodity['freightClass'] ?? 'No Class',
+                'description' => $commodity['description']
+            ];
+
+            $payload['commodities'][] = $transformedCommodity;
+        }
+
+        // Log the final payload
+        Log::info('Transformed payload:', [
+            'stops' => $payload['stops'],
+            'stop_types' => array_column($payload['stops'], 'stopType')
+        ]);
+
+        return $payload;
     }
-
-    // Transform commodities
-    $payload['commodities'] = [];
-    foreach ($data['commodities'] as $commodity) {
-        $transformedCommodity = [
-            'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 1,
-            'handlingQuantity' => $commodity['handlingQuantity'] ?? 1,
-            'packagingType' => $commodity['packagingType'],
-            'length' => (float) $commodity['length'],
-            'width' => (float) $commodity['width'],
-            'height' => (float) $commodity['height'],
-            'weightTotal' => (float) $commodity['weightTotal'],
-            'hazardousMaterial' => $commodity['hazardousMaterial'] ?? false,
-            'piecesTotal' => (int) $commodity['piecesTotal'],
-            'freightClass' => $commodity['freightClass'] ?? 'No Class',
-            'description' => $commodity['description']
-        ];
-
-        $payload['commodities'][] = $transformedCommodity;
-    }
-
-    // Log the final payload
-    Log::info('Transformed payload:', [
-        'stops' => $payload['stops'],
-        'stop_types' => array_column($payload['stops'], 'stopType')
-    ]);
-
-    return $payload;
-}
-
-/**
- * Map stopType values to what Unisource API expects
- */
-private function mapStopType($stopType): string
-{
-    $stopType = strtolower(trim($stopType));
-    
-    $mapping = [
-        'pickup' => 'Pickup',
-        'first pickup' => 'First Pickup',
-        'delivery' => 'Delivery', 
-        'final delivery' => 'Final Delivery',
-        'drop' => 'Drop',
-        'stop' => 'Stop'
-    ];
-    
-    return $mapping[$stopType] ?? ucwords($stopType);
-}
 
     /**
      * Get shipment status
@@ -599,5 +605,4 @@ private function mapStopType($stopType): string
             ], 500);
         }
     }
-
-}
+}   
