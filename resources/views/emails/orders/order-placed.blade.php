@@ -97,13 +97,13 @@
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; font-size: 15px; line-height:22px; color:black; font-size: 14px;">
-													Amount Paid
+													Total Amount
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: bold; line-height:22px; color:black; font-size: 14px;">
-													{{ $currency }} {{ $paidAmount }}
+													{{ $currency }} {{ $total }}
 												</td>
 											</tr>
 											<tr>
