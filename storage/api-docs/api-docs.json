@@ -26604,70 +26604,90 @@
                                             ],
                                             "properties": {
                                                 "companyName": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "ABC Logistics"
                                                 },
                                                 "streetAddress": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "123 Main St"
                                                 },
                                                 "streetAddressTwo": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Suite 200"
                                                 },
                                                 "city": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "New York"
                                                 },
                                                 "state": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "NY"
                                                 },
                                                 "zipCode": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "10001"
                                                 },
                                                 "country": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "USA"
                                                 },
                                                 "contactName": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "John Doe"
                                                 },
                                                 "phone": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "1234567890"
                                                 },
                                                 "fax": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "1234567891"
                                                 },
                                                 "email": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "john@abc.com"
                                                 },
                                                 "instructions": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Use loading dock"
                                                 },
                                                 "notes": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "Fragile shipment"
                                                 },
                                                 "referenceNumber": {
-                                                    "type": "string"
+                                                    "type": "string",
+                                                    "example": "REF123"
                                                 },
                                                 "estimatedReadyDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T14:00:00Z"
                                                 },
                                                 "estimatedCloseDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T16:00:00Z"
                                                 },
                                                 "appointmentReadyDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T14:30:00Z"
                                                 },
                                                 "appointmentCloseDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:30:00Z"
                                                 },
                                                 "actualArrivalDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:00:00Z"
                                                 },
                                                 "actualDepartureDateTime": {
                                                     "type": "string",
-                                                    "format": "date-time"
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:45:00Z"
                                                 },
                                                 "stopType": {
                                                     "type": "string",
@@ -26678,10 +26698,12 @@
                                                     "items": {
                                                         "properties": {
                                                             "referenceType": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "example": "Reference Number"
                                                             },
                                                             "value": {
-                                                                "type": "string"
+                                                                "type": "string",
+                                                                "example": "REF-999"
                                                             }
                                                         },
                                                         "type": "object"
@@ -26692,13 +26714,16 @@
                                                     "items": {
                                                         "properties": {
                                                             "shipmentCommodityId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 1
                                                             },
                                                             "pickupStopId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 1
                                                             },
                                                             "deliveryStopId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 2
                                                             }
                                                         },
                                                         "type": "object"
@@ -26709,13 +26734,16 @@
                                                     "items": {
                                                         "properties": {
                                                             "shipmentCommodityId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 1
                                                             },
                                                             "pickupStopId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 1
                                                             },
                                                             "deliveryStopId": {
-                                                                "type": "integer"
+                                                                "type": "integer",
+                                                                "example": 2
                                                             }
                                                         },
                                                         "type": "object"
@@ -26740,7 +26768,7 @@
                                             "properties": {
                                                 "shipmentCommodityId": {
                                                     "type": "integer",
-                                                    "example": 0
+                                                    "example": 1
                                                 },
                                                 "handlingQuantity": {
                                                     "type": "integer",

@@ -68,45 +68,45 @@ class UnisourceShipmentController extends Controller
  *             @OA\Property(property="stops", type="array",
  *                 @OA\Items(
  *                     required={"companyName", "streetAddress", "city", "state", "zipCode", "country", "contactName", "phone", "email", "stopType"},
- *                     @OA\Property(property="companyName", type="string"),
- *                     @OA\Property(property="streetAddress", type="string"),
- *                     @OA\Property(property="streetAddressTwo", type="string"),
- *                     @OA\Property(property="city", type="string"),
- *                     @OA\Property(property="state", type="string"),
- *                     @OA\Property(property="zipCode", type="string"),
- *                     @OA\Property(property="country", type="string"),
- *                     @OA\Property(property="contactName", type="string"),
- *                     @OA\Property(property="phone", type="string"),
- *                     @OA\Property(property="fax", type="string"),
- *                     @OA\Property(property="email", type="string"),
- *                     @OA\Property(property="instructions", type="string"),
- *                     @OA\Property(property="notes", type="string"),
- *                     @OA\Property(property="referenceNumber", type="string"),
- *                     @OA\Property(property="estimatedReadyDateTime", type="string", format="date-time"),
- *                     @OA\Property(property="estimatedCloseDateTime", type="string", format="date-time"),
- *                     @OA\Property(property="appointmentReadyDateTime", type="string", format="date-time"),
- *                     @OA\Property(property="appointmentCloseDateTime", type="string", format="date-time"),
- *                     @OA\Property(property="actualArrivalDateTime", type="string", format="date-time"),
- *                     @OA\Property(property="actualDepartureDateTime", type="string", format="date-time"),
+ *                     @OA\Property(property="companyName", type="string", example="ABC Logistics"),
+ *                     @OA\Property(property="streetAddress", type="string", example="123 Main St"),
+ *                     @OA\Property(property="streetAddressTwo", type="string", example="Suite 200"),
+ *                     @OA\Property(property="city", type="string", example="New York"),
+ *                     @OA\Property(property="state", type="string", example="NY"),
+ *                     @OA\Property(property="zipCode", type="string", example="10001"),
+ *                     @OA\Property(property="country", type="string", example="USA"),
+ *                     @OA\Property(property="contactName", type="string", example="John Doe"),
+ *                     @OA\Property(property="phone", type="string", example="1234567890"),
+ *                     @OA\Property(property="fax", type="string", example="1234567891"),
+ *                     @OA\Property(property="email", type="string", example="john@abc.com"),
+ *                     @OA\Property(property="instructions", type="string", example="Use loading dock"),
+ *                     @OA\Property(property="notes", type="string", example="Fragile shipment"),
+ *                     @OA\Property(property="referenceNumber", type="string", example="REF123"),
+ *                     @OA\Property(property="estimatedReadyDateTime", type="string", format="date-time", example="2025-07-12T14:00:00Z"),
+ *                     @OA\Property(property="estimatedCloseDateTime", type="string", format="date-time", example="2025-07-12T16:00:00Z"),
+ *                     @OA\Property(property="appointmentReadyDateTime", type="string", format="date-time", example="2025-07-12T14:30:00Z"),
+ *                     @OA\Property(property="appointmentCloseDateTime", type="string", format="date-time", example="2025-07-12T15:30:00Z"),
+ *                     @OA\Property(property="actualArrivalDateTime", type="string", format="date-time", example="2025-07-12T15:00:00Z"),
+ *                     @OA\Property(property="actualDepartureDateTime", type="string", format="date-time", example="2025-07-12T15:45:00Z"),
  *                     @OA\Property(property="stopType", type="string", example="First Pickup"),
  *                     @OA\Property(property="shipmentStopReferenceNumbers", type="array",
  *                         @OA\Items(
- *                             @OA\Property(property="referenceType", type="string"),
- *                             @OA\Property(property="value", type="string")
+ *                             @OA\Property(property="referenceType", type="string", example="Reference Number"),
+ *                             @OA\Property(property="value", type="string", example="REF-999")
  *                         )
  *                     ),
  *                     @OA\Property(property="shipmentStopPickupCommodities", type="array",
  *                         @OA\Items(
- *                             @OA\Property(property="shipmentCommodityId", type="integer"),
- *                             @OA\Property(property="pickupStopId", type="integer"),
- *                             @OA\Property(property="deliveryStopId", type="integer")
+ *                             @OA\Property(property="shipmentCommodityId", type="integer", example=1),
+ *                             @OA\Property(property="pickupStopId", type="integer", example=1),
+ *                             @OA\Property(property="deliveryStopId", type="integer", example=2)
  *                         )
  *                     ),
  *                     @OA\Property(property="shipmentStopDeliveryCommodities", type="array",
  *                         @OA\Items(
- *                             @OA\Property(property="shipmentCommodityId", type="integer"),
- *                             @OA\Property(property="pickupStopId", type="integer"),
- *                             @OA\Property(property="deliveryStopId", type="integer")
+ *                             @OA\Property(property="shipmentCommodityId", type="integer", example=1),
+ *                             @OA\Property(property="pickupStopId", type="integer", example=1),
+ *                             @OA\Property(property="deliveryStopId", type="integer", example=2)
  *                         )
  *                     )
  *                 )
@@ -114,7 +114,7 @@ class UnisourceShipmentController extends Controller
  *             @OA\Property(property="commodities", type="array",
  *                 @OA\Items(
  *                     required={"packagingType", "length", "width", "height", "weightTotal", "piecesTotal", "description"},
- *                     @OA\Property(property="shipmentCommodityId", type="integer", example=0),
+ *                     @OA\Property(property="shipmentCommodityId", type="integer", example=1),
  *                     @OA\Property(property="handlingQuantity", type="integer", example=1),
  *                     @OA\Property(property="packagingType", type="string", example="Box"),
  *                     @OA\Property(property="length", type="number", example=12),
@@ -215,9 +215,10 @@ public function createShipment(Request $request)
 
 private function transformPayload(array $data): array
 {
+    // Transform commodities
     foreach ($data['commodities'] as &$commodity) {
         $commodity = [
-            'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 0,
+            'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 1,
             'handlingQuantity' => $commodity['handlingQuantity'] ?? 1,
             'packagingType' => $commodity['packagingType'],
             'length' => (float) $commodity['length'],
@@ -231,11 +232,8 @@ private function transformPayload(array $data): array
         ];
     }
 
-    // You can also clean/normalize stop subfields if needed
     return $data;
 }
-
-    
 
 
 }
