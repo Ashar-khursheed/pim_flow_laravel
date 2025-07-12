@@ -77,7 +77,7 @@
 										📞 <span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">{{ $siteName == 'UAE' ? 'UAE Toll-Free:' : 'Toll-Free (USA):' }}</span>
 										@if($siteName == 'UAE')
 										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">800</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (467-322)</span>
-										@if($siteName == 'USA')
+										@elseif($siteName == 'USA')
 										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">1-866-4</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (1-866-446-7322)</span>
 										@else
 										{!! $siteTollFreeContact !!}
