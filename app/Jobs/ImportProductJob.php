@@ -254,19 +254,6 @@ class ImportProductJob implements ShouldQueue
 					$rowError[] = "$category category does not exist or is not a valid lowest-level category.";
 				}
 
-				$usStatusArray = [
-					1 => "published",
-					2 => "draft",
-					3 => "pending"
-				];
-
-				/* Status validation */
-				if (!is_numeric($status) || !in_array($status, [1, 2, 3])) {
-					$rowError[] = "Status should be numeric and either 1 for Published, 2 for Draft, or 3 for Pending.";
-				} else {
-					$status = $usStatusArray[$status];
-				}
-
 				/* Stock status validation */
 				$usStockStatusArray = [
 					1 => "in_stock",
@@ -298,6 +285,63 @@ class ImportProductJob implements ShouldQueue
 					$frequentlyBoughtTogether = null;
 				}
 
+				/* Process Images */
+				$fetchedImages = $this->getImageURLs((array) $images ?? []);
+
+				$statusArray = [
+					1 => "published",
+					2 => "draft",
+					3 => "pending"
+				];
+
+				/* Status Validation */
+				if (!is_numeric($status) || !in_array((int)$status, [1, 2, 3])) {
+					$rowError[] = "Status must be a numeric value: 1 (Published), 2 (Draft), or 3 (Pending).";
+				} else {
+					$status = (int) $status;
+
+					if ($status === 1) {
+						if (!$product->id) {
+							$rowError[] = "You cannot set status to 'Published' during creation. Please save the product first.";
+						}
+
+						if (count($fetchedImages) === 0) {
+							$rowError[] = "At least one product image is required to publish.";
+						}
+
+						$benefits = $product->benefits_features;
+						$benefits = is_string($benefits) ? json_decode($benefits, true) : $benefits;
+						if (!is_array($benefits) || count($benefits) < 5) {
+							$rowError[] = "At least 5 benefits & features are required to publish.";
+						}
+
+						if ($product->productAttributes->count() < 5) {
+							$rowError[] = "At least 5 product attributes are required to publish.";
+						}
+
+						if (!$product->sellingUnitAttribute) {
+							$rowError[] = "The 'Selling Unit' attribute is required to publish.";
+						}
+
+						if ($product->productSuppliers->count() < 1) {
+							$rowError[] = "At least one vendor price detail (product supplier) is required to publish.";
+						}
+
+						if ($product->productSuppliers->contains(function ($supplier) {
+							return $supplier->in_stock !== 1;
+						})) {
+							$rowError[] = "All price details must have 'in_stock' set to Yes.";
+						}
+
+						if (empty($rowError)) {
+							$status = $statusArray[$status];
+						}
+					} else {
+						$status = $statusArray[$status];
+					}
+				}
+
+
 				if ($rowError) {
 					$errorArray[] = [
 						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
@@ -306,9 +350,6 @@ class ImportProductJob implements ShouldQueue
 					$failed++;
 					continue;
 				}
-
-				/* Process Images */
-				$fetchedImages = $this->getImageURLs((array) $images ?? []);
 			}
 
 			if ($rowError) {
@@ -325,7 +366,7 @@ class ImportProductJob implements ShouldQueue
 
 			try {
 				/*************/
-
+				$product->gen_type = 0;
 				if (!empty($this->userRole) && in_array($this->userRole, ['Content Writing Manager', 'Content Writer'])) {
 					$product->description = $jsonDescription;
 					$product->benefits_features = $jsonBenefitsFeatures;
