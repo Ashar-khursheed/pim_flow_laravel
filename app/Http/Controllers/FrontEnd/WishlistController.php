@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\FrontEnd\Wishlist;
 use App\Models\Product;
-
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 class WishlistController extends Controller
 {
     /**
