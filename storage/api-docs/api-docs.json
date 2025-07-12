@@ -26630,12 +26630,96 @@
                                                 "phone": {
                                                     "type": "string"
                                                 },
+                                                "fax": {
+                                                    "type": "string"
+                                                },
                                                 "email": {
                                                     "type": "string"
+                                                },
+                                                "instructions": {
+                                                    "type": "string"
+                                                },
+                                                "notes": {
+                                                    "type": "string"
+                                                },
+                                                "referenceNumber": {
+                                                    "type": "string"
+                                                },
+                                                "estimatedReadyDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "estimatedCloseDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "appointmentReadyDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "appointmentCloseDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "actualArrivalDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "actualDepartureDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time"
                                                 },
                                                 "stopType": {
                                                     "type": "string",
                                                     "example": "First Pickup"
+                                                },
+                                                "shipmentStopReferenceNumbers": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "referenceType": {
+                                                                "type": "string"
+                                                            },
+                                                            "value": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "shipmentStopPickupCommodities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "shipmentCommodityId": {
+                                                                "type": "integer"
+                                                            },
+                                                            "pickupStopId": {
+                                                                "type": "integer"
+                                                            },
+                                                            "deliveryStopId": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "shipmentStopDeliveryCommodities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "shipmentCommodityId": {
+                                                                "type": "integer"
+                                                            },
+                                                            "pickupStopId": {
+                                                                "type": "integer"
+                                                            },
+                                                            "deliveryStopId": {
+                                                                "type": "integer"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
                                                 }
                                             },
                                             "type": "object"
@@ -26716,8 +26800,7 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": true
+                                            "type": "boolean"
                                         },
                                         "data": {
                                             "type": "object"
@@ -26735,8 +26818,7 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": false
+                                            "type": "boolean"
                                         },
                                         "errors": {
                                             "type": "object"
@@ -26754,8 +26836,7 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": false
+                                            "type": "boolean"
                                         },
                                         "error": {
                                             "type": "string"
