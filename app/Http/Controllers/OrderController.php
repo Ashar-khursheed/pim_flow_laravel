@@ -33,6 +33,8 @@ class OrderController extends Controller
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="status", in="query", description="Filter by order status.", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="payment_status", in="query", description="Filter by payment status.", @OA\Schema(type="string", enum={"Paid", "Unpaid", "Partially Paid"})),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "order_number", "customer_name", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
@@ -42,6 +44,17 @@ class OrderController extends Controller
 	 */
 	public function index(Request $request)
 	{
+		if ($request->filled('from_date') && $request->filled('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+
+			$records = Order::whereBetween('created_at', [$from, $to])->pluck('id');
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+			]);
+		}
 		$searchableColumns = ['id', 'order_number', 'customer_name'];
 		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
 
