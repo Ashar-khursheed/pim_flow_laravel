@@ -5,8 +5,7 @@
 	<meta charset="UTF-8" />
 	<title>Order Delivered</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap"
-	rel="stylesheet">
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<style>
 		@media only screen and (max-width: 600px) {
 			.container {
@@ -36,7 +35,7 @@
 					<tr>
 						<td style="padding: 0 20px 10px 20px; font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 24px; color: #000;">
 							<p style="font-family: 'Noto Sans', sans-serif;font-size: 16px;line-height: 24px; margin: 5px 0;padding: 0;">
-								Hello <strong style="color: #26683A; font-family: 'Noto Sans', sans-serif;">{{ $name}}</strong>!
+								Hello <strong style="color: #26683A; font-family: 'Noto Sans', sans-serif;">{{ $name }}</strong>!
 							</p>
 							<p style="font-family: 'Noto Sans', sans-serif; font-size: 16px; line-height: 24px; font-family: 'Noto Sans', sans-serif;font-size: 16px;line-height: 24px;margin: 5px 0; padding: 0;">
 								Your HorecaStore order <strong style="color: #26683A; font-family: 'Noto Sans', sans-serif;">#{{ $orderNumber }}</strong> containing the items below has been successfully delivered! We hope everything arrived just the way you expected.
@@ -45,26 +44,38 @@
 					</tr>
 
 					<tr>
-						<td style="padding: 0 20px 10px 20px; font-family: 'Noto Sans', sans-serif;">
-							<table width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse; font-family: 'Noto Sans', sans-serif;">
-								<tr style="background-color: #FAFAFA; border-bottom: 1px solid #26683A;">
-									<th colspan="2" align="left" style="padding: 10px; font-family: 'Noto Sans', sans-serif; font-size: 16px; font-weight: 500; line-height: 20px;">
+						<td>
+							<table class="product-table" width="100%" cellspacing="0" cellpadding="8" border="0" style="border-collapse:collapse; font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
+								<tr style="background:#FAFAFA; font-weight:bold; border-bottom: 1px solid #26683A; font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+									<td colspan="2" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
 										Items Ordered
-									</th>
-									<th align="right" style="padding: 10px; font-family: 'Noto Sans', sans-serif; font-size: 16px; font-weight: 500; line-height: 20px;">
-										Delivered Quantity
-									</th>
+									</td>
+									<td align="center" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+										Quantity
+									</td>
+									<td align="right" style="font-family: 'Noto Sans',  sans-serif; line-height:22px;">
+										Total
+									</td>
 								</tr>
+
 								@foreach($products as $product)
 								<tr>
-									<td style="padding: 10px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
-										<img src="{{ $product->image }}" alt="product" width="50" style="border: 0.5px solid #DFDFDF; border-radius: 3px; margin-right: 10px;">
+									<td>
+										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="border: 1px solid #DFDFDF; border-radius: 4px; width: 54px;">
 									</td>
-									<td style="padding: 10px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px; font-weight: 500; color: #000; line-height: 20px;">
-										{{ $product->name }}
+									<td>
+										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->name }}</strong><br>
+										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Status:</span>
+										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+											Delivered
+										</span>
+										<br>
 									</td>
-									<td align="right" style="padding: 10px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px; font-weight: 500; color: #000; line-height: 20px;">
+									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
 										{{ $product->quantity }}
+									</td>
+									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+										{{ $currency }} {{ $product->total }}
 									</td>
 								</tr>
 								@endforeach
@@ -84,7 +95,7 @@
 									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 4px; width: 0; line-height: 20px;">
 										<img src="{{ $rightPngURL }}" width="26" height="26" style="vertical-align: middle; margin-right: 5px;">
 									</td>
-									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px;">
+									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px; color: #000; font-weight: 500;">
 										Need more?
 										<a href="{{ $checkoutURL }}" style="text-decoration: underline; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
 											Reorder Now
@@ -95,7 +106,7 @@
 									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 4px; width: 0; line-height: 20px;">
 										<img src="{{ $rightPngURL }}" width="26" height="26" style="vertical-align: middle; margin-right: 5px;">
 									</td>
-									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px;">
+									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px; color: #000; font-weight: 500;">
 										Need a formal invoice?
 										<a href="{{ $orderDetailUrl }}" style="text-decoration: underline; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
 											Download Invoice
@@ -106,7 +117,7 @@
 									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 4px; width: 0; line-height: 20px;">
 										<img src="{{ $rightPngURL }}" width="26" height="26" style="vertical-align: middle; margin-right: 5px;">
 									</td>
-									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px;">
+									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; width: 95%; line-height: 20px; color: #000; font-weight: 500;">
 										Looking for contract pricing?
 										<a href="mailto:{{ $siteEmail }}" style="text-decoration: underline; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
 											Request Bulk Quote
@@ -117,7 +128,7 @@
 									<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 4px; width: 0; line-height: 20px;">
 										<img src="{{ $rightPngURL }}" width="26" height="26" style="vertical-align: middle; margin-right: 5px;">
 									</td>
-									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; line-height: 20px;">
+									<td style="font-family: 'Noto Sans', sans-serif; font-size: 14px; padding-bottom: 8px; line-height: 20px; color: #000; font-weight: 500;">
 										Need help with returns, warranty, or support? We’ve got your back - just reach out.
 									</td>
 								</tr>

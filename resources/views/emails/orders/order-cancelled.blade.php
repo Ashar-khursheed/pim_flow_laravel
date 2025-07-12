@@ -53,7 +53,7 @@
 						<tr>
 							<td style="padding:10px 0 20px; border-top:2px solid #E2DFDF; border-bottom:2px solid #E2DFDF; text-align:left; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 								<h3 style="font-size:16px; color:black; margin:5px 0; font-family: 'Noto Sans', sans-serif; line-height:22px;">
-									Need help with your order?
+									Need help with your reorder?
 								</h3>
 								<a href="{{ $checkoutURL }}" style="background-color:#26683A; color:#ffffff; padding:12px 24px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block; font-family: 'Noto Sans', sans-serif; line-height:20px;">
 									Reorder Now
@@ -64,7 +64,7 @@
 						<tr>
 							<td style="font-size:15px; color:#000000; padding-top:10px; padding-bottom:10px; font-family: 'Noto Sans', sans-serif; line-height:22px;">
 								<p style="font-weight: 500;font-family: 'Noto Sans', sans-serif;font-size:15px;line-height: 20px;padding: 0;margin: 5px 0;">
-									At HORECA, we understand plans change - and we’re always here to support your business with:
+									At HorecaStore, we understand plans change - and we’re always here to support your business with:
 								</p>
 								<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-family: 'Noto Sans', sans-serif;">
 									<tr>

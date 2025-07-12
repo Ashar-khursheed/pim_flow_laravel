@@ -13,14 +13,10 @@ class OrderCancelledMail extends Notification implements ShouldQueue
 	use Queueable;
 
 	public $order;
-	public $cancelledOrderProducts;
-	public $cancellationReason;
 
-	public function __construct($order, $cancelledOrderProducts, $cancellationReason)
+	public function __construct($order)
 	{
 		$this->order = $order;
-		$this->cancelledOrderProducts = $cancelledOrderProducts;
-		$this->cancellationReason = $cancellationReason;
 	}
 
 	/**
