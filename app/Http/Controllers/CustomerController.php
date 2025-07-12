@@ -16,6 +16,8 @@ class CustomerController extends Controller
 	 *     tags={"Customers"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "email", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
@@ -25,6 +27,17 @@ class CustomerController extends Controller
 	 */
 	public function index(Request $request)
 	{
+		if ($request->filled('from_date') && $request->filled('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+
+			$records = Customer::whereBetween('created_at', [$from, $to])->pluck('id');
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+			]);
+		}
 		$searchableColumns = ['id', 'name', 'email'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
@@ -289,7 +302,7 @@ class CustomerController extends Controller
 		]);
 	}
 
-	
+
 /**
  * @OA\Get(
  *     path="/api/customers/filter-by-date",
@@ -337,7 +350,7 @@ public function filterByDate(Request $request)
 {
     // Add this at the very beginning to confirm the method is being called
     \Log::info('filterByDate method called');
-    
+
     try {
         $request->validate([
             'date_type' => 'required|in:created_at,updated_at',
@@ -366,18 +379,18 @@ public function filterByDate(Request $request)
 
         // Build the query step by step for debugging
         $query = Customer::query();
-        
+
         // Debug the raw SQL query
         $sqlQuery = Customer::whereBetween($dateType, [
             Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay()
         ])->toSql();
-        
+
         $bindings = Customer::whereBetween($dateType, [
             Carbon::parse($startDate)->startOfDay(),
             Carbon::parse($endDate)->endOfDay()
         ])->getBindings();
-        
+
         \Log::info('SQL Query: ' . $sqlQuery);
         \Log::info('Bindings: ', $bindings);
 
@@ -404,11 +417,11 @@ public function filterByDate(Request $request)
                 'bindings' => $bindings
             ]
         ]);
-        
+
     } catch (\Exception $e) {
         \Log::error('Error in filterByDate: ' . $e->getMessage());
         \Log::error('Stack trace: ' . $e->getTraceAsString());
-        
+
         return response()->json([
             'success' => false,
             'message' => 'An error occurred: ' . $e->getMessage(),

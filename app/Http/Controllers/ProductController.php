@@ -40,6 +40,8 @@ class ProductController extends BaseController
 	 *         required=false,
 	 *         @OA\Schema(type="integer", example=1)
 	 *     ),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(
 	 *         name="per_page",
 	 *         in="query",
@@ -117,6 +119,17 @@ class ProductController extends BaseController
 	 */
 	public function index(Request $request)
 	{
+		if ($request->filled('from_date') && $request->filled('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+
+			$records = Product::whereBetween('created_at', [$from, $to])->pluck('id');
+			return response()->json([
+				'success' => true,
+				'message' => __('msg_rec_list'),
+				'data' => $records,
+			]);
+		}
 		$perPage = $request->input('per_page', 50);
 		$search = $request->input('search');
 		$status = $request->input('status');
@@ -139,7 +152,7 @@ class ProductController extends BaseController
 			'brand:id,name',
 			'categories:id,name',
 			'slug:id,key,reference_id',
-			'productSuppliers', 
+			'productSuppliers',
 			'vendors'
 		])
 		->select(['id', 'name', 'sku', 'images', 'brand_id', 'status' , 'gen_type' ,'approved']);
@@ -172,11 +185,11 @@ class ProductController extends BaseController
 		$products = $query->orderBy($sortBy, $sortDirection)
 		->paginate($perPage);
 
-	
+
 		/* Formatting response */
 		$formattedProducts = $products->map(function ($product) {
 			$firstSupplier = $product->productSuppliers->first();
-		
+
 			if (!$firstSupplier) {
 				return [
 					'id' => $product->id,
@@ -195,12 +208,12 @@ class ProductController extends BaseController
 					'taxonomy_path' => optional($product->slug)->key ?? '',
 				];
 			}
-		
+
 			$margin = $firstSupplier->sale_price - $firstSupplier->price;
 			$marginPercent = $firstSupplier->sale_price > 0
 				? ($margin / $firstSupplier->sale_price) * 100
 				: 0;
-		
+
 			return [
 				'id' => $product->id,
 				'name' => $product->name,
@@ -219,7 +232,7 @@ class ProductController extends BaseController
 				'taxonomy_path' => optional($product->slug)->key ?? '',
 			];
 		});
-		
+
 
 		return response()->json([
 			'success' => true,
@@ -386,7 +399,7 @@ class ProductController extends BaseController
 			'categories.parent:id,name,parent_id',
 			'categories.parent.parent:id,name,parent_id',
 			'categories.children:id,name,parent_id',
-			'vendors' 
+			'vendors'
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
@@ -492,7 +505,7 @@ class ProductController extends BaseController
 		$formattedProduct['price'] = $productPrice;
 		$formattedProduct['sale_price'] = $productSalePrice;
 		$formattedProduct['delivery_days'] = $productDelivery_days;
-		
+
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
 
@@ -589,7 +602,7 @@ class ProductController extends BaseController
 						];
 					});
 					break;
-				
+
 
 				// case 'shipping_length_id':
 				// $formattedProduct['shipping_length'] = [

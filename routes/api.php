@@ -120,7 +120,7 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
 		->header('Content-Type', $response->header('Content-Type') ?? 'image/webp')
 		->header('Cache-Control', 'public, max-age=86400')
 		->header('Access-Control-Allow-Origin', '*')
-		->header('Access-Control-Allow-Headers', 'Content-Type');	
+		->header('Access-Control-Allow-Headers', 'Content-Type');
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
@@ -147,6 +147,10 @@ Route::apiResource('newsletters', NewsletterController::class);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+	Route::apiResource('payments', PaymentController::class);
+
+
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
 	Route::put('/product-groups/{group_id}/items/{item_id}/parent', [ProductGroupController::class, 'updateProductGroupItemParent']);
@@ -287,7 +291,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/seo-management/import', [SeoManagementController::class, 'import']);
 	Route::post('/seo-management/export', [SeoManagementController::class, 'export']);
 	Route::post('/seo-management/{relational_type}/{id}', [SeoManagementController::class, 'update']);
-	
+
 	Route::resource('seo-management', SeoManagementController::class);
 
 	Route::post('seo-details', [SeoDetailController::class, 'store']);
