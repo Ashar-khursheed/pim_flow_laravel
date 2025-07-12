@@ -223,7 +223,7 @@ class WishlistController extends Controller
                 $product->delivery_days = $firstSupplier->delivery_days;
                 $product->return_policy = $firstSupplier->return_policy;
                 $product->free_shipping = $firstSupplier->free_shipping;
-                $product->warranty_information = $firstSupplier->warranty_information;
+                $product->warranty_information = $firstSupplier->warranty_information ?? $product->warranty_information;
             } else {
                 // Safe fallback values
                 $product->vendor_sku = null;
@@ -239,7 +239,7 @@ class WishlistController extends Controller
                 $product->delivery_days = null;
                 $product->return_policy = null;
                 $product->free_shipping = null;
-                $product->warranty_information = null;
+                $product->warranty_information = $firstSupplier->warranty_information ?? $product->warranty_information;
             }
         }
 
