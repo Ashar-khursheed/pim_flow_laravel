@@ -397,85 +397,110 @@ class UnisourceShipmentController extends Controller
     /**
      * Transform the payload to match Unisource API requirements
      */
-    private function transformPayload(array $data): array
-    {
-        // Set default values
-        $payload = [
-            'customerReferenceNumber' => $data['customerReferenceNumber'],
-            'customerStaffId' => $data['customerStaffId'] ?? 1,
-            'tariffDescription' => $data['tariffDescription'] ?? 'Standard',
-            'allowNewShipmentNotifications' => $data['allowNewShipmentNotifications'] ?? true,
-            'isCommitted' => $data['isCommitted'] ?? true,
-            'rateShipment' => $data['rateShipment'] ?? true,
-            'carrierSCAC' => $data['carrierSCAC'],
-            'amount' => (float) $data['amount'],
-            'customerId' => (int) $data['customerId'],
-            'mileage' => $data['mileage'] ?? 0,
-            'shipmentType' => $data['shipmentType'] ?? 'Small Package',
-            'stackable' => $data['stackable'] ?? true,
-            'trailerType' => $data['trailerType'] ?? 'None',
-            'trailerSize' => $data['trailerSize'] ?? 'Full',
-            'weightUnits' => $data['weightUnits'] ?? 'lbs',
-            'dimensionUnits' => $data['dimensionUnits'] ?? 'in',
-            'serviceLevel' => $data['serviceLevel'] ?? 'Normal',
-            'importExport' => $data['importExport'] ?? 'Import',
+  /**
+ * Transform the payload to match Unisource API requirements
+ */
+private function transformPayload(array $data): array
+{
+    // Set default values
+    $payload = [
+        'customerReferenceNumber' => $data['customerReferenceNumber'],
+        'customerStaffId' => $data['customerStaffId'] ?? 1,
+        'tariffDescription' => $data['tariffDescription'] ?? 'Standard',
+        'allowNewShipmentNotifications' => $data['allowNewShipmentNotifications'] ?? true,
+        'isCommitted' => $data['isCommitted'] ?? true,
+        'rateShipment' => $data['rateShipment'] ?? true,
+        'carrierSCAC' => $data['carrierSCAC'],
+        'amount' => (float) $data['amount'],
+        'customerId' => (int) $data['customerId'],
+        'mileage' => $data['mileage'] ?? 0,
+        'shipmentType' => $data['shipmentType'] ?? 'Small Package',
+        'stackable' => $data['stackable'] ?? true,
+        'trailerType' => $data['trailerType'] ?? 'None',
+        'trailerSize' => $data['trailerSize'] ?? 'Full',
+        'weightUnits' => $data['weightUnits'] ?? 'lbs',
+        'dimensionUnits' => $data['dimensionUnits'] ?? 'in',
+        'serviceLevel' => $data['serviceLevel'] ?? 'Normal',
+        'importExport' => $data['importExport'] ?? 'Import',
+    ];
+
+    // Transform stops with proper stopType mapping
+    $payload['stops'] = [];
+    foreach ($data['stops'] as $index => $stop) {
+        // Map stopType values to what Unisource API expects
+        $stopType = $this->mapStopType($stop['stopType']);
+        
+        $transformedStop = [
+            'companyName' => $stop['companyName'],
+            'streetAddress' => $stop['streetAddress'],
+            'city' => $stop['city'],
+            'state' => $stop['state'],
+            'zipCode' => $stop['zipCode'],
+            'country' => $stop['country'],
+            'contactName' => $stop['contactName'],
+            'phone' => $stop['phone'],
+            'email' => $stop['email'],
+            'stopType' => $stopType, // Use mapped stopType
         ];
 
-        // Transform stops
-        $payload['stops'] = [];
-        foreach ($data['stops'] as $stop) {
-            $transformedStop = [
-                'companyName' => $stop['companyName'],
-                'streetAddress' => $stop['streetAddress'],
-                'city' => $stop['city'],
-                'state' => $stop['state'],
-                'zipCode' => $stop['zipCode'],
-                'country' => $stop['country'],
-                'contactName' => $stop['contactName'],
-                'phone' => $stop['phone'],
-                'email' => $stop['email'],
-                'stopType' => $stop['stopType'],
-            ];
+        // Add optional fields if they exist
+        $optionalFields = [
+            'streetAddressTwo', 'fax', 'instructions', 'notes', 'referenceNumber',
+            'estimatedReadyDateTime', 'estimatedCloseDateTime', 'appointmentReadyDateTime',
+            'appointmentCloseDateTime', 'actualArrivalDateTime', 'actualDepartureDateTime',
+            'shipmentStopReferenceNumbers', 'shipmentStopPickupCommodities', 'shipmentStopDeliveryCommodities'
+        ];
 
-            // Add optional fields if they exist
-            $optionalFields = [
-                'streetAddressTwo', 'fax', 'instructions', 'notes', 'referenceNumber',
-                'estimatedReadyDateTime', 'estimatedCloseDateTime', 'appointmentReadyDateTime',
-                'appointmentCloseDateTime', 'actualArrivalDateTime', 'actualDepartureDateTime',
-                'shipmentStopReferenceNumbers', 'shipmentStopPickupCommodities', 'shipmentStopDeliveryCommodities'
-            ];
-
-            foreach ($optionalFields as $field) {
-                if (isset($stop[$field])) {
-                    $transformedStop[$field] = $stop[$field];
-                }
+        foreach ($optionalFields as $field) {
+            if (isset($stop[$field]) && !empty($stop[$field])) {
+                $transformedStop[$field] = $stop[$field];
             }
-
-            $payload['stops'][] = $transformedStop;
         }
 
-        // Transform commodities
-        $payload['commodities'] = [];
-        foreach ($data['commodities'] as $commodity) {
-            $transformedCommodity = [
-                'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 1,
-                'handlingQuantity' => $commodity['handlingQuantity'] ?? 1,
-                'packagingType' => $commodity['packagingType'],
-                'length' => (float) $commodity['length'],
-                'width' => (float) $commodity['width'],
-                'height' => (float) $commodity['height'],
-                'weightTotal' => (float) $commodity['weightTotal'],
-                'hazardousMaterial' => $commodity['hazardousMaterial'] ?? false,
-                'piecesTotal' => (int) $commodity['piecesTotal'],
-                'freightClass' => $commodity['freightClass'] ?? 'No Class',
-                'description' => $commodity['description']
-            ];
-
-            $payload['commodities'][] = $transformedCommodity;
-        }
-
-        return $payload;
+        $payload['stops'][] = $transformedStop;
     }
+
+    // Transform commodities
+    $payload['commodities'] = [];
+    foreach ($data['commodities'] as $commodity) {
+        $transformedCommodity = [
+            'shipmentCommodityId' => $commodity['shipmentCommodityId'] ?? 1,
+            'handlingQuantity' => $commodity['handlingQuantity'] ?? 1,
+            'packagingType' => $commodity['packagingType'],
+            'length' => (float) $commodity['length'],
+            'width' => (float) $commodity['width'],
+            'height' => (float) $commodity['height'],
+            'weightTotal' => (float) $commodity['weightTotal'],
+            'hazardousMaterial' => $commodity['hazardousMaterial'] ?? false,
+            'piecesTotal' => (int) $commodity['piecesTotal'],
+            'freightClass' => $commodity['freightClass'] ?? 'No Class',
+            'description' => $commodity['description']
+        ];
+
+        $payload['commodities'][] = $transformedCommodity;
+    }
+
+    return $payload;
+}
+
+/**
+ * Map stopType values to what Unisource API expects
+ */
+private function mapStopType($stopType): string
+{
+    $stopType = strtolower(trim($stopType));
+    
+    $mapping = [
+        'pickup' => 'Pickup',
+        'first pickup' => 'First Pickup',
+        'delivery' => 'Delivery', 
+        'final delivery' => 'Final Delivery',
+        'drop' => 'Drop',
+        'stop' => 'Stop'
+    ];
+    
+    return $mapping[$stopType] ?? ucwords($stopType);
+}
 
     /**
      * Get shipment status
