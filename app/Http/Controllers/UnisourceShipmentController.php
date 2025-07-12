@@ -37,88 +37,66 @@ class UnisourceShipmentController extends Controller
         }
     }
 
-    /**
+   /**
      * @OA\Post(
      *     path="/api/unisource/create-shipment",
      *     tags={"Unisource"},
-     *     summary="Create a shipment with full payload",
+     *     summary="Create a shipment with Unisource-compliant payload",
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"billToType", "billToAccountNumber", "billToAddress", "priceDetail", "originAddress", "destinationAddress", "commodities"},
-     *             @OA\Property(property="billToType", type="string", example="Third"),
-     *             @OA\Property(property="billToAccountNumber", type="string", example="123456"),
-     *             @OA\Property(property="billToAddress", type="object",
-     *                 @OA\Property(property="companyName", type="string", example="Company A"),
-     *                 @OA\Property(property="streetAddress", type="string", example="123 Main St"),
-     *                 @OA\Property(property="streetAddressTwo", type="string", example="Suite 4B"),
-     *                 @OA\Property(property="city", type="string", example="New York"),
-     *                 @OA\Property(property="state", type="string", example="NY"),
-     *                 @OA\Property(property="zipCode", type="string", example="10001"),
-     *                 @OA\Property(property="email", type="string", example="billing@company.com"),
-     *                 @OA\Property(property="country", type="string", example="USA"),
-     *                 @OA\Property(property="fax", type="string", example="123-456-7890"),
-     *                 @OA\Property(property="phone", type="string", example="123-456-7890")
-     *             ),
-     *             @OA\Property(property="originAddress", type="object",
-     *                 @OA\Property(property="companyName", type="string", example="Origin Company"),
-     *                 @OA\Property(property="streetAddress", type="string", example="789 Origin St"),
-     *                 @OA\Property(property="city", type="string", example="Origin City"),
-     *                 @OA\Property(property="state", type="string", example="CA"),
-     *                 @OA\Property(property="zipCode", type="string", example="90210"),
-     *                 @OA\Property(property="email", type="string", example="origin@company.com"),
-     *                 @OA\Property(property="country", type="string", example="USA"),
-     *                 @OA\Property(property="phone", type="string", example="555-123-4567")
-     *             ),
-     *             @OA\Property(property="destinationAddress", type="object",
-     *                 @OA\Property(property="companyName", type="string", example="Destination Company"),
-     *                 @OA\Property(property="streetAddress", type="string", example="456 Destination Rd"),
-     *                 @OA\Property(property="city", type="string", example="Los Angeles"),
-     *                 @OA\Property(property="state", type="string", example="CA"),
-     *                 @OA\Property(property="zipCode", type="string", example="90001"),
-     *                 @OA\Property(property="email", type="string", example="destination@company.com"),
-     *                 @OA\Property(property="country", type="string", example="USA"),
-     *                 @OA\Property(property="phone", type="string", example="555-987-6543")
+     *             required={"customerReferenceNumber", "carrierSCAC", "customerId", "amount", "stops", "commodities"},
+     *             @OA\Property(property="customerReferenceNumber", type="string", example="REF123456"),
+     *             @OA\Property(property="customerStaffId", type="integer", example=1),
+     *             @OA\Property(property="tariffDescription", type="string", example="Standard"),
+     *             @OA\Property(property="allowNewShipmentNotifications", type="boolean", example=true),
+     *             @OA\Property(property="isCommitted", type="boolean", example=true),
+     *             @OA\Property(property="rateShipment", type="boolean", example=true),
+     *             @OA\Property(property="carrierSCAC", type="string", example="SCAC"),
+     *             @OA\Property(property="amount", type="number", example=100.0),
+     *             @OA\Property(property="customerId", type="integer", example=40),
+     *             @OA\Property(property="mileage", type="integer", example=0),
+     *             @OA\Property(property="shipmentType", type="string", example="Small Package"),
+     *             @OA\Property(property="stackable", type="boolean", example=true),
+     *             @OA\Property(property="trailerType", type="string", example="None"),
+     *             @OA\Property(property="trailerSize", type="string", example="Full"),
+     *             @OA\Property(property="weightUnits", type="string", example="lbs"),
+     *             @OA\Property(property="dimensionUnits", type="string", example="in"),
+     *             @OA\Property(property="serviceLevel", type="string", example="Normal"),
+     *             @OA\Property(property="importExport", type="string", example="Import"),
+     *             @OA\Property(property="stops", type="array",
+     *                 @OA\Items(type="object",
+     *                     required={"companyName", "streetAddress", "city", "state", "zipCode", "country", "contactName", "phone", "email", "stopType"},
+     *                     @OA\Property(property="companyName", type="string"),
+     *                     @OA\Property(property="streetAddress", type="string"),
+     *                     @OA\Property(property="streetAddressTwo", type="string"),
+     *                     @OA\Property(property="city", type="string"),
+     *                     @OA\Property(property="state", type="string"),
+     *                     @OA\Property(property="zipCode", type="string"),
+     *                     @OA\Property(property="country", type="string"),
+     *                     @OA\Property(property="contactName", type="string"),
+     *                     @OA\Property(property="phone", type="string"),
+     *                     @OA\Property(property="email", type="string"),
+     *                     @OA\Property(property="stopType", type="string", example="First Pickup")
+     *                 )
      *             ),
      *             @OA\Property(property="commodities", type="array",
      *                 @OA\Items(type="object",
-     *                     @OA\Property(property="description", type="string", example="Box of electronics"),
-     *                     @OA\Property(property="weight", type="number", example=15),
-     *                     @OA\Property(property="pieceTotal", type="integer", example=1),
+     *                     required={"packagingType", "length", "width", "height", "weightTotal", "piecesTotal", "description"},
+     *                     @OA\Property(property="shipmentCommodityId", type="integer", example=0),
+     *                     @OA\Property(property="handlingQuantity", type="integer", example=1),
+     *                     @OA\Property(property="packagingType", type="string", example="Box"),
      *                     @OA\Property(property="length", type="number", example=12),
      *                     @OA\Property(property="width", type="number", example=10),
      *                     @OA\Property(property="height", type="number", example=8),
-     *                     @OA\Property(property="declaredValue", type="number", example=100.00),
-     *                     @OA\Property(property="commodityClass", type="string", example="92.5")
+     *                     @OA\Property(property="weightTotal", type="number", example=15),
+     *                     @OA\Property(property="hazardousMaterial", type="boolean", example=false),
+     *                     @OA\Property(property="piecesTotal", type="integer", example=1),
+     *                     @OA\Property(property="freightClass", type="string", example="92.5"),
+     *                     @OA\Property(property="description", type="string", example="Box of electronics")
      *                 )
-     *             ),
-     *             @OA\Property(property="priceDetail", type="object",
-     *                 @OA\Property(property="carrierSCAC", type="string"),
-     *                 @OA\Property(property="carrierName", type="string"),
-     *                 @OA\Property(property="tariffDescription", type="string"),
-     *                 @OA\Property(property="transitTime", type="integer"),
-     *                 @OA\Property(property="serviceLevel", type="string"),
-     *                 @OA\Property(property="priceLineHaul", type="number"),
-     *                 @OA\Property(property="priceFuelSurcharge", type="number"),
-     *                 @OA\Property(property="priceAccessorials", type="array",
-     *                     @OA\Items(type="object",
-     *                         @OA\Property(property="accessorialCode", type="string"),
-     *                         @OA\Property(property="accessorialPrice", type="number")
-     *                     )
-     *                 ),
-     *                 @OA\Property(property="priceInsurance", type="number"),
-     *                 @OA\Property(property="insuranceQuoteNumber", type="string"),
-     *                 @OA\Property(property="priceTotal", type="number"),
-     *                 @OA\Property(property="pricingInstructions", type="string"),
-     *                 @OA\Property(property="usedLiabilityCoverage", type="number"),
-     *                 @OA\Property(property="newLiabilityCoverage", type="number"),
-     *                 @OA\Property(property="tsaCompliance", type="string"),
-     *                 @OA\Property(property="apiQuoteNumber", type="string")
-     *             ),
-     *             @OA\Property(property="shipmentDate", type="string", format="date", example="2025-07-15"),
-     *             @OA\Property(property="deliveryDate", type="string", format="date", example="2025-07-20"),
-     *             @OA\Property(property="specialInstructions", type="string", example="Fragile - Handle with care")
+     *             )
      *         )
      *     ),
      *     @OA\Response(
@@ -134,13 +112,12 @@ class UnisourceShipmentController extends Controller
      *         description="Validation Error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
-     *             @OA\Property(property="error", type="string"),
      *             @OA\Property(property="errors", type="object")
      *         )
      *     ),
      *     @OA\Response(
      *         response=500,
-     *         description="Internal Server Error",
+     *         description="Server Error",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=false),
      *             @OA\Property(property="error", type="string")
@@ -150,175 +127,96 @@ class UnisourceShipmentController extends Controller
      */
     public function createShipment(Request $request)
     {
-        // Validate the incoming request
         $validator = \Validator::make($request->all(), [
-            'billToType' => 'required|string',
-            'billToAccountNumber' => 'required|string',
-            'billToAddress' => 'required|array',
-            'billToAddress.companyName' => 'required|string',
-            'billToAddress.streetAddress' => 'required|string',
-            'billToAddress.city' => 'required|string',
-            'billToAddress.state' => 'required|string',
-            'billToAddress.zipCode' => 'required|string',
-            'billToAddress.email' => 'required|email',
-            'billToAddress.country' => 'required|string',
-            'billToAddress.phone' => 'required|string',
-            
-            // Origin zip is required - can be standalone or in address
-            'originZip' => 'required_without:originAddress.zipCode|string',
-            'originAddress' => 'required|array',
-            'originAddress.companyName' => 'required|string',
-            'originAddress.streetAddress' => 'required|string',
-            'originAddress.city' => 'required|string',
-            'originAddress.state' => 'required|string',
-            'originAddress.zipCode' => 'required|string',
-            'originAddress.email' => 'required|email',
-            'originAddress.country' => 'required|string',
-            'originAddress.phone' => 'required|string',
-            
-            // Destination zip is required - can be standalone or in address
-            'destinationZip' => 'required_without:destinationAddress.zipCode|string',
-            'destinationAddress' => 'required|array',
-            'destinationAddress.companyName' => 'required|string',
-            'destinationAddress.streetAddress' => 'required|string',
-            'destinationAddress.city' => 'required|string',
-            'destinationAddress.state' => 'required|string',
-            'destinationAddress.zipCode' => 'required|string',
-            'destinationAddress.email' => 'required|email',
-            'destinationAddress.country' => 'required|string',
-            'destinationAddress.phone' => 'required|string',
-            
-            // At least one commodity is required
+            'customerReferenceNumber' => 'required|string',
+            'carrierSCAC' => 'required|string',
+            'customerId' => 'required|integer',
+            'amount' => 'required|numeric',
+            'stops' => 'required|array|min:2',
+            'stops.*.companyName' => 'required|string',
+            'stops.*.streetAddress' => 'required|string',
+            'stops.*.city' => 'required|string',
+            'stops.*.state' => 'required|string',
+            'stops.*.zipCode' => 'required|string',
+            'stops.*.country' => 'required|string',
+            'stops.*.contactName' => 'required|string',
+            'stops.*.phone' => 'required|string',
+            'stops.*.email' => 'required|email',
+            'stops.*.stopType' => 'required|string',
+
             'commodities' => 'required|array|min:1',
-            'commodities.*.description' => 'required|string',
-            'commodities.*.weight' => 'required|numeric|min:0.1',
-            'commodities.*.pieceTotal' => 'required|integer|min:1',
+            'commodities.*.packagingType' => 'required|string',
             'commodities.*.length' => 'required|numeric|min:0.1',
             'commodities.*.width' => 'required|numeric|min:0.1',
             'commodities.*.height' => 'required|numeric|min:0.1',
-            'commodities.*.declaredValue' => 'nullable|numeric|min:0',
-            'commodities.*.commodityClass' => 'nullable|string',
-            
-            'priceDetail' => 'required|array',
-            'priceDetail.carrierSCAC' => 'required|string',
-            'priceDetail.carrierName' => 'required|string',
-            'priceDetail.priceTotal' => 'required|numeric|min:0',
-            
-            'shipmentDate' => 'nullable|date',
-            'deliveryDate' => 'nullable|date',
-            'specialInstructions' => 'nullable|string'
+            'commodities.*.weightTotal' => 'required|numeric|min:0.1',
+            'commodities.*.piecesTotal' => 'required|integer|min:1',
+            'commodities.*.description' => 'required|string',
         ]);
-    
+
         if ($validator->fails()) {
             return response()->json([
                 'success' => false,
-                'error' => 'Validation failed',
                 'errors' => $validator->errors()
             ], 422);
         }
-    
-        $client = new Client();
-        
-        $apiKey = env('UNISOURCE_API_KEY');
-        $apiUrl = rtrim(env('UNISOURCE_API_BASE_URL'), '/') . '/Shipments';
-    
-        // Transform the payload if needed
+
+        $client = new \GuzzleHttp\Client();
         $payload = $this->transformPayload($request->all());
-    
+
         try {
-            $response = $client->post($apiUrl, [
+            $response = $client->post(env('UNISOURCE_API_BASE_URL') . '/Shipments', [
                 'headers' => [
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
-                    'x-api-key' => $apiKey,
+                    'x-api-key' => env('UNISOURCE_API_KEY')
                 ],
-                'json' => $payload,
+                'json' => $payload
             ]);
-    
-            $data = json_decode($response->getBody(), true);
-    
+
             return response()->json([
                 'success' => true,
-                'data' => $data
+                'data' => json_decode($response->getBody(), true)
             ]);
-    
         } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $responseBody = $e->getResponse()->getBody()->getContents();
-            
-            Log::error('Create shipment client error: ' . $e->getMessage(), [
-                'response' => $responseBody,
-                'payload' => $payload
-            ]);
-    
             return response()->json([
                 'success' => false,
                 'error' => 'Client error: ' . $e->getMessage(),
-                'details' => json_decode($responseBody, true)
-            ], $e->getResponse()->getStatusCode());
-    
+                'details' => json_decode($e->getResponse()->getBody(), true)
+            ], $e->getCode());
         } catch (\Exception $e) {
-            Log::error('Create shipment failed: ' . $e->getMessage(), [
-                'payload' => $payload
-            ]);
-    
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
             ], 500);
         }
     }
+
     
-    /**
-     * Transform the payload to match the expected API format
-     */
     private function transformPayload(array $data): array
     {
-        // Ensure commodities have correct field names
-        if (isset($data['commodities'])) {
-            foreach ($data['commodities'] as &$commodity) {
-                // Transform piece_total to pieceTotal if needed
-                if (isset($commodity['piece_total'])) {
-                    $commodity['pieceTotal'] = $commodity['piece_total'];
-                    unset($commodity['piece_total']);
-                }
-                
-                // Ensure pieceTotal is at least 1
-                if (!isset($commodity['pieceTotal']) || $commodity['pieceTotal'] < 1) {
-                    $commodity['pieceTotal'] = 1;
-                }
-                
-                // Ensure numeric values are properly formatted
-                if (isset($commodity['weight'])) {
-                    $commodity['weight'] = (float) $commodity['weight'];
-                }
-                if (isset($commodity['length'])) {
-                    $commodity['length'] = (float) $commodity['length'];
-                }
-                if (isset($commodity['width'])) {
-                    $commodity['width'] = (float) $commodity['width'];
-                }
-                if (isset($commodity['height'])) {
-                    $commodity['height'] = (float) $commodity['height'];
-                }
-            }
+        // Ensure commodity structure
+        foreach ($data['commodities'] as &$commodity) {
+            $commodity = [
+                'shipmentCommodityId' => 0,
+                'handlingQuantity' => 1,
+                'packagingType' => $commodity['packagingType'] ?? 'Box',
+                'length' => (float) $commodity['length'],
+                'width' => (float) $commodity['width'],
+                'height' => (float) $commodity['height'],
+                'weightTotal' => (float) $commodity['weightTotal'],
+                'hazardousMaterial' => false,
+                'piecesTotal' => (int) $commodity['piecesTotal'],
+                'freightClass' => $commodity['freightClass'] ?? 'No Class',
+                'description' => $commodity['description']
+            ];
         }
     
-        // Add required top-level zip fields if missing
-        if (!isset($data['originZip']) && isset($data['originAddress']['zipCode'])) {
-            $data['originZip'] = $data['originAddress']['zipCode'];
-        }
-        
-        if (!isset($data['destinationZip']) && isset($data['destinationAddress']['zipCode'])) {
-            $data['destinationZip'] = $data['destinationAddress']['zipCode'];
-        }
-    
-        // Remove empty or null values that might cause issues
-        $data = array_filter($data, function($value) {
-            return $value !== null && $value !== '';
-        });
+        // Additional transformations can go here...
     
         return $data;
     }
+    
 
 
 }
