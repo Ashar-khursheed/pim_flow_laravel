@@ -400,6 +400,9 @@ class UnisourceShipmentController extends Controller
   /**
  * Transform the payload to match Unisource API requirements
  */
+/**
+ * Transform the payload to match Unisource API requirements
+ */
 private function transformPayload(array $data): array
 {
     // Set default values
@@ -424,11 +427,14 @@ private function transformPayload(array $data): array
         'importExport' => $data['importExport'] ?? 'Import',
     ];
 
-    // Transform stops with proper stopType mapping
+    // Transform stops
     $payload['stops'] = [];
     foreach ($data['stops'] as $index => $stop) {
-        // Map stopType values to what Unisource API expects
-        $stopType = $this->mapStopType($stop['stopType']);
+        // Ensure stopType is present and not empty
+        if (empty($stop['stopType'])) {
+            Log::error("Stop {$index} has empty stopType", ['stop' => $stop]);
+            throw new \Exception("Stop {$index} is missing required stopType");
+        }
         
         $transformedStop = [
             'companyName' => $stop['companyName'],
@@ -440,7 +446,7 @@ private function transformPayload(array $data): array
             'contactName' => $stop['contactName'],
             'phone' => $stop['phone'],
             'email' => $stop['email'],
-            'stopType' => $stopType, // Use mapped stopType
+            'stopType' => $stop['stopType'], // Keep original stopType for now
         ];
 
         // Add optional fields if they exist
@@ -479,6 +485,12 @@ private function transformPayload(array $data): array
 
         $payload['commodities'][] = $transformedCommodity;
     }
+
+    // Log the final payload
+    Log::info('Transformed payload:', [
+        'stops' => $payload['stops'],
+        'stop_types' => array_column($payload['stops'], 'stopType')
+    ]);
 
     return $payload;
 }
