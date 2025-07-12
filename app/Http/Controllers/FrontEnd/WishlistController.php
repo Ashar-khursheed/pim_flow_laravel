@@ -122,35 +122,135 @@ class WishlistController extends Controller
      *     security={{ "bearerAuth": {} }}
      * )
      */
-    public function getWishlist(Request $request)
-    {
-        $userId = Auth::id();
+    // public function getWishlist(Request $request)
+    // {
+    //     $userId = Auth::id();
         
-        $wishlistItems = Wishlist::with('product')
-                        ->where('customer_id', $userId)
-                        ->orderBy('created_at', 'desc')
-                        ->get();
+    //     $wishlistItems = Wishlist::with('product')
+    //                     ->where('customer_id', $userId)
+    //                     ->orderBy('created_at', 'desc')
+    //                     ->get();
 
-        $wishlistItems->transform(function ($item) {
-            $product = $item->product;
+    //     $wishlistItems->transform(function ($item) {
+    //         $product = $item->product;
 
-            if ($product) {
-                // Ensure images is properly formatted
-                if (is_string($product->images)) {
-                    $product->images = json_decode($product->images, true) ?: [];
-                }
-                $product->images = collect($product->images);
-                $product->in_wishlist = 1;
+    //         if ($product) {
+    //             // Ensure images is properly formatted
+    //             if (is_string($product->images)) {
+    //                 $product->images = json_decode($product->images, true) ?: [];
+    //             }
+    //             $product->images = collect($product->images);
+    //             $product->in_wishlist = 1;
+    //         }
+
+    //         return $item;
+    //     });
+
+    //     return response()->json([
+    //         'wishlist' => $wishlistItems,
+    //         'total_items' => $wishlistItems->count()
+    //     ]);
+    // }
+    public function getWishlist(Request $request)
+{
+    $userId = Auth::id();
+
+    $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand')
+        ->where('customer_id', $userId)
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+    // Fetch applicable discounts for the user
+    $userDiscountIds = DB::table('ec_discount_customers')
+        ->where('customer_id', $userId)
+        ->pluck('discount_id')
+        ->toArray();
+
+    // Fetch applicable product discounts
+    $productIds = $wishlistItems->pluck('product.id')->filter()->toArray();
+
+    $productDiscounts = DB::table('ec_discount_products')
+        ->whereIn('product_id', $productIds)
+        ->select('product_id', 'discount_id')
+        ->get()
+        ->groupBy('product_id')
+        ->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
+
+    // Get all discounts
+    $discounts = DB::table('ec_discounts')
+        ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
+        ->get()
+        ->keyBy('id');
+
+    $wishlistItems->transform(function ($item) use ($productDiscounts, $discounts) {
+        $product = $item->product;
+
+        if ($product) {
+            // Brand
+            $product->brand_name = optional($product->brand)->name;
+            $product->unsetRelation('brand');
+
+            // Images
+            $product->images = collect(json_decode($product->images, true) ?? []);
+            $product->in_wishlist = 1;
+
+            // Discounts
+            $discountIds = $productDiscounts[$product->id] ?? [];
+            $product->discounts = collect($discountIds)
+                ->map(fn($id) => $discounts[$id] ?? null)
+                ->filter()
+                ->values();
+
+            // Currency
+            $symbol = optional($product->currency)->symbol;
+            $product->unsetRelation('currency');
+            $product->currency = $symbol;
+
+            // Supplier Details
+            $firstSupplier = $product->productSuppliers->first();
+            if ($firstSupplier) {
+                $product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+                $product->price = (float) $firstSupplier->price;
+                $product->sale_price = (float) $firstSupplier->sale_price;
+                $product->original_price = (float) $firstSupplier->price;
+                $product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+                $product->best_price = (float) $firstSupplier->price;
+                $product->vendor_id = $firstSupplier->vendor_id;
+                $product->map = (float) $firstSupplier->map;
+                $product->inventory = $firstSupplier->inventory;
+                $product->in_stock = $firstSupplier->in_stock;
+                $product->delivery_days = $firstSupplier->delivery_days;
+                $product->return_policy = $firstSupplier->return_policy;
+                $product->free_shipping = $firstSupplier->free_shipping;
+                $product->warranty_information = $firstSupplier->warranty_information;
+            } else {
+                // Safe fallback values
+                $product->vendor_sku = null;
+                $product->price = null;
+                $product->sale_price = null;
+                $product->original_price = null;
+                $product->front_sale_price = null;
+                $product->best_price = null;
+                $product->vendor_id = null;
+                $product->map = null;
+                $product->inventory = null;
+                $product->in_stock = null;
+                $product->delivery_days = null;
+                $product->return_policy = null;
+                $product->free_shipping = null;
+                $product->warranty_information = null;
             }
+        }
 
-            return $item;
-        });
+        return $item;
+    });
 
-        return response()->json([
-            'wishlist' => $wishlistItems,
-            'total_items' => $wishlistItems->count()
-        ]);
-    }
+    return response()->json([
+        'wishlist' => $wishlistItems,
+        'total_items' => $wishlistItems->count()
+    ]);
+}
+
 
     /**
      * @OA\Delete(
