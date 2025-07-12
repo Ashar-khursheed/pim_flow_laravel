@@ -21,6 +21,7 @@ use App\Notifications\Orders\OrderConfirmationMail;
 use App\Notifications\Orders\OutForDeliveryMail;
 use App\Notifications\Orders\OrderDeliveredMail;
 use App\Notifications\Orders\PartialOrderCancelledMail;
+use App\Notifications\Orders\OrderCancelledMail;
 
 class OrderController extends Controller
 {
@@ -705,6 +706,10 @@ class OrderController extends Controller
 
 		if ($request->status == 'Delivered') {
 			$customer->notify(new OrderDeliveredMail($order));
+		}
+
+		if ($request->status == 'Cancelled') {
+			$customer->notify(new OrderCancelledMail($order));
 		}
 
 		return response()->json([

@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Notifications\Orders\OrderPlacedMail;
+use App\Notifications\Orders\OrderCancelledMail;
 
 class OrderController extends BaseController
 {
@@ -590,6 +591,10 @@ class OrderController extends BaseController
 			'status' => $request->status,
 		]);
 		$order->orderProducts()->update(['status' => $request->status]);
+
+		if ($request->status == 'Cancelled') {
+			$order->customer->notify(new OrderCancelledMail($order));
+		}
 
 		/* dd tracking entry */
 		OrderTracking::create([

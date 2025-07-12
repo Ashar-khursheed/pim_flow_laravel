@@ -92,21 +92,21 @@
 								</tr>
 							</table>
 
-							<p style="font-size: 15px; font-weight: 500; margin: 0 0 10px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
+							<p style="font-size: 15px; font-weight: 500; margin: 0 0 10px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px; color: #000; font-weight: 500;">
 								We’re proud to support your business with:
 							</p>
 							<table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td style="padding: 0; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
-										<p style="font-size: 14px; display: flex; align-items: center; margin: 0 0 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 20px;">
+										<p style="font-size: 14px; display: flex; align-items: center; margin: 0 0 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 20px; color: #000; font-weight: 500;">
 											<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="margin-right: 5px;">
 											Guaranteed Lowest Prices
 										</p>
-										<p style="font-size: 14px; display: flex; align-items: center; margin: 0 0 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 20px;">
+										<p style="font-size: 14px; display: flex; align-items: center; margin: 0 0 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 20px; color: #000; font-weight: 500;">
 											<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="margin-right: 5px;">
 											Zero-Stress Experience
 										</p>
-										<p style="font-size: 14px; display: flex; align-items: center; margin: 0; font-family: 'Noto Sans', sans-serif; line-height: 20px;">
+										<p style="font-size: 14px; display: flex; align-items: center; margin: 0; font-family: 'Noto Sans', sans-serif; line-height: 20px; color: #000; font-weight: 500;">
 											<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="margin-right: 5px;">
 											Reliable Quality You Can Count On
 										</p>

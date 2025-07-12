@@ -38,6 +38,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $this->order->order_number;
+		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
 
 		$products = collect();
 		foreach ($this->order->orderProducts as $orderProduct) {
@@ -48,6 +49,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->quantity = (int) $orderProduct->quantity;
+				$product->total = number_format($orderProduct->amount, 2, '.', ',');
 				$products->push($product);
 			}
 		}
@@ -61,6 +63,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 			'logoUrl' => $logoUrl,
 			'name' => $name,
 			'orderNumber' => $orderNumber,
+			'currency' => $currency,
 			'products' => $products,
 			'rightPngURL' => $rightPngURL,
 
