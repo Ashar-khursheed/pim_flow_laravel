@@ -26691,7 +26691,7 @@
                                                 },
                                                 "stopType": {
                                                     "type": "string",
-                                                    "example": "First Pickup"
+                                                    "example": "Pickup"
                                                 },
                                                 "shipmentStopReferenceNumbers": {
                                                     "type": "array",
