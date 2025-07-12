@@ -26499,7 +26499,7 @@
                 "tags": [
                     "Unisource"
                 ],
-                "summary": "Create a shipment with full payload",
+                "summary": "Create a shipment with Unisource-compliant payload",
                 "operationId": "dd6a00b14e9f545ce9b95aaef5790aef",
                 "requestBody": {
                     "required": true,
@@ -26507,157 +26507,276 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "billToType",
-                                    "billToAccountNumber",
-                                    "billToAddress",
-                                    "priceDetail",
-                                    "originAddress",
-                                    "destinationAddress",
+                                    "customerReferenceNumber",
+                                    "carrierSCAC",
+                                    "customerId",
+                                    "amount",
+                                    "stops",
                                     "commodities"
                                 ],
                                 "properties": {
-                                    "billToType": {
+                                    "customerReferenceNumber": {
                                         "type": "string",
-                                        "example": "Third"
+                                        "example": "REF123456"
                                     },
-                                    "billToAccountNumber": {
+                                    "customerStaffId": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tariffDescription": {
                                         "type": "string",
-                                        "example": "123456"
+                                        "example": "Standard"
                                     },
-                                    "billToAddress": {
-                                        "properties": {
-                                            "companyName": {
-                                                "type": "string",
-                                                "example": "Company A"
-                                            },
-                                            "streetAddress": {
-                                                "type": "string",
-                                                "example": "123 Main St"
-                                            },
-                                            "streetAddressTwo": {
-                                                "type": "string",
-                                                "example": "Suite 4B"
-                                            },
-                                            "city": {
-                                                "type": "string",
-                                                "example": "New York"
-                                            },
-                                            "state": {
-                                                "type": "string",
-                                                "example": "NY"
-                                            },
-                                            "zipCode": {
-                                                "type": "string",
-                                                "example": "10001"
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "example": "billing@company.com"
-                                            },
-                                            "country": {
-                                                "type": "string",
-                                                "example": "USA"
-                                            },
-                                            "fax": {
-                                                "type": "string",
-                                                "example": "123-456-7890"
-                                            },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "123-456-7890"
-                                            }
-                                        },
-                                        "type": "object"
+                                    "allowNewShipmentNotifications": {
+                                        "type": "boolean",
+                                        "example": true
                                     },
-                                    "originAddress": {
-                                        "properties": {
-                                            "companyName": {
-                                                "type": "string",
-                                                "example": "Origin Company"
-                                            },
-                                            "streetAddress": {
-                                                "type": "string",
-                                                "example": "789 Origin St"
-                                            },
-                                            "city": {
-                                                "type": "string",
-                                                "example": "Origin City"
-                                            },
-                                            "state": {
-                                                "type": "string",
-                                                "example": "CA"
-                                            },
-                                            "zipCode": {
-                                                "type": "string",
-                                                "example": "90210"
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "example": "origin@company.com"
-                                            },
-                                            "country": {
-                                                "type": "string",
-                                                "example": "USA"
-                                            },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "555-123-4567"
-                                            }
-                                        },
-                                        "type": "object"
+                                    "isCommitted": {
+                                        "type": "boolean",
+                                        "example": true
                                     },
-                                    "destinationAddress": {
-                                        "properties": {
-                                            "companyName": {
-                                                "type": "string",
-                                                "example": "Destination Company"
+                                    "rateShipment": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "carrierSCAC": {
+                                        "type": "string",
+                                        "example": "SCAC"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "example": 100
+                                    },
+                                    "customerId": {
+                                        "type": "integer",
+                                        "example": 40
+                                    },
+                                    "mileage": {
+                                        "type": "integer",
+                                        "example": 0
+                                    },
+                                    "shipmentType": {
+                                        "type": "string",
+                                        "example": "Small Package"
+                                    },
+                                    "stackable": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "trailerType": {
+                                        "type": "string",
+                                        "example": "None"
+                                    },
+                                    "trailerSize": {
+                                        "type": "string",
+                                        "example": "Full"
+                                    },
+                                    "weightUnits": {
+                                        "type": "string",
+                                        "example": "lbs"
+                                    },
+                                    "dimensionUnits": {
+                                        "type": "string",
+                                        "example": "in"
+                                    },
+                                    "serviceLevel": {
+                                        "type": "string",
+                                        "example": "Normal"
+                                    },
+                                    "importExport": {
+                                        "type": "string",
+                                        "example": "Import"
+                                    },
+                                    "stops": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "companyName",
+                                                "streetAddress",
+                                                "city",
+                                                "state",
+                                                "zipCode",
+                                                "country",
+                                                "contactName",
+                                                "phone",
+                                                "email",
+                                                "stopType"
+                                            ],
+                                            "properties": {
+                                                "companyName": {
+                                                    "type": "string",
+                                                    "example": "ABC Logistics"
+                                                },
+                                                "streetAddress": {
+                                                    "type": "string",
+                                                    "example": "123 Main St"
+                                                },
+                                                "streetAddressTwo": {
+                                                    "type": "string",
+                                                    "example": "Suite 200"
+                                                },
+                                                "city": {
+                                                    "type": "string",
+                                                    "example": "New York"
+                                                },
+                                                "state": {
+                                                    "type": "string",
+                                                    "example": "NY"
+                                                },
+                                                "zipCode": {
+                                                    "type": "string",
+                                                    "example": "10001"
+                                                },
+                                                "country": {
+                                                    "type": "string",
+                                                    "example": "USA"
+                                                },
+                                                "contactName": {
+                                                    "type": "string",
+                                                    "example": "John Doe"
+                                                },
+                                                "phone": {
+                                                    "type": "string",
+                                                    "example": "1234567890"
+                                                },
+                                                "fax": {
+                                                    "type": "string",
+                                                    "example": "1234567891"
+                                                },
+                                                "email": {
+                                                    "type": "string",
+                                                    "example": "john@abc.com"
+                                                },
+                                                "instructions": {
+                                                    "type": "string",
+                                                    "example": "Use loading dock"
+                                                },
+                                                "notes": {
+                                                    "type": "string",
+                                                    "example": "Fragile shipment"
+                                                },
+                                                "referenceNumber": {
+                                                    "type": "string",
+                                                    "example": "REF123"
+                                                },
+                                                "estimatedReadyDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T14:00:00Z"
+                                                },
+                                                "estimatedCloseDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T16:00:00Z"
+                                                },
+                                                "appointmentReadyDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T14:30:00Z"
+                                                },
+                                                "appointmentCloseDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:30:00Z"
+                                                },
+                                                "actualArrivalDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:00:00Z"
+                                                },
+                                                "actualDepartureDateTime": {
+                                                    "type": "string",
+                                                    "format": "date-time",
+                                                    "example": "2025-07-12T15:45:00Z"
+                                                },
+                                                "stopType": {
+                                                    "type": "string",
+                                                    "example": "Pickup"
+                                                },
+                                                "shipmentStopReferenceNumbers": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "referenceType": {
+                                                                "type": "string",
+                                                                "example": "Reference Number"
+                                                            },
+                                                            "value": {
+                                                                "type": "string",
+                                                                "example": "REF-999"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "shipmentStopPickupCommodities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "shipmentCommodityId": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "pickupStopId": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "deliveryStopId": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "shipmentStopDeliveryCommodities": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "shipmentCommodityId": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "pickupStopId": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "deliveryStopId": {
+                                                                "type": "integer",
+                                                                "example": 2
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                }
                                             },
-                                            "streetAddress": {
-                                                "type": "string",
-                                                "example": "456 Destination Rd"
-                                            },
-                                            "city": {
-                                                "type": "string",
-                                                "example": "Los Angeles"
-                                            },
-                                            "state": {
-                                                "type": "string",
-                                                "example": "CA"
-                                            },
-                                            "zipCode": {
-                                                "type": "string",
-                                                "example": "90001"
-                                            },
-                                            "email": {
-                                                "type": "string",
-                                                "example": "destination@company.com"
-                                            },
-                                            "country": {
-                                                "type": "string",
-                                                "example": "USA"
-                                            },
-                                            "phone": {
-                                                "type": "string",
-                                                "example": "555-987-6543"
-                                            }
-                                        },
-                                        "type": "object"
+                                            "type": "object"
+                                        }
                                     },
                                     "commodities": {
                                         "type": "array",
                                         "items": {
+                                            "required": [
+                                                "packagingType",
+                                                "length",
+                                                "width",
+                                                "height",
+                                                "weightTotal",
+                                                "piecesTotal",
+                                                "description"
+                                            ],
                                             "properties": {
-                                                "description": {
-                                                    "type": "string",
-                                                    "example": "Box of electronics"
-                                                },
-                                                "weight": {
-                                                    "type": "number",
-                                                    "example": 15
-                                                },
-                                                "pieceTotal": {
+                                                "shipmentCommodityId": {
                                                     "type": "integer",
                                                     "example": 1
+                                                },
+                                                "handlingQuantity": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "packagingType": {
+                                                    "type": "string",
+                                                    "example": "Box"
                                                 },
                                                 "length": {
                                                     "type": "number",
@@ -26671,95 +26790,29 @@
                                                     "type": "number",
                                                     "example": 8
                                                 },
-                                                "declaredValue": {
+                                                "weightTotal": {
                                                     "type": "number",
-                                                    "example": 100
+                                                    "example": 15
                                                 },
-                                                "commodityClass": {
+                                                "hazardousMaterial": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                },
+                                                "piecesTotal": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "freightClass": {
                                                     "type": "string",
                                                     "example": "92.5"
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "example": "Box of electronics"
                                                 }
                                             },
                                             "type": "object"
                                         }
-                                    },
-                                    "priceDetail": {
-                                        "properties": {
-                                            "carrierSCAC": {
-                                                "type": "string"
-                                            },
-                                            "carrierName": {
-                                                "type": "string"
-                                            },
-                                            "tariffDescription": {
-                                                "type": "string"
-                                            },
-                                            "transitTime": {
-                                                "type": "integer"
-                                            },
-                                            "serviceLevel": {
-                                                "type": "string"
-                                            },
-                                            "priceLineHaul": {
-                                                "type": "number"
-                                            },
-                                            "priceFuelSurcharge": {
-                                                "type": "number"
-                                            },
-                                            "priceAccessorials": {
-                                                "type": "array",
-                                                "items": {
-                                                    "properties": {
-                                                        "accessorialCode": {
-                                                            "type": "string"
-                                                        },
-                                                        "accessorialPrice": {
-                                                            "type": "number"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                }
-                                            },
-                                            "priceInsurance": {
-                                                "type": "number"
-                                            },
-                                            "insuranceQuoteNumber": {
-                                                "type": "string"
-                                            },
-                                            "priceTotal": {
-                                                "type": "number"
-                                            },
-                                            "pricingInstructions": {
-                                                "type": "string"
-                                            },
-                                            "usedLiabilityCoverage": {
-                                                "type": "number"
-                                            },
-                                            "newLiabilityCoverage": {
-                                                "type": "number"
-                                            },
-                                            "tsaCompliance": {
-                                                "type": "string"
-                                            },
-                                            "apiQuoteNumber": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "type": "object"
-                                    },
-                                    "shipmentDate": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-07-15"
-                                    },
-                                    "deliveryDate": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2025-07-20"
-                                    },
-                                    "specialInstructions": {
-                                        "type": "string",
-                                        "example": "Fragile - Handle with care"
                                     }
                                 },
                                 "type": "object"
@@ -26775,8 +26828,7 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": true
+                                            "type": "boolean"
                                         },
                                         "data": {
                                             "type": "object"
@@ -26794,11 +26846,7 @@
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": false
-                                        },
-                                        "error": {
-                                            "type": "string"
+                                            "type": "boolean"
                                         },
                                         "errors": {
                                             "type": "object"
@@ -26810,14 +26858,13 @@
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Server Error",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "properties": {
                                         "success": {
-                                            "type": "boolean",
-                                            "example": false
+                                            "type": "boolean"
                                         },
                                         "error": {
                                             "type": "string"
