@@ -172,33 +172,37 @@ class ProductTitleFormulaController extends Controller
 	 * )
 	 */
 	public function show($id)
-	{
-		// Load the requested formula with its category and creator
-		$formula = ProductTitleFormula::with(['category', 'creator'])->findOrFail($id);
+{
+	$formula = ProductTitleFormula::with(['category', 'creator'])->find($id);
 
-		// Get all formulas under the same category
-		$formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
+	if (!$formula) {
+		return response()->json([
+			'success' => false,
+			'message' => 'Product title formula not found.'
+		], 404);
+	}
 
-		// Collect unique attribute IDs across all formulas in this category
-		$attributeIds = $formulasInSameCategory->pluck('attribute_id')
+	$formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
+
+	$attributeIds = $formulasInSameCategory->pluck('attribute_id')
 		->flatten()
 		->unique()
 		->filter();
 
-		// Get attribute names
-		$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
+	$attributeNames = Attribute::whereIn('id', $attributeIds)->pluck('name')->toArray();
 
-		return response()->json([
-			'id' => $formula->id,
-			'category_id' => $formula->category_id,
-			'category_name' => $formula->category?->name,
-			'created_by' => $formula->creator?->name,
-			'attribute_names' => implode(', ', $attributeNames),
-			'locked' => $formula->locked,
-			'created_at' => $formula->created_at,
-			'updated_at' => $formula->updated_at,
-		]);
-	}
+	return response()->json([
+		'id' => $formula->id,
+		'category_id' => $formula->category_id,
+		'category_name' => $formula->category?->name,
+		'created_by' => $formula->creator?->name,
+		'attribute_names' => implode(', ', $attributeNames),
+		'locked' => $formula->locked,
+		'created_at' => $formula->created_at,
+		'updated_at' => $formula->updated_at,
+	]);
+}
+
 
 	/**
 	 * @OA\Post(
