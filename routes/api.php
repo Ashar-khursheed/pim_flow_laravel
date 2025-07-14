@@ -453,7 +453,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/save-for-later', [F_SaveForLaterController::class, 'showSaveForLater']);
 	Route::delete('/frontend/remove-from-save-for-later/{product_id}', [F_SaveForLaterController::class, 'removeFromSaveForLater']);
 
-	Route::apiResource('/frontend/payments',  F_PaymentManagementController ::class);
+	Route::apiResource('/frontend/payments',  F_PaymentManagementController::class);
 
 
 	Route::prefix('/frontend/blogs')->group(function () {
