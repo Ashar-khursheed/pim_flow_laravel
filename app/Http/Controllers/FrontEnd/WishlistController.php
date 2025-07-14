@@ -206,6 +206,21 @@ class WishlistController extends Controller
             $symbol = optional($product->currency)->symbol;
             $product->unsetRelation('currency');
             $product->currency = $symbol;
+            
+            $sellingType = null;
+     
+            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                $attributeUnit = strpos($fullValue, '/') !== false
+                    ? trim(explode('/', $fullValue)[1])
+                    : $fullValue;
+
+                $sellingType = [
+                    'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                    'attribute_value_unit' => $attributeUnit,
+                ];
+            }
 
             // Supplier Details
             $firstSupplier = $product->productSuppliers->first();
@@ -219,11 +234,13 @@ class WishlistController extends Controller
                 $product->vendor_id = $firstSupplier->vendor_id;
                 $product->map = (float) $firstSupplier->map;
                 $product->inventory = $firstSupplier->inventory;
+                $product->selling_type =$sellingType;
                 $product->in_stock = $firstSupplier->in_stock;
                 $product->delivery_days = $firstSupplier->delivery_days;
                 $product->return_policy = $firstSupplier->return_policy;
                 $product->free_shipping = $firstSupplier->free_shipping;
                 $product->warranty_information = $firstSupplier->warranty_information ?? $product->warranty_information;
+               
             } else {
                 // Safe fallback values
                 $product->vendor_sku = null;
@@ -240,6 +257,7 @@ class WishlistController extends Controller
                 $product->return_policy = null;
                 $product->free_shipping = null;
                 $product->warranty_information = $firstSupplier->warranty_information ?? $product->warranty_information;
+                $product->selling_type =$sellingType;
             }
         }
 
