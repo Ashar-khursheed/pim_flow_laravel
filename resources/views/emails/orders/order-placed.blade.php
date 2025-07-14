@@ -232,7 +232,7 @@
 
 							<table width="100%" cellspacing="0" cellpadding="0" border="0">
 								<tr>
-									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:10px;  font-family: 'Noto Sans',  sans-serif">
+									<td style="font-size:14px; border-top:3px solid #E2E8F0; padding-top:15px; padding-bottom:5px;  font-family: 'Noto Sans',  sans-serif">
 										You can view or update your order anytime by visiting the Orders section under your account profile.
 									</td>
 								</tr>
@@ -253,7 +253,7 @@
 					</tr>
 				</table>
 
-				<table width="650" cellspacing="0" cellpadding="0" border="0" style="border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
+				<table width="650" cellspacing="0" cellpadding="0" border="0" style="padding:10px; border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
 							<p style="font-size: 12px;  font-family: 'Noto Sans',  sans-serif">
