@@ -38,24 +38,24 @@
 
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 15px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: bold; margin: 0; padding: 10px 0; font-family: 'Noto Sans', sans-serif;">What happens next:</p>
+							<p style="font-weight: bold; margin: 0; padding: 10px 0;  font-family: 'Noto Sans', sans-serif;">What happens next:</p>
 							<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td valign="top" style="color:#26683A; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
 										<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="vertical-align: middle;" />
-										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif;">We’re preparing and packing your items</strong>
+										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">We’re preparing and packing your items</strong>
 									</td>
 								</tr>
 								<tr>
 									<td valign="top" style="color:#26683A; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
 										<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="vertical-align: middle;" />
-										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif;">You’ll receive shipping details shortly</strong>
+										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">You’ll receive shipping details shortly</strong>
 									</td>
 								</tr>
 								<tr>
 									<td valign="top" style="color:#26683A; font-family: 'Noto Sans', sans-serif;">
 										<img src="{{ $rightPngURL }}" alt="right" width="26" height="26" style="vertical-align: middle;" />
-										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif;">Fast, trackable delivery is on its way</strong>
+										<strong style="color:#232425; margin-left: 5px; font-family: 'Noto Sans', sans-serif; font-size: 14px;">Fast, trackable delivery is on its way</strong>
 									</td>
 								</tr>
 							</table>
@@ -70,7 +70,7 @@
 
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 14px; font-family: 'Noto Sans', sans-serif;">
-							<p style="font-weight: 500; padding: 5px 0; margin: 0; font-family: 'Noto Sans', sans-serif;">Need support? Real people. Real help. Just a call away.</p>
+							<p style="font-weight: 500; font-size: 14px; padding: 5px 0; margin: 0; font-family: 'Noto Sans', sans-serif;">Need support? Real people. Real help. Just a call away.</p>
 							<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td style="color: #26683A; font-weight: 500; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
@@ -78,7 +78,7 @@
 										@if($siteName == 'UAE')
 										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">800</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (467-322)</span>
 										@elseif($siteName == 'USA')
-										1-866-4- HORECA (1-866-446-7322)
+										<a href="tel:18664467322">1-866-4- HORECA (1-866-446-7322)</a>	
 										@else
 										{!! $siteTollFreeContact !!}
 										@endif
@@ -107,8 +107,8 @@
 				<table border="0" cellpadding="0" cellspacing="0" width="600" style="border-top: 2px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td align="left" style="padding: 20px; font-size: 12px; color:#3F3F3F; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0; font-family: 'Noto Sans', sans-serif;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
-							<p style="margin: 8px 0 0; font-family: 'Noto Sans', sans-serif;">This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
+							<p style="margin: 0;font-size:12px; font-family: 'Noto Sans', sans-serif;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
+							<p style="margin: 8px 0 0; font-size:12px; font-family: 'Noto Sans', sans-serif;">This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
 						</td>
 					</tr>
 				</table>
