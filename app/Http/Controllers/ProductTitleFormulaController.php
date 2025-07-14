@@ -171,19 +171,24 @@ class ProductTitleFormulaController extends Controller
 	 *     )
 	 * )
 	 */
-	public function show($id)
+	public function show($categoryId)
 {
-	$formula = ProductTitleFormula::with(['category', 'creator'])->find($id);
+	// Get the first formula from this category (adjust logic if needed)
+	$formula = ProductTitleFormula::with(['category', 'creator'])
+		->where('category_id', $categoryId)
+		->first();
 
 	if (!$formula) {
 		return response()->json([
 			'success' => false,
-			'message' => 'Product title formula not found.'
+			'message' => 'No formula found for the given category.'
 		], 404);
 	}
 
-	$formulasInSameCategory = ProductTitleFormula::where('category_id', $formula->category_id)->get();
+	// Get all formulas in the same category
+	$formulasInSameCategory = ProductTitleFormula::where('category_id', $categoryId)->get();
 
+	// Collect unique attribute IDs across formulas
 	$attributeIds = $formulasInSameCategory->pluck('attribute_id')
 		->flatten()
 		->unique()
@@ -202,6 +207,7 @@ class ProductTitleFormulaController extends Controller
 		'updated_at' => $formula->updated_at,
 	]);
 }
+
 
 
 	/**
