@@ -41,6 +41,111 @@ class PaymentController extends Controller
 	}
 
 	/**
+	 * @OA\Post(
+	 *     path="/api/payments",
+	 *     summary="Create a new payment",
+	 *     description="Create a new payment record for an authenticated customer",
+	 *     tags={"Payments"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         description="Payment data",
+	 *         @OA\JsonContent(
+	 *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
+	 *             @OA\Property(
+	 *                 property="order_id",
+	 *                 type="integer",
+	 *                 description="ID of the order this payment is for",
+	 *                 example=123
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="transaction_id",
+	 *                 type="string",
+	 *                 description="Unique transaction identifier from payment gateway",
+	 *                 example="TXN456789"
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="payment_mode",
+	 *                 type="string",
+	 *                 description="Method of payment",
+	 *                 example="Credit Card",
+	 *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay"}
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="amount",
+	 *                 type="number",
+	 *                 format="float",
+	 *                 description="Payment amount",
+	 *                 example=299.99,
+	 *                 minimum=0.01
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="status",
+	 *                 type="string",
+	 *                 description="Payment status",
+	 *                 example="completed",
+	 *                 enum={"pending", "completed", "failed", "cancelled", "refunded"}
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="payment_date",
+	 *                 type="string",
+	 *                 format="date",
+	 *                 description="Date when payment was made",
+	 *                 example="2024-06-24"
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="notes",
+	 *                 type="string",
+	 *                 description="Additional notes about the payment",
+	 *                 example="First installment paid",
+	 *                 nullable=true
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="payment_details",
+	 *                 type="object",
+	 *                 description="Additional payment gateway details",
+	 *                 example={"bank":"XYZ Bank","ref":"12345XYZ","gateway_response":"success"},
+	 *                 nullable=true
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function store(Request $request)
+	{
+		try {
+			$validated = $request->validate([
+				'order_id' => 'required|integer|exists:orders,id',
+				'transaction_id' => 'nullable|string|max:255|unique:payments_management,transaction_id',
+				'payment_mode' => 'required|string|in:Credit Card,Debit Card,PayPal,Bank Transfer,Cash on Delivery,Stripe,Razorpay',
+				'amount' => 'required|numeric|min:0.01|max:999999.99',
+				'status' => 'required|string|in:pending,completed,failed,cancelled,refunded',
+				'payment_date' => 'required|date|before_or_equal:today',
+				'notes' => 'nullable|string|max:1000',
+				'payment_details' => 'nullable|array|max:2000',
+			]);
+
+			if (isset($validated['payment_details'])) {
+				$validated['payment_details'] = json_encode($validated['payment_details']);
+			}
+
+			$payment = PaymentManagement::create($validated);
+
+			return response()->json([
+				'message' => 'Payment created successfully.',
+				'data' => $payment
+			], 201);
+
+		} catch (\Exception $e) {
+			return response()->json([
+				'message' => 'Something went wrong while creating the payment.',
+				'error' => $e->getMessage()
+			], 500);
+		}
+	}
+
+	/**
 	 * @OA\Get(
 	 *     path="/api/payments/{id}",
 	 *     summary="Get payment details",
