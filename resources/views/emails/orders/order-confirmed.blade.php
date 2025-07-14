@@ -32,7 +32,7 @@
 					<tr>
 						<td align="left" style="padding: 0 20px; font-size: 16px; font-family: 'Noto Sans', sans-serif;">
 							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif;">Hello <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">{{ $name }}</strong>!</p>
-							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif;">Great news - Your HorecaStore order <strong style="color:#26683A; font-family: 'Noto Sans', sans-serif;">#{{ $orderNumber }}</strong> has been confirmed and is now being processed.</p>
+							<p style="margin: 0; padding: 5px 0; font-family: 'Noto Sans', sans-serif; font-size: 14px;">Great news - Your HorecaStore order <strong style="font-size: 14px; color:#26683A; font-family: 'Noto Sans', sans-serif;">#{{ $orderNumber }}</strong> has been confirmed and is now being processed.</p>
 						</td>
 					</tr>
 

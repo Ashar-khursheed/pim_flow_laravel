@@ -16,7 +16,7 @@
 	</style>
 </head>
 
-<body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif;">
+<body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color:black">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
 		Your order arrived safely. Thank you for choosing HorecaStore!
@@ -60,10 +60,10 @@
 
 								@foreach($products as $product)
 								<tr>
-									<td>
+									<td style="width:12%;">
 										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="border: 1px solid #DFDFDF; border-radius: 4px; width: 54px;">
 									</td>
-									<td>
+									<td  style="width:60%;">
 										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->name }}</strong><br>
 										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Status:</span>
 										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
@@ -71,10 +71,10 @@
 										</span>
 										<br>
 									</td>
-									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;width:10%;">
 										{{ $product->quantity }}
 									</td>
-									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%;">
 										{{ $currency }} {{ $product->total }}
 									</td>
 								</tr>

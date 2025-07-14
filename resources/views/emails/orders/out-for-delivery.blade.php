@@ -38,12 +38,12 @@
 							<p style="font-size: 16px;color: black;font-family: 'Noto Sans', sans-serif;line-height: 24px; margin: 5px  0 ;padding: 0;">
 								Hello <strong style="color: #26683A; font-family: 'Noto Sans', sans-serif; line-height: 24px;">{{ $name }}</strong>!
 							</p>
-							<p style="font-size: 16px;color: black;font-family: 'Noto Sans', sans-serif;line-height: 24px;margin: 0;padding: 0;">
-								<strong>Good news! Your HorecaStore order is on its way.</strong><br />
+							<p style="font-size: 16px;color: black;font-family: 'Noto Sans', sans-serif;line-height: 24px;margin: 0;padding: 0;font-weight: 500;">
+								<strong style="font-size: 16px;color: black;font-family: 'Noto Sans', sans-serif;line-height: 24px;margin: 0;padding: 0;">Good news! Your HorecaStore order is on its way.</strong><br />
 								You can expect it to arrive at your door shortly - track it anytime below.
 							</p>
 
-							<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 15px 0 0; font-family: 'Noto Sans', sans-serif;">
+							<table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 25px 0 0; font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td valign="top" width="50%" style="padding: 0; padding-right: 10px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
 										<p style="font-weight: bold; font-size: 15px; color: #26683A; margin: 0 0 5px 0; font-family: 'Noto Sans', sans-serif; line-height: 22px;">
@@ -124,7 +124,7 @@
 					</tr>
 				</table>
 
-				<table class="footer-note" width="650" cellpadding="20" cellspacing="0" border="0" style="border-top: 3px solid #E2E8F0; background-color: rgba(226,232,240,0.3); font-size: 12px; color: black; font-family: 'Noto Sans', sans-serif;">
+				<table class="footer-note" width="650" cellpadding="20" cellspacing="0" border="0" style="border-top: 3px solid #E2E8F0; background-color: rgba(226,232,240,0.3); font-size: 12px; color: #3F3F3F; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td style="font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
 							<p style="margin: 0; font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
@@ -134,7 +134,7 @@
 							<br/>
 							<p style="margin: 0; font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
 								This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at
-								<a href="mailto:{{ $siteEmail }}" style="color: black; text-decoration: none; font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
+								<a href="mailto:{{ $siteEmail }}" style="  font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
 									{{ $siteEmail }}
 								</a>
 							</p>
