@@ -1067,7 +1067,11 @@ class BrandController extends Controller
                     'total_reviews' => $totalReviews,
                     'avg_rating' => $avgRating,
                     'left_stock' => $leftStock,
-                    'currency' => $currencyTitle,
+                    'currency_title' => $productWithRelations->currency
+                         ? ($productWithRelations->currency->is_prefix_symbol
+                             ? $productWithRelations->currency->symbol
+                             : ($product->price . ' ' . $productWithRelations->currency->symbol))
+                         : $product->price,
                     'in_wishlist' => $isInWishlist,
                     'images' => $imageUrls,
                     "original_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
