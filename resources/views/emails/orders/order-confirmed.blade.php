@@ -74,11 +74,11 @@
 							<table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td style="color: #26683A; font-weight: 500; padding-bottom: 8px; font-family: 'Noto Sans', sans-serif;">
-										📞 <span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">{{ $siteName == 'UAE' ? 'UAE Toll-Free:' : 'Toll-Free (USA):' }}</span>
+										📞 <span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">Toll-Free:</span>
 										@if($siteName == 'UAE')
 										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">800</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (467-322)</span>
-										@if($siteName == 'USA')
-										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">1-866-4</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (1-866-446-7322)</span>
+										@elseif($siteName == 'USA')
+										1-866-4- HORECA (1-866-446-7322)
 										@else
 										{!! $siteTollFreeContact !!}
 										@endif

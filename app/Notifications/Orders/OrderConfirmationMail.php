@@ -63,7 +63,7 @@ class OrderConfirmationMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('Your Horeca Order is Confirmed')
+		->subject("Your HorecaStore Order #{$orderNumber} Is Now Confirmed and in Progress")
 		->markdown('emails.orders.order-confirmed', $params);
 	}
 
