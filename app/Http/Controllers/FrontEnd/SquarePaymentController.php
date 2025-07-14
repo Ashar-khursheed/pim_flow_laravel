@@ -147,7 +147,7 @@ class SquarePaymentController extends Controller
         $this->client = new SquareClient(
             token: env('SQUARE_ACCESS_TOKEN'),
             options: [
-                'baseUrl' => Environments::Production->value,
+                'baseUrl' => Environments::Sandbox->value,
             ]
         );
         
