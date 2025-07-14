@@ -247,15 +247,18 @@ class CustomerController extends Controller
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 
-		if ($validatedData['profile_img']) {
+		if ($request->hasFile('profile_img')) {
 			$validatedData['profile_img'] = uploadImageToWebpS3FromFile(
 				$request,
 				'profile_img',
 				env('STORAGE_ENV') . '/customer/profile_img'
 			);
-		} else {
+		} elseif (!empty($validatedData['profile_img_url'])) {
 			$validatedData['profile_img'] = $validatedData['profile_img_url'];
+		} else {
+			unset($validatedData['profile_img']); // Don't update this field at all
 		}
+		
 
 
 		if (isset($validatedData['password'])) {
