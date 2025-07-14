@@ -53,7 +53,7 @@
 									{{ $name }}
 								</strong>!
 							</p>
-							<p style="font-size:16px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
+							<p style="font-size:14px; line-height:25px; font-weight: 500; font-family: 'Noto Sans',  sans-serif; margin: 0;">
 								Your Order Has Been Placed Successfully
 							</p>
 							<p style="font-size:14px;line-height: 22px;font-family: 'Noto Sans',  sans-serif;padding: 0;margin: 8px 0;">
@@ -158,19 +158,19 @@
 
 								@foreach($products as $product)
 								<tr>
-									<td>
+									<td style="width: 12%">
 										<img src="{{ $product->image }}" alt="Product" width="54" height="54" style="display: block; width: 54px; height: 54px; border: 1px solid #DFDFDF; border-radius: 4px; object-fit: cover;">
 									</td>
-									<td>
+									<td style="width: 60%">
 										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
 										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Arriving</span>
 										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->expectedShippingDate }}</span><br>
 										<span style="color:#BE2535; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ $product->priceBeforeDiscount }}{{ $product->discount ? ' | Save '.$product->discount.'%' : '' }}</span>
 									</td>
-									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:10%;">
 										{{ $product->quantity }}
 									</td>
-									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
+									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:18%; ">
 										{{ $currency }} {{ $product->total }}
 									</td>
 								</tr>
@@ -201,23 +201,23 @@
 									<td valign="top" width="50%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
 											<tr>
-												<td>Subtotal</td>
-												<td align="right">{{ $currency }} {{ $subTotal }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ $subTotal }}</td>
 											</tr>
 											<tr>
-												<td>Shipping</td>
-												<td align="right">{{ $currency }} {{ $shippingCharge }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ $shippingCharge }}</td>
 											</tr>
 											<tr>
-												<td>{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td align="right">{{ $currency }} {{ $taxAmount }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
+												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ $taxAmount }}</td>
 											</tr>
 											<tr>
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
 											</tr>
-											<tr style="font-weight: bold;">
-												<td style="font-weight: bold;">Total Amount</td>
-												<td align="right" style="color: #26683A; font-weight: bold;">{{ $currency }} {{ $total }}</td>
+											<tr style="font-weight: bold; ">
+												<td style="font-weight: bold;font-family: 'Noto Sans',  sans-serif;">Total Amount</td>
+												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ $total }}</td>
 											</tr>
 										</table>
 									</td>
@@ -243,7 +243,7 @@
 								</tr>
 								<tr>
 									<td style="font-size:14px; color: #26683A; font-weight: 500; line-height:22px; font-family: 'Noto Sans',  sans-serif">
-										<p style="padding: 5px 0; color: #26683A; font-weight: 500; font-size: 14px; margin: 0; line-height: 20px;">
+										<p style="padding: 5px 0; color: #26683A; font-weight: 500; font-size: 14px; margin: 0; line-height: 20px; font-family: 'Noto Sans',  sans-serif;">
 											&ndash; Team HorecaStore
 										</p>
 									</td>
@@ -256,11 +256,11 @@
 				<table width="650" cellspacing="0" cellpadding="0" border="0" style="border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
 						<td>
-							<p style="font-family: 'Noto Sans',  sans-serif">
+							<p style="font-size: 12px;  font-family: 'Noto Sans',  sans-serif">
 								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are
 								trademarks of Horeca Store LLC or its affiliates.
 							</p>
-							<p style="font-family: 'Noto Sans',  sans-serif">
+							<p style="font-size: 12px; font-family: 'Noto Sans',  sans-serif">
 								This message was sent from a notification-only address. Please do not reply directly to this email. For support or
 								inquiries, contact us at {{ $siteEmail }}
 							</p>
