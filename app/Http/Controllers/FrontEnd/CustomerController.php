@@ -156,6 +156,7 @@ class CustomerController extends BaseController
 				'dob' => $request->input('dob'),
 				'country_code' => $request->input('country_code'),
 				'mobile_number' => $request->input('mobile_number'),
+				'business_name' => $request->input('business_name'),
 				'profile_img' => $request->input('profile_img'),
 			]);
 			$guestCustomer->save();
@@ -176,6 +177,7 @@ class CustomerController extends BaseController
 			'email' => 'required|string|email|max:255|unique:customers',
 			'password' => 'required|string|min:8',
 			'type' => 'nullable|string',
+			'business_name' => 'nullable|string',
 			'dob' => 'nullable|date',
 			'country_code' => 'nullable|string',
 			'mobile_number' => 'nullable|string|max:20',
