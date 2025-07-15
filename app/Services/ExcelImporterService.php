@@ -65,6 +65,10 @@ class ExcelImporterService
 			throw new \Exception("The uploaded Excel file contains more than 2000 records.");
 		}
 
+		if ($totalRecords > 10000) {
+			throw new \Exception("The uploaded Excel file contains more than 10000 records.");
+		}
+
 		if ($totalRecords <= $rowsPerChunk) {
 			$chunkStarts = [2];
 		} else {

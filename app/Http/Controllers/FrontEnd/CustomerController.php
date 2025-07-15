@@ -161,7 +161,7 @@ class CustomerController extends BaseController
 			$guestCustomer->save();
 			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
 
-			$this->sendToOdoo($guestCustomer);
+			// $this->sendToOdoo($guestCustomer);
 
 			return response()->json([
 				'success' => true,
@@ -267,7 +267,6 @@ class CustomerController extends BaseController
 			\Log::error('Exception syncing to Odoo: ' . $e->getMessage());
 		}
 	}
-
 
 	/**
 	 * @OA\Get(
@@ -438,35 +437,35 @@ class CustomerController extends BaseController
 			'email' => 'nullable|email',
 			'name'  => 'nullable|string',
 		]);
-	
+
 		$identityToken = $request->input('identity_token');
-	
+
 		try {
 			// Decode JWT header
 			$jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
 			$kid = $jwtHeader['kid'];
-	
+
 			// Get Apple public keys
 			$appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
 			$publicKeys = JWK::parseKeySet($appleKeys);
-	
+
 			// Decode token using Apple’s public key
 			$decoded = JWT::decode($identityToken, $publicKeys[$kid]);
 			$email = $decoded->email ?? $request->email;
 			$appleSub = $decoded->sub;
-	
+
 			if (!$appleSub) {
 				return response()->json(['message' => 'Apple token does not contain a valid sub.'], 422);
 			}
-	
+
 			// Try to find user by apple_id first
 			$customer = Customer::where('apple_id', $appleSub)->first();
-	
+
 			// If not found by apple_id, try email fallback
 			if (!$customer && $email) {
 				$customer = Customer::where('email', $email)->first();
 			}
-	
+
 			// If still not found, create new
 			if (!$customer) {
 				$customer = Customer::create([
@@ -487,9 +486,9 @@ class CustomerController extends BaseController
 					$customer->update(['apple_id' => $appleSub]);
 				}
 			}
-	
+
 			$token = $customer->createToken('apple-login')->plainTextToken;
-	
+
 			return response()->json([
 				'user' => $customer,
 				'token' => $token,
@@ -501,32 +500,32 @@ class CustomerController extends BaseController
 			], 401);
 		}
 	}
-	
+
 	public function googleLogin(Request $request)
 	{
 		$idToken = $request->input('credential');
-	
+
 		$client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
 		$payload = $client->verifyIdToken($idToken);
-	
+
 		if (!$payload) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Invalid Google token'
 			], 401);
 		}
-	
+
 		$email = $payload['email'];
 		$name = $payload['name'] ?? 'Guest';
 		$googleProfileImg = $payload['picture'] ?? null;
-	
+
 		$customer = Customer::where('email', $email)->first();
-	
+
 		if (!$customer) {
 			$dob = $request->input('dob');
 			$countryCode = $request->input('country_code');
 			$mobileNumber = $request->input('mobile_number');
-	
+
 			try {
 				$customer = Customer::create([
 					'name' => $name,
@@ -539,13 +538,13 @@ class CustomerController extends BaseController
 					'mobile_number' => $mobileNumber,
 					'profile_img' => $googleProfileImg,
 				]);
-	
+
 				// Optional: send a welcome message, without any password
 				// $customer->notify(new GuestWelcomeMail());
-	
+
 			} catch (\Exception $e) {
 				\Log::error('Google Login Registration Failed: ' . $e->getMessage());
-	
+
 				return response()->json([
 					'success' => false,
 					'message' => 'Registration failed. Please try again later.'
@@ -560,10 +559,10 @@ class CustomerController extends BaseController
 				], 403);
 			}
 		}
-	
+
 		// ✅ Issue token for authenticated session
 		$token = $customer->createToken('google-login')->plainTextToken;
-	
+
 		return response()->json([
 			'success' => true,
 			'message' => $customer->wasRecentlyCreated
@@ -573,7 +572,7 @@ class CustomerController extends BaseController
 			'user' => $customer,
 		]);
 	}
-	
+
 	public function updateProfile(Request $request)
 	{
 		$user = auth()->user(); // Adjust for your guard

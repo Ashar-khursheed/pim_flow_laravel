@@ -423,7 +423,42 @@ class ImportVendorJob implements ShouldQueue
 	 */
 	public function failed(\Throwable $exception): void
 	{
-		$error = $exception->getMessage().$exception->getTraceAsString();
-		logger(__("Vendor Import Error").': '.$error);
+		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
+
+		if (!$log) {
+			logger()->error('Transaction log not found for batch: ' . $this->batch()->id);
+			return;
+		}
+
+		$jobName = class_basename($this);
+
+		$errorDetails = [
+			'job' => $jobName,
+			'message' => $exception->getMessage(),
+			'file' => $exception->getFile(),
+			'line' => $exception->getLine(),
+			'trace' => $exception->getTraceAsString(),
+		];
+
+		logger()->error("{$jobName} failed", $errorDetails);
+
+		$description = json_decode($log->description, true) ?? [];
+
+		$description['Success Count'] = $description['Success Count'] ?? 0;
+		$description['Failed Count'] = $description['Failed Count'] ?? 0;
+		$description['Errors'] = $description['Errors'] ?? [];
+
+		$description['Errors'][] = [
+			'Row Number' => 'N/A',
+			'Job' => $jobName,
+			'Error' => $errorDetails['message'],
+			'File' => $errorDetails['file'],
+			'Line' => $errorDetails['line'],
+		];
+
+		TransactionLog::where('id', $log->id)->update([
+			'status' => 'Failed',
+			'description' => json_encode($description, JSON_UNESCAPED_UNICODE),
+		]);
 	}
 }
