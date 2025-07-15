@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Jobs\ImportRedirectLinkJob;
 use App\Services\ExcelImporterService;
+use App\Repository\ExcelRepository;
 
 class RedirectLinkController extends Controller
 {
