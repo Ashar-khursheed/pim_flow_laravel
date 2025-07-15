@@ -24240,6 +24240,29 @@
                 ]
             }
         },
+        "/api/redirect-links/template": {
+            "get": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Download import template for redirect links",
+                "description": "Downloads an Excel template for redirect link imports",
+                "operationId": "dda1c9e9a3fb191d59ff25b376b7bab9",
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/return-products/{id}/inspect": {
             "put": {
                 "tags": [
