@@ -24203,7 +24203,7 @@
                 "tags": [
                     "Redirect Links"
                 ],
-                "summary": "Import redirect links from a CSV file",
+                "summary": "Import redirect links from an excel file",
                 "operationId": "fbb87ae300413db2317aad15bca6a162",
                 "requestBody": {
                     "required": true,
@@ -24211,11 +24211,11 @@
                         "multipart/form-data": {
                             "schema": {
                                 "required": [
-                                    "file"
+                                    "upload_file"
                                 ],
                                 "properties": {
-                                    "file": {
-                                        "description": "CSV file (.csv)",
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
                                         "type": "string",
                                         "format": "binary"
                                     }
@@ -24227,10 +24227,10 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Redirects imported successfully"
-                    },
-                    "422": {
-                        "description": "Invalid file upload"
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
