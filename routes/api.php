@@ -334,6 +334,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
+	Route::get('/redirect-links/{id}', [RedirectLinkController::class, 'show']);
+	Route::put('/redirect-links/{id}', [RedirectLinkController::class, 'update']);
 	Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
