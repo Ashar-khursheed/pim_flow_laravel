@@ -5,9 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use Symfony\Component\HttpFoundation\ResponseHeaderBag;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Repository\ExcelRepository;
 
 use App\Models\Product;
