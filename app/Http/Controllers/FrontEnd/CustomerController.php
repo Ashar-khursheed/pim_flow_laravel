@@ -11,6 +11,8 @@ use Illuminate\Support\Str;
 use App\Notifications\GuestWelcomeMail;
 use App\Notifications\WelcomeMail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
+
 class CustomerController extends BaseController
 {
 	/**
@@ -39,6 +41,94 @@ class CustomerController extends BaseController
 	 *     @OA\Response(response=201, description="Customer registered successfully", @OA\MediaType(mediaType="application/json")),
 	 * )
 	 */
+	// public function register(Request $request)
+	// {
+	// 	if ($request->is_guest == true) {
+	// 		$validated = $request->validate([
+	// 			'name' => 'required|string|max:255',
+	// 			'email' => 'required|string|email|max:255',
+	// 		]);
+
+	// 		$existingCustomer = Customer::where('email', $validated['email'])->first();
+	// 		if ($existingCustomer) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'You are already registered. Please login to continue.',
+	// 			], 409);
+	// 		}
+
+	// 		$randomPassword = Str::random(8); // alphanumeric
+	// 		$hashedPassword = Hash::make($randomPassword);
+
+	// 		$guestCustomer = new Customer([
+	// 			'name' => $validated['name'],
+	// 			'email' => $validated['email'],
+	// 			'password' => $hashedPassword,
+	// 			'type' => 'Private',
+	// 			'dob' => $request->input('dob'),
+	// 			'country_code' => $request->input('country_code'),
+	// 			'mobile_number' => $request->input('mobile_number'),
+	// 			'profile_img' => $request->input('profile_img'),
+	// 		]);
+	// 		$guestCustomer->save();
+
+	// 		$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'Guest account created successfully.',
+	// 			'user' => $guestCustomer,
+	// 			'plain_password' => $randomPassword
+	// 		], 201);
+	// 	}
+
+	// 	/* Normal customer registration */
+	// 	$validated = $request->validate([
+	// 		'name' => 'required|string|max:255',
+	// 		'email' => 'required|string|email|max:255|unique:customers',
+	// 		'password' => 'required|string|min:8',
+	// 		'type' => 'nullable|string',
+	// 		'dob' => 'nullable|date',
+	// 		'country_code' => 'nullable|string',
+	// 		'mobile_number' => 'nullable|string|max:20',
+	// 		'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
+	// 	]);
+
+	// 	try {
+	// 		$validated['profile_img'] = uploadImageToWebpS3FromFile(
+	// 			$request,
+	// 			'profile_img',
+	// 			env('STORAGE_ENV') . '/customer/profile_img'
+	// 		);
+
+	// 		$customer = new Customer([
+	// 			'name' => $validated['name'],
+	// 			'email' => $validated['email'],
+	// 			'password' => Hash::make($validated['password']),
+	// 			'type' => $validated['type'] ?? null,
+	// 			'dob' => $validated['dob'] ?? null,
+	// 			'country_code' => $request->input('country_code') ?? null,
+	// 			'mobile_number' => $validated['mobile_number'] ?? null,
+	// 			'profile_img' => $validated['profile_img'] ?? null,
+	// 		]);
+	// 		$customer->save();
+
+	// 		$customer->notify(new WelcomeMail());
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'Customer registered successfully.',
+	// 			'user' => $customer
+	// 		], 201);
+
+	// 	} catch (\Exception $e) {
+	// 		\Log::error('Error registering customer: ' . $e->getMessage());
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Registration failed. Please try again later.'
+	// 		], 500);
+	// 	}
+	// }
 	public function register(Request $request)
 	{
 		if ($request->is_guest == true) {
@@ -55,7 +145,7 @@ class CustomerController extends BaseController
 				], 409);
 			}
 
-			$randomPassword = Str::random(8); // alphanumeric
+			$randomPassword = Str::random(8);
 			$hashedPassword = Hash::make($randomPassword);
 
 			$guestCustomer = new Customer([
@@ -69,8 +159,9 @@ class CustomerController extends BaseController
 				'profile_img' => $request->input('profile_img'),
 			]);
 			$guestCustomer->save();
-
 			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
+
+			$this->sendToOdoo($guestCustomer);
 
 			return response()->json([
 				'success' => true,
@@ -80,7 +171,6 @@ class CustomerController extends BaseController
 			], 201);
 		}
 
-		/* Normal customer registration */
 		$validated = $request->validate([
 			'name' => 'required|string|max:255',
 			'email' => 'required|string|email|max:255|unique:customers',
@@ -113,6 +203,8 @@ class CustomerController extends BaseController
 
 			$customer->notify(new WelcomeMail());
 
+			$this->sendToOdoo($customer);
+
 			return response()->json([
 				'success' => true,
 				'message' => 'Customer registered successfully.',
@@ -125,6 +217,54 @@ class CustomerController extends BaseController
 				'success' => false,
 				'message' => 'Registration failed. Please try again later.'
 			], 500);
+		}
+	}
+
+	private function sendToOdoo($customer)
+	{
+		try {
+			$response = Http::withHeaders([
+				'Content-Type' => 'application/json',
+				'Cookie' => 'session_id=57ddd7bc96ea7900b2615ef1db5e65409c0e0e98',
+			])->post('https://horecastore-staging-20736821.dev.odoo.com/web/dataset/call_kw', [
+				'jsonrpc' => '2.0',
+				'method' => 'call',
+				'params' => [
+					'model' => 'res.partner',
+					'method' => 'create',
+					'args' => [[
+						'company_type' => 'person',
+						'name' => $customer->name,
+						'email' => $customer->email,
+						'phone' => ($customer->country_code ? $customer->country_code . ' ' : '') . $customer->mobile_number,
+						'mobile' => ($customer->country_code ? $customer->country_code . ' ' : '') . $customer->mobile_number,
+						'image_1920' => '',
+						'website' => '',
+						'is_customer' => "1",
+						'vat_not_register' => "0",
+						'vat' => '215444',
+						'street' => '12',
+						'street2' => 'new',
+						'city' => 'Surat',
+						'zip' => '395006',
+						'website_partner_id' => '21',
+						'website_customer' => 1
+					]],
+					'kwargs' => new \stdClass()
+				],
+				'id' => 1
+			]);
+
+			if ($response->successful()) {
+				\Log::info('Customer synced to Odoo successfully.', ['odoo_response' => $response->json()]);
+			} else {
+				\Log::error('Failed to sync customer to Odoo.', [
+					'status' => $response->status(),
+					'body' => $response->body()
+				]);
+			}
+		} catch (\Exception $e) {
+			\Log::error('Exception syncing to Odoo: ' . $e->getMessage());
 		}
 	}
 
