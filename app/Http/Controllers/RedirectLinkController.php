@@ -32,7 +32,7 @@ class RedirectLinkController extends Controller
 	 */
 	public function index()
 	{
-		return response()->json(RedirectLink::select('from', 'to')->get());
+		return response()->json(RedirectLink::select('id' , 'from', 'to')->get());
 	}
 
 	/**
