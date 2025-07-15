@@ -247,7 +247,7 @@ class CustomerController extends BaseController
 						'street2' => 'new',
 						'city' => 'Surat',
 						'zip' => '395006',
-						'website_partner_id' => '21',
+						'website_partner_id' => $customer->id,
 						'website_customer' => 1
 					]],
 					'kwargs' => new \stdClass()
