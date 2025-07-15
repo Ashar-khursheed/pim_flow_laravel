@@ -70,6 +70,86 @@ class RedirectLinkController extends Controller
 			'data' => $redirect
 		]);
 	}
+    /**
+     * @OA\Get(
+     *     path="/api/redirect-links/{id}",
+     *     summary="Get a specific redirect link",
+     *     tags={"Redirect Links"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(response=200, description="Redirect link found"),
+     *     @OA\Response(response=404, description="Redirect link not found")
+     * )
+     */
+    public function show($id)
+    {
+        $redirect = RedirectLink::find($id);
+
+        if (!$redirect) {
+            return response()->json([
+                'message' => 'Redirect link not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'data' => $redirect
+        ]);
+    }
+    /**
+     * @OA\Put(
+     *     path="/api/redirect-links/{id}",
+     *     summary="Update a redirect link",
+     *     tags={"Redirect Links"},
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         required=true,
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\MediaType(
+     *             mediaType="application/json",
+     *             @OA\Schema(
+     *                 @OA\Property(property="from", type="string", example="/category1"),
+     *                 @OA\Property(property="to", type="string", example="/category4324/22")
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(response=200, description="Redirect link updated successfully"),
+     *     @OA\Response(response=404, description="Redirect link not found"),
+     *     @OA\Response(response=422, description="Validation error")
+     * )
+     */
+    public function update(Request $request, $id)
+    {
+        $redirect = RedirectLink::find($id);
+
+        if (!$redirect) {
+            return response()->json([
+                'message' => 'Redirect link not found'
+            ], 404);
+        }
+
+        $request->validate([
+            'from' => 'required|string|unique:redirect_links,from,' . $redirect->id,
+            'to'   => 'required|string',
+        ]);
+
+        $redirect->update($request->only('from', 'to'));
+
+        return response()->json([
+            'message' => 'Redirect link updated successfully',
+            'data' => $redirect
+        ]);
+    }
+
 
 	/**
 	 * @OA\Post(

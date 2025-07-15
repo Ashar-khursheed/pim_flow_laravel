@@ -24198,6 +24198,91 @@
                 ]
             }
         },
+        "/api/redirect-links/{id}": {
+            "get": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Get a specific redirect link",
+                "operationId": "38be1d4be8bb457ce567fe881cbb60d8",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Redirect link found"
+                    },
+                    "404": {
+                        "description": "Redirect link not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Redirect Links"
+                ],
+                "summary": "Update a redirect link",
+                "operationId": "88efb680f2599cb28c266072bcbdf80d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "from": {
+                                        "type": "string",
+                                        "example": "/category1"
+                                    },
+                                    "to": {
+                                        "type": "string",
+                                        "example": "/category4324/22"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Redirect link updated successfully"
+                    },
+                    "404": {
+                        "description": "Redirect link not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links/import": {
             "post": {
                 "tags": [
