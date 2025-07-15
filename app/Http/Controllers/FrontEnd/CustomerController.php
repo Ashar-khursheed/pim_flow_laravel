@@ -129,7 +129,6 @@ class CustomerController extends BaseController
 	// 		], 500);
 	// 	}
 	// }
-
 	public function register(Request $request)
 	{
 		if ($request->is_guest == true) {
@@ -162,21 +161,14 @@ class CustomerController extends BaseController
 			$guestCustomer->save();
 			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
 
-			// Send response quickly
-			response()->json([
+			$this->sendToOdoo($guestCustomer);
+
+			return response()->json([
 				'success' => true,
 				'message' => 'Guest account created successfully.',
 				'user' => $guestCustomer,
 				'plain_password' => $randomPassword
-			], 201)->send();
-
-			if (function_exists('fastcgi_finish_request')) {
-				fastcgi_finish_request();
-			}
-
-			// Now do the slow Odoo sync AFTER response is sent
-			$this->sendToOdoo($guestCustomer);
-			return;
+			], 201);
 		}
 
 		$validated = $request->validate([
@@ -211,20 +203,13 @@ class CustomerController extends BaseController
 
 			$customer->notify(new WelcomeMail());
 
-			// Send response first
-			response()->json([
+			// $this->sendToOdoo($customer);
+
+			return response()->json([
 				'success' => true,
 				'message' => 'Customer registered successfully.',
 				'user' => $customer
-			], 201)->send();
-
-			if (function_exists('fastcgi_finish_request')) {
-				fastcgi_finish_request();
-			}
-
-			// Then sync with Odoo
-			$this->sendToOdoo($customer);
-			return;
+			], 201);
 
 		} catch (\Exception $e) {
 			\Log::error('Error registering customer: ' . $e->getMessage());
@@ -234,7 +219,6 @@ class CustomerController extends BaseController
 			], 500);
 		}
 	}
-
 
 	private function sendToOdoo($customer)
 	{
