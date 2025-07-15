@@ -154,7 +154,7 @@ class RedirectLinkController extends Controller
 		/* Set headers */
 		$excelRepo->setHeader($sheet, $header);
 
-		$fileName = 'redirect-links_import_template' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+		$fileName = 'redirect-links_import_template_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
 
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
