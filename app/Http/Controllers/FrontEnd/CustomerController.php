@@ -185,11 +185,11 @@ class CustomerController extends BaseController
 		]);
 
 		try {
-			$validated['profile_img'] = uploadImageToWebpS3FromFile(
-				$request,
-				'profile_img',
-				env('STORAGE_ENV') . '/customer/profile_img'
-			);
+			// $validated['profile_img'] = uploadImageToWebpS3FromFile(
+			// 	$request,
+			// 	'profile_img',
+			// 	env('STORAGE_ENV') . '/customer/profile_img'
+			// );
 
 			$customer = new Customer([
 				'name' => $validated['name'],
@@ -199,7 +199,7 @@ class CustomerController extends BaseController
 				'dob' => $validated['dob'] ?? null,
 				'country_code' => $request->input('country_code') ?? null,
 				'mobile_number' => $validated['mobile_number'] ?? null,
-				'profile_img' => $validated['profile_img'] ?? null,
+				// 'profile_img' => $validated['profile_img'] ?? null,
 			]);
 			$customer->save();
 
