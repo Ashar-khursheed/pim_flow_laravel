@@ -24120,31 +24120,132 @@
                 "tags": [
                     "Redirect Links"
                 ],
-                "summary": "Get list of all redirect links",
+                "summary": "Get list of all redirect links with search, sort, and pagination",
                 "operationId": "4e70a2a72b92d77858c5b2f49c69d39a",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by 'from' or 'to' URL",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "category1"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by (id, from, to)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "id"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "desc"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Number of items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 10
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "List of redirect links",
+                        "description": "Paginated list of redirect links",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "properties": {
-                                            "from": {
-                                                "type": "string",
-                                                "example": "/category1"
-                                            },
-                                            "to": {
-                                                "type": "string",
-                                                "example": "/category4324/22"
+                                    "properties": {
+                                        "current_page": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "from": {
+                                                        "type": "string",
+                                                        "example": "/category1"
+                                                    },
+                                                    "to": {
+                                                        "type": "string",
+                                                        "example": "/category4324/22"
+                                                    }
+                                                },
+                                                "type": "object"
                                             }
                                         },
-                                        "type": "object"
-                                    }
+                                        "first_page_url": {
+                                            "type": "string",
+                                            "example": "http://yourdomain.com/api/redirect-links?page=1"
+                                        },
+                                        "last_page": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "last_page_url": {
+                                            "type": "string",
+                                            "example": "http://yourdomain.com/api/redirect-links?page=5"
+                                        },
+                                        "next_page_url": {
+                                            "type": "string",
+                                            "example": "http://yourdomain.com/api/redirect-links?page=2"
+                                        },
+                                        "path": {
+                                            "type": "string",
+                                            "example": "http://yourdomain.com/api/redirect-links"
+                                        },
+                                        "per_page": {
+                                            "type": "integer",
+                                            "example": 10
+                                        },
+                                        "prev_page_url": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "example": 50
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
+                    },
+                    "401": {
+                        "description": "Unauthenticated"
                     }
                 },
                 "security": [
