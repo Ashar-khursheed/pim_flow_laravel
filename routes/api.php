@@ -61,7 +61,6 @@ use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
 
-
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
 use App\Http\Controllers\FrontEnd\WishlistController as F_WishlistController;
@@ -148,6 +147,14 @@ Route::apiResource('newsletters', NewsletterController::class);
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+
+	Route::prefix('category-banners')->group(function () {
+		Route::get('/{category_id}', [CategoryBannerController::class, 'index']);
+		Route::post('/', [CategoryBannerController::class, 'store']);
+		Route::put('/{id}', [CategoryBannerController::class, 'update']);
+		Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
+	});
+	
 	Route::apiResource('payments', PaymentController::class);
 
 
