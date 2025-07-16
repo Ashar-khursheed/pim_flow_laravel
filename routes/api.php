@@ -149,8 +149,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::prefix('category-banners')->group(function () {
-		Route::get('/{category_id}', [CategoryBannerController::class, 'index']);
+		Route::get('/', [CategoryBannerController::class, 'index']);
 		Route::post('/', [CategoryBannerController::class, 'store']);
+		Route::get('/show/{category_id}', [CategoryBannerController::class, 'show']);
 		Route::put('/{id}', [CategoryBannerController::class, 'update']);
 		Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
 	});
