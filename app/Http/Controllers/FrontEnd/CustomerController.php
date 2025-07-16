@@ -175,7 +175,7 @@ class CustomerController extends BaseController
 			}
 
 			// Now do the slow Odoo sync AFTER response is sent
-			$this->sendToOdoo($guestCustomer);
+			// $this->sendToOdoo($guestCustomer);
 			return;
 		}
 
@@ -223,7 +223,7 @@ class CustomerController extends BaseController
 			}
 
 			// Then sync with Odoo
-			$this->sendToOdoo($customer);
+			// $this->sendToOdoo($customer);
 			return;
 
 		} catch (\Exception $e) {
