@@ -162,7 +162,7 @@ class CustomerController extends BaseController
 			$guestCustomer->save();
 			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
 
-			// $this->sendToOdoo($guestCustomer);
+			 $this->sendToOdoo($guestCustomer);
 
 			return response()->json([
 				'success' => true,
@@ -205,7 +205,7 @@ class CustomerController extends BaseController
 
 			$customer->notify(new WelcomeMail());
 
-			// $this->sendToOdoo($customer);
+			 $this->sendToOdoo($customer);
 
 			return response()->json([
 				'success' => true,
