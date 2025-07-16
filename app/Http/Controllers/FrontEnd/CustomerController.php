@@ -180,7 +180,8 @@ class CustomerController extends BaseController
 			'business_name' => 'nullable|string',
 			'dob' => 'nullable|date',
 			'country_code' => 'nullable|string',
-			'mobile_number' => 'nullable|string|max:20',
+			'country_code' => 'nullable|string',
+			'business_name' => 'nullable|string|max:20',
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 
@@ -200,6 +201,7 @@ class CustomerController extends BaseController
 				'country_code' => $request->input('country_code') ?? null,
 				'mobile_number' => $validated['mobile_number'] ?? null,
 				'profile_img' => $validated['profile_img'] ?? null,
+				'business_name' => $validated['business_name'] ?? null,
 			]);
 			$customer->save();
 
