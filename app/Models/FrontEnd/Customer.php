@@ -35,7 +35,8 @@ class Customer extends Authenticatable
 		'profile_img',
 		'created_by',
 		'is_social_login',
-		'apple_id'
+		'apple_id',
+		'business_name'
 		
 	];
 

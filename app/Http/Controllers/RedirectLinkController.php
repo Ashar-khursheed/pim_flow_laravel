@@ -14,26 +14,100 @@ class RedirectLinkController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/redirect-links",
-	 *     summary="Get list of all redirect links",
+	 *     summary="Get list of all redirect links with search, sort, and pagination",
 	 *     tags={"Redirect Links"},
 	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="search",
+	 *         in="query",
+	 *         description="Search by 'from' or 'to' URL",
+	 *         required=false,
+	 *         @OA\Schema(type="string", example="category1")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_by",
+	 *         in="query",
+	 *         description="Column to sort by (id, from, to)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", default="id")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="sort_order",
+	 *         in="query",
+	 *         description="Sort order (asc or desc)",
+	 *         required=false,
+	 *         @OA\Schema(type="string", default="desc")
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="per_page",
+	 *         in="query",
+	 *         description="Number of items per page",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=10)
+	 *     ),
+	 *     @OA\Parameter(
+	 *         name="page",
+	 *         in="query",
+	 *         description="Page number",
+	 *         required=false,
+	 *         @OA\Schema(type="integer", default=1)
+	 *     ),
 	 *     @OA\Response(
 	 *         response=200,
-	 *         description="List of redirect links",
+	 *         description="Paginated list of redirect links",
 	 *         @OA\JsonContent(
-	 *             type="array",
-	 *             @OA\Items(
+	 *             @OA\Property(property="current_page", type="integer", example=1),
+	 *             @OA\Property(property="data", type="array", @OA\Items(
+	 *                 @OA\Property(property="id", type="integer", example=1),
 	 *                 @OA\Property(property="from", type="string", example="/category1"),
 	 *                 @OA\Property(property="to", type="string", example="/category4324/22")
-	 *             )
+	 *             )),
+	 *             @OA\Property(property="first_page_url", type="string", example="http://yourdomain.com/api/redirect-links?page=1"),
+	 *             @OA\Property(property="last_page", type="integer", example=5),
+	 *             @OA\Property(property="last_page_url", type="string", example="http://yourdomain.com/api/redirect-links?page=5"),
+	 *             @OA\Property(property="next_page_url", type="string", example="http://yourdomain.com/api/redirect-links?page=2"),
+	 *             @OA\Property(property="path", type="string", example="http://yourdomain.com/api/redirect-links"),
+	 *             @OA\Property(property="per_page", type="integer", example=10),
+	 *             @OA\Property(property="prev_page_url", type="string", nullable=true, example=null),
+	 *             @OA\Property(property="total", type="integer", example=50)
 	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=401,
+	 *         description="Unauthenticated"
 	 *     )
 	 * )
 	 */
-	public function index()
+
+	// public function index()
+	// {
+	// 	return response()->json(RedirectLink::select('id', 'from', 'to')->get());
+	// }
+	public function index(Request $request)
 	{
-		return response()->json(RedirectLink::select('id' , 'from', 'to')->get());
+		$query = RedirectLink::query()->select('id', 'from', 'to');
+
+		// Search (by 'from' or 'to')
+		if ($request->has('search') && !empty($request->search)) {
+			$search = $request->search;
+			$query->where(function ($q) use ($search) {
+				$q->where('from', 'like', "%{$search}%")
+				->orWhere('to', 'like', "%{$search}%");
+			});
+		}
+
+		// Sort
+		$sortBy = $request->get('sort_by', 'id');
+		$sortOrder = $request->get('sort_order', 'desc');
+		$query->orderBy($sortBy, $sortOrder);
+
+		// Pagination
+		$perPage = $request->get('per_page', 10);
+		$redirectLinks = $query->paginate($perPage);
+
+		return response()->json($redirectLinks);
 	}
+
 
 	/**
 	 * @OA\Post(
