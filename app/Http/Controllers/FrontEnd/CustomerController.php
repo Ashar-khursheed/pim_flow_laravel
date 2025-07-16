@@ -181,7 +181,7 @@ class CustomerController extends BaseController
 			'dob' => 'nullable|date',
 			'country_code' => 'nullable|string',
 			'country_code' => 'nullable|string',
-			'business_name' => 'nullable|string|max:20',
+			'business_name' => 'nullable|string',
 			'profile_img' => 'nullable|file|mimes:jpeg,jpg,png,webp|max:1024',
 		]);
 
