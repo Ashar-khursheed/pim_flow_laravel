@@ -4762,20 +4762,20 @@
                 ]
             }
         },
-        "/api/category-banners/{category_id}": {
+        "/api/category-banners": {
             "get": {
                 "tags": [
                     "Category Banners"
                 ],
                 "summary": "List category banners",
                 "description": "Fetch category banners with pagination, sorting and search",
-                "operationId": "5b4cdf6bba24464c3d63b85abc98d2c5",
+                "operationId": "cef101f73fa299efd3b89c7eee928960",
                 "parameters": [
                     {
                         "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
+                        "in": "query",
+                        "description": "Category ID to filter",
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -4843,9 +4843,7 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/category-banners": {
+            },
             "post": {
                 "tags": [
                     "Category Banners"
@@ -4895,6 +4893,91 @@
                                         },
                                         "data": {
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/category-banners/show/{category_id}": {
+            "get": {
+                "tags": [
+                    "Category Banners"
+                ],
+                "summary": "Show all banners for a category",
+                "description": "Retrieve all banners for a given category ID",
+                "operationId": "0901755cc320facb781948e5a1275bb2",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "The ID of the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "image_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "image_alt_text": {
+                                                        "type": "string"
+                                                    },
+                                                    "position": {
+                                                        "type": "integer"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
