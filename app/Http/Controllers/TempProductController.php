@@ -32,16 +32,17 @@ class TempProductController extends Controller
 
 		$recordsQuery = TempProduct::query();
 
-		/* Filter by status name */
+		/* Always apply status filter if present */
 		if ($request->filled('status')) {
 			$recordsQuery->whereHas('status', function ($q) use ($request) {
 				$q->where('name', $request->status);
 			});
 		}
 
-		if ($request->filled('page') && $request->filled('length')) {
+		$hasPagination = $request->filled('page') && $request->filled('length');
 
-			/* Eager load relationships */
+		if ($hasPagination) {
+			/* Eager load */
 			$recordsQuery->with([
 				'category:id,name',
 				'brand:id,name',
@@ -53,7 +54,6 @@ class TempProductController extends Controller
 			/* Global search */
 			if ($request->filled('global')) {
 				$search = $request->input('global');
-
 				$recordsQuery->where(function ($q) use ($search) {
 					$q->orWhere('name', 'like', "%$search%")
 					->orWhere('sku', 'like', "%$search%")
@@ -73,6 +73,7 @@ class TempProductController extends Controller
 				$recordsQuery->orderBy($sortBy, $sortDir);
 			}
 
+			/* Pagination */
 			$length = (int) $request->input('length');
 			$page = (int) $request->input('page');
 
@@ -85,18 +86,19 @@ class TempProductController extends Controller
 
 			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
 
-			/* Transform results */
+			/* Transform */
 			$records->transform(function ($record) {
 				$record->category_name = $record->category->name ?? null;
 				$record->brand_name = $record->brand->name ?? null;
 				$record->vendor_name = $record->vendor->name ?? null;
 				$record->status_name = $record->status->name ?? null;
-
 				$record->created_by = $record->creator->name ?? null;
-				unset($record->category, $record->brand, $record->vendor, $record->status_name, $record->creator);
+
+				unset($record->category, $record->brand, $record->vendor, $record->status, $record->creator);
 				return $record;
 			});
 		} else {
+			/* No pagination: only return id and name */
 			$records = $recordsQuery->get(['id', 'name']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
