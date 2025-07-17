@@ -40,6 +40,8 @@ class SeoManagement extends Model
 		'short_title_variant',
 		'gen_type',
 		'cat_desc',
+		'banner_image_alt_text',
+		'banner_image_file'
 	];
 
 	public function relational()

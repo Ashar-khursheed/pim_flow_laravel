@@ -132,6 +132,10 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
+				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+				'banner_image_alt_text' => 'nullable|string',
+				
+				
 			]);
 			
 
@@ -176,6 +180,22 @@ class SeoManagementController extends Controller
 				if (empty($seoData['og_image_name'])) {
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
+			}
+
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$storage = app('Illuminate\Support\Facades\Storage');
+			
+				// Define folder path for upload
+				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+			
+				// Store the file on S3
+				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+			
+				// Generate S3 URL
+				$bannerImageUrl = $storage::disk('s3')->url($bannerImagePath);
+			
+				// Store in DB fields
+				$seoData['banner_image_file'] = $bannerImageUrl;
 			}
 			$seoData['schema'] = '{}'; /* or null if the DB allows */
 			/* Generate schema and add it to the data (as an array) */
@@ -591,6 +611,8 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
+				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+				'banner_image_alt_text' => 'nullable|string',
 			]);
 
 			$seo = SeoManagement::findOrFail($id);
@@ -637,6 +659,15 @@ class SeoManagementController extends Controller
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
+
+			
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$storage = app('Illuminate\Support\Facades\Storage');
+				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+				$seoData['banner_image_file'] = $storage::disk('s3')->url($bannerImagePath);
+			}
+			
 
 			foreach ($seoData as $key => $value) {
 				$seo->$key = $value ?? '';
