@@ -98,6 +98,7 @@ use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
+use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 
 use Illuminate\Support\Facades\Http;
 
@@ -154,7 +155,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 		Route::put('/{id}', [CategoryBannerController::class, 'update']);
 		Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
 	});
-	
+
 	Route::apiResource('payments', PaymentController::class);
 
 
@@ -339,6 +340,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('orders', OrderController::class);
 
 
+
+
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
 	Route::get('/redirect-links/{id}', [RedirectLinkController::class, 'show']);
@@ -394,6 +397,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
 	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
 	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
+
+	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
