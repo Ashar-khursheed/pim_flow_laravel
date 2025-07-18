@@ -25,6 +25,8 @@ class OrderController extends BaseController
 	 *     @OA\Parameter(name="status", in="query", description="Filter by order status.", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="payment_status", in="query", description="Filter by payment status.", @OA\Schema(type="string", enum={"Paid", "Unpaid", "Partially Paid"})),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "order_number", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
@@ -55,6 +57,18 @@ class OrderController extends BaseController
 			/* Filter by status */
 			if ($request->has('status')) {
 				$recordsQuery->where('orders.status', $request->status);
+			}
+
+			if ($request->has('from_date') && $request->has('to_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->whereBetween('orders.created_at', [$from, $to]);
+			} elseif ($request->has('from_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$recordsQuery->where('orders.created_at', '>=', $from);
+			} elseif ($request->has('to_date')) {
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->where('orders.created_at', '<=', $to);
 			}
 
 			/* Filter by payment status */
