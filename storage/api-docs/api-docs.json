@@ -16084,6 +16084,158 @@
                 }
             }
         },
+        "/api/frontend/quotes": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Create a new quote",
+                "operationId": "0476f400a1edeb2111ff2ea63d74b0cd",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quote_number",
+                                    "quote_name",
+                                    "customer_address_id",
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "quote_number": {
+                                        "type": "string",
+                                        "example": "1111"
+                                    },
+                                    "quote_name": {
+                                        "type": "string",
+                                        "example": "Kitchen equipment quote"
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "send_customer_email": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "emails": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "john@example.com"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/quotes/{id}": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Get quote details",
+                "operationId": "46741568d49a2f2b4c12f8f0cb8a3352",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/recent-products/add": {
             "post": {
                 "tags": [
@@ -30271,6 +30423,10 @@
         {
             "name": "Frontend-Product You May Like",
             "description": "Frontend-Product You May Like"
+        },
+        {
+            "name": "FrontEnd-Quotes",
+            "description": "FrontEnd-Quotes"
         },
         {
             "name": "Frontend-Recently Viewed Products",
