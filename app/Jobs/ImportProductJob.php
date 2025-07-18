@@ -409,7 +409,7 @@ class ImportProductJob implements ShouldQueue
 				} else {
 					$product->name = $name;
 					$product->sku = $sku;
-					$product->status = $product->id ? $status : 2;
+					$product->status = $product->id ? $status : 'draft';
 					$product->is_featured = $isFeatured;
 					$product->brand_id = $brandId;
 					$product->images = json_encode($fetchedImages);
