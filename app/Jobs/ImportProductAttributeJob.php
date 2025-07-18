@@ -27,11 +27,13 @@ class ImportProductAttributeJob implements ShouldQueue
 
 	protected $header;
 	protected $chunk;
+	protected $userRole;
 
 	public function __construct($data)
 	{
 		$this->header = $data['header'];
 		$this->chunk = $data['chunk'];
+		$this->userRole = $data['userRole'];
 	}
 
 	public function handle()
@@ -63,6 +65,13 @@ class ImportProductAttributeJob implements ShouldQueue
 			/* Validate Product */
 			if (empty($rowData['ID']) || !$product = Product::find($rowData['ID'])) {
 				$rowError[] = 'Invalid Product ID or product not found.';
+				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+				$failed++;
+				continue;
+			}
+
+			if (!in_array($this->userRole, ['Admin', 'Super Admin']) && $product->approved == 1) {
+				$rowError[] = "This product has already been approved and cannot be modified.";
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;

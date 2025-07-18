@@ -28,6 +28,7 @@ class ImportProductSupplierJob implements ShouldQueue
 	protected $chunk;
 	protected $userId;
 	protected $fileFormatArray;
+	protected $userRole;
 
 	/**
 	 * Create a new job instance.
@@ -40,6 +41,7 @@ class ImportProductSupplierJob implements ShouldQueue
 		$this->header = $data['header'];
 		$this->chunk = $data['chunk'];
 		$this->userId = $data['userId'];
+		$this->userRole = $data['userRole'];
 	}
 
 	/**
@@ -106,6 +108,13 @@ class ImportProductSupplierJob implements ShouldQueue
 				} else {
 					$productID = $product->id;
 				}
+			}
+
+			if (!in_array($this->userRole, ['Admin', 'Super Admin']) && $product->approved == 1) {
+				$rowErrors[] = "This product has already been approved and cannot be modified.";
+				$this->logError($rowErrors, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+				$failed++;
+				continue;
 			}
 
 			if (empty($vendor_id) && empty($vendor_name)) {

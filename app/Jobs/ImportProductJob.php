@@ -150,6 +150,16 @@ class ImportProductJob implements ShouldQueue
 					$failed++;
 					continue;
 				}
+
+				if (!in_array($this->userRole, ['Admin', 'Super Admin']) && $product->approved == 1) {
+					$rowError[] = "This product has already been approved and cannot be modified.";
+					$errorArray[] = [
+						"Row Number" => $failed + $success + 2 + $previousSuccessCount + $previousFailedCount,
+						"Error" => implode(' | ', $rowError),
+					];
+					$failed++;
+					continue;
+				}
 			} else {
 				$product = new Product();
 
