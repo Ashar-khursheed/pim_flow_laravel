@@ -635,6 +635,34 @@ class CustomerController extends BaseController
 		]);
 	}
 
+public function getProfile(Request $request)
+{
+    $user = auth()->user(); // Adjust based on guard if needed
+
+    if (!$user) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Unauthorized',
+        ], 401);
+    }
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Profile fetched successfully',
+        'data' => [
+            'id'             => $user->id,
+            'name'           => $user->name,
+            'email'          => $user->email,
+            'type'           => $user->type,
+            'dob'            => $user->dob,
+            'country_code'   => $user->country_code,
+            'mobile_number'  => $user->mobile_number,
+            'profile_img'    => $user->profile_img,
+            'created_at'     => $user->created_at,
+            'updated_at'     => $user->updated_at,
+        ],
+    ]);
+}
 
 
 }
