@@ -578,6 +578,9 @@ class SeoManagementController extends Controller
 		}
 
 		try {
+			 if ($request->has('banner_image_file') && !($request->file('banner_image_file') instanceof \Illuminate\Http\UploadedFile)) {
+				$request->request->remove('banner_image_file');
+			}
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				// 'relational_type' => 'required|string', // ❌ removed from validation
