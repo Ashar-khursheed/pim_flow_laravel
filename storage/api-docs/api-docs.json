@@ -13192,6 +13192,135 @@
                 ]
             }
         },
+        "/api/frontend/customer-documents": {
+            "get": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Get customer documents",
+                "operationId": "cb62a50654be1fb726459fc6d758a5c3",
+                "responses": {
+                    "200": {
+                        "description": "List of documents"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Upload a new customer document",
+                "operationId": "1ec36b18c7929095b59c9f1058aeb224",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "document"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "document": {
+                                        "type": "file"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Document uploaded successfully"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-documents/{id}": {
+            "delete": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Delete a customer document",
+                "operationId": "c2d616567d821406b4669d2950ab0e47",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-documents/{customer_id}": {
+            "get": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Get all documents for a customer",
+                "operationId": "d7948cf549a783fa191450ee3a291e60",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of documents"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/discounts": {
             "get": {
                 "tags": [
@@ -30584,6 +30713,10 @@
         {
             "name": "FrontEnd-Customer",
             "description": "FrontEnd-Customer"
+        },
+        {
+            "name": "Frontend CustomerDocuments",
+            "description": "Frontend CustomerDocuments"
         },
         {
             "name": "Frontend-Discounts",

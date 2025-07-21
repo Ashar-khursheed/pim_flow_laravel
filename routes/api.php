@@ -100,6 +100,8 @@ use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
+use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
+
 
 
 
@@ -388,6 +390,11 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::get('customer-documents', [CustomerDocumentController::class, 'index']);
+    Route::post('customer-documents', [CustomerDocumentController::class, 'store']);
+    Route::delete('customer-documents/{id}', [CustomerDocumentController::class, 'destroy']);
+    Route::get('/customer-documents/{customer_id}', [CustomerDocumentController::class, 'customerDocuments']);
 
 	Route::apiResource('contact-directories', F_ContactDirectoryController::class);
 
