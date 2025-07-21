@@ -18005,6 +18005,158 @@
                 }
             }
         },
+        "/api/frontend/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "List all tickets",
+                "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Create a support ticket",
+                "operationId": "5a79bf4ae481982fad446ac090e8b46f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "full_name",
+                                    "email",
+                                    "category_id",
+                                    "priority_id",
+                                    "subject",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "full_name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "company_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_number": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "priority_id": {
+                                        "type": "integer"
+                                    },
+                                    "subject": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "reference_id": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ticket Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/support-tickets/{id}": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get a ticket by ID",
+                "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket Found"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customers/{customer_id}/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get tickets for a specific customer",
+                "operationId": "6608cc2a106e67b71b4aad7fea17b5c9",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tickets found"
+                    },
+                    "404": {
+                        "description": "No tickets found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/tamara/checkout": {
             "post": {
                 "tags": [
@@ -30581,6 +30733,9 @@
         {
             "name": "Discounts",
             "description": "API Endpoints for managing discounts"
+        },
+        {
+            "name": "SupportTickets"
         },
         {
             "name": "Newsletters",
