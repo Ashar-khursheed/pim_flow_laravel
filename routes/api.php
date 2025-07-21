@@ -101,7 +101,7 @@ use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProd
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
-
+use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
 
 
 
