@@ -382,6 +382,20 @@ class OrderController extends BaseController
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 		}
+					// ✅ Returnable status check based on delivery date and return policy
+			if (
+				$order->status === 'delivered' &&
+				$orderProduct->product_supplier &&
+				isset($orderProduct->product_supplier['return_policy'])
+			) {
+				$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+				$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+				$returnUntil = $deliveryDate->copy()->addDays($returnDays);
+
+				$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+			} else {
+				$orderProduct->is_returnable = 'no';
+			}
 
 		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
