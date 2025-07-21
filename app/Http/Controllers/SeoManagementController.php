@@ -578,9 +578,7 @@ class SeoManagementController extends Controller
 		}
 
 		try {
-			 if ($request->has('banner_image_file') && !($request->file('banner_image_file') instanceof \Illuminate\Http\UploadedFile)) {
-				$request->request->remove('banner_image_file');
-			}
+			
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				// 'relational_type' => 'required|string', // ❌ removed from validation
@@ -663,13 +661,14 @@ class SeoManagementController extends Controller
 				}
 			}
 			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-				$storage = app('Illuminate\Support\Facades\Storage');
-				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+			$storage = app('Illuminate\Support\Facades\Storage');
+			$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+			$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
 
-				// ✅ Store the image URL in existing column if you have one
+				// Save new banner image URL
 				$seo->banner_image_file = $storage::disk('s3')->url($bannerImagePath);
 			}
+			// ✅ Else: do nothing — keep old banner_image_file value
 
 
 
