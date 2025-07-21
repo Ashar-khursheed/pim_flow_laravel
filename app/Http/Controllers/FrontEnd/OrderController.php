@@ -394,7 +394,7 @@ class OrderController extends BaseController
 
 				$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
 			} else {
-				$orderProduct->is_returnable = 'no';
+				$orderProduct->is_returnable = 'yes';
 			}
 
 		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
