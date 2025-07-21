@@ -392,4 +392,158 @@ class WishlistController extends Controller
             'count' => $count
         ]);
     }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/wishlist/remove-multiple",
+     *     operationId="removeMultipleFromWishlist",
+     *     tags={"Frontend-Wishlist"},
+     *     summary="Remove multiple products from wishlist",
+     *     description="Removes one or more products from the authenticated user's wishlist.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"product_ids"},
+     *             @OA\Property(
+     *                 property="product_ids",
+     *                 type="array",
+     *                 @OA\Items(type="integer", example=1),
+     *                 example={1, 5, 9}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Selected products removed from wishlist",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Selected products removed from wishlist."),
+     *             @OA\Property(property="deleted_count", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 example={"product_ids": {"The product_ids field is required."}}
+     *             )
+     *         )
+     *     )
+     * )
+     */
+
+    public function removeMultipleFromWishlist(Request $request)
+    {
+        $request->validate([
+            'product_ids' => 'required|array',
+            'product_ids.*' => 'required|integer|exists:ec_products,id',
+        ]);
+
+        $productIds = $request->input('product_ids');
+        $userId = Auth::id();
+
+        $deleted = Wishlist::where('customer_id', $userId)
+                        ->whereIn('product_id', $productIds)
+                        ->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => $deleted > 0 ? 'Selected products removed from wishlist.' : 'No matching products found in wishlist.',
+            'deleted_count' => $deleted,
+        ]);
+    }
+
+    /**
+     * @OA\Post(
+     *     path="/api/frontend/wishlist/add-multiple",
+     *     operationId="addMultipleToWishlist",
+     *     tags={"Wishlist"},
+     *     summary="Add multiple products to wishlist",
+     *     description="Adds multiple products to the authenticated customer's wishlist.",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\RequestBody(
+     *         required=true,
+     *         @OA\JsonContent(
+     *             type="object",
+     *             required={"products"},
+     *             @OA\Property(
+     *                 property="products",
+     *                 type="array",
+     *                 @OA\Items(
+     *                     type="object",
+     *                     required={"product_id"},
+     *                     @OA\Property(property="product_id", type="integer", example=2)
+     *                 ),
+     *                 example={{"product_id": 2}, {"product_id": 4}, {"product_id": 7}}
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Products added to wishlist",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean", example=true),
+     *             @OA\Property(property="message", type="string", example="Products added to wishlist."),
+     *             @OA\Property(property="added_count", type="integer", example=3)
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=422,
+     *         description="Validation error",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="The given data was invalid."),
+     *             @OA\Property(
+     *                 property="errors",
+     *                 type="object",
+     *                 example={
+     *                     "products.0.product_id": {"The selected product_id is invalid."}
+     *                 }
+     *             )
+     *         )
+     *     )
+     * )
+     */
+    public function addMultipleToWishlist(Request $request)
+    {
+        $request->validate([
+            'products' => 'required|array',
+            'products.*.product_id' => 'required|exists:ec_products,id',
+        ]);
+
+        $products = $request->input('products');
+        $userId = Auth::id();
+
+        $added = 0;
+
+        foreach ($products as $item) {
+            $productId = $item['product_id'];
+
+            // Check if the product is already in the wishlist
+            $exists = Wishlist::where('customer_id', $userId)
+                            ->where('product_id', $productId)
+                            ->exists();
+
+            if (!$exists) {
+                Wishlist::create([
+                    'customer_id' => $userId,
+                    'product_id' => $productId,
+                ]);
+                $added++;
+            }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $added > 0 ? 'Products added to wishlist.' : 'All products were already in wishlist.',
+            'added_count' => $added,
+        ]);
+    }
+
+
 }

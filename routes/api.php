@@ -432,7 +432,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Additional wishlist routes
 	Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
 	Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
-
+	Route::Post('/frontend/wishlist/remove-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
+	Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
