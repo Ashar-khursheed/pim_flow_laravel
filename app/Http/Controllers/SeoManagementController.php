@@ -660,14 +660,12 @@ class SeoManagementController extends Controller
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
-			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-			$storage = app('Illuminate\Support\Facades\Storage');
-			$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-			$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-
-				// Save new banner image URL
-				$seo->banner_image_file = $storage::disk('s3')->url($bannerImagePath);
-			}
+		  if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+        $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+        $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+        $bannerImageUrl = Storage::disk('s3')->url($bannerImagePath);
+        $seoData['banner_image_file'] = $bannerImageUrl;
+    }
 			// ✅ Else: do nothing — keep old banner_image_file value
 
 
