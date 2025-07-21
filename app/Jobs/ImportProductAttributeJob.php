@@ -144,9 +144,6 @@ class ImportProductAttributeJob implements ShouldQueue
 									if (empty($attributeMeasurement) || !$attributeMeasurementId) {
 										$rowError[] = "Measurement Unit not defined or invalid for attribute: {$categoryAttribute->name}";
 									}
-
-									$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
-									$failed++;
 									continue;
 								}
 							} else {
