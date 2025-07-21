@@ -3,7 +3,7 @@ namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\CustomerDocument;
+use App\Models\FrontEnd\CustomerDocument;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 

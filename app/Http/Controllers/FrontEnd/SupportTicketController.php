@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\SupportTicket;
+use App\Models\FrontEnd\SupportTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
