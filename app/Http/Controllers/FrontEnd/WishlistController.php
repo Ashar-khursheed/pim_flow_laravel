@@ -463,7 +463,7 @@ class WishlistController extends Controller
      * @OA\Post(
      *     path="/api/frontend/wishlist/add-multiple",
      *     operationId="addMultipleToWishlist",
-     *     tags={"Wishlist"},
+     *     tags={"Frontend-Wishlist"},
      *     summary="Add multiple products to wishlist",
      *     description="Adds multiple products to the authenticated customer's wishlist.",
      *     security={{"bearerAuth":{}}},

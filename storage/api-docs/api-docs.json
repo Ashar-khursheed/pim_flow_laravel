@@ -19683,7 +19683,7 @@
         "/api/frontend/wishlist/add-multiple": {
             "post": {
                 "tags": [
-                    "Wishlist"
+                    "Frontend-Wishlist"
                 ],
                 "summary": "Add multiple products to wishlist",
                 "description": "Adds multiple products to the authenticated customer's wishlist.",
@@ -31297,10 +31297,6 @@
         {
             "name": "Frontend-Wishlist",
             "description": "Frontend-Wishlist"
-        },
-        {
-            "name": "Wishlist",
-            "description": "Wishlist"
         },
         {
             "name": "Grading",
