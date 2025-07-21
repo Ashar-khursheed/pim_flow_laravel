@@ -81,12 +81,28 @@ class ImportProductAttributeJob implements ShouldQueue
 			$productCategoryAttributes = $product->productCategoryAttributes()
 			->reject(fn($attribute) => $attribute['type'] === 'multiselect')
 			->values();
-
 			$productCategoryAttributeNames = $productCategoryAttributes->pluck('name')->toArray();
-			$missingAttributes = array_diff($productCategoryAttributeNames, $this->header);
 
-			if (!empty($missingAttributes)) {
-				$rowError[] = "Missing Attributes: " . implode(', ', $missingAttributes);
+			/* Check if any required attributes are missing from the CSV header */
+			$missingCategoryAttributes = array_diff($productCategoryAttributeNames, $this->header);
+			if (!empty($missingCategoryAttributes)) {
+				$rowError[] = "Missing category-specific attributes in CSV header: " . implode(', ', $missingCategoryAttributes);
+				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+				$failed++;
+				continue;
+			}
+
+			/* Get non-null values from row, excluding fixed columns */
+			$filteredRowAttributes = array_filter($rowData, function ($value, $key) {
+				return !in_array($key, ['ID', 'SKU', 'Name']) &&
+				!is_null($value) &&
+				!str_ends_with($key, ' Measurement Unit');
+			}, ARRAY_FILTER_USE_BOTH);
+
+			/* Check for extra attributes not linked to this product category */
+			$invalidAttributes = array_diff(array_keys($filteredRowAttributes), $productCategoryAttributeNames);
+			if (!empty($invalidAttributes)) {
+				$rowError[] = "Invalid attributes found for product category: " . implode(', ', $invalidAttributes);
 				$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
 				$failed++;
 				continue;
@@ -110,14 +126,29 @@ class ImportProductAttributeJob implements ShouldQueue
 								$attribute = $categoryAttribute->attributeValues()->firstOrCreate([
 									'attribute_value' => $attributeValue
 								]);
-
 							}
 
 							/* Handle measurement unit */
-							if ($categoryAttribute->type == 'measurement') {
+							if ($categoryAttribute->type === 'measurement') {
 								$columnName = $categoryAttribute->name . ' Measurement Unit';
 								$attributeMeasurement = trim($rowData[$columnName] ?? '');
 								$attributeMeasurementId = $measurementNameIds[$attributeMeasurement] ?? null;
+
+								/* Both value and measurement unit are required */
+								if (($attributeValue && !$attributeMeasurementId) || (!$attributeValue && $attributeMeasurementId)) {
+									DB::rollBack();
+
+									if (empty($attributeValue)) {
+										$rowError[] = "Value not defined for attribute: {$categoryAttribute->name}";
+									}
+									if (empty($attributeMeasurement) || !$attributeMeasurementId) {
+										$rowError[] = "Measurement Unit not defined or invalid for attribute: {$categoryAttribute->name}";
+									}
+
+									$this->logError($rowError, $failed, $success, $previousSuccessCount, $previousFailedCount, $errorArray);
+									$failed++;
+									continue;
+								}
 							} else {
 								$attributeMeasurementId = null;
 							}
