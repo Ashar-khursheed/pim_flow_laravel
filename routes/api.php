@@ -391,10 +391,10 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-	Route::post('/frontend/support-tickets', [SupportTicketController::class, 'store']);
-    Route::get('/frontend/support-tickets', [SupportTicketController::class, 'index']);
-    Route::get('/frontend/support-tickets/{id}', [SupportTicketController::class, 'show']);
-    Route::get('/frontend/customers/{customer_id}/support-tickets', [SupportTicketController::class, 'getTicketsByCustomer']);
+	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
+    Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
+    Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
+    Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
 
 	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
     Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
