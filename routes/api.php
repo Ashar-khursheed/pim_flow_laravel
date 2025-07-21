@@ -99,6 +99,9 @@ use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
+use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
+
+
 
 use Illuminate\Support\Facades\Http;
 
@@ -385,6 +388,8 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::apiResource('contact-directories', F_ContactDirectoryController::class);
 
 	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
 
