@@ -391,15 +391,15 @@ Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-	Route::post('support-tickets', [SupportTicketController::class, 'store']);
-    Route::get('support-tickets', [SupportTicketController::class, 'index']);
-    Route::get('support-tickets/{id}', [SupportTicketController::class, 'show']);
-    Route::get('customers/{customer_id}/support-tickets', [SupportTicketController::class, 'getTicketsByCustomer']);
+	Route::post('/frontend/support-tickets', [SupportTicketController::class, 'store']);
+    Route::get('/frontend/support-tickets', [SupportTicketController::class, 'index']);
+    Route::get('/frontend/support-tickets/{id}', [SupportTicketController::class, 'show']);
+    Route::get('/frontend/customers/{customer_id}/support-tickets', [SupportTicketController::class, 'getTicketsByCustomer']);
 
-	Route::get('customer-documents', [CustomerDocumentController::class, 'index']);
-    Route::post('customer-documents', [CustomerDocumentController::class, 'store']);
-    Route::delete('customer-documents/{id}', [CustomerDocumentController::class, 'destroy']);
-    Route::get('/customer-documents/{customer_id}', [CustomerDocumentController::class, 'customerDocuments']);
+	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
+    Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+    Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
+    Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
 	Route::apiResource('contact-directories', F_ContactDirectoryController::class);
 
