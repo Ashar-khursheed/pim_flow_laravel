@@ -96,24 +96,39 @@ class SupportTicketController extends Controller
      *     @OA\Response(response=200, description="Success")
      * )
      */
-    public function index()
-    {
-        try {
-            $tickets = SupportTicket::all();
-            return response()->json([
-                'success' => true,
-                'data' => $tickets,
-                'message' => 'Support tickets fetched successfully.'
-            ], 200);
-        } catch (\Exception $e) {
-            Log::error('SupportTicketController@index error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch support tickets.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+public function index()
+{
+    try {
+        $tickets = SupportTicket::with(['category:id,name', 'priority:id,name'])->get();
+
+        $transformed = $tickets->map(function ($ticket) {
+            return [
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'description' => $ticket->description,
+                'category' => $ticket->category ? $ticket->category->name : null,
+                'priority' => $ticket->priority ? $ticket->priority->name : null,
+                'created_at' => $ticket->created_at,
+                'updated_at' => $ticket->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformed,
+            'message' => 'Support tickets fetched successfully.'
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@index error: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch support tickets.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * @OA\Get(
@@ -126,29 +141,31 @@ class SupportTicketController extends Controller
      *     @OA\Response(response=404, description="Not Found")
      * )
      */
-    public function show($id)
-    {
-        try {
-            $ticket = SupportTicket::findOrFail($id);
-            return response()->json([
-                'success' => true,
-                'data' => $ticket,
-                'message' => 'Support ticket found.'
-            ], 200);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Support ticket not found.'
-            ], 404);
-        } catch (\Exception $e) {
-            Log::error('SupportTicketController@show error: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to fetch ticket.',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+   public function show($id)
+{
+    try {
+        $ticket = SupportTicket::with(['category', 'priority'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $ticket,
+            'message' => 'Support ticket found.'
+        ], 200);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Support ticket not found.'
+        ], 404);
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@show error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch ticket.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * @OA\Get(
@@ -161,30 +178,33 @@ class SupportTicketController extends Controller
      *     @OA\Response(response=404, description="No tickets found")
      * )
      */
-    public function getTicketsByCustomer($customer_id)
-    {
-        try {
-            $tickets = SupportTicket::where('customer_id', $customer_id)->get();
+   public function getTicketsByCustomer($customer_id)
+{
+    try {
+        $tickets = SupportTicket::with(['category', 'priority'])
+            ->where('customer_id', $customer_id)
+            ->get();
 
-            if ($tickets->isEmpty()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'No tickets found for this customer.'
-                ], 404);
-            }
-
-            return response()->json([
-                'success' => true,
-                'data' => $tickets,
-                'message' => 'Support tickets found.'
-            ], 200);
-        } catch (\Exception $e) {
-            Log::error('SupportTicketController@getTicketsByCustomer error: ' . $e->getMessage());
+        if ($tickets->isEmpty()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to fetch customer tickets.',
-                'error' => $e->getMessage()
-            ], 500);
+                'message' => 'No tickets found for this customer.'
+            ], 404);
         }
+
+        return response()->json([
+            'success' => true,
+            'data' => $tickets,
+            'message' => 'Support tickets found.'
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@getTicketsByCustomer error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch customer tickets.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 }

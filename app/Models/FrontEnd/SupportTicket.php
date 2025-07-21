@@ -24,4 +24,14 @@ class SupportTicket extends Model
     {
         return $this->belongsTo(Customer::class, 'customer_id');
     }
+    public function category()
+    {
+        return $this->belongsTo(SupportCategory::class, 'category_id');
+    }
+
+    public function priority()
+    {
+        return $this->belongsTo(SupportPriority::class, 'priority_id');
+    }
+
 }
