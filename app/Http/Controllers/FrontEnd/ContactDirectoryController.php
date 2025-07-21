@@ -12,7 +12,7 @@ class ContactDirectoryController extends Controller
     /**
      * @OA\Get(
      *     path="/api/frontend/contact-directories",
-     *     tags={"ContactDirectory"},
+     *     tags={"Frontend ContactDirectory"},
      *     security={{"bearerAuth":{}}},
      *     summary="Get all contact directories",
      *     @OA\Parameter(
@@ -39,7 +39,7 @@ class ContactDirectoryController extends Controller
     /**
      * @OA\Post(
      *     path="/api/frontend/contact-directories",
-     *     tags={"ContactDirectory"},
+     *     tags={"Frontend ContactDirectory"},
      *     security={{"bearerAuth":{}}},
      *     summary="Create a new contact",
      *     @OA\RequestBody(
@@ -86,7 +86,7 @@ class ContactDirectoryController extends Controller
     /**
      * @OA\Get(
      *     path="/api/frontend/contact-directories/{id}",
-     *     tags={"ContactDirectory"},
+     *     tags={"Frontend ContactDirectory"},
      * 	   security={{"bearerAuth":{}}},
      *     summary="Get a contact by ID",
      *     @OA\Parameter(
@@ -108,7 +108,7 @@ class ContactDirectoryController extends Controller
     /**
      * @OA\Put(
      *     path="/api/frontend/contact-directories/{id}",
-     *     tags={"ContactDirectory"},
+     *     tags={"Frontend ContactDirectory"},
      *     security={{"bearerAuth":{}}},
      *     summary="Update a contact",
      *     @OA\Parameter(
@@ -163,7 +163,7 @@ class ContactDirectoryController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/frontend/contact-directories/{id}",
-     *     tags={"ContactDirectory"},
+     *     tags={"Frontend ContactDirectory"},
      * 	   security={{"bearerAuth":{}}},
      *     summary="Delete a contact",
      *     @OA\Parameter(

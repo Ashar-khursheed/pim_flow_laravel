@@ -12402,7 +12402,7 @@
         "/api/frontend/contact-directories": {
             "get": {
                 "tags": [
-                    "ContactDirectory"
+                    "Frontend ContactDirectory"
                 ],
                 "summary": "Get all contact directories",
                 "operationId": "494c5fa7cb3096f79f2e76853c11121d",
@@ -12430,7 +12430,7 @@
             },
             "post": {
                 "tags": [
-                    "ContactDirectory"
+                    "Frontend ContactDirectory"
                 ],
                 "summary": "Create a new contact",
                 "operationId": "1b03e1ab71510bcaa80c01938e8091d1",
@@ -12494,7 +12494,7 @@
         "/api/frontend/contact-directories/{id}": {
             "get": {
                 "tags": [
-                    "ContactDirectory"
+                    "Frontend ContactDirectory"
                 ],
                 "summary": "Get a contact by ID",
                 "operationId": "0b1f1bcc56f15e87b2d5b2a833ddcd7b",
@@ -12524,7 +12524,7 @@
             },
             "put": {
                 "tags": [
-                    "ContactDirectory"
+                    "Frontend ContactDirectory"
                 ],
                 "summary": "Update a contact",
                 "operationId": "017ee127cba4f7fe57ef53fe25b7c397",
@@ -12592,7 +12592,7 @@
             },
             "delete": {
                 "tags": [
-                    "ContactDirectory"
+                    "Frontend ContactDirectory"
                 ],
                 "summary": "Delete a contact",
                 "operationId": "866c0d1bde7053579c3f230e0d8419a6",
@@ -30562,8 +30562,8 @@
             "description": "CCAvenue"
         },
         {
-            "name": "ContactDirectory",
-            "description": "ContactDirectory"
+            "name": "Frontend ContactDirectory",
+            "description": "Frontend ContactDirectory"
         },
         {
             "name": "Frontend-Countries",
