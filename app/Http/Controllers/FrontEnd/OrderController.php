@@ -384,7 +384,7 @@ class OrderController extends BaseController
 		}
 					// ✅ Returnable status check based on delivery date and return policy
 			if (
-				$order->status === 'delivered' &&
+				$order->status === 'Delivered' &&
 				$orderProduct->product_supplier &&
 				isset($orderProduct->product_supplier['return_policy'])
 			) {
