@@ -615,7 +615,6 @@ class SeoManagementController extends Controller
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
 				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
-				'banner_image_url' => 'nullable|string|url',
 				'banner_image_alt_text' => 'nullable|string',
 			]);
 
@@ -667,9 +666,9 @@ class SeoManagementController extends Controller
 				$storage = app('Illuminate\Support\Facades\Storage');
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
 				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-				$seoData['banner_image_url'] = $storage::disk('s3')->url($bannerImagePath);
-			} elseif (!empty($validated['banner_image_url'])) {
-				$seoData['banner_image_url'] = $validated['banner_image_url'];
+
+				// ✅ Store the image URL in existing column if you have one
+				$seo->banner_image_file = $storage::disk('s3')->url($bannerImagePath);
 			}
 
 
