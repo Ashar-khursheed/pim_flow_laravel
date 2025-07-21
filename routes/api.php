@@ -401,7 +401,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
     Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
-	Route::apiResource('contact-directories', F_ContactDirectoryController::class);
+	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
 
 	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
 
