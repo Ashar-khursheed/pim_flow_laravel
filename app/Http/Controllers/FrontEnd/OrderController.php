@@ -127,7 +127,10 @@ class OrderController extends BaseController
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 				}
 				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
@@ -304,7 +307,10 @@ class OrderController extends BaseController
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 			}
 
 			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
