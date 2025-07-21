@@ -102,9 +102,7 @@ use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
 use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
-
-
-
+use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;;
 use Illuminate\Support\Facades\Http;
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
@@ -388,6 +386,8 @@ Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
 
+Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
+Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
