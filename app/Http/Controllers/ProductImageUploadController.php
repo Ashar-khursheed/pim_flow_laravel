@@ -165,36 +165,43 @@ class ProductImageUploadController extends Controller
             
             if ($product) {
                 // Process images for this product
-                $result = $this->uploadProductImagesToS3($skuDir, $sku);
-                
-                if (!empty($result['imageUrls'])) {
-                    // Update the product record with new image URLs
-                    $product->images = $result['imageUrls'];
-                    $product->save();
-                    
-                    $processedSkus[] = [
-                        'sku' => $sku,
-                        'status' => empty($result['errors']) ? 'success' : 'partial_success',
-                        'image_count' => count($result['imageUrls']),
-                        'errors' => $result['errors']
-                    ];
-                } else {
-                    $processedSkus[] = [
-                        'sku' => $sku,
-                        'status' => 'no_valid_images_found',
-                        'errors' => $result['errors']
-                    ];
-                }
+                if ($product->approved == 1) {
+                $processedSkus[] = [
+                    'sku' => $sku,
+                    'status' => 'already_approved',
+                    'errors' => ['This product is already approved and cannot be modified.'],
+                ];
+                continue;
+                 }
+                 $result = $this->uploadProductImagesToS3($skuDir, $sku);
+
+            if (!empty($result['imageUrls'])) {
+                $product->images = $result['imageUrls'];
+                $product->save();
+
+                $processedSkus[] = [
+                    'sku' => $sku,
+                    'status' => empty($result['errors']) ? 'success' : 'partial_success',
+                    'image_count' => count($result['imageUrls']),
+                    'errors' => $result['errors']
+                ];
             } else {
                 $processedSkus[] = [
                     'sku' => $sku,
-                    'status' => 'product_not_found'
+                    'status' => 'no_valid_images_found',
+                    'errors' => $result['errors']
                 ];
             }
+        } else {
+            $processedSkus[] = [
+                'sku' => $sku,
+                'status' => 'product_not_found'
+            ];
         }
-        
-        return $processedSkus;
     }
+
+    return $processedSkus;
+}
 
     /**
      * Upload images to S3 and return array of URLs and errors

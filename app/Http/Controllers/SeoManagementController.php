@@ -14,7 +14,7 @@ use App\Models\SeoSecondaryKeyword;
 use App\Jobs\ImportSeoDetailJob;
 use App\Services\ExcelImporterService;
 use App\Repository\ExcelRepository;
-
+use Illuminate\Support\Facades\Storage;
 class SeoManagementController extends Controller
 {
 	/**
@@ -578,9 +578,7 @@ class SeoManagementController extends Controller
 		}
 
 		try {
-			 if ($request->has('banner_image_file') && !($request->file('banner_image_file') instanceof \Illuminate\Http\UploadedFile)) {
-				$request->request->remove('banner_image_file');
-			}
+			
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				// 'relational_type' => 'required|string', // ❌ removed from validation
@@ -662,14 +660,13 @@ class SeoManagementController extends Controller
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
-			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-				$storage = app('Illuminate\Support\Facades\Storage');
-				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-
-				// ✅ Store the image URL in existing column if you have one
-				$seo->banner_image_file = $storage::disk('s3')->url($bannerImagePath);
-			}
+		  if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+        $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+        $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+        $bannerImageUrl = Storage::disk('s3')->url($bannerImagePath);
+        $seoData['banner_image_file'] = $bannerImageUrl;
+    }
+			// ✅ Else: do nothing — keep old banner_image_file value
 
 
 
