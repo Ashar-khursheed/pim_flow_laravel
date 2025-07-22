@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\FrontEnd\CustomerDocument;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class CustomerDocumentController extends Controller
 {
@@ -32,7 +33,7 @@ class CustomerDocumentController extends Controller
      *     @OA\Response(response=422, description="Validation failed")
      * )
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -40,23 +41,25 @@ class CustomerDocumentController extends Controller
             'status' => 'nullable|in:active,inactive'
         ]);
 
-       
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
+        $userId = Auth::id();
+        $isUserLoggedIn = $userId !== null;
+
+        // Store the file
         $path = $request->file('document')->store(
             'customers/directory/documents',
-            Storage::getDefaultDriver() // uses STORAGE_ENV
+            Storage::getDefaultDriver()
         );
 
+        // Get full URL (e.g., http://yourdomain.com/storage/...)
+        $fullUrl = Storage::url($path);
+
+        // Optional: if you need absolute URL with domain
+        $absoluteUrl = asset($fullUrl);
+
         $document = CustomerDocument::create([
-            'customer_id' => $user->id,
+            'customer_id' => $userId,
             'name' => $request->name,
-            'document_path' => $path,
+            'document_path' => $absoluteUrl, // Save full URL
             'status' => $request->status ?? 'active',
         ]);
 
@@ -65,6 +68,7 @@ class CustomerDocumentController extends Controller
             'data' => $document,
         ], 201);
     }
+
 
     /**
      * @OA\Get(
@@ -78,15 +82,10 @@ class CustomerDocumentController extends Controller
     public function index()
     {
          
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
+         $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
 
-        $documents = CustomerDocument::where('customer_id', $user->id)->get();
+        $documents = CustomerDocument::where('customer_id', $userId)->get();
 
         return response()->json($documents);
     }
@@ -109,16 +108,9 @@ class CustomerDocumentController extends Controller
      */
     public function destroy($id)
     {
-        
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
-
-        $document = CustomerDocument::where('customer_id', $user->id)->where('id', $id)->firstOrFail();
+        $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
+        $document = CustomerDocument::where('customer_id', $userId)->where('id', $id)->firstOrFail();
 
         Storage::delete($document->document_path);
         $document->delete();

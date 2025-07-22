@@ -103,7 +103,10 @@ use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
 use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
-use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;;
+use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;
+use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
+
+
 use Illuminate\Support\Facades\Http;
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
@@ -401,6 +404,14 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
     Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
     Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
     Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
+
+	Route::prefix('frontend')->group(function () {
+    Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
+    Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
+    Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
+    Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
+    Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
+	});
 
 	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
 
