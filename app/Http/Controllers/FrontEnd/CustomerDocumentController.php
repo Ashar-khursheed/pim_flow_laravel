@@ -51,7 +51,7 @@ class CustomerDocumentController extends Controller
         );
 
         $document = CustomerDocument::create([
-            'customer_id' => $user->id,
+            'customer_id' => $userId->id,
             'name' => $request->name,
             'document_path' => $path,
             'status' => $request->status ?? 'active',
@@ -78,7 +78,7 @@ class CustomerDocumentController extends Controller
          $userId = Auth::id();
             $isUserLoggedIn = $userId !== null;
 
-        $documents = CustomerDocument::where('customer_id', $user->id)->get();
+        $documents = CustomerDocument::where('customer_id', $userId->id)->get();
 
         return response()->json($documents);
     }
@@ -103,7 +103,7 @@ class CustomerDocumentController extends Controller
     {
         $userId = Auth::id();
             $isUserLoggedIn = $userId !== null;
-        $document = CustomerDocument::where('customer_id', $user->id)->where('id', $id)->firstOrFail();
+        $document = CustomerDocument::where('customer_id', $userId->id)->where('id', $id)->firstOrFail();
 
         Storage::delete($document->document_path);
         $document->delete();
