@@ -221,7 +221,7 @@ class ReturnOrderProductController extends BaseController
 			if (!in_array($orderProduct->status, ['Delivered'])) {
 				return response()->json([
 					'success' => false,
-					'message' => "{$orderProduct->product->name} is not eligible for return."
+					'message' => "Product has not been delivered yet."
 				]);
 			}
 
