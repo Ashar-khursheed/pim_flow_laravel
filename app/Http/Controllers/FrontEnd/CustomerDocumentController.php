@@ -33,7 +33,7 @@ class CustomerDocumentController extends Controller
      *     @OA\Response(response=422, description="Validation failed")
      * )
      */
-    public function store(Request $request)
+   public function store(Request $request)
     {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -41,19 +41,25 @@ class CustomerDocumentController extends Controller
             'status' => 'nullable|in:active,inactive'
         ]);
 
-       
-         $userId = Auth::id();
-            $isUserLoggedIn = $userId !== null;
+        $userId = Auth::id();
+        $isUserLoggedIn = $userId !== null;
 
+        // Store the file
         $path = $request->file('document')->store(
             'customers/directory/documents',
-            Storage::getDefaultDriver() // uses STORAGE_ENV
+            Storage::getDefaultDriver()
         );
+
+        // Get full URL (e.g., http://yourdomain.com/storage/...)
+        $fullUrl = Storage::url($path);
+
+        // Optional: if you need absolute URL with domain
+        $absoluteUrl = asset($fullUrl);
 
         $document = CustomerDocument::create([
             'customer_id' => $userId,
             'name' => $request->name,
-            'document_path' => $path,
+            'document_path' => $absoluteUrl, // Save full URL
             'status' => $request->status ?? 'active',
         ]);
 
@@ -62,6 +68,7 @@ class CustomerDocumentController extends Controller
             'data' => $document,
         ], 201);
     }
+
 
     /**
      * @OA\Get(
