@@ -218,17 +218,17 @@ class ReturnOrderProductController extends BaseController
 				], 404);
 			}
 
-			if (!in_array($orderProduct->status, ['Delivered'])) {
-				return response()->json([
-					'success' => false,
-					'message' => "Product has not been delivered yet."
-				]);
-			}
-
 			if (in_array($orderProduct->status, ['Request Return', 'Partial Request Return'])) {
 				return response()->json([
 					'success' => false,
 					'message' => "Return already initiated for Product."
+				]);
+			}
+
+			if (!in_array($orderProduct->status, ['Delivered'])) {
+				return response()->json([
+					'success' => false,
+					'message' => "Product has not been delivered yet."
 				]);
 			}
 
