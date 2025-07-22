@@ -59,7 +59,10 @@ class SupportTicketController extends Controller
             ]);
 
             if ($request->hasFile('file')) {
-                $validated['file_path'] = $request->file('file')->store('support-tickets', env('STORAGE_ENV', 'public'));
+              $path = $request->file('file')->store('support-tickets', 's3');
+                $validated['file_path'] = $path;
+                $validated['file_url'] = Storage::disk('s3')->url($path);
+
             }
 
             $ticket = SupportTicket::create($validated);
