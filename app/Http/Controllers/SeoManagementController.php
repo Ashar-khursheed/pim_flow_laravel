@@ -612,7 +612,7 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+    			'banner_image_file' => 'sometimes|nullable|image|mimes:jpeg,png,jpg,gif,webp',
 				'banner_image_alt_text' => 'nullable|string',
 			]);
 
