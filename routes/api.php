@@ -418,6 +418,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
+	Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
