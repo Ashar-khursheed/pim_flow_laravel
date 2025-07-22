@@ -771,11 +771,11 @@ class ProductController extends BaseController
 				'faq' => $faqs ?? [],
 
 			]);
-		}
+	}
 
 
 
-		/**
+	/**
 	 * @OA\Post(
 	 *     path="/api/products/{product}",
 	 *     summary="Update a product using POST with _method=PUT",
@@ -954,10 +954,21 @@ class ProductController extends BaseController
 		$product = Product::find($productId);
 
 		if (!$product) {
+    	return response()->json([
+        'success' => false,
+        'message' => 'Product does not exist.'
+			]);
+		}
+
+		$user = auth()->user();
+		$userRole = $user ? $user->getRoleNames()->first() : null;
+
+		// Restriction for approved products
+		if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Product does not exist.'
-			]);
+				'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
+			], 403);
 		}
 
 		// Get the authenticated user and their role
