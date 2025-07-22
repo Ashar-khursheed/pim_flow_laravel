@@ -399,7 +399,9 @@ class ProductController extends BaseController
 			'categories.parent:id,name,parent_id',
 			'categories.parent.parent:id,name,parent_id',
 			'categories.children:id,name,parent_id',
-			'vendors'
+			'vendors',
+			'productAttributes.attributeDetails',
+			'productAttributes.measurementUnit'
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
@@ -509,7 +511,17 @@ class ProductController extends BaseController
 		$formattedProduct['delivery_days'] = $productDelivery_days;
 		$formattedProduct['inventory'] = $productInventory;
 		$formattedProduct['in_stock'] = $productInStock;
-		$formattedProduct['product_attributes'] = !empty($product->productAttributes) ? $product->productAttributes->toArray() : [];
+		$formattedProduct['product_attributes'] = [];
+
+		foreach ($product->productAttributes as $attr) {
+			$formattedProduct['product_attributes'][] = [
+				'attribute_id' => $attr->attribute_id,
+				'attribute_name' => $attr->attributeDetails->name ?? null,
+				'attribute_value' => $attr->attribute_value,
+				'measurement_unit_id' => $attr->measurement_unit_id,
+				'measurement_unit_name' => $attr->measurementUnit->name ?? null,
+			];
+		}
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
