@@ -506,6 +506,16 @@ class ProductController extends BaseController
 		$formattedProduct['price'] = $productPrice;
 		$formattedProduct['sale_price'] = $productSalePrice;
 		$formattedProduct['delivery_days'] = $productDelivery_days;
+		if ($product->relationLoaded('productAttributes')) {
+		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
+			return [
+				'id' => $attr->id,
+				'attribute_name' => $attr->attribute_name ?? $attr->name,
+				'attribute_value' => $attr->attribute_value ?? $attr->value,
+			];
+		});
+	}
+
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
