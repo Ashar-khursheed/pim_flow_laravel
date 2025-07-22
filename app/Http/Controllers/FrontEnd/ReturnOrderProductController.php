@@ -228,7 +228,7 @@ class ReturnOrderProductController extends BaseController
 			if (in_array($orderProduct->status, ['Request Return', 'Partial Request Return'])) {
 				return response()->json([
 					'success' => false,
-					'message' => "Return already initiated for {$orderProduct->product->name}."
+					'message' => "Return already initiated for Product."
 				]);
 			}
 
