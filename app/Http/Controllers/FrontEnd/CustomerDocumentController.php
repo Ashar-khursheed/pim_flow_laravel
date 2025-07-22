@@ -6,7 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\FrontEnd\CustomerDocument;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class CustomerDocumentController extends Controller
 {
