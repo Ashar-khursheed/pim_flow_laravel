@@ -7,6 +7,7 @@ use App\Models\FrontEnd\ReturnOrderProduct;
 use App\Models\FrontEnd\OrderProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ReturnOrderProductController extends BaseController
 {
@@ -179,7 +180,6 @@ class ReturnOrderProductController extends BaseController
 	 */
 	public function multipleReturn(Request $request)
 	{
-
 		$request->validate([
 			'reason' => 'required|string',
 			'description' => 'nullable|string',
@@ -189,105 +189,124 @@ class ReturnOrderProductController extends BaseController
 		]);
 
 		$returnItems = json_decode($request->return_items, true);
-		dd($request->all(), $returnItems);
 
 		if (!is_array($returnItems) || empty($returnItems)) {
-			return response()->json(['success' => false, 'message' => 'Invalid return_items format.']);
+			return response()->json([
+				'success' => false,
+				'message' => 'Invalid or empty return_items.'
+			], 422);
 		}
 
-		/* Upload media (common for all) */
-		$productImages = [];
-		if ($request->hasFile('product_images')) {
-			foreach ($request->file('product_images') as $imageFile) {
-				$tempRequest = new \Illuminate\Http\Request();
-				$tempRequest->files->set('product_image_single', $imageFile);
-
-				$uploadedUrl = uploadImageToWebpS3FromFile($tempRequest, 'product_image_single', env('STORAGE_ENV') . '/product-returns/images');
-				if ($uploadedUrl) {
-					$productImages[] = $uploadedUrl;
-				}
-			}
-		}
-
-		$productVideos = [];
-		if ($request->hasFile('product_videos')) {
-			foreach ($request->file('product_videos') as $video) {
-				$productVideos[] = uploadFileToS3($video, env('STORAGE_ENV') . '/returns/videos');
-			}
-		}
-
-		$successReturns = [];
-		$failedReturns = [];
-
+		/* Validate all items before DB operations */
 		foreach ($returnItems as $item) {
 			$orderProductId = $item['order_product_id'] ?? null;
 			$quantity = $item['quantity'] ?? 0;
 
 			if (!$orderProductId || $quantity <= 0) {
-				$failedReturns[] = [
-					'order_product_id' => $orderProductId,
-					'message' => 'Invalid order_product_id or quantity.'
-				];
-				continue;
+				return response()->json([
+					'success' => false,
+					'message' => 'Invalid product ID or quantity.'
+				], 422);
 			}
 
 			$orderProduct = OrderProduct::find($orderProductId);
+
 			if (!$orderProduct) {
-				$failedReturns[] = [
-					'order_product_id' => $orderProductId,
-					'message' => 'Order product not found.'
-				];
-				continue;
+				return response()->json([
+					'success' => false,
+					'message' => "Order product ID $orderProductId not found."
+				], 404);
 			}
 
-			if (!in_array($orderProduct->status, ['Delivered', 'Partial Request Return'])) {
-				$failedReturns[] = [
-					'order_product_id' => $orderProductId,
-					'message' => 'Only delivered products are eligible for return.'
-				];
-				continue;
+			if (!in_array($orderProduct->status, ['Delivered'])) {
+				return response()->json([
+					'success' => false,
+					'message' => "{$orderProduct->product->name} is not eligible for return."
+				]);
 			}
 
-			$shippedQuantity = $orderProduct->shipmentProducts->sum('quantity');
-			$returnedQuantity = $orderProduct->returnOrderProducts->sum('quantity');
-			$remainingReturnable = $shippedQuantity - $returnedQuantity;
-
-			if ($quantity > $remainingReturnable) {
-				$failedReturns[] = [
-					'order_product_id' => $orderProductId,
-					'message' => 'Return quantity exceeds remaining delivered quantity.'
-				];
-				continue;
+			if (in_array($orderProduct->status, ['Request Return', 'Partial Request Return'])) {
+				return response()->json([
+					'success' => false,
+					'message' => "Return already initiated for {$orderProduct->product->name}."
+				]);
 			}
 
-			$return = ReturnOrderProduct::create([
-				'refund_number' => 'R-' . strtoupper(Str::random(10)),
-				'order_product_id' => $orderProduct->id,
-				'quantity' => $quantity,
-				'reason' => $request->reason,
-				'description' => $request->description,
-				'product_images' => json_encode($productImages),
-				'product_videos' => json_encode($productVideos),
-				'status' => 'requested',
-			]);
+			$shippedQty = $orderProduct->shipmentProducts->sum('quantity');
+			$returnedQty = $orderProduct->returnOrderProducts->sum('quantity');
+			$remaining = $shippedQty - $returnedQty;
 
-			$totalRequested = $returnedQuantity + $quantity;
-			if ($totalRequested >= $shippedQuantity) {
-				$orderProduct->update(['status' => 'Request Return']);
-			} else {
-				$orderProduct->update(['status' => 'Partial Request Return']);
+			if ($quantity > $remaining) {
+				return response()->json([
+					'success' => false,
+					'message' => "Cannot return more than available quantity for {$orderProduct->product->name}."
+				]);
 			}
-
-			$successReturns[] = $return;
 		}
 
-		return response()->json([
-			'success' => true,
-			'message' => 'Return request(s) processed.',
-			'data' => [
-				'success' => $successReturns,
-				'failed' => $failedReturns
-			]
-		]);
+		DB::beginTransaction();
+
+		try {
+			/* Upload product images */
+			$productImages = [];
+			if ($request->hasFile('product_images')) {
+				foreach ($request->file('product_images') as $imageFile) {
+					$tempRequest = new \Illuminate\Http\Request();
+					$tempRequest->files->set('product_image_single', $imageFile);
+					$uploadedUrl = uploadImageToWebpS3FromFile($tempRequest, 'product_image_single', env('STORAGE_ENV') . '/product-returns/images');
+					if ($uploadedUrl) $productImages[] = $uploadedUrl;
+				}
+			}
+
+			/* Upload product videos */
+			$productVideos = [];
+			if ($request->hasFile('product_videos')) {
+				foreach ($request->file('product_videos') as $video) {
+					$productVideos[] = uploadFileToS3($video, env('STORAGE_ENV') . '/returns/videos');
+				}
+			}
+
+			/* Now apply DB changes */
+			foreach ($returnItems as $item) {
+				$orderProductId = $item['order_product_id'];
+				$quantity = $item['quantity'];
+
+				$orderProduct = OrderProduct::find($orderProductId);
+				$shippedQty = $orderProduct->shipmentProducts->sum('quantity');
+				$returnedQty = $orderProduct->returnOrderProducts->sum('quantity');
+				$totalRequested = $returnedQty + $quantity;
+
+				ReturnOrderProduct::create([
+					'refund_number' => 'R-' . strtoupper(Str::random(10)),
+					'order_product_id' => $orderProduct->id,
+					'quantity' => $quantity,
+					'reason' => $request->reason,
+					'description' => $request->description,
+					'product_images' => json_encode($productImages),
+					'product_videos' => json_encode($productVideos),
+					'status' => 'requested',
+				]);
+
+				/* Update order product status */
+				$orderProduct->update([
+					'status' => $totalRequested >= $shippedQty ? 'Request Return' : 'Partial Request Return'
+				]);
+			}
+
+			DB::commit();
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Return request(s) submitted successfully.'
+			]);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+			return response()->json([
+				'success' => false,
+				'message' => 'Something went wrong while processing the return request.',
+				'error' => $e->getMessage()
+			], 500);
+		}
 	}
 }
