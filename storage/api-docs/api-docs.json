@@ -18194,11 +18194,142 @@
                 "tags": [
                     "SupportTickets"
                 ],
-                "summary": "List all tickets",
+                "summary": "List all support tickets with optional filters, search, and sorting",
                 "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search keyword for subject or description",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter tickets by status (e.g., open, closed, pending)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by (created_at, updated_at, subject, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "updated_at",
+                                "subject",
+                                "status"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Success"
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "subject": {
+                                                        "type": "string",
+                                                        "example": "Login Issue"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "open"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "I can't log in to my account."
+                                                    },
+                                                    "category": {
+                                                        "type": "string",
+                                                        "example": "Technical"
+                                                    },
+                                                    "priority": {
+                                                        "type": "string",
+                                                        "example": "High"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-21T15:03:00Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-22T09:15:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Support tickets fetched successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to fetch support tickets."
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Exception message here"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [

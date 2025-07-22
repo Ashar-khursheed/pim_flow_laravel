@@ -87,24 +87,107 @@ class SupportTicketController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/support-tickets",
-     *     tags={"SupportTickets"},
-     *     summary="List all tickets",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="Success")
-     * )
-     */
-public function index()
+/**
+ * @OA\Get(
+ *     path="/api/frontend/support-tickets",
+ *     tags={"SupportTickets"},
+ *     summary="List all support tickets with optional filters, search, and sorting",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search keyword for subject or description",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="status",
+ *         in="query",
+ *         description="Filter tickets by status (e.g., open, closed, pending)",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Field to sort by (created_at, updated_at, subject, status)",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"created_at", "updated_at", "subject", "status"})
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_order",
+ *         in="query",
+ *         description="Sort order (asc or desc)",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"asc", "desc"})
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Success",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="data", type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="subject", type="string", example="Login Issue"),
+ *                     @OA\Property(property="status", type="string", example="open"),
+ *                     @OA\Property(property="description", type="string", example="I can't log in to my account."),
+ *                     @OA\Property(property="category", type="string", example="Technical"),
+ *                     @OA\Property(property="priority", type="string", example="High"),
+ *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-07-21T15:03:00Z"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-07-22T09:15:00Z")
+ *                 )
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Support tickets fetched successfully.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Failed to fetch support tickets."),
+ *             @OA\Property(property="error", type="string", example="Exception message here")
+ *         )
+ *     )
+ * )
+ */
+
+public function index(Request $request)
 {
     try {
-        $tickets = SupportTicket::with(['category:id,name', 'priority:id,name'])->get();
+        $query = SupportTicket::with(['category:id,name', 'priority:id,name']);
+
+        // 🔍 Search by subject or description
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        // ✅ Filter by status
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
+
+        // 🔃 Sorting
+        $sortBy = $request->get('sort_by', 'created_at'); // Default: created_at
+        $sortOrder = $request->get('sort_order', 'desc'); // Default: desc
+
+        $allowedSortFields = ['created_at', 'updated_at', 'subject', 'status'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'created_at';
+        }
+
+        $tickets = $query->orderBy($sortBy, $sortOrder)->get();
 
         $transformed = $tickets->map(function ($ticket) {
             return [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
+                'status' => $ticket->status,
                 'description' => $ticket->description,
                 'category' => $ticket->category ? $ticket->category->name : null,
                 'priority' => $ticket->priority ? $ticket->priority->name : null,
