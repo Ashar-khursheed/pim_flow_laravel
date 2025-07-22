@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\FrontEnd;
+namespace App\Http\Controllers;
 
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
@@ -13,16 +13,16 @@ class QuoteController extends BaseController
 {
 	/**
 	 * @OA\Get(
-	 *     path="/api/frontend/quotes",
+	 *     path="/api/quotes",
 	 *     summary="Get all quotes with pagination and filters",
-	 *     tags={"FrontEnd-Quotes"},
+	 *     tags={"Quotes"},
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="status", in="query", description="Filter by quote status.", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
-	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "quote_number", "quote_name", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "quote_number", "quote_name", "customer_name", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -30,16 +30,22 @@ class QuoteController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$searchableColumns = ['id', 'quote_number', 'quote_name'];
+		$searchableColumns = ['id', 'quote_number', 'quote_name', 'customer_name'];
 		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
 
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		$recordsQuery = Quote::where('customer_id', auth()->id());
+		$recordsQuery = Quote::query();
 
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
+			/* Join if customer_name is involved in search or sort */
+			if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
+				$recordsQuery->leftJoin('customers', 'quotes.customer_id', '=', 'customers.id');
+				$recordsQuery->select('quotes.*');
+			}
+
 			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name,email,type,country_code,mobile_number',
@@ -74,13 +80,23 @@ class QuoteController extends BaseController
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
 					foreach ($searchableColumns as $col) {
-						$q->orWhere("quotes.$col", 'like', '%' . $search . '%');
+						if ($col === 'customer_name') {
+							$q->orWhereHas('customer', function ($sub) use ($search) {
+								$sub->where('name', 'like', '%' . $search . '%');
+							});
+						} else {
+							$q->orWhere("quotes.$col", 'like', '%' . $search . '%');
+						}
 					}
 				});
 			}
 
 			/* Sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
+			if ($sortBy === 'customer_name') {
+				$recordsQuery->orderBy('customers.name', $sortDir);
+			} else {
+				$recordsQuery->orderBy("quotes.$sortBy", $sortDir);
+			}
 
 			/* Pagination */
 			$length = (int) $request->input('length');
@@ -100,6 +116,12 @@ class QuoteController extends BaseController
 
 			/* Transform results */
 			$records->transform(function ($record) {
+				$record->customer_name = $record->customer->name ?? null;
+				$record->created_by = $record->creator->name ?? null;
+				$record->updated_by = $record->updator->name ?? null;
+
+				unset($record->creator, $record->updator);
+
 				/* Process each product in record products */
 				foreach ($record->quoteProducts as $quoteProduct) {
 					$product = $quoteProduct->product;
@@ -114,7 +136,6 @@ class QuoteController extends BaseController
 					? getDateRange($record->created_at, $quoteProduct->product_supplier['delivery_days'])
 					: null;
 
-					/* Format numeric values to 2 decimal places */
 					/* Format numeric values to 2 decimal places */
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($quoteProduct->$key)) {
@@ -149,15 +170,16 @@ class QuoteController extends BaseController
 
 	/**
 	 * @OA\Post(
-	 *     path="/api/frontend/quotes",
+	 *     path="/api/quotes",
 	 *     summary="Create a new quote",
-	 *     tags={"FrontEnd-Quotes"},
+	 *     tags={"Quotes"},
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"quote_number", "quote_name", "customer_address_id", "tax_percentage", "products"},
+	 *             required={"quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="quote_number", type="string", example="1111"),
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
+	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
@@ -192,6 +214,7 @@ class QuoteController extends BaseController
 		$request->validate([
 			'quote_number' => 'required|string|unique:quotes,quote_number',
 			'quote_name' => 'required|string',
+			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
 			'products' => 'required|array|min:1',
@@ -204,7 +227,7 @@ class QuoteController extends BaseController
 			'emails.*' => 'email',
 		]);
 
-		$customerId = auth()->id();
+		$customerId = $request->customer_id;
 
 		$address = CustomerAddress::where('id', $request->customer_address_id)
 		->where('customer_id', $customerId)
@@ -249,7 +272,7 @@ class QuoteController extends BaseController
 				'internal_notes' => $request->internal_notes,
 				'status' => 'Pending',
 				'expiration_days' => 7,
-				'created_by' => 0,
+				'created_by' => auth()->id(),
 			]);
 
 			foreach ($request->products as $product) {
@@ -298,7 +321,10 @@ class QuoteController extends BaseController
 					unset($product->brand, $product->currency);
 				}
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
+				? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
+				: null;
 
 				/* Format numeric values to 2 decimal places */
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -332,9 +358,9 @@ class QuoteController extends BaseController
 
 	/**
 	 * @OA\Get(
-	 *     path="/api/frontend/quotes/{id}",
+	 *     path="/api/quotes/{id}",
 	 *     summary="Get quote details",
-	 *     tags={"FrontEnd-Quotes"},
+	 *     tags={"Quotes"},
 	 *     @OA\Parameter(
 	 *         name="id",
 	 *         in="path",
@@ -377,6 +403,7 @@ class QuoteController extends BaseController
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
+
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
 			? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])

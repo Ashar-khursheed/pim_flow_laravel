@@ -60,6 +60,7 @@ use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
+use App\Http\Controllers\QuoteController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -346,8 +347,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
 	Route::apiResource('orders', OrderController::class);
 
-
-
+	Route::apiResource('quotes', QuoteController::class);
 
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
