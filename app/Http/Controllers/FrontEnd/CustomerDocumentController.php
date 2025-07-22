@@ -42,13 +42,9 @@ class CustomerDocumentController extends Controller
         ]);
 
        
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
+         $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
+
         $path = $request->file('document')->store(
             'customers/directory/documents',
             Storage::getDefaultDriver() // uses STORAGE_ENV
@@ -79,13 +75,8 @@ class CustomerDocumentController extends Controller
     public function index()
     {
          
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
+         $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
 
         $documents = CustomerDocument::where('customer_id', $user->id)->get();
 
@@ -110,15 +101,8 @@ class CustomerDocumentController extends Controller
      */
     public function destroy($id)
     {
-        
-        $user = Auth::id();
-            if (!$customerId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'User not authenticated.'
-                ]);
-            }
-
+        $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
         $document = CustomerDocument::where('customer_id', $user->id)->where('id', $id)->firstOrFail();
 
         Storage::delete($document->document_path);
