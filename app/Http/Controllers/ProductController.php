@@ -399,8 +399,7 @@ class ProductController extends BaseController
 			'categories.parent:id,name,parent_id',
 			'categories.parent.parent:id,name,parent_id',
 			'categories.children:id,name,parent_id',
-			'vendors',
-			'productAttributes'
+			'vendors'
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
@@ -506,16 +505,7 @@ class ProductController extends BaseController
 		$formattedProduct['price'] = $productPrice;
 		$formattedProduct['sale_price'] = $productSalePrice;
 		$formattedProduct['delivery_days'] = $productDelivery_days;
-		if ($product->relationLoaded('productAttributes')) {
-		$formattedProduct['product_attributes'] = $product->productAttributes->map(function ($attr) {
-			return [
-				'id' => $attr->id,
-				'attribute_name' => $attr->attribute_name ?? $attr->name,
-				'attribute_value' => $attr->attribute_value ?? $attr->value,
-			];
-		});
-	}
-
+		$formattedProduct['product_attributes'] = !empty($product->productAttributes) ? $product->productAttributes->toArray() : [];
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
