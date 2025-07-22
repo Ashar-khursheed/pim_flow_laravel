@@ -12399,6 +12399,218 @@
                 }
             }
         },
+        "/api/frontend/company-profiles": {
+            "get": {
+                "tags": [
+                    "Company Profiles"
+                ],
+                "summary": "Get all company profiles",
+                "operationId": "721724750092147c50bc56782f035ee5",
+                "responses": {
+                    "200": {
+                        "description": "List of company profiles"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Company Profiles"
+                ],
+                "summary": "Create a new company profile",
+                "operationId": "8bf6387e98c4d009c5c1fa52b4999fe9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "business_name",
+                                    "country"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace Restaurant LLC"
+                                    },
+                                    "trade_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace"
+                                    },
+                                    "company_reg_no": {
+                                        "type": "string",
+                                        "example": "LLC-2019-001234"
+                                    },
+                                    "vat_number": {
+                                        "type": "string",
+                                        "example": "100123456700003"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "legal_status": {
+                                        "type": "string",
+                                        "example": "Limited Liability Company (LLC)"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Company profile created successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/company-profiles/{id}": {
+            "get": {
+                "tags": [
+                    "Company Profiles"
+                ],
+                "summary": "Get a specific company profile",
+                "operationId": "82c8c29d05624147727ad5a4dd201b06",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Company profile found"
+                    },
+                    "404": {
+                        "description": "Company profile not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Company Profiles"
+                ],
+                "summary": "Update a company profile",
+                "operationId": "6e18423876540d1e1149bff373c6628c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace Restaurant LLC"
+                                    },
+                                    "trade_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace"
+                                    },
+                                    "company_reg_no": {
+                                        "type": "string",
+                                        "example": "LLC-2019-001234"
+                                    },
+                                    "vat_number": {
+                                        "type": "string",
+                                        "example": "100123456700003"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "legal_status": {
+                                        "type": "string",
+                                        "example": "Limited Liability Company (LLC)"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Company profile updated successfully"
+                    },
+                    "404": {
+                        "description": "Company profile not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Company Profiles"
+                ],
+                "summary": "Delete a company profile",
+                "operationId": "449322f0b0a774cd4cc9aeb3273812eb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Company profile not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/contact-directories": {
             "get": {
                 "tags": [
@@ -31484,6 +31696,10 @@
         {
             "name": "CCAvenue",
             "description": "CCAvenue"
+        },
+        {
+            "name": "Company Profiles",
+            "description": "Company Profiles"
         },
         {
             "name": "Frontend ContactDirectory",
