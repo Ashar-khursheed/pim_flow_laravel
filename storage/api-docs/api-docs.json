@@ -12404,11 +12404,14 @@
                 "tags": [
                     "Company Profiles"
                 ],
-                "summary": "Get all company profiles",
+                "summary": "Get the logged-in user's company profile",
                 "operationId": "721724750092147c50bc56782f035ee5",
                 "responses": {
                     "200": {
-                        "description": "List of company profiles"
+                        "description": "Company profile"
+                    },
+                    "404": {
+                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -12421,7 +12424,7 @@
                 "tags": [
                     "Company Profiles"
                 ],
-                "summary": "Create a new company profile",
+                "summary": "Create a new company profile for the logged-in user",
                 "operationId": "8bf6387e98c4d009c5c1fa52b4999fe9",
                 "requestBody": {
                     "required": true,
@@ -12429,15 +12432,10 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "customer_id",
                                     "business_name",
                                     "country"
                                 ],
                                 "properties": {
-                                    "customer_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "business_name": {
                                         "type": "string",
                                         "example": "Golden Palace Restaurant LLC"
@@ -12470,7 +12468,7 @@
                 },
                 "responses": {
                     "201": {
-                        "description": "Company profile created successfully"
+                        "description": "Created"
                     }
                 },
                 "security": [
@@ -12485,7 +12483,7 @@
                 "tags": [
                     "Company Profiles"
                 ],
-                "summary": "Get a specific company profile",
+                "summary": "Get a specific company profile by ID",
                 "operationId": "82c8c29d05624147727ad5a4dd201b06",
                 "parameters": [
                     {
@@ -12499,10 +12497,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Company profile found"
+                        "description": "Profile found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
                     },
                     "404": {
-                        "description": "Company profile not found"
+                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -12515,7 +12516,7 @@
                 "tags": [
                     "Company Profiles"
                 ],
-                "summary": "Update a company profile",
+                "summary": "Update the logged-in user's company profile",
                 "operationId": "6e18423876540d1e1149bff373c6628c",
                 "parameters": [
                     {
@@ -12532,10 +12533,6 @@
                         "application/json": {
                             "schema": {
                                 "properties": {
-                                    "customer_id": {
-                                        "type": "integer",
-                                        "example": 1
-                                    },
                                     "business_name": {
                                         "type": "string",
                                         "example": "Golden Palace Restaurant LLC"
@@ -12558,7 +12555,7 @@
                                     },
                                     "legal_status": {
                                         "type": "string",
-                                        "example": "Limited Liability Company (LLC)"
+                                        "example": "LLC"
                                     }
                                 },
                                 "type": "object"
@@ -12568,10 +12565,13 @@
                 },
                 "responses": {
                     "200": {
-                        "description": "Company profile updated successfully"
+                        "description": "Updated successfully"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
                     },
                     "404": {
-                        "description": "Company profile not found"
+                        "description": "Not found"
                     }
                 },
                 "security": [
@@ -12598,10 +12598,13 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Deleted successfully"
+                        "description": "Deleted"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
                     },
                     "404": {
-                        "description": "Company profile not found"
+                        "description": "Not found"
                     }
                 },
                 "security": [
