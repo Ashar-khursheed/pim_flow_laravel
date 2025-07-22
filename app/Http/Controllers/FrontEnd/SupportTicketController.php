@@ -105,6 +105,7 @@ public function index()
             return [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
+                'status' => $ticket->status,
                 'description' => $ticket->description,
                 'category' => $ticket->category ? $ticket->category->name : null,
                 'priority' => $ticket->priority ? $ticket->priority->name : null,
