@@ -98,6 +98,7 @@ use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
+use App\Http\Controllers\FrontEnd\FbtProductController  as F_FbtProductController;
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
@@ -404,7 +405,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
 
 	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
-
+	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
 
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
@@ -498,6 +499,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
+Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
+
 
 Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
