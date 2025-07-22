@@ -399,7 +399,8 @@ class ProductController extends BaseController
 			'categories.parent:id,name,parent_id',
 			'categories.parent.parent:id,name,parent_id',
 			'categories.children:id,name,parent_id',
-			'vendors'
+			'vendors',
+			'productAttributes'
 		]);
 
 		$product = Product::with($with)->where('id', $productId)->first(array_merge(['id'], $attributes));
