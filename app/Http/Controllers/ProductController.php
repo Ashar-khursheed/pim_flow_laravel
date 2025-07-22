@@ -505,6 +505,7 @@ class ProductController extends BaseController
 		$formattedProduct['price'] = $productPrice;
 		$formattedProduct['sale_price'] = $productSalePrice;
 		$formattedProduct['delivery_days'] = $productDelivery_days;
+		$formattedProduct['product_attributes'] = !empty($product->productAttributes) ? $product->productAttributes->toArray() : [];
 
 		foreach ($attributes as $attribute) {
 			$value = $product->$attribute ?? null;
