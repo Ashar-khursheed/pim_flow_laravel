@@ -14,7 +14,7 @@ class CompanyProfileController extends Controller
     /**
      * @OA\Get(
      *     path="/api/frontend/company-profiles",
-     *     tags={"Company Profiles"},
+     *     tags={"Frontend Company Profiles"},
      *     security={{"bearerAuth":{}}},
      *     summary="Get the logged-in user's company profile",
      *     @OA\Response(response=200, description="Company profile"),
@@ -32,7 +32,7 @@ class CompanyProfileController extends Controller
     /**
      * @OA\Post(
      *     path="/api/frontend/company-profiles",
-     *     tags={"Company Profiles"},
+     *     tags={"Frontend Company Profiles"},
      *     security={{"bearerAuth":{}}},
      *     summary="Create a new company profile for the logged-in user",
      *     @OA\RequestBody(
@@ -71,7 +71,7 @@ class CompanyProfileController extends Controller
     /**
      * @OA\Get(
      *     path="/api/frontend/company-profiles/{id}",
-     *     tags={"Company Profiles"},
+     *     tags={"Frontend Company Profiles"},
      *     security={{"bearerAuth":{}}},
      *     summary="Get a specific company profile by ID",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -94,7 +94,7 @@ class CompanyProfileController extends Controller
     /**
      * @OA\Put(
      *     path="/api/frontend/company-profiles/{id}",
-     *     tags={"Company Profiles"},
+     *     tags={"Frontend Company Profiles"},
      *     security={{"bearerAuth":{}}},
      *     summary="Update the logged-in user's company profile",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
@@ -138,7 +138,7 @@ class CompanyProfileController extends Controller
     /**
      * @OA\Delete(
      *     path="/api/frontend/company-profiles/{id}",
-     *     tags={"Company Profiles"},
+     *     tags={"Frontend Company Profiles"},
      *     security={{"bearerAuth":{}}},
      *     summary="Delete a company profile",
      *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
