@@ -408,6 +408,8 @@ class ProductController extends BaseController
 		$productPrice = $firstVendor?->pivot?->price ?? null;
 		$productSalePrice = $firstVendor?->pivot?->sale_price ?? null;
 		$productDelivery_days = $firstVendor?->pivot?->delivery_days ?? null;
+		$productInventory = $firstVendor?->pivot?->inventory ?? null;
+		$productInStock = $firstVendor?->pivot?->in_stock ?? null;
 		$formattedCategories = [];
 
 		foreach ($product->categories as $category) {
