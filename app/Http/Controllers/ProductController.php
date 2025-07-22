@@ -386,7 +386,7 @@ class ProductController extends BaseController
 			'Shipping & Dimensions' => [],
 			'Store & Vendor Information' => ['brand:id,name', 'creator:id,name'],
 			'SEO' => [],
-			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days'],
+			'Pricing' => ['vendors:id,name,price,sale_price,delivery_days,inventory,in_stock'],
 			'All' => ['categories:id,name,parent_id', 'currency:id,title', 'brand:id,name', 'creator:id,name']
 		];
 
