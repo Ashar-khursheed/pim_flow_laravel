@@ -773,8 +773,6 @@ class ProductController extends BaseController
 			]);
 	}
 
-
-
 	/**
 	 * @OA\Post(
 	 *     path="/api/products/{product}",
@@ -1415,117 +1413,7 @@ class ProductController extends BaseController
 		/* Initialize an error array to store validation errors */
 		$rowError = [];
 
-		/* Refund policy validation */
-			// $usRefundPolicyArray = [
-			// 	1 => "non-refundable",
-			// 	2 => "15 days",
-			// 	3 => "90 days"
-			// ];
-			// if (isset($input['refund'])) {
-			// 	if (!is_numeric($input['refund']) || !array_key_exists((int) $input['refund'], $usRefundPolicyArray)) {
-			// 		$rowError[] = "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.";
-			// 	} else {
-			// 		$product->refund = $usRefundPolicyArray[(int) $input['refund']];
-			// 		unset($input['refund']); /* Remove processed field */
-			// 	}
-			// }
 
-		if (isset($input['status'])) {
-			$validStatuses = ['draft', 'published', 'pending']; /* Define allowed statuses */
-			if (!in_array($input['status'], $validStatuses)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Invalid status value. Allowed values: draft, published, archived.'
-				]);
-			}
-
-			if($input['status'] == 'published' && $product->productAttributes->count() < 5) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You must assign at least 5 attributes to the product before it can be published'
-				]);
-			}
-
-			
-			$descriptionData = json_decode($product->description, true);
-			$descriptionValid = is_array($descriptionData) && !empty(array_filter($descriptionData, function($d) {
-				return !empty($d);
-			}));
-
-			// Validate benefits_features
-			$benefitsData = json_decode($product->benefits_features, true);
-			$benefitsValid = is_array($benefitsData) && !empty(array_filter($benefitsData, function($b) {
-				return !empty($b);
-			}));
-
-			if ($input['status'] == 'published' && (!$descriptionValid || !$benefitsValid)) {
-				return response()->json([
-					'success' => false,
-					'message' => 'You cannot publish this product until both Description and Benefits & Features are filled.'
-				], 422);
-			}
-
-			$product->status = $input['status']; /* Assign status */
-		}
-
-		
-		/* Handle benefits_features field with content writer permission check */
-			// if ($request->has('benefits_features')) {
-			// 	$benefitsFeaturesInput = $request->input('benefits_features');
-			// 	$hasNewBenefitsData = false;
-
-			// 	// Decode new input
-			// 	if (is_string($benefitsFeaturesInput)) {
-			// 		$decoded = json_decode($benefitsFeaturesInput, true);
-			// 		if (json_last_error() === JSON_ERROR_NONE) {
-			// 			$newBenefits = $decoded;
-			// 		} else {
-			// 			return response()->json([
-			// 				'success' => false,
-			// 				'message' => 'Invalid JSON format for benefits_features.'
-			// 			], 400);
-			// 		}
-			// 	} elseif (is_array($benefitsFeaturesInput)) {
-			// 		$newBenefits = $benefitsFeaturesInput;
-			// 	} else {
-			// 		return response()->json([
-			// 			'success' => false,
-			// 			'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-			// 		], 400);
-			// 	}
-
-			// 	// Ensure it's an array
-			// 	if (!is_array($newBenefits)) {
-			// 		$newBenefits = [];
-			// 	}
-
-			// 	// Get existing saved benefits
-			// 	$existingBenefits = json_decode($product->benefits_features, true);
-			// 	if (!is_array($existingBenefits)) {
-			// 		$existingBenefits = [];
-			// 	}
-
-			// 	// Check for actual change
-			// 	if ($newBenefits !== $existingBenefits) {
-			// 		$hasNewBenefitsData = true;
-			// 	}
-
-			// 	// Restrict update only if change attempted and no permission
-			// 	if ($hasNewBenefitsData && !$canModifyContent) {
-			// 		return response()->json([
-			// 			'success' => false,
-			// 			'message' => 'You do not have permission to modify product benefits and features.'
-			// 		], 403);
-			// 	}
-
-			// 	// If changes are allowed or not needed, process it
-			// 	if ($canModifyContent && $hasNewBenefitsData) {
-			// 		$product->benefits_features = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
-			// 	}
-
-			// 	// Prevent reprocessing later
-			// 	unset($input['benefits_features']);
-			// }
 		if ($request->has('benefits_features')) {
 			$benefitsInput = $request->input('benefits_features');
 
@@ -1614,8 +1502,6 @@ class ProductController extends BaseController
 				unset($input['description']);
 			}
 		}
-			// If description not in request at all, existing description is preserved automatically
-
 
 		/* Stock status validation */
 		$usStockStatusArray = [
@@ -1675,24 +1561,6 @@ class ProductController extends BaseController
 			$product->google_shopping_mpn = $input['google_shopping_mpn'];
 			unset($input['google_shopping_mpn']);
 		}
-
-			// if (isset($input['box_quantity'])) {
-			// 	/* If box_quantity should be an integer */
-			// 	$product->box_quantity = (int)$input['box_quantity'];
-			// 	unset($input['box_quantity']);
-			// }
-
-			// /* Store ID validation */
-			// if (isset($input['vendor_id'])) {
-			// 	$storeArray = Vendor::pluck("id")->toArray();
-			// 	if (!is_numeric($input['vendor_id']) || !in_array((int) $input['vendor_id'], $storeArray)) {
-			// 		$storeList = implode(', ', $storeArray);
-			// 		$rowError[] = "Invalid store value. Valid store IDs are: " . $storeList;
-			// 	} else {
-			// 		$product->vendor_id = (int) $input['vendor_id'];
-			// 		unset($input['vendor_id']); /* Remove processed field */
-			// 	}
-			// }
 
 		/* Brand ID validation */
 		if (isset($input['brand_id'])) {
@@ -1776,6 +1644,66 @@ class ProductController extends BaseController
 
 		/* Save the product */
 		$product->save();
+
+		if (isset($input['status'])) {
+			$validStatuses = ['draft', 'published', 'pending'];
+
+			if (!in_array($input['status'], $validStatuses)) {
+				return response()->json([
+					'success' => false,
+					'message' => "Invalid status value. Allowed values: draft, published, pending."
+				]);
+			}
+
+			if ($input['status'] === 'published') {
+
+				// Reload full product with required relationships
+				$product = Product::with(['productAttributes', 'sellingUnitAttribute', 'productSuppliers'])->find($product->id);
+				$rowError = [];
+
+				/* Validate images */
+				$images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+				if (empty($images) || count($images) === 0) {
+					$rowError[] = "At least one product image is required to publish.";
+				}
+
+				/* Validate benefits */
+				$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+				if (empty($benefits) || count($benefits) < 5) {
+					$rowError[] = "At least 5 benefits & features are required to publish.";
+				}
+
+				/* Validate attributes */
+				if ($product->productAttributes->count() < 5) {
+					$rowError[] = "At least 5 product attributes are required to publish.";
+				}
+
+				/* Validate selling unit */
+				if (!$product->sellingUnitAttribute) {
+					$rowError[] = "The 'Selling Unit' attribute is required to publish.";
+				}
+
+				/* Validate product suppliers */
+				if ($product->productSuppliers->isEmpty()) {
+					$rowError[] = "At least one vendor price detail is required to publish.";
+				}
+
+				if ($product->productSuppliers->contains(fn ($supplier) => $supplier->in_stock !== 1)) {
+					$rowError[] = "All vendor price entries must have 'in_stock' set to Yes.";
+				}
+
+				if (!empty($rowError)) {
+					return response()->json([
+						'success' => false,
+						'message' => implode(', ', $rowError)
+					]);
+				}
+			}
+
+			/* Passed all validations, now update the status */
+			$product->status = $input['status'];
+			$product->save();
+		}
 
 		$product = Product::find($product->id);
 
