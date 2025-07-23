@@ -531,8 +531,6 @@ class ProductController extends BaseController
 				$formattedProduct[$attribute] = [['value' => $value]];
 
 				break;
-				// case 'allow_checkout_when_out_of_stock':
-				// case 'with_storehouse_management':
 				case 'variant_requires_shipping':
 				case 'is_variation':
 				$formattedProduct[$attribute] = [
@@ -545,29 +543,6 @@ class ProductController extends BaseController
 				];
 				break;
 
-				// case 'shipping_weight_option':
-				// $formattedProduct[$attribute] = [
-				// 	'type' => 'Dropdown',
-				// 	'selected' => $value,
-				// 	'values' => [
-				// 		'lbs' => 'LBS',
-				// 		'kg' => 'KG',
-				// 		'g' => 'Grams'
-				// 	]
-				// ];
-				// break;
-
-				// case 'shipping_dimension_option':
-				// $formattedProduct[$attribute] = [
-				// 	'type' => 'Dropdown',
-				// 	'selected' => $value,
-				// 	'values' => [
-				// 		'inch' => 'Inch',
-				// 		'cm' => 'CM',
-				// 		'mm' => 'MM'
-				// 	]
-				// ];
-				break;
 				case 'benefits_features':
 				$formattedProduct['benefits_features'] = json_decode($value, true);
 				break;
@@ -603,12 +578,14 @@ class ProductController extends BaseController
 					'title' => $product->currency->title
 				]] : null;
 				break;
+
 				case 'brand_id':
 				$formattedProduct['brand'] = $product->brand ? [[
 					'id' => $product->brand->id,
 					'name' => $product->brand->name
 				]] : null;
 				break;
+
 				case 'vendor':
 				$formattedProduct['vendors'] = $product->vendors->map(function ($vendor) {
 					return [
@@ -620,50 +597,6 @@ class ProductController extends BaseController
 				});
 				break;
 
-
-				// case 'shipping_length_id':
-				// $formattedProduct['shipping_length'] = [
-				// 	'selected' => optional($product->shippingLengthUnit)->symbol, /* Selected unit symbol */
-				// 	'values' => [
-				// 		'cm' => 'cm',
-				// 		'in' => 'in',
-				// 		'mm' => 'mm'
-				// 	]
-				// ];
-				// break;
-
-
-				// case 'weight_unit_id':
-				// $formattedProduct['weight_unit'] = [
-				// 	'selected' => optional($product->weightUnit)->symbol,
-				// 	'values' => [
-				// 		'kg' => 'Kilograms',
-				// 		'lbs' => 'Pounds',
-				// 		'grams' => 'Grams'
-				// 	]
-				// ];
-				// break;
-				// case 'weight_unit_id':
-				// $formattedProduct['weight_unit'] = [
-				// 	'selected' => optional($product->weightUnit)->symbol,
-				// 	'values' => [
-				// 		'kg' => 'Kilograms',
-				// 		'lbs' => 'Pounds',
-				// 		'grams' => 'Grams'
-				// 	]
-				// ];
-				// break;
-				// case 'length_unit_id':
-				// $formattedProduct['length_unit'] = [
-				// 	'selected' => optional($product->lengthUnit)->symbol,
-				// 	'values' => [
-				// 		'mm' => 'mm',
-				// 		'cm' => 'cm',
-				// 		'inch' => 'inch'
-				// 	]
-				// ];
-				// break;
-				break;
 				case 'categories':
 				$formattedProduct['categories'] = $product->categories ? $product->categories->map(function ($category) {
 					return [
@@ -674,103 +607,95 @@ class ProductController extends BaseController
 				}) : [];
 				break;
 
-
-				break;
-				// case 'content':
-				// /* Extract <li> items from the content and remove HTML tags */
-				// preg_match_all('/<li>(.*?)<\/li>/', $value, $matches);
-				// $formattedProduct[$attribute] = $matches[1] ?? [];
-				// break;
-
 				case 'description':
-					$decodedDescription = json_decode($value, true); // Decode JSON string to array
+				$decodedDescription = json_decode($value, true);
 					// Send as array if valid, else send raw string
-					$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
-					break;
+				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
+				break;
 
-					case 'frequently_bought_together':
-					/* Ensure $value is a valid JSON string */
-					$decoded = json_decode($value, true);
+				case 'frequently_bought_together':
+				/* Ensure $value is a valid JSON string */
+				$decoded = json_decode($value, true);
 
-					if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
-						$formattedProduct[$attribute] = []; /* Default to an empty array if decoding fails */
-					} else {
-						/* Get all product IDs from the frequently bought together items */
-						$productIds = array_map(function($item) {
-							/* Check if the item is an array and contains 'value' or it's a comma-separated string */
-							return is_array($item) ? ($item['value'] ?? null) : $item;
-						}, $decoded);
+				if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+					$formattedProduct[$attribute] = []; /* Default to an empty array if decoding fails */
+				} else {
+					/* Get all product IDs from the frequently bought together items */
+					$productIds = array_map(function($item) {
+						/* Check if the item is an array and contains 'value' or it's a comma-separated string */
+						return is_array($item) ? ($item['value'] ?? null) : $item;
+					}, $decoded);
 
-						/* Flatten any possible comma-separated IDs into an array of individual IDs */
-						$productIds = array_merge(...array_map(function($id) {
-							return explode(',', $id);  /* Split comma-separated values */
-						}, $productIds));
+					/* Flatten any possible comma-separated IDs into an array of individual IDs */
+					$productIds = array_merge(...array_map(function($id) {
+						return explode(',', $id);  /* Split comma-separated values */
+					}, $productIds));
 
-						/* Filter out null or empty values */
-						$productIds = array_filter($productIds, function($id) {
-							return !empty($id); /* Ensure we only have non-empty IDs */
-						});
+					/* Filter out null or empty values */
+					$productIds = array_filter($productIds, function($id) {
+						return !empty($id); /* Ensure we only have non-empty IDs */
+					});
 
-						/* If we have product IDs, fetch their SKUs from the Product model */
-						$productSkus = [];
-						if (!empty($productIds)) {
-							/* Query the Product model to get SKUs for these product IDs */
-							$products = \App\Models\Product::whereIn('id', $productIds)
-							->select('id', 'sku')
-							->get()
-							->keyBy('id');
+					/* If we have product IDs, fetch their SKUs from the Product model */
+					$productSkus = [];
+					if (!empty($productIds)) {
+						/* Query the Product model to get SKUs for these product IDs */
+						$products = \App\Models\Product::whereIn('id', $productIds)
+						->select('id', 'sku')
+						->get()
+						->keyBy('id');
 
-							/* Create a mapping of product ID to SKU */
-							foreach ($products as $product) {
-								$productSkus[$product->id] = $product->sku;
-							}
+						/* Create a mapping of product ID to SKU */
+						foreach ($products as $product) {
+							$productSkus[$product->id] = $product->sku;
 						}
-
-						/* Now map the original items, but include SKUs as key-value pairs (ID => SKU) */
-						$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
-							$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
-							/* Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU) */
-							$ids = explode(',', $productIds);
-							$skus = array_map(function($id) use ($productSkus) {
-								return $productSkus[$id] ?? null;
-							}, $ids);
-
-							/* Return a flat array with 'id' => ID and 'sku' => SKU */
-							return array_map(function($id, $sku) {
-								return ['id' => $id, 'sku' => $sku]; /* Pair each ID with its SKU */
-							}, $ids, $skus);
-						}, $decoded);
-
-						/* Flatten the nested arrays (if any) and merge them into one array */
-						$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
 					}
-					break;
 
-					case 'images':
-					case 'video_path':
-					case 'documents':
-					$formattedProduct[$attribute] = is_array($value) ? $value : [];
-					break;
+					/* Now map the original items, but include SKUs as key-value pairs (ID => SKU) */
+					$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
+						$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
+						/* Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU) */
+						$ids = explode(',', $productIds);
+						$skus = array_map(function($id) use ($productSkus) {
+							return $productSkus[$id] ?? null;
+						}, $ids);
 
-					case 'status':
-					$formattedProduct[$attribute] = [['value' => $value]];
-					break;
+						/* Return a flat array with 'id' => ID and 'sku' => SKU */
+						return array_map(function($id, $sku) {
+							return ['id' => $id, 'sku' => $sku]; /* Pair each ID with its SKU */
+						}, $ids, $skus);
+					}, $decoded);
 
-					default:
-					$formattedProduct[$attribute] = $value;
-					break;
+					/* Flatten the nested arrays (if any) and merge them into one array */
+					$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
 				}
+				break;
+
+				case 'images':
+				case 'video_path':
+				case 'documents':
+				$formattedProduct[$attribute] = is_array($value) ? $value : [];
+				break;
+
+				case 'status':
+				$formattedProduct[$attribute] = [['value' => $value]];
+				break;
+
+				default:
+				$formattedProduct[$attribute] = $value;
+				break;
 			}
+		}
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Product detail',
-				'product' => $formattedProduct,
-				'categories_hierarchy' => $formattedCategories,
-				'admin_reviews' => $adminReviews,
-				'faq' => $faqs ?? [],
+		return response()->json([
+			'success' => true,
+			'message' => 'Product detail',
+			'product' => $formattedProduct,
+			'categories_hierarchy' => $formattedCategories,
+			'admin_reviews' => $adminReviews,
+			'faq' => $faqs ?? [],
 
-			]);
+		]);
 	}
 
 	/**
@@ -798,152 +723,149 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="warranty_information", type="string", example="One Year Warranty"),
 	 *                 @OA\Property(property="refund", type="string", example="1"),
 	 *				   @OA\Property(
-	*					property="categories",
-	*					type="array",
-	*					@OA\Items(type="integer", example=1),
-	*					description="Array of category IDs (can include parent and child)"
-	*					),
-	*                 @OA\Property(property="quantity", type="integer", example=100),
-	*                 @OA\Property(property="status", type="string", example="draft"),
-	*                 @OA\Property(property="stock_status", type="string", example="1"),
-	*                 @OA\Property(property="price", type="number", format="float", example=199.99),
-	*                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
-	*                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
-	*                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
-	*                 @OA\Property(property="tax_id", type="integer", example=3),
-	*                 @OA\Property(property="currency_id", type="integer", example=1),
-	*                 @OA\Property(property="name", type="string", example="Sample Product"),
-	*                 @OA\Property(property="description", type="string", example="Short description."),
-	*                    @OA\Property(
-	*                 property="benefits_features",
-	*                 type="array",
-	*                 @OA\Items(
-	*                  type="object",
-	*                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
-	*                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
-	*            			  )
-	* 					),
-	*                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
-	*                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
-	*                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
-	*                 @OA\Property(property="is_variation", type="boolean", example=false),
-	*                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
-	*                 @OA\Property(property="variant_color_title", type="string", example="Red"),
-	*                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
-	*                 @OA\Property(property="vendor_id", type="integer", example=7),
-	*                 @OA\Property(property="brand_id", type="integer", example=13),
-	*                 @OA\Property(property="views", type="integer", example=200),
-	*                 @OA\Property(property="units_sold", type="integer", example=50),
-	*                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
-	*                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
-	*                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
-	*                 @OA\Property(property="order", type="integer", example=1),
-	*                 @OA\Property(property="box_quantity", type="integer", example=5),
-	*                 @OA\Property(property="delivery_days", type="integer", example=3),
-	* 				  @OA\Property(
-	*                     property="faqs",
-	*                     type="array",
-	*                     @OA\Items(
-	*                         @OA\Property(property="question", type="string", example="What is the warranty period?"),
-	*                         @OA\Property(property="answer", type="string", example="The warranty period is 1 year."),
-	*                         @OA\Property(property="category_id", type="integer", nullable=true, example=2),
-	*                         @OA\Property(property="status", type="integer", example=1)
-	*                     )
-	*                 ),
-	* 				  @OA\Property(
-	* 				      property="product_attributes",
-	* 				      type="object",
-	* 				      description="Dynamic attributes with attribute_id as key",
-	* 				      @OA\AdditionalProperties(
-	* 				          type="string",
-	* 				          description="Attribute value corresponding to the attribute_id"
-	* 				      ),
-	* 				      example={
-	* 				          "1": "1111",
-	* 				          "4": "tanuj",
-	* 				          "5": "raaj",
-	* 				          "11": "ahmad"
-	* 				      },
-	* 				      nullable=true
-	* 				  )
-	*             )
-	*         )
-	*     ),
-	*     @OA\Response(
-	*         response=201,
-	*         description="Review created successfully",
-	*         @OA\JsonContent(
-	*             type="object",
-	*             @OA\Property(property="success", type="boolean", example=true),
-	*             @OA\Property(property="message", type="string", example="Review created successfully."),
-	*             @OA\Property(property="review", type="object",
-	*                 @OA\Property(property="id", type="integer", example=1),
-	*                 @OA\Property(property="customer_id", type="integer", example=1),
-	*                 @OA\Property(property="customer_name", type="string", example="John Doe"),
-	*                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
-	*                 @OA\Property(property="product_id", type="integer", example=5),
-	*                 @OA\Property(property="star", type="integer", example=5),
-	*                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
-	*                 @OA\Property(property="status", type="string", example="pending"),
-	*                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
-	*                 @OA\Property(property="created_at", type="string", format="date-time"),
-	*                 @OA\Property(property="updated_at", type="string", format="date-time"),
-	* 				   @OA\Property(property="faqs", type="array",
-	*                 @OA\Items(
-	*                     @OA\Property(property="question", type="string"),
-	*                     @OA\Property(property="answer", type="string"),
-	*                     @OA\Property(property="category_id", type="integer", nullable=true),
-	*                     @OA\Property(property="status", type="integer")
-	*                 )
-	*             )
-	*             )
-	*         )
-	*     ),
-	*     @OA\Response(
-	*         response=200,
-	*         description="Review updated successfully",
-	*         @OA\JsonContent(
-	*             type="object",
-	*             @OA\Property(property="success", type="boolean", example=true),
-	*             @OA\Property(property="message", type="string", example="Review updated successfully."),
-	*             @OA\Property(property="review", type="object",
-	*                 @OA\Property(property="id", type="integer", example=1),
-	*                 @OA\Property(property="customer_id", type="integer", example=1),
-	*                 @OA\Property(property="customer_name", type="string", example="John Doe"),
-	*                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
-	*                 @OA\Property(property="product_id", type="integer", example=5),
-	*                 @OA\Property(property="star", type="integer", example=5),
-	*                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
-	*                 @OA\Property(property="status", type="string", example="published"),
-	*                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
-	*                 @OA\Property(property="created_at", type="string", format="date-time"),
-	*                 @OA\Property(property="updated_at", type="string", format="date-time")
-	*             )
-	*         )
-	*     ),
-
-	*     @OA\Response(
-	*         response=400,
-	*         description="Validation Error",
-	*         @OA\JsonContent(
-	*             type="object",
-	*             @OA\Property(property="success", type="boolean", example=false),
-	*             @OA\Property(property="message", type="array", @OA\Items(type="string"), example={
-	*                 "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
-	*                 "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
-	*                 "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-	*                 "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
-	*                 "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
-	*                 "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
-	*                 "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
-	*             })
-	*         )
-	*     ),
-	*     security={{"bearerAuth":{}}}
-	* )
-	*/
-
-
+	 *					property="categories",
+	 *					type="array",
+	 *					@OA\Items(type="integer", example=1),
+	 *					description="Array of category IDs (can include parent and child)"
+	 *					),
+	 *                 @OA\Property(property="quantity", type="integer", example=100),
+	 *                 @OA\Property(property="status", type="string", example="draft"),
+	 *                 @OA\Property(property="stock_status", type="string", example="1"),
+	 *                 @OA\Property(property="price", type="number", format="float", example=199.99),
+	 *                 @OA\Property(property="sale_price", type="number", format="float", example=149.99),
+	 *                 @OA\Property(property="cost_per_item", type="number", format="float", example=50.00),
+	 *                 @OA\Property(property="cost_per_item_currency", type="string", example="USD", description="Currency of the cost per item"),
+	 *                 @OA\Property(property="tax_id", type="integer", example=3),
+	 *                 @OA\Property(property="currency_id", type="integer", example=1),
+	 *                 @OA\Property(property="name", type="string", example="Sample Product"),
+	 *                 @OA\Property(property="description", type="string", example="Short description."),
+	 *                    @OA\Property(
+	 *                 property="benefits_features",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                  type="object",
+	 *                  @OA\Property(property="benifit", type="string", example="Fast shipping"),
+	 *                  @OA\Property(property="description", type="string", example="Get your order delivered within 24 hours.")
+	 *            			  )
+	 * 					),
+	 *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
+	 *                 @OA\Property(property="is_variation", type="boolean", example=false),
+	 *                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
+	 *                 @OA\Property(property="variant_color_title", type="string", example="Red"),
+	 *                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
+	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
+	 *                 @OA\Property(property="brand_id", type="integer", example=13),
+	 *                 @OA\Property(property="views", type="integer", example=200),
+	 *                 @OA\Property(property="units_sold", type="integer", example=50),
+	 *                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
+	 *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
+	 *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
+	 *                 @OA\Property(property="order", type="integer", example=1),
+	 *                 @OA\Property(property="box_quantity", type="integer", example=5),
+	 *                 @OA\Property(property="delivery_days", type="integer", example=3),
+	 * 				  @OA\Property(
+	 *                     property="faqs",
+	 *                     type="array",
+	 *                     @OA\Items(
+	 *                         @OA\Property(property="question", type="string", example="What is the warranty period?"),
+	 *                         @OA\Property(property="answer", type="string", example="The warranty period is 1 year."),
+	 *                         @OA\Property(property="category_id", type="integer", nullable=true, example=2),
+	 *                         @OA\Property(property="status", type="integer", example=1)
+	 *                     )
+	 *                 ),
+	 * 				  @OA\Property(
+	 * 				      property="product_attributes",
+	 * 				      type="object",
+	 * 				      description="Dynamic attributes with attribute_id as key",
+	 * 				      @OA\AdditionalProperties(
+	 * 				          type="string",
+	 * 				          description="Attribute value corresponding to the attribute_id"
+	 * 				      ),
+	 * 				      example={
+	 * 				          "1": "1111",
+	 * 				          "4": "tanuj",
+	 * 				          "5": "raaj",
+	 * 				          "11": "ahmad"
+	 * 				      },
+	 * 				      nullable=true
+	 * 				  )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=201,
+	 *         description="Review created successfully",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Review created successfully."),
+	 *             @OA\Property(property="review", type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="customer_id", type="integer", example=1),
+	 *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
+	 *                 @OA\Property(property="product_id", type="integer", example=5),
+	 *                 @OA\Property(property="star", type="integer", example=5),
+	 *                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
+	 *                 @OA\Property(property="status", type="string", example="pending"),
+	 *                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
+	 *                 @OA\Property(property="created_at", type="string", format="date-time"),
+	 *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+	 * 				   @OA\Property(property="faqs", type="array",
+	 *                 @OA\Items(
+	 *                     @OA\Property(property="question", type="string"),
+	 *                     @OA\Property(property="answer", type="string"),
+	 *                     @OA\Property(property="category_id", type="integer", nullable=true),
+	 *                     @OA\Property(property="status", type="integer")
+	 *                 )
+	 *             )
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=200,
+	 *         description="Review updated successfully",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=true),
+	 *             @OA\Property(property="message", type="string", example="Review updated successfully."),
+	 *             @OA\Property(property="review", type="object",
+	 *                 @OA\Property(property="id", type="integer", example=1),
+	 *                 @OA\Property(property="customer_id", type="integer", example=1),
+	 *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
+	 *                 @OA\Property(property="customer_email", type="string", example="john.doe@example.com"),
+	 *                 @OA\Property(property="product_id", type="integer", example=5),
+	 *                 @OA\Property(property="star", type="integer", example=5),
+	 *                 @OA\Property(property="comment", type="string", example="Great product, highly recommended!"),
+	 *                 @OA\Property(property="status", type="string", example="published"),
+	 *                 @OA\Property(property="images", type="array", @OA\Items(type="string")),
+	 *                 @OA\Property(property="created_at", type="string", format="date-time"),
+	 *                 @OA\Property(property="updated_at", type="string", format="date-time")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(
+	 *         response=400,
+	 *         description="Validation Error",
+	 *         @OA\JsonContent(
+	 *             type="object",
+	 *             @OA\Property(property="success", type="boolean", example=false),
+	 *             @OA\Property(property="message", type="array", @OA\Items(type="string"), example={
+	 *                 "Refund policy should be numeric and either 1 for Non-Refundable, 2 for 15 Days Refund, or 3 for 90 Days Refund.",
+	 *                 "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.",
+	 *                 "Invalid length unit value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+	 *                 "Invalid weight unit value. Valid values are 5 (kg), 6 (g), or 9 (lbs).",
+	 *                 "Invalid shipping length value. Valid values are 1 (cm), 3 (inch), or 11 (mm).",
+	 *                 "Invalid store value. Valid store IDs are: 1, 7, 8, 16, 17, ... 60",
+	 *                 "Invalid brand value. Valid brand IDs are: 13, 14, 18, 19, ... 60"
+	 *             })
+	 *         )
+	 *     ),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
 	public function update(Request $request, $productId)
 	{
 		/* Log the incoming request for debugging */
@@ -952,9 +874,9 @@ class ProductController extends BaseController
 		$product = Product::find($productId);
 
 		if (!$product) {
-    	return response()->json([
-        'success' => false,
-        'message' => 'Product does not exist.'
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
 			]);
 		}
 
@@ -1216,7 +1138,7 @@ class ProductController extends BaseController
 
 
 		/* Get all input data except '_method' */
-		$input = $request->except('_method');
+		$input = $request->except('_method', 'status');
 		/* Remove 'faqs' from the input before validation */
 
 		/* Process the new fields if they exist in the request */
@@ -1645,17 +1567,17 @@ class ProductController extends BaseController
 		/* Save the product */
 		$product->save();
 
-		if (isset($input['status'])) {
+		if (isset($request->status)) {
 			$validStatuses = ['draft', 'published', 'pending'];
 
-			if (!in_array($input['status'], $validStatuses)) {
+			if (!in_array($request->status, $validStatuses)) {
 				return response()->json([
 					'success' => false,
 					'message' => "Invalid status value. Allowed values: draft, published, pending."
 				]);
 			}
 
-			if ($input['status'] === 'published') {
+			if ($request->status === 'published') {
 
 				// Reload full product with required relationships
 				$product = Product::with(['productAttributes', 'sellingUnitAttribute', 'productSuppliers'])->find($product->id);
@@ -1701,7 +1623,7 @@ class ProductController extends BaseController
 			}
 
 			/* Passed all validations, now update the status */
-			$product->status = $input['status'];
+			$product->status = $request->status;
 			$product->save();
 		}
 
@@ -2120,7 +2042,6 @@ class ProductController extends BaseController
 		}
 	}
 
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/products/category/{category_id}",
@@ -2439,7 +2360,6 @@ class ProductController extends BaseController
 			'data' => $formattedProducts
 		]);
 	}
-
 
 	public function getFilteredProductsByCategorybd3($category_ids)
 	{
