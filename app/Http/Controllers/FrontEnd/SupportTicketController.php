@@ -2,9 +2,11 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\Controller;
-use App\Models\SupportTicket;
+use App\Models\FrontEnd\SupportTicket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 /**
  * @OA\Tag(name="SupportTickets")
@@ -41,88 +43,254 @@ class SupportTicketController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'full_name'     => 'required|string|max:255',
-            'email'         => 'required|email',
-            'company_name'  => 'nullable|string',
-            'phone_number'  => 'nullable|string|max:20',
-            'category_id'   => 'required|integer',
-            'priority_id'   => 'required|integer',
-            'subject'       => 'required|string',
-            'description'   => 'required|string',
-            'reference_id'  => 'nullable|string',
-            'file'          => 'nullable|file|max:2048',
-            'customer_id'   => 'nullable|integer', 
+        try {
+            $validated = $request->validate([
+                'full_name'     => 'required|string|max:255',
+                'email'         => 'required|email',
+                'company_name'  => 'nullable|string',
+                'phone_number'  => 'nullable|string|max:20',
+                'category_id'   => 'required|integer',
+                'priority_id'   => 'required|integer',
+                'subject'       => 'required|string',
+                'description'   => 'required|string',
+                'reference_id'  => 'nullable|string',
+                'file'          => 'nullable|file|max:2048',
+                'customer_id'   => 'nullable|integer',
+            ]);
 
-        ]);
+            if ($request->hasFile('file')) {
+              $path = $request->file('file')->store('support-tickets', 's3');
+                $validated['file_path'] = $path;
+                $validated['file_url'] = Storage::disk('s3')->url($path);
 
-        if ($request->hasFile('file')) {
-            $validated['file_path'] = $request->file('file')->store('support-tickets', env('STORAGE_ENV', 'production'));
+            }
+
+            $ticket = SupportTicket::create($validated);
+
+            return response()->json([
+                'success' => true,
+                'data' => $ticket,
+                'message' => 'Support ticket created successfully.'
+            ], 201);
+
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation error',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (\Exception $e) {
+            Log::error('Support Ticket Error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+/**
+ * @OA\Get(
+ *     path="/api/frontend/support-tickets",
+ *     tags={"SupportTickets"},
+ *     summary="List all support tickets with optional filters, search, and sorting",
+ *     security={{"bearerAuth":{}}},
+ *     @OA\Parameter(
+ *         name="search",
+ *         in="query",
+ *         description="Search keyword for subject or description",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="status",
+ *         in="query",
+ *         description="Filter tickets by status (e.g., open, closed, pending)",
+ *         required=false,
+ *         @OA\Schema(type="string")
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_by",
+ *         in="query",
+ *         description="Field to sort by (created_at, updated_at, subject, status)",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"created_at", "updated_at", "subject", "status"})
+ *     ),
+ *     @OA\Parameter(
+ *         name="sort_order",
+ *         in="query",
+ *         description="Sort order (asc or desc)",
+ *         required=false,
+ *         @OA\Schema(type="string", enum={"asc", "desc"})
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="Success",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="data", type="array",
+ *                 @OA\Items(
+ *                     @OA\Property(property="id", type="integer", example=1),
+ *                     @OA\Property(property="subject", type="string", example="Login Issue"),
+ *                     @OA\Property(property="status", type="string", example="open"),
+ *                     @OA\Property(property="description", type="string", example="I can't log in to my account."),
+ *                     @OA\Property(property="category", type="string", example="Technical"),
+ *                     @OA\Property(property="priority", type="string", example="High"),
+ *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-07-21T15:03:00Z"),
+ *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-07-22T09:15:00Z")
+ *                 )
+ *             ),
+ *             @OA\Property(property="message", type="string", example="Support tickets fetched successfully.")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=500,
+ *         description="Internal Server Error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="Failed to fetch support tickets."),
+ *             @OA\Property(property="error", type="string", example="Exception message here")
+ *         )
+ *     )
+ * )
+ */
+
+public function index(Request $request)
+{
+    try {
+        $query = SupportTicket::with(['category:id,name', 'priority:id,name']);
+
+        // 🔍 Search by subject or description
+        if ($request->has('search') && !empty($request->search)) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('subject', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+            });
         }
 
-        $ticket = SupportTicket::create($validated);
+        // ✅ Filter by status
+        if ($request->has('status') && !empty($request->status)) {
+            $query->where('status', $request->status);
+        }
 
-        return response()->json($ticket, 201);
-    }
+        // 🔃 Sorting
+        $sortBy = $request->get('sort_by', 'created_at'); // Default: created_at
+        $sortOrder = $request->get('sort_order', 'desc'); // Default: desc
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/support-tickets",
-     *     tags={"SupportTickets"},
-     *     summary="List all tickets",
-     *     security={{"bearerAuth":{}}},
-     *     @OA\Response(response=200, description="Success")
-     * )
-     */
-    public function index()
-    {
-        return response()->json(SupportTicket::all());
+        $allowedSortFields = ['created_at', 'updated_at', 'subject', 'status'];
+        if (!in_array($sortBy, $allowedSortFields)) {
+            $sortBy = 'created_at';
+        }
+
+        $tickets = $query->orderBy($sortBy, $sortOrder)->get();
+
+        $transformed = $tickets->map(function ($ticket) {
+            return [
+                'id' => $ticket->id,
+                'subject' => $ticket->subject,
+                'status' => $ticket->status,
+                'description' => $ticket->description,
+                'category' => $ticket->category ? $ticket->category->name : null,
+                'priority' => $ticket->priority ? $ticket->priority->name : null,
+                'created_at' => $ticket->created_at,
+                'updated_at' => $ticket->updated_at,
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformed,
+            'message' => 'Support tickets fetched successfully.'
+        ], 200);
+
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@index error: ' . $e->getMessage());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch support tickets.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
     /**
      * @OA\Get(
      *     path="/api/frontend/support-tickets/{id}",
      *     tags={"SupportTickets"},
      *     summary="Get a ticket by ID",
-     *     @OA\Parameter(
-     *         name="id", in="path", required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
+     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
      *     security={{"bearerAuth":{}}},
      *     @OA\Response(response=200, description="Ticket Found"),
      *     @OA\Response(response=404, description="Not Found")
      * )
      */
-    public function show($id)
-    {
-        return response()->json(SupportTicket::findOrFail($id));
+   public function show($id)
+{
+    try {
+        $ticket = SupportTicket::with(['category', 'priority'])->findOrFail($id);
+
+        return response()->json([
+            'success' => true,
+            'data' => $ticket,
+            'message' => 'Support ticket found.'
+        ], 200);
+    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Support ticket not found.'
+        ], 404);
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@show error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch ticket.',
+            'error' => $e->getMessage()
+        ], 500);
     }
-    
+}
+
+
     /**
      * @OA\Get(
      *     path="/api/frontend/customers/{customer_id}/support-tickets",
      *     tags={"SupportTickets"},
      *     summary="Get tickets for a specific customer",
      *     security={{"bearerAuth":{}}},
-     *     @OA\Parameter(
-     *         name="customer_id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
+     *     @OA\Parameter(name="customer_id", in="path", required=true, @OA\Schema(type="integer")),
      *     @OA\Response(response=200, description="Tickets found"),
      *     @OA\Response(response=404, description="No tickets found")
      * )
      */
-    public function getTicketsByCustomer($customer_id)
-    {
-        $tickets = SupportTicket::where('customer_id', $customer_id)->get();
+   public function getTicketsByCustomer($customer_id)
+{
+    try {
+        $tickets = SupportTicket::with(['category', 'priority'])
+            ->where('customer_id', $customer_id)
+            ->get();
 
         if ($tickets->isEmpty()) {
-            return response()->json(['message' => 'No tickets found'], 404);
+            return response()->json([
+                'success' => false,
+                'message' => 'No tickets found for this customer.'
+            ], 404);
         }
 
-        return response()->json($tickets, 200);
+        return response()->json([
+            'success' => true,
+            'data' => $tickets,
+            'message' => 'Support tickets found.'
+        ], 200);
+    } catch (\Exception $e) {
+        Log::error('SupportTicketController@getTicketsByCustomer error: ' . $e->getMessage());
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to fetch customer tickets.',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
 }

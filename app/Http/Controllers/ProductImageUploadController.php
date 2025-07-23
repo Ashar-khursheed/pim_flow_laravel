@@ -149,31 +149,93 @@ class ProductImageUploadController extends Controller
      * @param string $extractPath
      * @return array
      */
+    // private function processExtractedDirectory($extractPath)
+    // {
+    //     $processedSkus = [];
+        
+    //     // Get all directories in the extracted path (each directory represents a SKU)
+    //     $skuDirectories = File::directories($extractPath);
+        
+    //     foreach ($skuDirectories as $skuDir) {
+    //         // Get the SKU from the directory name
+    //         $sku = basename($skuDir);
+            
+    //         // Find product with this SKU using the existing Product model
+    //         $product = Product::where('sku', $sku)->first();
+            
+    //         if ($product) {
+    //             // Process images for this product
+    //             if ($product->approved == 1) {
+    //             $processedSkus[] = [
+    //                 'sku' => $sku,
+    //                 'status' => 'already_approved',
+    //                 'errors' => ['This product is already approved and cannot be modified.'],
+    //             ];
+    //             continue;
+    //              }
+    //              $result = $this->uploadProductImagesToS3($skuDir, $sku);
+
+    //         if (!empty($result['imageUrls'])) {
+    //             $product->images = $result['imageUrls'];
+    //             $product->save();
+
+    //             $processedSkus[] = [
+    //                 'sku' => $sku,
+    //                 'status' => empty($result['errors']) ? 'success' : 'partial_success',
+    //                 'image_count' => count($result['imageUrls']),
+    //                 'errors' => $result['errors']
+    //             ];
+    //         } else {
+    //             $processedSkus[] = [
+    //                 'sku' => $sku,
+    //                 'status' => 'no_valid_images_found',
+    //                 'errors' => $result['errors']
+    //             ];
+    //         }
+    //     } else {
+    //         $processedSkus[] = [
+    //             'sku' => $sku,
+    //             'status' => 'product_not_found'
+    //         ];
+    //     }
+    // }
     private function processExtractedDirectory($extractPath)
-    {
-        $processedSkus = [];
-        
-        // Get all directories in the extracted path (each directory represents a SKU)
-        $skuDirectories = File::directories($extractPath);
-        
-        foreach ($skuDirectories as $skuDir) {
-            // Get the SKU from the directory name
-            $sku = basename($skuDir);
-            
-            // Find product with this SKU using the existing Product model
-            $product = Product::where('sku', $sku)->first();
-            
-            if ($product) {
-                // Process images for this product
-                if ($product->approved == 1) {
+{
+    $processedSkus = [];
+
+    // Get all directories in the extracted path (each directory represents a SKU)
+    $skuDirectories = File::directories($extractPath);
+
+    // Get the authenticated user and their role
+    $user = auth()->user();
+    $userRole = $user ? $user->getRoleNames()->first() : null;
+
+    // Define roles that are allowed to override the approval check
+    $allowedRoles = [
+        'Super Admin',
+        'Admin'
+    ];
+
+    foreach ($skuDirectories as $skuDir) {
+        // Get the SKU from the directory name
+        $sku = basename($skuDir);
+
+        // Find product with this SKU using the existing Product model
+        $product = Product::where('sku', $sku)->first();
+
+        if ($product) {
+            // Skip modification if approved AND user is not allowed
+            if ($product->approved == 1 && !in_array($userRole, $allowedRoles)) {
                 $processedSkus[] = [
                     'sku' => $sku,
                     'status' => 'already_approved',
                     'errors' => ['This product is already approved and cannot be modified.'],
                 ];
                 continue;
-                 }
-                 $result = $this->uploadProductImagesToS3($skuDir, $sku);
+            }
+
+            // Proceed with uploading
+            $result = $this->uploadProductImagesToS3($skuDir, $sku);
 
             if (!empty($result['imageUrls'])) {
                 $product->images = $result['imageUrls'];
@@ -202,6 +264,8 @@ class ProductImageUploadController extends Controller
 
     return $processedSkus;
 }
+
+
 
     /**
      * Upload images to S3 and return array of URLs and errors

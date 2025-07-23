@@ -60,6 +60,7 @@ use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
+use App\Http\Controllers\QuoteController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -98,11 +99,13 @@ use App\Http\Controllers\FrontEnd\GeoController as F_GeoController;
 use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
+use App\Http\Controllers\FrontEnd\FbtProductController  as F_FbtProductController;
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
-
-
+use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
+use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;
+use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
 
 
 use Illuminate\Support\Facades\Http;
@@ -344,8 +347,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
 	Route::apiResource('orders', OrderController::class);
 
-
-
+	Route::apiResource('quotes', QuoteController::class);
 
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
@@ -383,28 +385,39 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
+Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
 
+Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
+Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
-	Route::post('support-tickets', [SupportTicketController::class, 'store']);
-    Route::get('support-tickets', [SupportTicketController::class, 'index']);
-    Route::get('support-tickets/{id}', [SupportTicketController::class, 'show']);
-    Route::get('customers/{customer_id}/support-tickets', [SupportTicketController::class, 'getTicketsByCustomer']);
+	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
+    Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
+    Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
+    Route::get('/frontend/customers/{customer_id}/support-tickets', [F_SupportTicketController::class, 'getTicketsByCustomer']);
 
-	Route::get('customer-documents', [CustomerDocumentController::class, 'index']);
-    Route::post('customer-documents', [CustomerDocumentController::class, 'store']);
-    Route::delete('customer-documents/{id}', [CustomerDocumentController::class, 'destroy']);
-    Route::get('/customer-documents/{customer_id}', [CustomerDocumentController::class, 'customerDocuments']);
+	Route::get('/frontend/customer-documents', [F_CustomerDocumentController::class, 'index']);
+    Route::post('/frontend/customer-documents', [F_CustomerDocumentController::class, 'store']);
+    Route::delete('/frontend/customer-documents/{id}', [F_CustomerDocumentController::class, 'destroy']);
+    Route::get('/frontend/customer-documents/{customer_id}', [F_CustomerDocumentController::class, 'customerDocuments']);
 
-	Route::apiResource('contact-directories', F_ContactDirectoryController::class);
+	Route::prefix('frontend')->group(function () {
+    Route::get('/company-profiles', [CompanyProfileController::class, 'index']);
+    Route::post('/company-profiles', [CompanyProfileController::class, 'store']);
+    Route::get('/company-profiles/{id}', [CompanyProfileController::class, 'show']);
+    Route::put('/company-profiles/{id}', [CompanyProfileController::class, 'update']);
+    Route::delete('/company-profiles/{id}', [CompanyProfileController::class, 'destroy']);
+	});
+
+	Route::apiResource('/frontend/contact-directories', F_ContactDirectoryController::class);
 
 	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
-
+	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
 
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
@@ -418,6 +431,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
+	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
+	Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);
 	Route::put('frontend/orders/{id}/status', [F_OrderController::class, 'updateStatus']);
@@ -432,7 +447,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	// Additional wishlist routes
 	Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
 	Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
-
+	Route::Post('/frontend/wishlist/remove-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
+	Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
@@ -497,6 +513,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
+Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
+
 
 Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 

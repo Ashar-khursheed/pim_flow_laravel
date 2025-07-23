@@ -579,9 +579,8 @@ class SeoManagementController extends Controller
 
 		try {
 			
-			$validated = $request->validate([
+			$rules = [
 				'relational_id' => 'required|integer',
-				// 'relational_type' => 'required|string', // ❌ removed from validation
 				'url' => 'required|string',
 				'primary_keyword' => 'required|string',
 				'monthly_search_volume' => 'required|integer',
@@ -612,11 +611,19 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+				'banner_image_file' => 'nullable', // <-- default to nullable
 				'banner_image_alt_text' => 'nullable|string',
-			]);
+			];
 
-			$seo = SeoManagement::findOrFail($id);
+			// ✅ Only apply image validation if a file is uploaded
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
+			}
+
+			// 🚀 Now validate
+			$validated = $request->validate($rules);
+
+						$seo = SeoManagement::findOrFail($id);
 
 			// ✅ Validate relational_type and relational_id
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {

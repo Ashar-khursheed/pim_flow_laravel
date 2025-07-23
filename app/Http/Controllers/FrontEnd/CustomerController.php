@@ -162,7 +162,7 @@ class CustomerController extends BaseController
 			$guestCustomer->save();
 			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
 
-			 $this->sendToOdoo($guestCustomer);
+			$this->sendToOdoo($guestCustomer);
 
 			return response()->json([
 				'success' => true,
@@ -207,7 +207,7 @@ class CustomerController extends BaseController
 
 			$customer->notify(new WelcomeMail());
 
-			 $this->sendToOdoo($customer);
+			$this->sendToOdoo($customer);
 
 			return response()->json([
 				'success' => true,
@@ -442,35 +442,35 @@ class CustomerController extends BaseController
 			'email' => 'nullable|email',
 			'name'  => 'nullable|string',
 		]);
-	
+
 		$identityToken = $request->input('identity_token');
-	
+
 		try {
 			// Decode JWT header
 			$jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
 			$kid = $jwtHeader['kid'];
-	
+
 			// Get Apple public keys
 			$appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
 			$publicKeys = JWK::parseKeySet($appleKeys);
-	
+
 			// Decode token using Apple’s public key
 			$decoded = JWT::decode($identityToken, $publicKeys[$kid]);
 			$email = $decoded->email ?? $request->email;
 			$appleSub = $decoded->sub;
-	
+
 			if (!$appleSub) {
 				return response()->json(['message' => 'Apple token does not contain a valid sub.'], 422);
 			}
-	
+
 			// Try to find user by apple_id first
 			$customer = Customer::where('apple_id', $appleSub)->first();
-	
+
 			// If not found by apple_id, try email fallback
 			if (!$customer && $email) {
 				$customer = Customer::where('email', $email)->first();
 			}
-	
+
 			// If still not found, create new
 			if (!$customer) {
 				$customer = Customer::create([
@@ -491,9 +491,9 @@ class CustomerController extends BaseController
 					$customer->update(['apple_id' => $appleSub]);
 				}
 			}
-	
+
 			$token = $customer->createToken('apple-login')->plainTextToken;
-	
+
 			return response()->json([
 				'user' => $customer,
 				'token' => $token,
@@ -505,32 +505,32 @@ class CustomerController extends BaseController
 			], 401);
 		}
 	}
-	
+
 	public function googleLogin(Request $request)
 	{
 		$idToken = $request->input('credential');
-	
+
 		$client = new \Google_Client(['client_id' => '96165540519-5abr44463l214dog6teceibk8nmqlfm1.apps.googleusercontent.com']);
 		$payload = $client->verifyIdToken($idToken);
-	
+
 		if (!$payload) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Invalid Google token'
 			], 401);
 		}
-	
+
 		$email = $payload['email'];
 		$name = $payload['name'] ?? 'Guest';
 		$googleProfileImg = $payload['picture'] ?? null;
-	
+
 		$customer = Customer::where('email', $email)->first();
-	
+
 		if (!$customer) {
 			$dob = $request->input('dob');
 			$countryCode = $request->input('country_code');
 			$mobileNumber = $request->input('mobile_number');
-	
+
 			try {
 				$customer = Customer::create([
 					'name' => $name,
@@ -543,13 +543,13 @@ class CustomerController extends BaseController
 					'mobile_number' => $mobileNumber,
 					'profile_img' => $googleProfileImg,
 				]);
-	
+
 				// Optional: send a welcome message, without any password
 				// $customer->notify(new GuestWelcomeMail());
-	
+
 			} catch (\Exception $e) {
 				\Log::error('Google Login Registration Failed: ' . $e->getMessage());
-	
+
 				return response()->json([
 					'success' => false,
 					'message' => 'Registration failed. Please try again later.'
@@ -564,23 +564,23 @@ class CustomerController extends BaseController
 				], 403);
 			}
 		}
-	
+
 		// ✅ Issue token for authenticated session
 		$token = $customer->createToken('google-login')->plainTextToken;
-	
+
 		return response()->json([
 			'success' => true,
 			'message' => $customer->wasRecentlyCreated
-				? 'User registered successfully using Google.'
-				: 'User logged in successfully with Google.',
+			? 'User registered successfully using Google.'
+			: 'User logged in successfully with Google.',
 			'token' => $token,
 			'user' => $customer,
 		]);
 	}
-	
+
 	public function updateProfile(Request $request)
 	{
-		$user = auth()->user(); // Adjust for your guard
+		$user = auth()->user();
 
 		$request->validate([
 			'name'          => 'sometimes|string|max:255',
@@ -591,7 +591,7 @@ class CustomerController extends BaseController
 			'country_code'  => 'sometimes|string|max:10',
 			'mobile_number' => 'sometimes|string|max:20',
 			'profile_img'   => 'sometimes|image|mimes:jpeg,png,jpg,gif|max:2048',
-     	]);
+		]);
 
 		$user->fill($request->only([
 			'name',
@@ -635,34 +635,75 @@ class CustomerController extends BaseController
 		]);
 	}
 
-public function getProfile(Request $request)
-{
-    $user = auth()->user(); // Adjust based on guard if needed
+	public function getProfile(Request $request)
+	{
+		$user = auth()->user();
 
-    if (!$user) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Unauthorized',
-        ], 401);
-    }
+		if (!$user) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Unauthorized',
+			], 401);
+		}
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Profile fetched successfully',
-        'data' => [
-            'id'             => $user->id,
-            'name'           => $user->name,
-            'email'          => $user->email,
-            'type'           => $user->type,
-            'dob'            => $user->dob,
-            'country_code'   => $user->country_code,
-            'mobile_number'  => $user->mobile_number,
-            'profile_img'    => $user->profile_img,
-            'created_at'     => $user->created_at,
-            'updated_at'     => $user->updated_at,
-        ],
-    ]);
-}
+		return response()->json([
+			'success' => true,
+			'message' => 'Profile fetched successfully',
+			'data' => [
+				'id'             => $user->id,
+				'name'           => $user->name,
+				'email'          => $user->email,
+				'type'           => $user->type,
+				'dob'            => $user->dob,
+				'country_code'   => $user->country_code,
+				'mobile_number'  => $user->mobile_number,
+				'profile_img'    => $user->profile_img,
+				'created_at'     => $user->created_at,
+				'updated_at'     => $user->updated_at,
+			],
+		]);
+	}
 
+	/**
+	 * @OA\Post(
+	 *     path="/api/frontend/customers/change-password",
+	 *     summary="Change customer password",
+	 *     tags={"FrontEnd-Customer"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"old_password", "new_password", "new_password_confirmation"},
+	 *             @OA\Property(property="old_password", type="string", example="OldPass123"),
+	 *             @OA\Property(property="new_password", type="string", example="NewPass123"),
+	 *             @OA\Property(property="new_password_confirmation", type="string", example="NewPass123")
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Password changed successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function changePassword(Request $request)
+	{
+		$request->validate([
+			'old_password' => 'required|string',
+			'new_password' => 'required|string|min:8|confirmed',
+		]);
 
+		$customer = auth()->user();
+
+		if (!Hash::check($request->old_password, $customer->password)) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Old password is incorrect.',
+			], 422);
+		}
+
+		$customer->password = Hash::make($request->new_password);
+		$customer->save();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Password changed successfully',
+		]);
+	}
 }
