@@ -60,6 +60,7 @@ use App\Http\Controllers\CategoryMeasurementUnitPriorityController;
 use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
+use App\Http\Controllers\QuoteController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -346,8 +347,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('orders/{id}/shipments', [OrderController::class, 'createShipment']);
 	Route::apiResource('orders', OrderController::class);
 
-
-
+	Route::apiResource('quotes', QuoteController::class);
 
 	Route::get('/redirect-links/template', [RedirectLinkController::class, 'downloadTemplate']);
 	Route::get('/redirect-links', [RedirectLinkController::class, 'index']);
@@ -395,6 +395,8 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
+	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
+
 	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
     Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
     Route::get('/frontend/support-tickets/{id}', [F_SupportTicketController::class, 'show']);
@@ -430,6 +432,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
+	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
 	Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);

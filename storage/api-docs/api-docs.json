@@ -12402,7 +12402,7 @@
         "/api/frontend/company-profiles": {
             "get": {
                 "tags": [
-                    "Company Profiles"
+                    "Frontend Company Profiles"
                 ],
                 "summary": "Get the logged-in user's company profile",
                 "operationId": "721724750092147c50bc56782f035ee5",
@@ -12422,7 +12422,7 @@
             },
             "post": {
                 "tags": [
-                    "Company Profiles"
+                    "Frontend Company Profiles"
                 ],
                 "summary": "Create a new company profile for the logged-in user",
                 "operationId": "8bf6387e98c4d009c5c1fa52b4999fe9",
@@ -12481,7 +12481,7 @@
         "/api/frontend/company-profiles/{id}": {
             "get": {
                 "tags": [
-                    "Company Profiles"
+                    "Frontend Company Profiles"
                 ],
                 "summary": "Get a specific company profile by ID",
                 "operationId": "82c8c29d05624147727ad5a4dd201b06",
@@ -12514,7 +12514,7 @@
             },
             "put": {
                 "tags": [
-                    "Company Profiles"
+                    "Frontend Company Profiles"
                 ],
                 "summary": "Update the logged-in user's company profile",
                 "operationId": "6e18423876540d1e1149bff373c6628c",
@@ -12582,7 +12582,7 @@
             },
             "delete": {
                 "tags": [
-                    "Company Profiles"
+                    "Frontend Company Profiles"
                 ],
                 "summary": "Delete a company profile",
                 "operationId": "449322f0b0a774cd4cc9aeb3273812eb",
@@ -13395,6 +13395,57 @@
                 "responses": {
                     "200": {
                         "description": "Search results",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customers/change-password": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Change customer password",
+                "operationId": "5a9b3258e14a4df6fa0883529ba1e9c2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "old_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "old_password": {
+                                        "type": "string",
+                                        "example": "OldPass123"
+                                    },
+                                    "new_password": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    },
+                                    "new_password_confirmation": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -14416,6 +14467,40 @@
                     },
                     "404": {
                         "description": "No delivered orders found with products"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/tracking": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Track order by order ID",
+                "operationId": "93e60833826a585603af66f9454fd6e5",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Order ID to track",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12345
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -16652,6 +16737,7 @@
                             "enum": [
                                 "id",
                                 "quote_number",
+                                "quote_name",
                                 "shipping_charge",
                                 "total_amount",
                                 "total_products",
@@ -25885,6 +25971,269 @@
                 ]
             }
         },
+        "/api/quotes": {
+            "get": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Get all quotes with pagination and filters",
+                "operationId": "4d3d7fbebfc2d9ade65463dfdf630651",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by quote status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "quote_number",
+                                "quote_name",
+                                "customer_name",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Create a new quote",
+                "operationId": "e5f4d8774f0cc8799899e26186b79438",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quote_number",
+                                    "quote_name",
+                                    "customer_id",
+                                    "customer_address_id",
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "quote_number": {
+                                        "type": "string",
+                                        "example": "1111"
+                                    },
+                                    "quote_name": {
+                                        "type": "string",
+                                        "example": "Kitchen equipment quote"
+                                    },
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "send_customer_email": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "emails": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "john@example.com"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/quotes/{id}": {
+            "get": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Get quote details",
+                "operationId": "edf0acd5f16e3027ed530263b3747831",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/redirect-links": {
             "get": {
                 "tags": [
@@ -31701,8 +32050,8 @@
             "description": "CCAvenue"
         },
         {
-            "name": "Company Profiles",
-            "description": "Company Profiles"
+            "name": "Frontend Company Profiles",
+            "description": "Frontend Company Profiles"
         },
         {
             "name": "Frontend ContactDirectory",
@@ -31871,6 +32220,10 @@
         {
             "name": "Product Title Formula",
             "description": "Product Title Formula"
+        },
+        {
+            "name": "Quotes",
+            "description": "Quotes"
         },
         {
             "name": "Redirect Links",

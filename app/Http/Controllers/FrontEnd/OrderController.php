@@ -388,20 +388,20 @@ class OrderController extends BaseController
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 		}
-					// ✅ Returnable status check based on delivery date and return policy
-			if (
-				$order->status === 'Delivered' &&
-				$orderProduct->product_supplier &&
-				isset($orderProduct->product_supplier['return_policy'])
-			) {
-				$returnDays = (int) $orderProduct->product_supplier['return_policy'];
-				$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
-				$returnUntil = $deliveryDate->copy()->addDays($returnDays);
 
-				$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
-			} else {
-				$orderProduct->is_returnable = 'yes';
-			}
+		if (
+			$order->status === 'Delivered' &&
+			$orderProduct->product_supplier &&
+			isset($orderProduct->product_supplier['return_policy'])
+		) {
+			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
+
+			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+		} else {
+			$orderProduct->is_returnable = 'yes';
+		}
 
 		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
@@ -703,5 +703,40 @@ class OrderController extends BaseController
 			'message' => 'Products retrieved from your previous orders.',
 			'data' => $products
 		], 200);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/orders/tracking",
+	 *     summary="Track order by order ID",
+	 *     tags={"FrontEnd-Orders"},
+	 *     @OA\Parameter(name="order_id", in="query", required=true, description="Order ID to track", @OA\Schema(type="integer", example=12345)),
+	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function orderTracking(Request $request)
+	{
+		$request->validate([
+			'order_id' => 'required|integer|exists:orders,id',
+		]);
+
+		$customer = auth()->user();
+
+		$orderTracking = OrderTracking::where('id', $request->order_id)->get();
+
+		if (!$orderTracking) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found or access denied.',
+				'data' => null,
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Tracking info retrieved',
+			'data' => $orderTracking,
+		]);
 	}
 }
