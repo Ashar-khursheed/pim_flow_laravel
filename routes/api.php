@@ -385,7 +385,6 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
-Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -395,6 +394,8 @@ Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'get
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 
 	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
     Route::get('/frontend/support-tickets', [F_SupportTicketController::class, 'index']);
