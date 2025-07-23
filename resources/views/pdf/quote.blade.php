@@ -142,11 +142,11 @@
 					</div>
 					<div class="text-right text-[11px]" bis_skin_checked="1">
 						<p class="font-bold">{{ $companyName }}</p>
-						<p>8800 Bissonnet Street, Ste A,</p>
-						<p>Houston, Texas 77074</p>
-						<p>Phone: 1 (866) 446-7322</p>
-						<p>Email: sales@thehorecastore.com</p>
-						<p>www.thehorecastore.com</p>
+						<p>{{ $street }}</p>
+						<p>{{ $city }}</p>
+						<p>Phone: {{ $phone }}</p>
+						<p>Email: {{ $siteEmail }}</p>
+						<p>{{ $siteUrl }}</p>
 					</div>
 				</div>
 
@@ -157,10 +157,10 @@
 						</div>
 						<div class="pl-2 pr-2 pb-4" bis_skin_checked="1">
 							<p class="font-bold text-sm mb-1 uppercase"></p>
-							<p class="mb-2 text-[14px]">Rosenberg<br>Rosenberg, Texas, United States</p>
+							<p class="mb-2 text-[14px]">{{ $name }}<br>{{ $address }}, {{ $city }}, {{ $country }}</p>
 							<div class="space-y-1 text-xs" bis_skin_checked="1">
 								<p></p>
-								<p class="text-[14px]"><span class="font-semibold ">Email:</span> rishi694076@gmail.com</p>
+								<p class="text-[14px]"><span class="font-semibold ">Email:</span>{{ $email }}</p>
 							</div>
 						</div>
 					</div>

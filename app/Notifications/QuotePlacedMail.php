@@ -36,11 +36,27 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 	{
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+
 		$companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC.' : 'THE HORECA STORE INC.';
+		$street = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
+		$city = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
+		$phone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'www.thehorecastore.com';
+
+		$name = $notifiable->type === 'Private' ? $notifiable->name : $notifiable->business_name;
+
+		$customerAddress = $this->quote->customerAddress;
+		$address = $customerAddress->address ?? '';
+		$city = $customerAddress->city ?? '';
+		$country = $customerAddress->country ?? '';
+
+		$email = $notifiable->email ?? '';
+
+		$createdAt = $this->quote->created_at->format('M d Y');
 
 
 
-		$name = $notifiable->name ?? 'User';
 		$quoteUrl = url("/registration/all-quotes");
 
 		$quoteNumber = $this->quote->quote_number;
@@ -115,7 +131,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		$taxAmount = number_format($this->quote->tax_amount ?? 0, 2, '.', ',');
 		$total = number_format($this->quote->total_amount ?? 0, 2, '.', ',');
 
-		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'www.thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		$params = [
