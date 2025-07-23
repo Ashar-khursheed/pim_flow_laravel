@@ -1446,9 +1446,29 @@ class ProductController extends BaseController
 				]);
 			}
 
+			
+			$descriptionData = json_decode($product->description, true);
+			$descriptionValid = is_array($descriptionData) && !empty(array_filter($descriptionData, function($d) {
+				return !empty($d);
+			}));
+
+			// Validate benefits_features
+			$benefitsData = json_decode($product->benefits_features, true);
+			$benefitsValid = is_array($benefitsData) && !empty(array_filter($benefitsData, function($b) {
+				return !empty($b);
+			}));
+
+			if ($input['status'] == 'published' && (!$descriptionValid || !$benefitsValid)) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You cannot publish this product until both Description and Benefits & Features are filled.'
+				], 422);
+			}
+
 			$product->status = $input['status']; /* Assign status */
 		}
 
+		
 		/* Handle benefits_features field with content writer permission check */
 			// if ($request->has('benefits_features')) {
 			// 	$benefitsFeaturesInput = $request->input('benefits_features');
