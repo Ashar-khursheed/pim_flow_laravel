@@ -388,6 +388,7 @@ class OrderController extends BaseController
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 		}
+
 		if (
 			$order->status === 'Delivered' &&
 			$orderProduct->product_supplier &&
@@ -722,14 +723,9 @@ class OrderController extends BaseController
 
 		$customer = auth()->user();
 
-		$order = Order::with([
-			'tracking',
-		])
-		->where('id', $request->order_id)
-		->where('customer_id', $customer->id)
-		->first();
+		$orderTracking = OrderTracking::where('id', $request->order_id)->get();
 
-		if (!$order) {
+		if (!$orderTracking) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Order not found or access denied.',
@@ -740,7 +736,7 @@ class OrderController extends BaseController
 		return response()->json([
 			'success' => true,
 			'message' => 'Tracking info retrieved',
-			'data' => $order,
+			'data' => $orderTracking,
 		]);
 	}
 }
