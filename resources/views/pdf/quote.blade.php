@@ -134,14 +134,14 @@
 			<div class="flex  flex-col justify-between h-full" bis_skin_checked="1">
 				<div class="grid grid-cols-3 gap-4 p-2" bis_skin_checked="1">
 					<div class="flex items-center" bis_skin_checked="1">
-						<img class="h-30 w-40" src="/images/horecalogo.png" alt="logo">
+						<img class="h-30 w-40" src="{{ $logoUrl }}" alt="logo">
 					</div>
 					<div class="text-center" bis_skin_checked="1">
 						<h1 class="text-[16px] font-bold">SALES QUOTATION</h1>
 						<p class="text-[13px] font-bold text-[#186737]">Best Price. Zero Hassle.</p>
 					</div>
 					<div class="text-right text-[11px]" bis_skin_checked="1">
-						<p class="font-bold">THE HORECA STORE INC.</p>
+						<p class="font-bold">{{ $companyName }}</p>
 						<p>8800 Bissonnet Street, Ste A,</p>
 						<p>Houston, Texas 77074</p>
 						<p>Phone: 1 (866) 446-7322</p>
