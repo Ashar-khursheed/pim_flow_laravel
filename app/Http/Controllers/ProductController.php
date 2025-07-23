@@ -1565,7 +1565,6 @@ class ProductController extends BaseController
 		}
 
 		/* Save the product */
-		$product->status = 'draft';
 		$product->save();
 
 		if (isset($request->status)) {
