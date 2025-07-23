@@ -385,6 +385,7 @@ Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
 
 
+Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
@@ -430,6 +431,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
+	Route::get('frontend/orders/tracking', [F_OrderController::class, 'orderTracking']);
 	Route::post('frontend/order-products/multiple-return', [F_ReturnOrderProductController::class, 'multipleReturn']);
 	Route::post('frontend/order-products/{id}/return', [F_ReturnOrderProductController::class, 'store']);
 	Route::get('frontend/orders/buy-it-again', [F_OrderController::class, 'buyItAgain']);

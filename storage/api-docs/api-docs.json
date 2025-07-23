@@ -13407,6 +13407,57 @@
                 ]
             }
         },
+        "/api/frontend/customers/change-password": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Change customer password",
+                "operationId": "5a9b3258e14a4df6fa0883529ba1e9c2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "old_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "old_password": {
+                                        "type": "string",
+                                        "example": "OldPass123"
+                                    },
+                                    "new_password": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    },
+                                    "new_password_confirmation": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/customer-documents": {
             "get": {
                 "tags": [
@@ -14416,6 +14467,40 @@
                     },
                     "404": {
                         "description": "No delivered orders found with products"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/tracking": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Track order by order ID",
+                "operationId": "93e60833826a585603af66f9454fd6e5",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Order ID to track",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12345
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
