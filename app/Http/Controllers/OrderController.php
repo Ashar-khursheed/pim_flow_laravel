@@ -162,10 +162,20 @@ class OrderController extends Controller
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
+
+					/* Format numeric values to 2 decimal places */
+					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+						if (isset($quoteProduct->$key)) {
+							$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+						}
+					}
 				}
 
-				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -340,10 +350,20 @@ class OrderController extends Controller
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
+
+				/* Format numeric values to 2 decimal places */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
 			}
 
-			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}
@@ -414,13 +434,20 @@ class OrderController extends Controller
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
-			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days']);
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
+
+			/* Format numeric values to 2 decimal places */
+			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+				if (isset($quoteProduct->$key)) {
+					$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+				}
+			}
 		}
 
-		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 			if (isset($order->$key)) {
 				$order->$key = number_format($order->$key, 2, '.', '');
 			}
@@ -591,10 +618,20 @@ class OrderController extends Controller
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
+
+				/* Format numeric values to 2 decimal places */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
 			}
 
-			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 				if (isset($order->$key)) {
 					$order->$key = number_format($order->$key, 2, '.', '');
 				}

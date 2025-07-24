@@ -65,46 +65,45 @@ class AuthController extends Controller
 	// 	]);
 	// }
 	public function store(Request $request)
-{
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
+	{
+	    $request->validate([
+	        'email' => 'required|email',
+	        'password' => 'required',
+	    ]);
 
-    $customer = Customer::where('email', $request->email)->first();
+	    $customer = Customer::where('email', $request->email)->first();
 
-    if (!$customer) {
-        return response()->json([
-            'success' => false,
-            'message' => 'User not found.',
-        ], 404);
-    }
+	    if (!$customer) {
+	        return response()->json([
+	            'success' => false,
+	            'message' => 'User not found.',
+	        ], 404);
+	    }
 
-    // 🛑 Prevent password login for social accounts (Google/Apple)
-    if ($customer->is_social_login) {
-        return response()->json([
-            'success' => false,
-            'message' => 'This email is linked with a social login (Google/Apple). Please log in using that method.',
-        ], 403);
-    }
+	    // 🛑 Prevent password login for social accounts (Google/Apple)
+	    if ($customer->is_social_login) {
+	        return response()->json([
+	            'success' => false,
+	            'message' => 'This email is linked with a social login (Google/Apple). Please log in using that method.',
+	        ], 403);
+	    }
 
-    // ✅ Traditional login (email/password)
-    if (!Hash::check($request->password, $customer->password)) {
-        return response()->json([
-            'success' => false,
-            'message' => 'The provided credentials are incorrect.',
-        ], 401);
-    }
+	    if (!Hash::check($request->password, $customer->password)) {
+	        return response()->json([
+	            'success' => false,
+	            'message' => 'The provided credentials are incorrect.',
+	        ], 401);
+	    }
 
-    $token = $customer->createToken('auth_token')->plainTextToken;
+	    $token = $customer->createToken('auth_token')->plainTextToken;
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Login successful',
-        'customer' => $customer,
-        'token' => $token,
-    ]);
-}
+	    return response()->json([
+	        'success' => true,
+	        'message' => 'Login successful',
+	        'customer' => $customer,
+	        'token' => $token,
+	    ]);
+	}
 
 
 	/**
@@ -319,6 +318,6 @@ class AuthController extends Controller
 	// 	}
 	// }
 
-	
-	
+
+
 }

@@ -12482,6 +12482,443 @@
                 }
             }
         },
+        "/api/frontend/company-profiles": {
+            "get": {
+                "tags": [
+                    "Frontend Company Profiles"
+                ],
+                "summary": "Get the logged-in user's company profile",
+                "operationId": "721724750092147c50bc56782f035ee5",
+                "responses": {
+                    "200": {
+                        "description": "Company profile"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend Company Profiles"
+                ],
+                "summary": "Create a new company profile for the logged-in user",
+                "operationId": "8bf6387e98c4d009c5c1fa52b4999fe9",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "business_name",
+                                    "country"
+                                ],
+                                "properties": {
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace Restaurant LLC"
+                                    },
+                                    "trade_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace"
+                                    },
+                                    "company_reg_no": {
+                                        "type": "string",
+                                        "example": "LLC-2019-001234"
+                                    },
+                                    "vat_number": {
+                                        "type": "string",
+                                        "example": "100123456700003"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "legal_status": {
+                                        "type": "string",
+                                        "example": "Limited Liability Company (LLC)"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/company-profiles/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend Company Profiles"
+                ],
+                "summary": "Get a specific company profile by ID",
+                "operationId": "82c8c29d05624147727ad5a4dd201b06",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Profile found"
+                    },
+                    "403": {
+                        "description": "Forbidden"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Frontend Company Profiles"
+                ],
+                "summary": "Update the logged-in user's company profile",
+                "operationId": "6e18423876540d1e1149bff373c6628c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "business_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace Restaurant LLC"
+                                    },
+                                    "trade_name": {
+                                        "type": "string",
+                                        "example": "Golden Palace"
+                                    },
+                                    "company_reg_no": {
+                                        "type": "string",
+                                        "example": "LLC-2019-001234"
+                                    },
+                                    "vat_number": {
+                                        "type": "string",
+                                        "example": "100123456700003"
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "example": "United Arab Emirates"
+                                    },
+                                    "legal_status": {
+                                        "type": "string",
+                                        "example": "LLC"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated successfully"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend Company Profiles"
+                ],
+                "summary": "Delete a company profile",
+                "operationId": "449322f0b0a774cd4cc9aeb3273812eb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted"
+                    },
+                    "403": {
+                        "description": "Unauthorized"
+                    },
+                    "404": {
+                        "description": "Not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/contact-directories": {
+            "get": {
+                "tags": [
+                    "Frontend ContactDirectory"
+                ],
+                "summary": "Get all contact directories",
+                "operationId": "494c5fa7cb3096f79f2e76853c11121d",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "description": "Filter by customer ID",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend ContactDirectory"
+                ],
+                "summary": "Create a new contact",
+                "operationId": "1b03e1ab71510bcaa80c01938e8091d1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "customer_id",
+                                    "name"
+                                ],
+                                "properties": {
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 101
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+1234567890"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "friend"
+                                    },
+                                    "image": {
+                                        "description": "Image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/contact-directories/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend ContactDirectory"
+                ],
+                "summary": "Get a contact by ID",
+                "operationId": "0b1f1bcc56f15e87b2d5b2a833ddcd7b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Frontend ContactDirectory"
+                ],
+                "summary": "Update a contact",
+                "operationId": "017ee127cba4f7fe57ef53fe25b7c397",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Contact directory ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "John Doe"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "phone": {
+                                        "type": "string",
+                                        "example": "+123456789"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "friend"
+                                    },
+                                    "image": {
+                                        "description": "Image file",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Frontend ContactDirectory"
+                ],
+                "summary": "Delete a contact",
+                "operationId": "866c0d1bde7053579c3f230e0d8419a6",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Deleted"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/countries": {
             "get": {
                 "tags": [
@@ -13053,6 +13490,186 @@
                 ]
             }
         },
+        "/api/frontend/customers/change-password": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer"
+                ],
+                "summary": "Change customer password",
+                "operationId": "5a9b3258e14a4df6fa0883529ba1e9c2",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "old_password",
+                                    "new_password",
+                                    "new_password_confirmation"
+                                ],
+                                "properties": {
+                                    "old_password": {
+                                        "type": "string",
+                                        "example": "OldPass123"
+                                    },
+                                    "new_password": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    },
+                                    "new_password_confirmation": {
+                                        "type": "string",
+                                        "example": "NewPass123"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Password changed successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-documents": {
+            "get": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Get customer documents",
+                "operationId": "cb62a50654be1fb726459fc6d758a5c3",
+                "responses": {
+                    "200": {
+                        "description": "List of documents"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Upload a new customer document",
+                "operationId": "1ec36b18c7929095b59c9f1058aeb224",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "document"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "document": {
+                                        "type": "file"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "inactive"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Document uploaded successfully"
+                    },
+                    "422": {
+                        "description": "Validation failed"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-documents/{id}": {
+            "delete": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Delete a customer document",
+                "operationId": "c2d616567d821406b4669d2950ab0e47",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted successfully"
+                    },
+                    "404": {
+                        "description": "Document not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customer-documents/{customer_id}": {
+            "get": {
+                "tags": [
+                    "Frontend CustomerDocuments"
+                ],
+                "summary": "Get all documents for a customer",
+                "operationId": "d7948cf549a783fa191450ee3a291e60",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of documents"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/discounts": {
             "get": {
                 "tags": [
@@ -13584,6 +14201,22 @@
                         }
                     },
                     {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
                         "name": "sort_by",
                         "in": "query",
                         "description": "Column name to sort by",
@@ -13917,6 +14550,40 @@
                     },
                     "404": {
                         "description": "No delivered orders found with products"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/orders/tracking": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Track order by order ID",
+                "operationId": "93e60833826a585603af66f9454fd6e5",
+                "parameters": [
+                    {
+                        "name": "order_id",
+                        "in": "query",
+                        "description": "Order ID to track",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 12345
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -16085,6 +16752,111 @@
             }
         },
         "/api/frontend/quotes": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Get all quotes with pagination and filters",
+                "operationId": "47650e9ac516bde075b90e1ae01c3750",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by quote status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "quote_number",
+                                "quote_name",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
             "post": {
                 "tags": [
                     "FrontEnd-Quotes"
@@ -16698,6 +17470,82 @@
                 "responses": {
                     "200": {
                         "description": "Return request created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/order-products/multiple-return": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Orders"
+                ],
+                "summary": "Create a return request for multiple order products",
+                "operationId": "095690fd14beb948d060bff7b2cca32f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "reason",
+                                    "return_items"
+                                ],
+                                "properties": {
+                                    "return_items": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "order_product_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "reason": {
+                                        "type": "string",
+                                        "example": "Defective product"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Screen is broken"
+                                    },
+                                    "product_images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    },
+                                    "product_videos[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Return request(s) created successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -17719,6 +18567,397 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/support-categories": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get all support ticket categories",
+                "description": "Returns a list of all available support categories.",
+                "operationId": "getSupportCategories",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "Technical Support"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/support-priorities": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get all support ticket priorities",
+                "description": "Returns a list of all available support priorities (ordered by severity level).",
+                "operationId": "getSupportPriorities",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "name": {
+                                                        "type": "string",
+                                                        "example": "High"
+                                                    },
+                                                    "level": {
+                                                        "type": "integer",
+                                                        "example": 3
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "List all support tickets with optional filters, search, and sorting",
+                "operationId": "b7d9a4a7ea5ba21acef8104832a49a00",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search keyword for subject or description",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter tickets by status (e.g., open, closed, pending)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Field to sort by (created_at, updated_at, subject, status)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "created_at",
+                                "updated_at",
+                                "subject",
+                                "status"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort order (asc or desc)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer",
+                                                        "example": 1
+                                                    },
+                                                    "subject": {
+                                                        "type": "string",
+                                                        "example": "Login Issue"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "open"
+                                                    },
+                                                    "description": {
+                                                        "type": "string",
+                                                        "example": "I can't log in to my account."
+                                                    },
+                                                    "category": {
+                                                        "type": "string",
+                                                        "example": "Technical"
+                                                    },
+                                                    "priority": {
+                                                        "type": "string",
+                                                        "example": "High"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-21T15:03:00Z"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time",
+                                                        "example": "2024-07-22T09:15:00Z"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Support tickets fetched successfully."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Failed to fetch support tickets."
+                                        },
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Exception message here"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Create a support ticket",
+                "operationId": "5a79bf4ae481982fad446ac090e8b46f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "full_name",
+                                    "email",
+                                    "category_id",
+                                    "priority_id",
+                                    "subject",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "full_name": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "company_name": {
+                                        "type": "string"
+                                    },
+                                    "phone_number": {
+                                        "type": "string"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "priority_id": {
+                                        "type": "integer"
+                                    },
+                                    "subject": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "reference_id": {
+                                        "type": "string"
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Ticket Created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/support-tickets/{id}": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get a ticket by ID",
+                "operationId": "ab8a844c9a42f6d2e8c92b6d6b0220fc",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ticket Found"
+                    },
+                    "404": {
+                        "description": "Not Found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/customers/{customer_id}/support-tickets": {
+            "get": {
+                "tags": [
+                    "SupportTickets"
+                ],
+                "summary": "Get tickets for a specific customer",
+                "operationId": "6608cc2a106e67b71b4aad7fea17b5c9",
+                "parameters": [
+                    {
+                        "name": "customer_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tickets found"
+                    },
+                    "404": {
+                        "description": "No tickets found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/tamara/checkout": {
@@ -19035,6 +20274,204 @@
                     },
                     "401": {
                         "description": "Unauthenticated"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/wishlist/remove-multiple": {
+            "post": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Remove multiple products from wishlist",
+                "description": "Removes one or more products from the authenticated user's wishlist.",
+                "operationId": "removeMultipleFromWishlist",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "product_ids"
+                                ],
+                                "properties": {
+                                    "product_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "integer",
+                                            "example": 1
+                                        },
+                                        "example": [
+                                            1,
+                                            5,
+                                            9
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Selected products removed from wishlist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Selected products removed from wishlist."
+                                        },
+                                        "deleted_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "product_ids": [
+                                                    "The product_ids field is required."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/wishlist/add-multiple": {
+            "post": {
+                "tags": [
+                    "Frontend-Wishlist"
+                ],
+                "summary": "Add multiple products to wishlist",
+                "description": "Adds multiple products to the authenticated customer's wishlist.",
+                "operationId": "addMultipleToWishlist",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "products"
+                                ],
+                                "properties": {
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "example": [
+                                            {
+                                                "product_id": 2
+                                            },
+                                            {
+                                                "product_id": 4
+                                            },
+                                            {
+                                                "product_id": 7
+                                            }
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Products added to wishlist",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Products added to wishlist."
+                                        },
+                                        "added_count": {
+                                            "type": "integer",
+                                            "example": 3
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "The given data was invalid."
+                                        },
+                                        "errors": {
+                                            "type": "object",
+                                            "example": {
+                                                "products.0.product_id": [
+                                                    "The selected product_id is invalid."
+                                                ]
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -22028,18 +23465,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "variant_requires_shipping": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "variant_color_title": {
-                                        "type": "string",
-                                        "example": "Red"
-                                    },
-                                    "variant_color_value": {
-                                        "type": "string",
-                                        "example": "#FF0000"
-                                    },
                                     "vendor_id": {
                                         "type": "integer",
                                         "example": 7
@@ -22055,13 +23480,6 @@
                                     "units_sold": {
                                         "type": "integer",
                                         "example": 50
-                                    },
-                                    "frequently_bought_together[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 101
-                                        }
                                     },
                                     "google_shopping_category": {
                                         "type": "string",
@@ -22393,29 +23811,6 @@
                                     "type": "object"
                                 }
                             }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/products/product-input": {
-            "get": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get product input fields",
-                "description": "Fetches all available product input fields.",
-                "operationId": "getProductInputs",
-                "responses": {
-                    "201": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
                         }
                     }
                 },
@@ -24608,6 +26003,269 @@
                 "responses": {
                     "200": {
                         "description": "Batch started successfully"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/quotes": {
+            "get": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Get all quotes with pagination and filters",
+                "operationId": "4d3d7fbebfc2d9ade65463dfdf630651",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by quote status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "quote_number",
+                                "quote_name",
+                                "customer_name",
+                                "shipping_charge",
+                                "total_amount",
+                                "total_products",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Create a new quote",
+                "operationId": "e5f4d8774f0cc8799899e26186b79438",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quote_number",
+                                    "quote_name",
+                                    "customer_id",
+                                    "customer_address_id",
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "quote_number": {
+                                        "type": "string",
+                                        "example": "1111"
+                                    },
+                                    "quote_name": {
+                                        "type": "string",
+                                        "example": "Kitchen equipment quote"
+                                    },
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "send_customer_email": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "emails": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "email",
+                                            "example": "john@example.com"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/quotes/{id}": {
+            "get": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Get quote details",
+                "operationId": "edf0acd5f16e3027ed530263b3747831",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -29835,6 +31493,52 @@
                 },
                 "type": "object"
             },
+            "ContactDirectory": {
+                "required": [
+                    "customer_id",
+                    "name"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "customer_id": {
+                        "type": "integer",
+                        "example": 101
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "John Doe"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "john@example.com"
+                    },
+                    "phone": {
+                        "type": "string",
+                        "example": "+1234567890"
+                    },
+                    "image": {
+                        "type": "string",
+                        "example": "https://example.com/image.jpg"
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "friend"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "Country": {
                 "title": "Country",
                 "required": [
@@ -29855,6 +31559,29 @@
             },
             "GuestRecentlyViewedProduct": {
                 "description": "GuestRecentlyViewedProduct model",
+                "type": "object"
+            },
+            "SupportCategory": {
+                "title": "Support Category",
+                "description": "Support ticket category",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Technical Support"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
                 "type": "object"
             },
             "Newsletter": {
@@ -30253,6 +31980,9 @@
             "description": "API Endpoints for managing discounts"
         },
         {
+            "name": "SupportTickets"
+        },
+        {
             "name": "Newsletters",
             "description": "API Endpoints for managing newsletters"
         },
@@ -30361,6 +32091,14 @@
             "description": "CCAvenue"
         },
         {
+            "name": "Frontend Company Profiles",
+            "description": "Frontend Company Profiles"
+        },
+        {
+            "name": "Frontend ContactDirectory",
+            "description": "Frontend ContactDirectory"
+        },
+        {
             "name": "Frontend-Countries",
             "description": "Frontend-Countries"
         },
@@ -30379,6 +32117,10 @@
         {
             "name": "FrontEnd-Customer",
             "description": "FrontEnd-Customer"
+        },
+        {
+            "name": "Frontend CustomerDocuments",
+            "description": "Frontend CustomerDocuments"
         },
         {
             "name": "Frontend-Discounts",
@@ -30519,6 +32261,10 @@
         {
             "name": "Product Title Formula",
             "description": "Product Title Formula"
+        },
+        {
+            "name": "Quotes",
+            "description": "Quotes"
         },
         {
             "name": "Redirect Links",

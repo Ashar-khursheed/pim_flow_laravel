@@ -265,21 +265,21 @@ class ImportProductJob implements ShouldQueue
 				}
 
 				/* Stock status validation */
-				$usStockStatusArray = [
-					1 => "in_stock",
-					2 => "out_of_stock",
-					3 => "on_backorder"
-				];
+				// $usStockStatusArray = [
+				// 	1 => "in_stock",
+				// 	2 => "out_of_stock",
+				// 	3 => "on_backorder"
+				// ];
 
-				if ($stockStatus) {
-					if (!is_numeric($stockStatus) || !array_key_exists((int) $stockStatus, $usStockStatusArray)) {
-						$rowError[] = "Stock status should be numeric and either 1 for In-Stock, 2 for Out of Stock, or 3 for Pre Order.";
-					} else {
-						$stockStatus = $usStockStatusArray[(int) $stockStatus];
-					}
-				} else {
-					$stockStatus = null;
-				}
+				// if ($stockStatus) {
+				// 	if (!is_numeric($stockStatus) || !array_key_exists((int) $stockStatus, $usStockStatusArray)) {
+				// 		$rowError[] = "Stock status should be numeric and either 1 for In-Stock, 2 for Out of Stock, or 3 for Pre Order.";
+				// 	} else {
+				// 		$stockStatus = $usStockStatusArray[(int) $stockStatus];
+				// 	}
+				// } else {
+				// 	$stockStatus = null;
+				// }
 
 				/* Is featured validation (Check for 0 if empty) */
 				if ($isFeatured !== '' && (!is_numeric($isFeatured) || !in_array($isFeatured, [0, 1]))) {
@@ -288,12 +288,12 @@ class ImportProductJob implements ShouldQueue
 					$isFeatured = $isFeatured !== '' ? (int) $isFeatured : 0;
 				}
 
-				$frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
-				if ($frequentlyBoughtTogether) {
-					$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
-				} else {
-					$frequentlyBoughtTogether = null;
-				}
+				// $frequentlyBoughtTogether = trim($rowData['Frequently Bought Together']);
+				// if ($frequentlyBoughtTogether) {
+				// 	$frequentlyBoughtTogether = json_encode(array_map(fn($value) => ['value' => trim($value)], explode(',', $frequentlyBoughtTogether)));
+				// } else {
+				// 	$frequentlyBoughtTogether = null;
+				// }
 
 				/* Process Images */
 				$fetchedImages = $this->getImageURLs((array) $images ?? []);
@@ -424,8 +424,8 @@ class ImportProductJob implements ShouldQueue
 					$product->brand_id = $brandId;
 					$product->images = json_encode($fetchedImages);
 					$product->video_path = $uploadVideo;
-					$product->stock_status = $stockStatus;
-					$product->frequently_bought_together = $frequentlyBoughtTogether;
+					// $product->stock_status = $stockStatus;
+					// $product->frequently_bought_together = $frequentlyBoughtTogether;
 					$product->currency_id = env('APP_WEBSITE') == 'UAE' ? 2 : 1;
 					$product->barcode = !empty($barcode) ? $barcode : null;
 					$product->google_shopping_category = !empty($googleShoppingCategory) ? $googleShoppingCategory : null;

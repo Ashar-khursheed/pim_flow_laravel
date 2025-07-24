@@ -25,6 +25,8 @@ class OrderController extends BaseController
 	 *     @OA\Parameter(name="status", in="query", description="Filter by order status.", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="payment_status", in="query", description="Filter by payment status.", @OA\Schema(type="string", enum={"Paid", "Unpaid", "Partially Paid"})),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for all fields", @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date")),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date")),
 	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "order_number", "shipping_charge", "total_amount", "total_products", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
@@ -55,6 +57,18 @@ class OrderController extends BaseController
 			/* Filter by status */
 			if ($request->has('status')) {
 				$recordsQuery->where('orders.status', $request->status);
+			}
+
+			if ($request->has('from_date') && $request->has('to_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->whereBetween('orders.created_at', [$from, $to]);
+			} elseif ($request->has('from_date')) {
+				$from = $request->from_date . ' 00:00:00';
+				$recordsQuery->where('orders.created_at', '>=', $from);
+			} elseif ($request->has('to_date')) {
+				$to = $request->to_date . ' 23:59:59';
+				$recordsQuery->where('orders.created_at', '<=', $to);
 			}
 
 			/* Filter by payment status */
@@ -113,7 +127,10 @@ class OrderController extends BaseController
 						$product->currency_symbol = $product->currency->symbol ?? null;
 						unset($product->brand, $product->currency);
 					}
-					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 				}
 				foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
 					if (isset($record->$key)) {
@@ -290,7 +307,10 @@ class OrderController extends BaseController
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+				: null;
 			}
 
 			foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
@@ -363,10 +383,24 @@ class OrderController extends BaseController
 				$product->currency_symbol = $product->currency->symbol ?? null;
 				unset($product->brand, $product->currency);
 			}
-			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days']);
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
+		}
+
+		if (
+			$order->status === 'Delivered' &&
+			$orderProduct->product_supplier &&
+			isset($orderProduct->product_supplier['return_policy'])
+		) {
+			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
+
+			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+		} else {
+			$orderProduct->is_returnable = 'yes';
 		}
 
 		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
@@ -669,5 +703,40 @@ class OrderController extends BaseController
 			'message' => 'Products retrieved from your previous orders.',
 			'data' => $products
 		], 200);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/orders/tracking",
+	 *     summary="Track order by order ID",
+	 *     tags={"FrontEnd-Orders"},
+	 *     @OA\Parameter(name="order_id", in="query", required=true, description="Order ID to track", @OA\Schema(type="integer", example=12345)),
+	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function orderTracking(Request $request)
+	{
+		$request->validate([
+			'order_id' => 'required|integer|exists:orders,id',
+		]);
+
+		$customer = auth()->user();
+
+		$orderTracking = OrderTracking::where('id', $request->order_id)->get();
+
+		if (!$orderTracking) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Order not found or access denied.',
+				'data' => null,
+			], 404);
+		}
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Tracking info retrieved',
+			'data' => $orderTracking,
+		]);
 	}
 }

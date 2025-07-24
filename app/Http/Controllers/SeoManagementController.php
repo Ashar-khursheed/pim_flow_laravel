@@ -14,7 +14,7 @@ use App\Models\SeoSecondaryKeyword;
 use App\Jobs\ImportSeoDetailJob;
 use App\Services\ExcelImporterService;
 use App\Repository\ExcelRepository;
-
+use Illuminate\Support\Facades\Storage;
 class SeoManagementController extends Controller
 {
 	/**
@@ -578,12 +578,9 @@ class SeoManagementController extends Controller
 		}
 
 		try {
-			 if ($request->has('banner_image_file') && !($request->file('banner_image_file') instanceof \Illuminate\Http\UploadedFile)) {
-				$request->request->remove('banner_image_file');
-			}
-			$validated = $request->validate([
+			
+			$rules = [
 				'relational_id' => 'required|integer',
-				// 'relational_type' => 'required|string', // ❌ removed from validation
 				'url' => 'required|string',
 				'primary_keyword' => 'required|string',
 				'monthly_search_volume' => 'required|integer',
@@ -614,12 +611,19 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
-				'banner_image_url' => 'nullable|string|url',
+				'banner_image_file' => 'nullable', // <-- default to nullable
 				'banner_image_alt_text' => 'nullable|string',
-			]);
+			];
 
-			$seo = SeoManagement::findOrFail($id);
+			// ✅ Only apply image validation if a file is uploaded
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
+			}
+
+			// 🚀 Now validate
+			$validated = $request->validate($rules);
+
+						$seo = SeoManagement::findOrFail($id);
 
 			// ✅ Validate relational_type and relational_id
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
@@ -663,14 +667,13 @@ class SeoManagementController extends Controller
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
-			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-				$storage = app('Illuminate\Support\Facades\Storage');
-				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-				$seoData['banner_image_url'] = $storage::disk('s3')->url($bannerImagePath);
-			} elseif (!empty($validated['banner_image_url'])) {
-				$seoData['banner_image_url'] = $validated['banner_image_url'];
-			}
+		  if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+        $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+        $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+        $bannerImageUrl = Storage::disk('s3')->url($bannerImagePath);
+        $seoData['banner_image_file'] = $bannerImageUrl;
+    }
+			// ✅ Else: do nothing — keep old banner_image_file value
 
 
 
