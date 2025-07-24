@@ -6,6 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 
 class QuotePlacedMail extends Notification implements ShouldQueue
@@ -155,9 +156,21 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 			'routingCode' => $routingCode,
 		];
 
+		$pdf = Pdf::loadView('pdf.quote1', $params);
+
+
 		return (new MailMessage)
-		->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
-		->markdown('emails.quotes.quote-placed', $params);
+		->subject('Your Invoice')
+		->greeting('Hello ' . $name . ',')
+		->line('Please find attached your invoice.')
+		->attachData($pdf->output(), 'invoice.pdf', [
+			'mime' => 'application/pdf',
+		])
+		->line('Thank you for your business!');
+
+		// return (new MailMessage)
+		// ->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+		// ->markdown('emails.quotes.quote-placed', $params);
 	}
 
 
