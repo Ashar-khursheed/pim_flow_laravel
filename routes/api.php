@@ -106,6 +106,7 @@ use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocume
 use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
 use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
+use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 
 
 use Illuminate\Support\Facades\Http;
@@ -394,6 +395,10 @@ Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'get
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
+    Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
+    Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
 
 	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 

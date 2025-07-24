@@ -13838,6 +13838,256 @@
                 }
             }
         },
+        "/api/frontend/invoices": {
+            "get": {
+                "tags": [
+                    "Frontend Invoices"
+                ],
+                "summary": "Get all invoices for the authenticated customer",
+                "description": "Returns invoice summary and list for the authenticated customer.",
+                "operationId": "getCustomerInvoices",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_outstanding": {
+                                            "type": "number",
+                                            "example": 1200.5
+                                        },
+                                        "paid_this_month": {
+                                            "type": "number",
+                                            "example": 850
+                                        },
+                                        "overdue": {
+                                            "type": "number",
+                                            "example": 350.5
+                                        },
+                                        "total_invoices": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "invoices": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_number": {
+                                                        "type": "string",
+                                                        "example": "INV-1001"
+                                                    },
+                                                    "invoice_date": {
+                                                        "type": "string",
+                                                        "example": "Jul 24 2025"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "po_number": {
+                                                        "type": "string",
+                                                        "example": "PO-2025-07"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string",
+                                                        "example": "Jul 31 2025"
+                                                    },
+                                                    "amount": {
+                                                        "type": "string",
+                                                        "example": "1200.50"
+                                                    },
+                                                    "payment_method": {
+                                                        "type": "string",
+                                                        "example": "Bank Transfer"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "unpaid"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frotend Invoices"
+                ],
+                "summary": "Create a new invoice",
+                "operationId": "aefb49c5e449fba5d6af7b71911bbdaa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "invoice_number",
+                                    "invoice_date",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "invoice_number": {
+                                        "type": "string"
+                                    },
+                                    "invoice_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "order_id": {
+                                        "type": "integer"
+                                    },
+                                    "po_number": {
+                                        "type": "string"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "payment_method": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "paid",
+                                            "unpaid",
+                                            "overdue"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Invoice created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/invoices/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend Invoices"
+                ],
+                "summary": "Get a single invoice by ID or invoice number (customer-specific)",
+                "description": "Returns details for one invoice, only if it belongs to the authenticated customer.",
+                "operationId": "getCustomerInvoiceById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Invoice ID or invoice number",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Invoice found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "invoice_number": {
+                                            "type": "string",
+                                            "example": "INV-1001"
+                                        },
+                                        "invoice_date": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025"
+                                        },
+                                        "order_id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "po_number": {
+                                            "type": "string",
+                                            "example": "PO-2025-07"
+                                        },
+                                        "due_date": {
+                                            "type": "string",
+                                            "example": "Jul 31 2025"
+                                        },
+                                        "amount": {
+                                            "type": "string",
+                                            "example": "1200.50"
+                                        },
+                                        "payment_method": {
+                                            "type": "string",
+                                            "example": "Bank Transfer"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "unpaid"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025 14:32:00"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025 15:10:00"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invoice not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/frontend/location": {
             "get": {
                 "tags": [
@@ -32092,6 +32342,14 @@
         {
             "name": "Geolocation",
             "description": "Geolocation"
+        },
+        {
+            "name": "Frontend Invoices",
+            "description": "Frontend Invoices"
+        },
+        {
+            "name": "Frotend Invoices",
+            "description": "Frotend Invoices"
         },
         {
             "name": "Frontend-Location",
