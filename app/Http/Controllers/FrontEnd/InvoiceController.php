@@ -178,8 +178,14 @@ class InvoiceController extends Controller
 
         $customer = Auth::id();
 
-        $invoice = Invoice::create($customer);
+        $invoice = Invoice::create(array_merge($validated, [
+            'customer_id' => $customer,
+        ]));
 
-        return response()->json(['message' => 'Invoice created', 'invoice' => $invoice], 201);
+        return response()->json([
+            'message' => 'Invoice created',
+            'invoice' => $invoice
+        ], 201);
     }
+
 }
