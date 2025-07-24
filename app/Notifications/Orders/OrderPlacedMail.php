@@ -106,7 +106,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
 		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
-		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
+		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
 		$taxPercent = $this->order->tax_percentage;
 		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
 		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');

@@ -127,7 +127,9 @@
 		}
 	</style>
 </head>
-
+@php
+use Illuminate\Support\Str;
+@endphp
 <body>
 	<div id="targetDiv" bis_skin_checked="1" style="width: auto; min-height: 290mm; margin: 0px auto; padding: 5mm; font-size: 12px; line-height: 1.3; font-family: Outfit; background-color: white;">
 		<div class="bg-white" bis_skin_checked="1" style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; justify-content: space-between; padding: 50px; box-sizing: border-box;">
@@ -141,12 +143,12 @@
 						<p class="text-[13px] font-bold text-[#186737]">Best Price. Zero Hassle.</p>
 					</div>
 					<div class="text-right text-[11px]" bis_skin_checked="1">
-						<p class="font-bold">{{ $companyName }}</p>
+						<p class="font-bold">{{ $companyName }}.</p>
 						<p>{{ $street }}</p>
 						<p>{{ $city }}</p>
 						<p>Phone: {{ $phone }}</p>
 						<p>Email: {{ $siteEmail }}</p>
-						<p>{{ $siteUrl }}</p>
+						<p>{{ $siteURL }}</p>
 					</div>
 				</div>
 
@@ -175,11 +177,15 @@
 							</thead>
 							<tbody>
 								<tr class="text-center">
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 "> Jul 21 2025</td>
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  text-red-600 font-semibold">
-										Jul 28 2025
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">
+										{{ $createdAt }}
 									</td>
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">345993</td>
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  text-red-600 font-semibold">
+										{{ $expiredAt }}
+									</td>
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">
+										{{ $quoteNumber }}
+									</td>
 								</tr>
 								<tr class="bg-gray-200 text-center">
 									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  font-bold">Payment Mode</td>
@@ -187,9 +193,15 @@
 									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  font-bold">Currency</td>
 								</tr>
 								<tr class="text-center">
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">Bank Transfer/Credit Card</td>
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">Online</td>
-									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  text-red-600 font-semibold">$</td>
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">
+										{{ $paymentMode }}
+									</td>
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2 ">
+										{{ $email }}
+									</td>
+									<td class="border border-black  pl-2 pr-2 pb-2 pt-2  text-red-600 font-semibold">
+										{{ $currency }}
+									</td>
 								</tr>
 							</tbody>
 						</table>
@@ -224,80 +236,46 @@
 							</tr>
 						</thead>
 						<tbody>
+							@foreach($products as $product)
 							<tr class="bg-white">
 								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">
-									01
+									01{{ $product->count }}
 								</td>
 								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2">
 									<div class="space-y-0.5" bis_skin_checked="1">
 										<p class="font-bold text-[12px]">
-											Beverage-Air SF34HC-S 35" Stainless Steel Shallow Well Bottle Cooler
+											{{ Str::limit($product->name, 90, '...') }}
 										</p>
 										<p class="text-[11px]">
 											<span class="font-bold">Brand:</span>
-											<span class="text-red-600">Beverage-Air</span> |
+											<span class="text-red-600">{{ $product->brandName }}</span> |
 											<span class="font-bold">SKU #:</span>
-											<span class="text-red-600">SF34HC-S</span>
+											<span class="text-red-600">{{ $product->sku }}</span>
 										</p>
 										<p class="text-[11px] pb-[3px]">
 											<span class="font-bold">Warranty :</span>
-											<span class="text-red-600"> 5 Years Parts &amp; Labor, 7 Year Compresso</span>
+											<span class="text-red-600">{{ $product->warrantyInfo }}</span>
 										</p>
 										<p class="text-[11px] pb-[3px]">
-											<span class="font-bold text-[#1B6738]">FREE SHIPPING </span>
-											<span class="font-bold">Mostly Ships in 5 to 7 Days</span>
+											<span class="font-bold text-[#1B6738]">{{ $product->shippingCharge }}</span>
+											<span class="font-bold">Mostly Ships in {{ $product->deliveryDays }}</span>
 										</p>
-										<a href="/product/21657" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-[9.7px] ">
+										<a href="{{ $product->productURL }}" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-[9.7px] ">
 											Click here for more details
 										</a>
 									</div>
 								</td>
 								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center align-middle">
 									<div class="flex justify-center items-center h-full" bis_skin_checked="1">
-										<img src="https://pim.thehorecastore.co/api/proxy-image?url=https%3A%2F%2Fhorecastore-s3-storage.s3.us-west-1.amazonaws.com%2Fproduction%2Fproducts%2FSF34HC-S_6899c36e-e0fe-4312-800a-b2eb22d3355e.webp" class="w-12 h-12 object-contain" crossorigin="anonymous" alt="Product">
+										<img src="https://pim.thehorecastore.co/api/proxy-image?url=https%3A%2F%2Fhorecastore-s3-storage.s3.us-west-1.amazonaws.com%2Fproduction%2Fproducts%2FSF34HC-S_6899c36e-e0fe-4312-800a-b2eb22d3355e.webp" class="w-12 h-12 object-contain" crossorigin="anonymous" alt="Product{{ $product->image }}">
 									</div>
 								</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">1</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">Each</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">3,782.35</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">3,782.35</td>
+								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">{{ $product->quantity }}</td>
+								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">{{ $product->sellingType }}</td>
+								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">{{ $product->unitPrice }}</td>
+								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">{{ $product-> total}}</td>
 							</tr>
-							<tr class="bg-white">
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">02</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2">
-									<div class="space-y-0.5" bis_skin_checked="1">
-										<p class="font-bold text-[12px]">
-											True TD-80-30-HC 80 1/8" TD/GC Series Galvanized Steel Forced Air Bottle Cooler ...
-										</p>
-										<p class="text-[11px]">
-											<span class="font-bold">Brand:</span>
-											<span class="text-red-600">True Refrigeration</span> |
-											<span class="font-bold">SKU #:</span>
-											<span class="text-red-600">TD-80-30-HC</span>
-										</p>
-										<p class="text-[11px] pb-[3px]">
-											<span class="font-bold">Warranty :</span>
-											<span class="text-red-600"> 5 Years Parts &amp; Labor, 7 Year Compresso</span>
-										</p>
-										<p class="text-[11px] pb-[3px]">
-											<span class="font-bold text-[#1B6738]">FREE SHIPPING </span>
-											<span class="font-bold">Mostly Ships in 5 to 7 Days</span>
-										</p>
-										<a href="/product/31546" target="_blank" rel="noopener noreferrer" class="text-blue-600 text-[9.7px] ">
-											Click here for more details
-										</a>
-									</div>
-								</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center align-middle">
-									<div class="flex justify-center items-center h-full" bis_skin_checked="1">
-										<img src="https://pim.thehorecastore.co/api/proxy-image?url=https%3A%2F%2Fhorecastore-s3-storage.s3.us-west-1.amazonaws.com%2Fproduction%2Fproducts%2FTD-80-30-HC_4124c01d-5b87-49e4-94c4-e3504465404b.webp" class="w-12 h-12 object-contain" crossorigin="anonymous" alt="True TD-80-30-HC 80 1/8&quot; TD/GC Series Galvanized Steel Forced Air Bottle Cooler Holds (720) 12 oz Bottles, Lid Locks, Black, 115v/1ph">
-									</div>
-								</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">1</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">Each</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">4,299.10</td>
-								<td class="border-t border-b border-black  pl-2 pr-2 pb-2  pt-2 text-center">4,299.10</td>
-							</tr>
+							@endforeach
 						</tbody>
 					</table>
 				</div>
@@ -306,12 +284,12 @@
 					<div class="pb-[20px]" bis_skin_checked="1">
 						<div class="border-t border-black p-2 mt-[10px] pb-[-100px] text-xs flex flex-col items-center gap-2" bis_skin_checked="1">
 							<div class="w-full flex justify-between" bis_skin_checked="1">
-								<div bis_skin_checked="1">Order Online for Fast Shipping &amp; Lower Prices at
-									<a href="https://www.thehorecastore.com" target="_blank" rel="noopener noreferrer" class="text-green-700">
-										www.thehorecastore.com
+								<div bis_skin_checked="1">Order Online for Fast Shipping & Lower Prices at
+									<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" class="text-green-700">
+										$siteURL
 									</a>
 								</div>
-								<div bis_skin_checked="1">Page 1 of 3</div>
+								<div bis_skin_checked="1">Page 1 of 3//dynamic</div>
 							</div>
 						</div>
 					</div>
@@ -323,23 +301,25 @@
 			<div bis_skin_checked="1" style="break-after: page;"></div>
 			<div class="col-span-12  mt-2" bis_skin_checked="1" style="height: 1050px; box-sizing: border-box; padding: 50px;">
 				<div class="flex flex-col justify-between h-full" bis_skin_checked="1">
+
 					<div class="grid grid-cols-3 gap-4 p-2" bis_skin_checked="1">
 						<div class="flex items-center" bis_skin_checked="1">
-							<img class="h-30 w-40" src="/images/horecalogo.png" alt="logo">
+							<img class="h-30 w-40" src="{{ $logoUrl }}" alt="logo">
 						</div>
 						<div class="text-center" bis_skin_checked="1">
 							<h1 class="text-[16px] font-bold">SALES QUOTATION</h1>
 							<p class="text-[13px] font-bold text-[#186737]">Best Price. Zero Hassle.</p>
 						</div>
 						<div class="text-right text-[11px]" bis_skin_checked="1">
-							<p class="font-bold">THE HORECA STORE INC.</p>
-							<p>8800 Bissonnet Street, Ste A,</p>
-							<p>Houston, Texas 77074</p>
-							<p>Phone: 1 (866) 446-7322</p>
-							<p>Email: sales@thehorecastore.com</p>
-							<p>www.thehorecastore.com</p>
+							<p class="font-bold">{{ $companyName }}.</p>
+							<p>{{ $street }}</p>
+							<p>{{ $city }}</p>
+							<p>Phone: {{ $phone }}</p>
+							<p>Email: {{ $siteEmail }}</p>
+							<p>{{ $siteURL }}</p>
 						</div>
 					</div>
+
 					<div class="p-[15px]" bis_skin_checked="1">
 						<table class="w-full border border-gray-300 text-[11px]">
 							<thead>
@@ -354,12 +334,12 @@
 							</thead>
 							<tbody>
 								<tr class="text-center">
-									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Jul 21 2025</td>
-									<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">Jul 28 2025</td>
-									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">345993</td>
-									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Bank Transfer/Credit Card</td>
-									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Online</td>
-									<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">$</td>
+									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $createdAt }}</td>
+									<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">{{ $expiredAt }}</td>
+									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $quoteNumber }}</td>
+									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $paymentMode }}</td>
+									<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $email }}</td>
+									<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">{{ $currency }}</td>
 								</tr>
 							</tbody>
 						</table>
@@ -416,13 +396,15 @@
 							</tbody>
 						</table>
 					</div>
+
 					<div class="border-t border-black p-2 mt-[10px] pb-[-100px] text-xs flex flex-col items-center gap-2" bis_skin_checked="1">
 						<div class="w-full flex justify-between" bis_skin_checked="1">
-							<div bis_skin_checked="1">Order Online for Fast Shipping &amp; Lower Prices at
-								<a href="https://www.thehorecastore.com" target="_blank" rel="noopener noreferrer" class="text-green-700">www.thehorecastore.com
-								</a>\
+							<div bis_skin_checked="1">Order Online for Fast Shipping & Lower Prices at
+								<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" class="text-green-700">
+									$siteURL
+								</a>
 							</div>
-							<div bis_skin_checked="1">Page 2 of 3</div>
+							<div bis_skin_checked="1">Page 2 of 3//dynamic</div>
 						</div>
 					</div>
 				</div>
@@ -435,19 +417,19 @@
 			<div class="flex flex-col justify-between h-full" bis_skin_checked="1">
 				<div class="grid grid-cols-3 gap-4 p-2" bis_skin_checked="1">
 					<div class="flex items-center" bis_skin_checked="1">
-						<img class="h-30 w-40" src="/images/horecalogo.png" alt="logo">
+						<img class="h-30 w-40" src="{{ $logoUrl }}" alt="logo">
 					</div>
 					<div class="text-center" bis_skin_checked="1">
 						<h1 class="text-[16px] font-bold">SALES QUOTATION</h1>
 						<p class="text-[13px] font-bold text-[#186737]">Best Price. Zero Hassle.</p>
 					</div>
 					<div class="text-right text-[11px]" bis_skin_checked="1">
-						<p class="font-bold">THE HORECA STORE INC.</p>
-						<p>8800 Bissonnet Street, Ste A,</p>
-						<p>Houston, Texas 77074</p>
-						<p>Phone: 1 (866) 446-7322</p>
-						<p>Email: sales@thehorecastore.com</p>
-						<p>www.thehorecastore.com</p>
+						<p class="font-bold">{{ $companyName }}.</p>
+						<p>{{ $street }}</p>
+						<p>{{ $city }}</p>
+						<p>Phone: {{ $phone }}</p>
+						<p>Email: {{ $siteEmail }}</p>
+						<p>{{ $siteURL }}</p>
 					</div>
 				</div>
 
@@ -458,19 +440,19 @@
 								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Quotation Date</th>
 								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Expiry Date</th>
 								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Quotation No</th>
-								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Payment Mode</th>
+								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Paymen Mode</th>
 								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Quotation Type</th>
 								<th class="border border-black pl-2 pr-2 pb-2 pt-2 ">Currency</th>
 							</tr>
 						</thead>
 						<tbody>
 							<tr class="text-center">
-								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Jul 21 2025</td>
-								<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">Jul 28 2025</td>
-								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">345993</td>
-								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Bank Transfer/Credit Card</td>
-								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">Online</td>
-								<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">$</td>
+								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $createdAt }}</td>
+								<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">{{ $expiredAt }}</td>
+								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $quoteNumber }}</td>
+								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $paymentMode }}</td>
+								<td class="border border-black pl-2 pr-2 pb-2 pt-2 ">{{ $email }}</td>
+								<td class="border border-black text-[#FF0000] pl-2 pr-2 pb-2 pt-2 ">{{ $currency }}</td>
 							</tr>
 						</tbody>
 					</table>
@@ -482,7 +464,7 @@
 						<ul class="mt-2 space-y-2 text-[12px]">
 							<li class="flex items-start">
 								<span class="text-[13px] mr-2 mt-[-1px]">•</span>
-								<span>Kindly include our Order No &amp; Date while processing the payment through bank transfer.</span>
+								<span>Kindly include our Order No & Date while processing the payment through bank transfer.</span>
 							</li>
 							<li class="flex items-start">
 								<span class="text-[13px] mr-2 mt-[-1px]">•</span>
@@ -514,24 +496,24 @@
 								<tbody class="text-[12px]">
 									<tr>
 										<td class="text-left py-1 font-semibold">INVOICE SUBTOTAL</td>
-										<td class="text-right py-1">32,152.09</td>
+										<td class="text-right py-1">{{ $subTotal }}</td>
 									</tr>
 									<tr>
-										<td class="text-left py-1 font-semibold">TOTAL W/O TAX</td>
-										<td class="text-right py-1">32,152.09</td>
+										<td class="text-left py-1 font-semibold">SHIPPING CHARGE</td>
+										<td class="text-right py-1">{{ $shippingCharge }}</td>
 									</tr>
 									<tr>
-										<td class="text-left py-1 font-semibold">SALES TAX (2.9000000000000004%)</td>
-										<td class="text-right py-1">932.41</td>
+										<td class="text-left py-1 font-semibold">{{ $taxName }} ({{ $taxPercent }}%)</td>
+										<td class="text-right py-1">{{ $taxAmount }}</td>
 									</tr>
 								</tbody>
 							</table>
 						</div>
 						<p class="flex  justify-between text-[#FF0000] bg-[#E7E7E7] pl-2 pr-2 pb-2 pt-2  font-semibold">
-							<span>NET TOTAL INCL. SALES TAX</span><span>33,084.50</span>
+							<span>NET TOTAL INCL. {{ $taxName }}</span><span>{{ $total }}</span>
 						</p>
 						<div class="text-right pl-4 pt-2 pb-2 pr-2" bis_skin_checked="1">
-							<p class="font-semibold">Thirty-Three Thousand, Eighty-Four And 50/100 U.S. Dollars Only</p>
+							<p class="font-semibold">{{ $totalInWords }}</p>
 						</div>
 					</div>
 				</div>
@@ -550,7 +532,7 @@
 												Account Name
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-4 pt-1 font-semibold">
-												THE HORECA STORE INC
+												{{ $companyName }}
 											</td>
 										</tr>
 										<tr>
@@ -558,7 +540,7 @@
 												Beneficiary Address
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-4 pt-1 font-semibold">
-												8800 BISSONNET ST STE A, HOUSTON TX 77074-2435
+												{{ $beneficiaryAddress }}
 											</td>
 										</tr>
 										<tr>
@@ -566,7 +548,7 @@
 												Account No
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-4 pt-1 font-semibold">
-												6130 9953 3
+												{{ $accountNo }}
 											</td>
 										</tr>
 										<tr>
@@ -574,7 +556,7 @@
 												Bank
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-4 pt-1 font-semibold">
-												JP Morgan Chase Bank
+												{{ $bankName }}
 											</td>
 										</tr>
 										<tr>
@@ -582,7 +564,7 @@
 												Routing Code
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-4 pt-1 font-semibold">
-												1110 0061 4
+												{{ $routingCode }}
 											</td>
 										</tr>
 										<tr>
@@ -591,7 +573,7 @@
 											</td>
 											<td class="border-t border-black pl-1 pr-2 pb-5 pt-1 font-semibold whitespace-nowrap">
 												Please prepare all cheques in favor of <br>
-												<span class="text-[#FF0000] block">THE HORECA STORE INC</span>
+												<span class="text-[#FF0000] block">{{ $companyName }}</span>
 											</td>
 										</tr>
 									</tbody>
@@ -602,7 +584,7 @@
 						<div class="border  border-black bg-[white]" bis_skin_checked="1">
 							<div class="bg-gray-200 text-center pl-2 pr-2 pb-2 pt-2" bis_skin_checked="1">
 								<p class="font-semibold text-md">
-									Customer Payment Terms &amp; Order Processing Timeline
+									Customer Payment Terms & Order Processing Timeline
 								</p>
 							</div>
 							<div class="pl-1 pb-2  text-[12px] leading-relaxed" bis_skin_checked="1">
@@ -623,7 +605,7 @@
 									Orders are processed after 3 business days from deposit date.
 								</p>
 								<p>
-									<strong>Cash &amp; Card Payments:</strong>
+									<strong>Cash & Card Payments:</strong>
 									Orders are processed immediately upon successful payment.
 								</p>
 								<p>
@@ -644,12 +626,12 @@
 
 				<div class="border-t border-black p-2 mt-[10px] pb-[-100px] text-xs flex flex-col items-center gap-2" bis_skin_checked="1">
 					<div class="w-full flex justify-between" bis_skin_checked="1">
-						<div bis_skin_checked="1">
-							Order Online for Fast Shipping &amp; Lower Prices at
-							<a href="https://www.thehorecastore.com" target="_blank" rel="noopener noreferrer" class="text-green-700">www.thehorecastore.com
+						<div bis_skin_checked="1">Order Online for Fast Shipping & Lower Prices at
+							<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" class="text-green-700">
+								$siteURL
 							</a>
 						</div>
-						<div bis_skin_checked="1">Page 3 of 3</div>
+						<div bis_skin_checked="1">Page 3 of 3//dynamic</div>
 					</div>
 				</div>
 			</div>
