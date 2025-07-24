@@ -101,7 +101,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 		}
 
 		$orderListUrl = url("/registration/all-orders");
-		$checkoutUrl = url("/checkout");
+		$checkoutURL = url("/checkout");
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 
 		$params = [
@@ -118,7 +118,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 			'pendingItems' => $pendingItems,
 
 			'orderUrl' => $orderListUrl,
-			'checkoutUrl' => $checkoutUrl,
+			'checkoutURL' => $checkoutURL,
 			'siteUrl' => $siteUrl,
 		];
 

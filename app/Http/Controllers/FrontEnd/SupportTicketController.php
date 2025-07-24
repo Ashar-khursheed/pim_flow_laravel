@@ -162,7 +162,7 @@ public function index(Request $request)
         $query = SupportTicket::with(['category:id,name', 'priority:id,name']);
 
         // 🔍 Search by subject or description
-        if ($request->has('search') && !empty($request->search)) {
+        if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('subject', 'like', "%{$search}%")
@@ -170,23 +170,24 @@ public function index(Request $request)
             });
         }
 
-        // ✅ Filter by status
-        if ($request->has('status') && !empty($request->status)) {
+        // ✅ Filter by status (ignore if status is "all" or not set)
+        if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
         // 🔃 Sorting
-        $sortBy = $request->get('sort_by', 'created_at'); // Default: created_at
-        $sortOrder = $request->get('sort_order', 'desc'); // Default: desc
+        $sortBy = $request->get('sort_by', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
 
         $allowedSortFields = ['created_at', 'updated_at', 'subject', 'status'];
         if (!in_array($sortBy, $allowedSortFields)) {
             $sortBy = 'created_at';
         }
 
-        $tickets = $query->orderBy($sortBy, $sortOrder)->get();
+        $perPage = $request->get('per_page', 10);
+        $tickets = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
 
-        $transformed = $tickets->map(function ($ticket) {
+        $transformed = $tickets->getCollection()->map(function ($ticket) {
             return [
                 'id' => $ticket->id,
                 'subject' => $ticket->subject,
@@ -202,6 +203,12 @@ public function index(Request $request)
         return response()->json([
             'success' => true,
             'data' => $transformed,
+            'pagination' => [
+                'current_page' => $tickets->currentPage(),
+                'last_page' => $tickets->lastPage(),
+                'per_page' => $tickets->perPage(),
+                'total' => $tickets->total(),
+            ],
             'message' => 'Support tickets fetched successfully.'
         ], 200);
 
@@ -215,6 +222,7 @@ public function index(Request $request)
         ], 500);
     }
 }
+
 
     /**
      * @OA\Get(

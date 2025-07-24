@@ -189,7 +189,7 @@
 								<tr>
 									<td style="font-size:14px; line-height:24px; padding-top:5px; font-family: 'Noto Sans', sans-serif;">
 										Changed your mind?
-										<a href="{{ $checkoutUrl }}" class="order-link" style="text-decoration:underline; font-weight:500; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
+										<a href="{{ $checkoutURL }}" class="order-link" style="text-decoration:underline; font-weight:500; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 											Click here to reorder
 										</a>
 										- we’d love to serve you again.
