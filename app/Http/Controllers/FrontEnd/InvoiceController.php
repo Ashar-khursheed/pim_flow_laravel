@@ -139,11 +139,11 @@ class InvoiceController extends Controller
         ]);
     }
 
-      /**
+    /**
      * @OA\Post(
      *     path="/api/frontend/invoices",
      *     summary="Create a new invoice",
-     *     tags={"Frotend Invoices"},
+     *     tags={"Frontend Invoices"},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
@@ -176,9 +176,9 @@ class InvoiceController extends Controller
             'status'          => 'required|in:paid,unpaid,overdue',
         ]);
 
-        $validated['customer_id'] = Auth::id();
+        $customer = Auth::id();
 
-        $invoice = Invoice::create($validated);
+        $invoice = Invoice::create($customer);
 
         return response()->json(['message' => 'Invoice created', 'invoice' => $invoice], 201);
     }
