@@ -34,7 +34,7 @@ class DiffProductController extends Controller
                 : session()->get('guest_wishlist', []);
     
             // Step 1: Get all dif product IDs
-            $difProductIds = DB::table('dif')
+            $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
                 ->orderBy('priority', 'asc')
                 ->orderByDesc('similarity')
@@ -153,7 +153,7 @@ class DiffProductController extends Controller
     
     
             // Step 1: Get all dif product IDs
-            $difProductIds = DB::table('dif')
+            $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
                 ->orderBy('priority', 'asc')
                 ->orderByDesc('similarity')
