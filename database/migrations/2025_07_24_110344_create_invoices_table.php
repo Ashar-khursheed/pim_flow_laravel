@@ -13,7 +13,7 @@ class CreateInvoicesTable extends Migration
             $table->id();
             $table->string('invoice_number')->unique();
             $table->date('invoice_date');
-            $table->unsignedBigInteger('customer_id')->after('id');
+            $table->unsignedBigInteger('customer_id');
             $table->unsignedBigInteger('order_id')->nullable();
             $table->string('po_number')->nullable();
             $table->date('due_date');
