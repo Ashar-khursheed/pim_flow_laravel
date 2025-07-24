@@ -421,7 +421,7 @@ class OrderController extends Controller
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 			'shipments',
 			'creator',
 			'updator'
