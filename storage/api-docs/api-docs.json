@@ -23632,18 +23632,6 @@
                                         "type": "boolean",
                                         "example": false
                                     },
-                                    "variant_requires_shipping": {
-                                        "type": "boolean",
-                                        "example": true
-                                    },
-                                    "variant_color_title": {
-                                        "type": "string",
-                                        "example": "Red"
-                                    },
-                                    "variant_color_value": {
-                                        "type": "string",
-                                        "example": "#FF0000"
-                                    },
                                     "vendor_id": {
                                         "type": "integer",
                                         "example": 7
@@ -23659,13 +23647,6 @@
                                     "units_sold": {
                                         "type": "integer",
                                         "example": 50
-                                    },
-                                    "frequently_bought_together[]": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "integer",
-                                            "example": 101
-                                        }
                                     },
                                     "google_shopping_category": {
                                         "type": "string",
@@ -23997,29 +23978,6 @@
                                     "type": "object"
                                 }
                             }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/products/product-input": {
-            "get": {
-                "tags": [
-                    "Products"
-                ],
-                "summary": "Get product input fields",
-                "description": "Fetches all available product input fields.",
-                "operationId": "getProductInputs",
-                "responses": {
-                    "201": {
-                        "description": "Success",
-                        "content": {
-                            "application/json": {}
                         }
                     }
                 },
