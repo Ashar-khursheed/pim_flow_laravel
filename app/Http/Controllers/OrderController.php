@@ -424,7 +424,7 @@ class OrderController extends Controller
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 			'shipments',
 			'creator',
-			'updator'
+			'updator',
 			'tracking',
 		]);
 
