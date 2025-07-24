@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class SeoManagement extends Model
 {
-	
-
 	protected $fillable = [
 		'relational_id',
 		'relational_type',
@@ -41,7 +39,9 @@ class SeoManagement extends Model
 		'gen_type',
 		'cat_desc',
 		'banner_image_alt_text',
-		'banner_image_file'
+		'banner_image_file',
+		'banner_slug',                 // ✅ NEW FIELD
+		'popularTag_details',         // ✅ NEW FIELD
 	];
 
 	public function relational()
@@ -50,20 +50,19 @@ class SeoManagement extends Model
 	}
 	
 	protected $casts = [
-		'popular_tags' => 'array', // Ensures it's handled as array in Laravel
+		'popular_tags' => 'array',
 		'tags' => 'array',
-        'schema' => 'array',
-        'popular_tags' => 'array',
-
+		'schema' => 'array',
+		'popularTag_details' => 'array', // ✅ NEW FIELD cast
 	];
 
 	public function secondaryKeywordDetails()
 	{
 		return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id');
 	}
-	public function seo_secondary_keywords()
-    {
-        return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id', 'id');
-    }
 
+	public function seo_secondary_keywords()
+	{
+		return $this->hasMany(SeoSecondaryKeyword::class, 'primary_keyword_id', 'id');
+	}
 }

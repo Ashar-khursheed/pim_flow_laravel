@@ -89,6 +89,167 @@ class SeoManagementController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function store(Request $request)
+	// {
+	// 	if (!auth()->user()->can('add seo mgmt')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+	// 	try {
+	// 		/* Update the validation rules */
+	// 		$validated = $request->validate([
+	// 			'relational_id' => 'required|integer',
+	// 			'relational_type' => 'required|string',
+	// 			'url' => 'required|string',
+	// 			'primary_keyword' => 'required|string',
+	// 			'monthly_search_volume' => 'required|integer',
+	// 			'title_tag' => 'required|string',
+	// 			'meta_title' => 'required|string',
+	// 			'meta_description' => 'required|string',
+	// 			'internal_links' => 'nullable|string',
+	// 			'indexing' => 'required|in:0,1,true,false',
+	// 			'og_title' => 'nullable|string',
+	// 			'og_description' => 'nullable|string',
+	// 			'og_image_url' => 'nullable|string',
+	// 			'og_image_alt_text' => 'nullable|string',
+	// 			'og_image_name' => 'nullable|string',
+	// 			'tags' => 'nullable|string',
+	// 			'schema_rating' => 'nullable|integer',
+	// 			'schema_reviews_count' => 'nullable|integer',
+	// 			'created_by' => 'required|integer',
+	// 			'updated_by' => 'nullable|integer',
+	// 			'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+	// 			'secondary_keywords' => 'nullable|json',
+	// 			'paragraph_1' => 'nullable|string',
+	// 			'paragraph_2' => 'nullable|string',
+	// 			'paragraph_3' => 'nullable|string',
+	// 			'paragraph_4' => 'nullable|string',
+	// 			'popular_tags' => 'nullable',
+	// 			'google_shopping_feed_title' => 'nullable|string',
+	// 			'google_shopping_feed_description' => 'nullable|string',
+	// 			'short_title_variant' => 'nullable|string',
+	// 			'gen_type' => 'nullable|integer',
+	// 			'cat_desc' => 'nullable|string',
+	// 			'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
+	// 			'banner_image_alt_text' => 'nullable|string',
+	// 			'banner_slug' => 'nullable|string', // ✅ NEW
+	// 			'popularTag_details' => 'nullable|json', // ✅ NEW
+				
+				
+	// 		]);
+			
+
+	// 		/* Prepare the data for creating the SEO management record */
+	// 		$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+
+	// 		/* Convert indexing boolean */
+	// 		$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+	// 		/* In your store method */
+	// 		if (!empty($validated['popular_tags'])) {
+	// 			if (is_string($validated['popular_tags'])) {
+	// 				/* Try to decode if it's a JSON string */
+	// 				$decoded = json_decode($validated['popular_tags'], true);
+
+	// 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+	// 					$seoData['popular_tags'] = $decoded;
+	// 				} else {
+	// 					/* Fallback: treat it as a plain comma-separated string */
+	// 					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+	// 				}
+	// 			} else {
+	// 				$seoData['popular_tags'] = $validated['popular_tags'];
+	// 			}
+	// 		}
+	// 		/* Handle OG image file upload if provided */
+	// 		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+	// 			$storage = app('Illuminate\Support\Facades\Storage');
+
+	// 			/* Define folder path for upload */
+	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
+
+	// 			/* Store the file */
+	// 			$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
+
+	// 			/* Generate URL for the stored file */
+	// 			$imageUrl = $storage::disk('s3')->url($imagePath);
+
+	// 			/* Update the og_image_url in the data */
+	// 			$seoData['og_image_url'] = $imageUrl;
+
+	// 			/* Update the og_image_name if not provided */
+	// 			if (empty($seoData['og_image_name'])) {
+	// 				$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+	// 			}
+	// 		}
+
+	// 		if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+	// 			$storage = app('Illuminate\Support\Facades\Storage');
+			
+	// 			// Define folder path for upload
+	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+			
+	// 			// Store the file on S3
+	// 			$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+			
+	// 			// Generate S3 URL
+	// 			$bannerImageUrl = $storage::disk('s3')->url($bannerImagePath);
+			
+	// 			// Store in DB fields
+	// 			$seoData['banner_image_file'] = $bannerImageUrl;
+	// 		}
+	// 		$seoData['schema'] = '{}'; /* or null if the DB allows */
+	// 		/* Generate schema and add it to the data (as an array) */
+	// 		$schemaArray = $this->generateSchema(new SeoManagement($seoData));
+
+	// 		/* Convert the schema array to a JSON string */
+	// 		$seoData['schema'] = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+
+	// 		/* Create the SEO record */
+	// 		$seo = SeoManagement::create($seoData);
+
+	// 		/* Process secondary keywords */
+	// 		if (!empty($validated['secondary_keywords'])) {
+	// 			/* Decode the JSON string to array */
+	// 			$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
+
+	// 			if (is_array($secondaryKeywords)) {
+	// 				foreach ($secondaryKeywords as $keyword) {
+	// 					if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
+	// 						SeoSecondaryKeyword::create([
+	// 							'primary_keyword_id' => $seo->id,
+	// 							'secondary_keyword' => $keyword['secondary_keyword'],
+	// 							'monthly_search_volume' => $keyword['monthly_search_volume'],
+	// 						]);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+
+	// 		/* Generate schema and save */
+	// 		$seo->schema = $this->generateSchema($seo);
+	// 		$seo->save();
+
+	// 		/* Return response with loaded secondary keywords */
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'SEO record created successfully',
+	// 			'data' => $seo->load('secondaryKeywordDetails')
+	// 		], 201);
+	// 	} catch (\Exception $e) {
+	// 		/* Log the error */
+	// 		\Log::error('SEO Management creation error: ' . $e->getMessage());
+
+	// 		/* Return a proper JSON error response */
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Failed to create SEO record',
+	// 			'error' => $e->getMessage()
+	// 		], 422);
+	// 	}
+	// }
 	public function store(Request $request)
 	{
 		if (!auth()->user()->can('add seo mgmt')) {
@@ -97,8 +258,8 @@ class SeoManagementController extends Controller
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
+
 		try {
-			/* Update the validation rules */
 			$validated = $request->validate([
 				'relational_id' => 'required|integer',
 				'relational_type' => 'required|string',
@@ -134,49 +295,42 @@ class SeoManagementController extends Controller
 				'cat_desc' => 'nullable|string',
 				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp',
 				'banner_image_alt_text' => 'nullable|string',
-				
-				
+				'banner_slug' => 'nullable|string', // ✅ NEW
+				'popularTag_details' => 'nullable|json', // ✅ NEW
 			]);
-			
 
-			/* Prepare the data for creating the SEO management record */
-			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
+			$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file', 'banner_image_file'])->toArray();
 
-			/* Convert indexing boolean */
 			$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
-			/* In your store method */
+
 			if (!empty($validated['popular_tags'])) {
 				if (is_string($validated['popular_tags'])) {
-					/* Try to decode if it's a JSON string */
 					$decoded = json_decode($validated['popular_tags'], true);
-
 					if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
 						$seoData['popular_tags'] = $decoded;
 					} else {
-						/* Fallback: treat it as a plain comma-separated string */
 						$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
 					}
 				} else {
 					$seoData['popular_tags'] = $validated['popular_tags'];
 				}
 			}
-			/* Handle OG image file upload if provided */
+
+			// ✅ Handle popularTag_details JSON
+			if (!empty($validated['popularTag_details'])) {
+				if (is_string($validated['popularTag_details'])) {
+					$seoData['popularTag_details'] = json_decode($validated['popularTag_details'], true);
+				} else {
+					$seoData['popularTag_details'] = $validated['popularTag_details'];
+				}
+			}
+
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
-
-				/* Define folder path for upload */
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
-
-				/* Store the file */
 				$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
-
-				/* Generate URL for the stored file */
 				$imageUrl = $storage::disk('s3')->url($imagePath);
-
-				/* Update the og_image_url in the data */
 				$seoData['og_image_url'] = $imageUrl;
-
-				/* Update the og_image_name if not provided */
 				if (empty($seoData['og_image_name'])) {
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
@@ -184,35 +338,20 @@ class SeoManagementController extends Controller
 
 			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
-			
-				// Define folder path for upload
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-			
-				// Store the file on S3
 				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-			
-				// Generate S3 URL
 				$bannerImageUrl = $storage::disk('s3')->url($bannerImagePath);
-			
-				// Store in DB fields
 				$seoData['banner_image_file'] = $bannerImageUrl;
 			}
-			$seoData['schema'] = '{}'; /* or null if the DB allows */
-			/* Generate schema and add it to the data (as an array) */
-			$schemaArray = $this->generateSchema(new SeoManagement($seoData));
 
-			/* Convert the schema array to a JSON string */
+			$seoData['schema'] = '{}';
+			$schemaArray = $this->generateSchema(new SeoManagement($seoData));
 			$seoData['schema'] = json_encode($schemaArray, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
-
-			/* Create the SEO record */
 			$seo = SeoManagement::create($seoData);
 
-			/* Process secondary keywords */
 			if (!empty($validated['secondary_keywords'])) {
-				/* Decode the JSON string to array */
 				$secondaryKeywords = json_decode($validated['secondary_keywords'], true);
-
 				if (is_array($secondaryKeywords)) {
 					foreach ($secondaryKeywords as $keyword) {
 						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
@@ -226,21 +365,18 @@ class SeoManagementController extends Controller
 				}
 			}
 
-			/* Generate schema and save */
 			$seo->schema = $this->generateSchema($seo);
 			$seo->save();
 
-			/* Return response with loaded secondary keywords */
 			return response()->json([
 				'success' => true,
 				'message' => 'SEO record created successfully',
 				'data' => $seo->load('secondaryKeywordDetails')
 			], 201);
+
 		} catch (\Exception $e) {
-			/* Log the error */
 			\Log::error('SEO Management creation error: ' . $e->getMessage());
 
-			/* Return a proper JSON error response */
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to create SEO record',
@@ -248,6 +384,7 @@ class SeoManagementController extends Controller
 			], 422);
 		}
 	}
+
 
 	/**
 	 * @OA\Get(
@@ -578,7 +715,6 @@ class SeoManagementController extends Controller
 		}
 
 		try {
-			
 			$rules = [
 				'relational_id' => 'required|integer',
 				'url' => 'required|string',
@@ -611,21 +747,20 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable', // <-- default to nullable
+				'banner_image_file' => 'nullable',
 				'banner_image_alt_text' => 'nullable|string',
+				'banner_slug' => 'nullable|string', // ✅ New field
+				'popularTag_details' => 'nullable|json', // ✅ New field
 			];
 
-			// ✅ Only apply image validation if a file is uploaded
 			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
 				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
 			}
 
-			// 🚀 Now validate
 			$validated = $request->validate($rules);
 
-						$seo = SeoManagement::findOrFail($id);
+			$seo = SeoManagement::findOrFail($id);
 
-			// ✅ Validate relational_type and relational_id
 			if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
 				return response()->json([
 					'success' => false,
@@ -635,7 +770,6 @@ class SeoManagementController extends Controller
 
 			$seoData = $validated;
 
-			// Optional paragraphs
 			foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
 				if (!$request->has($field)) {
 					$seoData[$field] = '';
@@ -658,6 +792,15 @@ class SeoManagementController extends Controller
 				}
 			}
 
+			// ✅ Handle new popularTag_details
+			if (!empty($validated['popularTag_details'])) {
+				if (is_string($validated['popularTag_details'])) {
+					$seoData['popularTag_details'] = json_decode($validated['popularTag_details'], true);
+				} else {
+					$seoData['popularTag_details'] = $validated['popularTag_details'];
+				}
+			}
+
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$storage = app('Illuminate\Support\Facades\Storage');
 				$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
@@ -667,61 +810,24 @@ class SeoManagementController extends Controller
 					$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
 				}
 			}
-		  if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-        $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-        $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-        $bannerImageUrl = Storage::disk('s3')->url($bannerImagePath);
-        $seoData['banner_image_file'] = $bannerImageUrl;
-    }
-			// ✅ Else: do nothing — keep old banner_image_file value
 
-
-
-			
-			// if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
-			// 	$storage = app('Illuminate\Support\Facades\Storage');
-			// 	$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-			// 	$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-			// 	$seoData['banner_image_file'] = $storage::disk('s3')->url($bannerImagePath);
-			// }
-			
-
-			foreach ($seoData as $key => $value) {
-				$seo->$key = $value ?? '';
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+				$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+				$bannerImageUrl = \Storage::disk('s3')->url($bannerImagePath);
+				$seoData['banner_image_file'] = $bannerImageUrl;
 			}
 
-			$seo->schema = json_encode($this->generateSchema($seo), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-			$seo->save();
-
-			if (!empty($validated['secondary_keywords'])) {
-				SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
-
-				$secondaryKeywords = is_string($validated['secondary_keywords'])
-					? json_decode($validated['secondary_keywords'], true)
-					: $validated['secondary_keywords'];
-
-				if (is_array($secondaryKeywords)) {
-					foreach ($secondaryKeywords as $keyword) {
-						if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
-							SeoSecondaryKeyword::create([
-								'primary_keyword_id' => $seo->id,
-								'secondary_keyword' => $keyword['secondary_keyword'],
-								'monthly_search_volume' => $keyword['monthly_search_volume'],
-							]);
-						}
-					}
-				}
-			}
+			$seo->update($seoData);
 
 			return response()->json([
 				'success' => true,
 				'message' => 'SEO record updated successfully',
-				'data' => $seo->load('secondaryKeywordDetails')
+				'data' => $seo
 			], 200);
 
 		} catch (\Exception $e) {
 			\Log::error('SEO Management update error: ' . $e->getMessage());
-
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to update SEO record',
@@ -729,6 +835,168 @@ class SeoManagementController extends Controller
 			], 422);
 		}
 	}
+
+	// public function update(Request $request, $relational_type, $id)
+	// {
+	// 	if (!auth()->user()->can('update seo mgmt')) {
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => "You don't have permission to access this module.",
+	// 		]);
+	// 	}
+
+	// 	try {
+			
+	// 		$rules = [
+	// 			'relational_id' => 'required|integer',
+	// 			'url' => 'required|string',
+	// 			'primary_keyword' => 'required|string',
+	// 			'monthly_search_volume' => 'required|integer',
+	// 			'title_tag' => 'required|string',
+	// 			'meta_title' => 'required|string',
+	// 			'meta_description' => 'required|string',
+	// 			'internal_links' => 'nullable|string',
+	// 			'indexing' => 'required|in:0,1,true,false',
+	// 			'og_title' => 'nullable|string',
+	// 			'og_description' => 'nullable|string',
+	// 			'og_image_url' => 'nullable|string',
+	// 			'og_image_alt_text' => 'nullable|string',
+	// 			'og_image_name' => 'nullable|string',
+	// 			'tags' => 'nullable|string',
+	// 			'schema_rating' => 'nullable|integer',
+	// 			'schema_reviews_count' => 'nullable|integer',
+	// 			'created_by' => 'required|integer',
+	// 			'updated_by' => 'nullable|integer',
+	// 			'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp',
+	// 			'secondary_keywords' => 'nullable|string',
+	// 			'paragraph_1' => 'nullable|string',
+	// 			'paragraph_2' => 'nullable|string',
+	// 			'paragraph_3' => 'nullable|string',
+	// 			'paragraph_4' => 'nullable|string',
+	// 			'popular_tags' => 'nullable|string',
+	// 			'google_shopping_feed_title' => 'nullable|string',
+	// 			'google_shopping_feed_description' => 'nullable|string',
+	// 			'short_title_variant' => 'nullable|string',
+	// 			'gen_type' => 'nullable|integer',
+	// 			'cat_desc' => 'nullable|string',
+	// 			'banner_image_file' => 'nullable', // <-- default to nullable
+	// 			'banner_image_alt_text' => 'nullable|string',
+	// 		];
+
+	// 		// ✅ Only apply image validation if a file is uploaded
+	// 		if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+	// 			$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
+	// 		}
+
+	// 		// 🚀 Now validate
+	// 		$validated = $request->validate($rules);
+
+	// 					$seo = SeoManagement::findOrFail($id);
+
+	// 		// ✅ Validate relational_type and relational_id
+	// 		if ($seo->relational_type !== $relational_type || $seo->relational_id != $validated['relational_id']) {
+	// 			return response()->json([
+	// 				'success' => false,
+	// 				'message' => 'The provided relational_type or relational_id does not match the existing record.',
+	// 			], 403);
+	// 		}
+
+	// 		$seoData = $validated;
+
+	// 		// Optional paragraphs
+	// 		foreach (['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'] as $field) {
+	// 			if (!$request->has($field)) {
+	// 				$seoData[$field] = '';
+	// 			}
+	// 		}
+
+	// 		$seoData = collect($seoData)->except(['secondary_keywords', 'og_image_file'])->toArray();
+	// 		$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
+
+	// 		if (!empty($validated['popular_tags'])) {
+	// 			if (is_string($validated['popular_tags'])) {
+	// 				$decoded = json_decode($validated['popular_tags'], true);
+	// 				if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+	// 					$seoData['popular_tags'] = $decoded;
+	// 				} else {
+	// 					$seoData['popular_tags'] = array_map('trim', explode(',', $validated['popular_tags']));
+	// 				}
+	// 			} else {
+	// 				$seoData['popular_tags'] = $validated['popular_tags'];
+	// 			}
+	// 		}
+
+	// 		if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+	// 			$storage = app('Illuminate\Support\Facades\Storage');
+	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-images";
+	// 			$imagePath = $request->file('og_image_file')->store($folderPath, 's3');
+	// 			$seoData['og_image_url'] = $storage::disk('s3')->url($imagePath);
+	// 			if (empty($seoData['og_image_name'])) {
+	// 				$seoData['og_image_name'] = $request->file('og_image_file')->getClientOriginalName();
+	// 			}
+	// 		}
+	// 	  if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+    //     $folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+    //     $bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+    //     $bannerImageUrl = Storage::disk('s3')->url($bannerImagePath);
+    //     $seoData['banner_image_file'] = $bannerImageUrl;
+    // 	}
+	// 		// ✅ Else: do nothing — keep old banner_image_file value
+
+
+
+			
+	// 		// if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+	// 		// 	$storage = app('Illuminate\Support\Facades\Storage');
+	// 		// 	$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
+	// 		// 	$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
+	// 		// 	$seoData['banner_image_file'] = $storage::disk('s3')->url($bannerImagePath);
+	// 		// }
+			
+
+	// 		foreach ($seoData as $key => $value) {
+	// 			$seo->$key = $value ?? '';
+	// 		}
+
+	// 		$seo->schema = json_encode($this->generateSchema($seo), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	// 		$seo->save();
+
+	// 		if (!empty($validated['secondary_keywords'])) {
+	// 			SeoSecondaryKeyword::where('primary_keyword_id', $seo->id)->delete();
+
+	// 			$secondaryKeywords = is_string($validated['secondary_keywords'])
+	// 				? json_decode($validated['secondary_keywords'], true)
+	// 				: $validated['secondary_keywords'];
+
+	// 			if (is_array($secondaryKeywords)) {
+	// 				foreach ($secondaryKeywords as $keyword) {
+	// 					if (isset($keyword['secondary_keyword']) && isset($keyword['monthly_search_volume'])) {
+	// 						SeoSecondaryKeyword::create([
+	// 							'primary_keyword_id' => $seo->id,
+	// 							'secondary_keyword' => $keyword['secondary_keyword'],
+	// 							'monthly_search_volume' => $keyword['monthly_search_volume'],
+	// 						]);
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => 'SEO record updated successfully',
+	// 			'data' => $seo->load('secondaryKeywordDetails')
+	// 		], 200);
+
+	// 	} catch (\Exception $e) {
+	// 		\Log::error('SEO Management update error: ' . $e->getMessage());
+
+	// 		return response()->json([
+	// 			'success' => false,
+	// 			'message' => 'Failed to update SEO record',
+	// 			'error' => $e->getMessage()
+	// 		], 422);
+	// 	}
+	// }
 
 
 	/**
