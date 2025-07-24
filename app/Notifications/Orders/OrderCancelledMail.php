@@ -40,7 +40,7 @@ class OrderCancelledMail extends Notification implements ShouldQueue
 		$name = $notifiable->name ?? 'User';
 		$orderNumber = $this->order->order_number;
 
-		$checkoutUrl = url("/checkout");
+		$checkoutURL = url("/checkout");
 		$rightPngURL = $backendURL. '/right.png';
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
@@ -50,7 +50,7 @@ class OrderCancelledMail extends Notification implements ShouldQueue
 			'name' => $name,
 			'orderNumber' => $orderNumber,
 
-			'checkoutUrl' => $checkoutUrl,
+			'checkoutURL' => $checkoutURL,
 			'rightPngURL' => $rightPngURL,
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
