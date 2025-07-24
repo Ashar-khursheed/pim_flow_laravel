@@ -13924,7 +13924,7 @@
             },
             "post": {
                 "tags": [
-                    "Frotend Invoices"
+                    "Frontend Invoices"
                 ],
                 "summary": "Create a new invoice",
                 "operationId": "aefb49c5e449fba5d6af7b71911bbdaa",
@@ -32304,10 +32304,6 @@
         {
             "name": "Frontend Invoices",
             "description": "Frontend Invoices"
-        },
-        {
-            "name": "Frotend Invoices",
-            "description": "Frotend Invoices"
         },
         {
             "name": "Frontend-Location",
