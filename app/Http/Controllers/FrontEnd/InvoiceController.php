@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Carbon\Carbon;
 
 class InvoiceController extends Controller
 {
@@ -43,6 +44,7 @@ class InvoiceController extends Controller
      *     )
      * )
      */
+
     public function index()
     {
         $customer = Auth::id();
@@ -52,17 +54,17 @@ class InvoiceController extends Controller
         return response()->json([
             'total_outstanding' => $invoices->where('status', '!=', 'paid')->sum('amount'),
             'paid_this_month'   => $invoices->where('status', 'paid')->filter(function ($inv) {
-                return $inv->updated_at->format('m') == now()->format('m');
+                return Carbon::parse($inv->updated_at)->format('m') == now()->format('m');
             })->sum('amount'),
             'overdue'           => $invoices->where('status', 'overdue')->sum('amount'),
             'total_invoices'    => $invoices->count(),
             'invoices' => $invoices->map(function ($invoice) {
                 return [
                     'invoice_number'  => $invoice->invoice_number,
-                    'invoice_date'    => $invoice->invoice_date->format('M d Y'),
+                    'invoice_date'    => Carbon::parse($invoice->invoice_date)->format('M d Y'),
                     'order_id'        => $invoice->order_id,
                     'po_number'       => $invoice->po_number,
-                    'due_date'        => $invoice->due_date->format('M d Y'),
+                    'due_date'        => Carbon::parse($invoice->due_date)->format('M d Y'),
                     'amount'          => number_format($invoice->amount, 2),
                     'payment_method'  => $invoice->payment_method,
                     'status'          => $invoice->status,
@@ -70,6 +72,7 @@ class InvoiceController extends Controller
             }),
         ]);
     }
+
 
     /**
      * @OA\Get(
