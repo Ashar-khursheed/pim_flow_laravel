@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class DiffProduct extends Model
 {
-    protected $table = 'fbt';
+    protected $table = 'diff_brands';
 
     protected $fillable = [
         'product_id',
