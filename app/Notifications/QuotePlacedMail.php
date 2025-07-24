@@ -45,18 +45,15 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		$siteURL = $url;
 
 		$name = $notifiable->type === 'Private' ? $notifiable->name : $notifiable->business_name;
-
 		$customerAddress = $this->quote->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
-
 		$email = $notifiable->email ?? '';
 
 		$createdAt = $this->quote->created_at->format('M d Y');
 		$expiredAt = $this->quote->created_at->copy()->addDays($this->quote->expiration_days)->format('M d Y');
 		$quoteNumber = $this->quote->quote_number;
-
 		$paymentMode = $this->quote->payment_terms;
 		$quoteType = 'Online';
 		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
@@ -121,22 +118,28 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 		$params = [
 			'logoUrl' => $logoUrl,
+
+			'companyName' => $companyName,
+			'street' => $street,
+			'city' => $city,
+			'phone' => $phone,
+			'siteEmail' => $siteEmail,
+			'siteURL' => $siteURL
+
 			'name' => $name,
-			'quoteUrl' => $quoteUrl,
-
-			'quoteNumber' => $quoteNumber,
-			'quoteDate' => $quoteDate,
-			'currency' => $currency,
-			'paidAmount' => $paidAmount,
-			'paymentMethod' => $paymentMethod,
-
 			'address' => $address,
 			'city' => $city,
 			'country' => $country,
-			'zipcode' => $zipcode,
+			'email' => $email,
+
+			'createdAt' => $createdAt,
+			'expiredAt' => $expiredAt,
+			'quoteNumber' => $quoteNumber,
+			'paymentMode' => $paymentMode,
+			'quoteType' => $quoteType,
+			'currency' => $currency,
 
 			'products' => $products,
-			'totalSaved' => $totalSaved,
 
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
@@ -144,9 +147,12 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 			'taxPercent' => $taxPercent,
 			'taxAmount' => $taxAmount,
 			'total' => $total,
+			'totalInWords' => $totalInWords,
 
-			'siteUrl' => $siteUrl,
-			'siteEmail' => $siteEmail,
+			'beneficiaryAddress' => $beneficiaryAddress,
+			'accountNo' => $accountNo,
+			'bankName' => $bankName,
+			'routingCode' => $routingCode,
 		];
 
 		return (new MailMessage)
