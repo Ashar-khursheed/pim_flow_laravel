@@ -372,7 +372,7 @@ class ProductController extends BaseController
 			'Marketing' => ['name', 'description', 'gen_type'],
 			'Media' => ['images', 'video_path', 'documents' , 'benefits_features'],
 			'Store & Vendor Information' => [ 'brand_id' ],
-			'Performance & Analytics' => ['views', 'units_sold', 'frequently_bought_together'],
+			'Performance & Analytics' => ['views', 'units_sold'],
 			'SEO' => ['google_shopping_category', 'google_shopping_mpn'],
 			'Other' => ['order', 'website_ids'],
 			'All' => []
@@ -613,64 +613,6 @@ class ProductController extends BaseController
 				$formattedProduct['description'] = is_array($decodedDescription) ? $decodedDescription : [$value];
 				break;
 
-				case 'frequently_bought_together':
-				/* Ensure $value is a valid JSON string */
-				$decoded = json_decode($value, true);
-
-				if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
-					$formattedProduct[$attribute] = []; /* Default to an empty array if decoding fails */
-				} else {
-					/* Get all product IDs from the frequently bought together items */
-					$productIds = array_map(function($item) {
-						/* Check if the item is an array and contains 'value' or it's a comma-separated string */
-						return is_array($item) ? ($item['value'] ?? null) : $item;
-					}, $decoded);
-
-					/* Flatten any possible comma-separated IDs into an array of individual IDs */
-					$productIds = array_merge(...array_map(function($id) {
-						return explode(',', $id);  /* Split comma-separated values */
-					}, $productIds));
-
-					/* Filter out null or empty values */
-					$productIds = array_filter($productIds, function($id) {
-						return !empty($id); /* Ensure we only have non-empty IDs */
-					});
-
-					/* If we have product IDs, fetch their SKUs from the Product model */
-					$productSkus = [];
-					if (!empty($productIds)) {
-						/* Query the Product model to get SKUs for these product IDs */
-						$products = \App\Models\Product::whereIn('id', $productIds)
-						->select('id', 'sku')
-						->get()
-						->keyBy('id');
-
-						/* Create a mapping of product ID to SKU */
-						foreach ($products as $product) {
-							$productSkus[$product->id] = $product->sku;
-						}
-					}
-
-					/* Now map the original items, but include SKUs as key-value pairs (ID => SKU) */
-					$formattedProduct[$attribute] = array_map(function($item) use ($productSkus) {
-						$productIds = is_array($item) ? ($item['value'] ?? null) : $item;
-						/* Split the IDs, fetch the SKUs, and return them as an array of key-value pairs (ID => SKU) */
-						$ids = explode(',', $productIds);
-						$skus = array_map(function($id) use ($productSkus) {
-							return $productSkus[$id] ?? null;
-						}, $ids);
-
-						/* Return a flat array with 'id' => ID and 'sku' => SKU */
-						return array_map(function($id, $sku) {
-							return ['id' => $id, 'sku' => $sku]; /* Pair each ID with its SKU */
-						}, $ids, $skus);
-					}, $decoded);
-
-					/* Flatten the nested arrays (if any) and merge them into one array */
-					$formattedProduct[$attribute] = array_merge(...$formattedProduct[$attribute]);
-				}
-				break;
-
 				case 'images':
 				case 'video_path':
 				case 'documents':
@@ -752,14 +694,10 @@ class ProductController extends BaseController
 	 *                 @OA\Property(property="video_path[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="documents[]", type="array", @OA\Items(type="string", format="binary")),
 	 *                 @OA\Property(property="is_variation", type="boolean", example=false),
-	 *                 @OA\Property(property="variant_requires_shipping", type="boolean", example=true),
-	 *                 @OA\Property(property="variant_color_title", type="string", example="Red"),
-	 *                 @OA\Property(property="variant_color_value", type="string", example="#FF0000"),
 	 *                 @OA\Property(property="vendor_id", type="integer", example=7),
 	 *                 @OA\Property(property="brand_id", type="integer", example=13),
 	 *                 @OA\Property(property="views", type="integer", example=200),
 	 *                 @OA\Property(property="units_sold", type="integer", example=50),
-	 *                 @OA\Property(property="frequently_bought_together[]", type="array", @OA\Items(type="integer", example=101)),
 	 *                 @OA\Property(property="google_shopping_category", type="string", example="Electronics"),
 	 *                 @OA\Property(property="google_shopping_mpn", type="string", example="123-ABC"),
 	 *                 @OA\Property(property="order", type="integer", example=1),
@@ -1141,41 +1079,6 @@ class ProductController extends BaseController
 		$input = $request->except('_method', 'status');
 		/* Remove 'faqs' from the input before validation */
 
-		/* Process the new fields if they exist in the request */
-		if ($request->has('cost_per_item')) {
-			$input['cost_per_item'] = $request->input('cost_per_item');
-		}
-
-		if ($request->has('cost_per_item_currency')) {
-			$input['cost_per_item_currency'] = $request->input('cost_per_item_currency');
-		}
-
-		if ($request->has('cost_type')) {
-			$input['cost_type'] = $request->input('cost_type');
-		}
-
-		if ($request->has('additional_cost_percentage')) {
-			$input['additional_cost_percentage'] = $request->input('additional_cost_percentage');
-		}
-
-		if ($request->has('additional_cost_value')) {
-			$input['additional_cost_value'] = $request->input('additional_cost_value');
-		}
-
-		/* Calculate the total cost if it's not already provided */
-		if ($request->has('cost_per_item') && ($request->has('additional_cost_percentage') || $request->has('additional_cost_value'))) {
-			if ($input['cost_type'] === 'percentage' && $request->has('additional_cost_percentage')) {
-				$input['total_cost_per_item'] = $input['cost_per_item'] + ($input['cost_per_item'] * $input['additional_cost_percentage'] / 100);
-			} elseif ($input['cost_type'] === 'value' && $request->has('additional_cost_value')) {
-				$input['total_cost_per_item'] = $input['cost_per_item'] + $input['additional_cost_value'];
-			}
-		}
-		/* ✅ Remove review-related fields before validation */
-		$reviewFields = ['review_customer_email', 'review_customer_name', 'review_comment', 'review_status', 'review_star', 'review_images'];
-		foreach ($reviewFields as $field) {
-			unset($input[$field]);
-		}
-
 		$fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
 
 		foreach ($fieldsToUnset as $field) {
@@ -1185,7 +1088,6 @@ class ProductController extends BaseController
 		$imagePath = 'production/products';
 		$videoPath = 'production/videos';
 		$documentPath = 'production/documents';
-		$reviewImagePath = 'production/reviews';
 
 		// Handle images with role-based permission
 		// Handle images with role-based permission - FIXED VERSION
@@ -1206,7 +1108,7 @@ class ProductController extends BaseController
 				}
 
 			// Save as JSON with unescaped slashes
-				$input['images'] = json_encode($finalImages, JSON_UNESCAPED_SLASHES);
+				$input['images'] = json_encode($finalImages);
 			} else {
 			// User tried to modify images but doesn't have permission - check if they're uploading files
 				$hasNewImageFiles = false;
@@ -1248,7 +1150,7 @@ class ProductController extends BaseController
 				// ignore invalid inputs
 				}
 
-				$input['video_path'] = json_encode($finalVideos, JSON_UNESCAPED_SLASHES);
+				$input['video_path'] = json_encode($finalVideos);
 			} else {
 			// User tried to modify videos but doesn't have permission - check if they're uploading files
 				$hasNewVideoFiles = false;
@@ -1304,32 +1206,17 @@ class ProductController extends BaseController
 		}
 
 		/* Convert to JSON with unescaped slashes */
-		$input['documents'] = json_encode($input['documents'], JSON_UNESCAPED_SLASHES);
+		$input['documents'] = json_encode($input['documents']);
 
 		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 
 		/* List of valid fields allowed for updating */
-		$validArray = [
-			"sku", "status", "barcode",
-			"stock_status", "tax_id", "currency_id", "name", "description", "images",
-			"image", "video_path", "videos", "documents",
-			"variant_barcode",
-			"brand_id", "views", "units_sold", "frequently_bought_together", "google_shopping_category", "google_shopping_mpn", "order",
-			"unit_of_measurement_id", "benefits_features" , "gen_type" , "approved"
-		];
+		$validArray = [ "sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features" , "gen_type" , "approved"];
 
 		unset($input['product_attributes']);
 		unset($input['vendor_id']);
 
-		/* Check for invalid fields */
-			// $invalidFields = array_diff(array_keys($input), $validArray);
-			// if (!empty($invalidFields)) {
-			// 	return response()->json([
-			// 		'success' => false,
-			// 		'message' => 'The field' . (count($invalidFields) > 1 ? 's' : '') . ' ' . implode(', ', $invalidFields) . ' ' . (count($invalidFields) > 1 ? 'are' : 'is') . ' not valid.'
-			// 	]);
-			// }
 		$input = array_intersect_key($input, array_flip($validArray));
 
 		/* Initialize an error array to store validation errors */
@@ -1373,7 +1260,7 @@ class ProductController extends BaseController
 
 					// Only save if changed
 				if ($newBenefits !== $existingBenefits) {
-					$input['benefits_features'] = json_encode($newBenefits, JSON_UNESCAPED_SLASHES);
+					$input['benefits_features'] = json_encode($newBenefits);
 				} else {
 						// No change, so ignore it
 					unset($input['benefits_features']);
@@ -1383,8 +1270,6 @@ class ProductController extends BaseController
 				unset($input['benefits_features']);
 			}
 		}
-
-
 
 		if ($request->has('description')) {
 			if ($canModifyContent) {
@@ -1416,27 +1301,12 @@ class ProductController extends BaseController
 				}
 
 					// Save the description
-				$input['description'] = json_encode($newDescription, JSON_UNESCAPED_SLASHES);
+				$input['description'] = json_encode($newDescription);
 			} else {
 					// User tried to modify description but doesn't have permission
 					// For now, let's just remove it from input to prevent overwriting
 					// This matches the behavior when no actual change is detected
 				unset($input['description']);
-			}
-		}
-
-		/* Stock status validation */
-		$usStockStatusArray = [
-			1 => "in_stock",
-			2 => "out_of_stock",
-			3 => "Pre Order"
-		];
-		if (isset($input['stock_status'])) {
-			if (!is_numeric($input['stock_status']) || !array_key_exists((int) $input['stock_status'], $usStockStatusArray)) {
-				$rowError[] = "Stock status should be numeric and either 1 for In Stock, 2 for Out of Stock, or 3 for On Backorder.";
-			} else {
-				$product->stock_status = $usStockStatusArray[(int) $input['stock_status']];
-				unset($input['stock_status']); /* Remove processed field */
 			}
 		}
 
@@ -1463,16 +1333,6 @@ class ProductController extends BaseController
 		}
 
 		/* Unit ID validation for length, weight, and shipping */
-		$lengthUnitArray = [
-			1 => "cm",
-			3 => "inch",
-			11 => "mm",
-		];
-		$weightUnitArray = [
-			5 => "kg",
-			6 => "g",
-			9 => "lbs",
-		];
 
 		if (isset($input['google_shopping_category'])) {
 			$product->google_shopping_category = $input['google_shopping_category'];
@@ -1507,61 +1367,6 @@ class ProductController extends BaseController
 		/* Assign remaining valid fields to the product */
 		foreach ($input as $key => $value) {
 			$product->$key = $value;
-		}
-
-		if ($request->has('review')) {
-			$reviewInput = $request->input('review');
-
-			/* Ensure required fields exist */
-			if (empty($reviewInput['comment'])) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Review comment is required.',
-				]);
-			}
-
-			/* Ensure product exists */
-			if (!$product) {
-				return response()->json([
-					'success' => false,
-					'message' => 'Product not found.',
-				]);
-			}
-
-			/* Ensure a valid customer_id is used */
-			$customerId =  1; /* Default to 1 if not logged in */
-
-			/* Create new review */
-			$review = new Review();
-			$review->product_id = $product->id;
-			$review->customer_id = $customerId;
-			$review->customer_name = $reviewInput['customer_name'] ?? 'Guest';
-			$review->customer_email = $reviewInput['customer_email'] ?? null;
-			$review->star = isset($reviewInput['star']) ? (int) $reviewInput['star'] : null;
-			$review->comment = $reviewInput['comment'];
-			$review->status = 'pending'; /* Set a default status if needed */
-
-			if ($review->save()) {
-				/* Handle review images (if any) */
-				if ($request->hasFile('review_images')) {
-					foreach ($request->file('review_images') as $image) {
-						$path = $image->store('reviews', 'public');
-
-						ReviewImage::create([
-							'review_id' => $review->id,
-							'image_path' => $path,
-						]);
-					}
-				}
-
-				return response()->json([
-					'success' => true,
-					'message' => 'Review saved successfully.',
-				]);
-			} else {
-				\Log::error('Failed to save review:', $review->toArray());
-				return response()->json(['success' => false, 'message' => 'Failed to save review.']);
-			}
 		}
 
 		/* Save the product */
@@ -1636,190 +1441,6 @@ class ProductController extends BaseController
 			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
 			'faq' => $faqs ?? null,
 		]);
-	}
-
-	/**
-	 * @OA\Get(
-	 *     path="/api/products/product-input",
-	 *     summary="Get product input fields",
-	 *     description="Fetches all available product input fields.",
-	 *     operationId="getProductInputs",
-	 *     tags={"Products"},
-	 *     @OA\Response(
-	 *         response=201,
-	 *         description="Success",
-	 *          @OA\MediaType(
-	 *              mediaType="application/json",
-	 *          )
-	 *     ),
-	 *     security={{"bearerAuth":{}}}
-	 * )
-	 */
-	public function getProductInputs()
-	{
-		$refund['type'] = 'Dropdown';
-		$refund['values'] = [
-			"1" => "Non-Refundable",
-			"2" => "15 Days Refund",
-			"3" => "90 Days Refund"
-		];
-
-		$allowCheckoutWhenOutOfStock['type'] = 'checkbox';
-		$allowCheckoutWhenOutOfStock['values'] = [
-			"0" => "unchecked",
-			"1" => "checked",
-		];
-
-		$withStorehouseManagement['type'] = 'checkbox';
-		$withStorehouseManagement['values'] = [
-			"0" => "unchecked",
-			"1" => "checked",
-		];
-
-		$stockStatus['type'] = 'Dropdown';
-		$stockStatus['values'] = [
-			"1" => "In Stock",
-			"2" => "Out of Stock",
-			"3" => "Pre Order"
-		];
-
-		$tax['type'] = 'Dropdown';
-		$tax['values'] = Tax::pluck("title", "id")->all();
-
-		$currency['type'] = 'Dropdown';
-		$currency['values'] = Currency::pluck("title", "id")->all();
-
-		$lengthUnit['type'] = 'Dropdown';
-		$lengthUnit['values'] = [
-			1 => "cm",
-			3 => "inch",
-			11 => "mm",
-		];
-
-		$weightUnit['type'] = 'Dropdown';
-		$weightUnit['values'] = [
-			5 => "kg",
-			6 => "g",
-			9 => "lbs",
-		];
-
-		$shippingWeightOption['type'] = 'Dropdown';
-		$shippingWeightOption['values'] = [
-			"lbs" => "LBS",
-			"kg" => "KG",
-			"g" => "Grams",
-		];
-
-		$shippingDimensionOption['type'] = 'Dropdown';
-		$shippingDimensionOption['values'] = [
-			"inch" => "Inch",
-			"cm" => "CM",
-			"mm" => "MM",
-		];
-
-		$shippingLength['type'] = 'Dropdown';
-		$shippingLength['values'] = [
-			1 => "cm",
-			3 => "inch",
-			11 => "mm",
-		];
-
-		$isVariation['type'] = 'checkbox';
-		$isVariation['values'] = [
-			"0" => "unchecked",
-			"1" => "checked",
-		];
-
-		$variantRequiresShipping['type'] = 'checkbox';
-		$variantRequiresShipping['values'] = [
-			"0" => "unchecked",
-			"1" => "checked",
-		];
-
-		$store['type'] = 'Dropdown';
-		$store['values'] = Store::pluck("name", "id")->all();
-
-		$brand['type'] = 'Dropdown';
-		$brand['values'] = Brand::pluck("name", "id")->all();
-
-		$allKeyword = [
-			"sku",
-			"barcode",
-			"warranty_information",
-			"refund",
-			"quantity",
-			"allow_checkout_when_out_of_stock",
-			"with_storehouse_management",
-			"stock_status",
-			"variant_inventory_tracker",
-			"variant_inventory_quantity",
-			"variant_inventory_policy",
-			"variant_fulfillment_service",
-			"sale_type",
-			"cost_per_item",
-			"tax_id",
-			"currency_id",
-			"minimum_order_quantity",
-			"maximum_order_quantity",
-			"name",
-			"content",
-			"description",
-			"images",
-			"image",
-			"video_url",
-			"video_path",
-			"documents",
-			"length",
-			"length_unit_id",
-			"width",
-			"height",
-			"depth",
-			"weight",
-			"weight_unit_id",
-			"shipping_weight_option",
-			"shipping_weight",
-			"shipping_dimension_option",
-			"shipping_width",
-			"shipping_depth",
-			"shipping_height",
-			"shipping_length",
-			"shipping_length_id",
-			"variant_barcode",
-			"brand_id",
-			"views",
-			"units_sold",
-			"frequently_bought_together",
-			"google_shopping_category",
-			"google_shopping_mpn",
-			"order",
-			"box_quantity",
-			/* "created_by_id", */
-			/* "created_by_type", */
-		];
-		$keywordType = [
-			"refund" => $refund,
-			"allow_checkout_when_out_of_stock" => $allowCheckoutWhenOutOfStock,
-			"with_storehouse_management" => $withStorehouseManagement,
-			"stock_status" => $stockStatus,
-			"tax" => $tax,
-			"currency" => $currency,
-			"length_unit" => $lengthUnit,
-			"weight_unit" => $weightUnit,
-			"shipping_weight_option" => $shippingWeightOption,
-			"shipping_dimension_option" => $shippingDimensionOption,
-			"shipping_length" => $shippingLength,
-			"is_variation" => $isVariation,
-			"variant_requires_shipping" => $variantRequiresShipping,
-			"store" => $store,
-			"brand" => $brand,
-		];
-
-		return response()->json([
-			'success' => true,
-			'message' => 'Product keyword detail',
-			'all_keyword' => $allKeyword,
-			'keyword_type' => $keywordType,
-		], 201, [], JSON_FORCE_OBJECT);
 	}
 
 	/**

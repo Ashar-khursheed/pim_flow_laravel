@@ -124,7 +124,6 @@ if (!function_exists('product_constants')) {
 			],
 			'HEADER_MAP2' => [
 				"tags" => "Tags",
-				"stock_status" => "Stock Status",
 				"images" => "Images",
 				"upload_video" => "Upload Video",
 				"barcode" => "Barcode (ISBN, UPC, GTIN, etc.)",
@@ -132,7 +131,6 @@ if (!function_exists('product_constants')) {
 				"google_shopping_category" => "Google Shopping Category",
 				"google_shopping_mpn" => "Google Shopping Mpn",
 				"is_featured" => "Is Featured",
-				"frequently_bought_together" => "Frequently Bought Together",
 			],
 			'DISCOUNT_SECTION' => [
 				"buying_quantity1" => "Buying Quantity1",
@@ -228,7 +226,6 @@ if (!function_exists('product_import_constants')) {
 
 			'ADVANCED_FIELDS' => [
 				'Tags' => 'tags',
-				'Stock Status' => 'stockStatus',
 				'Images' => 'images',
 				'Upload Video' => 'uploadVideo',
 				'Barcode (ISBN, UPC, GTIN, etc.)' => 'barcode',
@@ -236,7 +233,6 @@ if (!function_exists('product_import_constants')) {
 				'Google Shopping Category' => 'googleShoppingCategory',
 				'Google Shopping Mpn' => 'googleShoppingMpn',
 				'Is Featured' => 'isFeatured',
-				'Frequently Bought Together' => 'frequentlyBoughtTogether',
 			],
 
 			'DISCOUNT_SECTION' => [
