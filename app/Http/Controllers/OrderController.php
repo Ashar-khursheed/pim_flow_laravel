@@ -421,11 +421,18 @@ class OrderController extends Controller
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+			'shipments',
+			'creator',
+			'updator'
+			'tracking',
 		]);
 
 		/* Mutate the data for each order product */
+		$order->created_by = $order->creator->name ?? null;
+		$order->updated_by = $order->updator->name ?? null;
+		unset($record->creator, $record->updator);
+
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {
