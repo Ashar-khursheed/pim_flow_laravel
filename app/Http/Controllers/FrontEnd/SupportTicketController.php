@@ -231,7 +231,7 @@ public function index(Request $request)
 
         // 📄 Fetch tickets belonging only to the logged-in user
         $query = SupportTicket::with(['category:id,name', 'priority:id,name'])
-            ->where('user_id', $user); // or 'customer_id' if that's your field
+            ->where('customer_id', $user); // or 'customer_id' if that's your field
 
         // 🔍 Search by subject or description
         if ($request->filled('search')) {
