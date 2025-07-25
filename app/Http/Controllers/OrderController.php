@@ -972,6 +972,7 @@ class OrderController extends Controller
 				'tracking_number' => $request->tracking_number,
 				'carrier' => $request->carrier,
 				'notes' => $request->notes,
+				'estimated_delivery_date' => $request->estimated_delivery_date
 			]);
 
 			/* Process each product */
