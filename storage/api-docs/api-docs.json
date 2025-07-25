@@ -14035,6 +14035,27 @@
                                                     "status": {
                                                         "type": "string",
                                                         "example": "unpaid"
+                                                    },
+                                                    "pagination": {
+                                                        "properties": {
+                                                            "current_page": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "last_page": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "per_page": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "total": {
+                                                                "type": "integer",
+                                                                "example": 50
+                                                            }
+                                                        },
+                                                        "type": "object"
                                                     }
                                                 },
                                                 "type": "object"
