@@ -14887,12 +14887,12 @@
                 "operationId": "93e60833826a585603af66f9454fd6e5",
                 "parameters": [
                     {
-                        "name": "order_id",
+                        "name": "order_number",
                         "in": "query",
                         "description": "Order ID to track",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 12345
                         }
                     }

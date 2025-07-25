@@ -710,7 +710,7 @@ class OrderController extends BaseController
 	 *     path="/api/frontend/orders/tracking",
 	 *     summary="Track order by order ID",
 	 *     tags={"FrontEnd-Orders"},
-	 *     @OA\Parameter(name="order_id", in="query", required=true, description="Order ID to track", @OA\Schema(type="integer", example=12345)),
+	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order ID to track", @OA\Schema(type="string", example=12345)),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -723,7 +723,9 @@ class OrderController extends BaseController
 
 		$customer = auth()->user();
 
-		$orderTracking = OrderTracking::where('id', $request->order_id)->get();
+		$orderTracking = OrderTracking::whereHas('order', function ($query) use ($request) {
+			$query->where('order_number', $request->order_number);
+		})->get();
 
 		if (!$orderTracking) {
 			return response()->json([
