@@ -21,7 +21,7 @@
 		Your HorecaStore quotation is ready to download.
 	</span>
 
-	<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff;">
+	<table role="presentation" width="650" cellspacing="0" cellpadding="0" border="0" style="background:#ffffff; margin: auto;">
 		<tr>
 			<td align="center">
 				<table class="wrapper" width="650" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #eaeaea; padding:20px; font-family:'Noto Sans', sans-serif;  background:#ffffff; ">
@@ -52,11 +52,11 @@
 
 					<tr>
 						<td style="font-size: 14px; line-height: 25px; font-family:'Noto Sans', sans-serif; color: black;">
-							<img src="{{ $rightPngURL }}" width="18" style="vertical-align: middle;">
+							<img src="{{ $rightPngURL }}" width="18" style="vertical-align: middle; width: 24px; height: 24px;">
 							<span style="font-weight: 500; font-size: 14px; line-height: 25px; font-family:'Noto Sans', sans-serif; color: black;">
 								Unbeatable Pricing
 							</span><br>
-							<img src="{{ $rightPngURL }}" width="18" style="vertical-align: middle;">
+							<img src="{{ $rightPngURL }}" width="18" style="vertical-align: middle; width: 24px; height: 24px;">
 							<span style="font-weight: 500; font-size: 14px; line-height: 25px; font-family:'Noto Sans', sans-serif; color: black;">
 								Stress-Free Sourcing
 							</span>
@@ -79,8 +79,8 @@
 						<td>
 							<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
-									<td style="width: 0%;font-family: 'Noto Sans', sans-serif;">
-										<img src="{{ $rightPngURL }}" alt="" width="24" height="24">
+									<td style="width: 0%; font-family: 'Noto Sans', sans-serif;  max-width: 24px; width: 24px; height: 24px;">
+										<img src="{{ $rightPngURL }}" alt="" width="24" height="24" style="max-width: 24px; width: 24px; height: 24px;">
 									</td>
 									<td valign="top" style="padding-left: 5px; font-family: 'Noto Sans', sans-serif;font-size:14px;line-height:25px;">
 										<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
@@ -90,8 +90,8 @@
 									</td>
 								</tr>
 								<tr>
-									<td style="width: 0%; font-family: 'Noto Sans', sans-serif;">
-										<img src="{{ $rightPngURL }}" alt="" width="24" height="24">
+									<td style="width: 0%; font-family: 'Noto Sans', sans-serif; max-width: 24px; width: 24px; height: 24px;">
+										<img src="{{ $rightPngURL }}" alt="" width="24" height="24"  style="max-width: 24px; width: 24px; height: 24px;">
 									</td>
 									<td valign="top" style="padding-left: 5px; font-family: 'Noto Sans', sans-serif;font-size:14px;line-height:25px;">
 										<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
@@ -101,8 +101,8 @@
 									</td>
 								</tr>
 								<tr>
-									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif;">
-										<img src="{{ $rightPngURL }}" alt="" width="24" height="24">
+									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif; max-width: 24px; width: 24px; height: 24px;">
+										<img src="{{ $rightPngURL }}" alt="" width="24" height="24"  style="max-width: 24px; width: 24px; height: 24px;">
 									</td>
 									<td valign="top" style="padding-left: 5px;font-family: 'Noto Sans', sans-serif;font-size:14px;line-height:25px;">
 										<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
@@ -112,8 +112,8 @@
 									</td>
 								</tr>
 								<tr>
-									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif;">
-										<img src="{{ $rightPngURL }}" alt="" width="24" height="24">
+									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif; max-width: 24px; width: 24px; height: 24px;">
+										<img src="{{ $rightPngURL }}" alt="" width="24" height="24"  style="max-width: 24px; width: 24px; height: 24px;">
 									</td>
 									<td valign="top" style="padding-left: 5px;font-family: 'Noto Sans', sans-serif;font-size:14px;line-height:25px;">
 										<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
@@ -123,8 +123,8 @@
 									</td>
 								</tr>
 								<tr>
-									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif;">
-										<img src="{{ $rightPngURL }}" alt="" width="24" height="24">
+									<td style=" width: 0%; font-family: 'Noto Sans', sans-serif; max-width: 24px; width: 24px; height: 24px;">
+										<img src="{{ $rightPngURL }}" alt="" width="24" height="24"  style="max-width: 24px; width: 24px; height: 24px;">
 									</td>
 									<td valign="top" style="padding-left: 5px;font-family: 'Noto Sans', sans-serif;font-size:14px;line-height:25px;">
 										<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
@@ -139,7 +139,7 @@
 
 					<tr>
 						<td valign="top" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 25px; display: flex; align-items: center; margin-top: 10px; margin-bottom: 5px;">
-							<img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px;">
+							<img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px; max-width: 24px; width: 24px; height: 24px;">
 							<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
 								Your Quotation is Ready
 							</strong>
