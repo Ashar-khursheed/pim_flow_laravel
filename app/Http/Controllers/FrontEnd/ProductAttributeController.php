@@ -577,6 +577,7 @@ class ProductAttributeController extends Controller
             'Inside Carton',
             'Type',
             'Selling Unit',
+            'Units per Case',
             'Warranty',
             'Certification',
             'Features'
