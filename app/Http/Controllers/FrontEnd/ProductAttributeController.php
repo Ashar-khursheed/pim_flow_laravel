@@ -531,15 +531,34 @@ class ProductAttributeController extends Controller
         $allAttributes = clone $filteredAttributes;
 
         // Now hide attributes by name from the output
-        $filteredAttributes = $filteredAttributes->reject(function ($item) {
-            return in_array($item->attribute->name, [
-                'Unit of Measurement',
-                'Unit Qty',
-                'Units per Case',
-                'Pack Type',
-                'Ingredients'
-            ]);
-        })->values();
+        // $filteredAttributes = $filteredAttributes->reject(function ($item) {
+        //     return in_array($item->attribute->name, [
+        //         'Unit of Measurement',
+        //         'Unit Qty',
+        //         'Units per Case',
+        //         'Pack Type',
+        //         'Ingredients'
+        //     ]);
+        // })->values();
+          $filteredAttributes = $filteredAttributes->reject(function ($item) {
+                $appWebsite = env('APP_WEBSITE');
+
+                // Always reject these
+                $attributesToReject = [
+                    'Unit of Measurement',
+                    'Unit Qty',
+                    'Pack Type',
+                    'Ingredients'
+                ];
+
+                // Conditionally reject 'Units per Case' if APP_WEBSITE is not 'US'
+                if ($appWebsite !== 'US') {
+                    $attributesToReject[] = 'Units per Case';
+                }
+
+                return in_array($item->attribute->name, $attributesToReject);
+            })->values();
+
 
         // Define fixed order
         $leftOrder = [
