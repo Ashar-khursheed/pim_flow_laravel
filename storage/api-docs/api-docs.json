@@ -13838,6 +13838,137 @@
                 }
             }
         },
+        "/api/frontend/google-reviews": {
+            "get": {
+                "tags": [
+                    "Google Reviews"
+                ],
+                "summary": "Get Google Reviews for a Place",
+                "description": "Fetch reviews, rating breakdown, and filter by star ratings from Google Places API.",
+                "operationId": "getGoogleReviews",
+                "parameters": [
+                    {
+                        "name": "place_id",
+                        "in": "query",
+                        "description": "Google Place ID (default from .env if not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ChIJa4N_zmppXz4R-Oi2cjnr2iE"
+                        }
+                    },
+                    {
+                        "name": "stars",
+                        "in": "query",
+                        "description": "Filter reviews by star rating (1-5)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 5,
+                            "minimum": 1,
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Some Business"
+                                        },
+                                        "rating": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 4.3
+                                        },
+                                        "total_reviews": {
+                                            "type": "integer",
+                                            "example": 145
+                                        },
+                                        "rating_breakdown": {
+                                            "properties": {
+                                                "5": {
+                                                    "type": "integer",
+                                                    "example": 80
+                                                },
+                                                "4": {
+                                                    "type": "integer",
+                                                    "example": 30
+                                                },
+                                                "3": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "2": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "1": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "filtered_star": {
+                                            "type": "integer",
+                                            "example": 5,
+                                            "nullable": true
+                                        },
+                                        "reviews": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "author_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "rating": {
+                                                        "type": "number",
+                                                        "example": 5
+                                                    },
+                                                    "text": {
+                                                        "type": "string",
+                                                        "example": "Excellent service!"
+                                                    },
+                                                    "relative_time_description": {
+                                                        "type": "string",
+                                                        "example": "2 weeks ago"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Missing API key or place ID / Google API error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Missing API key or place ID."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/invoices": {
             "get": {
                 "tags": [
@@ -32300,6 +32431,10 @@
         {
             "name": "Geolocation",
             "description": "Geolocation"
+        },
+        {
+            "name": "Google Reviews",
+            "description": "Google Reviews"
         },
         {
             "name": "Frontend Invoices",

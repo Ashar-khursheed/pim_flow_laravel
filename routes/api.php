@@ -108,6 +108,8 @@ use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketCont
 use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
 use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
+use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
+
 
 
 use Illuminate\Support\Facades\Http;
@@ -634,3 +636,5 @@ Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
+
+Route::get('/frontend/reviews', [F_GoogleReviewController::class, 'getReviews']);
