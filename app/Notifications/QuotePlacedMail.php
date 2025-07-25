@@ -116,7 +116,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		$bankName = config('app.website') == 'UAE' ? 'JP Morgan Chase Bank' : 'JP Morgan Chase Bank';
 		$routingCode = config('app.website') == 'UAE' ? '1110 0061 4' : '1110 0061 4';
 
-		$params = [
+		$pdfParams = [
 			'logoUrl' => $logoUrl,
 			'companyName' => $companyName,
 			'street' => $street,
@@ -154,22 +154,28 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 			'routingCode' => $routingCode,
 		];
 
-		$pdf = Pdf::loadView('pdf.quote1', $params);
+		$rightPngURL = $backendURL. '/right.png';
+		$siteName = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$downloadLink = url('/my-quotes');
+		$orderLink = url('/checkout');
+
+		$mailParams = [
+			'logoUrl' => $logoUrl,
+			'name' => $name,
+			'rightPngURL' => $rightPngURL,
+			'downloadLink' => $downloadLink,
+			'orderLink' => $orderLink,
+			'siteName' => $siteName,
+			'siteEmail' => $siteEmail,
+		];
+		// $pdf = Pdf::loadView('pdf.quote1', $pdfParams);
 
 		return (new MailMessage)
 		->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
-		->greeting("Hello {$name},")
-		->line("Please find attached your quotation.")
-		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
-			'mime' => 'application/pdf',
-		])
-		->line("Thank you for using The Horeca Store!");
-
-
-
-		// return (new MailMessage)
-		// ->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
-		// ->markdown('emails.quotes.quote-placed', $params);
+		// ->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
+		// 	'mime' => 'application/pdf',
+		// ])
+		->markdown('emails.quotes.quote-placed', $mailParams);
 	}
 
 	/**
