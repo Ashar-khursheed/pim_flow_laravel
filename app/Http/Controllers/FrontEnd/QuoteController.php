@@ -272,9 +272,10 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			foreach ($quote->quoteEmails as $quoteEmail) {
-				$quoteEmail->notify(new QuotePlacedMail($quote));
-			}
+			// foreach ($quote->quoteEmails as $quoteEmail) {
+			// 	$quoteEmail->notify(new QuotePlacedMail($quote));
+			// }
+			auth()->user()->notify(new QuotePlacedMail($quote));
 
 			DB::commit();
 

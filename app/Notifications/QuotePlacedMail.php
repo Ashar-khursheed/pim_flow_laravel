@@ -43,12 +43,12 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		$city = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
 		$phone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
-		$siteURL = $url;
+		$siteURL = url('/');
 
 		$name = $notifiable->type === 'Private' ? $notifiable->name : $notifiable->business_name;
 		$customerAddress = $this->quote->customerAddress;
 		$address = $customerAddress->address ?? '';
-		$city = $customerAddress->city ?? '';
+		$customerCity = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$email = $notifiable->email ?? '';
 
@@ -111,25 +111,23 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		? convertNumberToWords($total, "AED", "Fils")
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
-
 		$beneficiaryAddress = config('app.website') == 'UAE' ? '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
 		$accountNo = config('app.website') == 'UAE' ? '6130 9953 3' : '6130 9953 3';
 		$bankName = config('app.website') == 'UAE' ? 'JP Morgan Chase Bank' : 'JP Morgan Chase Bank';
-		$routingCode = config('app.website') == 'UAE' ? '	1110 0061 4' : '	1110 0061 4';
+		$routingCode = config('app.website') == 'UAE' ? '1110 0061 4' : '1110 0061 4';
 
 		$params = [
 			'logoUrl' => $logoUrl,
-
 			'companyName' => $companyName,
 			'street' => $street,
 			'city' => $city,
 			'phone' => $phone,
 			'siteEmail' => $siteEmail,
-			'siteURL' => $siteURL
+			'siteURL' => $siteURL,
 
 			'name' => $name,
 			'address' => $address,
-			'city' => $city,
+			'city' => $customerCity,
 			'country' => $country,
 			'email' => $email,
 
@@ -158,21 +156,21 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 		$pdf = Pdf::loadView('pdf.quote1', $params);
 
-
 		return (new MailMessage)
-		->subject('Your Invoice')
-		->greeting('Hello ' . $name . ',')
-		->line('Please find attached your invoice.')
-		->attachData($pdf->output(), 'invoice.pdf', [
+		->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+		->greeting("Hello {$name},")
+		->line("Please find attached your quotation.")
+		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
 			'mime' => 'application/pdf',
 		])
-		->line('Thank you for your business!');
+		->line("Thank you for using The Horeca Store!");
+
+
 
 		// return (new MailMessage)
 		// ->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
 		// ->markdown('emails.quotes.quote-placed', $params);
 	}
-
 
 	/**
 	 * Get the array representation of the notification.
