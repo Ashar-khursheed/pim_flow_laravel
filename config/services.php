@@ -70,6 +70,10 @@ return [
         'cache_enabled' => env('TAXJAR_CACHE_ENABLED', true),
         'cache_ttl' => env('TAXJAR_CACHE_TTL', 3600), // 1 hour
     ],
+    'google_place' => [
+    'key' => env('GOOGLE_PLACE_API_KEY'),
+    'place_id' => env('GOOGLE_PLACE_ID'),
+    ],
 
 
 
