@@ -16,7 +16,7 @@ class GoogleReviewController extends Controller
         $this->apiKey = config('services.google_place.key');
         $this->defaultPlaceId = config('services.google_place.place_id');
     }
-        /**
+    /**
      * @OA\Get(
      *     path="/api/frontend/google-reviews",
      *     summary="Get Google Reviews for a Place",
