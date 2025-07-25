@@ -15,13 +15,13 @@
 	</style>
 </head>
 
-<body style="margin:0; padding:0; background:#ffffff; font-family:'Noto Sans', sans-serif; color:black;">
+<body style="margin:0; padding:0; background: #ffffff; font-family:'Noto Sans', sans-serif; color:black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden; font-family: 'Noto Sans', sans-serif;">
 		We're sorry to see your order go. Here's what was cancelled and how to reorder.
 	</span>
 
-	<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="font-family: 'Noto Sans', sans-serif;">
+	<table role="presentation" width="650" cellspacing="0" cellpadding="0" border="0" style="font-family: 'Noto Sans', sans-serif; background: #ffffff; margin: auto; ">
 		<tr>
 			<td align="center" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 				<table role="presentation" class="wrapper" width="650" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #eaeaea; padding:20px; font-family: 'Noto Sans', sans-serif;">
