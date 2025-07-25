@@ -637,4 +637,4 @@ Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
-Route::get('/frontend/reviews', [F_GoogleReviewController::class, 'getReviews']);
+Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
