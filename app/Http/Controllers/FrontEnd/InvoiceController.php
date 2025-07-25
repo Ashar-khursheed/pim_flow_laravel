@@ -37,7 +37,15 @@ class InvoiceController extends Controller
      *                     @OA\Property(property="due_date", type="string", example="Jul 31 2025"),
      *                     @OA\Property(property="amount", type="string", example="1200.50"),
      *                     @OA\Property(property="payment_method", type="string", example="Bank Transfer"),
-     *                     @OA\Property(property="status", type="string", example="unpaid")
+     *                     @OA\Property(property="status", type="string", example="unpaid"),
+     *                     @OA\Property(
+     *                         property="pagination",
+     *                         type="object",
+     *                         @OA\Property(property="current_page", type="integer", example=1),
+     *                         @OA\Property(property="last_page", type="integer", example=5),
+     *                         @OA\Property(property="per_page", type="integer", example=10),
+     *                         @OA\Property(property="total", type="integer", example=50),
+    *                      ),
      *                 )
      *             )
      *         )
@@ -45,33 +53,42 @@ class InvoiceController extends Controller
      * )
      */
 
-    public function index()
-    {
-        $customer = Auth::id();
+   public function index()
+{
+    $customer = Auth::id();
+    $perPage = request('per_page', 10);
 
-        $invoices = Invoice::where('customer_id', $customer)->latest()->get();
+    $paginated = Invoice::where('customer_id', $customer)->latest()->paginate($perPage);
 
-        return response()->json([
-            'total_outstanding' => $invoices->where('status', '!=', 'paid')->sum('amount'),
-            'paid_this_month'   => $invoices->where('status', 'paid')->filter(function ($inv) {
-                return Carbon::parse($inv->updated_at)->format('m') == now()->format('m');
-            })->sum('amount'),
-            'overdue'           => $invoices->where('status', 'overdue')->sum('amount'),
-            'total_invoices'    => $invoices->count(),
-            'invoices' => $invoices->map(function ($invoice) {
-                return [
-                    'invoice_number'  => $invoice->invoice_number,
-                    'invoice_date'    => Carbon::parse($invoice->invoice_date)->format('M d Y'),
-                    'order_id'        => $invoice->order_id,
-                    'po_number'       => $invoice->po_number,
-                    'due_date'        => Carbon::parse($invoice->due_date)->format('M d Y'),
-                    'amount'          => number_format($invoice->amount, 2),
-                    'payment_method'  => $invoice->payment_method,
-                    'status'          => $invoice->status,
-                ];
-            }),
-        ]);
-    }
+    $invoices = $paginated->getCollection();
+
+    return response()->json([
+        'total_outstanding' => $invoices->where('status', '!=', 'paid')->sum('amount'),
+        'paid_this_month'   => $invoices->where('status', 'paid')->filter(function ($inv) {
+            return Carbon::parse($inv->updated_at)->format('m') == now()->format('m');
+        })->sum('amount'),
+        'overdue'           => $invoices->where('status', 'overdue')->sum('amount'),
+        'total_invoices'    => $paginated->total(),
+        'invoices'          => $invoices->map(function ($invoice) {
+            return [
+                'invoice_number'  => $invoice->invoice_number,
+                'invoice_date'    => Carbon::parse($invoice->invoice_date)->format('M d Y'),
+                'order_id'        => $invoice->order_id,
+                'po_number'       => $invoice->po_number,
+                'due_date'        => Carbon::parse($invoice->due_date)->format('M d Y'),
+                'amount'          => number_format($invoice->amount, 2),
+                'payment_method'  => $invoice->payment_method,
+                'status'          => $invoice->status,
+            ];
+        }),
+        'pagination' => [
+            'current_page' => $paginated->currentPage(),
+            'last_page'    => $paginated->lastPage(),
+            'per_page'     => $paginated->perPage(),
+            'total'        => $paginated->total(),
+        ],
+    ]);
+}
 
 
     /**
