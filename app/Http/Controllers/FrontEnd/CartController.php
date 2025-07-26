@@ -676,9 +676,10 @@ class CartController extends Controller
 
 //     return response()->json(['success' => true]);
 // }
-
 public function updateCartQuantity(Request $request)
 {
+    $start = microtime(true);
+
     $productId = $request->input('product_id');
     $quantity = $request->input('quantity');
 
@@ -689,8 +690,13 @@ public function updateCartQuantity(Request $request)
         $quantity, $productId, $value
     ]);
 
+    $end = microtime(true);
+
+    \Log::info('updateCartQuantity duration: ' . round(($end - $start) * 1000) . 'ms');
+
     return response()->json(['success' => $updated > 0]);
 }
+
 
 
 
