@@ -10,6 +10,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class QuotePlacedMail extends Notification implements ShouldQueue
 {
@@ -89,17 +90,29 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 				$product->proxyUrl = null;
 
+
 				if (!empty($product->image)) {
 					try {
-						$response = Http::timeout(10)->get($product->image);
-						if ($response->successful()) {
-							$contentType = $response->header('Content-Type') ?? 'image/webp';
-							$product->proxyUrl = 'data:' . $contentType . ';base64,' . base64_encode($response->body());
+						$imageContent = file_get_contents($product->image);
+						$filename = basename(parse_url($product->image, PHP_URL_PATH)); // Better filename extraction
+						
+						// Ensure filename has extension
+						$pathInfo = pathinfo($filename);
+						if (empty($pathInfo['extension'])) {
+							$filename .= '.webp'; // Default extension for your images
 						}
+
+						Storage::disk('public')->put('temp/' . $filename, $imageContent);
+						$product->localImagePath = public_path('storage/temp/' . $filename);
+
 					} catch (\Exception $e) {
-						Log::warning('Failed to fetch product image for PDF: ' . $e->getMessage());
+						Log::warning('Failed to save product image for PDF: ' . $e->getMessage());
+						$product->localImagePath = null;
 					}
+				} else {
+					$product->localImagePath = null;
 				}
+
 
 
 

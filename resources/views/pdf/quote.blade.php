@@ -158,14 +158,15 @@ use Illuminate\Support\Str;
 							</div>
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center; vertical-align:middle;">
-							<div style="display:flex; justify-content:center; align-items:center; height:100%;">
-								@if (!empty($product->proxyUrl))
-									<img src="{{ $product->proxyUrl }}" style="width:60px; height:60px; object-fit:cover;" />
-								@else
-									<span>No Image</span>
-								@endif
-							</div>
+							@if (!empty($product->localImagePath) && file_exists($product->localImagePath))
+								<img src="{{ $product->localImagePath }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto;">
+							@else
+								<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280;">
+									No Image
+								</div>
+							@endif
 						</td>
+
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->sellingType }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->unitPrice }}</td>
