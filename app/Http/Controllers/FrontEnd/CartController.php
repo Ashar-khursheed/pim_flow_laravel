@@ -676,28 +676,26 @@ class CartController extends Controller
 
 //     return response()->json(['success' => true]);
 // }
-public function updateCartQuantity(Request $request)
-{
-    $start = microtime(true);
+    public function updateCartQuantity(Request $request)
+    {
+        $start = microtime(true);
 
-    $productId = $request->input('product_id');
-    $quantity = $request->input('quantity');
+        $productId = $request->input('product_id');
+        $quantity = $request->input('quantity');
 
-    $column = Auth::check() ? 'user_id' : 'session_id';
-    $value = Auth::check() ? auth()->id() : $request->session()->getId();
+        $column = Auth::check() ? 'user_id' : 'session_id';
+        $value = Auth::check() ? auth()->id() : $request->session()->getId();
 
-    $updated = DB::update("UPDATE carts SET quantity = ? WHERE product_id = ? AND {$column} = ?", [
-        $quantity, $productId, $value
-    ]);
+        $updated = DB::update("UPDATE carts SET quantity = ? WHERE product_id = ? AND {$column} = ?", [
+            $quantity, $productId, $value
+        ]);
 
-    $end = microtime(true);
+        $end = microtime(true);
 
-    \Log::info('updateCartQuantity duration: ' . round(($end - $start) * 1000) . 'ms');
+        \Log::info('updateCartQuantity duration: ' . round(($end - $start) * 1000) . 'ms');
 
-    return response()->json(['success' => $updated > 0]);
-}
-
-
+        return response()->json(['success' => $updated > 0]);
+    }
 
 
     /**
