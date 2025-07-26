@@ -141,6 +141,15 @@ class Product extends Model
 			$query->where('name', 'Selling Unit');
 		});
 	}
+
+	public function warrantyAttribute()
+	{
+		return $this->hasOne(ProductAttribute::class)
+		->whereHas('attributeDetails', function ($query) {
+			$query->where('name', 'Warranty');
+		});
+	}
+
 	public function ingredientsAttribute()
 	{
 		return $this->hasOne(ProductAttribute::class)
