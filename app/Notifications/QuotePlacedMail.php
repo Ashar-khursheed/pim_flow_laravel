@@ -88,25 +88,21 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
-				if ($product->image) {
+				if (!empty($product->image)) {
 					try {
 						if (!Storage::disk('public')->exists('temp')) {
 							Storage::disk('public')->makeDirectory('temp');
 						}
-
 						$imageContent = file_get_contents($product->image);
 						$filename = basename(parse_url($product->image, PHP_URL_PATH));
 
-						if (empty(pathinfo($filename)['extension'])) {
+						$pathInfo = pathinfo($filename);
+						if (empty($pathInfo['extension'])) {
 							$filename .= '.webp';
 						}
-
 						Storage::disk('public')->put('temp/' . $filename, $imageContent);
-
 						$product->localImagePath = storage_path('app/public/temp/' . $filename);
-
 					} catch (\Exception $e) {
-						Log::error('Failed to download image: ' . $e->getMessage());
 						$product->localImagePath = null;
 					}
 				} else {
