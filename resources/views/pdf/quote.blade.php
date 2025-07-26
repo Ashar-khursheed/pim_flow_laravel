@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.5rem; vertical-align: top;">
-						<img alt="logo" src="{{ $logoUrl }}" style="height: 7.5rem; width: 10rem;" />
+						<img alt="logo" src="{{ $logoUrl }}" width="120"/>
 					</td>
 
 					<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
