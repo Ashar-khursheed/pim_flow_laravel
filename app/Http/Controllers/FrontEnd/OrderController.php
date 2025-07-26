@@ -712,7 +712,6 @@ class OrderController extends BaseController
 	 *     tags={"FrontEnd-Orders"},
 	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order number to track", @OA\Schema(type="string", example=12345)),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function orderTracking(Request $request)
@@ -721,11 +720,7 @@ class OrderController extends BaseController
 			'order_number' => 'required|string|exists:orders,order_number',
 		]);
 
-		$customer = auth()->user();
-
-		$orderTracking = OrderTracking::whereHas('order', function ($query) use ($request) {
-			$query->where('order_number', $request->order_number);
-		})->get();
+		$order = Order::with(['tracking'])->where('order_number', $request->order_number)->first();
 
 		if (!$orderTracking) {
 			return response()->json([
@@ -737,8 +732,8 @@ class OrderController extends BaseController
 
 		return response()->json([
 			'success' => true,
-			'message' => 'Tracking info retrieved',
-			'data' => $orderTracking,
+			'message' => 'Order with tracking info retrieved',
+			'data' => $order,
 		]);
 	}
 }
