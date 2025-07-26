@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\DB;
 
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
-
+use App\Notifications\QuotePlacedMail;
+ 
 class QuoteController extends BaseController
 {
 	/**
@@ -271,9 +272,10 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			foreach ($quote->quoteEmails as $quoteEmail) {
-				// $quoteEmail->notify(new QuotePlacedMail($quote));
-			}
+			// foreach ($quote->quoteEmails as $quoteEmail) {
+			// 	$quoteEmail->notify(new QuotePlacedMail($quote));
+			// } QuotePlacedMail
+			auth()->user()->notify(new QuotePlacedMail($quote));
 
 			DB::commit();
 

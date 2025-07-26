@@ -136,7 +136,7 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
-});
+})->name('proxy-image');
 
 
 
@@ -431,12 +431,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
 
-	// Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
-	// Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
-	// Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
-	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
-	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
-
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
@@ -516,8 +510,6 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::prefix('/frontend/blogs')->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
-
-
 
 });
 
