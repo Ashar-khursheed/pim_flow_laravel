@@ -159,7 +159,11 @@ use Illuminate\Support\Str;
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center; vertical-align:middle;">
 							<div style="display:flex; justify-content:center; align-items:center; height:100%;">
-								<img src="{{ $product->proxyUrl }}" style="width:48px; height:48px; object-fit:contain;" crossorigin="anonymous" alt='Product'/>
+								@if (!empty($product->proxyUrl))
+									<img src="{{ $product->proxyUrl }}" style="width:60px; height:60px; object-fit:cover;" />
+								@else
+									<span>No Image</span>
+								@endif
 							</div>
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>

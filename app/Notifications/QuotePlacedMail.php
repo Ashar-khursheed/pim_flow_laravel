@@ -87,7 +87,20 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
-				$product->proxyUrl = url('/api/proxy-image?url=' . urlencode($product->image));
+				$product->proxyUrl = null;
+
+				if (!empty($product->image)) {
+					try {
+						$response = Http::timeout(10)->get($product->image);
+						if ($response->successful()) {
+							$contentType = $response->header('Content-Type') ?? 'image/webp';
+							$product->proxyUrl = 'data:' . $contentType . ';base64,' . base64_encode($response->body());
+						}
+					} catch (\Exception $e) {
+						Log::warning('Failed to fetch product image for PDF: ' . $e->getMessage());
+					}
+				}
+
 
 
 					// In your notification class or wherever you're preparing the PDF data
