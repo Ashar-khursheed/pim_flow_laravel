@@ -8,10 +8,13 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class QuotePlacedMail extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
 	public $quote;
 
@@ -84,6 +87,24 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
+				$product->proxyUrl = url('/api/proxy-image?url=' . urlencode($product->image));
+
+
+					// In your notification class or wherever you're preparing the PDF data
+// $imageData = null;
+// if ($product->image) {
+// try {
+//     $response = Http::timeout(10)->get($product->image);
+//     if ($response->successful()) {
+//         $imageData = 'data:image/webp;base64,' . base64_encode($response->body());
+//     }
+// } catch (Exception $e) {
+//     Log::error('Failed to fetch product image: ' . $e->getMessage());
+// }
+// }
+
+
+// $product->image = $imageData;
 				$product->quantity = (int) $quoteProduct->quantity;
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';

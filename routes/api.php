@@ -132,7 +132,7 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
-});
+})->name('proxy-image');
 
 
 
