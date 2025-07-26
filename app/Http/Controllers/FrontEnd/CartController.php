@@ -558,45 +558,92 @@ class CartController extends Controller
      *     security={{"bearerAuth": {}}}
      * )
      */
+    // public function updateCartQuantity(Request $request)
+    // {
+    //     $request->validate([
+    //         'product_id' => 'required|exists:ec_products,id',
+    //         'quantity' => 'required|integer|min:1',
+    //     ]);
+    
+    //     $productId = $request->input('product_id');
+    //     $quantity = $request->input('quantity');
+    
+    //     if (Auth::check()) {
+    //         $userId = auth()->id();
+    //         $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
+    //     } else {
+    //         $sessionId = $request->session()->getId();
+    //         $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
+    //     }
+    
+    //     if ($cartItem) {
+    //         $cartItem->quantity = $quantity;
+    //         $cartItem->update();
+    
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => [
+    //                 'id' => $cartItem->id,
+    //                 'user_id' => $cartItem->user_id,
+    //                 'session_id' => $cartItem->session_id,
+    //                 'product_id' => $cartItem->product_id,
+    //                 'quantity' => $cartItem->quantity,
+    //                 'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
+    //                 'created_at' => $cartItem->created_at,
+    //                 'updated_at' => $cartItem->updated_at,
+    //             ],
+    //         ]);
+    //     }
+    
+    //     return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
+    // }
+
     public function updateCartQuantity(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'product_id' => 'required|exists:ec_products,id',
             'quantity' => 'required|integer|min:1',
         ]);
-    
-        $productId = $request->input('product_id');
-        $quantity = $request->input('quantity');
-    
+
+        $productId = $validated['product_id'];
+        $quantity = $validated['quantity'];
+
+        // Determine user context
+        $cartQuery = Cart::query()->where('product_id', $productId);
+
         if (Auth::check()) {
-            $userId = auth()->id();
-            $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
+            $cartQuery->where('user_id', auth()->id());
         } else {
-            $sessionId = $request->session()->getId();
-            $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
+            $cartQuery->where('session_id', $request->session()->getId());
         }
-    
-        if ($cartItem) {
-            $cartItem->quantity = $quantity;
-            $cartItem->update();
-    
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'id' => $cartItem->id,
-                    'user_id' => $cartItem->user_id,
-                    'session_id' => $cartItem->session_id,
-                    'product_id' => $cartItem->product_id,
-                    'quantity' => $cartItem->quantity,
-                    'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
-                    'created_at' => $cartItem->created_at,
-                    'updated_at' => $cartItem->updated_at,
-                ],
-            ]);
+
+        // Load cart item with currency in same query
+        $cartItem = $cartQuery->with('product:id,currency_id', 'product.currency:id,symbol')->first();
+
+        if (!$cartItem) {
+            return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
         }
-    
-        return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
+
+        // Update only if needed to reduce DB writes
+        if ($cartItem->quantity !== $quantity) {
+            $cartItem->update(['quantity' => $quantity]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id' => $cartItem->id,
+                'user_id' => $cartItem->user_id,
+                'session_id' => $cartItem->session_id,
+                'product_id' => $cartItem->product_id,
+                'quantity' => $cartItem->quantity,
+                'currency_title' => $cartItem->product->currency->symbol ?? null,
+                'created_at' => $cartItem->created_at,
+                'updated_at' => $cartItem->updated_at,
+            ],
+        ]);
     }
+
 
 
     /**
