@@ -342,7 +342,7 @@ use Illuminate\Support\Str;
 						style="color: #15803d;">{{ $siteURL }}</a>
 					</td>
 					<td style="padding: 8px; text-align: right;">
-						Page 1 of 1
+						{{-- Page 1 of 1 --}}
 					</td>
 				</tr>
 			</table>
