@@ -722,7 +722,7 @@ class OrderController extends BaseController
 
 		$order = Order::with(['tracking'])->where('order_number', $request->order_number)->first();
 
-		if (!$orderTracking) {
+		if (!$order) {
 			return response()->json([
 				'success' => false,
 				'message' => 'Order not found or access denied.',
