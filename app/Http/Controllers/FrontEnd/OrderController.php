@@ -710,7 +710,7 @@ class OrderController extends BaseController
 	 *     path="/api/frontend/orders/tracking",
 	 *     summary="Track order by order ID",
 	 *     tags={"FrontEnd-Orders"},
-	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order ID to track", @OA\Schema(type="string", example=12345)),
+	 *     @OA\Parameter(name="order_number", in="query", required=true, description="Order number to track", @OA\Schema(type="string", example=12345)),
 	 *     @OA\Response(response=200, description="List retrieved successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -718,7 +718,7 @@ class OrderController extends BaseController
 	public function orderTracking(Request $request)
 	{
 		$request->validate([
-			'order_id' => 'required|integer|exists:orders,id',
+			'order_number' => 'required|string|exists:orders,order_number',
 		]);
 
 		$customer = auth()->user();

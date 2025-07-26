@@ -14889,7 +14889,7 @@
                     {
                         "name": "order_number",
                         "in": "query",
-                        "description": "Order ID to track",
+                        "description": "Order number to track",
                         "required": true,
                         "schema": {
                             "type": "string",
