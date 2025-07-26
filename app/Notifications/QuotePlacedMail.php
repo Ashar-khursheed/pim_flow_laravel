@@ -88,49 +88,31 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
-				$product->proxyUrl = null;
-
-
-				if (!empty($product->image)) {
+				if ($product->image) {
 					try {
+						if (!Storage::disk('public')->exists('temp')) {
+							Storage::disk('public')->makeDirectory('temp');
+						}
+
 						$imageContent = file_get_contents($product->image);
-						$filename = basename(parse_url($product->image, PHP_URL_PATH)); // Better filename extraction
-						
-						// Ensure filename has extension
-						$pathInfo = pathinfo($filename);
-						if (empty($pathInfo['extension'])) {
-							$filename .= '.webp'; // Default extension for your images
+						$filename = basename(parse_url($product->image, PHP_URL_PATH));
+
+						if (empty(pathinfo($filename)['extension'])) {
+							$filename .= '.webp';
 						}
 
 						Storage::disk('public')->put('temp/' . $filename, $imageContent);
-						$product->localImagePath = public_path('storage/temp/' . $filename);
+
+						$product->localImagePath = storage_path('app/public/temp/' . $filename);
 
 					} catch (\Exception $e) {
-						Log::warning('Failed to save product image for PDF: ' . $e->getMessage());
+						Log::error('Failed to download image: ' . $e->getMessage());
 						$product->localImagePath = null;
 					}
 				} else {
 					$product->localImagePath = null;
 				}
 
-
-
-
-					// In your notification class or wherever you're preparing the PDF data
-// $imageData = null;
-// if ($product->image) {
-// try {
-//     $response = Http::timeout(10)->get($product->image);
-//     if ($response->successful()) {
-//         $imageData = 'data:image/webp;base64,' . base64_encode($response->body());
-//     }
-// } catch (Exception $e) {
-//     Log::error('Failed to fetch product image: ' . $e->getMessage());
-// }
-// }
-
-
-// $product->image = $imageData;
 				$product->quantity = (int) $quoteProduct->quantity;
 
 				$fullValue = $productDetail->sellingUnitAttribute->attribute_value ?? '';
@@ -225,6 +207,12 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 			'mime' => 'application/pdf',
 		])
 		->markdown('emails.quotes.quote-placed', $mailParams);
+
+		// foreach ($products as $product) {
+		// 	if ($product->localImagePath) {
+		// 		unlink($product->localImagePath);
+		// 	}
+		// }
 	}
 
 	/**

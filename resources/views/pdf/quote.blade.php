@@ -135,8 +135,7 @@ use Illuminate\Support\Str;
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px;">
 							<div style="margin-bottom:4px;">
 								<p style="font-weight:bold; font-size:12px; margin-bottom:2px;">
-									Reach-In Refrigerator, 48", 2 Doors, 36 Cu. Ft., Stainless Steel, 6-Year
-									Warrant...
+									{{ Str::limit($product->name, 90, '...') }}
 								</p>
 								<p style="font-size:11px; margin-bottom:2px;">
 									<span style="font-weight:bold;">Brand:</span>
