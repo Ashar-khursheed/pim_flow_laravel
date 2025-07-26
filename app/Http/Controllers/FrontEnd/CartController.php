@@ -643,40 +643,54 @@ class CartController extends Controller
     //         ],
     //     ]);
     // }
-    public function updateCartQuantity(Request $request)
+//     public function updateCartQuantity(Request $request)
+// {
+//     $validated = $request->validate([
+//         'product_id' => 'required|exists:ec_products,id',
+//         'quantity' => 'required|integer|min:1',
+//     ]);
+
+//     $productId = $validated['product_id'];
+//     $quantity = $validated['quantity'];
+
+//     // Choose key (user or session)
+//     $cartQuery = Cart::query()->where('product_id', $productId);
+
+//     if (Auth::check()) {
+//         $cartQuery->where('user_id', auth()->id());
+//     } else {
+//         $cartQuery->where('session_id', $request->session()->getId());
+//     }
+
+//     // Only fetch id and quantity — minimal data
+//     $cartItem = $cartQuery->select('id', 'quantity')->first();
+
+//     if (!$cartItem) {
+//         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
+//     }
+
+//     // Direct DB update without loading the full model
+//     if ($cartItem->quantity !== $quantity) {
+//         Cart::where('id', $cartItem->id)->update(['quantity' => $quantity]);
+//     }
+
+//     return response()->json(['success' => true]);
+// }
+
+public function updateCartQuantity(Request $request)
 {
-    $validated = $request->validate([
-        'product_id' => 'required|exists:ec_products,id',
-        'quantity' => 'required|integer|min:1',
+    $productId = $request->input('product_id');
+    $quantity = $request->input('quantity');
+
+    $column = Auth::check() ? 'user_id' : 'session_id';
+    $value = Auth::check() ? auth()->id() : $request->session()->getId();
+
+    $updated = DB::update("UPDATE carts SET quantity = ? WHERE product_id = ? AND {$column} = ?", [
+        $quantity, $productId, $value
     ]);
 
-    $productId = $validated['product_id'];
-    $quantity = $validated['quantity'];
-
-    // Choose key (user or session)
-    $cartQuery = Cart::query()->where('product_id', $productId);
-
-    if (Auth::check()) {
-        $cartQuery->where('user_id', auth()->id());
-    } else {
-        $cartQuery->where('session_id', $request->session()->getId());
-    }
-
-    // Only fetch id and quantity — minimal data
-    $cartItem = $cartQuery->select('id', 'quantity')->first();
-
-    if (!$cartItem) {
-        return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-    }
-
-    // Direct DB update without loading the full model
-    if ($cartItem->quantity !== $quantity) {
-        Cart::where('id', $cartItem->id)->update(['quantity' => $quantity]);
-    }
-
-    return response()->json(['success' => true]);
+    return response()->json(['success' => $updated > 0]);
 }
-
 
 
 
