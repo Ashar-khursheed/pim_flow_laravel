@@ -59,7 +59,7 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => __('msg_rec_list'),
-				'data' => $records,
+				'data' => $recordsQuery,
 			]);
 		}
 
