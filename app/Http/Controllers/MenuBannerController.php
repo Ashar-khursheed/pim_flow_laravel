@@ -14,7 +14,7 @@ class MenuBannerController extends Controller
      * @OA\Post(
      *     path="/api/menu-banners",
      *     summary="Create a new menu banner",
-     *     security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}},
      *     tags={"Menu Banners"},
      *     @OA\RequestBody(
      *         required=true,
@@ -69,7 +69,7 @@ class MenuBannerController extends Controller
      * @OA\Get(
      *     path="/api/menu-banners",
      *     summary="Get all menu banners",
-     *     security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}},
      *     tags={"Menu Banners"},
      *     @OA\Response(response=200, description="List of banners"),
      * )
@@ -87,7 +87,7 @@ class MenuBannerController extends Controller
      *     path="/api/menu-banners/{id}",
      *     summary="Get a single banner by ID",
      *     tags={"Menu Banners"},
-     *     security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -109,7 +109,7 @@ class MenuBannerController extends Controller
      *     path="/api/menu-banners/{id}",
      *     summary="Update a menu banner",
      *     tags={"Menu Banners"},
-     *     security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",
@@ -177,7 +177,7 @@ class MenuBannerController extends Controller
      *     path="/api/menu-banners/{id}",
      *     summary="Delete a menu banner",
      *     tags={"Menu Banners"},
-     *     security={{"bearerAuth":{}}}
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

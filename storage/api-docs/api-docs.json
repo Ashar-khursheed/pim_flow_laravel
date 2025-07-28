@@ -17360,7 +17360,7 @@
                 "tags": [
                     "FrontEnd-Quotes"
                 ],
-                "summary": "Download quote's pdf",
+                "summary": "emal quote's pdf",
                 "operationId": "cad83e8b89c524e0ba4835dcf13d3f53",
                 "parameters": [
                     {
@@ -17375,7 +17375,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "PDF downloaded successfully",
+                        "description": "Quote email sent successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -21529,6 +21529,213 @@
                     },
                     "404": {
                         "description": "File not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/menu-banners": {
+            "get": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Get all menu banners",
+                "operationId": "808791726a4735eb046f43c47c57c8cf",
+                "responses": {
+                    "200": {
+                        "description": "List of banners"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Create a new menu banner",
+                "operationId": "f5bc13c27052d330d76135f82ae3f1c5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "desktop_image",
+                                    "mobile_image"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "desktop_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "desktop_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "mobile_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "mobile_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Banner created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/menu-banners/{id}": {
+            "get": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Get a single banner by ID",
+                "operationId": "9d9c81eda1978907e978da2e0b9e986d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner found"
+                    },
+                    "404": {
+                        "description": "Banner not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Update a menu banner",
+                "operationId": "3e666bccdb4ec30e899f3d463506c29b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "_method"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "desktop_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "desktop_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "mobile_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "mobile_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Banner updated"
+                    },
+                    "404": {
+                        "description": "Banner not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Delete a menu banner",
+                "operationId": "ed1e4f82fe880f1961e4eb49adb4e769",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner deleted"
+                    },
+                    "404": {
+                        "description": "Banner not found"
                     }
                 },
                 "security": [
@@ -32617,6 +32824,10 @@
         {
             "name": "Measurement",
             "description": "Measurement"
+        },
+        {
+            "name": "Menu Banners",
+            "description": "Menu Banners"
         },
         {
             "name": "Orders",
