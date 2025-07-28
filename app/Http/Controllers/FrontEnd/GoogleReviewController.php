@@ -113,13 +113,22 @@ class GoogleReviewController extends Controller
             }
         }
 
-        if ($filterStars && in_array((int)$filterStars, [1, 2, 3, 4, 5])) {
-            $filterStars = (int) $filterStars;
-            $reviews = array_filter($reviews, function ($review) use ($filterStars) {
-                return $review['rating'] >= $filterStars && $review['rating'] < ($filterStars + 1);
-            });
-            $reviews = array_values($reviews);
+       if ($filterStars && in_array((int)$filterStars, [1, 2, 3, 4, 5])) {
+    $filterStars = (int) $filterStars;
+
+    $reviews = array_filter($reviews, function ($review) use ($filterStars) {
+        // Exact match only for 5-star (since there's no 5.9 rating)
+        if ($filterStars === 5) {
+            return (float)$review['rating'] === 5.0;
         }
+
+        // Range match for others: e.g. 4.0 ≤ rating < 5.0
+        return $review['rating'] >= $filterStars && $review['rating'] < ($filterStars + 1);
+    });
+
+    $reviews = array_values($reviews); // Re-index the array
+}
+
 
 
         return response()->json([
