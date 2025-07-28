@@ -16,10 +16,10 @@ use Exception;
 class QuotePlacedMail extends Notification implements ShouldQueue
 {
     use Queueable;
-    
+
     public $timeout = 300; // 5 minutes (reduced from 12 hours)
     public $tries = 2; // Reduced attempts for faster debugging
-    public $maxExceptions = 1; 
+    public $maxExceptions = 1;
     public $backoff = [30, 60]; // Shorter backoff
 
     public $quote;
@@ -27,7 +27,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
     public function __construct($quote)
     {
         $this->quote = $quote;
-        
+
         Log::info('QuotePlacedMail job created', [
             'quote_id' => $quote->id ?? 'unknown',
             'quote_number' => $quote->quote_number ?? 'unknown'
@@ -48,13 +48,13 @@ class QuotePlacedMail extends Notification implements ShouldQueue
     public function shouldSend($notifiable, $channel)
     {
         $shouldSend = !empty($this->quote) && !empty($notifiable->email);
-        
+
         Log::info('QuotePlacedMail shouldSend check', [
             'quote_id' => $this->quote->id ?? 'unknown',
             'notifiable_email' => $notifiable->email ?? 'empty',
             'should_send' => $shouldSend
         ]);
-        
+
         return $shouldSend;
     }
 
@@ -82,10 +82,10 @@ class QuotePlacedMail extends Notification implements ShouldQueue
                 'quote_id' => $quote->id,
                 'product_count' => $quote->quoteProducts->count()
             ]);
-            
+
             $downloadedCount = 0;
             $failedCount = 0;
-            
+
             foreach ($quote->quoteProducts as $index => $quoteProduct) {
                 $productDetail = $quoteProduct->product;
                 if (!$productDetail) {
@@ -111,7 +111,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
                 // Download and store the image
                 $localPath = self::downloadProductImageSync($imageUrl, $productDetail->id, $quote->id);
-                
+
                 if ($localPath) {
                     $downloadedCount++;
                     Log::info('Successfully pre-downloaded image', [
@@ -158,7 +158,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
                 : (is_array($decoded = json_decode($productDetail->images, true)) ? $decoded : null);
 
             $imageUrl = is_array($images) ? ($images[0] ?? null) : null;
-            
+
             if (empty($imageUrl)) {
                 return null;
             }
@@ -241,7 +241,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
             }
 
             $imageData = $response->body();
-            
+
             // Validate image data
             if (empty($imageData) || strlen($imageData) < 100) {
                 Log::warning('Invalid image data received', [
@@ -253,7 +253,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
             // Save to storage
             $saved = Storage::disk('public')->put($relativePath, $imageData);
-            
+
             if (!$saved) {
                 Log::error('Failed to save image to storage', [
                     'product_id' => $productId,
@@ -304,8 +304,9 @@ class QuotePlacedMail extends Notification implements ShouldQueue
         ]);
 
         try {
+
             $backendURL = config('app.backend_url');
-            $logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+            $logoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
 
             $companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC' : 'THE HORECA STORE INC';
             $street = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
@@ -403,7 +404,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
             Log::info('Generating PDF', ['quote_id' => $this->quote->id]);
             $pdf = $this->generatePDF($pdfParams);
-            
+
             Log::info('QuotePlacedMail completed successfully', [
                 'quote_id' => $this->quote->id,
                 'memory_final' => memory_get_usage(true)
@@ -434,7 +435,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
     private function processProducts($currency)
     {
         $products = collect();
-        
+
         try {
             foreach ($this->quote->quoteProducts as $index => $quoteProduct) {
                 try {
@@ -508,7 +509,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
             $filename = "product_{$productDetail->id}.jpg";
             $relativePath = "temp/quotes/{$this->quote->id}/{$filename}";
             $fullPath = storage_path("app/public/{$relativePath}");
-            
+
             if (file_exists($fullPath) && filesize($fullPath) > 0) {
                 Log::info('Using pre-downloaded image', [
                     'product_id' => $productDetail->id,
@@ -521,7 +522,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
             $tempBasePath = storage_path('app/public/temp');
             $pattern = $tempBasePath . "/**/product_{$productDetail->id}.*";
             $files = glob($pattern, GLOB_BRACE);
-            
+
             foreach ($files as $file) {
                 if (is_file($file) && filesize($file) > 0) {
                     Log::info('Using existing temp image', [
@@ -566,13 +567,13 @@ class QuotePlacedMail extends Notification implements ShouldQueue
             public_path('assets/images/no-image.jpg'),
             storage_path('app/public/dummy-product.jpg')
         ];
-        
+
         foreach ($paths as $path) {
             if (file_exists($path)) {
                 return $path;
             }
         }
-        
+
         return null;
     }
 

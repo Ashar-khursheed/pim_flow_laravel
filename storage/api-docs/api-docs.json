@@ -14904,12 +14904,7 @@
                             "application/json": {}
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/payments": {
