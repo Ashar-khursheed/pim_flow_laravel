@@ -63,8 +63,14 @@ class OrderController extends Controller
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		/* Check if pagination requested */
+		$recordsQuery = Order::query();
+
+		/* Filter by status */
+		if ($request->has('status')) {
+			$recordsQuery->where('status', $request->status);
+		}
+
 		if ($request->filled('page') && $request->filled('length')) {
-			$recordsQuery = Order::query();
 
 			/* Join if customer_name is involved in search or sort */
 			if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
@@ -84,11 +90,6 @@ class OrderController extends Controller
 				'creator',
 				'updator'
 			]);
-
-			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('orders.status', $request->status);
-			}
 
 			/* Filter by payment status */
 			if ($request->has('payment_status')) {
@@ -185,7 +186,7 @@ class OrderController extends Controller
 			});
 		} else {
 			/* No pagination: just fetch id and order_number */
-			$records = Order::orderBy('order_number', 'asc')->get(['id', 'order_number']);
+			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
