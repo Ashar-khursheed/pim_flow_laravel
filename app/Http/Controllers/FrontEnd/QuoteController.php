@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Notifications\QuotePlacedMail;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\GeneratesQuotePdf;
 
 class QuoteController extends BaseController
 {
+	use GeneratesQuotePdf;
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/quotes",
@@ -188,7 +191,6 @@ class QuoteController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-
 	public function store(Request $request)
 	{
 		$request->validate([
@@ -273,55 +275,54 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			// foreach ($quote->quoteEmails as $quoteEmail) {
-			// 	$quoteEmail->notify(new QuotePlacedMail($quote));
-			// }
-			auth()->user()->notify(new QuotePlacedMail($quote));
-
 			DB::commit();
 
-			$quote->load([
-				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'quoteProducts.product.brand:id,name',
-				'quoteProducts.product.currency:id,symbol',
-				'quoteEmails'
-			]);
+			$pdfParams = $this->generateQuotePdfParams($quote->id);
+			$pdf = Pdf::loadView('pdf.quote', $pdfParams);
+			return $pdf->download("quote_{$quote->id}.pdf");
 
-			foreach ($quote->quoteProducts as $quoteProduct) {
-				$product = $quoteProduct->product;
-				if ($product) {
-					$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+			// $quote->load([
+			// 	'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+			// 	'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			// 	'quoteProducts.product.brand:id,name',
+			// 	'quoteProducts.product.currency:id,symbol',
+			// 	'quoteEmails'
+			// ]);
 
-					$product->brand_name = $product->brand->name ?? null;
-					$product->currency_symbol = $product->currency->symbol ?? null;
+			// foreach ($quote->quoteProducts as $quoteProduct) {
+			// 	$product = $quoteProduct->product;
+			// 	if ($product) {
+			// 		$product->images = is_array($product->images)
+			// 		? $product->images
+			// 		: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-					unset($product->brand, $product->currency);
-				}
+			// 		$product->brand_name = $product->brand->name ?? null;
+			// 		$product->currency_symbol = $product->currency->symbol ?? null;
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+			// 		unset($product->brand, $product->currency);
+			// 	}
 
-				/* Format numeric values to 2 decimal places */
-				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-					if (isset($quoteProduct->$key)) {
-						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-					}
-				}
-			}
+			// 	$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
-				if (isset($quote->$key)) {
-					$quote->$key = number_format($quote->$key, 2, '.', '');
-				}
-			}
+			// 	/* Format numeric values to 2 decimal places */
+			// 	foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+			// 		if (isset($quoteProduct->$key)) {
+			// 			$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+			// 		}
+			// 	}
+			// }
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Quote created successfully',
-				'data' => $quote
-			], 201);
+			// foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			// 	if (isset($quote->$key)) {
+			// 		$quote->$key = number_format($quote->$key, 2, '.', '');
+			// 	}
+			// }
+
+			// return response()->json([
+			// 	'success' => true,
+			// 	'message' => 'Quote created successfully',
+			// 	'data' => $quote
+			// ], 201);
 
 		} catch (\Exception $e) {
 			DB::rollBack();
@@ -402,6 +403,70 @@ class QuoteController extends BaseController
 		return response()->json([
 			'success' => true,
 			'data' => $quote
+		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/quotes/{id}/download-pdf",
+	 *     summary="Download quote's pdf",
+	 *     tags={"FrontEnd-Quotes"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Quote ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="PDF downloaded successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function downloadPdf($id)
+	{
+		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
+		if (!$quote) {
+			return response()->json([
+				'success' => false,
+				'message' => "Quote not found."
+			]);
+		}
+
+		$pdfParams = $this->generateQuotePdfParams($id);
+		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
+		return $pdf->download("quote_{$quote->id}.pdf");
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/frontend/quotes/{id}/email-pdf",
+	 *     summary="emal quote's pdf",
+	 *     tags={"FrontEnd-Quotes"},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Quote ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Quote email sent successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function emailPdf($id)
+	{
+		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
+		if (!$quote) {
+			return response()->json([
+				'success' => false,
+				'message' => "Quote not found."
+			]);
+		}
+		auth()->user()->notify(new QuotePlacedMail($quote));
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Quote email sent successfully with the attached PDF'
 		]);
 	}
 

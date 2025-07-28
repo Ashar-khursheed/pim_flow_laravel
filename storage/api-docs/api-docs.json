@@ -17322,6 +17322,72 @@
                 ]
             }
         },
+        "/api/frontend/quotes/{id}/download-pdf": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Download quote's pdf",
+                "operationId": "0579f813b918ced165d138aef45a1ca7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF downloaded successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/quotes/{id}/email-pdf": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Download quote's pdf",
+                "operationId": "cad83e8b89c524e0ba4835dcf13d3f53",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF downloaded successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/recent-products/add": {
             "post": {
                 "tags": [
