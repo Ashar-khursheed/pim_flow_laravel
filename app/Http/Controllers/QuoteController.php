@@ -374,7 +374,7 @@ class QuoteController extends BaseController
 	 */
 	public function show($id)
 	{
-		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
+		$quote = Quote::find($id);
 		if (!$quote) {
 			return response()->json([
 				'success' => false,
