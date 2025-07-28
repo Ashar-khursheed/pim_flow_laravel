@@ -114,11 +114,13 @@ class GoogleReviewController extends Controller
         }
 
         if ($filterStars && in_array((int)$filterStars, [1, 2, 3, 4, 5])) {
+            $filterStars = (int) $filterStars;
             $reviews = array_filter($reviews, function ($review) use ($filterStars) {
-                return (int) round($review['rating']) === (int)$filterStars;
+                return $review['rating'] >= $filterStars && $review['rating'] < ($filterStars + 1);
             });
             $reviews = array_values($reviews);
         }
+
 
         return response()->json([
             'name' => $data['result']['name'] ?? null,
