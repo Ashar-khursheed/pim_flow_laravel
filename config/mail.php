@@ -45,8 +45,19 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            'timeout' => env('MAIL_TIMEOUT', 120), // Increased timeout for attachments
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url(env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
+            'stream' => [
+                'socket' => [
+                    'timeout' => env('MAIL_SOCKET_TIMEOUT', 120),
+                ],
+                'ssl' => [
+                    'verify_peer' => env('MAIL_SSL_VERIFY_PEER', false),
+                    'verify_peer_name' => env('MAIL_SSL_VERIFY_PEER_NAME', false),
+                    'allow_self_signed' => env('MAIL_SSL_ALLOW_SELF_SIGNED', true),
+                    'timeout' => env('MAIL_SSL_TIMEOUT', 120),
+                ],
+            ],
         ],
 
         'ses' => [
