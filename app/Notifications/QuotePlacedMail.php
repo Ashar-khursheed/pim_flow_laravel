@@ -188,41 +188,6 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 	}
 
 	/**
-	 * Get path to pre-downloaded image
-	 */
-	private function getPreDownloadedImagePath($productDetail)
-	{
-		try {
-			$filename = "product_{$productDetail->id}.jpg";
-			$relativePath = "temp/quotes/{$this->quote->id}/{$filename}";
-			$fullPath = storage_path("app/public/{$relativePath}");
-
-			if (file_exists($fullPath) && filesize($fullPath) > 0) {
-				return $fullPath;
-			}
-
-			// Fallback: try to find any existing temp image
-			$tempBasePath = storage_path('app/public/temp');
-			$pattern = $tempBasePath . "/**/product_{$productDetail->id}.*";
-			$files = glob($pattern, GLOB_BRACE);
-
-			foreach ($files as $file) {
-				if (is_file($file) && filesize($file) > 0) {
-					return $file;
-				}
-			}
-			return null;
-
-		} catch (Exception $e) {
-			Log::warning('Error getting pre-downloaded image path', [
-				'product_id' => $productDetail->id ?? 'unknown',
-				'error' => $e->getMessage()
-			]);
-			return null;
-		}
-	}
-
-	/**
 	 * Get the array representation of the notification.
 	 *
 	 * @return array<string, mixed>
@@ -232,39 +197,5 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		return [
 			//
 		];
-	}
-
-	/**
-	 * Destructor for cleanup
-	 */
-	public function __destruct()
-	{
-		try {
-			$tempBasePath = storage_path('app/public/temp');
-			if (!is_dir($tempBasePath)) {
-				return;
-			}
-
-			$iterator = new \RecursiveIteratorIterator(
-				new \RecursiveDirectoryIterator($tempBasePath, \RecursiveDirectoryIterator::SKIP_DOTS),
-				\RecursiveIteratorIterator::CHILD_FIRST
-			);
-
-			$now = time();
-			$maxAge = 3600; // 1 hour
-
-			foreach ($iterator as $file) {
-				if ($file->isFile() && $now - $file->getMTime() >= $maxAge) {
-					@unlink($file->getRealPath());
-				} elseif ($file->isDir() && $now - $file->getMTime() >= $maxAge) {
-					@rmdir($file->getRealPath());
-				}
-			}
-
-		} catch (Exception $e) {
-			Log::info('Cleanup temp files error (non-critical)', [
-				'error' => $e->getMessage()
-			]);
-		}
 	}
 }
