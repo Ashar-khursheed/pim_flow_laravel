@@ -431,6 +431,8 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
 
+	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
+	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
