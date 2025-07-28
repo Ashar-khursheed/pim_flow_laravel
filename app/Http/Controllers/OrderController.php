@@ -49,13 +49,20 @@ class OrderController extends Controller
 			$from = $request->from_date . ' 00:00:00';
 			$to = $request->to_date . ' 23:59:59';
 
-			$records = Order::whereBetween('created_at', [$from, $to])->pluck('id');
+			$recordsQuery = Order::query();
+			/* Filter by status */
+			if ($request->has('status')) {
+				$recordsQuery->where('status', $request->status);
+			}
+			$recordsQuery = $recordsQuery->whereBetween('created_at', [$from, $to])->pluck('id');
+
 			return response()->json([
 				'success' => true,
 				'message' => __('msg_rec_list'),
 				'data' => $records,
 			]);
 		}
+
 		$searchableColumns = ['id', 'order_number', 'customer_name'];
 		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
 
