@@ -165,7 +165,7 @@ use Illuminate\Support\Str;
 								</div>
 							@endif
 						</td>
-
+						
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->sellingType }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->unitPrice }}</td>

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Log;
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
 use App\Notifications\QuotePlacedMail;
@@ -188,126 +188,153 @@ class QuoteController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function store(Request $request)
-	{
-		$request->validate([
-			'quote_number' => 'required|string|unique:quotes,quote_number',
-			'quote_name' => 'required|string',
-			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'tax_percentage' => 'required|numeric|min:0',
-			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:ec_products,id',
-			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
-			'emails' => 'array',
-			'emails.*' => 'email',
-		]);
 
-		$customerId = auth()->id();
+public function store(Request $request)
+{
+    $request->validate([
+        'quote_number' => 'required|string|unique:quotes,quote_number',
+        'quote_name' => 'required|string',
+        'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+        'tax_percentage' => 'required|numeric|min:0',
+        'products' => 'required|array|min:1',
+        'products.*.product_id' => 'required|integer|exists:ec_products,id',
+        'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+        'products.*.quantity' => 'required|integer|min:1',
+        'products.*.unit_price' => 'required|numeric|min:0',
+        'products.*.shipping_charge' => 'required|numeric|min:0',
+        'emails' => 'array',
+        'emails.*' => 'email',
+    ]);
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)
-		->where('customer_id', $customerId)
-		->first();
+    $customerId = auth()->id();
 
-		if (!$address) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The selected address does not belong to the customer.'
-			], 422);
-		}
+    $address = CustomerAddress::where('id', $request->customer_address_id)
+        ->where('customer_id', $customerId)
+        ->first();
 
-		DB::beginTransaction();
+    if (!$address) {
+        return response()->json([
+            'success' => false,
+            'message' => 'The selected address does not belong to the customer.'
+        ], 422);
+    }
 
-		try {
-			$totalProducts = 0;
-			$quoteAmount = 0;
-			$quoteShipping = 0;
+    DB::beginTransaction();
 
-			foreach ($request->products as $product) {
-				$totalProducts += $product['quantity'];
-				$quoteAmount += $product['quantity'] * $product['unit_price'];
-				$quoteShipping += $product['shipping_charge'];
-			}
+    try {
+        $totalProducts = 0;
+        $quoteAmount = 0;
+        $quoteShipping = 0;
 
-			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
+        foreach ($request->products as $product) {
+            $totalProducts += $product['quantity'];
+            $quoteAmount += $product['quantity'] * $product['unit_price'];
+            $quoteShipping += $product['shipping_charge'];
+        }
 
-			$quote = Quote::create([
-				'quote_number' => $request->quote_number,
-				'quote_name' => $request->quote_name,
-				'customer_id' => $customerId,
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $quoteShipping,
-				'amount' => $quoteAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'payment_terms' => $request->payment_terms,
-				'customer_notes' => $request->customer_notes,
-				'internal_notes' => $request->internal_notes,
-				'status' => 'Pending',
-				'expiration_days' => 7,
-				'created_by' => 0,
-			]);
+        $taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+        $totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
-			foreach ($request->products as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				$quote->quoteProducts()->create([
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'unit_price' => $product['unit_price'],
-					'amount' => $total,
-					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
-				]);
-			}
+        $quote = Quote::create([
+            'quote_number' => $request->quote_number,
+            'quote_name' => $request->quote_name,
+            'customer_id' => $customerId,
+            'customer_address_id' => $request->customer_address_id,
+            'shipping_charge' => $quoteShipping,
+            'amount' => $quoteAmount,
+            'tax_percentage' => $request->tax_percentage,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'total_products' => $totalProducts,
+            'payment_terms' => $request->payment_terms,
+            'customer_notes' => $request->customer_notes,
+            'internal_notes' => $request->internal_notes,
+            'status' => 'Pending',
+            'expiration_days' => 7,
+            'created_by' => 0,
+        ]);
 
-			foreach ($request->emails as $email) {
-				$quote->quoteEmails()->create([
-					'email' => $email,
-				]);
-			}
+        foreach ($request->products as $product) {
+            $total = $product['quantity'] * $product['unit_price'];
+            $quote->quoteProducts()->create([
+                'product_id' => $product['product_id'],
+                'vendor_id' => $product['vendor_id'],
+                'quantity' => $product['quantity'],
+                'unit_price' => $product['unit_price'],
+                'amount' => $total,
+                'shipping_charge' => $product['shipping_charge'],
+                'total_amount' => $total + $product['shipping_charge'],
+            ]);
+        }
 
-			// foreach ($quote->quoteEmails as $quoteEmail) {
-			// 	$quoteEmail->notify(new QuotePlacedMail($quote));
-			// } QuotePlacedMail
-			auth()->user()->notify(new QuotePlacedMail($quote));
+        foreach ($request->emails as $email) {
+            $quote->quoteEmails()->create([
+                'email' => $email,
+            ]);
+        }
 
-			DB::commit();
+        // Load the necessary relationships for image pre-download
+        $quote->load([
+            'quoteProducts.product',
+            'customer'
+        ]);
 
-			$quote->load([
-				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'quoteProducts.product.brand:id,name',
-				'quoteProducts.product.currency:id,symbol',
-				'quoteEmails'
-			]);
+        Log::info('Quote created, starting email process', [
+            'quote_id' => $quote->id,
+            'quote_number' => $quote->quote_number,
+            'customer_email' => auth()->user()->email
+        ]);
 
-			foreach ($quote->quoteProducts as $quoteProduct) {
-				$product = $quoteProduct->product;
-				if ($product) {
-					$product->images = is_array($product->images)
-					? $product->images
-					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+        // CRITICAL: Pre-download images BEFORE queuing the notification
+        Log::info('Pre-downloading images before queue...');
+        $preDownloadResult = \App\Notifications\QuotePlacedMail::preDownloadImages($quote);
+        
+        if ($preDownloadResult) {
+            Log::info('Images pre-downloaded successfully');
+        } else {
+            Log::warning('Some images failed to pre-download, but continuing...');
+        }
 
-					$product->brand_name = $product->brand->name ?? null;
-					$product->currency_symbol = $product->currency->symbol ?? null;
+        // Now dispatch the notification - images are already downloaded
+        Log::info('Dispatching notification to queue...');
+        auth()->user()->notify(new \App\Notifications\QuotePlacedMail($quote));
 
-					unset($product->brand, $product->currency);
-				}
+        Log::info('Quote email queued successfully', [
+            'quote_id' => $quote->id
+        ]);
 
-				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+        DB::commit();
 
-				/* Format numeric values to 2 decimal places */
-				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-					if (isset($quoteProduct->$key)) {
-						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-					}
-				}
+        // Load relationships for response
+        $quote->load([
+            'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+            'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+            'quoteProducts.product.brand:id,name',
+            'quoteProducts.product.currency:id,symbol',
+            'quoteEmails'
+        ]);
+
+        foreach ($quote->quoteProducts as $quoteProduct) {
+            $product = $quoteProduct->product;
+            if ($product) {
+                $product->images = is_array($product->images)
+                    ? $product->images
+                    : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+                $product->brand_name = $product->brand->name ?? null;
+                $product->currency_symbol = $product->currency->symbol ?? null;
+
+                unset($product->brand, $product->currency);
+            }
+
+            $quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+
+            /* Format numeric values to 2 decimal places */
+            foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+                if (isset($quoteProduct->$key)) {
+                    $quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+                }
+            }
 			}
 
 			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
