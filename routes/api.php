@@ -61,6 +61,7 @@ use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\MenuBannerController ;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -112,6 +113,7 @@ use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewContro
 
 
 
+
 use Illuminate\Support\Facades\Http;
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
@@ -160,6 +162,14 @@ Route::apiResource('newsletters', NewsletterController::class);
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+	Route::prefix('menu-banners')->group(function () {
+    // Create banner
+    Route::post('/', [MenuBannerController::class, 'store']);
+    Route::get('/', [MenuBannerController::class, 'index']);
+    Route::get('/{id}', [MenuBannerController::class, 'show']);
+    Route::post('/{id}', [MenuBannerController::class, 'update']);
+    Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
+	});
 
 	Route::prefix('category-banners')->group(function () {
 		Route::get('/{category_id}', [CategoryBannerController::class, 'index']);
