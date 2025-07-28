@@ -273,39 +273,13 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			// Load the necessary relationships for image pre-download
-			$quote->load([
-				'quoteProducts.product',
-				'customer'
-			]);
-
-			Log::info('Quote created, starting email process', [
-				'quote_id' => $quote->id,
-				'quote_number' => $quote->quote_number,
-				'customer_email' => auth()->user()->email
-			]);
-
-			// CRITICAL: Pre-download images BEFORE queuing the notification
-			Log::info('Pre-downloading images before queue...');
-			$preDownloadResult = \App\Notifications\QuotePlacedMail::preDownloadImages($quote);
-
-			if ($preDownloadResult) {
-				Log::info('Images pre-downloaded successfully');
-			} else {
-				Log::warning('Some images failed to pre-download, but continuing...');
-			}
-
-			// Now dispatch the notification - images are already downloaded
-			Log::info('Dispatching notification to queue...');
-			auth()->user()->notify(new \App\Notifications\QuotePlacedMail($quote));
-
-			Log::info('Quote email queued successfully', [
-				'quote_id' => $quote->id
-			]);
+			// foreach ($quote->quoteEmails as $quoteEmail) {
+			// 	$quoteEmail->notify(new QuotePlacedMail($quote));
+			// }
+			auth()->user()->notify(new QuotePlacedMail($quote));
 
 			DB::commit();
 
-			// Load relationships for response
 			$quote->load([
 				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',

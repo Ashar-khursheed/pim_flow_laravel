@@ -12,6 +12,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
 use PhpUnitsOfMeasure\PhysicalQuantity\Force;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
@@ -475,3 +476,21 @@ function convertNumberToWords($amount, $currencyMain = 'U.S. Dollars', $currency
 
 	return trim("$whole $currencyMain$fraction Only");
 }
+
+function getBase64Image($url)
+{
+	try {
+		$response = Http::timeout(10)->get($url);
+
+		if ($response->successful()) {
+			$contentType = $response->header('Content-Type');
+			$base64 = base64_encode($response->body());
+
+			return "data:{$contentType};base64,{$base64}";
+		}
+	} catch (\Exception $e) {
+	}
+
+	return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAE/wJLCNRVswAAAABJRU5ErkJggg==';
+}
+

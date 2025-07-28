@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.5rem; vertical-align: top;">
-						<img alt="logo" src="{{ $logoUrl }}" width="120"/>
+						<img alt="logo" src="{{ $pdfLogoUrl }}" width="120"/>
 					</td>
 
 					<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
@@ -157,15 +157,15 @@ use Illuminate\Support\Str;
 							</div>
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center; vertical-align:middle;">
-							@if (!empty($product->localImagePath) && file_exists($product->localImagePath))
-								<img src="{{ $product->localImagePath }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto;">
+							@if (!empty($product->base64_image))
+								<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto;">
 							@else
 								<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280;">
 									No Image
 								</div>
 							@endif
 						</td>
-						
+
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->sellingType }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->unitPrice }}</td>
