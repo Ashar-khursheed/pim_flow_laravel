@@ -37,7 +37,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
-		$orderUrl = url("/registration/all-orders");
+		$orderUrl = url("/my-order");
 
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
