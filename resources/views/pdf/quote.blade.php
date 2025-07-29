@@ -10,170 +10,206 @@
 	<script src="https://cdn.tailwindcss.com"></script>
 </head>
 @php
-use Illuminate\Support\Str;
+	use Illuminate\Support\Str;
+
+	$chunks = [];
+	$offset = 0;
+	$total = $products->count();
+	$pattern = [3];
+
+	while (array_sum($pattern) < $total) {
+		$pattern[] = 4;
+	}
+
+	foreach ($pattern as $size) {
+		if ($offset >= $total) break;
+		$chunks[] = $products->slice($offset, $size);
+		$offset += $size;
+	}
 @endphp
 <body>
 	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto;  font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
 		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 50px; box-sizing: border-box;background-color: white;">
-			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
-				<tr>
-					<td style="width: 33.33%; padding: 0.5rem; vertical-align: top;">
-						<img alt="logo" src="{{ $pdfLogoUrl }}" width="120"/>
-					</td>
+			@foreach($chunks as $index => $chunk)
+				@if($index > 0)
+					<div style="page-break-before: always;"></div>
+				@endif
 
-					<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
-						<h1 style="font-size: 16px; font-weight: 700; margin: 0;">SALES QUOTATION</h1>
-						<p style="font-size: 13px; font-weight: 700; color: #186737; margin: 4px 0 0;">Best Price. Zero Hassle.</p>
-					</td>
+				<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
+					<tr>
+						<td style="width: 33.33%; padding: 0.5rem; vertical-align: top;">
+							<img alt="logo" src="{{ $pdfLogoUrl }}" width="120"/>
+						</td>
 
-					<!-- Contact Info Column -->
-					<td style="width: 33.33%; text-align: right; font-size: 11px; padding: 0.5rem; vertical-align: top;">
-						<p style="font-weight: 700; margin: 0;">{{ $companyName }}.</p>
-						<p style="margin: 0;">{{ $street }}</p>
-						<p style="margin: 0;">{{ $city }}</p>
-						<p style="margin: 0;">Phone: {{ $phone }}</p>
-						<p style="margin: 0;">Email: {{ $siteEmail }}</p>
-						<p style="margin: 0;">{{ $siteURL }}</p>
-					</td>
-				</tr>
-			</table>
+						<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
+							<h1 style="font-size: 16px; font-weight: 700; margin: 0;">SALES QUOTATION</h1>
+							<p style="font-size: 13px; font-weight: 700; color: #186737; margin: 4px 0 0;">Best Price. Zero Hassle.</p>
+						</td>
 
-			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
-				<tr>
-					<td style="width: 49%; border: 1px solid black; vertical-align: top; margin-right: 1%;">
-						<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-							<tr>
-								<td colspan="1" style="background-color: #e5e7eb; text-align: center; font-weight: 600; font-size: 0.875rem; border-bottom: 1px solid black; padding: 0.5rem;">
-									Prepared For
-								</td>
-							</tr>
-							<tr>
-								<td style="padding: 0.5rem; font-weight: 700; text-transform: uppercase;">
-									{{ $name }}
-								</td>
-							</tr>
-							<tr>
-								<td style="padding: 0.5rem 0.5rem 0 0.5rem;">
-									{{ $address }}, {{ $city }}, {{ $country }}
-								</td>
-							</tr>
-							<tr>
-								<td style="padding: 0.5rem;">
-									<strong>Email:</strong> {{ $email }}
-								</td>
-							</tr>
-						</table>
-					</td>
+						<!-- Contact Info Column -->
+						<td style="width: 33.33%; text-align: right; font-size: 11px; padding: 0.5rem; vertical-align: top;">
+							<p style="font-weight: 700; margin: 0;">{{ $companyName }}.</p>
+							<p style="margin: 0;">{{ $street }}</p>
+							<p style="margin: 0;">{{ $city }}</p>
+							<p style="margin: 0;">Phone: {{ $phone }}</p>
+							<p style="margin: 0;">Email: {{ $siteEmail }}</p>
+							<p style="margin: 0;">{{ $siteURL }}</p>
+						</td>
+					</tr>
+				</table>
 
-					<td style="width: 48%; vertical-align: top;">
-						<table style=" margin-left: 2%;  width: 98%; border-collapse: collapse; font-size: 12px; border: 1px solid black;">
-							<tr style="background-color: #e5e7eb; text-align: center;">
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation Date</td>
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Expiry Date</td>
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation No</td>
+				@if($index === 0)
+					<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
+						<tr>
+							<td style="width: 49%; border: 1px solid black; vertical-align: top; margin-right: 1%;">
+								<table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+									<tr>
+										<td colspan="1" style="background-color: #e5e7eb; text-align: center; font-weight: 600; font-size: 0.875rem; border-bottom: 1px solid black; padding: 0.5rem;">
+											Prepared For
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 0.5rem; font-weight: 700; text-transform: uppercase;">
+											{{ $name }}
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 0.5rem 0.5rem 0 0.5rem;">
+											{{ $address }}, {{ $city }}, {{ $country }}
+										</td>
+									</tr>
+									<tr>
+										<td style="padding: 0.5rem;">
+											<strong>Email:</strong> {{ $email }}
+										</td>
+									</tr>
+								</table>
+							</td>
+
+							<td style="width: 48%; vertical-align: top;">
+								<table style=" margin-left: 2%;  width: 98%; border-collapse: collapse; font-size: 12px; border: 1px solid black;">
+									<tr style="background-color: #e5e7eb; text-align: center;">
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation Date</td>
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Expiry Date</td>
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation No</td>
+									</tr>
+									<tr style="text-align: center;">
+										<td style="border: 1px solid black; padding: 0.5rem;">{{ $createdAt }}</td>
+										<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600;">{{ $expiredAt }}</td>
+										<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteNumber }}</td>
+									</tr>
+									<tr style="background-color: #e5e7eb; text-align: center;">
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Payment Mode</td>
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation Type</td>
+										<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Currency</td>
+									</tr>
+									<tr style="text-align: center;">
+										<td style="border: 1px solid black; padding: 0.5rem;">{{ $paymentMode }}</td>
+										<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteType }}</td>
+										<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600;">{{ $currency }}</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				@else
+					<table style="padding: 0.5rem; width: 100%;  margin-bottom: 1rem;  border: 1px solid #d1d5db; font-size: 11px; border-collapse: collapse;">
+						<thead>
+							<tr style="background-color: #e5e7eb; text-align: center; font-weight: 600;">
+								<th style="border: 1px solid black; padding: 0.5rem;">Quotation Date</th>
+								<th style="border: 1px solid black; padding: 0.5rem;">Expiry Date</th>
+								<th style="border: 1px solid black; padding: 0.5rem;">Quotation No</th>
+								<th style="border: 1px solid black; padding: 0.5rem;">Paymen Mode</th>
+								<th style="border: 1px solid black; padding: 0.5rem;">Quotation Type</th>
+								<th style="border: 1px solid black; padding: 0.5rem;">Currency</th>
 							</tr>
+						</thead>
+						<tbody>
 							<tr style="text-align: center;">
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $createdAt }}</td>
-								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600;">{{ $expiredAt }}</td>
+								<td style="border: 1px solid black; padding: 0.5rem; color: #FF0000;">{{ $expiredAt }}</td>
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteNumber }}</td>
-							</tr>
-							<tr style="background-color: #e5e7eb; text-align: center;">
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Payment Mode</td>
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Quotation Type</td>
-								<td style="border: 1px solid black; padding: 0.5rem; font-weight: 700;">Currency</td>
-							</tr>
-							<tr style="text-align: center;">
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $paymentMode }}</td>
 								<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteType }}</td>
-								<td style="border: 1px solid black; padding: 0.5rem; color: #dc2626; font-weight: 600;">{{ $currency }}</td>
+								<td style="border: 1px solid black; padding: 0.5rem; color: #FF0000;">{{ $currency }}</td>
 							</tr>
-						</table>
-					</td>
-				</tr>
-			</table>
-
-			<table style="padding: 0.5rem; width: 100%;  margin-bottom: 1rem;  border: 1px solid #d1d5db; font-size: 11px; border-collapse: collapse;">
-				<thead>
-					<tr style="background-color: #e5e7eb; text-align: center; font-weight: 600;">
-						<th style="border: 1px solid black; padding: 0.5rem;">Quotation Date</th>
-						<th style="border: 1px solid black; padding: 0.5rem;">Expiry Date</th>
-						<th style="border: 1px solid black; padding: 0.5rem;">Quotation No</th>
-						<th style="border: 1px solid black; padding: 0.5rem;">Paymen Mode</th>
-						<th style="border: 1px solid black; padding: 0.5rem;">Quotation Type</th>
-						<th style="border: 1px solid black; padding: 0.5rem;">Currency</th>
-					</tr>
-				</thead>
-				<tbody>
-					<tr style="text-align: center;">
-						<td style="border: 1px solid black; padding: 0.5rem;">{{ $createdAt }}</td>
-						<td style="border: 1px solid black; padding: 0.5rem; color: #FF0000;">{{ $expiredAt }}</td>
-						<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteNumber }}</td>
-						<td style="border: 1px solid black; padding: 0.5rem;">{{ $paymentMode }}</td>
-						<td style="border: 1px solid black; padding: 0.5rem;">{{ $quoteType }}</td>
-						<td style="border: 1px solid black; padding: 0.5rem; color: #FF0000;">{{ $currency }}</td>
-					</tr>
-				</tbody>
-			</table>
+						</tbody>
+					</table>
+				@endif
 
 
-			<table style="width:100%; border-collapse:collapse; border:1px solid black; font-size:11px;">
-				<thead>
-					<tr style="background-color:#e5e7eb;">
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:5%;">S.No</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:35%;">Description</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%;">Image</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%;">Quantity</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%;">UNIT</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%;">Unit Price</th>
-						<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:12%;">Total</th>
-					</tr>
-				</thead>
-				<tbody>
-					@foreach($products as $product)
-					<tr style="background-color:white;">
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">1</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px;">
-							<div style="margin-bottom:4px;">
-								<p style="font-weight:bold; font-size:12px; margin-bottom:2px;">
-									{{ Str::limit($product->name, 90, '...') }}
-								</p>
-								<p style="font-size:11px; margin-bottom:2px;">
-									<span style="font-weight:bold;">Brand:</span>
-									<span style="color:#dc2626;">{{ $product->brandName }}</span> |
-									<span style="font-weight:bold;">SKU #:</span>
-									<span style="color:#dc2626;">{{ $product->sku }}</span>
-								</p>
-								<p style="font-size:11px; margin-bottom:3px;">
-									<span style="font-weight:bold;">Warranty :</span>
-									<span style="color:#dc2626;">{{ $product->warrantyInfo }}</span>
-								</p>
-								<p style="font-size:11px; margin-bottom:3px;">
-									<span style="font-weight:bold; color:#1B6738;">{{ $product->shippingCharge }}</span>
-									<span style="font-weight:bold;">Mostly Ships in {{ $product->deliveryDays }}</span>
-								</p>
-								<a href="{{ $product->productURL }}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; font-size:9.7px;">
-									Click here for more details
-								</a>
-							</div>
-						</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center; vertical-align:middle;">
-							@if (!empty($product->base64_image))
-								<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto;">
-							@else
-								<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280;">
-									No Image
+				<table style="width:100%; border-collapse:collapse; border:1px solid black; font-size:11px;">
+					<thead>
+						<tr style="background-color:#e5e7eb;">
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:5%;">S.No</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:35%;">Description</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%;">Image</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%;">Quantity</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:8%;">UNIT</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:10%;">Unit Price</th>
+							<th style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; font-weight:bold; width:12%;">Total</th>
+						</tr>
+					</thead>
+					<tbody>
+						@foreach($chunk  as $index1 => $product)
+						<tr style="background-color:white;">
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $index1+1 }}</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px;">
+								<div style="margin-bottom:4px;">
+									<p style="font-weight:bold; font-size:12px; margin-bottom:2px;">
+										{{ Str::limit($product->name, 90, '...') }}
+									</p>
+									<p style="font-size:11px; margin-bottom:2px;">
+										<span style="font-weight:bold;">Brand:</span>
+										<span style="color:#dc2626;">{{ $product->brandName }}</span> |
+										<span style="font-weight:bold;">SKU #:</span>
+										<span style="color:#dc2626;">{{ $product->sku }}</span>
+									</p>
+									<p style="font-size:11px; margin-bottom:3px;">
+										<span style="font-weight:bold;">Warranty :</span>
+										<span style="color:#dc2626;">{{ $product->warrantyInfo }}</span>
+									</p>
+									<p style="font-size:11px; margin-bottom:3px;">
+										<span style="font-weight:bold; color:#1B6738;">{{ $product->shippingCharge }}</span>
+										<span style="font-weight:bold;">Mostly Ships in {{ $product->deliveryDays }}</span>
+									</p>
+									<a href="{{ $product->productURL }}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; font-size:9.7px;">
+										Click here for more details
+									</a>
 								</div>
-							@endif
-						</td>
+							</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center; vertical-align:middle;">
+								@if (!empty($product->base64_image))
+									<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto;">
+								@else
+									<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280;">
+										No Image
+									</div>
+								@endif
+							</td>
 
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->sellingType }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->unitPrice }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->total}}</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->quantity }}</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->sellingType }}</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->unitPrice }}</td>
+							<td style="border-top:1px solid black; border-bottom:1px solid black; padding:8px; text-align:center;">{{ $product->total}}</td>
+						</tr>
+						@endforeach
+					</tbody>
+				</table>
+
+				<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px;">
+					<tr>
+						<td style="text-align: left;">
+							Order Online for Fast Shipping & Lower Prices at
+							<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #15803d;">{{ $siteURL }}</a>
+						</td>
+						<td style="text-align: right;">
+							{{-- Page {{ $index+1 }} of {{ count($chunks) }} --}}
+							Page {{ $index+1 }}
+						</td>
 					</tr>
-					@endforeach
-				</tbody>
-			</table>
+				</table>
+			@endforeach
 
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px;">
 				<tr>
