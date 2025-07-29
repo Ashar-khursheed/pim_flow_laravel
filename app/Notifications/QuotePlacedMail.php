@@ -19,10 +19,13 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 	public $timeout = 43200;
 
 	public $quote;
+	public $sendToCc;
 
-	public function __construct($quote)
+	/* Constructor with default value for $sendToCc */
+	public function __construct($quote, bool $sendToCc = true)
 	{
 		$this->quote = $quote;
+		$this->sendToCc = $sendToCc;
 	}
 
 	/**
@@ -68,13 +71,23 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 		$ccEmails = $this->quote->quoteEmails->pluck('email')->toArray();
 
 		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
-		return (new MailMessage)
-		->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
-		->cc($ccEmails)
-		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
-			'mime' => 'application/pdf',
-		])
-		->markdown('emails.quotes.quote-placed', $mailParams);
+
+		if ($this->sendToCc) {
+			return (new MailMessage)
+			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+			->cc($ccEmails)
+			->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
+				'mime' => 'application/pdf',
+			])
+			->markdown('emails.quotes.quote-placed', $mailParams);
+		} else {
+			return (new MailMessage)
+			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+			->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
+				'mime' => 'application/pdf',
+			])
+			->markdown('emails.quotes.quote-placed', $mailParams);
+		}
 	}
 
 	/**

@@ -275,54 +275,55 @@ class QuoteController extends BaseController
 				]);
 			}
 
+			auth()->user()->notify(new QuotePlacedMail($quote, false));
+
 			DB::commit();
 
-			$pdfParams = $this->generateQuotePdfParams($quote->id);
-			$pdf = Pdf::loadView('pdf.quote', $pdfParams);
-			return $pdf->download("quote_{$quote->id}.pdf");
+			$quote->load([
+				'customer:id,name,email,type,country_code,mobile_number',
+				'customerAddress',
+				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'quoteProducts.product.brand:id,name',
+				'quoteProducts.product.currency:id,symbol',
+				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteEmails',
+			]);
 
-			// $quote->load([
-			// 	'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
-			// 	'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			// 	'quoteProducts.product.brand:id,name',
-			// 	'quoteProducts.product.currency:id,symbol',
-			// 	'quoteEmails'
-			// ]);
+			foreach ($quote->quoteProducts as $quoteProduct) {
+				$product = $quoteProduct->product;
+				if ($product) {
+					$product->images = is_array($product->images)
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-			// foreach ($quote->quoteProducts as $quoteProduct) {
-			// 	$product = $quoteProduct->product;
-			// 	if ($product) {
-			// 		$product->images = is_array($product->images)
-			// 		? $product->images
-			// 		: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
 
-			// 		$product->brand_name = $product->brand->name ?? null;
-			// 		$product->currency_symbol = $product->currency->symbol ?? null;
+					unset($product->brand, $product->currency);
+				}
 
-			// 		unset($product->brand, $product->currency);
-			// 	}
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
 
-			// 	$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price']);
+				/* Format numeric values to 2 decimal places */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
+			}
 
-			// 	/* Format numeric values to 2 decimal places */
-			// 	foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-			// 		if (isset($quoteProduct->$key)) {
-			// 			$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-			// 		}
-			// 	}
-			// }
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				if (isset($quote->$key)) {
+					$quote->$key = number_format($quote->$key, 2, '.', '');
+				}
+			}
 
-			// foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
-			// 	if (isset($quote->$key)) {
-			// 		$quote->$key = number_format($quote->$key, 2, '.', '');
-			// 	}
-			// }
-
-			// return response()->json([
-			// 	'success' => true,
-			// 	'message' => 'Quote created successfully',
-			// 	'data' => $quote
-			// ], 201);
+			return response()->json([
+				'success' => true,
+				'message' => 'Quote created successfully',
+				'data' => $quote
+			], 201);
 
 		} catch (\Exception $e) {
 			DB::rollBack();
