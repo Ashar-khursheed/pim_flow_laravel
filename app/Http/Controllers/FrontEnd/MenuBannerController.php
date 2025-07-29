@@ -38,7 +38,6 @@ class MenuBannerController extends Controller
      *     path="/api/frontend/menu-banners/{id}",
      *     summary="Get a single banner by ID",
      *     tags={"Frontend Menu Banners"},
-     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="id",
      *         in="path",

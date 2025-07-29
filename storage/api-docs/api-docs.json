@@ -14500,12 +14500,7 @@
                     "404": {
                         "description": "Banner not found"
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/orders": {
