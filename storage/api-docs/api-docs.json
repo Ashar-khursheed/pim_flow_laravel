@@ -14476,16 +14476,16 @@
                 }
             }
         },
-        "/api/frontend/menu-banners/{id}": {
+        "/api/frontend/menu-banners/category/{category_id}": {
             "get": {
                 "tags": [
                     "Frontend Menu Banners"
                 ],
-                "summary": "Get a single banner by ID",
-                "operationId": "0fa68c01eb49ea991207f9d2ec655723",
+                "summary": "Get all banners by category ID",
+                "operationId": "4bae56487452d899aa3e7e26ac650d78",
                 "parameters": [
                     {
-                        "name": "id",
+                        "name": "category_id",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -14495,10 +14495,10 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Banner found"
+                        "description": "Banners found"
                     },
                     "404": {
-                        "description": "Banner not found"
+                        "description": "No banners found"
                     }
                 }
             }

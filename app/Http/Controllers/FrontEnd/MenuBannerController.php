@@ -33,35 +33,37 @@ class MenuBannerController extends Controller
     }
 
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/menu-banners/{id}",
-     *     summary="Get a single banner by ID",
-     *     tags={"Frontend Menu Banners"},
-     *     @OA\Parameter(
-     *         name="id",
-     *         in="path",
-     *         required=true,
-     *         @OA\Schema(type="integer")
-     *     ),
-     *     @OA\Response(response=200, description="Banner found"),
-     *     @OA\Response(response=404, description="Banner not found")
-     * )
-     */
-    public function show($id)
-    {
-        $banner = MenuBanner::findOrFail($id);
+/**
+ * @OA\Get(
+ *     path="/api/frontend/menu-banners/category/{category_id}",
+ *     summary="Get all banners by category ID",
+ *     tags={"Frontend Menu Banners"},
+ *     @OA\Parameter(
+ *         name="category_id",
+ *         in="path",
+ *         required=true,
+ *         @OA\Schema(type="integer")
+ *     ),
+ *     @OA\Response(response=200, description="Banners found"),
+ *     @OA\Response(response=404, description="No banners found")
+ * )
+ */
+public function getByCategory($category_id)
+{
+    $banners = MenuBanner::where('category_id', $category_id)->get();
 
-        $relatedBanners = MenuBanner::where('category_id', $banner->category_id)->get();
-
+    if ($banners->isEmpty()) {
         return response()->json([
-            'status' => 'success',
-            'data' => [
-                'banner' => $banner,
-                'category_banners' => $relatedBanners
-            ]
-        ]);
+            'status' => 'error',
+            'message' => 'No banners found for this category'
+        ], 404);
     }
+
+    return response()->json([
+        'status' => 'success',
+        'data' => $banners
+    ]);
+}
 
   
 }
