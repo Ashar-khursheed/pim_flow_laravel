@@ -346,9 +346,9 @@ use Illuminate\Support\Str;
 		`;
 
 		const renderFooter = () => `
-		<p style="font-weight: 600; text-align: center; margin-bottom: 20px;">
-			This is a system generated Invoice. Hence, no stamp or signature required.
-		</p>
+			<p style="font-weight: 600; text-align: center; margin-bottom: 20px;">
+				This is a system generated Invoice. Hence, no stamp or signature required.
+			</p>
 		`;
 
 		const getPageCount = (products) => {
