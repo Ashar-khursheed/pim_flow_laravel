@@ -431,9 +431,10 @@ class QuoteController extends BaseController
 
 	/**
 	 * @OA\Put(
-	 *     path="/api/quotes",
-	 *     summary="Create a new quote",
+	 *     path="/api/quotes/{id}",
+	 *     summary="Update an existing quote",
 	 *     tags={"Quotes"},
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Quote ID", @OA\Schema(type="integer")),
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
@@ -442,6 +443,8 @@ class QuoteController extends BaseController
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
 	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
 	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
+	 *             @OA\Property(property="status", type="string", example="Confirmed"),
+	 *             @OA\Property(property="expired_at", type="string", format="date", example="2025-08-09"),
 	 *             @OA\Property(
 	 *                 property="products",
 	 *                 type="array",
@@ -454,21 +457,148 @@ class QuoteController extends BaseController
 	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
 	 *                 )
 	 *             ),
-	 *             @OA\Property(
-	 *                 property="emails",
-	 *                 type="array",
-	 *                 @OA\Items(type="string", format="email", example="john@example.com")
-	 *             )
 	 *         )
 	 *     ),
-	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     @OA\Response(response=201, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $orderId)
+	public function update(Request $request, $quoteId)
 	{
-		//
+		$quote = Quote::find($quoteId);
+
+		if (!$quote) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Quote not found'
+			], 404);
+		}
+
+		$request->validate([
+			'tax_percentage' => 'required|numeric|min:0',
+			'products' => 'required|array|min:1',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.unit_price' => 'required|numeric|min:0',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+		]);
+
+		DB::beginTransaction();
+
+		try {
+			$totalProducts = 0;
+			$quoteAmount = 0;
+			$quoteShipping = 0;
+
+			foreach ($request->products as $product) {
+				$totalProducts += $product['quantity'];
+				$quoteAmount += $product['quantity'] * $product['unit_price'];
+				$quoteShipping += $product['shipping_charge'];
+			}
+
+			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
+
+			$quote->update([
+				'shipping_charge' => $quoteShipping,
+				'amount' => $quoteAmount,
+				'tax_percentage' => $request->tax_percentage,
+				'tax_amount' => $taxAmount,
+				'total_amount' => $totalAmount,
+				'total_products' => $totalProducts,
+				'payment_terms' => $request->payment_terms,
+				'customer_notes' => $request->customer_notes,
+				'internal_notes' => $request->internal_notes,
+				'status' => $request->status,
+				'expired_at' => $request->expired_at,
+				'updated_by' => auth()->id(),
+			]);
+
+			/* Remove old quote products */
+			$quote->quoteProducts()->delete();
+
+			/* Insert updated products */
+			foreach ($request->products as $product) {
+				$amount = $product['quantity'] * $product['unit_price'];
+				$totalAmount = $amount + $product['shipping_charge'];
+
+				$quote->quoteProducts()->create([
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $product['unit_price'],
+					'amount' => $amount,
+					'shipping_charge' => $product['shipping_charge'],
+					'total_amount' => $totalAmount,
+				]);
+			}
+
+			DB::commit();
+
+			$quote->load([
+				'customer:id,name,email,type,country_code,mobile_number',
+				'customerAddress',
+				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'quoteProducts.product.brand:id,name',
+				'quoteProducts.product.currency:id,symbol',
+				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteEmails',
+			]);
+
+			foreach ($quote->quoteProducts as $quoteProduct) {
+				$product = $quoteProduct->product;
+
+				if ($product) {
+					$product->images = is_array($product->images)
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
+
+					unset($product->brand, $product->currency);
+				}
+
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
+					'price', 'sale_price', 'delivery_days', 'return_policy'
+				]);
+
+				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
+				? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
+				: null;
+
+				/* Format monetary values */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
+			}
+
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				if (isset($quote->$key)) {
+					$quote->$key = number_format($quote->$key, 2, '.', '');
+				}
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Quote updated successfully',
+				'data' => $quote
+			]);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update quote: ' . $e->getMessage()
+			]);
+		}
 	}
+
 
 	/**
 	 * Remove the specified resource from storage.
