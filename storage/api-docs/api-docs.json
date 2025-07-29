@@ -26943,6 +26943,116 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "put": {
+                "tags": [
+                    "Quotes"
+                ],
+                "summary": "Update an existing quote",
+                "operationId": "1d8f67b8c99fc0184630e059291e5bef",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Confirmed"
+                                    },
+                                    "expired_at": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-08-09"
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/redirect-links": {
@@ -29486,6 +29596,157 @@
                     },
                     "404": {
                         "description": "Supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/temp-products": {
+            "get": {
+                "tags": [
+                    "Temp Products"
+                ],
+                "summary": "Get all temp-products with pagination and filters",
+                "operationId": "8aac5da6828576ff7c1da6d0d8566889",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by temp product status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "category",
+                                "brand",
+                                "vendor",
+                                "sku",
+                                "creator",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Temp Products"
+                ],
+                "summary": "Create a new Temp Product",
+                "operationId": "a22b5d9f1caa54894a533271a8b28a2b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id",
+                                    "brand_id",
+                                    "vendor_id",
+                                    "sku"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Red Cotton Shirt"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "brand_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "vendor_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "RCSHIRT-001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -32971,6 +33232,10 @@
         {
             "name": "Supplier Scores",
             "description": "Supplier Scores"
+        },
+        {
+            "name": "Temp Products",
+            "description": "Temp Products"
         },
         {
             "name": "Unisource",
