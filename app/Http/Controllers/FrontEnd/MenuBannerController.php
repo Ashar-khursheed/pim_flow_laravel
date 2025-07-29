@@ -52,7 +52,16 @@ class MenuBannerController extends Controller
     public function show($id)
     {
         $banner = MenuBanner::findOrFail($id);
-        return response()->json(['status' => 'success', 'data' => $banner]);
+
+        $relatedBanners = MenuBanner::where('category_id', $banner->category_id)->get();
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'banner' => $banner,
+                'category_banners' => $relatedBanners
+            ]
+        ]);
     }
 
   
