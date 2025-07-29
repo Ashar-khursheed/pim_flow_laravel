@@ -338,8 +338,7 @@ use Illuminate\Support\Str;
 				<tr>
 					<td style="padding: 8px; text-align: left;">
 						Order Online for Fast Shipping & Lower Prices at
-						<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer"
-						style="color: #15803d;">{{ $siteURL }}</a>
+						<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #15803d;">{{ $siteURL }}</a>
 					</td>
 					<td style="padding: 8px; text-align: right;">
 						{{-- Page 1 of 1 --}}
