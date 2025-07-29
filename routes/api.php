@@ -110,7 +110,7 @@ use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaControll
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
 use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
-
+use App\Http\Controllers\MenuBannerController as F_MenuBannerController ;
 
 
 
@@ -642,3 +642,7 @@ Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
 Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
+
+// Create banner
+Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
+Route::get('/frontend/{id}', [F_MenuBannerController::class, 'show']);

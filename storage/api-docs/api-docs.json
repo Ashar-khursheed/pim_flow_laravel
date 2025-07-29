@@ -14462,6 +14462,52 @@
                 }
             }
         },
+        "/api/frontend/menu-banners": {
+            "get": {
+                "tags": [
+                    "Frontend Menu Banners"
+                ],
+                "summary": "Get all menu banners grouped by category_id",
+                "operationId": "448927fbaa798c14107d7664c48ea52f",
+                "responses": {
+                    "200": {
+                        "description": "Grouped list of banners"
+                    }
+                }
+            }
+        },
+        "/api/frontend/menu-banners/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend Menu Banners"
+                ],
+                "summary": "Get a single banner by ID",
+                "operationId": "0fa68c01eb49ea991207f9d2ec655723",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner found"
+                    },
+                    "404": {
+                        "description": "Banner not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/frontend/orders": {
             "get": {
                 "tags": [
@@ -32842,6 +32888,10 @@
         {
             "name": "Frontend-Location",
             "description": "Frontend-Location"
+        },
+        {
+            "name": "Frontend Menu Banners",
+            "description": "Frontend Menu Banners"
         },
         {
             "name": "FrontEnd-Orders",
