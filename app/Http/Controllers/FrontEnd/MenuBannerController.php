@@ -48,7 +48,7 @@ class MenuBannerController extends Controller
      *     @OA\Response(response=404, description="No banners found")
      * )
      */
-    public function show($category_id)
+    public function showCategory($category_id)
     {
         $banners = MenuBanner::where('category_id', $category_id)->get();
 

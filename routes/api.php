@@ -645,4 +645,5 @@ Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getRev
 
 // Create banner
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
-Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'show']);
+Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
+Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
