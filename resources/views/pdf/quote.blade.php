@@ -196,6 +196,19 @@
 						@endforeach
 					</tbody>
 				</table>
+
+				<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px;">
+					<tr>
+						<td style="text-align: left;">
+							Order Online for Fast Shipping & Lower Prices at
+							<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #15803d;">{{ $siteURL }}</a>
+						</td>
+						<td style="text-align: right;">
+							{{-- Page {{ $index+1 }} of {{ count($chunks) }} --}}
+							Page {{ $index+1 }}
+						</td>
+					</tr>
+				</table>
 			@endforeach
 
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px;">
