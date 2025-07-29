@@ -271,7 +271,7 @@ class QuoteController extends BaseController
 				'customer_notes' => $request->customer_notes,
 				'internal_notes' => $request->internal_notes,
 				'status' => 'Pending',
-				'expiration_days' => 7,
+				'expired_at' => now()->addDays(7),
 				'created_by' => auth()->id(),
 			]);
 
@@ -430,9 +430,42 @@ class QuoteController extends BaseController
 	}
 
 	/**
-	 * Update the specified resource in storage.
+	 * @OA\Put(
+	 *     path="/api/quotes",
+	 *     summary="Create a new quote",
+	 *     tags={"Quotes"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"tax_percentage", "products"},
+	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
+	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
+	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
+	 *             @OA\Property(
+	 *                 property="products",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     @OA\Property(property="product_id", type="integer", example=2001),
+	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
+	 *                     @OA\Property(property="quantity", type="integer", example=2),
+	 *                     @OA\Property(property="unit_price", type="number", format="float", example=4000),
+	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                 )
+	 *             ),
+	 *             @OA\Property(
+	 *                 property="emails",
+	 *                 type="array",
+	 *                 @OA\Items(type="string", format="email", example="john@example.com")
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
 	 */
-	public function update(Request $request, Quote $quote)
+	public function update(Request $request, $orderId)
 	{
 		//
 	}

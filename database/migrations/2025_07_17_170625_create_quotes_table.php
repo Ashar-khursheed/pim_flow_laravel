@@ -28,7 +28,7 @@ return new class extends Migration
 			$table->text('customer_notes')->nullable();
 			$table->text('internal_notes')->nullable();
 			$table->string('status')->nullable();//pending
-			$table->integer('expiration_days')->nullable();//7
+			$table->date('expired_at')->nullable();//7
 
 			$table->integer('created_by');
 			$table->integer('updated_by')->nullable();

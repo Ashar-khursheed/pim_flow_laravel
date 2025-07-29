@@ -22,7 +22,7 @@ class Quote extends Model
 		'customer_notes',
 		'internal_notes',
 		'status',
-		'expiration_days',
+		'expired_at',
 		'created_by',
 		'updated_by',
 	];

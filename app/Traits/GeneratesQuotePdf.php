@@ -49,7 +49,7 @@ trait GeneratesQuotePdf
 		$email = $customer->email ?? '';
 
 		$createdAt = $quote->created_at->format('M d Y');
-		$expiredAt = $quote->created_at->copy()->addDays($quote->expiration_days)->format('M d Y');
+		$expiredAt = $quote->expired_at->format('M d Y');
 		$quoteNumber = $quote->quote_number;
 		$paymentMode = $quote->payment_terms;
 		$quoteType = 'Online';

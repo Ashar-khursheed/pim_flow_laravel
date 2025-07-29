@@ -252,7 +252,7 @@ class QuoteController extends BaseController
 				'customer_notes' => $request->customer_notes,
 				'internal_notes' => $request->internal_notes,
 				'status' => 'Pending',
-				'expiration_days' => 7,
+				'expired_at' => now()->addDays(7),
 				'created_by' => 0,
 			]);
 

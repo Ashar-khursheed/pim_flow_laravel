@@ -31,7 +31,7 @@ Route::get('/test-quote-pdf', function () {
 	$email = $this->quote->customer->email ?? '';
 
 	$createdAt = $this->quote->created_at->format('M d Y');
-	$expiredAt = $this->quote->created_at->copy()->addDays($this->quote->expiration_days)->format('M d Y');
+	$expiredAt = $this->quote->expired_at->format('M d Y');
 	$quoteNumber = $this->quote->quote_number;
 	$paymentMode = $this->quote->payment_terms;
 	$quoteType = 'Online';
