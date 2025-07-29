@@ -110,7 +110,7 @@ use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaControll
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
 use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
-use App\Http\Controllers\MenuBannerController as F_MenuBannerController ;
+use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 
 
 
@@ -645,4 +645,5 @@ Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getRev
 
 // Create banner
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
-Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'getByCategory']);
+Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
+Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
