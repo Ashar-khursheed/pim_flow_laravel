@@ -477,7 +477,7 @@ class CustomerController extends BaseController
 				$customer = Customer::create([
 					'apple_id' => $appleSub,
 					'email' => $email,
-					'name' => $request->name ?? 'Apple User',
+					'name' => $request->name ?? 'Hello',
 					'password' => Hash::make(Str::random(32)),
 					'is_social_login' => true,
 					'created_by' => null,
@@ -494,7 +494,7 @@ class CustomerController extends BaseController
 			}
 
 			$token = $customer->createToken('apple-login')->plainTextToken;
-
+			$customer->notify(new WelcomeMail());
 			return response()->json([
 				'user' => $customer,
 				'token' => $token,
@@ -544,6 +544,7 @@ class CustomerController extends BaseController
 					'mobile_number' => $mobileNumber,
 					'profile_img' => $googleProfileImg,
 				]);
+				$customer->notify(new WelcomeMail());
 
 				// Optional: send a welcome message, without any password
 				// $customer->notify(new GuestWelcomeMail());
