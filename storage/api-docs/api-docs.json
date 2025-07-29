@@ -17320,6 +17320,117 @@
                         "bearerAuth": []
                     }
                 ]
+            },
+            "put": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Update an existing quote",
+                "operationId": "01aefd9f33dbc2912d96dec85787fbae",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quote_name",
+                                    "customer_address_id",
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "quote_name": {
+                                        "type": "string",
+                                        "example": "Kitchen equipment quote"
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Updated successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/quotes/{id}/download-pdf": {
