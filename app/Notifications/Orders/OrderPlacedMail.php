@@ -37,7 +37,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
-		$orderUrl = url("/registration/all-orders");
+		$orderUrl = url("/my-order");
 
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
@@ -106,7 +106,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
 		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
-		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
+		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
 		$taxPercent = $this->order->tax_percentage;
 		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
 		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');

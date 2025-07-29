@@ -843,7 +843,8 @@ class ProductController extends BaseController
 			'Super Admin',
 			'Admin',
 			'Content Writing Manager',
-			'Content Writer'
+			'Content Writer',
+			'Ecommerce Specialist',
 		];
 		$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
 

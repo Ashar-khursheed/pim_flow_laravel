@@ -61,6 +61,7 @@ use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
 use App\Http\Controllers\QuoteController;
+use App\Http\Controllers\MenuBannerController ;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -100,12 +101,17 @@ use App\Http\Controllers\FrontEnd\LookupController  as F_LookupController;
 use App\Http\Controllers\FrontEnd\TaxController  as F_TaxController;
 use App\Http\Controllers\FrontEnd\AlternateProductController  as F_AlternateProductController;
 use App\Http\Controllers\FrontEnd\FbtProductController  as F_FbtProductController;
+use App\Http\Controllers\FrontEnd\DiffProductController  as F_DiffProductController;
 use App\Http\Controllers\FrontEnd\QuoteController as F_QuoteController;
 use App\Http\Controllers\FrontEnd\ContactDirectoryController as F_ContactDirectoryController;
 use App\Http\Controllers\FrontEnd\CustomerDocumentController as F_CustomerDocumentController;
 use App\Http\Controllers\FrontEnd\SupportTicketController as F_SupportTicketController;
 use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaController;
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
+use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
+use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
+
+
 
 
 use Illuminate\Support\Facades\Http;
@@ -132,7 +138,7 @@ Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     } catch (\Exception $e) {
         abort(500, 'Proxy failed: ' . $e->getMessage());
     }
-});
+})->name('proxy-image');
 
 
 
@@ -156,6 +162,14 @@ Route::apiResource('newsletters', NewsletterController::class);
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+	Route::prefix('menu-banners')->group(function () {
+    // Create banner
+    Route::post('/', [MenuBannerController::class, 'store']);
+    Route::get('/', [MenuBannerController::class, 'index']);
+    Route::get('/{id}', [MenuBannerController::class, 'show']);
+    Route::post('/{id}', [MenuBannerController::class, 'update']);
+    Route::delete('/{id}', [MenuBannerController::class, 'destroy']);
+	});
 
 	Route::prefix('category-banners')->group(function () {
 		Route::get('/', [CategoryBannerController::class, 'index']);
@@ -396,6 +410,10 @@ Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'get
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
+	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
+    Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
+    Route::post('/frontend/invoices', [F_InvoiceController::class, 'store']);
+
 	Route::post('frontend/customers/change-password', [F_CustomerController::class, 'changePassword']);
 
 	Route::post('/frontend/support-tickets', [F_SupportTicketController::class, 'store']);
@@ -420,16 +438,12 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 
 	Route::get('/frontend/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateProducts']);
 	Route::get('/frontend/products/{id}/fbt', [F_FbtProductController::class, 'getFbtProducts']);
-
+	Route::get('/frontend/products/{id}/dif', [F_DiffProductController::class, 'getDiffProducts']);
 	Route::post('/frontend/customer-address/default', [F_CustomerAddressController::class, 'updateDefaultAddress']);
 	Route::apiResource('frontend/customer-address', F_CustomerAddressController::class);
 
-	// Route::get('/frontend/addresses', [F_AddressController::class, 'index']);
-	// Route::post('/frontend/addresses', [F_AddressController::class, 'store']);
-	// Route::put('/frontend/addresses/{id}', [F_AddressController::class, 'update']);
-	// Route::delete('/frontend/addresses/{id}', [F_AddressController::class, 'destroy']);
-	// Route::post('/frontend/addresses/default', [F_AddressController::class, 'updateDefaultAddress']);
-
+	Route::get('/frontend/quotes/{id}/email-pdf', [F_QuoteController::class, 'emailPdf']);
+	Route::get('/frontend/quotes/{id}/download-pdf', [F_QuoteController::class, 'downloadPdf']);
 	Route::apiResource('frontend/quotes', F_QuoteController::class);
 
 
@@ -450,7 +464,7 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 	Route::get('/frontend/wishlist/check/{product_id}', [F_WishlistController::class, 'checkWishlist']);
 	Route::get('/frontend/wishlist/count', [F_WishlistController::class, 'getWishlistCount']);
 	Route::Post('/frontend/wishlist/remove-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
-	Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'removeMultipleFromWishlist']);
+	Route::Post('/frontend/wishlist/add-multiple', [F_WishlistController::class, 'addMultipleToWishlist']);
 
 	Route::get('/customer-reviews', [F_UserReviewController::class, 'getCustomerReviews']);
 	Route::post('/add-customer-reviews', [F_UserReviewController::class, 'createReview']);
@@ -510,13 +524,11 @@ Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
 		Route::post('/{id}/comments', [F_BlogController::class, 'postComment']);
 	});
 
-
-
 });
 
 Route::get('/frontend/guest/products/{id}/alternates', [F_AlternateProductController::class, 'getAlternateGuestProducts']);
 Route::get('/frontend/guest/products/{id}/fbt', [F_FbtProductController::class, 'getFbtGuestProducts']);
-
+Route::get('/frontend/guest/products/{id}/dif', [F_DiffProductController::class, 'getDiffGuestProducts']);
 
 Route::post('/frontend/product-questions', [F_ProductQuestionController::class, 'store']);
 
@@ -629,3 +641,5 @@ Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
+
+Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);

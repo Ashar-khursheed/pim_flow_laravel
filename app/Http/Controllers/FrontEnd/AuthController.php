@@ -188,7 +188,7 @@ class AuthController extends Controller
 				$rawName = ucwords(strtolower(trim($emailPrefix))); // Capitalize: "noman peera" => "Noman Peera"
 			}
 
-			$nameToUse = $rawName ?: 'Apple User'; // Final fallback
+			$nameToUse = $rawName ?: 'Hello'; // Final fallback
 
 			// Now create user
 			if (!$customer) {

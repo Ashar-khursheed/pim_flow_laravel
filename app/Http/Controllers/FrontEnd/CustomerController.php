@@ -243,6 +243,7 @@ class CustomerController extends BaseController
 						'email' => $customer->email,
 						'phone' => ($customer->country_code ? $customer->country_code . ' ' : '') . $customer->mobile_number,
 						'mobile' => ($customer->country_code ? $customer->country_code . ' ' : '') . $customer->mobile_number,
+						'business_name' =>  $customer->business_name,
 						'image_1920' => '',
 						'website' => '',
 						'is_customer' => "1",

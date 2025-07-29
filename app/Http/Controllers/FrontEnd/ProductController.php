@@ -350,6 +350,7 @@ class ProductController extends Controller
                             $fullValue = $product->ingredientsAttribute->attribute_value;
                         }
 
+                       
                         // Calculate per unit price
                         $unitsPerCase = null;
                         $packType = null;

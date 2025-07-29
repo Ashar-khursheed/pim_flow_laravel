@@ -12,6 +12,7 @@ use PhpUnitsOfMeasure\PhysicalQuantity\Pressure;
 use PhpUnitsOfMeasure\PhysicalQuantity\Force;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 
 if (!function_exists('app_constants')) {
 	function app_constants($key = null) {
@@ -416,5 +417,80 @@ if (!function_exists('getDateRange')) {
 		? $startDate->format('D, F j') . ' - ' . $endDate->format('D, F j')
 		: $startDate->format('D, F j');
 	}
+}
+
+function convertNumberToWords($amount, $currencyMain = 'U.S. Dollars', $currencyFraction = 'Cents')
+{
+	$amount = str_replace(',', '', $amount);
+	$number = floor($amount);
+	$decimal = round(($amount - $number) * 100);
+
+	$words = [
+		0 => 'Zero', 1 => 'One', 2 => 'Two', 3 => 'Three', 4 => 'Four',
+		5 => 'Five', 6 => 'Six', 7 => 'Seven', 8 => 'Eight', 9 => 'Nine',
+		10 => 'Ten', 11 => 'Eleven', 12 => 'Twelve', 13 => 'Thirteen',
+		14 => 'Fourteen', 15 => 'Fifteen', 16 => 'Sixteen',
+		17 => 'Seventeen', 18 => 'Eighteen', 19 => 'Nineteen',
+		20 => 'Twenty', 30 => 'Thirty', 40 => 'Forty', 50 => 'Fifty',
+		60 => 'Sixty', 70 => 'Seventy', 80 => 'Eighty', 90 => 'Ninety'
+	];
+
+	$units = ['', 'Thousand', 'Million', 'Billion'];
+	$str = [];
+
+	$i = 0;
+	while ($number > 0) {
+		$chunk = $number % 1000;
+		if ($chunk) {
+			$chunkWords = [];
+
+			$hundreds = floor($chunk / 100);
+			$tensUnits = $chunk % 100;
+
+			if ($hundreds) {
+				$chunkWords[] = $words[$hundreds] . ' Hundred';
+			}
+
+			if ($tensUnits > 0) {
+				if ($tensUnits < 21) {
+					$chunkWords[] = $words[$tensUnits];
+				} else {
+					$tens = floor($tensUnits / 10) * 10;
+					$unitsDigit = $tensUnits % 10;
+					$chunkWords[] = $words[$tens] . ($unitsDigit ? '-' . $words[$unitsDigit] : '');
+				}
+			}
+
+			$part = implode(' ', $chunkWords);
+			$str[] = trim($part . ' ' . $units[$i]);
+		}
+
+		$number = floor($number / 1000);
+		$i++;
+	}
+
+	$whole = implode(', ', array_reverse($str));
+	$whole = preg_replace('/\s+/', ' ', $whole);
+
+	$fraction = $decimal > 0 ? ' and ' . convertNumberToWords($decimal, $currencyFraction, '') : '';
+
+	return trim("$whole $currencyMain$fraction Only");
+}
+
+function getBase64Image($url)
+{
+	try {
+		$response = Http::timeout(10)->get($url);
+
+		if ($response->successful()) {
+			$contentType = $response->header('Content-Type');
+			$base64 = base64_encode($response->body());
+
+			return "data:{$contentType};base64,{$base64}";
+		}
+	} catch (\Exception $e) {
+	}
+
+	return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAE/wJLCNRVswAAAABJRU5ErkJggg==';
 }
 

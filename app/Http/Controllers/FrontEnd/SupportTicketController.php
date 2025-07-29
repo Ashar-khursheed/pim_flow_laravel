@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Auth;
 
 /**
  * @OA\Tag(name="SupportTickets")
@@ -156,10 +157,81 @@ class SupportTicketController extends Controller
  * )
  */
 
+//  public function index(Request $request)
+// {
+//     try {
+//         $query = SupportTicket::with(['category:id,name', 'priority:id,name']);
+
+//         // 🔍 Search by subject or description
+//         if ($request->filled('search')) {
+//             $search = $request->search;
+//             $query->where(function ($q) use ($search) {
+//                 $q->where('subject', 'like', "%{$search}%")
+//                   ->orWhere('description', 'like', "%{$search}%");
+//             });
+//         }
+
+//         // ✅ Filter by status (ignore if status is "all" or not set)
+//         if ($request->filled('status') && $request->status !== 'all') {
+//             $query->where('status', $request->status);
+//         }
+
+//         // 🔃 Sorting
+//         $sortBy = $request->get('sort_by', 'created_at');
+//         $sortOrder = $request->get('sort_order', 'desc');
+
+//         $allowedSortFields = ['created_at', 'updated_at', 'subject', 'status'];
+//         if (!in_array($sortBy, $allowedSortFields)) {
+//             $sortBy = 'created_at';
+//         }
+
+//         $perPage = $request->get('per_page', 10);
+//         $tickets = $query->orderBy($sortBy, $sortOrder)->paginate($perPage);
+
+//         $transformed = $tickets->getCollection()->map(function ($ticket) {
+//             return [
+//                 'id' => $ticket->id,
+//                 'subject' => $ticket->subject,
+//                 'status' => $ticket->status,
+//                 'description' => $ticket->description,
+//                 'category' => $ticket->category ? $ticket->category->name : null,
+//                 'priority' => $ticket->priority ? $ticket->priority->name : null,
+//                 'created_at' => $ticket->created_at,
+//                 'updated_at' => $ticket->updated_at,
+//             ];
+//         });
+
+//         return response()->json([
+//             'success' => true,
+//             'data' => $transformed,
+//             'pagination' => [
+//                 'current_page' => $tickets->currentPage(),
+//                 'last_page' => $tickets->lastPage(),
+//                 'per_page' => $tickets->perPage(),
+//                 'total' => $tickets->total(),
+//             ],
+//             'message' => 'Support tickets fetched successfully.'
+//         ], 200);
+
+//     } catch (\Exception $e) {
+//         Log::error('SupportTicketController@index error: ' . $e->getMessage());
+
+//         return response()->json([
+//             'success' => false,
+//             'message' => 'Failed to fetch support tickets.',
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
 public function index(Request $request)
 {
     try {
-        $query = SupportTicket::with(['category:id,name', 'priority:id,name']);
+        // 🔐 Get authenticated user
+        $user = Auth::id();
+
+        // 📄 Fetch tickets belonging only to the logged-in user
+        $query = SupportTicket::with(['category:id,name', 'priority:id,name'])
+            ->where('customer_id', $user); // or 'customer_id' if that's your field
 
         // 🔍 Search by subject or description
         if ($request->filled('search')) {
@@ -170,12 +242,12 @@ public function index(Request $request)
             });
         }
 
-        // ✅ Filter by status (ignore if status is "all" or not set)
+        // ✅ Filter by status
         if ($request->filled('status') && $request->status !== 'all') {
             $query->where('status', $request->status);
         }
 
-        // 🔃 Sorting
+        // 🔃 Sorting logic
         $sortBy = $request->get('sort_by', 'created_at');
         $sortOrder = $request->get('sort_order', 'desc');
 
@@ -222,6 +294,7 @@ public function index(Request $request)
         ], 500);
     }
 }
+
 
 
     /**

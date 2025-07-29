@@ -49,13 +49,20 @@ class OrderController extends Controller
 			$from = $request->from_date . ' 00:00:00';
 			$to = $request->to_date . ' 23:59:59';
 
-			$records = Order::whereBetween('created_at', [$from, $to])->pluck('id');
+			$recordsQuery = Order::query();
+			/* Filter by status */
+			if ($request->has('status')) {
+				$recordsQuery->where('status', $request->status);
+			}
+			$recordsQuery = $recordsQuery->whereBetween('created_at', [$from, $to])->pluck('id');
+
 			return response()->json([
 				'success' => true,
 				'message' => __('msg_rec_list'),
-				'data' => $records,
+				'data' => $recordsQuery,
 			]);
 		}
+
 		$searchableColumns = ['id', 'order_number', 'customer_name'];
 		$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
 
@@ -63,8 +70,14 @@ class OrderController extends Controller
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		/* Check if pagination requested */
+		$recordsQuery = Order::query();
+
+		/* Filter by status */
+		if ($request->has('status')) {
+			$recordsQuery->where('status', $request->status);
+		}
+
 		if ($request->filled('page') && $request->filled('length')) {
-			$recordsQuery = Order::query();
 
 			/* Join if customer_name is involved in search or sort */
 			if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
@@ -84,11 +97,6 @@ class OrderController extends Controller
 				'creator',
 				'updator'
 			]);
-
-			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('orders.status', $request->status);
-			}
 
 			/* Filter by payment status */
 			if ($request->has('payment_status')) {
@@ -185,7 +193,7 @@ class OrderController extends Controller
 			});
 		} else {
 			/* No pagination: just fetch id and order_number */
-			$records = Order::orderBy('order_number', 'asc')->get(['id', 'order_number']);
+			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
@@ -421,11 +429,18 @@ class OrderController extends Controller
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
+			'shipments',
+			'creator',
+			'updator',
 			'tracking',
-			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
 
 		/* Mutate the data for each order product */
+		$order->created_by = $order->creator->name ?? null;
+		$order->updated_by = $order->updator->name ?? null;
+		unset($record->creator, $record->updator);
+
 		foreach ($order->orderProducts as $orderProduct) {
 			$product = $orderProduct->product;
 			if ($product) {
@@ -965,6 +980,7 @@ class OrderController extends Controller
 				'tracking_number' => $request->tracking_number,
 				'carrier' => $request->carrier,
 				'notes' => $request->notes,
+				'estimated_delivery_date' => $request->estimated_delivery_date
 			]);
 
 			/* Process each product */

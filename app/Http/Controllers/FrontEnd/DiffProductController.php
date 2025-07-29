@@ -5,212 +5,84 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\DB;
 use App\Models\Product;
 use Illuminate\Http\Request;
-use App\Models\FrontEnd\AlternateProduct;
+use App\Models\FrontEnd\DiffProduct;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-class AlternateProductController extends Controller
+
+class DiffProductController extends Controller
 {
-    // public function getAlternateProducts(Request $request, $productId = null)
-    // {
-    //     try {
-    //         $productId = $productId ?? $request->input('product_id');
-    
-    //         if (!$productId) {
-    //             return response()->json([
-    //                 'success' => false,
-    //                 'message' => 'Product ID is required',
-    //             ], 400);
-    //         }
-    
-    //         $userId = Auth::id();
-    //         $isUserLoggedIn = $userId !== null;
-    
-    //         Log::info('Fetching alternate products for:', ['product_id' => $productId, 'user_id' => $userId]);
-    
-    //         // Wishlist logic
-    //         $wishlistProductIds = $isUserLoggedIn
-    //             ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
-    //             : session()->get('guest_wishlist', []);
-    
-    //         // Step 1: Get all alternate product IDs
-    //         $alternateProductIds = DB::table('alternate_products')
-    //             ->where('product_id', $productId)
-    //             ->orderBy('priority', 'asc')
-    //             ->orderByDesc('similarity')
-    //             ->pluck('product_alternate_id')
-    //             ->toArray();
-    
-    //         if (empty($alternateProductIds)) {
-    //             return response()->json([
-    //                 'success' => true,
-    //                 'message' => 'No alternate products found for this product',
-    //                 'data' => [],
-    //             ]);
-    //         }
-    
-    //         // Step 2: Get published products with those IDs
-    //         $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
-    //             ->where('status', 'published')
-    //             ->whereIn('id', $alternateProductIds)
-    //             ->get()
-    //             ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
-    
-    //         // Transform response
-    //         $transformedProducts = $products->map(function ($product) use ($wishlistProductIds) {
-    //             $images = $this->normalizeMediaUrls($product->images);
-    //             $videos = $this->normalizeMediaUrls($product->video_path);
-    
-    //             $totalReviews = $product->reviews?->count() ?? 0;
-    //             $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-    
-    //             $quantity = $product->quantity ?? 0;
-    //             $unitsSold = $product->units_sold ?? 0;
-    //             $leftStock = $quantity - $unitsSold;
-    
-    //             $sellingType = null;
-    //             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-    //                 $fullValue = $product->sellingUnitAttribute->attribute_value;
-    //                 $attributeUnit = strpos($fullValue, '/') !== false
-    //                     ? trim(explode('/', $fullValue)[1])
-    //                     : $fullValue;
-    
-    //                 $sellingType = [
-    //                     'attribute_value' => $fullValue,
-    //                     'attribute_value_unit' => $attributeUnit,
-    //                 ];
-    //             }
-    
-    //             $firstSupplier = $product->productSuppliers->first();
-    
-    //             return [
-    //                 'id' => $product->id,
-    //                 'name' => $product->name,
-    //                 'images' => $images,
-    //                 'video_url' => $product->video_url,
-    //                 'video_path' => $videos,
-    //                 'sku' => $product->sku,
-    //                 'start_date' => $product->start_date,
-    //                 'end_date' => $product->end_date,
-    //                 'currency' => $product->currency?->symbol,
-    //                 'total_reviews' => $totalReviews,
-    //                 'avg_rating' => $avgRating,
-    //                 'leftStock' => $leftStock,
-    //                 'currency_title' => $product->currency
-    //                     ? ($product->currency->is_prefix_symbol
-    //                         ? $product->currency->symbol
-    //                         : ($product->price . ' ' . $product->currency->symbol))
-    //                     : $product->price,
-    //                 'in_wishlist' => in_array($product->id, $wishlistProductIds),
-    //                 'selling_type' => $sellingType,
-    //                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-    //                 'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-    //                 'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-    //                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-    //                 'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-    //                 'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-    //                 'per_unit_price' => $product->per_unit_price,
-    //                 'vendor_id' => $firstSupplier->vendor_id ?? null,
-    //                 'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-    //                 'inventory' => $firstSupplier->inventory ?? null,
-    //                 'in_stock' => $firstSupplier->in_stock ?? null,
-    //                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-    //                 'return_policy' => $firstSupplier->return_policy ?? null,
-    //                 'free_shipping' => $firstSupplier->free_shipping ?? null,
-    //                 'warranty_information' => $firstSupplier->warranty_information ?? null,
-    //             ];
-    //         });
-    
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => $transformedProducts->values(),
-    //             'message' => 'Alternate products retrieved successfully',
-    //         ]);
-    //     } catch (\Exception $e) {
-    //         Log::error('Error in getAlternateProducts: ' . $e->getMessage());
-    
-    //         return response()->json([
-    //             'success' => false,
-    //             'message' => 'An error occurred while fetching alternate products',
-    //             'error' => $e->getMessage(),
-    //         ], 500);
-    //     }
-    // }
-    public function getAlternateProducts(Request $request, $productId = null)
+    public function getDiffProducts(Request $request, $productId = null)
     {
         try {
             $productId = $productId ?? $request->input('product_id');
-
+    
             if (!$productId) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Product ID is required',
                 ], 400);
             }
-
+    
             $userId = Auth::id();
             $isUserLoggedIn = $userId !== null;
-
-            Log::info('Fetching alternate products for:', ['product_id' => $productId, 'user_id' => $userId]);
-
+    
+            Log::info('Fetching dif products for:', ['product_id' => $productId, 'user_id' => $userId]);
+    
             // Wishlist logic
             $wishlistProductIds = $isUserLoggedIn
                 ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
                 : session()->get('guest_wishlist', []);
-
-            // Step 1: Get all alternate product IDs with similarity
-            $alternateProductData = DB::table('alternate_products')
+    
+            // Step 1: Get all dif product IDs
+            $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
                 ->orderBy('priority', 'asc')
                 ->orderByDesc('similarity')
-                ->get(['product_alternate_id', 'similarity']);
-
-            $alternateProductIds = $alternateProductData->pluck('product_alternate_id')->toArray();
-
-            // Similarity map [product_id => similarity]
-            $similarityMap = $alternateProductData->pluck('similarity', 'product_alternate_id')->toArray();
-
-            if (empty($alternateProductIds)) {
+                ->pluck('dif_id')
+                ->toArray();
+    
+            if (empty($difProductIds)) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No alternate products found for this product',
+                    'message' => 'No dif products found for this product',
                     'data' => [],
                 ]);
             }
-
+    
             // Step 2: Get published products with those IDs
             $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
                 ->where('status', 'published')
-                ->whereIn('id', $alternateProductIds)
+                ->whereIn('id', $difProductIds)
                 ->get()
-                ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
-
-            // Step 3: Transform response
-            $transformedProducts = $products->map(function ($product) use ($wishlistProductIds, $similarityMap) {
+                ->sortBy(fn($product) => array_search($product->id, $difProductIds));
+    
+            // Transform response
+            $transformedProducts = $products->map(function ($product) use ($wishlistProductIds) {
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
-
+    
                 $totalReviews = $product->reviews?->count() ?? 0;
                 $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-
+    
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
-
+    
                 $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
                     $attributeUnit = strpos($fullValue, '/') !== false
                         ? trim(explode('/', $fullValue)[1])
                         : $fullValue;
-
+    
                     $sellingType = [
                         'attribute_value' => $fullValue,
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-
+    
                 $firstSupplier = $product->productSuppliers->first();
-
+    
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
@@ -246,30 +118,27 @@ class AlternateProductController extends Controller
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
-
-                    // ✅ New: Similarity score
-                    'similarity' => $similarityMap[$product->id] ?? null,
                 ];
             });
-
+    
             return response()->json([
                 'success' => true,
                 'data' => $transformedProducts->values(),
-                'message' => 'Alternate products retrieved successfully',
+                'message' => 'dif products retrieved successfully',
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getAlternateProducts: ' . $e->getMessage());
-
+    
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching alternate products',
+                'message' => 'An error occurred while fetching dif products',
                 'error' => $e->getMessage(),
             ], 500);
         }
     }
 
 
-    public function getAlternateGuestProducts(Request $request, $productId = null)
+    public function getDiffGuestProducts(Request $request, $productId = null)
     {
         try {
             $productId = $productId ?? $request->input('product_id');
@@ -283,22 +152,18 @@ class AlternateProductController extends Controller
     
     
     
-            // Step 1: Get all alternate product IDs
-            $alternateProductData = DB::table('alternate_products')
+            // Step 1: Get all dif product IDs
+            $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
                 ->orderBy('priority', 'asc')
                 ->orderByDesc('similarity')
-                ->get(['product_alternate_id', 'similarity']);
-
-            $alternateProductIds = $alternateProductData->pluck('product_alternate_id')->toArray();
-
-            // Similarity map [product_id => similarity]
-            $similarityMap = $alternateProductData->pluck('similarity', 'product_alternate_id')->toArray();
+                ->pluck('dif_id')
+                ->toArray();
     
-            if (empty($alternateProductIds)) {
+            if (empty($difProductIds)) {
                 return response()->json([
                     'success' => true,
-                    'message' => 'No alternate products found for this product',
+                    'message' => 'No dif products found for this product',
                     'data' => [],
                 ]);
             }
@@ -306,12 +171,12 @@ class AlternateProductController extends Controller
             // Step 2: Get published products with those IDs
             $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
                 ->where('status', 'published')
-                ->whereIn('id', $alternateProductIds)
+                ->whereIn('id', $difProductIds)
                 ->get()
-                ->sortBy(fn($product) => array_search($product->id, $alternateProductIds));
+                ->sortBy(fn($product) => array_search($product->id, $difProductIds));
     
             // Transform response
-            $transformedProducts = $products->map(function ($product)use ( $similarityMap){
+            $transformedProducts = $products->map(function ($product){
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
     
@@ -371,21 +236,20 @@ class AlternateProductController extends Controller
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
-                     'similarity' => $similarityMap[$product->id] ?? null,
                 ];
             });
     
             return response()->json([
                 'success' => true,
                 'data' => $transformedProducts->values(),
-                'message' => 'Alternate products retrieved successfully',
+                'message' => 'dif products retrieved successfully',
             ]);
         } catch (\Exception $e) {
             Log::error('Error in getAlternateProducts: ' . $e->getMessage());
     
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching alternate products',
+                'message' => 'An error occurred while fetching dif products',
                 'error' => $e->getMessage(),
             ], 500);
         }

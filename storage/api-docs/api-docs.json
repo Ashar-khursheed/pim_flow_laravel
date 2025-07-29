@@ -13921,6 +13921,408 @@
                 }
             }
         },
+        "/api/frontend/google-reviews": {
+            "get": {
+                "tags": [
+                    "Google Reviews"
+                ],
+                "summary": "Get Google Reviews for a Place",
+                "description": "Fetch reviews, rating breakdown, and filter by star ratings from Google Places API.",
+                "operationId": "getGoogleReviews",
+                "parameters": [
+                    {
+                        "name": "place_id",
+                        "in": "query",
+                        "description": "Google Place ID (default from .env if not provided)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "ChIJa4N_zmppXz4R-Oi2cjnr2iE"
+                        }
+                    },
+                    {
+                        "name": "stars",
+                        "in": "query",
+                        "description": "Filter reviews by star rating (1-5)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "maximum": 5,
+                            "minimum": 1,
+                            "example": 5
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "name": {
+                                            "type": "string",
+                                            "example": "Some Business"
+                                        },
+                                        "rating": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 4.3
+                                        },
+                                        "total_reviews": {
+                                            "type": "integer",
+                                            "example": 145
+                                        },
+                                        "rating_breakdown": {
+                                            "properties": {
+                                                "5": {
+                                                    "type": "integer",
+                                                    "example": 80
+                                                },
+                                                "4": {
+                                                    "type": "integer",
+                                                    "example": 30
+                                                },
+                                                "3": {
+                                                    "type": "integer",
+                                                    "example": 20
+                                                },
+                                                "2": {
+                                                    "type": "integer",
+                                                    "example": 10
+                                                },
+                                                "1": {
+                                                    "type": "integer",
+                                                    "example": 5
+                                                }
+                                            },
+                                            "type": "object"
+                                        },
+                                        "filtered_star": {
+                                            "type": "integer",
+                                            "example": 5,
+                                            "nullable": true
+                                        },
+                                        "reviews": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "author_name": {
+                                                        "type": "string",
+                                                        "example": "John Doe"
+                                                    },
+                                                    "rating": {
+                                                        "type": "number",
+                                                        "example": 5
+                                                    },
+                                                    "text": {
+                                                        "type": "string",
+                                                        "example": "Excellent service!"
+                                                    },
+                                                    "relative_time_description": {
+                                                        "type": "string",
+                                                        "example": "2 weeks ago"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request - Missing API key or place ID / Google API error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "error": {
+                                            "type": "string",
+                                            "example": "Missing API key or place ID."
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/frontend/invoices": {
+            "get": {
+                "tags": [
+                    "Frontend Invoices"
+                ],
+                "summary": "Get all invoices for the authenticated customer",
+                "description": "Returns invoice summary and list for the authenticated customer.",
+                "operationId": "getCustomerInvoices",
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "total_outstanding": {
+                                            "type": "number",
+                                            "example": 1200.5
+                                        },
+                                        "paid_this_month": {
+                                            "type": "number",
+                                            "example": 850
+                                        },
+                                        "overdue": {
+                                            "type": "number",
+                                            "example": 350.5
+                                        },
+                                        "total_invoices": {
+                                            "type": "integer",
+                                            "example": 5
+                                        },
+                                        "invoices": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "invoice_number": {
+                                                        "type": "string",
+                                                        "example": "INV-1001"
+                                                    },
+                                                    "invoice_date": {
+                                                        "type": "string",
+                                                        "example": "Jul 24 2025"
+                                                    },
+                                                    "order_id": {
+                                                        "type": "integer",
+                                                        "example": 101
+                                                    },
+                                                    "po_number": {
+                                                        "type": "string",
+                                                        "example": "PO-2025-07"
+                                                    },
+                                                    "due_date": {
+                                                        "type": "string",
+                                                        "example": "Jul 31 2025"
+                                                    },
+                                                    "amount": {
+                                                        "type": "string",
+                                                        "example": "1200.50"
+                                                    },
+                                                    "payment_method": {
+                                                        "type": "string",
+                                                        "example": "Bank Transfer"
+                                                    },
+                                                    "status": {
+                                                        "type": "string",
+                                                        "example": "unpaid"
+                                                    },
+                                                    "pagination": {
+                                                        "properties": {
+                                                            "current_page": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "last_page": {
+                                                                "type": "integer",
+                                                                "example": 5
+                                                            },
+                                                            "per_page": {
+                                                                "type": "integer",
+                                                                "example": 10
+                                                            },
+                                                            "total": {
+                                                                "type": "integer",
+                                                                "example": 50
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Frontend Invoices"
+                ],
+                "summary": "Create a new invoice",
+                "operationId": "aefb49c5e449fba5d6af7b71911bbdaa",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "invoice_number",
+                                    "invoice_date",
+                                    "amount"
+                                ],
+                                "properties": {
+                                    "invoice_number": {
+                                        "type": "string"
+                                    },
+                                    "invoice_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "order_id": {
+                                        "type": "integer"
+                                    },
+                                    "po_number": {
+                                        "type": "string"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float"
+                                    },
+                                    "payment_method": {
+                                        "type": "string"
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "enum": [
+                                            "paid",
+                                            "unpaid",
+                                            "overdue"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Invoice created"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/invoices/{id}": {
+            "get": {
+                "tags": [
+                    "Frontend Invoices"
+                ],
+                "summary": "Get a single invoice by ID or invoice number (customer-specific)",
+                "description": "Returns details for one invoice, only if it belongs to the authenticated customer.",
+                "operationId": "getCustomerInvoiceById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Invoice ID or invoice number",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Invoice found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "invoice_number": {
+                                            "type": "string",
+                                            "example": "INV-1001"
+                                        },
+                                        "invoice_date": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025"
+                                        },
+                                        "order_id": {
+                                            "type": "integer",
+                                            "example": 101
+                                        },
+                                        "po_number": {
+                                            "type": "string",
+                                            "example": "PO-2025-07"
+                                        },
+                                        "due_date": {
+                                            "type": "string",
+                                            "example": "Jul 31 2025"
+                                        },
+                                        "amount": {
+                                            "type": "string",
+                                            "example": "1200.50"
+                                        },
+                                        "payment_method": {
+                                            "type": "string",
+                                            "example": "Bank Transfer"
+                                        },
+                                        "status": {
+                                            "type": "string",
+                                            "example": "unpaid"
+                                        },
+                                        "created_at": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025 14:32:00"
+                                        },
+                                        "updated_at": {
+                                            "type": "string",
+                                            "example": "Jul 24 2025 15:10:00"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invoice not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Invoice not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/frontend/location": {
             "get": {
                 "tags": [
@@ -14568,12 +14970,12 @@
                 "operationId": "93e60833826a585603af66f9454fd6e5",
                 "parameters": [
                     {
-                        "name": "order_id",
+                        "name": "order_number",
                         "in": "query",
-                        "description": "Order ID to track",
+                        "description": "Order number to track",
                         "required": true,
                         "schema": {
-                            "type": "integer",
+                            "type": "string",
                             "example": 12345
                         }
                     }
@@ -14585,12 +14987,7 @@
                             "application/json": {}
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/payments": {
@@ -16996,6 +17393,72 @@
                 "responses": {
                     "200": {
                         "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/quotes/{id}/download-pdf": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Download quote's pdf",
+                "operationId": "0579f813b918ced165d138aef45a1ca7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "PDF downloaded successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/quotes/{id}/email-pdf": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "emal quote's pdf",
+                "operationId": "cad83e8b89c524e0ba4835dcf13d3f53",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Quote email sent successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -21149,6 +21612,213 @@
                     },
                     "404": {
                         "description": "File not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/menu-banners": {
+            "get": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Get all menu banners",
+                "operationId": "808791726a4735eb046f43c47c57c8cf",
+                "responses": {
+                    "200": {
+                        "description": "List of banners"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Create a new menu banner",
+                "operationId": "f5bc13c27052d330d76135f82ae3f1c5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "desktop_image",
+                                    "mobile_image"
+                                ],
+                                "properties": {
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "desktop_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "desktop_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "mobile_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "mobile_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Banner created"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/menu-banners/{id}": {
+            "get": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Get a single banner by ID",
+                "operationId": "9d9c81eda1978907e978da2e0b9e986d",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner found"
+                    },
+                    "404": {
+                        "description": "Banner not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Update a menu banner",
+                "operationId": "3e666bccdb4ec30e899f3d463506c29b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "category_id",
+                                    "_method"
+                                ],
+                                "properties": {
+                                    "_method": {
+                                        "type": "string",
+                                        "example": "PUT"
+                                    },
+                                    "category_id": {
+                                        "type": "integer"
+                                    },
+                                    "desktop_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "desktop_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "mobile_image": {
+                                        "type": "file",
+                                        "format": "binary"
+                                    },
+                                    "mobile_image_alt": {
+                                        "type": "string"
+                                    },
+                                    "url": {
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Banner updated"
+                    },
+                    "404": {
+                        "description": "Banner not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Menu Banners"
+                ],
+                "summary": "Delete a menu banner",
+                "operationId": "ed1e4f82fe880f1961e4eb49adb4e769",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banner deleted"
+                    },
+                    "404": {
+                        "description": "Banner not found"
                     }
                 },
                 "security": [
@@ -32135,6 +32805,14 @@
             "description": "Geolocation"
         },
         {
+            "name": "Google Reviews",
+            "description": "Google Reviews"
+        },
+        {
+            "name": "Frontend Invoices",
+            "description": "Frontend Invoices"
+        },
+        {
             "name": "Frontend-Location",
             "description": "Frontend-Location"
         },
@@ -32229,6 +32907,10 @@
         {
             "name": "Measurement",
             "description": "Measurement"
+        },
+        {
+            "name": "Menu Banners",
+            "description": "Menu Banners"
         },
         {
             "name": "Orders",

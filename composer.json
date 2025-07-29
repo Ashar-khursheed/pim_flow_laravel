@@ -8,6 +8,7 @@
     "require": {
         "php": "^8.2",
         "astrotomic/laravel-translatable": "^11.16",
+        "barryvdh/laravel-dompdf": "^3.1",
         "darkaonline/l5-swagger": "^9.0",
         "firebase/php-jwt": "*",
         "google/apiclient": "^2.18",
