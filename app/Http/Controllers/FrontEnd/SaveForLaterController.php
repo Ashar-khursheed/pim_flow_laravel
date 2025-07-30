@@ -90,60 +90,60 @@ class SaveForLaterController extends Controller
 	// 	], 200);
 	// }
 	public function saveForLater(Request $request)
-{
-    $request->validate([
-        'product_id' => 'required|exists:ec_products,id',
-    ]);
+	{
+		$request->validate([
+			'product_id' => 'required|exists:ec_products,id',
+		]);
 
-    $userId = auth()->id();
+		$userId = auth()->id();
 
-    if (!$userId) {
-        return response()->json([
-            'message' => 'Customer not authenticated.',
-        ], 401);
-    }
+		if (!$userId) {
+			return response()->json([
+				'message' => 'Customer not authenticated.',
+			], 401);
+		}
 
-    // Try to find the product in the cart
-    $cartItem = Cart::where('user_id', $userId)
-        ->where('product_id', $request->product_id)
-        ->first();
+		// Try to find the product in the cart
+		$cartItem = Cart::where('user_id', $userId)
+			->where('product_id', $request->product_id)
+			->first();
 
-    $quantity = 1;
+		$quantity = 1;
 
-    if ($cartItem) {
-        $quantity = $cartItem->quantity;
-        $cartItem->delete();
-    } else {
-        // If not in cart, check if it's in wishlist
-        $wishlistItem = Wishlist::where('customer_id', $userId)
-            ->where('product_id', $request->product_id)
-            ->first();
+		if ($cartItem) {
+			$quantity = $cartItem->quantity;
+			$cartItem->delete();
+		} else {
+			// If not in cart, check if it's in wishlist
+			$wishlistItem = Wishlist::where('customer_id', $userId)
+				->where('product_id', $request->product_id)
+				->first();
 
-        if ($wishlistItem) {
-		Wishlist::where('customer_id', $userId)
-		->where('product_id', $request->product_id)
-		->delete();        } else {
-            return response()->json([
-                'message' => 'Product not found in cart or wishlist.'
-            ], 404);
-        }
-    }
+			if ($wishlistItem) {
+			Wishlist::where('customer_id', $userId)
+			->where('product_id', $request->product_id)
+			->delete();        } else {
+				return response()->json([
+					'message' => 'Product not found in cart or wishlist.'
+				], 404);
+			}
+		}
 
-    // Move to save for later
-    SaveForLater::updateOrCreate(
-        [
-            'user_id' => $userId,
-            'product_id' => $request->product_id,
-        ],
-        [
-            'quantity' => $quantity,
-        ]
-    );
+		// Move to save for later
+		SaveForLater::updateOrCreate(
+			[
+				'user_id' => $userId,
+				'product_id' => $request->product_id,
+			],
+			[
+				'quantity' => $quantity,
+			]
+		);
 
-    return response()->json([
-        'message' => 'Product has been moved to Save for Later.',
-    ], 200);
-}
+		return response()->json([
+			'message' => 'Product has been moved to Save for Later.',
+		], 200);
+	}
 
 
 	/**
@@ -232,11 +232,14 @@ class SaveForLaterController extends Controller
 			}
 	
 			// Per unit price
-			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
-				$attr->attributeDetails->name === 'Units per Case');
-			$packType = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
-				$attr->attributeDetails->name === 'Pack Type');
-	
+			$unitsPerCase = $product->per_unit_price_attributes?->firstWhere(
+					fn($attr) => $attr->attributeDetails->name === 'Units per Case'
+				);
+
+				$packType = $product->per_unit_price_attributes?->firstWhere(
+					fn($attr) => $attr->attributeDetails->name === 'Pack Type'
+				);
+					
 			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
 			  // Calculate per unit price
 			  $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
