@@ -26871,6 +26871,7 @@
                                     "customer_id",
                                     "customer_address_id",
                                     "tax_percentage",
+                                    "status",
                                     "products"
                                 ],
                                 "properties": {
@@ -26898,6 +26899,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
+                                    },
+                                    "discount_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Pending"
+                                    },
+                                    "expired_at": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-08-09"
                                     },
                                     "payment_terms": {
                                         "type": "string",
