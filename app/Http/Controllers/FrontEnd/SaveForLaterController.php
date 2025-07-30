@@ -120,8 +120,9 @@ class SaveForLaterController extends Controller
             ->first();
 
         if ($wishlistItem) {
-            $wishlistItem->delete();
-        } else {
+		Wishlist::where('customer_id', $userId)
+		->where('product_id', $request->product_id)
+		->delete();        } else {
             return response()->json([
                 'message' => 'Product not found in cart or wishlist.'
             ], 404);
