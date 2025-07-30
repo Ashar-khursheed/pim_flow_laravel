@@ -23,6 +23,11 @@ return new class extends Migration
 			$table->decimal('tax_percentage', 10, 2);
 			$table->decimal('tax_amount', 10, 2);
 			$table->decimal('total_amount', 10, 2);
+
+			$table->decimal('discount_percentage', 10, 4)->nullable();
+			$table->decimal('discount_amount', 10, 2)->nullable();
+			$table->decimal('amount_after_discount', 10, 2)->nullable();
+
 			$table->integer('total_products');
 			$table->string('payment_terms')->nullable();
 			$table->text('customer_notes')->nullable();
