@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
 
@@ -44,6 +45,50 @@ class SaveForLaterController extends Controller
 	 * )
 	 */
 
+	// public function saveForLater(Request $request)
+	// {
+	// 	$request->validate([
+	// 		'product_id' => 'required|exists:ec_products,id',
+	// 	]);
+
+	// 	$userId = auth()->id();
+
+	// 	 // Check if customer is authenticated
+	// 	if (!$userId) {
+	// 		return response()->json([
+	// 			'message' => 'Customer not authenticated.',
+	// 		], 401);
+	// 	}
+
+	// 	 // Check if product is in the cart
+	// 	$cartItem = Cart::where('user_id', $userId)
+	// 	->where('product_id', $request->product_id)
+	// 	->first();
+
+	// 	if (!$cartItem) {
+	// 		return response()->json([
+	// 			'message' => 'Product not found in cart.'
+	// 		], 404);
+	// 	}
+
+
+	// 	 // Move to save for later
+	// 	SaveForLater::updateOrCreate(
+	// 		[
+	// 			'user_id' => $userId,
+	// 			'product_id' => $request->product_id,
+	// 		],
+	// 		[
+	// 			'quantity' => $cartItem->quantity,
+	// 		]
+	// 	);
+
+	// 	$cartItem->delete();
+
+	// 	return response()->json([
+	// 		'message' => 'Product has been moved to Save for Later.',
+	// 	], 200);
+	// }
 	public function saveForLater(Request $request)
 	{
 		$request->validate([
@@ -52,42 +97,54 @@ class SaveForLaterController extends Controller
 
 		$userId = auth()->id();
 
-		 // Check if customer is authenticated
 		if (!$userId) {
 			return response()->json([
 				'message' => 'Customer not authenticated.',
 			], 401);
 		}
 
-		 // Check if product is in the cart
+		// Try to find the product in the cart
 		$cartItem = Cart::where('user_id', $userId)
-		->where('product_id', $request->product_id)
-		->first();
+			->where('product_id', $request->product_id)
+			->first();
 
-		if (!$cartItem) {
-			return response()->json([
-				'message' => 'Product not found in cart.'
-			], 404);
+		$quantity = 1;
+
+		if ($cartItem) {
+			$quantity = $cartItem->quantity;
+			$cartItem->delete();
+		} else {
+			// If not in cart, check if it's in wishlist
+			$wishlistItem = Wishlist::where('customer_id', $userId)
+				->where('product_id', $request->product_id)
+				->first();
+
+			if ($wishlistItem) {
+			Wishlist::where('customer_id', $userId)
+			->where('product_id', $request->product_id)
+			->delete();        } else {
+				return response()->json([
+					'message' => 'Product not found in cart or wishlist.'
+				], 404);
+			}
 		}
 
-
-		 // Move to save for later
+		// Move to save for later
 		SaveForLater::updateOrCreate(
 			[
 				'user_id' => $userId,
 				'product_id' => $request->product_id,
 			],
 			[
-				'quantity' => $cartItem->quantity,
+				'quantity' => $quantity,
 			]
 		);
-
-		$cartItem->delete();
 
 		return response()->json([
 			'message' => 'Product has been moved to Save for Later.',
 		], 200);
 	}
+
 
 	/**
 	 * @OA\Get(
@@ -175,29 +232,27 @@ class SaveForLaterController extends Controller
 			}
 	
 			// Per unit price
-			$unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
-				$attr->attributeDetails->name === 'Units per Case');
-			$packType = $product->per_unit_price_attributes->firstWhere(fn($attr) =>
-				$attr->attributeDetails->name === 'Pack Type');
-	
-			$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-			  // Calculate per unit price
-			  $unitsPerCase = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Units per Case');
-			  $packType = $product->per_unit_price_attributes->firstWhere(fn($attr) => $attr->attributeDetails->name === 'Pack Type');
-			  
+			$unitsPerCase = $product->per_unit_price_attributes?->firstWhere(
+					fn($attr) => $attr->attributeDetails->name === 'Units per Case'
+				);
 
-			  $basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
-			  $perUnitPrice = null;
+				$packType = $product->per_unit_price_attributes?->firstWhere(
+					fn($attr) => $attr->attributeDetails->name === 'Pack Type'
+				);
 
-			  if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
-				  $unitValue = (float) $unitsPerCase->attribute_value;
-				  if ($unitValue > 0) {
-					  $calculated = round($basePrice / $unitValue, 2);
-					  $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
-				  }
-			  }
+				$basePrice = ($product->sale_price > 0) ? $product->sale_price : $product->price;
+				$perUnitPrice = null;
 
-			  $product->per_unit_price = $perUnitPrice;
+				if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+					$unitValue = (float) $unitsPerCase->attribute_value;
+					if ($unitValue > 0) {
+						$calculated = round($basePrice / $unitValue, 2);
+						$perUnitPrice = $calculated . ' /' . ($packType?->attribute_value ?? '');
+					}
+				}
+
+				$product->per_unit_price = $perUnitPrice;
+
 			  $currencyTitle = $product->currency->symbol ?? $product->price;
 			  $firstSupplier = $product->productSuppliers->first();
 
