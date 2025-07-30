@@ -144,7 +144,9 @@ class SearchController extends Controller
                 'delivery_days' => $firstSupplier->delivery_days ?? null,
                 'return_policy' => $firstSupplier->return_policy ?? null,
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
-                'warranty_information' => $firstSupplier->warranty_information ?? null,
+               'warranty_information' => !empty($product->warrantyAttribute?->attribute_value)
+                    ? $product->warrantyAttribute->attribute_value
+                    : ($firstSupplier->warranty_information ?? null),
                 'brand' => $product->brand ? [
                     'id' => $product->brand->id,
                     'name' => $product->brand->name,

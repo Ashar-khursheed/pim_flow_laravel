@@ -735,7 +735,6 @@ class SeoManagementController extends Controller
 				'schema_reviews_count' => 'nullable|integer',
 				'created_by' => 'required|integer',
 				'updated_by' => 'nullable|integer',
-				'og_image_file' => 'nullable|image|mimes:jpeg,png,jpg,webp',
 				'secondary_keywords' => 'nullable|string',
 				'paragraph_1' => 'nullable|string',
 				'paragraph_2' => 'nullable|string',
@@ -747,11 +746,17 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable',
+				'banner_image_file' => 'nullable', // <- keep it basic
 				'banner_image_alt_text' => 'nullable|string',
-				'banner_slug' => 'nullable|string', // ✅ New field
-				'popularTag_details' => 'nullable|json', // ✅ New field
+				'banner_slug' => 'nullable|string',
+				'popularTag_details' => 'nullable|json',
 			];
+
+			// Only validate og_image_file if present
+			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
+				$rules['og_image_file'] = 'image|mimes:jpeg,png,jpg,webp|max:2048';
+			}
+
 
 			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
 				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
