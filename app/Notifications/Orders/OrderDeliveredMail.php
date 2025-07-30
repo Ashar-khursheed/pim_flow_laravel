@@ -74,7 +74,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('Your Horeca Order Has Been Delivered')
+		->subject("Your HorecaStore Order #{$orderNumber} Has Been Delivered")
 		->markdown('emails.orders.order-delivered', $params);
 	}
 

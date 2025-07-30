@@ -41,7 +41,7 @@ class GuestWelcomeMail extends Notification implements ShouldQueue
 		$websiteUrl = url("/");
 
 		return (new MailMessage)
-		->subject('Welcome Email')
+		->subject("Welcome to HorecaStore — Here's Your Login Credentials")
 		->markdown('emails.guest-welcome', [
 			'logoUrl' => $logoUrl,
 			'name' => $name,

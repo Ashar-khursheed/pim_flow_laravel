@@ -123,7 +123,7 @@ class PartialOrderCancelledMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('Some Products from Your Order Have Been Cancelled')
+		->subject("Some Products from Your HorecaStore Order #{$orderNumber} Have Been Cancelled")
 		->markdown('emails.orders.partial-order-cancelled', $params);
 	}
 
