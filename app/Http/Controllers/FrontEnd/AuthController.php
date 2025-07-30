@@ -81,12 +81,13 @@ class AuthController extends Controller
 	    }
 
 	    // 🛑 Prevent password login for social accounts (Google/Apple)
-	    if ($customer->is_social_login) {
-	        return response()->json([
-	            'success' => false,
-	            'message' => 'This email is linked with a social login (Google/Apple). Please log in using that method.',
-	        ], 403);
-	    }
+	   if ($customer->is_social_login && !$customer->password) {
+   		 return response()->json([
+				'success' => false,
+			'message' => 'This email is linked with a social login (Google/Apple). Please log in using that method.',
+		], 403);
+	}
+
 
 	    if (!Hash::check($request->password, $customer->password)) {
 	        return response()->json([
