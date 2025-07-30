@@ -94,15 +94,17 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			}
 		}
 
-		/* Total price before discount */
-		$totalPriceWithoutDiscount = number_format($products->sum(function ($p) {
+		/* Total price before discount (raw value) */
+		$totalPriceWithoutDiscountRaw = $products->sum(function ($p) {
 			return (float) $p->priceBeforeDiscount * $p->quantity;
-		}), 2, '.', ',');
+		});
 
 		/* Total saved = original total - actual subtotal */
-		$totalSaved = number_format(
-			max(0, $totalPriceWithoutDiscount - ($this->order->amount ?? 0)), 2, '.', ','
-		);
+		$totalSavedRaw = max(0, $totalPriceWithoutDiscountRaw - ($this->order->amount ?? 0));
+
+		/* Format for display */
+		$totalPriceWithoutDiscount = number_format($totalPriceWithoutDiscountRaw, 2, '.', ',');
+		$totalSaved = number_format($totalSavedRaw, 2, '.', ',');
 
 		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
 		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
