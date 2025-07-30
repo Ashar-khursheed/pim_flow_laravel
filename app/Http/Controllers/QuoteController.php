@@ -39,6 +39,23 @@ class QuoteController extends BaseController
 
 		$recordsQuery = Quote::query();
 
+		/* Filter by status */
+		if ($request->has('status')) {
+			$recordsQuery->where('status', $request->status);
+		}
+
+		if ($request->has('from_date') && $request->has('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->whereBetween('created_at', [$from, $to]);
+		} elseif ($request->has('from_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$recordsQuery->where('created_at', '>=', $from);
+		} elseif ($request->has('to_date')) {
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->where('created_at', '<=', $to);
+		}
+
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Join if customer_name is involved in search or sort */
@@ -60,21 +77,21 @@ class QuoteController extends BaseController
 			]);
 
 			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('quotes.status', $request->status);
-			}
+			// if ($request->has('status')) {
+			// 	$recordsQuery->where('quotes.status', $request->status);
+			// }
 
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('quotes.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('quotes.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('quotes.created_at', '<=', $to);
-			}
+			// if ($request->has('from_date') && $request->has('to_date')) {
+			// 	$from = $request->from_date . ' 00:00:00';
+			// 	$to = $request->to_date . ' 23:59:59';
+			// 	$recordsQuery->whereBetween('quotes.created_at', [$from, $to]);
+			// } elseif ($request->has('from_date')) {
+			// 	$from = $request->from_date . ' 00:00:00';
+			// 	$recordsQuery->where('quotes.created_at', '>=', $from);
+			// } elseif ($request->has('to_date')) {
+			// 	$to = $request->to_date . ' 23:59:59';
+			// 	$recordsQuery->where('quotes.created_at', '<=', $to);
+			// }
 
 			/* Global search */
 			if ($request->filled('global')) {
@@ -155,7 +172,7 @@ class QuoteController extends BaseController
 			});
 		} else {
 			/* No pagination: just fetch id and quote_number */
-			$records = Quote::orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
+			$records = $recordsQuery->orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
