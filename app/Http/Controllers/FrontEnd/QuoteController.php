@@ -233,9 +233,9 @@ class QuoteController extends BaseController
 			}
 
 			/* Generate new quote number */
-			$latestQuote = Quote::where('quote_number', 'NOT LIKE', '%\_v%')
-			->orderBy('id', 'desc')
-			->first();
+			$latestQuote = Quote::whereRaw("quote_number REGEXP '^QT[0-9]+$'")
+				->orderBy('id', 'desc')
+				->first();
 
 			if ($latestQuote && preg_match('/^QT(\d+)$/', $latestQuote->quote_number, $matches)) {
 				$nextNumber = (int) $matches[1] + 1;
