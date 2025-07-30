@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
@@ -176,7 +177,8 @@ class QuoteController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *             required={"is_revised", "quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *             @OA\Property(property="is_revised", type="boolean", example=false),
 	 *             @OA\Property(property="quote_number", type="string", example="1111"),
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
@@ -212,7 +214,8 @@ class QuoteController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'quote_number' => 'required|string|unique:quotes,quote_number',
+			'is_revised' => 'required|boolean',
+			'quote_number' => 'required_if:is_revised,true|string|unique:quotes,quote_number',
 			'quote_name' => 'required|string',
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -253,11 +256,33 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
+			if ($request->is_revised) {
+				if (!preg_match('/^QT\d+$/', $request->quote_number)) {
+					throw ValidationException::withMessages([
+						'quote_number' => ['The quote number format is invalid.']
+					]);
+				}
+				/* Use provided quote number if it's a revised quote */
+				$quoteNumber = $request->quote_number;
+			} else {
+				/* Generate new quote number */
+				$latestQuote = Quote::where('quote_number', 'NOT LIKE', '%\_v%')
+				->orderBy('id', 'desc')
+				->first();
+
+				if ($latestQuote && preg_match('/^QT(\d+)$/', $latestQuote->quote_number, $matches)) {
+					$nextNumber = (int) $matches[1] + 1;
+					$quoteNumber = 'QT' . $nextNumber;
+				} else {
+					$quoteNumber = 'QT1001';
+				}
+			}
+
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote = Quote::create([
-				'quote_number' => $request->quote_number,
+				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
