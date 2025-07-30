@@ -746,17 +746,21 @@ class SeoManagementController extends Controller
 				'short_title_variant' => 'nullable|string',
 				'gen_type' => 'nullable|integer',
 				'cat_desc' => 'nullable|string',
-				'banner_image_file' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+				'banner_image_file' => 'nullable', // <- keep it basic
 				'banner_image_alt_text' => 'nullable|string',
 				'banner_slug' => 'nullable|string',
 				'popularTag_details' => 'nullable|json',
 			];
 
-			// Only validate og_image_file if uploaded and valid
+			// Only validate og_image_file if present
 			if ($request->hasFile('og_image_file') && $request->file('og_image_file')->isValid()) {
 				$rules['og_image_file'] = 'image|mimes:jpeg,png,jpg,webp|max:2048';
 			}
 
+
+			if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
+				$rules['banner_image_file'] = 'image|mimes:jpeg,png,jpg,gif,webp';
+			}
 
 			$validated = $request->validate($rules);
 
