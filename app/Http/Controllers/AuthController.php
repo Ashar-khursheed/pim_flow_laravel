@@ -260,7 +260,7 @@ class AuthController extends BaseController
 		$user->password = Hash::make($request->password);
 		$user->save();
 
-		$user->passwordResetToken()->delete();
+		$user->passwordResetToken->delete();
 
         $user->tokens()->delete();
 
