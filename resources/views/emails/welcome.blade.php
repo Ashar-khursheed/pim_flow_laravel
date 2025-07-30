@@ -59,7 +59,7 @@
 					✔ <strong style="color:#000000;">No Hidden Fees</strong>
 				</p>
 				<p style="color:green; font-family: 'Poppins', sans-serif; ">
-					✔ <strong style="color:#000000;">Middle East Longest Warranty On Equipment & Supplies</strong>
+					✔ <strong style="color:#000000;">{{ $regionName }} Longest Warranty on Equipment & Supplies</strong>
 				</p>
 				<p style="color:green; font-family: 'Poppins', sans-serif; ">
 					✔ <strong style="color:#000000;">Real Support From People Who Care</strong>
@@ -93,10 +93,13 @@
 			<!-- Footer -->
 			<div class="footer-note" style=" font-family: 'Poppins', sans-serif; border-top:1px solid #ccc; margin-top:30px; padding-top:15px; font-size:12px; color:#777;">
 				<p style="margin:0; font-family: 'Poppins', sans-serif; ">
-					©2025 HorecaStore.ae. All rights reserved. HorecaStore.ae and the HorecaStore logo are trademarks of Horeca Store LLC or its affiliates.
+					©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
 				</p>
 				<p style="margin:8px 0 0; font-family: 'Poppins', sans-serif; ">
-					This message was sent from a notification-only email address. Please do not reply to this email.
+					This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at
+					<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
+						{{ $siteEmail }}
+					</a>.
 				</p>
 			</div>
 		</div>

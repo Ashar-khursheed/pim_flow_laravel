@@ -120,7 +120,7 @@
 								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
 							</p>
 							<p style="margin:8px 0 0; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
-								This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at
+								This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at
 								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
 									{{ $siteEmail }}
 								</a>.

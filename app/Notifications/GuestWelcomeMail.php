@@ -39,6 +39,9 @@ class GuestWelcomeMail extends Notification implements ShouldQueue
 		$randomPassword = $this->randomPassword ?? 'User';
 		$resetPasswordUrl = url("/");
 		$websiteUrl = url("/");
+		$regionName = config('app.website') == 'UAE' ? "Middle East’s":"America’s";
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		return (new MailMessage)
 		->subject("Welcome to HorecaStore — Here's Your Login Credentials")
@@ -48,6 +51,9 @@ class GuestWelcomeMail extends Notification implements ShouldQueue
 			'randomPassword' => $randomPassword,
 			'resetPasswordUrl' => $resetPasswordUrl,
 			'websiteUrl' => $websiteUrl,
+			'regionName' => $regionName,
+			'siteUrl' => $siteUrl,
+			'siteEmail' => $siteEmail,
 		]);
 	}
 
