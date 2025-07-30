@@ -6,6 +6,7 @@ use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
@@ -162,7 +163,7 @@ class QuoteController extends BaseController
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -194,13 +195,16 @@ class QuoteController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"is_revised", "quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *             required={"is_revised", "quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "status", "products"},
 	 *             @OA\Property(property="is_revised", type="boolean", example=false),
 	 *             @OA\Property(property="quote_number", type="string", example="1111"),
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="discount_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="status", type="string",  example="Pending"),
+	 *             @OA\Property(property="expired_at", type="string", format="date", example="2025-08-09"),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
 	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
 	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
@@ -237,6 +241,9 @@ class QuoteController extends BaseController
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
+			'discount_percentage' => 'nullable|numeric|min:0',
+			'status' => 'required|in:Pending,Revised',
+			'expired_at' => 'nullable|date',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -274,9 +281,9 @@ class QuoteController extends BaseController
 			}
 
 			if ($request->is_revised) {
-				if (!preg_match('/^QT\d+$/', $request->quote_number)) {
+				if (!Str::startsWith($request->quote_number, 'QT')) {
 					throw ValidationException::withMessages([
-						'quote_number' => ['The quote number format is invalid.']
+						'quote_number' => ['The quote number must start with "QT".']
 					]);
 				}
 				/* Use provided quote number if it's a revised quote */
@@ -298,6 +305,15 @@ class QuoteController extends BaseController
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
+			if ($request->discount_percentage) {
+				$discountPercentage = $request->discount_percentage;
+				$discountAmount = round($totalAmount * ($request->discount_percentage / 100), 2);
+				$amountAfterDiscount = $totalAmount - $discountAmount;
+ 			} else {
+ 				$discountPercentage = null;
+				$discountAmount = null;
+				$amountAfterDiscount = null;
+ 			}
 			$quote = Quote::create([
 				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
@@ -308,12 +324,17 @@ class QuoteController extends BaseController
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
 				'total_amount' => $totalAmount,
+
+				'discount_percentage' => $discountPercentage,
+				'discount_amount' => $discountAmount,
+				'amount_after_discount' => $amountAfterDiscount,
+
 				'total_products' => $totalProducts,
 				'payment_terms' => $request->payment_terms,
 				'customer_notes' => $request->customer_notes,
 				'internal_notes' => $request->internal_notes,
-				'status' => 'Pending',
-				'expired_at' => now()->addDays(7),
+				'status' => $request->status,
+				'expired_at' => $request->expired_at ?? now()->addDays(7),
 				'created_by' => auth()->id(),
 			]);
 
@@ -376,7 +397,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
@@ -459,7 +480,7 @@ class QuoteController extends BaseController
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
@@ -619,7 +640,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}

@@ -127,7 +127,7 @@ class QuoteController extends BaseController
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -323,7 +323,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
@@ -405,7 +405,7 @@ class QuoteController extends BaseController
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
@@ -577,7 +577,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
