@@ -32,7 +32,7 @@ class WelcomeMail extends Notification implements ShouldQueue
 		$websiteUrl = url("/");
 
 		return (new MailMessage)
-		->subject('Welcome Email')
+		->subject("Welcome to HorecaStore — Let’s Bring Your Dream to Life")
 		->markdown('emails.welcome', [
 			'logoUrl' => $logoUrl,
 			'name' => $name,

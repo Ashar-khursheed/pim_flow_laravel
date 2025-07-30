@@ -26,7 +26,7 @@ class NewsLetterMail extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('Newsletter Subscription')
+            ->subject("Thanks for Joining Our Newsletter — Hospitality Starts Here")
             ->view('emails.newsletter_subscribed', ['data' => $this->data]);
     }
 }

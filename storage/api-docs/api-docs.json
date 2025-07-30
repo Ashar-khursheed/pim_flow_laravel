@@ -14482,7 +14482,7 @@
                     "Frontend Menu Banners"
                 ],
                 "summary": "Get all banners by category ID",
-                "operationId": "4bae56487452d899aa3e7e26ac650d78",
+                "operationId": "5aa7052320be7fe938265b0580d478fa",
                 "parameters": [
                     {
                         "name": "category_id",
@@ -17224,17 +17224,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "quote_number",
                                     "quote_name",
                                     "customer_address_id",
                                     "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
-                                    "quote_number": {
-                                        "type": "string",
-                                        "example": "1111"
-                                    },
                                     "quote_name": {
                                         "type": "string",
                                         "example": "Kitchen equipment quote"
@@ -26870,6 +26865,7 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "is_revised",
                                     "quote_number",
                                     "quote_name",
                                     "customer_id",
@@ -26878,6 +26874,10 @@
                                     "products"
                                 ],
                                 "properties": {
+                                    "is_revised": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "quote_number": {
                                         "type": "string",
                                         "example": "1111"

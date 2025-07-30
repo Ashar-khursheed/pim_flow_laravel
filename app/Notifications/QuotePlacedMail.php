@@ -74,7 +74,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 
 		if ($this->sendToCc) {
 			return (new MailMessage)
-			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Generated")
 			->cc($ccEmails)
 			->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
 				'mime' => 'application/pdf',
@@ -82,7 +82,7 @@ class QuotePlacedMail extends Notification implements ShouldQueue
 			->markdown('emails.quotes.quote-placed', $mailParams);
 		} else {
 			return (new MailMessage)
-			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Placed")
+			->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Generated")
 			->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
 				'mime' => 'application/pdf',
 			])

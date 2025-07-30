@@ -159,8 +159,7 @@ class QuoteController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"quote_number", "quote_name", "customer_address_id", "tax_percentage", "products"},
-	 *             @OA\Property(property="quote_number", type="string", example="1111"),
+	 *             required={"quote_name", "customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
@@ -194,7 +193,6 @@ class QuoteController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'quote_number' => 'required|string|unique:quotes,quote_number',
 			'quote_name' => 'required|string',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
@@ -234,11 +232,23 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
+			/* Generate new quote number */
+			$latestQuote = Quote::where('quote_number', 'NOT LIKE', '%\_v%')
+			->orderBy('id', 'desc')
+			->first();
+
+			if ($latestQuote && preg_match('/^QT(\d+)$/', $latestQuote->quote_number, $matches)) {
+				$nextNumber = (int) $matches[1] + 1;
+				$quoteNumber = 'QT' . $nextNumber;
+			} else {
+				$quoteNumber = 'QT1001';
+			}
+
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote = Quote::create([
-				'quote_number' => $request->quote_number,
+				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,

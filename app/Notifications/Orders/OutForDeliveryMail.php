@@ -82,7 +82,7 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject('Your Horeca Order is Out for Delivery')
+		->subject("Your HorecaStore Order #{$orderNumber} is Out for Delivery")
 		->markdown('emails.orders.out-for-delivery', $params);
 	}
 

@@ -57,7 +57,7 @@ class OrderCancelledMail extends Notification implements ShouldQueue
 		];
 
 		return (new MailMessage)
-		->subject("Your Order #{$orderNumber} Has Been Cancelled – We're Here to Help")
+		->subject("Your HorecaStore Order #{$orderNumber} Has Been Cancelled – We're Here to Help")
 		->markdown('emails.orders.order-cancelled', $params);
 	}
 
