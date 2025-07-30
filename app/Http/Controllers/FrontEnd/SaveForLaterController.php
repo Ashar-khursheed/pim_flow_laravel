@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\Cart;
+use App\Models\FrontEnd\Wishlist;
 use App\Models\FrontEnd\SaveForLater;
 use App\Models\Product;
 
@@ -44,50 +45,105 @@ class SaveForLaterController extends Controller
 	 * )
 	 */
 
+	// public function saveForLater(Request $request)
+	// {
+	// 	$request->validate([
+	// 		'product_id' => 'required|exists:ec_products,id',
+	// 	]);
+
+	// 	$userId = auth()->id();
+
+	// 	 // Check if customer is authenticated
+	// 	if (!$userId) {
+	// 		return response()->json([
+	// 			'message' => 'Customer not authenticated.',
+	// 		], 401);
+	// 	}
+
+	// 	 // Check if product is in the cart
+	// 	$cartItem = Cart::where('user_id', $userId)
+	// 	->where('product_id', $request->product_id)
+	// 	->first();
+
+	// 	if (!$cartItem) {
+	// 		return response()->json([
+	// 			'message' => 'Product not found in cart.'
+	// 		], 404);
+	// 	}
+
+
+	// 	 // Move to save for later
+	// 	SaveForLater::updateOrCreate(
+	// 		[
+	// 			'user_id' => $userId,
+	// 			'product_id' => $request->product_id,
+	// 		],
+	// 		[
+	// 			'quantity' => $cartItem->quantity,
+	// 		]
+	// 	);
+
+	// 	$cartItem->delete();
+
+	// 	return response()->json([
+	// 		'message' => 'Product has been moved to Save for Later.',
+	// 	], 200);
+	// }
 	public function saveForLater(Request $request)
-	{
-		$request->validate([
-			'product_id' => 'required|exists:ec_products,id',
-		]);
+{
+    $request->validate([
+        'product_id' => 'required|exists:ec_products,id',
+    ]);
 
-		$userId = auth()->id();
+    $userId = auth()->id();
 
-		 // Check if customer is authenticated
-		if (!$userId) {
-			return response()->json([
-				'message' => 'Customer not authenticated.',
-			], 401);
-		}
+    if (!$userId) {
+        return response()->json([
+            'message' => 'Customer not authenticated.',
+        ], 401);
+    }
 
-		 // Check if product is in the cart
-		$cartItem = Cart::where('user_id', $userId)
-		->where('product_id', $request->product_id)
-		->first();
+    // Try to find the product in the cart
+    $cartItem = Cart::where('user_id', $userId)
+        ->where('product_id', $request->product_id)
+        ->first();
 
-		if (!$cartItem) {
-			return response()->json([
-				'message' => 'Product not found in cart.'
-			], 404);
-		}
+    $quantity = 1;
 
+    if ($cartItem) {
+        $quantity = $cartItem->quantity;
+        $cartItem->delete();
+    } else {
+        // If not in cart, check if it's in wishlist
+        $wishlistItem = Wishlist::where('user_id', $userId)
+            ->where('product_id', $request->product_id)
+            ->first();
 
-		 // Move to save for later
-		SaveForLater::updateOrCreate(
-			[
-				'user_id' => $userId,
-				'product_id' => $request->product_id,
-			],
-			[
-				'quantity' => $cartItem->quantity,
-			]
-		);
+        if ($wishlistItem) {
+            $wishlistItem->delete();
+        } else {
+            return response()->json([
+                'message' => 'Product not found in cart or wishlist.'
+            ], 404);
+        }
+    }
 
-		$cartItem->delete();
+    // Move to save for later
+    SaveForLater::updateOrCreate(
+        [
+            'user_id' => $userId,
+            'product_id' => $request->product_id,
+        ],
+        [
+            'quantity' => $quantity,
+        ]
+    );
 
-		return response()->json([
-			'message' => 'Product has been moved to Save for Later.',
-		], 200);
-	}
+    return response()->json([
+        'message' => 'Product has been moved to Save for Later.',
+    ], 200);
+}
+
 
 	/**
 	 * @OA\Get(
