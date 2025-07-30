@@ -115,7 +115,7 @@ class SaveForLaterController extends Controller
         $cartItem->delete();
     } else {
         // If not in cart, check if it's in wishlist
-        $wishlistItem = Wishlist::where('user_id', $userId)
+        $wishlistItem = Wishlist::where('custmomer_id', $userId)
             ->where('product_id', $request->product_id)
             ->first();
 
