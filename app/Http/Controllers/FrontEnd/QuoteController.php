@@ -451,7 +451,7 @@ class QuoteController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function update(Request $request, $quoteId)
+	public function update(Request $request, $id)
 	{
 		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
 		if (!$quote) {
