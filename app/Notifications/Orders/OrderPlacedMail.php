@@ -42,7 +42,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		$orderNumber = $this->order->order_number;
 		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
 		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
-		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
+		$paidAmount = $this->order->paid_amount ?? 0;
 		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
 		$customerAddress = $this->order->customerAddress;
@@ -70,8 +70,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
 
-				$product->priceBeforeDiscount = number_format($originalPrice, 2, '.', ',');
-				$product->unitPrice = number_format($orderProduct->unit_price, 2, '.', ',');
+				$product->priceBeforeDiscount = $originalPrice;
+				$product->unitPrice = $orderProduct->unit_price;
 
 				if (
 					$productSupplierDetail &&
@@ -79,39 +79,33 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 					$productSupplierDetail->price > 0 &&
 					$orderProduct->unit_price > 0
 				) {
-					$product->discount = number_format(
-						(($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100,
-						2
-					);
+					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
+
 				} else {
 					$product->discount = 0;
 				}
 
 				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = number_format($orderProduct->amount, 2, '.', ',');
+				$product->total = $orderProduct->amount;
 
 				$products->push($product);
 			}
 		}
 
 		/* Total price before discount (raw value) */
-		$totalPriceWithoutDiscountRaw = $products->sum(function ($p) {
+		$totalPriceWithoutDiscount = $products->sum(function ($p) {
 			return (float) $p->priceBeforeDiscount * $p->quantity;
 		});
 
 		/* Total saved = original total - actual subtotal */
-		$totalSavedRaw = max(0, $totalPriceWithoutDiscountRaw - ($this->order->amount ?? 0));
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($this->order->amount ?? 0));
 
-		/* Format for display */
-		$totalPriceWithoutDiscount = number_format($totalPriceWithoutDiscountRaw, 2, '.', ',');
-		$totalSaved = number_format($totalSavedRaw, 2, '.', ',');
-
-		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
-		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
+		$subTotal = $this->order->amount ?? 0;
+		$shippingCharge = $this->order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
 		$taxPercent = $this->order->tax_percentage;
-		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
-		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');
+		$taxAmount = $this->order->tax_amount ?? 0;
+		$total = $this->order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';

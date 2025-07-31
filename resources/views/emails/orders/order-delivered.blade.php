@@ -75,7 +75,7 @@
 										{{ $product->quantity }}
 									</td>
 									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%;">
-										{{ $currency }} {{ $product->total }}
+										{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}
 									</td>
 								</tr>
 								@endforeach

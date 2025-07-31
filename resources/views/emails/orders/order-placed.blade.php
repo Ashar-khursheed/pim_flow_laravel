@@ -165,13 +165,13 @@
 										<strong style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ Str::limit($product->name, 90, '...') }}</strong><br>
 										<span style="color:#26683A; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">Arriving</span>
 										<span style="color:#26683A; font-style:italic; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $product->expectedShippingDate }}</span><br>
-										<span style="color:#BE2535; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ $product->priceBeforeDiscount }}{{ $product->discount ? ' | Save '.$product->discount.'%' : '' }}</span>
+										<span style="color:#BE2535; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">{{ $currency }} {{ number_format($product->priceBeforeDiscount, 2, '.', ',') }}{{ $product->discount ? ' | Save '.number_format($product->discount, 2).'%' : '' }}</span>
 									</td>
 									<td align="center" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:10%;">
 										{{ $product->quantity }}
 									</td>
 									<td align="right" style="font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px; width:18%; ">
-										{{ $currency }} {{ $product->total }}
+										{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}
 									</td>
 								</tr>
 								@endforeach
@@ -191,7 +191,7 @@
 													You Saved
 												</td>
 												<td align="right" style="font-weight: bold; font-family: 'Noto Sans',  sans-serif; font-size:14px; line-height:20px;">
-													{{ $currency }} {{ $totalSaved }}
+													{{ $currency }} {{ number_format($totalSaved, 2, '.', ',') }}
 												</td>
 											</tr>
 											@endif
@@ -202,22 +202,22 @@
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ $subTotal }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Shipping</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ $shippingCharge }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
 											</tr>
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ $taxAmount }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif;" align="right">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 											</tr>
 											<tr>
 												<td colspan="2" style="border-top: 2px solid #E2E8F0;"></td>
 											</tr>
 											<tr style="font-weight: bold; ">
 												<td style="font-weight: bold;font-family: 'Noto Sans',  sans-serif;">Total Amount</td>
-												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ $total }}</td>
+												<td align="right" style="color: #26683A; font-weight: bold; font-family: 'Noto Sans',  sans-serif;">{{ $currency }} {{ number_format($total, 2, '.', ',') }}</td>
 											</tr>
 										</table>
 									</td>
