@@ -443,7 +443,7 @@ class RecentlyViewedProductController extends Controller
                     'in_wishlist' => false,
                     'images' => $cleanedImages,
                     "selling_type"=> $sellingType,
-                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                     'price' => (float) ($firstSupplier->price ?? 0),
                     "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
                     "original_price"=> (float) ($firstSupplier->price ?? 0),
