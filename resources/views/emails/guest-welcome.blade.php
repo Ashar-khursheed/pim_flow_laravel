@@ -44,19 +44,19 @@
 
 			<!-- Greeting -->
 			<p style="font-size:16px; color:#000000; margin: 0 0 10px; font-family: 'Poppins', sans-serif; ">
-				Hi <strong style="color:#00a651;">{{ $name }}</strong>!
+				Hi <strong style="color:#186737;">{{ $name }}</strong>!
 			</p>
 
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
 				Starting or running a restaurant isn’t just business, it’s a dream. At HorecaStore, we’re here to help turn that
 			</p>
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
-				Your Default password is:<strong style="color:#00a651;"> {{ $randomPassword }} </strong>
+				Your Default password is:<strong style="color:#186737;"> {{ $randomPassword }} </strong>
 			</p>
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
 				If you want to change your password click the button below.
 				<br />
-				<a href="{{ $resetPasswordUrl}}" style="background-color:#26683A;  color:#ffffff; margin-top: 20px; padding:10px 10px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">
+				<a href="{{ $resetPasswordUrl}}" style="background-color:#186737;  color:#ffffff; margin-top: 20px; padding:10px 10px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">
 					Reset Password
 				</a>
 			</p>
@@ -91,7 +91,7 @@
 
 			<!-- CTA Button -->
 			<div style="margin-bottom:20px; font-family: 'Poppins', sans-serif; ">
-				<a href="{{ $websiteUrl }}" style="background-color:#26683A; color:#ffffff; padding:12px 24px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">Browse Products</a>
+				<a href="{{ $websiteUrl }}" style="background-color:#186737; color:#ffffff; padding:12px 24px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">Browse Products</a>
 			</div>
 
 			<!-- Final Message -->
@@ -101,7 +101,7 @@
 			<p style="font-size:14px; color:#333333; margin:0 0 10px; font-family: 'Poppins', sans-serif; ">
 				<strong>Save More, with Zero Stress.</strong>
 			</p>
-			<p style="font-size:14px; color:#26683A; font-weight:bold; margin:0 0 20px; font-family: 'Poppins', sans-serif; ">
+			<p style="font-size:14px; color:#186737; font-weight:bold; margin:0 0 20px; font-family: 'Poppins', sans-serif; ">
 				– Team HorecaStore
 			</p>
 
