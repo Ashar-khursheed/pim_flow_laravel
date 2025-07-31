@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8" />
-	<title>HORECA Email</title>
+	<title>HorecaStore Email</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 	<style>
@@ -25,7 +25,7 @@
 				<table border="0" cellpadding="0" cellspacing="0" width="600" style="border: 1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td align="left" style="padding: 20px; font-family: 'Noto Sans', sans-serif;">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120" style="display: block;" />
+							<img src="{{ $logoUrl }}" alt="Logo" width="120" style="display: block;" />
 						</td>
 					</tr>
 
@@ -78,7 +78,7 @@
 										@if($siteName == 'UAE')
 										<span style="color:#8B4513; font-family: 'Noto Sans', sans-serif;">800</span> <span style="color:#26683A; font-family: 'Noto Sans', sans-serif;">- HORECA (467-322)</span>
 										@elseif($siteName == 'USA')
-										<a href="tel:18664467322">1-866-4- HORECA (1-866-446-7322)</a>	
+										<a href="tel:18664467322">1-866-4- HORECA (1-866-446-7322)</a>
 										@else
 										{!! $siteTollFreeContact !!}
 										@endif
@@ -107,7 +107,7 @@
 				<table border="0" cellpadding="0" cellspacing="0" width="600" style="border-top: 2px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td align="left" style="padding: 20px; font-size: 12px; color:#3F3F3F; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0;font-size:12px; font-family: 'Noto Sans', sans-serif;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.</p>
+							<p style="margin: 0;font-size:12px; font-family: 'Noto Sans', sans-serif;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.</p>
 							<p style="margin: 8px 0 0; font-size:12px; font-family: 'Noto Sans', sans-serif;">This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
 						</td>
 					</tr>

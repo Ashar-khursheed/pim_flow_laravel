@@ -43,7 +43,7 @@
 							<table width="100%" border="0" cellspacing="0" cellpadding="0" style="font-family: 'Noto Sans', sans-serif;">
 								<tr>
 									<td style="padding-bottom:20px; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-										<img src="{{ $logoUrl }}" alt="HORECA Logo" style="width:120px;">
+										<img src="{{ $logoUrl }}" alt="Logo" style="width:120px;">
 									</td>
 								</tr>
 								<tr>
@@ -206,7 +206,7 @@
 					<tr>
 						<td style="font-family: 'Noto Sans', sans-serif; font-size:12px; color:#3F3F3F; background-color: rgba(226, 232, 240, 0.3); padding:20px; border-top:2px solid #E2E8F0; line-height:18px;">
 							<p style="margin:0; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
-								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
+								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<p style="margin:8px 0 0; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
 								This message was sent from a notification-only email address that cannot receive incoming messages. Please do not reply to this email.

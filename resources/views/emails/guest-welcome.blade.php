@@ -39,7 +39,7 @@
 
 			<!-- Logo -->
 			<div style="margin-bottom:20px;">
-				<img src="{{ $logoUrl }}" alt="HORECA Logo" style="width: 120px;" />
+				<img src="{{ $logoUrl }}" alt="Logo" style="width: 120px;" />
 			</div>
 
 			<!-- Greeting -->
@@ -48,7 +48,7 @@
 			</p>
 
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
-				Starting or running a restaurant isn’t just business, it’s a dream. At HORECA, we’re here to help turn that
+				Starting or running a restaurant isn’t just business, it’s a dream. At HorecaStore, we’re here to help turn that
 			</p>
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
 				Your Default password is:<strong style="color:#00a651;"> {{ $randomPassword }} </strong>
@@ -108,7 +108,7 @@
 			<!-- Footer -->
 			<div class="footer-note" style=" font-family: 'Poppins', sans-serif; border-top:1px solid #ccc; margin-top:30px; padding-top:15px; font-size:12px; color:#777;">
 				<p style="margin:0; font-family: 'Poppins', sans-serif; ">
-					©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
+					©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 				</p>
 				<p style="margin:8px 0 0; font-family: 'Poppins', sans-serif; ">
 					This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at

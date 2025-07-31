@@ -34,7 +34,7 @@
 				<table class="container" width="650" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border: 1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td style="padding: 20px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120" style="display: block; margin-bottom: 20px;">
+							<img src="{{ $logoUrl }}" alt="Logo" width="120" style="display: block; margin-bottom: 20px;">
 							<p style="font-size: 16px;color: black;font-family: 'Noto Sans', sans-serif;line-height: 24px; margin: 5px  0 ;padding: 0;">
 								Hello <strong style="color: #26683A; font-family: 'Noto Sans', sans-serif; line-height: 24px;">{{ $name }}</strong>!
 							</p>
@@ -129,7 +129,7 @@
 						<td style="font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
 							<p style="margin: 0; font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">
 								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com,
-								and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
+								and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<br/>
 							<p style="margin: 0; font-family: 'Noto Sans', sans-serif; font-size: 12px; line-height: 18px;">

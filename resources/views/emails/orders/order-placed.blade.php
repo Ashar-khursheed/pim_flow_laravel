@@ -41,7 +41,7 @@
 				<table class="container" width="650" cellspacing="0" cellpadding="10" border="0" style="background:#ffffff; border:1px solid #eaeaea; font-family: 'Noto Sans',  sans-serif;">
 					<tr>
 						<td align="left">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120">
+							<img src="{{ $logoUrl }}" alt="Logo" width="120">
 						</td>
 					</tr>
 
@@ -258,7 +258,7 @@
 						<td>
 							<p style="font-size: 12px;  font-family: 'Noto Sans',  sans-serif">
 								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are
-								trademarks of Horeca Store LLC or its affiliates.
+								trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<p style="font-size: 12px; font-family: 'Noto Sans',  sans-serif">
 								This message was sent from a notification-only address. Please do not reply directly to this email. For support or
