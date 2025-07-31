@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\Orders\OrderPlacedNotification;
-use App\Notifications\Orders\OrderConfirmationMail;
+use App\Notifications\Orders\OrderConfirmationNotification;
 use App\Notifications\Orders\OutForDeliveryMail;
 use App\Notifications\Orders\OrderDeliveredMail;
 use App\Notifications\Orders\PartialOrderCancelledMail;
@@ -750,7 +750,7 @@ class OrderController extends Controller
 
 		$customer = $order->customer;
 		if ($request->status == 'Confirmed') {
-			$customer->notify(new OrderConfirmationMail($order));
+			$customer->notify(new OrderConfirmationNotification($order->id));
 		}
 
 		if ($request->status == 'Out for delivery') {

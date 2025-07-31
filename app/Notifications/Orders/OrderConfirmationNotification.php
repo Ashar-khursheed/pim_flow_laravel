@@ -7,15 +7,15 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class OrderConfirmationMail extends Notification implements ShouldQueue
+class OrderConfirmationNotification extends Notification implements ShouldQueue
 {
 	use Queueable;
 
-	public $order;
+	public $orderId;
 
-	public function __construct($order)
+	public function __construct($order_id)
 	{
-		$this->order = $order;
+		$this->orderId = $order_id;
 	}
 
 	/**
@@ -33,10 +33,12 @@ class OrderConfirmationMail extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
+		$order = Order::find($this->orderId);
+
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
-		$orderNumber = $this->order->order_number;
+		$orderNumber = $order->order_number;
 
 		$rightPngURL = $backendURL. '/right.png';
 
