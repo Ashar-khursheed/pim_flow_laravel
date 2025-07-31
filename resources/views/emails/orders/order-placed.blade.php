@@ -105,7 +105,7 @@
 													:
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: bold; line-height:22px; color:black; font-size: 14px;">
-													{{ $currency }} {{ $total }}
+													{{ $currency }} {{ number_format($total, 2, '.', ',') }}
 												</td>
 											</tr>
 											<tr>
