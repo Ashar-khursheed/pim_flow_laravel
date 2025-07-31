@@ -48,7 +48,7 @@
 			</p>
 
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
-				Starting or running a restaurant isn’t just business, it’s a dream. At HorecaStore, we’re here to help turn that
+				Starting or running a restaurant isn’t just business, it’s a dream. At HorecaStore, we’re here to help turn that dream into reality.
 			</p>
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
 				Your Default password is:<strong style="color:#186737;"> {{ $randomPassword }} </strong>
