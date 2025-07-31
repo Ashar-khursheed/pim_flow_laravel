@@ -39,7 +39,7 @@
 
 			<!-- Greeting -->
 			<p style="font-size:16px; color:#000000; margin: 0 0 10px; font-family: 'Poppins', sans-serif; ">
-				Hi <strong style="color:#00a651;">{{ $name }}</strong>!
+				Hi <strong style="color:#186737;">{{ $name }}</strong>!
 			</p>
 
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
@@ -76,7 +76,7 @@
 
 			<!-- CTA Button -->
 			<div style="margin-bottom:20px; font-family: 'Poppins', sans-serif; ">
-				<a href="{{ $websiteUrl }}" style="background-color:#26683A; color:#ffffff; padding:12px 24px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">Browse Products</a>
+				<a href="{{ $websiteUrl }}" style="background-color:#186737; color:#ffffff; padding:12px 24px; text-decoration:none; font-size:14px; border-radius:5px; display:inline-block;">Browse Products</a>
 			</div>
 
 			<!-- Final Message -->
@@ -86,7 +86,7 @@
 			<p style="font-size:14px; color:#333333; margin:0 0 10px; font-family: 'Poppins', sans-serif; ">
 				<strong>Save More, with Zero Stress.</strong>
 			</p>
-			<p style="font-size:14px; color:#26683A; font-weight:bold; margin:0 0 20px; font-family: 'Poppins', sans-serif; ">
+			<p style="font-size:14px; color:#186737; font-weight:bold; margin:0 0 20px; font-family: 'Poppins', sans-serif; ">
 				– Team HorecaStore
 			</p>
 
