@@ -34,7 +34,7 @@
 
 			<!-- Logo -->
 			<div style="margin-bottom:20px;">
-                <img src="{{ $logoUrl }}" alt="HORECA Logo" style="width: 120px;" />
+				<img src="{{ $logoUrl }}" alt="Logo" style="width: 120px;" />
 			</div>
 
 			<!-- Greeting -->
@@ -43,13 +43,13 @@
 			</p>
 
 			<p style="font-size:15px; color:#000000; margin: 0 0 20px; font-family: 'Poppins', sans-serif; ">
-				Starting or running a restaurant isn’t just business, it’s a dream. At HORECA, we’re here to help turn that
-				dream into reality.
+				Starting or running a restaurant isn’t just business, it’s a dream. At HorecaStore, we’re here to help turn that dream into reality.
 			</p>
 
 			<!-- Value Points -->
 			<p style="font-size:15px; font-weight:bold; margin:0 0 10px; font-family: 'Poppins', sans-serif; ">
-			Here’s what you can count on from us:</p>
+				Here’s what you can count on from us:
+			</p>
 
 			<div style=" margin: 0 0 20px; font-size:14px; color:#000000; font-family: 'Poppins', sans-serif; ">
 				<p style="color:green; font-family: 'Poppins', sans-serif; ">
@@ -59,7 +59,7 @@
 					✔ <strong style="color:#000000;">No Hidden Fees</strong>
 				</p>
 				<p style="color:green; font-family: 'Poppins', sans-serif; ">
-					✔ <strong style="color:#000000;">Middle East Longest Warranty On Equipment & Supppes</strong>
+					✔ <strong style="color:#000000;">{{ $regionName }} Longest Warranty on Equipment & Supplies</strong>
 				</p>
 				<p style="color:green; font-family: 'Poppins', sans-serif; ">
 					✔ <strong style="color:#000000;">Real Support From People Who Care</strong>
@@ -87,13 +87,20 @@
 				<strong>Save More, with Zero Stress.</strong>
 			</p>
 			<p style="font-size:14px; color:#26683A; font-weight:bold; margin:0 0 20px; font-family: 'Poppins', sans-serif; ">
-				– Team Horeca
+				– Team HorecaStore
 			</p>
 
 			<!-- Footer -->
 			<div class="footer-note" style=" font-family: 'Poppins', sans-serif; border-top:1px solid #ccc; margin-top:30px; padding-top:15px; font-size:12px; color:#777;">
-				<p style="margin:0; font-family: 'Poppins', sans-serif; ">©2025 HorecaStore.ae. All rights reserved. HorecaStore.ae and the HorecaStore logo are trademarks of Horeca Store LLC or its affiliates.</p>
-				<p style="margin:8px 0 0; font-family: 'Poppins', sans-serif; ">This message was sent from a notification-only email address. Please do not reply to this email.</p>
+				<p style="margin:0; font-family: 'Poppins', sans-serif; ">
+					©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
+				</p>
+				<p style="margin:8px 0 0; font-family: 'Poppins', sans-serif; ">
+					This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at
+					<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
+						{{ $siteEmail }}
+					</a>.
+				</p>
 			</div>
 		</div>
 	</div>

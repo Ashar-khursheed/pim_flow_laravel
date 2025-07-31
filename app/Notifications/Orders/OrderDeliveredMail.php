@@ -49,7 +49,7 @@ class OrderDeliveredMail extends Notification implements ShouldQueue
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = number_format($orderProduct->amount, 2, '.', ',');
+				$product->total = $orderProduct->amount;
 				$products->push($product);
 			}
 		}

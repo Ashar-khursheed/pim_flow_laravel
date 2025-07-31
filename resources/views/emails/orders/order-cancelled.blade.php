@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<title>Order Cancellation - HORECA</title>
+	<title>Order Cancellation - HorecaStore</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		@media only screen and (max-width: 580px) {
@@ -27,7 +27,7 @@
 				<table role="presentation" class="wrapper" width="650" cellspacing="0" cellpadding="0" border="0" style="border:1px solid #eaeaea; padding:20px; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td align="left" style="padding-bottom: 20px; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120">
+							<img src="{{ $logoUrl }}" alt="Logo" width="120">
 						</td>
 					</tr>
 
@@ -117,10 +117,10 @@
 								We strive to ship all orders promptly. However, in rare cases, delays or cancellations may occur. We appreciate your understanding and patience.
 							</p>
 							<p style="margin:5px 0; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
-								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
+								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<p style="margin:8px 0 0; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
-								This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at
+								This message was sent from a notification-only email address. Please do not reply directly to this email. For support or inquiries, contact us at
 								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
 									{{ $siteEmail }}
 								</a>.
