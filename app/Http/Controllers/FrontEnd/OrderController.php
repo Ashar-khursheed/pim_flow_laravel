@@ -284,9 +284,10 @@ class OrderController extends BaseController
 				'description' => 'Order has been successfully created',
 			]);
 
-			auth()->user()->notify(new OrderPlacedMail($order));
+			
 
 			DB::commit();
+			auth()->user()->notify(new OrderPlacedMail($order));
 
 			/* Load relationships */
 			$order->load([
