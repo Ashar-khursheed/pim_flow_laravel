@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Notifications\Orders\OrderPlacedMail;
 use App\Notifications\Orders\OrderCancelledMail;
+use App\Notifications\Orders\MyOrderPlacedMail;
 
 class OrderController extends BaseController
 {
@@ -284,10 +285,9 @@ class OrderController extends BaseController
 				'description' => 'Order has been successfully created',
 			]);
 
-			
-
 			DB::commit();
-			auth()->user()->notify(new OrderPlacedMail($order));
+
+			auth()->user()->notify(new MyOrderPlacedMail($order));
 
 			/* Load relationships */
 			$order->load([
