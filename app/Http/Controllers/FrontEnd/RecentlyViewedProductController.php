@@ -170,11 +170,11 @@ class RecentlyViewedProductController extends Controller
                 'data' => $recentlyViewed->map(function ($viewed) use ($wishlistIds) {
                     $product = $viewed->product;
 
-            
-                    // Check if the product is null
-                    if (!$product) {
-                        return null; // Or handle it as needed (e.g., skip this entry, log it, etc.)
+                    // ✅ Skip null or unpublished products
+                    if (!$product || $product->status !== 'published') {
+                        return null;
                     }
+
                     $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
                     $cleanedImages = collect($imageArray)->map(function ($item) {
                         if (is_string($item) && str_starts_with($item, '[')) {
@@ -293,8 +293,9 @@ class RecentlyViewedProductController extends Controller
         $productId = $request->input('product_id');
         $guestToken = $request->input('guest_token');
 
-        if (!$productId || !Product::find($productId)) {
-            return response()->json(['message' => 'Invalid product ID.'], 400);
+       $product = Product::where('id', $productId)->where('status', 'published')->first();
+        if (!$product) {
+            return response()->json(['message' => 'Invalid or unpublished product.'], 400);
         }
 
         // If token not provided, create one
