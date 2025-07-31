@@ -152,12 +152,16 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			'siteUrl' => $siteUrl,
 			'siteEmail' => $siteEmail,
 		];
+		$htmlContent = view('emails.orders.order-placed', $params)->render();
+		\Log::info('Rendered Order Email HTML', [
+			'order_id' => $this->order->id,
+			'html' => $htmlContent,
+		]);
 
 		return (new MailMessage)
 		->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
 		->markdown('emails.orders.order-placed', $params);
-		$htmlContent = view('emails.orders.order-placed', $params)->render();
-		\Log::info('Rendered Order Email HTML', ['order_id' => $this->order->id, 'html' => $htmlContent]);
+		
 
 	}
 
