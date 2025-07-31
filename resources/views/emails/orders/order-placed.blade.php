@@ -12,12 +12,12 @@
 				padding: 20px !important;
 			}
 
-			.product-table th,
+			{{-- .product-table th,
 			.product-table td {
 				display: block;
 				width: 100% !important;
 				text-align: left !important;
-			}
+			} --}}
 
 			.order-button {
 				display: block;
