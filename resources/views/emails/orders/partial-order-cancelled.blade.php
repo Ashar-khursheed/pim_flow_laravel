@@ -90,7 +90,7 @@
 										:
 									</td>
 									<td style="font-weight:500; font-size:14px; font-family: 'Noto Sans', sans-serif; line-height:18px;">
-										{{ $currency }} {{ $paidAmount }}
+										{{ $currency }} {{ number_format($paidAmount, 2, '.', ',') }}
 									</td>
 								</tr>
 								<tr>
