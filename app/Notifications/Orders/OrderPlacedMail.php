@@ -74,9 +74,10 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				/* Original Price (before discount) */
 				$originalPrice = $supplierPrice > 0 ? $supplierPrice : $unitPrice;
 
+
 				// ✅ Ensure all numeric values are safely converted
 				$product->priceBeforeDiscount = $this->toNumeric($originalPrice);
-				$product->unitPrice = $this->toNumeric($unitPrice);
+				$product->unitPrice = $unitPrice;
 
 
 				/* FIXED: Safe discount calculation with proper validation */
@@ -91,8 +92,9 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 					$product->discount = 0;
 				}
 
-				$product->quantity = (int) ($orderProduct->quantity ?? 0);
-				$product->total = $this->toNumeric($orderProduct->amount ?? $unitPrice * $product->quantity);
+				$product->quantity = (int) ($orderProduct->qty ?? 1);
+				$product->total = $this->toNumeric($orderProduct->amount ?? ($unitPrice * $product->quantity));
+
 
 
 				$products->push($product);
