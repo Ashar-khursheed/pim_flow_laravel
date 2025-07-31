@@ -12,6 +12,7 @@ use App\Models\FrontEnd\Order;
 class OrderPlacedNotification extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
 	public $orderId;
 

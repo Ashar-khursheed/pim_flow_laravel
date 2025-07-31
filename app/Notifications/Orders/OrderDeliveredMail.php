@@ -10,6 +10,7 @@ use Illuminate\Notifications\Notification;
 class OrderDeliveredMail extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
 	public $order;
 

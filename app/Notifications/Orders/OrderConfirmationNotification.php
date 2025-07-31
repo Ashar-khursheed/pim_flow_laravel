@@ -11,6 +11,7 @@ use App\Models\FrontEnd\Order;
 class OrderConfirmationNotification extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
 	public $orderId;
 
