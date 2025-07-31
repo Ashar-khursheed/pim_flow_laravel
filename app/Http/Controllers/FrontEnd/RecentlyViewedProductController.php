@@ -201,7 +201,7 @@ class RecentlyViewedProductController extends Controller
 
             
                     return [
-                        'product_id' => $product->id,
+                        'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
                         'total_reviews' => $product->reviews->count(),
@@ -433,7 +433,7 @@ class RecentlyViewedProductController extends Controller
 
 
                 $data[] = [
-                    'product_id' => $product->id,
+                    'id' => $product->id,
                     'name' => $product->name,
                     'sku' => $product->sku,
                     'total_reviews' => $product->reviews->count(),
