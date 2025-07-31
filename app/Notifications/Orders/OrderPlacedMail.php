@@ -70,12 +70,14 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				/* FIXED: Safe numeric conversion and validation */
 				$supplierPrice = $this->toNumeric($productSupplierDetail->price ?? 0);
 				$unitPrice = $this->toNumeric($orderProduct->unit_price ?? 0);
-				
+
 				/* Original Price (before discount) */
 				$originalPrice = $supplierPrice > 0 ? $supplierPrice : $unitPrice;
 
-				$product->priceBeforeDiscount = $originalPrice;
-				$product->unitPrice = $unitPrice;
+				// ✅ Ensure all numeric values are safely converted
+				$product->priceBeforeDiscount = $this->toNumeric($originalPrice);
+				$product->unitPrice = $this->toNumeric($unitPrice);
+
 
 				/* FIXED: Safe discount calculation with proper validation */
 				if (
@@ -90,7 +92,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				}
 
 				$product->quantity = (int) ($orderProduct->quantity ?? 0);
-				$product->total = $this->toNumeric($orderProduct->amount ?? 0);
+				$product->total = $this->toNumeric($orderProduct->amount ?? $unitPrice * $product->quantity);
+
 
 				$products->push($product);
 			}
