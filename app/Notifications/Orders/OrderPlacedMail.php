@@ -67,45 +67,53 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				? getDateRange($this->order->created_at, $productSupplierDetail->delivery_days)
 				: null;
 
+				/* FIXED: Safe numeric conversion and validation */
+				$supplierPrice = $this->toNumeric($productSupplierDetail->price ?? 0);
+				$unitPrice = $this->toNumeric($orderProduct->unit_price ?? 0);
+				
 				/* Original Price (before discount) */
-				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
+				$originalPrice = $supplierPrice > 0 ? $supplierPrice : $unitPrice;
 
 				$product->priceBeforeDiscount = $originalPrice;
-				$product->unitPrice = $orderProduct->unit_price;
+				$product->unitPrice = $unitPrice;
 
+				/* FIXED: Safe discount calculation with proper validation */
 				if (
 					$productSupplierDetail &&
-					$productSupplierDetail->price > $orderProduct->unit_price &&
-					$productSupplierDetail->price > 0 &&
-					$orderProduct->unit_price > 0
+					$supplierPrice > 0 &&
+					$unitPrice > 0 &&
+					$supplierPrice > $unitPrice
 				) {
-					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
-
+					$product->discount = round((($supplierPrice - $unitPrice) / $supplierPrice) * 100, 2);
 				} else {
 					$product->discount = 0;
 				}
 
-				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = $orderProduct->amount;
+				$product->quantity = (int) ($orderProduct->quantity ?? 0);
+				$product->total = $this->toNumeric($orderProduct->amount ?? 0);
 
 				$products->push($product);
 			}
 		}
 
-		/* Total price before discount (raw value) */
+		/* FIXED: Safe calculation for total price before discount */
 		$totalPriceWithoutDiscount = $products->sum(function ($p) {
-			return (float) $p->priceBeforeDiscount * $p->quantity;
+			$price = $this->toNumeric($p->priceBeforeDiscount ?? 0);
+			$quantity = (int) ($p->quantity ?? 0);
+			return $price * $quantity;
 		});
 
-		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($this->order->amount ?? 0));
+		/* FIXED: Safe calculation for total saved */
+		$orderAmount = $this->toNumeric($this->order->amount ?? 0);
+		$totalSaved = max(0, $totalPriceWithoutDiscount - $orderAmount);
 
-		$subTotal = $this->order->amount ?? 0;
-		$shippingCharge = $this->order->shipping_charge ?? 0;
+		/* FIXED: Safe numeric conversions for all order amounts */
+		$subTotal = $this->toNumeric($this->order->amount ?? 0);
+		$shippingCharge = $this->toNumeric($this->order->shipping_charge ?? 0);
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
-		$taxPercent = $this->order->tax_percentage;
-		$taxAmount = $this->order->tax_amount ?? 0;
-		$total = $this->order->total_amount ?? 0;
+		$taxPercent = $this->toNumeric($this->order->tax_percentage ?? 0);
+		$taxAmount = $this->toNumeric($this->order->tax_amount ?? 0);
+		$total = $this->toNumeric($this->order->total_amount ?? 0);
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
@@ -118,7 +126,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			'orderNumber' => $orderNumber,
 			'orderDate' => $orderDate,
 			'currency' => $currency,
-			'paidAmount' => $paidAmount,
+			'paidAmount' => $this->toNumeric($paidAmount),
 			'paymentMethod' => $paymentMethod,
 
 			'address' => $address,
@@ -145,6 +153,35 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 		->markdown('emails.orders.order-placed', $params);
 	}
 
+	/**
+	 * ADDED: Helper method to safely convert values to numeric
+	 */
+	private function toNumeric($value)
+	{
+		if (is_null($value) || $value === '' || $value === false) {
+			return 0;
+		}
+		
+		if (is_numeric($value)) {
+			return (float) $value;
+		}
+		
+		// Try to extract numeric value from string
+		$cleaned = preg_replace('/[^0-9.-]/', '', (string) $value);
+		
+		if (is_numeric($cleaned)) {
+			return (float) $cleaned;
+		}
+		
+		// Log problematic values for debugging
+		\Log::warning("Non-numeric value encountered in OrderPlacedMail", [
+			'original_value' => $value,
+			'type' => gettype($value),
+			'order_id' => $this->order->id ?? 'unknown'
+		]);
+		
+		return 0;
+	}
 
 	/**
 	 * Get the array representation of the notification.
