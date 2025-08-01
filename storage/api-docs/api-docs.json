@@ -1632,6 +1632,24 @@
                 }
             }
         },
+        "/api/auth/send-customers-reset-link": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Send password reset links to all customers",
+                "description": "Generates and emails password reset links to all registered customers.",
+                "operationId": "4a9da8909593fa99cd8734b396bb62fe",
+                "responses": {
+                    "200": {
+                        "description": "Reset link sent",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/blog-categories": {
             "get": {
                 "tags": [
