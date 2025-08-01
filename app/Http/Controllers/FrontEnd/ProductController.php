@@ -590,27 +590,16 @@ class ProductController extends Controller
 
             //     $query->where('id', $productId);
             // }
-              if ($productInput) {
+             if ($productInput) {
                     if (is_numeric($productInput)) {
-                        $productId = (int) $productInput;
+                        $query->where('id', (int) $productInput);
                     } else {
-                        $product = Product::with('seoUrl')
-                            ->whereHas('seoUrl', function ($q) use ($productInput) {
-                                $q->where('url', $productInput);
-                            })->first();
-
-                        if (!$product) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => 'Product not found by slug',
-                            ], 404);
-                        }
-
-                        $productId = $product->id;
+                        $query->whereHas('seoUrl', function ($q) use ($productInput) {
+                            $q->where('url', $productInput);
+                        });
                     }
-
-                    $query->where('id', $productId);
                 }
+
 
 
 
