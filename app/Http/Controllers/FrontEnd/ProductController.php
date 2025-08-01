@@ -97,10 +97,28 @@ class ProductController extends Controller
 
                                     
                 // Check if filtering by specific product ID
-                $productId = $request->input('product_id');
-                if ($productId) {
+              // Check if filtering by specific product ID or slug
+                $productInput = $request->input('product_id');
+
+                if ($productInput) {
+                    if (is_numeric($productInput)) {
+                        $productId = (int) $productInput;
+                    } else {
+                        // Look up the product by SEO slug
+                        $product = Product::whereHas('seoUrl', function ($query) use ($productInput) {
+                            $query->where('url', $productInput);
+                        })->first();
+
+                        if (!$product) {
+                            return response()->json(['success' => false, 'message' => 'Product not found'], 404);
+                        }
+
+                        $productId = $product->id;
+                    }
+
                     $query->where('id', $productId);
                 }
+
                 // Apply filters
                 $this->applyFilters($query, $request);
 
@@ -547,10 +565,31 @@ class ProductController extends Controller
 
                 
                 // Check if filtering by specific product ID
-                $productId = $request->input('product_id');
-                if ($productId) {
-                    $query->where('id', $productId);
-                }
+               // Check if filtering by specific product ID or slug
+                    $productInput = $request->input('product_id');
+
+                    if ($productInput) {
+                        if (is_numeric($productInput)) {
+                            $productId = (int) $productInput;
+                        } else {
+                            // Look up the product by SEO slug
+                            $product = Product::whereHas('seoUrl', function ($query) use ($productInput) {
+                                $query->where('url', $productInput);
+                            })->first();
+
+                            if (!$product) {
+                                return response()->json([
+                                    'success' => false,
+                                    'message' => 'Product not found',
+                                ], 404);
+                            }
+
+                            $productId = $product->id;
+                        }
+
+                        $query->where('id', $productId);
+                    }
+
                 $this->applyFilters($query, $request);
 
                 // Log query for debugging
