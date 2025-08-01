@@ -963,7 +963,7 @@ class ProductController extends Controller
             ->limit(20)
             ->with([
                 'reviews:id,product_id,star',
-                'currency' ,   'productSuppliers'    ])
+                'currency' ,   'productSuppliers'  ,'seoUrl'  ])
             ->get();
 
         $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
@@ -1007,6 +1007,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $cleanedImages,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1122,7 +1123,7 @@ class ProductController extends Controller
         // Get paginated products with relationships
         $products = $brand->products()
             ->where('status', 'published')
-            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers' ,'seoUrl' ])
             ->paginate($perPage);
 
         // Transform each product
@@ -1156,6 +1157,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1277,7 +1279,7 @@ class ProductController extends Controller
             ->where('status', 'published')
             ->whereNotNull('sale_price')
             ->where('sale_price', '>', 0)
-            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers' ,'seoUrl' ])
             ->paginate($perPage);
 
         $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
@@ -1300,6 +1302,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1496,7 +1499,8 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
 
-        $products = Product::where('status', 'published') // only published products
+      $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'per_unit_price_attributes.attributeDetails', 'seoUrl']) // add seoUrl here
+    ->where('status', 'published')
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
         })
@@ -1557,6 +1561,7 @@ class ProductController extends Controller
                 "id" => $product->id,
                 "name" => $product->name,
                 "sku" => $product->sku,
+                "url" => $product->seoUrl->url ?? null,
                 "total_reviews" => $product->reviews->count(),
                 "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                 "left_stock" => $product->left_stock ?? 0,
@@ -1668,7 +1673,9 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-        $products = Product::where('status', 'published') // only published products
+       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'per_unit_price_attributes.attributeDetails', 'seoUrl']) // add seoUrl here
+    ->where('status', 'published')
+
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
         })
@@ -1750,7 +1757,7 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-
+                "url" => $product->seoUrl->url ?? null,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,
