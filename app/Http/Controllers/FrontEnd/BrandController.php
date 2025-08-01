@@ -289,6 +289,7 @@ class BrandController extends Controller
                         'reviews:id,product_id,star',
                         'currency:id,symbol',
                         'productSuppliers',
+                         'seoUrl'
                     ]);
             }])
             ->orderBy('created_at', 'desc')
@@ -353,6 +354,7 @@ class BrandController extends Controller
                             "id" => $product->id,
                             "name" => $product->name,
                             "sku" => $product->sku,
+                            'url' => $details->seoUrl->url ?? null,
                             "total_reviews" => $product->reviews->count(),
                             "avg_rating" => $product->reviews->avg('star'),
                             "left_stock" => $product->left_stock ?? 0,
@@ -982,6 +984,7 @@ class BrandController extends Controller
                      'reviews:id,product_id,star',
                      'currency',
                      'productSuppliers'
+                     , 'seoUrl'
                  ])
                  ->get()
                  ->keyBy('id');
@@ -1033,6 +1036,7 @@ class BrandController extends Controller
                      'id' => $product->id,
                      'name' => $product->name,
                      'sku' => $product->sku,
+                     'url' => $details->seoUrl->url ?? null,
                      'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                      'price' => $firstSupplier ? (float) $firstSupplier->price : null,
                      'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,

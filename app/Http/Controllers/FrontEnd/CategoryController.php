@@ -798,7 +798,7 @@ class CategoryController extends Controller
 		// Fetching products based on filters
 		$products = Product::whereIn('id', $filteredProductIds)
 			->where('status', 'published')
-			->with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
+			->with(['currency', 'reviews', 'productSuppliers', 'brand', 'seoUrl', 'productAttributes' => function ($query) {
 				$query->whereHas('attributeDetails', function ($q) {
 					$q->whereIn('name', ['Units per Case', 'Pack Type']);
 				});
@@ -925,6 +925,7 @@ class CategoryController extends Controller
 				'id' => $product->id,
 				'name' => $product->name,
 				'images' => $cleanedImages,
+				'url' => $product->seoUrl->url ?? null,
 				'video_url' => $product->video_url,
 				'video_path' => is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []),
 				'sku' => $product->sku,

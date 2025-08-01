@@ -202,7 +202,7 @@ class ProductYouMayLikeController extends Controller
             // Load additional relationships for paginated products
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
+                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers', 'seoUrl'])
                 ->get()
                 ->keyBy('id');
 
@@ -253,6 +253,7 @@ class ProductYouMayLikeController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $details->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -550,7 +551,7 @@ class ProductYouMayLikeController extends Controller
     
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers' , 'seoUrl'])
                 ->get()
                 ->keyBy('id');
     
@@ -588,6 +589,7 @@ class ProductYouMayLikeController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'images' => $images,
+                    'url' => $details->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,

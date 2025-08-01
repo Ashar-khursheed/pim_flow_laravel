@@ -138,6 +138,7 @@ class ProductController extends Controller
                     'currency',
                     'categories',
                     'productSuppliers',
+                     'seoUrl',
                     'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -1736,7 +1737,7 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-
+                'url' => $details->seoUrl->url ?? null,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,

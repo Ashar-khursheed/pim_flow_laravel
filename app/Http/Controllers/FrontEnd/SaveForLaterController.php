@@ -194,6 +194,7 @@ class SaveForLaterController extends Controller
 				'product.currency',
 				'product.sellingUnitAttribute',
 				'product.productSuppliers',
+				'seoUrl'
 			])
 			->get();
 	
@@ -261,6 +262,7 @@ class SaveForLaterController extends Controller
 				'id' => $product->id,
 				'name' => $product->name,
 				'sku' => $product->sku,
+				'url' => $product->seoUrl->url ?? null,
 				'total_reviews' => $totalReviews,
 				'avg_rating' => $avgRating,
 				'left_stock' => ($product->quantity ?? 0) - ($product->units_sold ?? 0),

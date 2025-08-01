@@ -50,7 +50,7 @@ class DiffProductController extends Controller
             }
     
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $difProductIds)
                 ->get()
@@ -86,6 +86,7 @@ class DiffProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $details->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -169,7 +170,7 @@ class DiffProductController extends Controller
             }
     
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $difProductIds)
                 ->get()
@@ -205,6 +206,7 @@ class DiffProductController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $details->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,

@@ -150,7 +150,8 @@ class RecentlyViewedProductController extends Controller
                 'product.reviews',
                 'product.currency',
                 'product.sellingUnitAttribute',
-                'product.productAttributes.attributeDetails'
+                'product.productAttributes.attributeDetails',
+                'product.seoUrl',
             ])
                 ->where('customer_id', $userId)
                 ->latest()
@@ -204,6 +205,7 @@ class RecentlyViewedProductController extends Controller
                         'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
+                        'url' => $details->seoUrl->url ?? null,
                         'total_reviews' => $product->reviews->count(),
                         'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                         'left_stock' => $product->left_stock ?? 0,
@@ -396,7 +398,7 @@ class RecentlyViewedProductController extends Controller
 
       private function getGuestRecentlyViewedData(string $guestToken): array
         {
-            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers')
+            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers', 'seoUrl')
                 ->where('guest_token', $guestToken)
                 ->latest()
                 ->get();
@@ -436,6 +438,7 @@ class RecentlyViewedProductController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'sku' => $product->sku,
+                    'url' => $details->seoUrl->url ?? null,
                     'total_reviews' => $product->reviews->count(),
                     'avg_rating' => $product->reviews->avg('star'),
                     'left_stock' => $product->left_stock ?? 0,
