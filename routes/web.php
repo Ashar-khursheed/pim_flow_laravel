@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Http\Controllers\SitemapController;
 
 Route::get('/test-quote-pdf', function () {
 	$quote = \App\Models\FrontEnd\Quote::with([
