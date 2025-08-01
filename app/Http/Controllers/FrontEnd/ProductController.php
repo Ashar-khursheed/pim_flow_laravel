@@ -569,27 +569,27 @@ class ProductController extends Controller
     $productInput = $request->input('id');
 
     if ($productInput) {
-        if (is_numeric($productInput)) {
-            // Filter by product ID
-            $productId = (int) $productInput;
-        } else {
-            // Filter by slug in seo_managment table via seoUrl relation
-            $product = Product::with('seoUrl')->whereHas('seoUrl', function ($q) use ($productInput) {
-                $q->where('url', $productInput); // Make sure this matches your data
-            })->first();
+    if (is_numeric($productInput)) {
+        $productId = (int) $productInput;
+    } else {
+        // Find product by slug (url) only — no relational_type
+        $product = Product::with('seoUrl')->whereHas('seoUrl', function ($query) use ($productInput) {
+            $query->where('url', $productInput);
+        })->first();
 
-            if (!$product) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product not found by slug',
-                ], 404);
-            }
-
-            $productId = $product->id;
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found by slug',
+            ], 404);
         }
 
-        $query->where('id', $productId);
+        $productId = $product->id;
     }
+
+    $query->where('id', $productId);
+}
+
 
                 $this->applyFilters($query, $request);
 
