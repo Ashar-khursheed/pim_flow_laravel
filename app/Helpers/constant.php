@@ -497,8 +497,10 @@ function getBase64Image($url)
 if (!function_exists('glitch_error_reporting_mails')) {
 	function glitch_error_reporting_mails() {
 		$mails = [
+			'nomanpeera@horecastore.ae',
+			'nomanpeera@gmail.com',
 			'aksitbhardwaj@gmail.com',
-			'AsharKhursheed26@gmail.com'
+			'asharKhursheed26@gmail.com'
 		];
 
 		return $mails;
