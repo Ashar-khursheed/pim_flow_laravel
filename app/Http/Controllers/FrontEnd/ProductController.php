@@ -575,8 +575,7 @@ class ProductController extends Controller
         } else {
             // Filter by slug in seo_managment table via seoUrl relation
             $product = Product::with('seoUrl')->whereHas('seoUrl', function ($q) use ($productInput) {
-                $q->where('url', $productInput)
-                  ->where('relational_type', Product::class); // Make sure this matches your data
+                $q->where('url', $productInput); // Make sure this matches your data
             })->first();
 
             if (!$product) {
