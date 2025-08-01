@@ -13838,6 +13838,92 @@
                 }
             }
         },
+        "/api/frontend/glitch-errors": {
+            "get": {
+                "tags": [
+                    "FrontEnd-GlitchErrors"
+                ],
+                "summary": "Get all glitch errors with pagination and filters",
+                "operationId": "8ab4ce0108a649238c5f519c07b8c6c4",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "FrontEnd-GlitchErrors"
+                ],
+                "summary": "Create a new glitch error",
+                "operationId": "43ff1d79b8eda1fbfdfd50db7654ead0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Page not loading properly."
+                                    },
+                                    "images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/google-reviews": {
             "get": {
                 "tags": [
@@ -32997,6 +33083,10 @@
         {
             "name": "Geolocation",
             "description": "Geolocation"
+        },
+        {
+            "name": "FrontEnd-GlitchErrors",
+            "description": "FrontEnd-GlitchErrors"
         },
         {
             "name": "Google Reviews",
