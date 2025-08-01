@@ -13,7 +13,7 @@ class SquareService
     public function __construct()
     {
         // Simple constructor - just pass the access token and environment as string
-        $environment = env('SQUARE_ENV', 'sandbox'); // 'sandbox' or 'production'
+        $environment = env('SQUARE_ENV', 'production'); // 'sandbox' or 'production'
         $this->client = new SquareClient(env('SQUARE_ACCESS_TOKEN'), $environment);
     }
 
