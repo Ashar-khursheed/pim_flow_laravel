@@ -72,7 +72,6 @@ class GlitchErrorController extends BaseController
 	 *         )
 	 *     ),
 	 *     @OA\Response(response=201, description="Created successfully", @OA\MediaType(mediaType="application/json")),
-	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
 	public function store(Request $request)

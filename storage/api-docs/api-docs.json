@@ -13920,12 +13920,7 @@
                             "application/json": {}
                         }
                     }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
+                }
             }
         },
         "/api/frontend/google-reviews": {
