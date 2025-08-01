@@ -2405,6 +2405,7 @@ class CategoryController extends Controller
 				'reviews',
 				'currency',
 				'productSuppliers',
+				  'seoUrl',
 				'productAttributes' => function ($query) {
 					$query->whereHas('attributeDetails', function ($q) {
 						$q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -2483,6 +2484,7 @@ class CategoryController extends Controller
 						'id' => $details->id,
 						'name' => $details->name,
 						'sku' => $details->sku,
+						'url' => $details->seoUrl->url ?? null,
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 						'price' => $firstSupplier ? (float) $firstSupplier->price : null,
 						'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
@@ -2601,6 +2603,7 @@ class CategoryController extends Controller
 				'currency',
 				'productSuppliers',
 				'vendors',
+				 'seoUrl',
 				'productAttributes' => function ($query) {
 					$query->whereHas('attributeDetails', function ($q) {
 						$q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -2669,6 +2672,7 @@ class CategoryController extends Controller
 						'id' => $details->id,
 						'name' => $details->name,
 						'sku' => $details->sku,
+						'url' => $details->seoUrl->url ?? null,
 						'vendor_sku' => $firstSupplier->vendor_sku ?? null,
 						'price' => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
 						"sale_price" => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : null,

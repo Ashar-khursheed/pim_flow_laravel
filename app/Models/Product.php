@@ -8,7 +8,7 @@ use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Models\Frontend\Wishlist; // Add this at the top of your Product model
 use App\Models\Frontend\ProductQuestion;
-
+use App\Models\SeoManagement;
 /**
  * @OA\Schema(
  *     schema="Product",
@@ -127,6 +127,10 @@ class Product extends Model
 	public function slug()
 	{
 		return $this->hasOne(Slug::class, 'reference_id')->where('prefix', 'products');
+	}
+	public function seoUrl()
+	{
+		return $this->hasOne(SeoManagement::class, 'reference_id', 'id');
 	}
 
 	public function productAttributes()

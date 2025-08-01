@@ -1563,6 +1563,7 @@ class ProductController extends Controller
                 'return_policy' => $firstSupplier->return_policy ?? null,
                 'free_shipping' => $firstSupplier->free_shipping ?? null,
                 'warranty_information' => $firstSupplier->warranty_information ?? null,
+                
             ];
             
         });
