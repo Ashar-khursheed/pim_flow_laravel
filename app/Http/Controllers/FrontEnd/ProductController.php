@@ -556,40 +556,41 @@ class ProductController extends Controller
      *     )
      * )
      */
-    public function getAllPublicProducts(Request $request)
-    {
+  public function getAllPublicProducts(Request $request)
+{
+    $query = Product::with([
+        'categories', 
+        'brand', 
+        'productSuppliers', 
+        'brand.products.reviews', 
+        'seoUrl'  // your relation here
+    ])->where('status', 'published');
 
-              // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,'seoUrl'])
-                    ->where('status', 'published');
+    $productInput = $request->input('id');
 
-                
-                // Check if filtering by specific product ID
-               // Check if filtering by specific product ID or slug
-                   $productInput = $request->input('id');
+    if ($productInput) {
+        if (is_numeric($productInput)) {
+            // Filter by product ID
+            $productId = (int) $productInput;
+        } else {
+            // Filter by slug in seo_managment table via seoUrl relation
+            $product = Product::with('seoUrl')->whereHas('seoUrl', function ($q) use ($productInput) {
+                $q->where('url', $productInput)
+                  ->where('relational_type', Product::class); // Make sure this matches your data
+            })->first();
 
-                    if ($productInput) {
-                    if (is_numeric($productInput)) {
-                        $productId = (int) $productInput;
-                    } else {
-                        // Look up the product by SEO slug
-                        $product = Product::with('seoUrl')->whereHas('seoUrl', function ($query) use ($productInput) {
-                            $query->where('url', $productInput)
-                                ->where('relational_type', Product::class);
-                        })->first();
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found by slug',
+                ], 404);
+            }
 
-                        if (!$product) {
-                            return response()->json([
-                                'success' => false,
-                                'message' => 'Product not found',
-                            ], 404);
-                        }
+            $productId = $product->id;
+        }
 
-                        $productId = $product->id;
-                    }
-
-                    $query->where('id', $productId);
-                }
+        $query->where('id', $productId);
+    }
 
                 $this->applyFilters($query, $request);
 
