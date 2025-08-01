@@ -130,7 +130,7 @@ class Product extends Model
 	}
 	public function seoUrl()
 	{
-		return $this->hasOne(SeoManagement::class, 'reference_id', 'id');
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id');
 	}
 
 	public function productAttributes()
