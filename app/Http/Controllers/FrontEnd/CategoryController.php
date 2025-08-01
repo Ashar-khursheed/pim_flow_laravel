@@ -419,7 +419,7 @@ class CategoryController extends Controller
 	{
 		// Existing validation code
 		$validator = Validator::make($request->all(), [
-			'category_id' => 'required|integer',
+			'category_id' => 'required|string',
 			'filters' => 'nullable|array',
 			'price_min' => 'nullable|numeric|min:0',
 			'price_max' => 'nullable|numeric|min:0',
@@ -434,10 +434,19 @@ class CategoryController extends Controller
 		}
 	
 		$perPage = $request->get('per_page', 10);
-		$category = Category::find($request->category_id);
+		$categoryIdentifier = $request->input('category_id');
+		$category = null;
+
+		if (is_numeric($categoryIdentifier)) {
+			$category = Category::find($categoryIdentifier);
+		} else {
+			$category = Category::where('slug', $categoryIdentifier)->first();
+		}
+
 		if (!$category) {
 			return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
 		}
+
 	
 		// Get products from current category
 		$currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
