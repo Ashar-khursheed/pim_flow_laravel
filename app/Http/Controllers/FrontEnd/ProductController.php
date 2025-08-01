@@ -92,15 +92,20 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
                     ->where('status', 'published');
 
-                                    
-                // Check if filtering by specific product ID
-                $productId = $request->input('product_id');
-                if ($productId) {
-                    $query->where('id', $productId);
-                }
+    
+                 $productId = $request->input('product_id'); // numeric ID
+                            $slug = $request->input('slug');           // string slug
+                        if ($productId) {
+                            $query->where('id', $productId);
+                        } elseif ($slug) {
+                            $query->whereHas('seoUrl', function ($q) use ($slug) {
+                                $q->where('url', $slug);
+                            });
+                        }
+
                 // Apply filters
                 $this->applyFilters($query, $request);
 
