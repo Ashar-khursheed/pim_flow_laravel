@@ -104,20 +104,27 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getByRelationalId($relational_id)
-    {
-        $seoData = SeoManagement::with('seo_secondary_keywords')
-            ->where('relational_id', $relational_id)
-            ->get()
-            ->map(function ($item) {
-                return $this->filterFields($item);
-            });
+  public function getByRelationalId($identifier)
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
-        return response()->json([
-            'status' => true,
-            'data' => $seoData
-        ]);
+    // Check if the identifier looks like a full or partial URL
+    if (filter_var($identifier, FILTER_VALIDATE_URL) || str_contains($identifier, '/')) {
+        $seoQuery->where('url', $identifier);
+    } else {
+        $seoQuery->where('relational_id', $identifier);
     }
+
+    $seoData = $seoQuery->get()->map(function ($item) {
+        return $this->filterFields($item);
+    });
+
+    return response()->json([
+        'status' => true,
+        'data' => $seoData
+    ]);
+}
+
 
     /**
      * @OA\Get(
@@ -156,33 +163,43 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getParagraphData(Request $request, $relational_id)
+public function getParagraphData(Request $request, $identifier)
 {
-    $relationalType = $request->query('relational_type'); // from query param
+    $relationalType = $request->query('relational_type'); // optional filter
 
-    $seoData = SEOManagement::where('relational_id', $relational_id)
-        ->when($relationalType, function ($query, $relationalType) {
-            return $query->where('relational_type', $relationalType);
-        })
-        ->get()
-        ->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'relational_id' => $item->relational_id,
-                'relational_type' => $item->relational_type,
-                'internal_links' => $item->internal_links,
-                'cat_desc' => $item->cat_desc,
-                'paragraph_1' => $item->paragraph_1,
-                'paragraph_2' => $item->paragraph_2,
-                'paragraph_3' => $item->paragraph_3,
-                'paragraph_4' => $item->paragraph_4,
-                'banner_image_file' => $item->banner_image_file,
-                'banner_image_alt_text' => $item->banner_image_alt_text,
-                'popular_tags' => is_string($item->popular_tags)
-                    ? json_decode($item->popular_tags, true)
-                    : ($item->popular_tags ?? []),
-            ];
-        });
+    $seoQuery = SEOManagement::query();
+
+    // Check if identifier is a URL or slug-like path
+    if (filter_var($identifier, FILTER_VALIDATE_URL) || str_contains($identifier, '/')) {
+        $identifier = parse_url($identifier, PHP_URL_PATH); // optional: clean domain
+        $seoQuery->where('url', $identifier);
+    } else {
+        $seoQuery->where('relational_id', $identifier);
+    }
+
+    // Apply optional filter for relational_type
+    if ($relationalType) {
+        $seoQuery->where('relational_type', $relationalType);
+    }
+
+    $seoData = $seoQuery->get()->map(function ($item) {
+        return [
+            'id' => $item->id,
+            'relational_id' => $item->relational_id,
+            'relational_type' => $item->relational_type,
+            'internal_links' => $item->internal_links,
+            'cat_desc' => $item->cat_desc,
+            'paragraph_1' => $item->paragraph_1,
+            'paragraph_2' => $item->paragraph_2,
+            'paragraph_3' => $item->paragraph_3,
+            'paragraph_4' => $item->paragraph_4,
+            'banner_image_file' => $item->banner_image_file,
+            'banner_image_alt_text' => $item->banner_image_alt_text,
+            'popular_tags' => is_string($item->popular_tags)
+                ? json_decode($item->popular_tags, true)
+                : ($item->popular_tags ?? []),
+        ];
+    });
 
     return response()->json([
         'status' => true,
