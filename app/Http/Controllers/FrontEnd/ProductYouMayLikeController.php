@@ -314,231 +314,231 @@ class ProductYouMayLikeController extends Controller
     //     }
     // }
     public function getProductsYouMayLike(Request $request, $product_identifier = null)
-{
-    try {
-        // Get product identifier from route param or request input
-        $productIdentifier = $product_identifier ?? $request->input('product_id') ?? $request->input('slug');
+    {
+        try {
+            // Get product identifier from route param or request input
+            $productIdentifier = $product_identifier ?? $request->input('product_id') ?? $request->input('slug');
 
-        if (!$productIdentifier) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Product ID or slug is required',
-            ], 400);
-        }
-
-        $userId = Auth::id();
-        $isUserLoggedIn = $userId !== null;
-
-        // Determine if identifier is numeric (ID) or string (slug)
-        $isNumeric = is_numeric($productIdentifier);
-        $productId = null;
-
-        if ($isNumeric) {
-            // Direct product ID
-            $productId = (int) $productIdentifier;
-            Log::info('Using product ID directly:', ['product_id' => $productId]);
-        } else {
-            // Convert slug to product ID
-            $product = DB::table('ec_products')
-                ->where('slug', $productIdentifier)
-                ->where('status', 'published')
-                ->first(['id']);
-
-            if (!$product) {
+            if (!$productIdentifier) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product not found with the provided slug',
-                ], 404);
+                    'message' => 'Product ID or slug is required',
+                ], 400);
             }
 
-            $productId = $product->id;
-            Log::info('Converted slug to product ID:', [
-                'slug' => $productIdentifier,
-                'product_id' => $productId
+            $userId = Auth::id();
+            $isUserLoggedIn = $userId !== null;
+
+            // Determine if identifier is numeric (ID) or string (slug)
+            $isNumeric = is_numeric($productIdentifier);
+            $productId = null;
+
+            if ($isNumeric) {
+                // Direct product ID
+                $productId = (int) $productIdentifier;
+                Log::info('Using product ID directly:', ['product_id' => $productId]);
+            } else {
+                // Convert slug to product ID
+                $product = DB::table('ec_products')
+                    ->where('slug', $productIdentifier)
+                    ->where('status', 'published')
+                    ->first(['id']);
+
+                if (!$product) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product not found with the provided slug',
+                    ], 404);
+                }
+
+                $productId = $product->id;
+                Log::info('Converted slug to product ID:', [
+                    'slug' => $productIdentifier,
+                    'product_id' => $productId
+                ]);
+            }
+
+            Log::info('Fetching recommendations for product:', ['product_id' => $productId, 'user_id' => $userId]);
+
+            // Get wishlist product IDs (for logged in user or guest)
+            $wishlistProductIds = $isUserLoggedIn
+                ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
+                : session()->get('guest_wishlist', []);
+
+            // Step 1: Find the main "product_you_may_likes" record for this product
+            $productYouMayLike = DB::table('product_you_may_likes')
+                ->where('product_id', $productId)
+                ->first();
+
+            Log::info('ProductYouMayLike lookup:', [
+                'product_id' => $productId,
+                'found' => $productYouMayLike ? 'yes' : 'no',
+                'record_id' => $productYouMayLike->id ?? null,
             ]);
-        }
 
-        Log::info('Fetching recommendations for product:', ['product_id' => $productId, 'user_id' => $userId]);
+            if (!$productYouMayLike) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No related products found for this product',
+                    'data' => [],
+                    'pagination' => $this->emptyPagination(),
+                ]);
+            }
 
-        // Get wishlist product IDs (for logged in user or guest)
-        $wishlistProductIds = $isUserLoggedIn
-            ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
-            : session()->get('guest_wishlist', []);
+            // Step 2: Fetch all recommended products linked to this "product_you_may_like" record by product_you_may_like_id
+            $relatedProductIds = DB::table('product_you_may_like_items')
+                ->where('product_you_may_like_id', $productYouMayLike->id)
+                ->pluck('product_id')
+                ->toArray();
 
-        // Step 1: Find the main "product_you_may_likes" record for this product
-        $productYouMayLike = DB::table('product_you_may_likes')
-            ->where('product_id', $productId)
-            ->first();
-
-        Log::info('ProductYouMayLike lookup:', [
-            'product_id' => $productId,
-            'found' => $productYouMayLike ? 'yes' : 'no',
-            'record_id' => $productYouMayLike->id ?? null,
-        ]);
-
-        if (!$productYouMayLike) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No related products found for this product',
-                'data' => [],
-                'pagination' => $this->emptyPagination(),
+            Log::info('ProductYouMayLikeItems:', [
+                'product_you_may_like_id' => $productYouMayLike->id,
+                'count' => count($relatedProductIds),
+                'product_ids' => $relatedProductIds,
             ]);
-        }
 
-        // Step 2: Fetch all recommended products linked to this "product_you_may_like" record by product_you_may_like_id
-        $relatedProductIds = DB::table('product_you_may_like_items')
-            ->where('product_you_may_like_id', $productYouMayLike->id)
-            ->pluck('product_id')
-            ->toArray();
+            if (empty($relatedProductIds)) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No recommended products configured',
+                    'data' => [],
+                    'pagination' => $this->emptyPagination(),
+                ]);
+            }
 
-        Log::info('ProductYouMayLikeItems:', [
-            'product_you_may_like_id' => $productYouMayLike->id,
-            'count' => count($relatedProductIds),
-            'product_ids' => $relatedProductIds,
-        ]);
+            // Step 3: Get published products matching recommended IDs
+            $productsQuery = Product::with(['categories', 'brand'])
+                ->where('status', 'published')
+                ->whereIn('id', $relatedProductIds);
 
-        if (empty($relatedProductIds)) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No recommended products configured',
-                'data' => [],
-                'pagination' => $this->emptyPagination(),
+            $products = $productsQuery->get();
+
+            Log::info('Products query result:', [
+                'expected_ids' => $relatedProductIds,
+                'found_count' => $products->count(),
+                'found_ids' => $products->pluck('id')->toArray(),
             ]);
-        }
 
-        // Step 3: Get published products matching recommended IDs
-        $productsQuery = Product::with(['categories', 'brand'])
-            ->where('status', 'published')
-            ->whereIn('id', $relatedProductIds);
+            if ($products->isEmpty()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'No published products found in recommendations',
+                    'data' => [],
+                    'pagination' => $this->emptyPagination(),
+                ]);
+            }
 
-        $products = $productsQuery->get();
+            // Sort products to preserve priority order
+            $products = $products->sortBy(fn($product) => array_search($product->id, $relatedProductIds));
 
-        Log::info('Products query result:', [
-            'expected_ids' => $relatedProductIds,
-            'found_count' => $products->count(),
-            'found_ids' => $products->pluck('id')->toArray(),
-        ]);
+            // Pagination logic
+            $perPage = 50;
+            $page = max(1, (int) $request->input('page', 1));
+            $total = $products->count();
+            $offset = ($page - 1) * $perPage;
+            $paginatedProducts = $products->slice($offset, $perPage);
 
-        if ($products->isEmpty()) {
-            return response()->json([
-                'success' => true,
-                'message' => 'No published products found in recommendations',
-                'data' => [],
-                'pagination' => $this->emptyPagination(),
-            ]);
-        }
+            // Load additional relationships for paginated products
+            $productIds = $paginatedProducts->pluck('id')->toArray();
+            $productsWithRelations = Product::whereIn('id', $productIds)
+                ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl'])
+                ->get()
+                ->keyBy('id');
 
-        // Sort products to preserve priority order
-        $products = $products->sortBy(fn($product) => array_search($product->id, $relatedProductIds));
+            // Prepare pagination metadata
+            $pagination = $this->buildPagination($page, $perPage, $total);
 
-        // Pagination logic
-        $perPage = 50;
-        $page = max(1, (int) $request->input('page', 1));
-        $total = $products->count();
-        $offset = ($page - 1) * $perPage;
-        $paginatedProducts = $products->slice($offset, $perPage);
+            // Transform products for response
+            $transformedProducts = $paginatedProducts->map(function ($product) use ($wishlistProductIds, $productsWithRelations) {
+                $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
 
-        // Load additional relationships for paginated products
-        $productIds = $paginatedProducts->pluck('id')->toArray();
-        $productsWithRelations = Product::whereIn('id', $productIds)
-            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl'])
-            ->get()
-            ->keyBy('id');
+                // Normalize images and videos URLs
+                $images = $this->normalizeMediaUrls($product->images);
+                $videos = $this->normalizeMediaUrls($product->video_path);
 
-        // Prepare pagination metadata
-        $pagination = $this->buildPagination($page, $perPage, $total);
+                $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
+                $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
 
-        // Transform products for response
-        $transformedProducts = $paginatedProducts->map(function ($product) use ($wishlistProductIds, $productsWithRelations) {
-            $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
+                $quantity = $product->quantity ?? 0;
+                $unitsSold = $product->units_sold ?? 0;
+                $leftStock = $quantity - $unitsSold;
+                $sellingType = null;
+                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                    $fullValue = $product->sellingUnitAttribute->attribute_value;
 
-            // Normalize images and videos URLs
-            $images = $this->normalizeMediaUrls($product->images);
-            $videos = $this->normalizeMediaUrls($product->video_path);
+                    $attributeUnit = strpos($fullValue, '/') !== false
+                        ? trim(explode('/', $fullValue)[1])
+                        : $fullValue;
 
-            $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
-            $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
+                    $sellingType = [
+                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                        'attribute_value_unit' => $attributeUnit,
+                    ];
+                }
+                $firstSupplier = $product->productSuppliers->first();
 
-            $quantity = $product->quantity ?? 0;
-            $unitsSold = $product->units_sold ?? 0;
-            $leftStock = $quantity - $unitsSold;
-            $sellingType = null;
-            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                $fullValue = $product->sellingUnitAttribute->attribute_value;
-
-                $attributeUnit = strpos($fullValue, '/') !== false
-                    ? trim(explode('/', $fullValue)[1])
-                    : $fullValue;
-
-                $sellingType = [
-                    'attribute_value' => $product->sellingUnitAttribute->attribute_value,
-                    'attribute_value_unit' => $attributeUnit,
+                return [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'url' => $productWithRelations->seoUrl->url ?? null, // Fixed: was $details->seoUrl
+                    'images' => $images,
+                    'video_url' => $product->video_url,
+                    'video_path' => $videos,
+                    'sku' => $product->sku,
+                    'start_date' => $product->start_date,
+                    'end_date' => $product->end_date,
+                    'currency' => $productWithRelations->currency?->symbol,
+                    'total_reviews' => $totalReviews,
+                    'avg_rating' => $avgRating,
+                    'leftStock' => $leftStock,
+                    'currency_title' => $productWithRelations->currency
+                        ? ($productWithRelations->currency->is_prefix_symbol
+                            ? $productWithRelations->currency->symbol
+                            : ($product->price . ' ' . $productWithRelations->currency->symbol))
+                        : $product->price,
+                    'in_wishlist' => in_array($product->id, $wishlistProductIds),
+                    'selling_type' => $sellingType,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                    'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                    'per_unit_price' => $product->per_unit_price,
+                    'vendor_id' => $firstSupplier->vendor_id ?? null,
+                    'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+                    'inventory' => $firstSupplier->inventory ?? null,
+                    'in_stock' => $firstSupplier->in_stock ?? null,
+                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'return_policy' => $firstSupplier->return_policy ?? null,
+                    'free_shipping' => $firstSupplier->free_shipping ?? null,
+                    'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
-            }
-            $firstSupplier = $product->productSuppliers->first();
+            });
 
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'url' => $productWithRelations->seoUrl->url ?? null, // Fixed: was $details->seoUrl
-                'images' => $images,
-                'video_url' => $product->video_url,
-                'video_path' => $videos,
-                'sku' => $product->sku,
-                'start_date' => $product->start_date,
-                'end_date' => $product->end_date,
-                'currency' => $productWithRelations->currency?->symbol,
-                'total_reviews' => $totalReviews,
-                'avg_rating' => $avgRating,
-                'leftStock' => $leftStock,
-                'currency_title' => $productWithRelations->currency
-                    ? ($productWithRelations->currency->is_prefix_symbol
-                        ? $productWithRelations->currency->symbol
-                        : ($product->price . ' ' . $productWithRelations->currency->symbol))
-                    : $product->price,
-                'in_wishlist' => in_array($product->id, $wishlistProductIds),
-                'selling_type' => $sellingType,
-                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-                'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-                'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                'per_unit_price' => $product->per_unit_price,
-                'vendor_id' => $firstSupplier->vendor_id ?? null,
-                'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-                'inventory' => $firstSupplier->inventory ?? null,
-                'in_stock' => $firstSupplier->in_stock ?? null,
-                'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                'return_policy' => $firstSupplier->return_policy ?? null,
-                'free_shipping' => $firstSupplier->free_shipping ?? null,
-                'warranty_information' => $firstSupplier->warranty_information ?? null,
-            ];
-        });
+            Log::info('Returning products:', [
+                'total' => $total,
+                'page' => $page,
+                'count' => $transformedProducts->count(),
+            ]);
 
-        Log::info('Returning products:', [
-            'total' => $total,
-            'page' => $page,
-            'count' => $transformedProducts->count(),
-        ]);
+            return response()->json([
+                'success' => true,
+                'data' => $transformedProducts->values(),
+                'pagination' => $pagination,
+                'message' => 'Products you may like retrieved successfully',
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Error in getProductsYouMayLike: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
 
-        return response()->json([
-            'success' => true,
-            'data' => $transformedProducts->values(),
-            'pagination' => $pagination,
-            'message' => 'Products you may like retrieved successfully',
-        ]);
-    } catch (\Exception $e) {
-        Log::error('Error in getProductsYouMayLike: ' . $e->getMessage());
-        Log::error('Stack trace: ' . $e->getTraceAsString());
-
-        return response()->json([
-            'success' => false,
-            'message' => 'An error occurred while fetching products you may like',
-            'error' => $e->getMessage(),
-        ], 500);
+            return response()->json([
+                'success' => false,
+                'message' => 'An error occurred while fetching products you may like',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
-}
 
     /**
      * Return empty pagination structure.
@@ -691,187 +691,399 @@ class ProductYouMayLikeController extends Controller
      * )
      */
 
-    public function getProductsYouMayLikeGuest(Request $request, $product_id = null)
-    {
-        try {
-            $productId = $product_id ?? $request->input('product_id');
+    // public function getProductsYouMayLikeGuest(Request $request, $product_id = null)
+    // {
+    //     try {
+    //         $productId = $product_id ?? $request->input('product_id');
     
-            if (!$productId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product ID is required',
-                ], 400);
-            }
+    //         if (!$productId) {
+    //             return response()->json([
+    //                 'success' => false,
+    //                 'message' => 'Product ID is required',
+    //             ], 400);
+    //         }
     
-            Log::info('Fetching recommendations for product:', ['product_id' => $productId]);
+    //         Log::info('Fetching recommendations for product:', ['product_id' => $productId]);
     
-            // Step 1: Find the main "product_you_may_likes" record for this product
-            $productYouMayLike = DB::table('product_you_may_likes')
-                ->where('product_id', $productId)
-                ->first();
+    //         // Step 1: Find the main "product_you_may_likes" record for this product
+    //         $productYouMayLike = DB::table('product_you_may_likes')
+    //             ->where('product_id', $productId)
+    //             ->first();
     
-            Log::info('ProductYouMayLike lookup:', [
-                'product_id' => $productId,
-                'found' => $productYouMayLike ? 'yes' : 'no',
-                'record_id' => $productYouMayLike->id ?? null,
-            ]);
+    //         Log::info('ProductYouMayLike lookup:', [
+    //             'product_id' => $productId,
+    //             'found' => $productYouMayLike ? 'yes' : 'no',
+    //             'record_id' => $productYouMayLike->id ?? null,
+    //         ]);
     
-            if (!$productYouMayLike) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'No related products found for this product',
-                    'data' => [],
-                    'pagination' => $this->emptyPagination(),
-                ]);
-            }
+    //         if (!$productYouMayLike) {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => 'No related products found for this product',
+    //                 'data' => [],
+    //                 'pagination' => $this->emptyPagination(),
+    //             ]);
+    //         }
     
-            // Step 2: Get only product IDs from product_you_may_like_items where the product exists in ec_products
-            $relatedProductIds = DB::table('product_you_may_like_items')
-            ->where('product_you_may_like_id', $productYouMayLike->id)
-            ->pluck('product_id')
-            ->toArray();
+    //         // Step 2: Get only product IDs from product_you_may_like_items where the product exists in ec_products
+    //         $relatedProductIds = DB::table('product_you_may_like_items')
+    //         ->where('product_you_may_like_id', $productYouMayLike->id)
+    //         ->pluck('product_id')
+    //         ->toArray();
     
-            Log::info('ProductYouMayLikeItems:', [
-                'product_you_may_like_id' => $productYouMayLike->id,
-                'count' => count($relatedProductIds),
-                'product_ids' => $relatedProductIds,
-            ]);
+    //         Log::info('ProductYouMayLikeItems:', [
+    //             'product_you_may_like_id' => $productYouMayLike->id,
+    //             'count' => count($relatedProductIds),
+    //             'product_ids' => $relatedProductIds,
+    //         ]);
     
-            if (empty($relatedProductIds)) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'No recommended products configured',
-                    'data' => [],
-                    'pagination' => $this->emptyPagination(),
-                ]);
-            }
+    //         if (empty($relatedProductIds)) {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => 'No recommended products configured',
+    //                 'data' => [],
+    //                 'pagination' => $this->emptyPagination(),
+    //             ]);
+    //         }
     
-            $productsQuery = Product::with(['categories', 'brand'])
-                ->where('status', 'published')
-                ->whereIn('id', $relatedProductIds);
+    //         $productsQuery = Product::with(['categories', 'brand'])
+    //             ->where('status', 'published')
+    //             ->whereIn('id', $relatedProductIds);
     
-            $products = $productsQuery->get();
+    //         $products = $productsQuery->get();
     
-            Log::info('Products query result:', [
-                'expected_ids' => $relatedProductIds,
-                'found_count' => $products->count(),
-                'found_ids' => $products->pluck('id')->toArray(),
-            ]);
+    //         Log::info('Products query result:', [
+    //             'expected_ids' => $relatedProductIds,
+    //             'found_count' => $products->count(),
+    //             'found_ids' => $products->pluck('id')->toArray(),
+    //         ]);
     
-            if ($products->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'No published products found in recommendations',
-                    'data' => [],
-                    'pagination' => $this->emptyPagination(),
-                ]);
-            }
+    //         if ($products->isEmpty()) {
+    //             return response()->json([
+    //                 'success' => true,
+    //                 'message' => 'No published products found in recommendations',
+    //                 'data' => [],
+    //                 'pagination' => $this->emptyPagination(),
+    //             ]);
+    //         }
     
-            $products = $products->sortBy(fn($product) => array_search($product->id, $relatedProductIds));
+    //         $products = $products->sortBy(fn($product) => array_search($product->id, $relatedProductIds));
     
-            $perPage = 50;
-            $page = max(1, (int) $request->input('page', 1));
-            $total = $products->count();
-            $offset = ($page - 1) * $perPage;
-            $paginatedProducts = $products->slice($offset, $perPage);
+    //         $perPage = 50;
+    //         $page = max(1, (int) $request->input('page', 1));
+    //         $total = $products->count();
+    //         $offset = ($page - 1) * $perPage;
+    //         $paginatedProducts = $products->slice($offset, $perPage);
     
-            $productIds = $paginatedProducts->pluck('id')->toArray();
-            $productsWithRelations = Product::whereIn('id', $productIds)
-            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers' , 'seoUrl'])
-                ->get()
-                ->keyBy('id');
+    //         $productIds = $paginatedProducts->pluck('id')->toArray();
+    //         $productsWithRelations = Product::whereIn('id', $productIds)
+    //         ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers' , 'seoUrl'])
+    //             ->get()
+    //             ->keyBy('id');
     
-            $pagination = $this->buildPagination($page, $perPage, $total);
+    //         $pagination = $this->buildPagination($page, $perPage, $total);
     
-            $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
-                $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
+    //         $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
+    //             $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
     
-                $images = $this->normalizeMediaUrls($product->images);
-                $videos = $this->normalizeMediaUrls($product->video_path);
+    //             $images = $this->normalizeMediaUrls($product->images);
+    //             $videos = $this->normalizeMediaUrls($product->video_path);
     
-                $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
-                $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
+    //             $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
+    //             $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
     
-                $quantity = $product->quantity ?? 0;
-                $unitsSold = $product->units_sold ?? 0;
-                $leftStock = $quantity - $unitsSold;
-                $sellingType = null;
-                if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
-                    $fullValue = $product->sellingUnitAttribute->attribute_value;
+    //             $quantity = $product->quantity ?? 0;
+    //             $unitsSold = $product->units_sold ?? 0;
+    //             $leftStock = $quantity - $unitsSold;
+    //             $sellingType = null;
+    //             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+    //                 $fullValue = $product->sellingUnitAttribute->attribute_value;
 
-                    $attributeUnit = strpos($fullValue, '/') !== false
-                        ? trim(explode('/', $fullValue)[1])
-                        : $fullValue;
+    //                 $attributeUnit = strpos($fullValue, '/') !== false
+    //                     ? trim(explode('/', $fullValue)[1])
+    //                     : $fullValue;
 
-                    $sellingType = [
-                        'attribute_value' => $product->sellingUnitAttribute->attribute_value,
-                        'attribute_value_unit' => $attributeUnit,
-                    ];
-                }
+    //                 $sellingType = [
+    //                     'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+    //                     'attribute_value_unit' => $attributeUnit,
+    //                 ];
+    //             }
 
-                $firstSupplier = $product->productSuppliers->first();
+    //             $firstSupplier = $product->productSuppliers->first();
 
-                return [
-                    'id' => $product->id,
-                    'name' => $product->name,
-                    'images' => $images,
-                    'url' => $details->seoUrl->url ?? null,
-                    'video_url' => $product->video_url,
-                    'video_path' => $videos,
-                    'sku' => $product->sku,
-                    'start_date' => $product->start_date,
-                    'end_date' => $product->end_date,
-                    'currency' => $productWithRelations->currency?->symbol,
-                    'total_reviews' => $totalReviews,
-                    'avg_rating' => $avgRating,
-                    'leftStock' => $leftStock,
-                    'currency_title' => $productWithRelations->currency
-                        ? ($productWithRelations->currency->is_prefix_symbol
-                            ? $productWithRelations->currency->symbol
-                            : ($product->price . ' ' . $productWithRelations->currency->symbol))
-                        : $product->price,
-                    'selling_type' => $sellingType,
-                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-                    'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                    'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-                    'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                    'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
-                    'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-                    'per_unit_price' => $product->per_unit_price,
-                    'vendor_id' => $firstSupplier->vendor_id ?? null,
-                    'map' => $firstSupplier ? (float) $firstSupplier->map : null,
-                    'inventory' => $firstSupplier->inventory ?? null,
-                    'in_stock' => $firstSupplier->in_stock ?? null,
-                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
-                    'return_policy' => $firstSupplier->return_policy ?? null,
-                    'free_shipping' => $firstSupplier->free_shipping ?? null,
-                    'warranty_information' => $firstSupplier->warranty_information ?? null,
-                ];
+    //             return [
+    //                 'id' => $product->id,
+    //                 'name' => $product->name,
+    //                 'images' => $images,
+    //                 'url' => $details->seoUrl->url ?? null,
+    //                 'video_url' => $product->video_url,
+    //                 'video_path' => $videos,
+    //                 'sku' => $product->sku,
+    //                 'start_date' => $product->start_date,
+    //                 'end_date' => $product->end_date,
+    //                 'currency' => $productWithRelations->currency?->symbol,
+    //                 'total_reviews' => $totalReviews,
+    //                 'avg_rating' => $avgRating,
+    //                 'leftStock' => $leftStock,
+    //                 'currency_title' => $productWithRelations->currency
+    //                     ? ($productWithRelations->currency->is_prefix_symbol
+    //                         ? $productWithRelations->currency->symbol
+    //                         : ($product->price . ' ' . $productWithRelations->currency->symbol))
+    //                     : $product->price,
+    //                 'selling_type' => $sellingType,
+    //                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+    //                 'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+    //                 'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+    //                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+    //                 'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+    //                 'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+    //                 'per_unit_price' => $product->per_unit_price,
+    //                 'vendor_id' => $firstSupplier->vendor_id ?? null,
+    //                 'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+    //                 'inventory' => $firstSupplier->inventory ?? null,
+    //                 'in_stock' => $firstSupplier->in_stock ?? null,
+    //                 'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+    //                 'return_policy' => $firstSupplier->return_policy ?? null,
+    //                 'free_shipping' => $firstSupplier->free_shipping ?? null,
+    //                 'warranty_information' => $firstSupplier->warranty_information ?? null,
+    //             ];
                 
-            });
+    //         });
     
-            Log::info('Returning products:', [
-                'total' => $total,
-                'page' => $page,
-                'count' => $transformedProducts->count(),
-            ]);
+    //         Log::info('Returning products:', [
+    //             'total' => $total,
+    //             'page' => $page,
+    //             'count' => $transformedProducts->count(),
+    //         ]);
     
-            return response()->json([
-                'success' => true,
-                'data' => $transformedProducts->values(),
-                'pagination' => $pagination,
-                'message' => 'Products you may like retrieved successfully',
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Error in getProductsYouMayLike: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
+    //         return response()->json([
+    //             'success' => true,
+    //             'data' => $transformedProducts->values(),
+    //             'pagination' => $pagination,
+    //             'message' => 'Products you may like retrieved successfully',
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         Log::error('Error in getProductsYouMayLike: ' . $e->getMessage());
+    //         Log::error('Stack trace: ' . $e->getTraceAsString());
     
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'An error occurred while fetching products you may like',
+    //             'error' => $e->getMessage(),
+    //         ], 500);
+    //     }
+    // }
+    public function getProductsYouMayLikeGuest(Request $request, $product_identifier = null)
+{
+    try {
+        // Get product identifier from route param or request input
+        $productIdentifier = $product_identifier ?? $request->input('product_id') ?? $request->input('slug');
+
+        if (!$productIdentifier) {
             return response()->json([
                 'success' => false,
-                'message' => 'An error occurred while fetching products you may like',
-                'error' => $e->getMessage(),
-            ], 500);
+                'message' => 'Product ID or slug is required',
+            ], 400);
         }
+
+        // Determine if identifier is numeric (ID) or string (slug)
+        $isNumeric = is_numeric($productIdentifier);
+        $productId = null;
+
+        if ($isNumeric) {
+            // Direct product ID
+            $productId = (int) $productIdentifier;
+            Log::info('Using product ID directly:', ['product_id' => $productId]);
+        } else {
+            // Convert slug to product ID
+            $product = DB::table('ec_products')
+                ->where('slug', $productIdentifier)
+                ->where('status', 'published')
+                ->first(['id']);
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found with the provided slug',
+                ], 404);
+            }
+
+            $productId = $product->id;
+            Log::info('Converted slug to product ID:', [
+                'slug' => $productIdentifier,
+                'product_id' => $productId
+            ]);
+        }
+
+        Log::info('Fetching recommendations for product:', ['product_id' => $productId]);
+
+        // Step 1: Find the main "product_you_may_likes" record for this product
+        $productYouMayLike = DB::table('product_you_may_likes')
+            ->where('product_id', $productId)
+            ->first();
+
+        Log::info('ProductYouMayLike lookup:', [
+            'product_id' => $productId,
+            'found' => $productYouMayLike ? 'yes' : 'no',
+            'record_id' => $productYouMayLike->id ?? null,
+        ]);
+
+        if (!$productYouMayLike) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No related products found for this product',
+                'data' => [],
+                'pagination' => $this->emptyPagination(),
+            ]);
+        }
+
+        // Step 2: Get only product IDs from product_you_may_like_items where the product exists in ec_products
+        $relatedProductIds = DB::table('product_you_may_like_items')
+        ->where('product_you_may_like_id', $productYouMayLike->id)
+        ->pluck('product_id')
+        ->toArray();
+
+        Log::info('ProductYouMayLikeItems:', [
+            'product_you_may_like_id' => $productYouMayLike->id,
+            'count' => count($relatedProductIds),
+            'product_ids' => $relatedProductIds,
+        ]);
+
+        if (empty($relatedProductIds)) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No recommended products configured',
+                'data' => [],
+                'pagination' => $this->emptyPagination(),
+            ]);
+        }
+
+        $productsQuery = Product::with(['categories', 'brand'])
+            ->where('status', 'published')
+            ->whereIn('id', $relatedProductIds);
+
+        $products = $productsQuery->get();
+
+        Log::info('Products query result:', [
+            'expected_ids' => $relatedProductIds,
+            'found_count' => $products->count(),
+            'found_ids' => $products->pluck('id')->toArray(),
+        ]);
+
+        if ($products->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No published products found in recommendations',
+                'data' => [],
+                'pagination' => $this->emptyPagination(),
+            ]);
+        }
+
+        $products = $products->sortBy(fn($product) => array_search($product->id, $relatedProductIds));
+
+        $perPage = 50;
+        $page = max(1, (int) $request->input('page', 1));
+        $total = $products->count();
+        $offset = ($page - 1) * $perPage;
+        $paginatedProducts = $products->slice($offset, $perPage);
+
+        $productIds = $paginatedProducts->pluck('id')->toArray();
+        $productsWithRelations = Product::whereIn('id', $productIds)
+        ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'seoUrl'])
+            ->get()
+            ->keyBy('id');
+
+        $pagination = $this->buildPagination($page, $perPage, $total);
+
+        $transformedProducts = $paginatedProducts->map(function ($product) use ($productsWithRelations) {
+            $productWithRelations = $productsWithRelations->get($product->id) ?? $product;
+
+            $images = $this->normalizeMediaUrls($product->images);
+            $videos = $this->normalizeMediaUrls($product->video_path);
+
+            $totalReviews = $productWithRelations->reviews ? $productWithRelations->reviews->count() : 0;
+            $avgRating = $totalReviews > 0 ? $productWithRelations->reviews->avg('star') : null;
+
+            $quantity = $product->quantity ?? 0;
+            $unitsSold = $product->units_sold ?? 0;
+            $leftStock = $quantity - $unitsSold;
+            $sellingType = null;
+            if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+                $attributeUnit = strpos($fullValue, '/') !== false
+                    ? trim(explode('/', $fullValue)[1])
+                    : $fullValue;
+
+                $sellingType = [
+                    'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+                    'attribute_value_unit' => $attributeUnit,
+                ];
+            }
+
+            $firstSupplier = $product->productSuppliers->first();
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'images' => $images,
+                'url' => $productWithRelations->seoUrl->url ?? null, // Fixed: was $details->seoUrl
+                'video_url' => $product->video_url,
+                'video_path' => $videos,
+                'sku' => $product->sku,
+                'start_date' => $product->start_date,
+                'end_date' => $product->end_date,
+                'currency' => $productWithRelations->currency?->symbol,
+                'total_reviews' => $totalReviews,
+                'avg_rating' => $avgRating,
+                'leftStock' => $leftStock,
+                'currency_title' => $productWithRelations->currency
+                    ? ($productWithRelations->currency->is_prefix_symbol
+                        ? $productWithRelations->currency->symbol
+                        : ($product->price . ' ' . $productWithRelations->currency->symbol))
+                    : $product->price,
+                'selling_type' => $sellingType,
+                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                'price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
+                'best_price' => $firstSupplier ? (float) $firstSupplier->price : null,
+                'per_unit_price' => $product->per_unit_price,
+                'vendor_id' => $firstSupplier->vendor_id ?? null,
+                'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+                'inventory' => $firstSupplier->inventory ?? null,
+                'in_stock' => $firstSupplier->in_stock ?? null,
+                'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                'return_policy' => $firstSupplier->return_policy ?? null,
+                'free_shipping' => $firstSupplier->free_shipping ?? null,
+                'warranty_information' => $firstSupplier->warranty_information ?? null,
+            ];
+            
+        });
+
+        Log::info('Returning products:', [
+            'total' => $total,
+            'page' => $page,
+            'count' => $transformedProducts->count(),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'data' => $transformedProducts->values(),
+            'pagination' => $pagination,
+            'message' => 'Products you may like retrieved successfully',
+        ]);
+    } catch (\Exception $e) {
+        Log::error('Error in getProductsYouMayLikeGuest: ' . $e->getMessage());
+        Log::error('Stack trace: ' . $e->getTraceAsString());
+
+        return response()->json([
+            'success' => false,
+            'message' => 'An error occurred while fetching products you may like',
+            'error' => $e->getMessage(),
+        ], 500);
     }
+}
     
 }
