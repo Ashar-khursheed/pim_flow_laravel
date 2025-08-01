@@ -398,7 +398,7 @@ class RecentlyViewedProductController extends Controller
 
       private function getGuestRecentlyViewedData(string $guestToken): array
         {
-            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers', 'seoUrl')
+            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers', 'product.seoUrl')
                 ->where('guest_token', $guestToken)
                 ->latest()
                 ->get();
