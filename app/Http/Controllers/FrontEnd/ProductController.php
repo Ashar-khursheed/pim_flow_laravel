@@ -566,13 +566,10 @@ class ProductController extends Controller
                 'seoUrl'  // your relation here
             ])->where('status', 'published');
 
-            $productInput = $request->input('id');
-
-            if ($productInput) {
+           if ($productInput) {
                 if (is_numeric($productInput)) {
                     $productId = (int) $productInput;
                 } else {
-                    // Try to fetch the product using the SEO slug (url only)
                     $product = Product::with('seoUrl')
                         ->whereHas('seoUrl', function ($q) use ($productInput) {
                             $q->where('url', $productInput);
@@ -590,6 +587,7 @@ class ProductController extends Controller
 
                 $query->where('id', $productId);
             }
+
 
 
                         $this->applyFilters($query, $request);
