@@ -566,27 +566,51 @@ class ProductController extends Controller
                 'seoUrl'  // your relation here
             ])->where('status', 'published');
 
-           if ($productInput) {
-                if (is_numeric($productInput)) {
-                    $productId = (int) $productInput;
-                } else {
-                    $product = Product::with('seoUrl')
-                        ->whereHas('seoUrl', function ($q) use ($productInput) {
-                            $q->where('url', $productInput);
-                        })->first();
+            $productInput = $request->input('id');
 
-                    if (!$product) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Product not found by slug',
-                        ], 404);
+            // if ($productInput) {
+            //     if (is_numeric($productInput)) {
+            //         $productId = (int) $productInput;
+            //     } else {
+            //         // Try to fetch the product using the SEO slug (url only)
+            //         $product = Product::with('seoUrl')
+            //             ->whereHas('seoUrl', function ($q) use ($productInput) {
+            //                 $q->where('url', $productInput);
+            //             })->first();
+
+            //         if (!$product) {
+            //             return response()->json([
+            //                 'success' => false,
+            //                 'message' => 'Product not found by slug',
+            //             ], 404);
+            //         }
+
+            //         $productId = $product->id;
+            //     }
+
+            //     $query->where('id', $productId);
+            // }
+              if ($productInput) {
+                    if (is_numeric($productInput)) {
+                        $productId = (int) $productInput;
+                    } else {
+                        $product = Product::with('seoUrl')
+                            ->whereHas('seoUrl', function ($q) use ($productInput) {
+                                $q->where('url', $productInput);
+                            })->first();
+
+                        if (!$product) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Product not found by slug',
+                            ], 404);
+                        }
+
+                        $productId = $product->id;
                     }
 
-                    $productId = $product->id;
+                    $query->where('id', $productId);
                 }
-
-                $query->where('id', $productId);
-            }
 
 
 
