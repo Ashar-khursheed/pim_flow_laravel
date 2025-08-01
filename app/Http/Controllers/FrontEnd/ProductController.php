@@ -573,9 +573,11 @@ class ProductController extends Controller
                             $productId = (int) $productInput;
                         } else {
                             // Look up the product by SEO slug
-                            $product = Product::whereHas('seoUrl', function ($query) use ($productInput) {
-                                $query->where('url', $productInput);
-                            })->first();
+                           $product = Product::with('seoUrl')->whereHas('seoUrl', function ($query) use ($productInput) {
+                        $query->where('url', $productInput)
+                            ->where('reference_type',Product::class);
+                    })->first();
+
 
                             if (!$product) {
                                 return response()->json([
