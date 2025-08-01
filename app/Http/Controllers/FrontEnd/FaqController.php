@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Faq;
+use App\Models\Product;
 use OpenApi\Annotations as OA;
 
 
