@@ -13893,12 +13893,13 @@
                                 ],
                                 "properties": {
                                     "email": {
-                                        "type": "integer",
-                                        "example": ""
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
                                     },
                                     "description": {
                                         "type": "string",
-                                        "example": "....."
+                                        "example": "Page not loading properly."
                                     },
                                     "images[]": {
                                         "type": "array",
