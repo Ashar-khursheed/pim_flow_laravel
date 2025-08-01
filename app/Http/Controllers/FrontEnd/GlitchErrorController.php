@@ -65,8 +65,8 @@ class GlitchErrorController extends BaseController
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
 	 *                 required={"email", "description"},
-	 *                 @OA\Property(property="email", type="integer", example=""),
-	 *                 @OA\Property(property="description", type="string", example="....."),
+	 *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
+	 *                 @OA\Property(property="description", type="string", example="Page not loading properly."),
 	 *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary"))
 	 *             )
 	 *         )
