@@ -7,10 +7,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 use App\Models\User;
 use App\Models\FrontEnd\Customer;
 use App\Notifications\ResetPasswordNotification;
+use App\Notifications\CommonPasswordResetMail;
 
 class AuthController extends BaseController
 {
@@ -97,8 +99,8 @@ class AuthController extends BaseController
 			'success' => true,
 			'has_permission' => $hasPermission,
 			'message' => $hasPermission
-				? "User has the '{$permission}' permission."
-				: "User does not have the '{$permission}' permission.",
+			? "User has the '{$permission}' permission."
+			: "User does not have the '{$permission}' permission.",
 		]);
 	}
 
@@ -262,11 +264,50 @@ class AuthController extends BaseController
 
 		$user->passwordResetToken->delete();
 
-        $user->tokens()->delete();
+		$user->tokens()->delete();
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Password has been reset.'
 		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/auth/send-customers-reset-link",
+	 *     summary="Send password reset links to all customers",
+	 *     description="Generates and emails password reset links to all registered customers.",
+	 *     tags={"Auth"},
+	 *     @OA\Response(response=200, description="Reset link sent", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function sendAllCustomersResetLinkEmail()
+	{
+		try {
+			$customers = Customer::all();
+			foreach ($customers as $customer) {
+				$token = Str::random(60);
+
+				$customer->passwordResetToken()->updateOrCreate([], [
+					'token' => Hash::make($token),
+					'created_at' => now(),
+				]);
+
+				$customer->notify(new CommonPasswordResetMail($token));
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Reset link sent to all customers.'
+			], 200);
+		} catch (\Exception $e) {
+			Log::error('Error sending reset links to customers: ' . $e->getMessage());
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to send reset links.',
+				'error' => $e->getMessage()
+			], 500);
+		}
 	}
 }
