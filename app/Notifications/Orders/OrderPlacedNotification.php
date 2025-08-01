@@ -7,16 +7,18 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Carbon\Carbon;
+use App\Models\FrontEnd\Order;
 
-class MyOrderPlacedMail extends Notification implements ShouldQueue
+class OrderPlacedNotification extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
-	public $order;
+	public $orderId;
 
-	public function __construct($order)
+	public function __construct($order_id)
 	{
-		$this->order = $order;
+		$this->orderId = $order_id;
 	}
 
 	/**
@@ -34,18 +36,20 @@ class MyOrderPlacedMail extends Notification implements ShouldQueue
 	 */
 	public function toMail($notifiable)
 	{
+		$order = Order::find($this->orderId);
+
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
 		$orderUrl = url("/my-order");
 
-		$orderNumber = $this->order->order_number;
-		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
+		$orderNumber = $order->order_number;
+		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
-		$paidAmount = $this->order->paid_amount ?? 0;
-		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		$paidAmount = $order->paid_amount ?? 0;
+		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
-		$customerAddress = $this->order->customerAddress;
+		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
@@ -53,7 +57,7 @@ class MyOrderPlacedMail extends Notification implements ShouldQueue
 
 		$products = collect();
 
-		foreach ($this->order->orderProducts as $orderProduct) {
+		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
 			$productDetail = $orderProduct->product;
 
@@ -64,7 +68,7 @@ class MyOrderPlacedMail extends Notification implements ShouldQueue
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->expectedShippingDate = $productSupplierDetail
-				? getDateRange($this->order->created_at, $productSupplierDetail->delivery_days)
+				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
 				: null;
 
 				/* Original Price (before discount) */
@@ -98,14 +102,14 @@ class MyOrderPlacedMail extends Notification implements ShouldQueue
 		});
 
 		/* Total saved = original total - actual subtotal */
-		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($this->order->amount ?? 0));
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
 
-		$subTotal = $this->order->amount ?? 0;
-		$shippingCharge = $this->order->shipping_charge ?? 0;
+		$subTotal = $order->amount ?? 0;
+		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
-		$taxPercent = $this->order->tax_percentage;
-		$taxAmount = $this->order->tax_amount ?? 0;
-		$total = $this->order->total_amount ?? 0;
+		$taxPercent = $order->tax_percentage;
+		$taxAmount = $order->tax_amount ?? 0;
+		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';

@@ -10,9 +10,8 @@ use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Notifications\Orders\OrderPlacedMail;
+use App\Notifications\Orders\OrderPlacedNotification;
 use App\Notifications\Orders\OrderCancelledMail;
-use App\Notifications\Orders\MyOrderPlacedMail;
 
 class OrderController extends BaseController
 {
@@ -287,7 +286,7 @@ class OrderController extends BaseController
 
 			DB::commit();
 
-			auth()->user()->notify(new MyOrderPlacedMail($order));
+			auth()->user()->notify(new OrderPlacedNotification($order->id));
 
 			/* Load relationships */
 			$order->load([

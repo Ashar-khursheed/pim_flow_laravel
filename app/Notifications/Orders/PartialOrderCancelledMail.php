@@ -11,6 +11,7 @@ use Carbon\Carbon;
 class PartialOrderCancelledMail extends Notification implements ShouldQueue
 {
 	use Queueable;
+	public $timeout = 43200;
 
 	public $order;
 	public $cancelledOrderProducts;
