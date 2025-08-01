@@ -494,7 +494,7 @@ class CustomerController extends BaseController
 			}
 
 			$token = $customer->createToken('apple-login')->plainTextToken;
-			$customer->notify(new WelcomeMail());
+			// $customer->notify(new WelcomeMail());
 			return response()->json([
 				'user' => $customer,
 				'token' => $token,

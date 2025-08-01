@@ -205,7 +205,7 @@ class AuthController extends Controller
 					'mobile_number' => null,
 					'profile_img' => null,
 				]);
-		$customer->notify(new WelcomeMail());
+		// $customer->notify(new WelcomeMail());
 
 
 
