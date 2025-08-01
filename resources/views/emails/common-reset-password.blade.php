@@ -106,7 +106,7 @@
 					<tr>
 						<td>
 							<p style="font-size: 12px;  font-family: 'Noto Sans',  sans-serif">
-								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
+								©{{ date('Y') }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<p style="font-size: 12px; font-family: 'Noto Sans',  sans-serif">
 								This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}
