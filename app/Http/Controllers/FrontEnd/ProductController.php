@@ -560,37 +560,36 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,'seoUrl'])
                     ->where('status', 'published');
 
                 
                 // Check if filtering by specific product ID
                // Check if filtering by specific product ID or slug
-                    $productInput = $request->input('product_id');
+                   $productInput = $request->input('id');
 
                     if ($productInput) {
-                        if (is_numeric($productInput)) {
-                            $productId = (int) $productInput;
-                        } else {
-                            // Look up the product by SEO slug
-                           $product = Product::with('seoUrl')->whereHas('seoUrl', function ($query) use ($productInput) {
-                        $query->where('url', $productInput)
-                            ->where('relational_type',Product::class);
-                    })->first();
+                    if (is_numeric($productInput)) {
+                        $productId = (int) $productInput;
+                    } else {
+                        // Look up the product by SEO slug
+                        $product = Product::with('seoUrl')->whereHas('seoUrl', function ($query) use ($productInput) {
+                            $query->where('url', $productInput)
+                                ->where('relational_type', Product::class);
+                        })->first();
 
-
-                            if (!$product) {
-                                return response()->json([
-                                    'success' => false,
-                                    'message' => 'Product not found',
-                                ], 404);
-                            }
-
-                            $productId = $product->id;
+                        if (!$product) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => 'Product not found',
+                            ], 404);
                         }
 
-                        $query->where('id', $productId);
+                        $productId = $product->id;
                     }
+
+                    $query->where('id', $productId);
+                }
 
                 $this->applyFilters($query, $request);
 
