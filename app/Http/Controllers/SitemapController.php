@@ -1,4 +1,5 @@
 <?php
+namespace App\Http\Controllers;
 use Spatie\Sitemap\Sitemap;
 use Spatie\Sitemap\Tags\Url;
 use Illuminate\Support\Carbon;
