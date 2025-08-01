@@ -4,7 +4,7 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
-use App\Models\GlitchError;
+use App\Models\FrontEnd\GlitchError;
 
 class GlitchErrorMail extends Mailable
 {

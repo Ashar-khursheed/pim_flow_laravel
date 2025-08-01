@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\FrontEnd;
 
 use App\Http\Controllers\BaseController;
-use App\Models\GlitchError;
+use App\Models\FrontEnd\GlitchError;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\GlitchErrorMail;
+use App\Jobs\SendGlitchErrorReportMailJob;
 
 class GlitchErrorController extends BaseController
 {
@@ -109,13 +108,7 @@ class GlitchErrorController extends BaseController
 			'images' => $images,
 		]);
 
-		/* Notify admins via email */
-		$glitchErrorReportingMails = glitch_error_reporting_mails();
-
-		$to = array_shift($glitchErrorReportingMails);
-		$cc = $glitchErrorReportingMails;
-
-		Mail::to($to)->cc($cc)->send(new GlitchErrorMail($record));
+		SendGlitchErrorReportMailJob::dispatch($record->id);
 
 		return response()->json([
 			'success' => true,
