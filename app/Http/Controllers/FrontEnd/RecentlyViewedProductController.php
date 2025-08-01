@@ -53,27 +53,43 @@ class RecentlyViewedProductController extends Controller
      * )
      */
 
-    public function addToRecent(Request $request)
-    {
-        $request->validate([
-            'product_id' => 'required|exists:ec_products,id', // Validates if the product exists
-        ]);
+  public function addToRecent(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|string', // accept both ID or slug
+    ]);
 
-        $productId = $request->input('product_id');
-        $userId = Auth::id(); // Use Auth if the user is logged in
+    $input = $request->input('product_id');
 
-        if ($userId) {
-            // Add the product to the recently viewed list
-            RecentlyViewedProduct::updateOrCreate(
-                ['customer_id' => $userId, 'product_id' => $productId],
-                ['updated_at' => now()] // Updates the timestamp if already exists
-            );
+    // Resolve product ID
+    if (is_numeric($input)) {
+        $productId = (int) $input;
+    } else {
+        $product = Product::whereHas('seoUrl', function ($query) use ($input) {
+            $query->where('url', $input);
+        })->first();
 
-            return response()->json(['message' => 'Product added to recently viewed list.'], 200);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        return response()->json(['message' => 'User not authenticated.'], 401);
+        $productId = $product->id;
     }
+
+    $userId = Auth::id();
+
+    if ($userId) {
+        RecentlyViewedProduct::updateOrCreate(
+            ['customer_id' => $userId, 'product_id' => $productId],
+            ['updated_at' => now()]
+        );
+
+        return response()->json(['message' => 'Product added to recently viewed list.'], 200);
+    }
+
+    return response()->json(['message' => 'User not authenticated.'], 401);
+}
+
 
 
 
