@@ -1499,7 +1499,7 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
 
-      $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'per_unit_price_attributes.attributeDetails', 'seoUrl']) // add seoUrl here
+      $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
     ->where('status', 'published')
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
@@ -1673,7 +1673,7 @@ class ProductController extends Controller
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'per_unit_price_attributes.attributeDetails', 'seoUrl']) // add seoUrl here
+       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here
     ->where('status', 'published')
 
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
