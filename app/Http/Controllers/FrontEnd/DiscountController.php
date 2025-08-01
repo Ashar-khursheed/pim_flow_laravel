@@ -52,60 +52,77 @@ class DiscountController extends Controller
      * )
      */
 
-    public function getDiscountsForProduct(Request $request)
-    {
-        // Log the request for debugging
-        \Log::info($request->all());
+ public function getDiscountsForProduct(Request $request)
+{
+    \Log::info($request->all());
 
-        // Validate that a product_id is provided
-        $request->validate([
-            'product_id' => 'required|integer|exists:ec_products,id',
-        ]);
+    // Accept either product_id or slug
+    $productInput = $request->input('product_id');
 
-        // Get the product ID from the request
-        $productId = $request->input('product_id');
+    if (!$productInput) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Product identifier (ID or slug) is required.',
+        ], 400);
+    }
 
-        // Fetch product-specific discounts
-        $productDiscounts = Discount::whereHas('products', function ($query) use ($productId) {
-            $query->where('product_id', $productId);
-        })
-        ->active() // Only get active discounts
-        ->available() // Only get available discounts
-        ->get();
+    // Resolve product ID from slug or use as-is if numeric
+    if (is_numeric($productInput)) {
+        $productId = (int) $productInput;
+    } else {
+        $product = Product::whereHas('seoUrl', function ($q) use ($productInput) {
+            $q->where('url', $productInput);
+        })->first();
 
-        // Fetch categories the product belongs to
-        $productCategories = Category::whereHas('products', function ($query) use ($productId) {
-            $query->where('id', $productId);
-        })->pluck('id');
-
-        // Fetch category-level discounts using the productCategories relationship
-        $categoryDiscounts = Discount::whereHas('productCategories', function ($query) use ($productCategories) {
-            $query->whereIn('product_category_id', $productCategories);
-        })
-        ->active() // Only get active discounts
-        ->available() // Only get available discounts
-        ->get();
-
-        // Merge or prioritize discounts
-        $discounts = $productDiscounts->isNotEmpty() ? $productDiscounts : $categoryDiscounts;
-
-        // If both product-specific and category discounts exist, prioritize product-specific discounts
-        if ($productDiscounts->isNotEmpty() && $categoryDiscounts->isNotEmpty()) {
-            $discounts = $productDiscounts; // Prioritize product-specific discounts
-        }
-
-        // Check if discounts are found
-        if ($discounts->isEmpty()) {
+        if (!$product) {
             return response()->json([
                 'success' => false,
-                'message' => 'No discounts available for this product or its categories.',
-            ], 200);
+                'message' => 'Product not found by slug.',
+            ], 404);
         }
 
-        // Return the list of discounts
-        return response()->json([
-            'success' => true,
-            'data' => $discounts,
-        ]);
+        $productId = $product->id;
     }
+
+    // Fetch product-specific discounts
+    $productDiscounts = Discount::whereHas('products', function ($query) use ($productId) {
+        $query->where('product_id', $productId);
+    })
+    ->active()
+    ->available()
+    ->get();
+
+    // Fetch categories the product belongs to
+    $productCategories = Category::whereHas('products', function ($query) use ($productId) {
+        $query->where('id', $productId);
+    })->pluck('id');
+
+    // Fetch category-level discounts
+    $categoryDiscounts = Discount::whereHas('productCategories', function ($query) use ($productCategories) {
+        $query->whereIn('product_category_id', $productCategories);
+    })
+    ->active()
+    ->available()
+    ->get();
+
+    // Decide which discounts to return
+    $discounts = $productDiscounts->isNotEmpty() ? $productDiscounts : $categoryDiscounts;
+
+    if ($productDiscounts->isNotEmpty() && $categoryDiscounts->isNotEmpty()) {
+        $discounts = $productDiscounts; // Prioritize product-specific discounts
+    }
+
+    if ($discounts->isEmpty()) {
+        return response()->json([
+            'success' => false,
+            'message' => 'No discounts available for this product or its categories.',
+        ], 200);
+    }
+
+    return response()->json([
+        'success' => true,
+        'data' => $discounts,
+    ]);
+}
+
 }
