@@ -1,0 +1,30 @@
+<?php
+namespace App\Mail;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use App\Models\GlitchError;
+
+class GlitchErrorMail extends Mailable
+{
+	use Queueable, SerializesModels;
+
+	public $record;
+
+	public function __construct(GlitchError $record)
+	{
+		$this->record = $record;
+	}
+
+	public function build()
+	{
+		return $this->subject('New Glitch Error Reported')
+		->markdown('emails.glitch_error')
+		->with([
+			'description' => $this->record->description,
+			'email' => $this->record->email,
+			'images' => json_decode($this->record->images, true),
+		]);
+	}
+}
