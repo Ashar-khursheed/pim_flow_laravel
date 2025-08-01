@@ -1503,7 +1503,7 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
 
             $categoryId = $categoryModel->id;
 
-        $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
+        $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
     ->where('status', 'published')
@@ -1657,7 +1657,7 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
      *     )
      * )
      */
-    public function getCategoryWiseRandomProductsForUser(Request $request, $categoryId)
+    public function getCategoryWiseRandomProductsForUser(Request $request, $category)
     {
           // Auth and wishlist logic
           $userId = Auth::id();
@@ -1673,11 +1673,17 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
               $wishlistProductIds = session()->get('guest_wishlist', []);
           }
 
-        if (!$categoryId) {
-            return response()->json(['error' => 'category_id is required'], 400);
+       $categoryModel =Category::where('id', $category)
+                    ->orWhere('slug', $category)
+                    ->first();
+
+        if (!$categoryModel) {
+            return response()->json(['error' => 'Category not found'], 404);
         }
 
+        $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+
 
        $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here
     ->where('status', 'published')
