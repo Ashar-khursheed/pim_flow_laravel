@@ -1491,11 +1491,17 @@ class ProductController extends Controller
      * )
      */
 
-    public function getCategoryWiseRandomProducts(Request $request, $categoryId)
+public function getCategoryWiseRandomProducts(Request $request, $category)
     {
-        if (!$categoryId) {
-            return response()->json(['error' => 'category_id is required'], 400);
-        }
+       $categoryModel = Category::where('id', $category)
+                    ->orWhere('slug', $category)
+                    ->first();
+
+            if (!$categoryModel) {
+                return response()->json(['error' => 'Category not found'], 404);
+            }
+
+            $categoryId = $categoryModel->id;
 
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
 
