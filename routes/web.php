@@ -141,3 +141,6 @@ Route::get('/test-quote-pdf', function () {
 
 	return Pdf::loadView('pdf.quote1', $pdfParams)->stream();
 });
+
+
+Route::get('/generate-sitemap', [SitemapController::class, 'generate']);
