@@ -458,69 +458,140 @@ class UserReviewController extends Controller
      *     )
      * )
      */
+    // public function getProductReviews(Request $request)
+    // {
+    //     \Log::info($request->all());
+
+    //     $productId = $request->input('product_id');
+
+    //     $totalReviews = Review::where('product_id', $productId)->count();
+
+    //     $query = Review::query();
+
+    //     if ($request->has('star')) {
+    //         $star = $request->input('star');
+    //         $query->where('star', $star);
+    //     }
+
+    //     if ($request->has('product_id')) {
+    //         if (!Product::where('id', $productId)->exists()) {
+    //             return response()->json(['success' => false, 'message' => 'Product not found.'], 404);
+    //         }
+
+    //         $query->where('product_id', $productId);
+    //     }
+
+    //     if ($request->has('sort')) {
+    //         if ($request->input('sort') === 'highest') {
+    //             $query->orderBy('star', 'desc');
+    //         } elseif ($request->input('sort') === 'lowest') {
+    //             $query->orderBy('star', 'asc');
+    //         }
+    //     } else {
+    //         $query->orderBy('created_at', 'desc');
+    //     }
+
+    //     $reviews = $query->paginate($request->input('per_page', 15));
+
+    //     // Just ensure images is an array, no URL transformation
+    //     $reviews->getCollection()->transform(function ($review) {
+    //         if (!empty($review->images) && !is_array($review->images)) {
+    //             $review->images = json_decode($review->images, true) ?: [];
+    //         }
+    //         return $review;
+    //     });
+
+    //     $starCounts = [
+    //         '1_star' => Review::where('star', 1)->where('product_id', $productId)->count(),
+    //         '2_star' => Review::where('star', 2)->where('product_id', $productId)->count(),
+    //         '3_star' => Review::where('star', 3)->where('product_id', $productId)->count(),
+    //         '4_star' => Review::where('star', 4)->where('product_id', $productId)->count(),
+    //         '5_star' => Review::where('star', 5)->where('product_id', $productId)->count(),
+    //     ];
+
+    //     $averageRating = Review::where('product_id', $productId)->avg('star');
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => [
+    //             'reviews' => $reviews,
+    //             'total_reviews' => $totalReviews,
+    //             'star_counts' => $starCounts,
+    //             'average_rating' => round($averageRating, 2),
+    //             'product_id' => $productId,
+    //         ],
+    //     ]);
+    // }
     public function getProductReviews(Request $request)
-    {
-        \Log::info($request->all());
+{
+    \Log::info($request->all());
 
-        $productId = $request->input('product_id');
+    $input = $request->input('product_id');
 
-        $totalReviews = Review::where('product_id', $productId)->count();
-
-        $query = Review::query();
-
-        if ($request->has('star')) {
-            $star = $request->input('star');
-            $query->where('star', $star);
-        }
-
-        if ($request->has('product_id')) {
-            if (!Product::where('id', $productId)->exists()) {
-                return response()->json(['success' => false, 'message' => 'Product not found.'], 404);
-            }
-
-            $query->where('product_id', $productId);
-        }
-
-        if ($request->has('sort')) {
-            if ($request->input('sort') === 'highest') {
-                $query->orderBy('star', 'desc');
-            } elseif ($request->input('sort') === 'lowest') {
-                $query->orderBy('star', 'asc');
-            }
-        } else {
-            $query->orderBy('created_at', 'desc');
-        }
-
-        $reviews = $query->paginate($request->input('per_page', 15));
-
-        // Just ensure images is an array, no URL transformation
-        $reviews->getCollection()->transform(function ($review) {
-            if (!empty($review->images) && !is_array($review->images)) {
-                $review->images = json_decode($review->images, true) ?: [];
-            }
-            return $review;
-        });
-
-        $starCounts = [
-            '1_star' => Review::where('star', 1)->where('product_id', $productId)->count(),
-            '2_star' => Review::where('star', 2)->where('product_id', $productId)->count(),
-            '3_star' => Review::where('star', 3)->where('product_id', $productId)->count(),
-            '4_star' => Review::where('star', 4)->where('product_id', $productId)->count(),
-            '5_star' => Review::where('star', 5)->where('product_id', $productId)->count(),
-        ];
-
-        $averageRating = Review::where('product_id', $productId)->avg('star');
-
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'reviews' => $reviews,
-                'total_reviews' => $totalReviews,
-                'star_counts' => $starCounts,
-                'average_rating' => round($averageRating, 2),
-                'product_id' => $productId,
-            ],
-        ]);
+    if (!$input) {
+        return response()->json(['success' => false, 'message' => 'Product ID or slug is required.'], 400);
     }
+
+    // Resolve product ID from slug if needed
+    if (is_numeric($input)) {
+        $productId = (int) $input;
+    } else {
+        $product = Product::whereHas('seoUrl', function ($q) use ($input) {
+            $q->where('url', $input);
+        })->first();
+
+        if (!$product) {
+            return response()->json(['success' => false, 'message' => 'Product not found.'], 404);
+        }
+
+        $productId = $product->id;
+    }
+
+    $totalReviews = Review::where('product_id', $productId)->count();
+
+    $query = Review::query()->where('product_id', $productId);
+
+    if ($request->has('star')) {
+        $query->where('star', $request->input('star'));
+    }
+
+    if ($request->input('sort') === 'highest') {
+        $query->orderBy('star', 'desc');
+    } elseif ($request->input('sort') === 'lowest') {
+        $query->orderBy('star', 'asc');
+    } else {
+        $query->orderBy('created_at', 'desc');
+    }
+
+    $reviews = $query->paginate($request->input('per_page', 15));
+
+    // Normalize review images
+    $reviews->getCollection()->transform(function ($review) {
+        if (!empty($review->images) && !is_array($review->images)) {
+            $review->images = json_decode($review->images, true) ?: [];
+        }
+        return $review;
+    });
+
+    // Star counts
+    $starCounts = [];
+    for ($i = 1; $i <= 5; $i++) {
+        $starCounts["{$i}_star"] = Review::where('star', $i)->where('product_id', $productId)->count();
+    }
+
+    $averageRating = Review::where('product_id', $productId)->avg('star');
+
+    return response()->json([
+        'success' => true,
+        'data' => [
+            'reviews' => $reviews,
+            'total_reviews' => $totalReviews,
+            'star_counts' => $starCounts,
+            'average_rating' => round($averageRating, 2),
+            'product_id' => $productId,
+        ],
+    ]);
+}
+
 
 }
