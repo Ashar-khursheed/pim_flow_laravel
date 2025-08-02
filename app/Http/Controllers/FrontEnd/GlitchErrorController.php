@@ -108,7 +108,8 @@ class GlitchErrorController extends BaseController
 			'images' => $images,
 		]);
 
-		SendGlitchErrorReportMailJob::dispatch($record->id)->onQueue('mail');;
+		// SendGlitchErrorReportMailJob::dispatch($record->id)->onQueue('mail');;
+		SendGlitchErrorReportMailJob::dispatch($record->id);
 
 		return response()->json([
 			'success' => true,
