@@ -5,6 +5,86 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Http\Controllers\SitemapController;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Blog;
+
+Route::get('/sitemap.xml', function () {
+    $urls = [];
+
+    // Static Pages
+    $urls[] = [
+        'loc' => url('/'),
+        'changefreq' => 'daily',
+        'priority' => '1.0',
+        'lastmod' => now()->toISOString(),
+    ];
+    $urls[] = [
+        'loc' => url('/about'),
+        'changefreq' => 'monthly',
+        'priority' => '0.8',
+        'lastmod' => now()->toISOString(),
+    ];
+    $urls[] = [
+        'loc' => url('/contact'),
+        'changefreq' => 'monthly',
+        'priority' => '0.8',
+        'lastmod' => now()->toISOString(),
+    ];
+
+    // Categories
+    foreach (Category::where('status', 'published')->get() as $category) {
+        $urls[] = [
+            'loc' => url("/collections/{$category->slug}"),
+            'changefreq' => 'weekly',
+            'priority' => '0.8',
+            'lastmod' => $category->updated_at->toISOString(),
+        ];
+    }
+
+    // Products
+    foreach (Product::where('status', 'published')->get() as $product) {
+        $urls[] = [
+            'loc' => url("/products/{$product->slug}"),
+            'changefreq' => 'weekly',
+            'priority' => '0.7',
+            'lastmod' => $product->updated_at->toISOString(),
+        ];
+    }
+
+    // Blog Posts
+    foreach (Post::where('status', 'published')->get() as $post) {
+        $urls[] = [
+            'loc' => url("/blog/{$post->slug}"),
+            'changefreq' => 'monthly',
+            'priority' => '0.6',
+            'lastmod' => $post->updated_at->toISOString(),
+        ];
+    }
+
+    // Build XML
+    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+    foreach ($urls as $url) {
+        $xml .= '<url>';
+        $xml .= '<loc>' . htmlentities($url['loc']) . '</loc>';
+        $xml .= '<lastmod>' . $url['lastmod'] . '</lastmod>';
+        $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
+        $xml .= '<priority>' . $url['priority'] . '</priority>';
+        $xml .= '</url>';
+    }
+
+    $xml .= '</urlset>';
+
+    return Response::make($xml, 200)->header('Content-Type', 'text/xml');
+});
+
+
+
+
+
 
 Route::get('/robots.txt', function (Request $request) {
     $host = $request->getHost();
@@ -158,9 +238,3 @@ Route::get('/test-quote-pdf', function () {
 	return Pdf::loadView('pdf.quote1', $pdfParams)->stream();
 });
 
-
-Route::get('/sitemap.xml', [SitemapController::class, 'index']);
-Route::get('/sitemap-pages.xml', [SitemapController::class, 'pages']);
-Route::get('/sitemap-categories.xml', [SitemapController::class, 'categories']);
-Route::get('/sitemap-products.xml', [SitemapController::class, 'products']);
-Route::get('/sitemap-blog.xml', [SitemapController::class, 'blog']);
