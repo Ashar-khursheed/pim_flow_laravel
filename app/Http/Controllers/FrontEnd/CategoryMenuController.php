@@ -9,6 +9,7 @@ use App\Models\Category;
 use OpenApi\Annotations as OA;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use App\Models\SeoManagement;
 
 class CategoryMenuController extends Controller
 {
