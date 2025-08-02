@@ -10,32 +10,42 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use App\Models\FrontEnd\GlitchError;
 use App\Mail\GlitchErrorMail;
+use Illuminate\Queue\Middleware\RateLimited;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 
 class SendGlitchErrorReportMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-	protected $glitchErrorId;
-	public function middleware()
-	{
-		return [new \Illuminate\Queue\Middleware\RateLimited('mail-jobs')];
-	}
+	public $glitchErrorId;
+	public $timeout = 120;
+	public $tries = 3;
+	public $backoff = [10, 30, 60]; // Exponential backoff
 
-	/**
-	 * Create a new job instance.
-	 */
 	public function __construct($glitchErrorId)
 	{
 		$this->glitchErrorId = $glitchErrorId;
+		$this->onQueue('default');
 	}
 
+	public function middleware()
+	{
+		return [
+			new RateLimited('mail-jobs'),
+			new WithoutOverlapping($this->glitchErrorId)->dontRelease(),
+		];
+	}
 	/**
 	 * Execute the job.
 	 */
 	public function handle(): void
 	{
-		$record = GlitchError::find($this->glitchErrorId);
-		if (!$record) return;
+		$glitchError = GlitchError::find($this->glitchErrorId);
+
+		if (!$glitchError) {
+			$this->fail(new \Exception("GlitchError {$this->glitchErrorId} not found"));
+			return;
+		}
 
 		$recipients = glitch_error_reporting_mails(); // returns email array
 
@@ -43,8 +53,13 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 			$to = array_shift($recipients); // first is To
 			$cc = $recipients;              // rest as CC
 
-			Mail::to($to)->cc($cc)->send(new GlitchErrorMail($record));
+			Mail::to($to)->cc($cc)->send(new GlitchErrorMail($glitchError));
 		}
+	}
+
+	public function failed($exception)
+	{
+		\Log::error("Glitch error mail job failed for ID {$this->glitchErrorId}: " . $exception->getMessage());
 	}
 }
 
