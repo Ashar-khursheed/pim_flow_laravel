@@ -73,10 +73,6 @@ use App\Models\VendorDocument;
 use App\Models\Website;
 use App\Models\Zipcode;
 
-use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Support\Facades\RateLimiter;
-
-
 class AppServiceProvider extends ServiceProvider
 {
 	/**
@@ -92,13 +88,6 @@ class AppServiceProvider extends ServiceProvider
 	 */
 	public function boot(): void
 	{
-	    RateLimiter::for('mail-jobs', function () {
-	        return [
-	            Limit::perMinute(30)->by('mail-jobs'),
-	            Limit::perSecond(3)->by('mail-jobs'),
-	        ];
-	    });
-
 		foreach (config('units') as $unitClass) {
 			new $unitClass(0, $unitClass::getUnitDefinitions()[0]->getName());
 		}

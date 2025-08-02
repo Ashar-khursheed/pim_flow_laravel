@@ -108,8 +108,7 @@ class GlitchErrorController extends BaseController
 			'images' => $images,
 		]);
 
-		$delay = now()->addSeconds(rand(5, 30));
-		SendGlitchErrorReportMailJob::dispatch($record->id)->delay($delay);
+		SendGlitchErrorReportMailJob::dispatch($record->id)->onQueue('mail');;
 
 		return response()->json([
 			'success' => true,
