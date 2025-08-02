@@ -127,7 +127,7 @@
 									<td style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 										<strong style="font-family: 'Noto Sans', sans-serif;">{{ $product->name }}</strong><br>
 										<span style="font-family: 'Noto Sans', sans-serif;">Cancellation Reason:</span>
-										<span style="font-style:italic; font-family: 'Noto Sans', sans-serif;">{{ $product->cancellationReason }}</span>
+										<span style="font-style:italic; font-family: 'Noto Sans', sans-serif;">{{ $product->reason }}</span>
 									</td>
 									<td class="quantity" style="text-align:right; font-weight:500; font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px;">
 										{{ $product->quantity }}

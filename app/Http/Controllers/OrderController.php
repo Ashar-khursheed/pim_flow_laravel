@@ -24,9 +24,10 @@ use App\Jobs\Order\OrderPlacedMailJob;
 use App\Jobs\Order\OrderConfirmationMailJob;
 use App\Jobs\Order\OutDeliveryMailJob;
 use App\Jobs\Order\OrderDeliveredMailJob;
+use App\Jobs\Order\OrderCancelledMailJob;
+use App\Jobs\Order\PartialOrderCancelledMailJob;
 
 use App\Notifications\Orders\PartialOrderCancelledMail;
-use App\Notifications\Orders\OrderCancelledMail;
 
 class OrderController extends Controller
 {
@@ -793,12 +794,13 @@ class OrderController extends Controller
 					'recordId' => $order->id
 				]));
 			}
-		}
 
-		$customer = $order->customer;
-
-		if ($request->status == 'Cancelled') {
-			$customer->notify(new OrderCancelledMail($order));
+			if ($request->status == 'Cancelled') {
+				$batch->options['queue'] = 'ORD_CNCL_MAIL';
+				$batch->add(new OrderCancelledMailJob([
+					'recordId' => $order->id
+				]));
+			}
 		}
 
 		return response()->json([
@@ -928,8 +930,19 @@ class OrderController extends Controller
 		]);
 
 		if ($request->status == 'Cancelled') {
-			$orderProducts = OrderProduct::where('id', $orderProduct->id)->get();
-			$order->customer->notify(new PartialOrderCancelledMail($order, $orderProducts, $request->notes));
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+
+			})->catch(function (Batch $batch, Throwable $e) {
+
+			})->finally(function (Batch $batch) {
+
+			})->name('Order Mails')->dispatch();
+
+			$batch->options['queue'] = 'ORD_PART_CNCL_MAIL';
+			$batch->add(new PartialOrderCancelledMailJob([
+				'recordId' => $orderProduct->id,
+				'reason' => $request->notes,
+			]));
 		}
 
 		return response()->json([
