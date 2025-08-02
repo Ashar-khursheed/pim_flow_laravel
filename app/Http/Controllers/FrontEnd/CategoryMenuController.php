@@ -103,31 +103,69 @@ class CategoryMenuController extends Controller
      * @param  \Botble\Ecommerce\Models\ProductCategory  $category
      * @return array
      */
+    // private function getCategoryWithChildren($category)
+    // {
+    //     // Get the children of the category
+    //     $children = Category::where('parent_id', $category->id)
+    //     ->where('status', 'published')
+    //     ->get();
+
+    //     // Iterate through each child and fetch its children recursively
+    //     foreach ($children as $child) {
+    //         // Add image URL
+    //         // $child->image = $child->image;
+
+    //         // Prevent the 'children' attribute from causing recursion in JSON
+    //         $child->setRelation('children', $this->getCategoryWithChildren($child));
+    //     }
+
+    //     // Add image URL for the current category
+    //     $category->image = $category->image;
+
+    //     // Add the children to the current category
+    //     $category->children = $children;
+
+    //     // Return the category with its children
+    //     return $category->only(['id', 'name', 'slug', 'parent_id', 'image', 'children']);
+    // }
     private function getCategoryWithChildren($category)
-    {
-        // Get the children of the category
-        $children = Category::where('parent_id', $category->id)
+{
+    // Get the children of the category
+    $children = Category::where('parent_id', $category->id)
         ->where('status', 'published')
         ->get();
 
-        // Iterate through each child and fetch its children recursively
-        foreach ($children as $child) {
-            // Add image URL
-            // $child->image = $child->image;
+    // Iterate through each child and fetch its children recursively
+    foreach ($children as $child) {
+        // Recursively get children for the child category
+        $child->setRelation('children', $this->getCategoryWithChildren($child));
 
-            // Prevent the 'children' attribute from causing recursion in JSON
-            $child->setRelation('children', $this->getCategoryWithChildren($child));
-        }
-
-        // Add image URL for the current category
-        $category->image = $category->image;
-
-        // Add the children to the current category
-        $category->children = $children;
-
-        // Return the category with its children
-        return $category->only(['id', 'name', 'slug', 'parent_id', 'image', 'children']);
+        // Attach SEO URL instead of slug
+        $seo = $child->seoUrl; // Assumes you have the seoUrl() relationship
+        $child->seo_slug = $seo?->url ?? null;
     }
+
+    // Add image URL for the current category
+    $category->image = $category->image;
+
+    // Add the children to the current category
+    $category->children = $children;
+
+    // Attach SEO URL instead of slug for the current category
+    $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
+    $category->seo_slug = $seo?->url ?? null;
+
+    // Return the modified structure
+    return [
+        'id' => $category->id,
+        'name' => $category->name,
+        'slug' => $category->seo_slug, // Replace original slug with SEO URL
+        'parent_id' => $category->parent_id,
+        'image' => $category->image,
+        'children' => $category->children,
+    ];
+}
+
 
 
 
