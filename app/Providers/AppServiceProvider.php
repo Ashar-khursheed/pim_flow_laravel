@@ -95,7 +95,7 @@ class AppServiceProvider extends ServiceProvider
 	    RateLimiter::for('mail-jobs', function () {
 	        return [
 	            Limit::perMinute(30)->by('mail-jobs'),
-	            Limit::perSecond(3)->by('mail-jobs'),
+	            Limit::perSecond(1)->by('mail-jobs'),
 	        ];
 	    });
 
