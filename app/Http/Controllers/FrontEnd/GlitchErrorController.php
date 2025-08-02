@@ -7,6 +7,9 @@ use App\Models\FrontEnd\GlitchError;
 use Illuminate\Http\Request;
 use App\Jobs\SendGlitchErrorReportMailJob;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
 class GlitchErrorController extends BaseController
 {
 	/**
@@ -108,8 +111,17 @@ class GlitchErrorController extends BaseController
 			'images' => $images,
 		]);
 
-		// SendGlitchErrorReportMailJob::dispatch($record->id)->onQueue('mail');;
-		SendGlitchErrorReportMailJob::dispatch($record->id);
+		$batch = Bus::batch([])->before(function (Batch $batch) {
+
+		})->catch(function (Batch $batch, Throwable $e) {
+
+		})->finally(function (Batch $batch) {
+
+		})->name('Glitch Errors')->dispatch();
+
+		$batch->add(new SendGlitchErrorReportMailJob([
+			'recordId' => $record->id
+		]));
 
 		return response()->json([
 			'success' => true,
