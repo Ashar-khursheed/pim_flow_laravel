@@ -159,4 +159,4 @@ Route::get('/test-quote-pdf', function () {
 });
 
 
-Route::get('/generate-sitemap', [SitemapController::class, 'generate']);
+Route::get('/sitemap.xml', [SitemapController::class, 'index']);
