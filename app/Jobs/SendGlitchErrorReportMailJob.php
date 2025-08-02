@@ -10,30 +10,16 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use App\Models\FrontEnd\GlitchError;
 use App\Mail\GlitchErrorMail;
-use Illuminate\Queue\Middleware\RateLimited;
-use Illuminate\Queue\Middleware\WithoutOverlapping;
 
 class SendGlitchErrorReportMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 	public $glitchErrorId;
-	public $timeout = 120;
-	public $tries = 3;
-	public $backoff = [10, 30, 60]; // Exponential backoff
 
 	public function __construct($glitchErrorId)
 	{
 		$this->glitchErrorId = $glitchErrorId;
-		$this->onQueue('default');
-	}
-
-	public function middleware()
-	{
-		return [
-			new RateLimited('mail-jobs'),
-            new WithoutOverlapping($this->glitchErrorId),
-		];
 	}
 	/**
 	 * Execute the job.
