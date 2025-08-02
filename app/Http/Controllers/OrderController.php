@@ -16,7 +16,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use App\Notifications\Orders\OrderPlacedNotification;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\Order\OrderPlacedMailJob;
+
 use App\Notifications\Orders\OrderConfirmationNotification;
 use App\Notifications\Orders\OutForDeliveryMail;
 use App\Notifications\Orders\OrderDeliveredMail;
@@ -335,9 +340,20 @@ class OrderController extends Controller
 				'description' => 'Order has been successfully created',
 			]);
 
-			$order->customer->notify(new OrderPlacedNotification($order->id));
-
 			DB::commit();
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+
+			})->catch(function (Batch $batch, Throwable $e) {
+
+			})->finally(function (Batch $batch) {
+
+			})->name('Order Place')->dispatch();
+
+			$batch->options['queue'] = 'ORD_PLC_MAIL';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $order->id
+			]));
 
 			/* Load relationships */
 			$order->load([

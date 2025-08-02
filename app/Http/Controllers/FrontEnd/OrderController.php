@@ -10,7 +10,12 @@ use App\Models\FrontEnd\CustomerAddress;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use App\Notifications\Orders\OrderPlacedNotification;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\Order\OrderPlacedMailJob;
+
 use App\Notifications\Orders\OrderCancelledMail;
 
 class OrderController extends BaseController
@@ -286,7 +291,18 @@ class OrderController extends BaseController
 
 			DB::commit();
 
-			auth()->user()->notify(new OrderPlacedNotification($order->id));
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+
+			})->catch(function (Batch $batch, Throwable $e) {
+
+			})->finally(function (Batch $batch) {
+
+			})->name('Order Place')->dispatch();
+
+			$batch->options['queue'] = 'ORD_PLC_MAIL';
+			$batch->add(new OrderPlacedMailJob([
+				'recordId' => $order->id
+			]));
 
 			/* Load relationships */
 			$order->load([
