@@ -206,29 +206,61 @@ class CategoryMenuController extends Controller
      *     )
      * )
      */
+    // public function getCategoriesWithChildren(Request $request)
+    // {
+    //     $filterId = $request->get('id');
+
+    //     $query = Category::select(['id', 'name', 'slug', 'parent_id', 'image'])
+    //         ->withCount('products')
+    //         ->where('status', 'published');
+
+    //     if ($filterId) {
+    //         $query->where(function ($q) use ($filterId) {
+    //             $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+    //         });
+    //     }
+
+    //     $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+    //     $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+    //         $categories = $query->get();
+    //         return $this->buildCategoryTree($categories);
+    //     });
+
+    //     return response()->json($categoriesTree);
+    // }
     public function getCategoriesWithChildren(Request $request)
-    {
-        $filterId = $request->get('id');
+        {
+            $filterId = $request->get('id');
 
-        $query = Category::select(['id', 'name', 'slug', 'parent_id', 'image'])
-            ->withCount('products')
-            ->where('status', 'published');
+            $query = Category::select(['id', 'name', 'parent_id', 'image'])
+                ->withCount('products')
+                ->with(['seoUrl:id,relational_id,url']) // Eager load URL
+                ->where('status', 'published');
 
-        if ($filterId) {
-            $query->where(function ($q) use ($filterId) {
-                $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+            if ($filterId) {
+                $query->where(function ($q) use ($filterId) {
+                    $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+                });
+            }
+
+            $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+            $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+                $categories = $query->get();
+
+                // Add URL to each category
+                return $this->buildCategoryTree(
+                    $categories->map(function ($category) {
+                        $category->slug = optional($category->seoUrl)->url;
+                        return $category;
+                    })
+                );
             });
+
+            return response()->json($categoriesTree);
         }
 
-        $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-        $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-            $categories = $query->get();
-            return $this->buildCategoryTree($categories);
-        });
-
-        return response()->json($categoriesTree);
-    }
 
 
 
