@@ -54,23 +54,48 @@ class CategoryMenuController extends Controller
      * )
      */
 
-    public function showCategoryBySlug($slug)
-    {
-        // Fetch the category by slug
-        $category = Category::where('slug', $slug)
-                        ->where('status', 'published')
-                        ->first();
+    public function showCategoryBySlug($seoUrl)
+{
+    // Find the SEO record by URL
+    $seoRecord = SeoManagement::where('url', $seoUrl)
+        ->where('type', 'category') // if you use a type column
+        ->first();
 
-        if (!$category) {
-            return response()->json(['message' => 'Category not found'], 404);
-        }
-
-        // Fetch children of this category recursively
-        $categoryWithChildren = $this->getCategoryWithChildren($category);
-
-        // Return the category with children and their respective children
-        return response()->json($categoryWithChildren);
+    if (!$seoRecord) {
+        return response()->json(['message' => 'SEO URL not found'], 404);
     }
+
+    // Find the category using the relational_id
+    $category = Category::where('id', $seoRecord->relational_id)
+        ->where('status', 'published')
+        ->first();
+
+    if (!$category) {
+        return response()->json(['message' => 'Category not found'], 404);
+    }
+
+    // Fetch children of this category recursively
+    $categoryWithChildren = $this->getCategoryWithChildren($category);
+
+    return response()->json($categoryWithChildren);
+}
+    // public function showCategoryBySlug($slug)
+    // {
+    //     // Fetch the category by slug
+    //     $category = Category::where('slug', $slug)
+    //                     ->where('status', 'published')
+    //                     ->first();
+
+    //     if (!$category) {
+    //         return response()->json(['message' => 'Category not found'], 404);
+    //     }
+
+    //     // Fetch children of this category recursively
+    //     $categoryWithChildren = $this->getCategoryWithChildren($category);
+
+    //     // Return the category with children and their respective children
+    //     return response()->json($categoryWithChildren);
+    // }
 
     /**
      * Recursive function to fetch category and its children recursively.
