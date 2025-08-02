@@ -2,24 +2,27 @@
 
 namespace App\Jobs;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Support\Facades\Mail;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
+
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Bus\Queueable;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Bus\Batchable;
+
+use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\GlitchError;
 use App\Mail\GlitchErrorMail;
 
 class SendGlitchErrorReportMailJob implements ShouldQueue
 {
-	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
-
+	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+	public $timeout = 600;
 	public $glitchErrorId;
 
-	public function __construct($glitchErrorId)
+	public function __construct($data)
 	{
-		$this->glitchErrorId = $glitchErrorId;
+		$this->glitchErrorId = $data['recordId'];
 	}
 	/**
 	 * Execute the job.
@@ -43,9 +46,18 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 		}
 	}
 
-	public function failed($exception)
+	public function failed(\Throwable $exception): void
 	{
-		\Log::error("Glitch error mail job failed for ID {$this->glitchErrorId}: " . $exception->getMessage());
+		$jobName = class_basename($this);
+
+		$errorDetails = [
+			'job' => $jobName,
+			'message' => $exception->getMessage(),
+			'file' => $exception->getFile(),
+			'line' => $exception->getLine(),
+			'trace' => $exception->getTraceAsString(),
+		];
+
+		logger()->error("{$jobName} failed", $errorDetails);
 	}
 }
-
