@@ -54,7 +54,7 @@ Route::get('/sitemap.xml', function () {
     }
 
     // Blog Posts
-    foreach (Post::where('status', 'published')->get() as $post) {
+    foreach (Blog::where('status', 'published')->get() as $post) {
         $urls[] = [
             'loc' => url("/blog/{$post->slug}"),
             'changefreq' => 'monthly',
