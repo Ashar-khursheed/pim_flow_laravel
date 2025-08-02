@@ -369,7 +369,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('/redirect-links/{id}', [RedirectLinkController::class, 'update']);
 	Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
-	Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
 
 
 
@@ -651,3 +650,4 @@ Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
 Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
 
+	Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);
