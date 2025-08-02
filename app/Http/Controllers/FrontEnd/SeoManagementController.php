@@ -104,14 +104,18 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-  public function getByRelationalId($identifier)
+public function getByRelationalId($identifier)
 {
     $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
-    // Check if the identifier looks like a full or partial URL
-    if (filter_var($identifier, FILTER_VALIDATE_URL) || str_contains($identifier, '/')) {
-        $seoQuery->where('url', $identifier);
+    // Check if it's a full URL
+    if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        $path = parse_url($identifier, PHP_URL_PATH); // Just in case you get full URLs
+        $seoQuery->where('url', $path);
+    } elseif (is_numeric($identifier)) {
+        $seoQuery->where('relational_id', $identifier);
     } else {
+        // Assume it's a slug or string relational_id
         $seoQuery->where('relational_id', $identifier);
     }
 
