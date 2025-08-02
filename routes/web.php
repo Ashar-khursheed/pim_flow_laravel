@@ -160,3 +160,7 @@ Route::get('/test-quote-pdf', function () {
 
 
 Route::get('/sitemap.xml', [SitemapController::class, 'index']);
+Route::get('/sitemap-pages.xml', [SitemapController::class, 'pages']);
+Route::get('/sitemap-categories.xml', [SitemapController::class, 'categories']);
+Route::get('/sitemap-products.xml', [SitemapController::class, 'products']);
+Route::get('/sitemap-blog.xml', [SitemapController::class, 'blog']);
