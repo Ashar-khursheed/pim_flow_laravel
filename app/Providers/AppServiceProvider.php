@@ -97,7 +97,7 @@ class AppServiceProvider extends ServiceProvider
 	            Limit::perMinute(30)->by('mail-jobs'),
 	            Limit::perSecond(3)->by('mail-jobs'),
 	        ];
-	    })
+	    });
 
 		foreach (config('units') as $unitClass) {
 			new $unitClass(0, $unitClass::getUnitDefinitions()[0]->getName());
