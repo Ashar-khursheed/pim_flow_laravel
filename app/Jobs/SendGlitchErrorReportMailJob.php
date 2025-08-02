@@ -16,6 +16,10 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
 	protected $glitchErrorId;
+	public function middleware()
+	{
+		return [new \Illuminate\Queue\Middleware\RateLimited('mail-jobs')];
+	}
 
 	/**
 	 * Create a new job instance.
