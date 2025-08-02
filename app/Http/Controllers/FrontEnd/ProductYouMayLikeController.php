@@ -272,7 +272,7 @@ class ProductYouMayLikeController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
-                    'url' => $details->seoUrl->url ?? null,
+                    'url' => $product->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
