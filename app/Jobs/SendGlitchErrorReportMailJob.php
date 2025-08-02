@@ -32,7 +32,7 @@ class SendGlitchErrorReportMailJob implements ShouldQueue
 	{
 		return [
 			new RateLimited('mail-jobs'),
-			new WithoutOverlapping($this->glitchErrorId)->dontRelease(),
+            new WithoutOverlapping($this->glitchErrorId),
 		];
 	}
 	/**
