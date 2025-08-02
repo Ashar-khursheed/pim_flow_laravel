@@ -139,7 +139,7 @@ class AuthController extends Controller
 		]);
 	}
 
-	public function appleLogin(Request $request)
+public function appleLogin(Request $request)
 {
     $request->validate([
         'identity_token' => 'required|string',

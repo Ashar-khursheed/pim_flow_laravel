@@ -1,33 +1,71 @@
 <?php
+
 namespace App\Http\Controllers;
-use Spatie\Sitemap\Sitemap;
-use Spatie\Sitemap\Tags\Url;
-use Illuminate\Support\Carbon;
+
+use Illuminate\Http\Request;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Post;
 
 class SitemapController extends Controller
 {
-    public function generate()
+    public function index()
     {
-        $sitemap = Sitemap::create();
+        $urls = collect();
 
-        // Add static URLs
-        $sitemap->add(Url::create('/')
-            ->setLastModificationDate(Carbon::now())
-            ->setChangeFrequency(Url::CHANGE_FREQUENCY_DAILY)
-            ->setPriority(1.0)
-        );
+        // Static pages
+        $urls->push([
+            'loc' => url('/'),
+            'lastmod' => now()->toISOString(),
+            'changefreq' => 'daily',
+            'priority' => '1.0'
+        ]);
 
-        $sitemap->add(Url::create('/about'));
-        $sitemap->add(Url::create('/contact'));
+        $urls->push([
+            'loc' => url('/about'),
+            'lastmod' => now()->toISOString(),
+            'changefreq' => 'monthly',
+            'priority' => '0.8'
+        ]);
 
-        // Add dynamic URLs
-        foreach (\App\Models\Product::where('status', 'published')->get() as $product) {
-            $sitemap->add(Url::create("/product/{$product->slug}"));
-        }
+        $urls->push([
+            'loc' => url('/contact'),
+            'lastmod' => now()->toISOString(),
+            'changefreq' => 'monthly',
+            'priority' => '0.8'
+        ]);
 
-        // Save sitemap
-        $sitemap->writeToFile(public_path('sitemap.xml'));
+        // Categories
+        Category::active()->get()->each(function ($category) use ($urls) {
+            $urls->push([
+                'loc' => url("/category/{$category->slug}"),
+                'lastmod' => $category->updated_at->toISOString(),
+                'changefreq' => 'weekly',
+                'priority' => '0.8'
+            ]);
+        });
 
-        return response()->json(['message' => 'Sitemap generated successfully.']);
+        // Products
+        Product::active()->get()->each(function ($product) use ($urls) {
+            $urls->push([
+                'loc' => url("/products/{$product->slug}"),
+                'lastmod' => $product->updated_at->toISOString(),
+                'changefreq' => 'weekly',
+                'priority' => '0.7'
+            ]);
+        });
+
+        // Blog posts
+        Post::published()->get()->each(function ($post) use ($urls) {
+            $urls->push([
+                'loc' => url("/blog/{$post->slug}"),
+                'lastmod' => $post->updated_at->toISOString(),
+                'changefreq' => 'monthly',
+                'priority' => '0.6'
+            ]);
+        });
+
+        return response()->view('sitemap', compact('urls'))
+                         ->header('Content-Type', 'text/xml');
     }
 }
