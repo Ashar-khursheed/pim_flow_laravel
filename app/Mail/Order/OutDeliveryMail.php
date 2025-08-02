@@ -1,46 +1,38 @@
 <?php
 
-namespace App\Notifications\Orders;
+namespace App\Mail\Order;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
-class OutForDeliveryMail extends Notification implements ShouldQueue
+use App\Models\FrontEnd\Order;
+
+class OutDeliveryMail extends Mailable
 {
-	use Queueable;
-	public $timeout = 43200;
+	use Queueable, SerializesModels;
 
 	public $order;
 
-	public function __construct($order)
+	/**
+	 * Create a new message instance.
+	 */
+	public function __construct(Order $order)
 	{
 		$this->order = $order;
 	}
 
-	/**3
-	 * Get the notification's delivery channels.
-	 *
-	 * @return array<int, string>
-	 */
-	public function via($notifiable)
+	public function build()
 	{
-		return ['mail'];
-	}
+		$order = $this->order;
 
-	/**
-	 * Get the mail representation of the notification.
-	 */
-	public function toMail($notifiable)
-	{
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$name = $notifiable->name ?? 'User';
-		$carrier = optional($this->order->shipments()->latest()->first())->carrier ?? '';
-		$orderNumber = $this->order->order_number;
-		$estimatedDelivery = optional($this->order->shipments()->latest()->first())->estimated_delivery_date;
+		$name = $order->customer->name ?? 'User';
+		$carrier = optional($order->shipments()->latest()->first())->carrier ?? '';
+		$orderNumber = $order->order_number;
+		$estimatedDelivery = optional($order->shipments()->latest()->first())->estimated_delivery_date;
 		if ($estimatedDelivery) {
 			$estimatedDeliveryDate = Carbon::parse($estimatedDelivery);
 
@@ -50,14 +42,14 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 		} else {
 			$estimatedDeliveryFormatted = 'N/A';
 		}
-		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
-		$customerAddress = $this->order->customerAddress;
+		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
-		$orderDetailUrl = url("/order-details/{$this->order->id}");
+		$orderDetailUrl = url("/order-details/{$order->id}");
 		$rightPngURL = $backendURL. '/right.png';
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
@@ -82,21 +74,8 @@ class OutForDeliveryMail extends Notification implements ShouldQueue
 			'siteEmail' => $siteEmail,
 		];
 
-		return (new MailMessage)
-		->subject("Your HorecaStore Order #{$orderNumber} is Out for Delivery")
-		->markdown('emails.orders.out-for-delivery', $params);
-	}
-
-
-	/**
-	 * Get the array representation of the notification.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function toArray(object $notifiable): array
-	{
-		return [
-			//
-		];
+		return $this->subject("Your HorecaStore Order #{$orderNumber} is Out for Delivery")
+		->markdown('emails.orders.out-for-delivery')
+		->with($params);
 	}
 }

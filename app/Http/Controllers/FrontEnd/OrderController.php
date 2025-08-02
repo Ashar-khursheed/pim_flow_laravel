@@ -14,8 +14,6 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
-use App\Jobs\Order\OrderPlacedMailJob;
-
 use App\Notifications\Orders\OrderCancelledMail;
 
 class OrderController extends BaseController
@@ -290,19 +288,6 @@ class OrderController extends BaseController
 			]);
 
 			DB::commit();
-
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-
-			})->catch(function (Batch $batch, Throwable $e) {
-
-			})->finally(function (Batch $batch) {
-
-			})->name('Order Place')->dispatch();
-
-			$batch->options['queue'] = 'ORD_PLC_MAIL';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $order->id
-			]));
 
 			/* Load relationships */
 			$order->load([

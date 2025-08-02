@@ -21,10 +21,10 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Jobs\Order\OrderPlacedMailJob;
+use App\Jobs\Order\OrderConfirmationMailJob;
+use App\Jobs\Order\OutDeliveryMailJob;
+use App\Jobs\Order\OrderDeliveredMailJob;
 
-use App\Notifications\Orders\OrderConfirmationNotification;
-use App\Notifications\Orders\OutForDeliveryMail;
-use App\Notifications\Orders\OrderDeliveredMail;
 use App\Notifications\Orders\PartialOrderCancelledMail;
 use App\Notifications\Orders\OrderCancelledMail;
 
@@ -764,18 +764,38 @@ class OrderController extends Controller
 			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
 		]);
 
+		if (in_array($request->status, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+
+			})->catch(function (Batch $batch, Throwable $e) {
+
+			})->finally(function (Batch $batch) {
+
+			})->name('Order Mails')->dispatch();
+
+			if ($request->status == 'Confirmed') {
+				$batch->options['queue'] = 'ORD_CNF_MAIL';
+				$batch->add(new OrderConfirmationMailJob([
+					'recordId' => $order->id
+				]));
+			}
+
+			if ($request->status == 'Out for delivery') {
+				$batch->options['queue'] = 'ORD_OUT_MAIL';
+				$batch->add(new OutDeliveryMailJob([
+					'recordId' => $order->id
+				]));
+			}
+
+			if ($request->status == 'Delivered') {
+				$batch->options['queue'] = 'ORD_DLVR_MAIL';
+				$batch->add(new OrderDeliveredMailJob([
+					'recordId' => $order->id
+				]));
+			}
+		}
+
 		$customer = $order->customer;
-		if ($request->status == 'Confirmed') {
-			$customer->notify(new OrderConfirmationNotification($order->id));
-		}
-
-		if ($request->status == 'Out for delivery') {
-			$customer->notify(new OutForDeliveryMail($order));
-		}
-
-		if ($request->status == 'Delivered') {
-			$customer->notify(new OrderDeliveredMail($order));
-		}
 
 		if ($request->status == 'Cancelled') {
 			$customer->notify(new OrderCancelledMail($order));

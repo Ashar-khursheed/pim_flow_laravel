@@ -1,45 +1,35 @@
 <?php
 
-namespace App\Notifications\Orders;
+namespace App\Mail\Order;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use Carbon\Carbon;
+
 use App\Models\FrontEnd\Order;
 
-class OrderConfirmationNotification extends Notification implements ShouldQueue
+class OrderConfirmationMail extends Mailable
 {
-	use Queueable;
-	public $timeout = 43200;
+	use Queueable, SerializesModels;
 
-	public $orderId;
-
-	public function __construct($order_id)
-	{
-		$this->orderId = $order_id;
-	}
+	public $order;
 
 	/**
-	 * Get the notification's delivery channels.
-	 *
-	 * @return array<int, string>
+	 * Create a new message instance.
 	 */
-	public function via($notifiable)
+	public function __construct(Order $order)
 	{
-		return ['mail'];
+		$this->order = $order;
 	}
 
-	/**
-	 * Get the mail representation of the notification.
-	 */
-	public function toMail($notifiable)
+	public function build()
 	{
-		$order = Order::find($this->orderId);
+		$order = $this->order;
 
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$name = $notifiable->name ?? 'User';
+		$name = $order->customer->name ?? 'User';
 		$orderNumber = $order->order_number;
 
 		$rightPngURL = $backendURL. '/right.png';
@@ -66,20 +56,8 @@ class OrderConfirmationNotification extends Notification implements ShouldQueue
 			'siteEmail' => $siteEmail,
 		];
 
-		return (new MailMessage)
-		->subject("Your HorecaStore Order #{$orderNumber} Is Now Confirmed and in Progress")
-		->markdown('emails.orders.order-confirmed', $params);
-	}
-
-	/**
-	 * Get the array representation of the notification.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function toArray(object $notifiable): array
-	{
-		return [
-			//
-		];
+		return $this->subject("Your HorecaStore Order #{$orderNumber} Is Now Confirmed and in Progress")
+		->markdown('emails.orders.order-confirmed')
+		->with($params);
 	}
 }
