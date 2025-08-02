@@ -59,7 +59,7 @@ class CategoryMenuController extends Controller
 {
     // Find the SEO record by URL
     $seoRecord = SeoManagement::where('url', $seoUrl)
-        ->where('type', 'category') // if you use a type column
+        ->where('relational_type', 'category') // if you use a type column
         ->first();
 
     if (!$seoRecord) {
