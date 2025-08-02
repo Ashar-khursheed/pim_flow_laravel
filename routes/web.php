@@ -10,76 +10,76 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\Blog;
 
-Route::get('/sitemap.xml', function () {
-    $urls = [];
+// Route::get('/sitemap.xml', function () {
+//     $urls = [];
 
-    // Static Pages
-    $urls[] = [
-        'loc' => url('/'),
-        'changefreq' => 'daily',
-        'priority' => '1.0',
-        'lastmod' => now()->toISOString(),
-    ];
-    $urls[] = [
-        'loc' => url('/about'),
-        'changefreq' => 'monthly',
-        'priority' => '0.8',
-        'lastmod' => now()->toISOString(),
-    ];
-    $urls[] = [
-        'loc' => url('/contact'),
-        'changefreq' => 'monthly',
-        'priority' => '0.8',
-        'lastmod' => now()->toISOString(),
-    ];
+//     // Static Pages
+//     $urls[] = [
+//         'loc' => url('/'),
+//         'changefreq' => 'daily',
+//         'priority' => '1.0',
+//         'lastmod' => now()->toISOString(),
+//     ];
+//     $urls[] = [
+//         'loc' => url('/about'),
+//         'changefreq' => 'monthly',
+//         'priority' => '0.8',
+//         'lastmod' => now()->toISOString(),
+//     ];
+//     $urls[] = [
+//         'loc' => url('/contact'),
+//         'changefreq' => 'monthly',
+//         'priority' => '0.8',
+//         'lastmod' => now()->toISOString(),
+//     ];
 
-    // Categories
-    foreach (Category::where('status', 'published')->get() as $category) {
-        $urls[] = [
-            'loc' => url("/collections/{$category->slug}"),
-            'changefreq' => 'weekly',
-            'priority' => '0.8',
-            'lastmod' => $category->updated_at->toISOString(),
-        ];
-    }
+//     // Categories
+//     foreach (Category::where('status', 'published')->get() as $category) {
+//         $urls[] = [
+//             'loc' => url("/collections/{$category->slug}"),
+//             'changefreq' => 'weekly',
+//             'priority' => '0.8',
+//             'lastmod' => $category->updated_at->toISOString(),
+//         ];
+//     }
 
-    // Products
-    foreach (Product::where('status', 'published')->get() as $product) {
-        $urls[] = [
-            'loc' => url("/products/{$product->slug}"),
-            'changefreq' => 'weekly',
-            'priority' => '0.7',
-            'lastmod' => $product->updated_at->toISOString(),
-        ];
-    }
+//     // Products
+//     foreach (Product::where('status', 'published')->get() as $product) {
+//         $urls[] = [
+//             'loc' => url("/products/{$product->slug}"),
+//             'changefreq' => 'weekly',
+//             'priority' => '0.7',
+//             'lastmod' => $product->updated_at->toISOString(),
+//         ];
+//     }
 
-    // Blog Posts
-    foreach (Blog::where('status', 'published')->get() as $post) {
-        $urls[] = [
-            'loc' => url("/blog/{$post->slug}"),
-            'changefreq' => 'monthly',
-            'priority' => '0.6',
-            'lastmod' => $post->updated_at->toISOString(),
-        ];
-    }
+//     // Blog Posts
+//     foreach (Blog::where('status', 'published')->get() as $post) {
+//         $urls[] = [
+//             'loc' => url("/blog/{$post->slug}"),
+//             'changefreq' => 'monthly',
+//             'priority' => '0.6',
+//             'lastmod' => $post->updated_at->toISOString(),
+//         ];
+//     }
 
-    // Build XML
-    $xml = '<?xml version="1.0" encoding="UTF-8"?>';
-    $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+//     // Build XML
+//     $xml = '<?xml version="1.0" encoding="UTF-8"?>';
+//     $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
-    foreach ($urls as $url) {
-        $xml .= '<url>';
-        $xml .= '<loc>' . htmlentities($url['loc']) . '</loc>';
-        $xml .= '<lastmod>' . $url['lastmod'] . '</lastmod>';
-        $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
-        $xml .= '<priority>' . $url['priority'] . '</priority>';
-        $xml .= '</url>';
-    }
+//     foreach ($urls as $url) {
+//         $xml .= '<url>';
+//         $xml .= '<loc>' . htmlentities($url['loc']) . '</loc>';
+//         $xml .= '<lastmod>' . $url['lastmod'] . '</lastmod>';
+//         $xml .= '<changefreq>' . $url['changefreq'] . '</changefreq>';
+//         $xml .= '<priority>' . $url['priority'] . '</priority>';
+//         $xml .= '</url>';
+//     }
 
-    $xml .= '</urlset>';
+//     $xml .= '</urlset>';
 
-    return Response::make($xml, 200)->header('Content-Type', 'text/xml');
-});
+//     return Response::make($xml, 200)->header('Content-Type', 'text/xml');
+// });
 
 
 
