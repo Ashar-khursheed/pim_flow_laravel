@@ -500,7 +500,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'nomanpeera@horecastore.ae',
 			'nomanpeera@gmail.com',
 			'aksitbhardwaj@gmail.com',
-			'asharKhursheed26@gmail.com'
+			'asharKhursheed26@gmail.com',
+			'sales@thehorecastore.com',
 		];
 
 		return $mails;
@@ -510,9 +511,9 @@ if (!function_exists('glitch_error_reporting_mails')) {
 if (!function_exists('order_cc_mails')) {
 	function order_cc_mails() {
 		$mails = [
+			'ofm@thehorecastore.com',
 			'nomanpeera@horecastore.ae',
 			'shehzad@rapid-supplies.com',
-			'ofm@thehorecastore.com',
 			'ofs@thehorecastore.com',
 			'mfaizan@rapid-supplies.com',
 			'ofs02@thehorecastore.com'

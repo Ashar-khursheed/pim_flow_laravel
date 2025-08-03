@@ -35,8 +35,11 @@ class OutDeliveryMailJob implements ShouldQueue
 
 		if (!empty($order)) {
 			$to = $order->customer->email;
-			$cc = order_cc_mails();
+			Mail::to($to)->send(new OutDeliveryMail($order));
 
+			$recipients = order_cc_mails();
+			$to = array_shift($recipients);
+			$cc = $recipients;
 			Mail::to($to)->cc($cc)->send(new OutDeliveryMail($order));
 		}
 	}

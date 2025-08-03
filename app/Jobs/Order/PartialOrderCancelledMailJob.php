@@ -37,8 +37,11 @@ class PartialOrderCancelledMailJob implements ShouldQueue
 
 		if (!empty($orderProduct)) {
 			$to = $orderProduct->order->customer->email;
-			$cc = order_cc_mails();
+			Mail::to($to)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 
+			$recipients = order_cc_mails();
+			$to = array_shift($recipients);
+			$cc = $recipients;
 			Mail::to($to)->cc($cc)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 		}
 	}
