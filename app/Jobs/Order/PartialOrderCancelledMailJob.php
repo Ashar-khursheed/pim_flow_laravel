@@ -10,37 +10,39 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
 
 use Illuminate\Support\Facades\Mail;
-use App\Models\FrontEnd\Order;
-use App\Mail\Order\OrderPlacedMail;
+use App\Models\FrontEnd\OrderProduct;
+use App\Mail\Order\PartialOrderCancelledMail;
 
-class OrderPlacedMailJob implements ShouldQueue
+class PartialOrderCancelledMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
-	public $orderId;
+	public $orderProductId;
+	public $reason;
 
 	public function __construct($data)
 	{
-		$this->orderId = $data['recordId'];
+		$this->orderProductId = $data['recordId'];
+		$this->reason = $data['reason'];
 	}
 
 	public function handle(): void
 	{
-		$order = Order::find($this->orderId);
+		$orderProduct = OrderProduct::find($this->orderProductId);
 
-		if (!$order) {
-			$this->fail(new \Exception("Order {$this->orderId} not found"));
+		if (!$orderProduct) {
+			$this->fail(new \Exception("Order Product {$this->orderProductId} not found"));
 			return;
 		}
 
-		if (!empty($order)) {
-			$to = $order->customer->email;
-			Mail::to($to)->send(new OrderPlacedMail($order));
+		if (!empty($orderProduct)) {
+			$to = $orderProduct->order->customer->email;
+			Mail::to($to)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 
 			$recipients = order_cc_mails();
 			$to = array_shift($recipients);
 			$cc = $recipients;
-			Mail::to($to)->cc($cc)->send(new OrderPlacedMail($order));
+			Mail::to($to)->cc($cc)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 		}
 	}
 

@@ -11,9 +11,9 @@ use Illuminate\Bus\Batchable;
 
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Order;
-use App\Mail\Order\OrderPlacedMail;
+use App\Mail\Order\OutDeliveryMail;
 
-class OrderPlacedMailJob implements ShouldQueue
+class OutDeliveryMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
@@ -35,12 +35,12 @@ class OrderPlacedMailJob implements ShouldQueue
 
 		if (!empty($order)) {
 			$to = $order->customer->email;
-			Mail::to($to)->send(new OrderPlacedMail($order));
+			Mail::to($to)->send(new OutDeliveryMail($order));
 
 			$recipients = order_cc_mails();
 			$to = array_shift($recipients);
 			$cc = $recipients;
-			Mail::to($to)->cc($cc)->send(new OrderPlacedMail($order));
+			Mail::to($to)->cc($cc)->send(new OutDeliveryMail($order));
 		}
 	}
 

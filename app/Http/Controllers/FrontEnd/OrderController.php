@@ -14,9 +14,7 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
-use App\Jobs\Order\OrderPlacedMailJob;
-
-use App\Notifications\Orders\OrderCancelledMail;
+use App\Jobs\Order\OrderCancelledMailJob;
 
 class OrderController extends BaseController
 {
@@ -290,19 +288,6 @@ class OrderController extends BaseController
 			]);
 
 			DB::commit();
-
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-
-			})->catch(function (Batch $batch, Throwable $e) {
-
-			})->finally(function (Batch $batch) {
-
-			})->name('Order Place')->dispatch();
-
-			$batch->options['queue'] = 'ORD_PLC_MAIL';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $order->id
-			]));
 
 			/* Load relationships */
 			$order->load([
@@ -643,7 +628,18 @@ class OrderController extends BaseController
 		$order->orderProducts()->update(['status' => $request->status]);
 
 		if ($request->status == 'Cancelled') {
-			$order->customer->notify(new OrderCancelledMail($order));
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+
+			})->catch(function (Batch $batch, Throwable $e) {
+
+			})->finally(function (Batch $batch) {
+
+			})->name('Order Mails')->dispatch();
+
+			$batch->options['queue'] = 'ORD_CNCL_MAIL';
+			$batch->add(new OrderCancelledMailJob([
+				'recordId' => $order->id
+			]));
 		}
 
 		/* dd tracking entry */

@@ -14,5 +14,5 @@
 @endif
 
 Thanks,<br>
-{{ config('app.name') }}
+Team HorecaStore
 @endcomponent
