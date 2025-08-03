@@ -506,3 +506,18 @@ if (!function_exists('glitch_error_reporting_mails')) {
 		return $mails;
 	}
 }
+
+if (!function_exists('order_cc_mails')) {
+	function order_cc_mails() {
+		$mails = [
+			'nomanpeera@horecastore.ae',
+			'shehzad@rapid-supplies.com',
+			'ofm@thehorecastore.com',
+			'ofs@thehorecastore.com',
+			'mfaizan@rapid-supplies.com',
+			'ofs02@thehorecastore.com'
+		];
+
+		return $mails;
+	}
+}
