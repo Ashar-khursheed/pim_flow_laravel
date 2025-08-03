@@ -14,5 +14,5 @@
 @endif
 
 Thanks,<br>
-- Team HorecaStore
+Team HorecaStore
 @endcomponent
