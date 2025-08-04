@@ -173,11 +173,11 @@ def search(query: str):
     tokens = query.lower().split()
 
     scored = []
-    for sku, name,url, emb in zip(product_skus, product_names, embeddings):
+    for sku, name, url, emb in zip(product_skus, product_names, product_urls, embeddings):
         kw     = sum(1 for t in tokens if t in name.lower())
         sim    = float(np.dot(emb, q_emb))
         clicks = click_counts.get(sku, 0)
-        scored.append((kw, sim, clicks, sku, name))
+        scored.append((kw, sim, clicks, sku, name, url))
 
     # keyword + semantic sort, take top K
     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
