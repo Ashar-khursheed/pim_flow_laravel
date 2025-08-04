@@ -104,31 +104,7 @@ class CategoryMenuController extends Controller
      * @param  \Botble\Ecommerce\Models\ProductCategory  $category
      * @return array
      */
-    // private function getCategoryWithChildren($category)
-    // {
-    //     // Get the children of the category
-    //     $children = Category::where('parent_id', $category->id)
-    //     ->where('status', 'published')
-    //     ->get();
-
-    //     // Iterate through each child and fetch its children recursively
-    //     foreach ($children as $child) {
-    //         // Add image URL
-    //         // $child->image = $child->image;
-
-    //         // Prevent the 'children' attribute from causing recursion in JSON
-    //         $child->setRelation('children', $this->getCategoryWithChildren($child));
-    //     }
-
-    //     // Add image URL for the current category
-    //     $category->image = $category->image;
-
-    //     // Add the children to the current category
-    //     $category->children = $children;
-
-    //     // Return the category with its children
-    //     return $category->only(['id', 'name', 'slug', 'parent_id', 'image', 'children']);
-    // }
+   
     private function getCategoryWithChildren($category)
 {
     // Get the children of the category
@@ -206,29 +182,7 @@ class CategoryMenuController extends Controller
      *     )
      * )
      */
-    // public function getCategoriesWithChildren(Request $request)
-    // {
-    //     $filterId = $request->get('id');
-
-    //     $query = Category::select(['id', 'name', 'slug', 'parent_id', 'image'])
-    //         ->withCount('products')
-    //         ->where('status', 'published');
-
-    //     if ($filterId) {
-    //         $query->where(function ($q) use ($filterId) {
-    //             $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-    //         });
-    //     }
-
-    //     $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-    //     $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-    //         $categories = $query->get();
-    //         return $this->buildCategoryTree($categories);
-    //     });
-
-    //     return response()->json($categoriesTree);
-    // }
+   
     public function getCategoriesWithChildren(Request $request)
         {
             $filterId = $request->get('id');

@@ -282,31 +282,7 @@ class RecentlyViewedProductController extends Controller
      *     )
      * )
      */
-    // public function saveGuestProductView(Request $request)
-    // {
-    //     $productId = $request->input('product_id');
-    //     $guestToken = $request->input('guest_token');
-    
-    //     if (!$productId || !Product::find($productId)) {
-    //         return response()->json(['message' => 'Invalid product ID.'], 400);
-    //     }
-    
-    //     // If token not provided, create one
-    //     if (!$guestToken) {
-    //         $guestToken = Str::uuid()->toString();
-    //     }
-    
-    //     // Save the guest product view
-    //     GuestRecentlyViewedProduct::create([
-    //         'guest_token' => $guestToken,
-    //         'product_id' => $productId,
-    //     ]);
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'guest_token' => $guestToken, // send back token to store on frontend
-    //     ]);
-    // }
+
     public function saveGuestProductView(Request $request)
 {
     $url = $request->input('product_id'); // frontend sends full URL here

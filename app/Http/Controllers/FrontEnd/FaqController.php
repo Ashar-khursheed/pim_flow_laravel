@@ -12,7 +12,7 @@ use OpenApi\Annotations as OA;
 class FaqController extends Controller
 {
 
-        /**
+    /**
      * @OA\Get(
      *     path="/api/frontend/faqs/product/{product_id}",
      *     operationId="getFaqsByProduct",
