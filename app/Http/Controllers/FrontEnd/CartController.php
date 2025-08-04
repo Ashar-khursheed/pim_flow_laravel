@@ -321,8 +321,8 @@ class CartController extends Controller
 
         // Fetch cart items with product and currency details
         $cartItems = Auth::check()
-            ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers')->get()
-            : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers')->get();
+            ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
+            : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
 
         // Fetch applicable discounts for the user
         $userDiscountIds = DB::table('ec_discount_customers')
@@ -352,6 +352,8 @@ class CartController extends Controller
         
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+            $item->product->url = $item->product->seoUrl->url ?? null;
+
         
             // ✅ Replace `currency` object with just symbol
             $symbol = optional($item->product->currency)->symbol;

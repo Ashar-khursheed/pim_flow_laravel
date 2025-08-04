@@ -111,7 +111,7 @@ use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileCo
 use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
-
+use App\Http\Controllers\FrontEnd\GlitchErrorController;
 
 
 use Illuminate\Support\Facades\Http;
@@ -371,6 +371,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
+
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
@@ -394,6 +395,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 });
 
 
+Route::apiResource('/frontend/glitch-errors', GlitchErrorController::class);
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
@@ -648,3 +650,5 @@ Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getRev
 Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
 Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
 Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
+
+	Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);

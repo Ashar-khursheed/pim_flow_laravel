@@ -1,4 +1,3 @@
-// Migration: create_payments_table.php
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -14,7 +13,7 @@ return new class extends Migration
             $table->unsignedBigInteger('order_id'); // or just bigInteger if you prefer
             $table->string('transaction_id')->unique();
             $table->enum('payment_mode', [
-                'Cash on Delivery', 'Credit Card', 'Debit Card', 
+                'Cash on Delivery', 'Credit Card', 'Debit Card',
                 'Bank Transfer', 'Tabby', 'Tamara', 'Cheque'
             ]);
             $table->decimal('amount', 10, 2);

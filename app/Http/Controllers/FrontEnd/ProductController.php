@@ -92,15 +92,20 @@ class ProductController extends Controller
                 }
 
                 // Start building the base query
-                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand' ,'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
                     ->where('status', 'published');
 
-                                    
-                // Check if filtering by specific product ID
-                $productId = $request->input('product_id');
-                if ($productId) {
-                    $query->where('id', $productId);
-                }
+    
+                 $productId = $request->input('product_id'); // numeric ID
+                            $slug = $request->input('slug');           // string slug
+                        if ($productId) {
+                            $query->where('id', $productId);
+                        } elseif ($slug) {
+                            $query->whereHas('seoUrl', function ($q) use ($slug) {
+                                $q->where('url', $slug);
+                            });
+                        }
+
                 // Apply filters
                 $this->applyFilters($query, $request);
 
@@ -541,15 +546,25 @@ class ProductController extends Controller
     {
 
               // Start building the base query
-                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews'])
+                $query = Product::with(['categories', 'brand', 'productSuppliers', 'brand.products.reviews' ,  'seoUrl' ])
                     ->where('status', 'published');
 
                 
                 // Check if filtering by specific product ID
-                $productId = $request->input('product_id');
-                if ($productId) {
-                    $query->where('id', $productId);
-                }
+                // $productId = $request->input('product_id');
+                // if ($productId) {
+                //     $query->where('id', $productId);
+                // }
+                  $productId = $request->input('product_id'); // numeric ID
+                            $slug = $request->input('slug');           // string slug
+                        if ($productId) {
+                            $query->where('id', $productId);
+                        } elseif ($slug) {
+                            $query->whereHas('seoUrl', function ($q) use ($slug) {
+                                $q->where('url', $slug);
+                            });
+                        }
+
                 $this->applyFilters($query, $request);
 
                 // Log query for debugging
@@ -948,7 +963,7 @@ class ProductController extends Controller
             ->limit(20)
             ->with([
                 'reviews:id,product_id,star',
-                'currency' ,   'productSuppliers'    ])
+                'currency' ,   'productSuppliers'  ,'seoUrl'  ])
             ->get();
 
         $transformed = $relatedProducts->map(function ($product) use ($wishlistProductIds) {
@@ -992,6 +1007,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $cleanedImages,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1107,7 +1123,7 @@ class ProductController extends Controller
         // Get paginated products with relationships
         $products = $brand->products()
             ->where('status', 'published')
-            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers' ,'seoUrl' ])
             ->paginate($perPage);
 
         // Transform each product
@@ -1141,6 +1157,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1262,7 +1279,7 @@ class ProductController extends Controller
             ->where('status', 'published')
             ->whereNotNull('sale_price')
             ->where('sale_price', '>', 0)
-            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency' , 'productSuppliers' ,'seoUrl' ])
             ->paginate($perPage);
 
         $transformed = collect($products->items())->map(function ($product) use ($wishlistProductIds) {
@@ -1285,6 +1302,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
@@ -1473,15 +1491,22 @@ class ProductController extends Controller
      * )
      */
 
-    public function getCategoryWiseRandomProducts(Request $request, $categoryId)
+public function getCategoryWiseRandomProducts(Request $request, $category)
     {
-        if (!$categoryId) {
-            return response()->json(['error' => 'category_id is required'], 400);
-        }
+       $categoryModel = Category::where('id', $category)
+                    ->orWhere('slug', $category)
+                    ->first();
 
-        $allCategoryIds = $this->getAllChildCategoryIds($categoryId); // includes the given ID
+            if (!$categoryModel) {
+                return response()->json(['error' => 'Category not found'], 404);
+            }
 
-        $products = Product::where('status', 'published') // only published products
+            $categoryId = $categoryModel->id;
+
+        $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
+
+      $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
+    ->where('status', 'published')
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
         })
@@ -1542,6 +1567,7 @@ class ProductController extends Controller
                 "id" => $product->id,
                 "name" => $product->name,
                 "sku" => $product->sku,
+                "url" => $product->seoUrl->url ?? null,
                 "total_reviews" => $product->reviews->count(),
                 "avg_rating" => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                 "left_stock" => $product->left_stock ?? 0,
@@ -1631,7 +1657,7 @@ class ProductController extends Controller
      *     )
      * )
      */
-    public function getCategoryWiseRandomProductsForUser(Request $request, $categoryId)
+    public function getCategoryWiseRandomProductsForUser(Request $request, $category)
     {
           // Auth and wishlist logic
           $userId = Auth::id();
@@ -1647,13 +1673,21 @@ class ProductController extends Controller
               $wishlistProductIds = session()->get('guest_wishlist', []);
           }
 
-        if (!$categoryId) {
-            return response()->json(['error' => 'category_id is required'], 400);
+       $categoryModel =Category::where('id', $category)
+                    ->orWhere('slug', $category)
+                    ->first();
+
+        if (!$categoryModel) {
+            return response()->json(['error' => 'Category not found'], 404);
         }
 
+        $categoryId = $categoryModel->id;
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-        $products = Product::where('status', 'published') // only published products
+
+       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here
+    ->where('status', 'published')
+
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
         })
@@ -1735,7 +1769,7 @@ class ProductController extends Controller
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,
-
+                "url" => $product->seoUrl->url ?? null,
                 'start_date' => $product->start_date,
                 'end_date' => $product->end_date,
                 'warranty_information' => $product->warranty_information,

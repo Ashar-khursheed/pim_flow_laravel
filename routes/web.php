@@ -3,6 +3,33 @@
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use App\Http\Controllers\SitemapController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Blog;
+
+
+
+
+
+
+
+
+Route::get('/robots.txt', function (Request $request) {
+    $host = $request->getHost();
+
+    if ($host === 'thehorecastore.co') {
+        // Disallow all crawling
+        return response("User-agent: *\nDisallow: /", 200)
+            ->header('Content-Type', 'text/plain');
+    }
+
+    // Allow all crawling for thehorecastore.com or other domains
+    return response("User-agent: *\nDisallow:", 200)
+        ->header('Content-Type', 'text/plain');
+});
 
 Route::get('/test-quote-pdf', function () {
 	$quote = \App\Models\FrontEnd\Quote::with([
@@ -141,3 +168,4 @@ Route::get('/test-quote-pdf', function () {
 
 	return Pdf::loadView('pdf.quote1', $pdfParams)->stream();
 });
+

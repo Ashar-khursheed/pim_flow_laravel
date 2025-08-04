@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use OpenApi\Annotations as OA;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Models\SeoManagement;
 
 /**
  * @OA\Schema(
@@ -100,6 +101,11 @@ class Category extends Model
 	{
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
+		public function seoUrl()
+	{
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id');
+	}
+
 
 	public function subCategories()
 	{

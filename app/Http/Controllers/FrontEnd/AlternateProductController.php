@@ -178,7 +178,7 @@ class AlternateProductController extends Controller
             }
 
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute' , 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $alternateProductIds)
                 ->get()
@@ -215,6 +215,7 @@ class AlternateProductController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'images' => $images,
+                    'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,
@@ -304,7 +305,7 @@ class AlternateProductController extends Controller
             }
     
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute' , 'seoUrl',])
                 ->where('status', 'published')
                 ->whereIn('id', $alternateProductIds)
                 ->get()
@@ -341,6 +342,7 @@ class AlternateProductController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'images' => $images,
+                    'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,

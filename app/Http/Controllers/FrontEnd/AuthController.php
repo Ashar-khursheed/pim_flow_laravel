@@ -139,7 +139,7 @@ class AuthController extends Controller
 		]);
 	}
 
-	public function appleLogin(Request $request)
+public function appleLogin(Request $request)
 {
     $request->validate([
         'identity_token' => 'required|string',
@@ -151,15 +151,15 @@ class AuthController extends Controller
 
     try {
         // Decode JWT header
-        $jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
-        $kid = $jwtHeader['kid'];
+       $jwtHeader = json_decode(base64_decode(explode('.', $identityToken)[0]), true);
+		$appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
+		$publicKeys = JWK::parseKeySet($appleKeys);
 
-        // Get Apple public keys
-        $appleKeys = Http::get('https://appleid.apple.com/auth/keys')->json();
-        $publicKeys = JWK::parseKeySet($appleKeys);
+		$decoded = JWT::decode($identityToken, $publicKeys, ['RS256']);
+
 
         // Decode token using Apple’s public key
-        $decoded = JWT::decode($identityToken, $publicKeys[$kid]);
+        // $decoded = JWT::decode($identityToken, $publicKeys[$kid]);
         $email = $decoded->email ?? $request->email;
         $appleSub = $decoded->sub;
 
@@ -205,7 +205,7 @@ class AuthController extends Controller
 					'mobile_number' => null,
 					'profile_img' => null,
 				]);
-		$customer->notify(new WelcomeMail());
+		// $customer->notify(new WelcomeMail());
 
 
 
