@@ -1506,7 +1506,7 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
         $allCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
       $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute', 'seoUrl']) // add seoUrl here
-    ->where('status', 'published')
+     ->where('status', 'published')
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
         })
@@ -1686,7 +1686,7 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
 
 
        $products = Product::with(['reviews', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'ingredientsAttribute',  'seoUrl']) // add seoUrl here
-    ->where('status', 'published')
+      ->where('status', 'published')
 
         ->whereHas('categories', function ($query) use ($allCategoryIds) {
             $query->whereIn('categories.id', $allCategoryIds);
@@ -1843,187 +1843,209 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
 
 
     private function applyFilters(\Illuminate\Database\Eloquent\Builder $query, \Illuminate\Http\Request $request)
-        {
-            // Log the request to ensure you're receiving the correct parameters
-            \Log::info($request->all());
-          \Log::info('Request Parameters:', $request->all());
-            // Apply ID filter
-            if ($request->has('id')) {
-                $id = $request->input('id');
-                $query->where('id', $id);
-                \Log::info('Filter by ID: ' . $id);
-            }
-
-            // Search filters
-            // if ($request->has('search')) {
-            //     $searchTerm = $request->input('search');
-            //     $query->where(function($q) use ($searchTerm) {
-            //         $q->where('name', 'like', '%' . $searchTerm . '%')
-            //           ->orWhere('sku', 'like', '%' . $searchTerm . '%');
-            //     });
-            // }
-
-                    // Search filters with category and brand
-
-            // Search filter (product name or SKU)
-
-            if ($request->has('search')) {
-                $searchTerm = $request->input('search');
-                $query->where(function($q) use ($searchTerm) {
-                    $q->where('name', 'like', '%' . $searchTerm . '%')
-                      ->orWhere('sku', 'like', '%' . $searchTerm . '%')
-                      ->orWhereHas('categories', function($q) use ($searchTerm) {
-                          $q->where('name', 'like', '%' . $searchTerm . '%');
-                      })
-                      ->orWhereHas('brand', function($q) use ($searchTerm) {
-                          $q->where('name', 'like', '%' . $searchTerm . '%');
-                      });
-                });
-            }
-
-            if ($request->has('name')) {
-                $query->where('name', 'LIKE', '%' . $request->input('name') . '%');
-            }
-
-            if ($request->has('description')) {
-                $query->where('description', 'LIKE', '%' . $request->input('description') . '%');
-            }
-
-            // SKU filter
-            if ($request->has('sku')) {
-                $skus = $request->input('sku');
-                if (is_array($skus)) {
-                    $query->whereIn('sku', $skus);
-                } else {
-                    $query->where('sku', $skus);
-                }
-            }
-
-            // Status filter
-            if ($request->has('status')) {
-                $query->where('status', $request->input('status'));
-            }
-
-            // Stock status filter
-            if ($request->has('stock_status')) {
-                $query->where('stock_status', $request->input('stock_status'));
-            }
-
-            // Numerical filters
-                // Delivery Days
-            if ($request->has('delivery_days')) {
-                $query->where('delivery_days', $request->input('delivery_days'));
-            }
-            if ($request->has('price_min')) {
-                $query->where('price', '>=', $request->input('price_min'));
-            }
-
-            if ($request->has('price_max')) {
-                $query->where('price', '<=', $request->input('price_max'));
-            }
-
-            if ($request->has('quantity_min')) {
-                $query->where('quantity', '>=', $request->input('quantity_min'));
-            }
-
-            if ($request->has('quantity_max')) {
-                $query->where('quantity', '<=', $request->input('quantity_max'));
-            }
-
-            // Date filters
-            if ($request->has('start_date')) {
-                $query->where('created_at', '>=', $request->input('start_date'));
-            }
-
-            if ($request->has('end_date')) {
-                $query->where('created_at', '<=', $request->input('end_date'));
-            }
-
-        
-            if ($request->has('is_featured')) {
-                $query->where('is_featured', $request->input('is_featured'));
-            }
-
-            if ($request->has('rating')) {
-                $rating = $request->input('rating');
-                $query->whereHas('reviews', function($q) use ($rating) {
-                    $q->selectRaw('product_id, AVG(star) as avg_rating') // Include product_id in the select statement
-                      ->groupBy('product_id')
-                      ->havingRaw('AVG(star) = ?', [$rating]); // Change from >= to =
-                });
-            }
-
-                    if ($request->has('brand_id')) {
-                        $brandIds = $request->input('brand_id');
-
-                        // Convert to array if needed
-                        if (!is_array($brandIds)) {
-                            $brandIds = explode(',', $brandIds);
-                        }
-
-                        // Ensure brand IDs are integers
-                        $brandIds = array_map('intval', $brandIds);
-
-                        \Log::info('Filtering by Brand IDs: ', $brandIds);
-
-                        // Apply filter on the existing query object
-                        $query->whereIn('brand_id', $brandIds);
-                    }
-                    // Continue with any other filters or sorting options
-
-
-
-            // Brand filter by name
-            if ($request->has('brand_names')) {
-                $brandNames = $request->input('brand_names');
-
-                // Check if $brandNames is an array
-                if (is_array($brandNames)) {
-                    // Fetch brand IDs based on names
-                    $brandIds = Brand::whereIn('name', $brandNames)->pluck('id');
-
-                    // Apply the filter using brand IDs sd
-                    $query->whereIn('brand_id', $brandIds);
-                } else {
-                    // If it's a single name, convert it into an array
-                    $brandIds = Brand::where('name', $brandNames)->pluck('id');
-                    $query->whereIn('brand_id', $brandIds);
-                }
-            }
-
-                     // Sort by price if specified, else default to the general `sort_by` handling
-            if ($request->has('sort_by_price')) {
-                $order = strtolower($request->input('sort_by_price')); // Normalize input
-                if (in_array($order, ['asc', 'desc'])) {
-                    $query->orderBy('sale_price', $order);
-                    \Log::info("Sorting by price in $order order");
-                } else {
-                    \Log::info("Invalid sort_by_price parameter: $order");
-                }
-            } else {
-                // General sorting by other columns
-                $allowedSortBy = ['id', 'price', 'created_at', 'name'];
-                $sortBy = $request->input('sort_by', 'id');
-                $sortOrder = strtolower($request->input('sort_order', 'asc'));
-
-                if (in_array($sortBy, $allowedSortBy) && in_array($sortOrder, ['asc', 'desc'])) {
-                    $query->orderBy($sortBy, $sortOrder);
-                    \Log::info("Sorting by: $sortBy in $sortOrder order");
-                } else {
-                    \Log::info("Invalid sort parameters: sort_by = $sortBy, sort_order = $sortOrder");
-                }
-            }
-
-             //$products = $query->orderBy($sortBy, 'asc')->paginate($request->input('per_page', 15)); // Pagination
-
-                        //  $products = $query->orderBy($sortBy, 'asc'); // Pagination
-
-
-            // Log the final SQL query for debugging
-            \Log::info($query->toSql());
-            \Log::info($query->getBindings());
+    {
+        // Log the request to ensure you're receiving the correct parameters
+        \Log::info($request->all());
+        \Log::info('Request Parameters:', $request->all());
+        // Apply ID filter
+        if ($request->has('id')) {
+            $id = $request->input('id');
+            $query->where('id', $id);
+            \Log::info('Filter by ID: ' . $id);
         }
 
+        // Search filters
+        // if ($request->has('search')) {
+        //     $searchTerm = $request->input('search');
+        //     $query->where(function($q) use ($searchTerm) {
+        //         $q->where('name', 'like', '%' . $searchTerm . '%')
+        //           ->orWhere('sku', 'like', '%' . $searchTerm . '%');
+        //     });
+        // }
+
+                // Search filters with category and brand
+
+        // Search filter (product name or SKU)
+
+        if ($request->has('search')) {
+            $searchTerm = $request->input('search');
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('name', 'like', '%' . $searchTerm . '%')
+                    ->orWhere('sku', 'like', '%' . $searchTerm . '%')
+                    ->orWhereHas('categories', function($q) use ($searchTerm) {
+                        $q->where('name', 'like', '%' . $searchTerm . '%');
+                    })
+                    ->orWhereHas('brand', function($q) use ($searchTerm) {
+                        $q->where('name', 'like', '%' . $searchTerm . '%');
+                    });
+            });
+        }
+
+        if ($request->has('name')) {
+            $query->where('name', 'LIKE', '%' . $request->input('name') . '%');
+        }
+
+        if ($request->has('description')) {
+            $query->where('description', 'LIKE', '%' . $request->input('description') . '%');
+        }
+
+        // SKU filter
+        if ($request->has('sku')) {
+            $skus = $request->input('sku');
+            if (is_array($skus)) {
+                $query->whereIn('sku', $skus);
+            } else {
+                $query->where('sku', $skus);
+            }
+        }
+
+        // Status filter
+        if ($request->has('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        // Stock status filter
+        if ($request->has('stock_status')) {
+            $query->where('stock_status', $request->input('stock_status'));
+        }
+
+        // Numerical filters
+            // Delivery Days
+        if ($request->has('delivery_days')) {
+            $query->where('delivery_days', $request->input('delivery_days'));
+        }
+        if ($request->has('price_min')) {
+            $query->where('price', '>=', $request->input('price_min'));
+        }
+
+        if ($request->has('price_max')) {
+            $query->where('price', '<=', $request->input('price_max'));
+        }
+
+        if ($request->has('quantity_min')) {
+            $query->where('quantity', '>=', $request->input('quantity_min'));
+        }
+
+        if ($request->has('quantity_max')) {
+            $query->where('quantity', '<=', $request->input('quantity_max'));
+        }
+
+        // Date filters
+        if ($request->has('start_date')) {
+            $query->where('created_at', '>=', $request->input('start_date'));
+        }
+
+        if ($request->has('end_date')) {
+            $query->where('created_at', '<=', $request->input('end_date'));
+        }
+
+    
+        if ($request->has('is_featured')) {
+            $query->where('is_featured', $request->input('is_featured'));
+        }
+
+        if ($request->has('rating')) {
+            $rating = $request->input('rating');
+            $query->whereHas('reviews', function($q) use ($rating) {
+                $q->selectRaw('product_id, AVG(star) as avg_rating') // Include product_id in the select statement
+                    ->groupBy('product_id')
+                    ->havingRaw('AVG(star) = ?', [$rating]); // Change from >= to =
+            });
+        }
+
+                if ($request->has('brand_id')) {
+                    $brandIds = $request->input('brand_id');
+
+                    // Convert to array if needed
+                    if (!is_array($brandIds)) {
+                        $brandIds = explode(',', $brandIds);
+                    }
+
+                    // Ensure brand IDs are integers
+                    $brandIds = array_map('intval', $brandIds);
+
+                    \Log::info('Filtering by Brand IDs: ', $brandIds);
+
+                    // Apply filter on the existing query object
+                    $query->whereIn('brand_id', $brandIds);
+                }
+                // Continue with any other filters or sorting options
 
 
-}    
+
+        // Brand filter by name
+        if ($request->has('brand_names')) {
+            $brandNames = $request->input('brand_names');
+
+            // Check if $brandNames is an array
+            if (is_array($brandNames)) {
+                // Fetch brand IDs based on names
+                $brandIds = Brand::whereIn('name', $brandNames)->pluck('id');
+
+                // Apply the filter using brand IDs sd
+                $query->whereIn('brand_id', $brandIds);
+            } else {
+                // If it's a single name, convert it into an array
+                $brandIds = Brand::where('name', $brandNames)->pluck('id');
+                $query->whereIn('brand_id', $brandIds);
+            }
+        }
+
+                    // Sort by price if specified, else default to the general `sort_by` handling
+        if ($request->has('sort_by_price')) {
+            $order = strtolower($request->input('sort_by_price')); // Normalize input
+            if (in_array($order, ['asc', 'desc'])) {
+                $query->orderBy('sale_price', $order);
+                \Log::info("Sorting by price in $order order");
+            } else {
+                \Log::info("Invalid sort_by_price parameter: $order");
+            }
+        } else {
+            // General sorting by other columns
+            $allowedSortBy = ['id', 'price', 'created_at', 'name'];
+            $sortBy = $request->input('sort_by', 'id');
+            $sortOrder = strtolower($request->input('sort_order', 'asc'));
+
+            if (in_array($sortBy, $allowedSortBy) && in_array($sortOrder, ['asc', 'desc'])) {
+                $query->orderBy($sortBy, $sortOrder);
+                \Log::info("Sorting by: $sortBy in $sortOrder order");
+            } else {
+                \Log::info("Invalid sort parameters: sort_by = $sortBy, sort_order = $sortOrder");
+            }
+        }
+
+            //$products = $query->orderBy($sortBy, 'asc')->paginate($request->input('per_page', 15)); // Pagination
+
+                    //  $products = $query->orderBy($sortBy, 'asc'); // Pagination
+
+
+        // Log the final SQL query for debugging
+        \Log::info($query->toSql());
+        \Log::info($query->getBindings());
+    }
+
+    
+    public function getProductInfoBySlug($slug)
+    {
+        // Get the product ID from seo_management table
+        $seo = SeoManagement::where('url', $slug)->first();
+
+        if (!$seo) {
+            return response()->json(['message' => 'Invalid product URL'], 404);
+        }
+
+        $product = Product::with(['brand', 'productSuppliers'])->find($seo->relational_id);
+
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        return response()->json([
+            'brand' => $product->brand ? $product->brand->name : null,
+            'delivery_days' => $product->supplier->delivery_days ?? null,
+            'return_policy' => $product->supplier->return_policy ?? null,
+            'shipping' => $product->supplier->shipping ?? null,
+        ]);
+    }
+
+    }

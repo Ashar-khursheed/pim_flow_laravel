@@ -159,6 +159,8 @@ Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 Route::apiResource('newsletters', NewsletterController::class);
 
+Route::get('/api/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
+
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
