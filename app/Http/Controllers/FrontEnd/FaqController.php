@@ -5,13 +5,14 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\Faq;
+use App\Models\Product;
 use OpenApi\Annotations as OA;
 
 
 class FaqController extends Controller
 {
 
-        /**
+    /**
      * @OA\Get(
      *     path="/api/frontend/faqs/product/{product_id}",
      *     operationId="getFaqsByProduct",
@@ -51,15 +52,34 @@ class FaqController extends Controller
      * )
      */
 
-    public function getFaqsByProduct($product_id): JsonResponse
-    {
-        $faqs = Faq::where('product_id', $product_id)
-            ->where('status', 'published')
-            ->get(['id', 'question', 'answer', 'product_id']);
+   public function getFaqsByProduct($productInput): JsonResponse
+{
+    // Resolve product ID from slug or use as-is if numeric
+    if (is_numeric($productInput)) {
+        $productId = (int) $productInput;
+    } else {
+        $product = Product::whereHas('seoUrl', function ($q) use ($productInput) {
+            $q->where('url', $productInput);
+        })->first();
 
-        return response()->json([
-            'success' => true,
-            'data' => $faqs,
-        ]);
+        if (!$product) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Product not found by slug.',
+            ], 404);
+        }
+
+        $productId = $product->id;
     }
+
+    $faqs = Faq::where('product_id', $productId)
+        ->where('status', 'published')
+        ->get(['id', 'question', 'answer', 'product_id']);
+
+    return response()->json([
+        'success' => true,
+        'data' => $faqs,
+    ]);
+}
+
 }

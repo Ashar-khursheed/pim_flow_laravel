@@ -30,13 +30,19 @@ class WelcomeMail extends Notification implements ShouldQueue
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
 		$name = $notifiable->name ?? 'User';
 		$websiteUrl = url("/");
+		$regionName = config('app.website') == 'UAE' ? "Middle East’s":"America’s";
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 
 		return (new MailMessage)
-		->subject('Welcome Email')
+		->subject("Welcome to HorecaStore — Let’s Bring Your Dream to Life")
 		->markdown('emails.welcome', [
 			'logoUrl' => $logoUrl,
 			'name' => $name,
 			'websiteUrl' => $websiteUrl,
+			'regionName' => $regionName,
+			'siteUrl' => $siteUrl,
+			'siteEmail' => $siteEmail,
 		]);
 	}
 

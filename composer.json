@@ -19,6 +19,7 @@
         "php-units-of-measure/php-units-of-measure": "^2.2",
         "phpoffice/phpspreadsheet": "^4.1",
         "spatie/laravel-permission": "^6.17",
+        "spatie/laravel-sitemap": "*",
         "square/square": "^43.0",
         "stripe/stripe-php": "^17.3",
         "taxjar/taxjar-php": "^2.0",

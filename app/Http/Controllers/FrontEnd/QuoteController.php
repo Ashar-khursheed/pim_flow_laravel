@@ -127,7 +127,7 @@ class QuoteController extends BaseController
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -159,8 +159,7 @@ class QuoteController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"quote_number", "quote_name", "customer_address_id", "tax_percentage", "products"},
-	 *             @OA\Property(property="quote_number", type="string", example="1111"),
+	 *             required={"quote_name", "customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
@@ -194,7 +193,6 @@ class QuoteController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'quote_number' => 'required|string|unique:quotes,quote_number',
 			'quote_name' => 'required|string',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
@@ -234,11 +232,23 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
+			/* Generate new quote number */
+			$latestQuote = Quote::whereRaw("quote_number REGEXP '^QT[0-9]+$'")
+				->orderBy('id', 'desc')
+				->first();
+
+			if ($latestQuote && preg_match('/^QT(\d+)$/', $latestQuote->quote_number, $matches)) {
+				$nextNumber = (int) $matches[1] + 1;
+				$quoteNumber = 'QT' . $nextNumber;
+			} else {
+				$quoteNumber = 'QT1001';
+			}
+
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
 			$quote = Quote::create([
-				'quote_number' => $request->quote_number,
+				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
@@ -313,7 +323,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
@@ -395,7 +405,7 @@ class QuoteController extends BaseController
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
@@ -405,6 +415,188 @@ class QuoteController extends BaseController
 			'success' => true,
 			'data' => $quote
 		]);
+	}
+
+	/**
+	 * @OA\Put(
+	 *     path="/api/frontend/quotes/{id}",
+	 *     summary="Update an existing quote",
+	 *     tags={"FrontEnd-Quotes"},
+	 *     @OA\Parameter(name="id", in="path", required=true, description="Quote ID", @OA\Schema(type="integer")),
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\JsonContent(
+	 *             required={"quote_name", "customer_address_id", "tax_percentage", "products"},
+	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
+	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
+	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
+	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
+	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
+	 *             @OA\Property(
+	 *                 property="products",
+	 *                 type="array",
+	 *                 @OA\Items(
+	 *                     required={"product_id", "vendor_id", "quantity", "unit_price", "shipping_charge"},
+	 *                     @OA\Property(property="product_id", type="integer", example=2001),
+	 *                     @OA\Property(property="vendor_id", type="integer", example=22),
+	 *                     @OA\Property(property="quantity", type="integer", example=2),
+	 *                     @OA\Property(property="unit_price", type="number", format="float", example=4000),
+	 *                     @OA\Property(property="shipping_charge", type="number", format="float", example=50.00)
+	 *                 )
+	 *             ),
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=201, description="Updated successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function update(Request $request, $id)
+	{
+		$quote = Quote::where('customer_id', auth()->id())->where('id', $id)->first();
+		if (!$quote) {
+			return response()->json([
+				'success' => false,
+				'message' => "Quote not found."
+			]);
+		}
+
+		$customerId = auth()->id();
+		$address = CustomerAddress::where('id', $request->customer_address_id)
+		->where('customer_id', $customerId)
+		->first();
+
+		if (!$address) {
+			return response()->json([
+				'success' => false,
+				'message' => 'The selected address does not belong to the customer.'
+			], 422);
+		}
+
+		$request->validate([
+			'quote_name' => 'required|string',
+			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'tax_percentage' => 'required|numeric|min:0',
+			'products' => 'required|array|min:1',
+			'products.*.product_id' => 'required|integer|exists:ec_products,id',
+			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+			'products.*.quantity' => 'required|integer|min:1',
+			'products.*.unit_price' => 'required|numeric|min:0',
+			'products.*.shipping_charge' => 'required|numeric|min:0',
+		]);
+
+		DB::beginTransaction();
+
+		try {
+			$totalProducts = 0;
+			$quoteAmount = 0;
+			$quoteShipping = 0;
+
+			foreach ($request->products as $product) {
+				$totalProducts += $product['quantity'];
+				$quoteAmount += $product['quantity'] * $product['unit_price'];
+				$quoteShipping += $product['shipping_charge'];
+			}
+
+			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
+
+			$quote->update([
+				'quote_name' => $request->quote_name,
+				'customer_address_id' => $request->customer_address_id,
+				'shipping_charge' => $quoteShipping,
+				'amount' => $quoteAmount,
+				'tax_percentage' => $request->tax_percentage,
+				'tax_amount' => $taxAmount,
+				'total_amount' => $totalAmount,
+				'total_products' => $totalProducts,
+				'payment_terms' => $request->payment_terms,
+				'customer_notes' => $request->customer_notes,
+				'internal_notes' => $request->internal_notes,
+			]);
+
+			/* Remove old quote products */
+			$quote->quoteProducts()->delete();
+
+			/* Insert updated products */
+			foreach ($request->products as $product) {
+				$amount = $product['quantity'] * $product['unit_price'];
+				$totalAmount = $amount + $product['shipping_charge'];
+
+				$quote->quoteProducts()->create([
+					'product_id' => $product['product_id'],
+					'vendor_id' => $product['vendor_id'],
+					'quantity' => $product['quantity'],
+					'unit_price' => $product['unit_price'],
+					'amount' => $amount,
+					'shipping_charge' => $product['shipping_charge'],
+					'total_amount' => $totalAmount,
+				]);
+			}
+
+			DB::commit();
+
+			$quote->load([
+				'customer:id,name,email,type,country_code,mobile_number',
+				'customerAddress',
+				'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+				'quoteProducts.product.brand:id,name',
+				'quoteProducts.product.currency:id,symbol',
+				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+				'quoteEmails',
+			]);
+
+			foreach ($quote->quoteProducts as $quoteProduct) {
+				$product = $quoteProduct->product;
+
+				if ($product) {
+					$product->images = is_array($product->images)
+					? $product->images
+					: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+
+					$product->brand_name = $product->brand->name ?? null;
+					$product->currency_symbol = $product->currency->symbol ?? null;
+
+					unset($product->brand, $product->currency);
+				}
+
+				$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only([
+					'price', 'sale_price', 'delivery_days', 'return_policy'
+				]);
+
+				$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
+				? getDateRange($quote->created_at, $quoteProduct->product_supplier['delivery_days'])
+				: null;
+
+				/* Format monetary values */
+				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+					if (isset($quoteProduct->$key)) {
+						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					}
+				}
+			}
+
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
+				if (isset($quote->$key)) {
+					$quote->$key = number_format($quote->$key, 2, '.', '');
+				}
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Quote updated successfully',
+				'data' => $quote
+			]);
+
+		} catch (\Exception $e) {
+			DB::rollBack();
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to update quote: ' . $e->getMessage()
+			]);
+		}
 	}
 
 	/**
@@ -469,14 +661,6 @@ class QuoteController extends BaseController
 			'success' => true,
 			'message' => 'Quote email sent successfully with the attached PDF'
 		]);
-	}
-
-	/**
-	 * Update the specified resource in storage.
-	 */
-	public function update(Request $request, Quote $quote)
-	{
-		//
 	}
 
 	/**

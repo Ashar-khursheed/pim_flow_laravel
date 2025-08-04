@@ -110,8 +110,8 @@ use App\Http\Controllers\FrontEnd\SupportMetaController as F_SupportMetaControll
 use App\Http\Controllers\FrontEnd\CompanyProfileController as F_CompanyProfileController;
 use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
-
-
+use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
+use App\Http\Controllers\FrontEnd\GlitchErrorController;
 
 
 use Illuminate\Support\Facades\Http;
@@ -372,6 +372,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
+
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
@@ -395,6 +396,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 });
 
 
+Route::apiResource('/frontend/glitch-errors', GlitchErrorController::class);
 
 Route::post('frontend/login', [F_AuthController::class, 'store'])->name('f_login');
 Route::post('/apple-login', [F_AuthController::class, 'appleLogin']);
@@ -404,6 +406,7 @@ Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
+Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
 
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
@@ -609,6 +612,7 @@ Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandS
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
 Route::get('/frontend/search/products', [F_SearchController::class, 'getProductsOnly']);
+Route::get('/frontend/nlp-search', [F_SearchController::class, 'searchnlp']);
 
 Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
 
@@ -643,3 +647,10 @@ Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
 Route::post('frontend/tax/calculate', [F_TaxController::class, 'calculateTax']);
 
 Route::get('/frontend/google-reviews', [F_GoogleReviewController::class, 'getReviews']);
+
+// Create banner
+Route::get('/frontend/menu-banners', [F_MenuBannerController::class, 'index']);
+Route::get('/frontend/menu-banners/{id}', [F_MenuBannerController::class, 'show']);
+Route::get('/frontend/menu-banners/category/{category_id}', [F_MenuBannerController::class, 'showCategory']);
+
+	Route::get('/redirects/from/{from}', [RedirectLinkController::class, 'getByFrom']);

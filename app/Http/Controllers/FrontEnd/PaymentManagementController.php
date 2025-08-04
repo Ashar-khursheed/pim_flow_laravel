@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
 
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Jobs\Order\OrderPlacedMailJob;
 
 class PaymentManagementController extends Controller
 {
@@ -65,56 +69,56 @@ class PaymentManagementController extends Controller
      *         @OA\JsonContent(
      *             required={"order_id", "payment_mode", "amount", "status", "payment_date"},
      *             @OA\Property(
-     *                 property="order_id", 
-     *                 type="integer", 
+     *                 property="order_id",
+     *                 type="integer",
      *                 description="ID of the order this payment is for",
      *                 example=123
      *             ),
      *             @OA\Property(
-     *                 property="transaction_id", 
-     *                 type="string", 
+     *                 property="transaction_id",
+     *                 type="string",
      *                 description="Unique transaction identifier from payment gateway",
      *                 example="TXN456789"
      *             ),
      *             @OA\Property(
-     *                 property="payment_mode", 
-     *                 type="string", 
+     *                 property="payment_mode",
+     *                 type="string",
      *                 description="Method of payment",
      *                 example="Credit Card",
      *                 enum={"Credit Card", "Debit Card", "PayPal", "Bank Transfer", "Cash", "Stripe", "Razorpay"}
      *             ),
      *             @OA\Property(
-     *                 property="amount", 
-     *                 type="number", 
-     *                 format="float", 
+     *                 property="amount",
+     *                 type="number",
+     *                 format="float",
      *                 description="Payment amount",
      *                 example=299.99,
      *                 minimum=0.01
      *             ),
      *             @OA\Property(
-     *                 property="status", 
-     *                 type="string", 
+     *                 property="status",
+     *                 type="string",
      *                 description="Payment status",
      *                 example="completed",
      *                 enum={"pending", "completed", "failed", "cancelled", "refunded"}
      *             ),
      *             @OA\Property(
-     *                 property="payment_date", 
-     *                 type="string", 
-     *                 format="date", 
+     *                 property="payment_date",
+     *                 type="string",
+     *                 format="date",
      *                 description="Date when payment was made",
      *                 example="2024-06-24"
      *             ),
      *             @OA\Property(
-     *                 property="notes", 
-     *                 type="string", 
+     *                 property="notes",
+     *                 type="string",
      *                 description="Additional notes about the payment",
      *                 example="First installment paid",
      *                 nullable=true
      *             ),
      *             @OA\Property(
-     *                 property="payment_details", 
-     *                 type="object", 
+     *                 property="payment_details",
+     *                 type="object",
      *                 description="Additional payment gateway details",
      *                 example={"bank":"XYZ Bank","ref":"12345XYZ","gateway_response":"success"},
      *                 nullable=true
@@ -145,7 +149,7 @@ class PaymentManagementController extends Controller
      *         @OA\JsonContent(
      *             @OA\Property(property="message", type="string", example="The given data was invalid."),
      *             @OA\Property(
-     *                 property="errors", 
+     *                 property="errors",
      *                 type="object",
      *                 example={
      *                     "order_id": {"The order id field is required."},
@@ -203,13 +207,26 @@ class PaymentManagementController extends Controller
             }
 
             $validated['customer_id'] = auth()->id();
-            
+
             if (isset($validated['payment_details'])) {
                 $validated['payment_details'] = json_encode($validated['payment_details']);
             }
 
             // Create the payment record
             $payment = PaymentManagement::create($validated);
+
+            $batch = Bus::batch([])->before(function (Batch $batch) {
+
+            })->catch(function (Batch $batch, Throwable $e) {
+
+            })->finally(function (Batch $batch) {
+
+            })->name('Order Place')->dispatch();
+
+            $batch->options['queue'] = 'ORD_PLC_MAIL';
+            $batch->add(new OrderPlacedMailJob([
+                'recordId' => $validated['order_id']
+            ]));
 
             // Return success response with 201 status
             return response()->json([

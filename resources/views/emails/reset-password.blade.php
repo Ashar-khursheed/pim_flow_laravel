@@ -26,12 +26,12 @@
 
             <!-- Logo -->
             <div style="margin-bottom: 20px;">
-                <img src="{{ $logoUrl }}" alt="HORECA Logo" style="width: 120px;" />
+                <img src="{{ $logoUrl }}" alt="Logo" style="width: 120px;" />
             </div>
 
             <!-- Greeting -->
             <p style="font-size: 16px; color: #000000;">Hi <strong style="color: #186737;">{{ $name }}</strong>!</p>
-            <p style="font-size: 15px; color: #000000;">We received a request to reset your HORECA account password.</p>
+            <p style="font-size: 15px; color: #000000;">We received a request to reset your HorecaStore account password.</p>
             <p style="font-size: 15px; color: #000000; font-weight: 600;">To set a new password, simply click the link below:</p>
 
             <!-- Reset Button -->
@@ -45,7 +45,7 @@
             <p style="font-size: 14px; color: #000000;">
                 If you didn’t request this, you can safely ignore the email — your current password will remain unchanged. Your privacy and security are important to us.
             </p>
-            <p style="color: #186737; font-weight: bold;">– Team Horeca</p>
+            <p style="color: #186737; font-weight: bold;">– Team HorecaStore</p>
 
             <!-- Divider -->
             <div style="border-top: 1px solid #eaeaea; margin: 30px 0;"></div>

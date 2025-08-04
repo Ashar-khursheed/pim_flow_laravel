@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\SeoManagement;
 use OpenApi\Annotations as OA;
-
+use Illuminate\Support\Facades\Http;
 class SeoManagementController extends Controller
 {
     /**
@@ -104,20 +104,32 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getByRelationalId($relational_id)
+    public function getByRelationalId($identifier)
     {
-        $seoData = SeoManagement::with('seo_secondary_keywords')
-            ->where('relational_id', $relational_id)
-            ->get()
-            ->map(function ($item) {
-                return $this->filterFields($item);
-            });
+        $seoQuery = SeoManagement::with('seo_secondary_keywords');
+
+        // Check if it's a full URL
+        if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+            $path = parse_url($identifier, PHP_URL_PATH); // Extract just the path
+            $seoQuery->where('url', $path);
+        } elseif (is_numeric($identifier)) {
+            // If it's a number, assume it's the relational ID
+            $seoQuery->where('relational_id', $identifier);
+        } else {
+            // Try matching it with the 'url' first
+            $seoQuery->where('url', $identifier);
+        }
+
+        $seoData = $seoQuery->get()->map(function ($item) {
+            return $this->filterFields($item);
+        });
 
         return response()->json([
             'status' => true,
             'data' => $seoData
         ]);
     }
+
 
     /**
      * @OA\Get(
@@ -156,16 +168,26 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getParagraphData(Request $request, $relational_id)
-{
-    $relationalType = $request->query('relational_type'); // from query param
+    public function getParagraphData(Request $request, $identifier)
+    {
+        $relationalType = $request->query('relational_type'); // optional filter
 
-    $seoData = SEOManagement::where('relational_id', $relational_id)
-        ->when($relationalType, function ($query, $relationalType) {
-            return $query->where('relational_type', $relationalType);
-        })
-        ->get()
-        ->map(function ($item) {
+        $seoQuery = SEOManagement::query();
+
+        // If a full URL is passed, extract only the path
+        if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+            $identifier = parse_url($identifier, PHP_URL_PATH);
+        }
+
+        // Now treat identifier as a slug/path and match using 'slug' column
+        $seoQuery->where('url', ltrim($identifier, '/'));
+
+        // Apply optional relational_type filter
+        if ($relationalType) {
+            $seoQuery->where('relational_type', $relationalType);
+        }
+
+        $seoData = $seoQuery->get()->map(function ($item) {
             return [
                 'id' => $item->id,
                 'relational_id' => $item->relational_id,
@@ -184,11 +206,11 @@ class SeoManagementController extends Controller
             ];
         });
 
-    return response()->json([
-        'status' => true,
-        'data' => $seoData
-    ]);
-}
+        return response()->json([
+            'status' => true,
+            'data' => $seoData
+        ]);
+    }
 
 
     private function filterFields($item)
@@ -213,4 +235,6 @@ class SeoManagementController extends Controller
             'schema' => $item->schema
         ];
     }
+
+
 }

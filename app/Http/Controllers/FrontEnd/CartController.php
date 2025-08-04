@@ -321,8 +321,8 @@ class CartController extends Controller
 
         // Fetch cart items with product and currency details
         $cartItems = Auth::check()
-            ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers')->get()
-            : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers')->get();
+            ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
+            : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
 
         // Fetch applicable discounts for the user
         $userDiscountIds = DB::table('ec_discount_customers')
@@ -352,6 +352,8 @@ class CartController extends Controller
         
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+            $item->product->url = $item->product->seoUrl->url ?? null;
+
         
             // ✅ Replace `currency` object with just symbol
             $symbol = optional($item->product->currency)->symbol;
@@ -558,124 +560,7 @@ class CartController extends Controller
      *     security={{"bearerAuth": {}}}
      * )
      */
-    // public function updateCartQuantity(Request $request)
-    // {
-    //     $request->validate([
-    //         'product_id' => 'required|exists:ec_products,id',
-    //         'quantity' => 'required|integer|min:1',
-    //     ]);
-    
-    //     $productId = $request->input('product_id');
-    //     $quantity = $request->input('quantity');
-    
-    //     if (Auth::check()) {
-    //         $userId = auth()->id();
-    //         $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
-    //     } else {
-    //         $sessionId = $request->session()->getId();
-    //         $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
-    //     }
-    
-    //     if ($cartItem) {
-    //         $cartItem->quantity = $quantity;
-    //         $cartItem->update();
-    
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => [
-    //                 'id' => $cartItem->id,
-    //                 'user_id' => $cartItem->user_id,
-    //                 'session_id' => $cartItem->session_id,
-    //                 'product_id' => $cartItem->product_id,
-    //                 'quantity' => $cartItem->quantity,
-    //                 'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
-    //                 'created_at' => $cartItem->created_at,
-    //                 'updated_at' => $cartItem->updated_at,
-    //             ],
-    //         ]);
-    //     }
-    
-    //     return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-    // }
-
-    // public function updateCartQuantity(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'product_id' => 'required|exists:ec_products,id',
-    //         'quantity' => 'required|integer|min:1',
-    //     ]);
-
-    //     $productId = $validated['product_id'];
-    //     $quantity = $validated['quantity'];
-
-    //     // Determine user context
-    //     $cartQuery = Cart::query()->where('product_id', $productId);
-
-    //     if (Auth::check()) {
-    //         $cartQuery->where('user_id', auth()->id());
-    //     } else {
-    //         $cartQuery->where('session_id', $request->session()->getId());
-    //     }
-
-    //     // Load cart item with currency in same query
-    //     $cartItem = $cartQuery->with('product:id,currency_id', 'product.currency:id,symbol')->first();
-
-    //     if (!$cartItem) {
-    //         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-    //     }
-
-    //     // Update only if needed to reduce DB writes
-    //     if ($cartItem->quantity !== $quantity) {
-    //         $cartItem->update(['quantity' => $quantity]);
-    //     }
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => [
-    //             'id' => $cartItem->id,
-    //             'user_id' => $cartItem->user_id,
-    //             'session_id' => $cartItem->session_id,
-    //             'product_id' => $cartItem->product_id,
-    //             'quantity' => $cartItem->quantity,
-    //             'currency_title' => $cartItem->product->currency->symbol ?? null,
-    //             'created_at' => $cartItem->created_at,
-    //             'updated_at' => $cartItem->updated_at,
-    //         ],
-    //     ]);
-    // }
-//     public function updateCartQuantity(Request $request)
-// {
-//     $validated = $request->validate([
-//         'product_id' => 'required|exists:ec_products,id',
-//         'quantity' => 'required|integer|min:1',
-//     ]);
-
-//     $productId = $validated['product_id'];
-//     $quantity = $validated['quantity'];
-
-//     // Choose key (user or session)
-//     $cartQuery = Cart::query()->where('product_id', $productId);
-
-//     if (Auth::check()) {
-//         $cartQuery->where('user_id', auth()->id());
-//     } else {
-//         $cartQuery->where('session_id', $request->session()->getId());
-//     }
-
-//     // Only fetch id and quantity — minimal data
-//     $cartItem = $cartQuery->select('id', 'quantity')->first();
-
-//     if (!$cartItem) {
-//         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-//     }
-
-//     // Direct DB update without loading the full model
-//     if ($cartItem->quantity !== $quantity) {
-//         Cart::where('id', $cartItem->id)->update(['quantity' => $quantity]);
-//     }
-
-//     return response()->json(['success' => true]);
-// }
+ 
     public function updateCartQuantity(Request $request)
     {
         $start = microtime(true);

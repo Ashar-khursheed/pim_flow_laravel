@@ -11,36 +11,52 @@ use Illuminate\Support\Facades\Auth;
 
 class DiffProductController extends Controller
 {
-    public function getDiffProducts(Request $request, $productId = null)
+   
+    public function getDiffProducts(Request $request, $productInput = null)
     {
         try {
-            $productId = $productId ?? $request->input('product_id');
-    
-            if (!$productId) {
+            $productInput = $productInput ?? $request->input('product_id');
+
+            if (!$productInput) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product ID is required',
+                    'message' => 'Product ID or URL is required',
                 ], 400);
             }
-    
+
+            // Determine if input is numeric ID or SEO URL
+            if (is_numeric($productInput)) {
+                $product = Product::where('id', $productInput)->first();
+            } else {
+                $product = Product::whereHas('seoUrl', function ($query) use ($productInput) {
+                    $query->where('url', $productInput);
+                })->first();
+            }
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found',
+                ], 404);
+            }
+
+            $productId = $product->id;
             $userId = Auth::id();
             $isUserLoggedIn = $userId !== null;
-    
+
             Log::info('Fetching dif products for:', ['product_id' => $productId, 'user_id' => $userId]);
-    
-            // Wishlist logic
+
             $wishlistProductIds = $isUserLoggedIn
                 ? DB::table('ec_wish_lists')->where('customer_id', $userId)->pluck('product_id')->map(fn($id) => (int) $id)->toArray()
                 : session()->get('guest_wishlist', []);
-    
-            // Step 1: Get all dif product IDs
+
             $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
                 ->orderBy('priority', 'asc')
                 ->orderByDesc('similarity')
                 ->pluck('dif_id')
                 ->toArray();
-    
+
             if (empty($difProductIds)) {
                 return response()->json([
                     'success' => true,
@@ -48,44 +64,41 @@ class DiffProductController extends Controller
                     'data' => [],
                 ]);
             }
-    
-            // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $difProductIds)
                 ->get()
                 ->sortBy(fn($product) => array_search($product->id, $difProductIds));
-    
-            // Transform response
+
             $transformedProducts = $products->map(function ($product) use ($wishlistProductIds) {
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
-    
                 $totalReviews = $product->reviews?->count() ?? 0;
                 $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-    
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
-    
+
                 $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
                     $attributeUnit = strpos($fullValue, '/') !== false
                         ? trim(explode('/', $fullValue)[1])
                         : $fullValue;
-    
+
                     $sellingType = [
                         'attribute_value' => $fullValue,
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-    
+
                 $firstSupplier = $product->productSuppliers->first();
-    
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $product->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -120,15 +133,15 @@ class DiffProductController extends Controller
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
             });
-    
+
             return response()->json([
                 'success' => true,
                 'data' => $transformedProducts->values(),
                 'message' => 'dif products retrieved successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in getAlternateProducts: ' . $e->getMessage());
-    
+            Log::error('Error in getDiffProducts: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching dif products',
@@ -137,21 +150,36 @@ class DiffProductController extends Controller
         }
     }
 
-
-    public function getDiffGuestProducts(Request $request, $productId = null)
+    public function getDiffGuestProducts(Request $request, $productInput = null)
     {
         try {
-            $productId = $productId ?? $request->input('product_id');
-    
-            if (!$productId) {
+            $productInput = $productInput ?? $request->input('product_id');
+
+            if (!$productInput) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Product ID is required',
+                    'message' => 'Product ID or URL is required',
                 ], 400);
             }
-    
-    
-    
+
+            // Determine if input is numeric ID or SEO URL
+            if (is_numeric($productInput)) {
+                $product = Product::where('id', $productInput)->first();
+            } else {
+                $product = Product::whereHas('seoUrl', function ($query) use ($productInput) {
+                    $query->where('url', $productInput);
+                })->first();
+            }
+
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Product not found',
+                ], 404);
+            }
+
+            $productId = $product->id;
+
             // Step 1: Get all dif product IDs
             $difProductIds = DB::table('diff_brands')
                 ->where('product_id', $productId)
@@ -159,7 +187,7 @@ class DiffProductController extends Controller
                 ->orderByDesc('similarity')
                 ->pluck('dif_id')
                 ->toArray();
-    
+
             if (empty($difProductIds)) {
                 return response()->json([
                     'success' => true,
@@ -167,44 +195,45 @@ class DiffProductController extends Controller
                     'data' => [],
                 ]);
             }
-    
+
             // Step 2: Get published products with those IDs
-            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute'])
+            $products = Product::with(['reviews:id,product_id,star', 'currency', 'productSuppliers', 'sellingUnitAttribute', 'seoUrl'])
                 ->where('status', 'published')
                 ->whereIn('id', $difProductIds)
                 ->get()
                 ->sortBy(fn($product) => array_search($product->id, $difProductIds));
-    
+
             // Transform response
-            $transformedProducts = $products->map(function ($product){
+            $transformedProducts = $products->map(function ($product) {
                 $images = $this->normalizeMediaUrls($product->images);
                 $videos = $this->normalizeMediaUrls($product->video_path);
-    
+
                 $totalReviews = $product->reviews?->count() ?? 0;
                 $avgRating = $totalReviews > 0 ? $product->reviews->avg('star') : null;
-    
+
                 $quantity = $product->quantity ?? 0;
                 $unitsSold = $product->units_sold ?? 0;
                 $leftStock = $quantity - $unitsSold;
-    
+
                 $sellingType = null;
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                     $fullValue = $product->sellingUnitAttribute->attribute_value;
                     $attributeUnit = strpos($fullValue, '/') !== false
                         ? trim(explode('/', $fullValue)[1])
                         : $fullValue;
-    
+
                     $sellingType = [
                         'attribute_value' => $fullValue,
                         'attribute_value_unit' => $attributeUnit,
                     ];
                 }
-    
+
                 $firstSupplier = $product->productSuppliers->first();
-    
+
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $product->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -238,15 +267,15 @@ class DiffProductController extends Controller
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
                 ];
             });
-    
+
             return response()->json([
                 'success' => true,
                 'data' => $transformedProducts->values(),
                 'message' => 'dif products retrieved successfully',
             ]);
         } catch (\Exception $e) {
-            Log::error('Error in getAlternateProducts: ' . $e->getMessage());
-    
+            Log::error('Error in getDiffGuestProducts: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
                 'message' => 'An error occurred while fetching dif products',
@@ -274,5 +303,9 @@ class DiffProductController extends Controller
 
         return [];
     }
+
+  
+   
     
+
 }

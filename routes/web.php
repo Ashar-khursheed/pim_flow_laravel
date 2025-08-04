@@ -2,19 +2,51 @@
 
 use Illuminate\Support\Facades\Route;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
+use Carbon\Carbon;
+use App\Http\Controllers\SitemapController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Response;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\Blog;
+
+
+
+
+
+
+
+
+Route::get('/robots.txt', function (Request $request) {
+    $host = $request->getHost();
+
+    if ($host === 'thehorecastore.co') {
+        // Disallow all crawling
+        return response("User-agent: *\nDisallow: /", 200)
+            ->header('Content-Type', 'text/plain');
+    }
+
+    // Allow all crawling for thehorecastore.com or other domains
+    return response("User-agent: *\nDisallow:", 200)
+        ->header('Content-Type', 'text/plain');
+});
 
 Route::get('/test-quote-pdf', function () {
-	$this->quote = \App\Models\FrontEnd\Quote::with([
-		'quoteProducts.product.brand',
-		'quoteProducts.product.currency',
+	$quote = \App\Models\FrontEnd\Quote::with([
+		'customer:id,name,email,type,country_code,mobile_number',
 		'customerAddress',
+		'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
+		'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+		'quoteProducts.product.brand:id,name',
+		'quoteProducts.product.currency:id,symbol',
+		'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+		'quoteEmails',
 	])->latest()->first();
 
+	$customer = $quote->customer;
+
 	$backendURL = config('app.backend_url');
-	$logoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
+	$pdfLogoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
 
 	$companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC' : 'THE HORECA STORE INC';
 	$street = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
@@ -23,22 +55,22 @@ Route::get('/test-quote-pdf', function () {
 	$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 	$siteURL = url('/');
 
-	$name = $this->quote->customer->type === 'Private' ? $this->quote->customer->name : $this->quote->customer->business_name;
-	$customerAddress = $this->quote->customerAddress;
+	$name = $customer->type === 'Private' ? $customer->name : $customer->business_name;
+	$customerAddress = $quote->customerAddress;
 	$address = $customerAddress->address ?? '';
 	$customerCity = $customerAddress->city ?? '';
 	$country = $customerAddress->country ?? '';
-	$email = $this->quote->customer->email ?? '';
+	$email = $customer->email ?? '';
 
-	$createdAt = $this->quote->created_at->format('M d Y');
-	$expiredAt = $this->quote->expired_at->format('M d Y');
-	$quoteNumber = $this->quote->quote_number;
-	$paymentMode = $this->quote->payment_terms;
+	$createdAt = $quote->created_at->format('M d Y');
+	$expiredAt = Carbon::parse($quote->expired_at)->format('M d Y');
+	$quoteNumber = $quote->quote_number;
+	$paymentMode = $quote->payment_terms;
 	$quoteType = 'Online';
 	$currency = config('app.website') == 'UAE' ? 'AED' : '$';
 
 	$products = collect();
-	foreach ($this->quote->quoteProducts as $index => $quoteProduct) {
+	foreach ($quote->quoteProducts as $index => $quoteProduct) {
 		$productSupplierDetail = $quoteProduct->vendorProductSupplier;
 		$productDetail = $quoteProduct->product;
 
@@ -62,26 +94,7 @@ Route::get('/test-quote-pdf', function () {
 
 			$product->image = is_array($images) ? ($images[0] ?? null) : null;
 
-			if (!empty($product->image)) {
-				try {
-					if (!Storage::disk('public')->exists('temp')) {
-						Storage::disk('public')->makeDirectory('temp');
-					}
-					$imageContent = file_get_contents($product->image);
-					$filename = basename(parse_url($product->image, PHP_URL_PATH));
-
-					$pathInfo = pathinfo($filename);
-					if (empty($pathInfo['extension'])) {
-						$filename .= '.webp';
-					}
-					Storage::disk('public')->put('temp/' . $filename, $imageContent);
-					$product->localImagePath = storage_path('app/public/temp/' . $filename);
-				} catch (\Exception $e) {
-					$product->localImagePath = null;
-				}
-			} else {
-				$product->localImagePath = null;
-			}
+			$product->base64_image = getBase64Image($product->image);
 
 			$product->quantity = (int) $quoteProduct->quantity;
 
@@ -99,12 +112,12 @@ Route::get('/test-quote-pdf', function () {
 		}
 	}
 
-	$subTotal = number_format($this->quote->amount ?? 0, 2, '.', ',');
-	$shippingCharge = number_format($this->quote->shipping_charge ?? 0, 2, '.', ',');
+	$subTotal = number_format($quote->amount ?? 0, 2, '.', ',');
+	$shippingCharge = number_format($quote->shipping_charge ?? 0, 2, '.', ',');
 	$taxName = config('app.website') == 'UAE' ? 'VAT' : 'Sales Tax';
-	$taxPercent = $this->quote->tax_percentage;
-	$taxAmount = number_format($this->quote->tax_amount ?? 0, 2, '.', ',');
-	$total = number_format($this->quote->total_amount ?? 0, 2, '.', ',');
+	$taxPercent = $quote->tax_percentage;
+	$taxAmount = number_format($quote->tax_amount ?? 0, 2, '.', ',');
+	$total = number_format($quote->total_amount ?? 0, 2, '.', ',');
 
 	$totalInWords = config('app.website') == 'UAE'
 	? convertNumberToWords($total, "AED", "Fils")
@@ -116,7 +129,7 @@ Route::get('/test-quote-pdf', function () {
 	$routingCode = config('app.website') == 'UAE' ? '1110 0061 4' : '1110 0061 4';
 
 	$pdfParams = [
-		'logoUrl' => $logoUrl,
+		'pdfLogoUrl' => $pdfLogoUrl,
 		'companyName' => $companyName,
 		'street' => $street,
 		'city' => $city,
@@ -153,5 +166,6 @@ Route::get('/test-quote-pdf', function () {
 		'routingCode' => $routingCode,
 	];
 
-	return Pdf::loadView('pdf.quote', $pdfParams)->stream();
+	return Pdf::loadView('pdf.quote1', $pdfParams)->stream();
 });
+

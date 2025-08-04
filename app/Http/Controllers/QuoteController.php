@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
 
 use App\Models\FrontEnd\Quote;
 use App\Models\FrontEnd\CustomerAddress;
@@ -38,6 +40,23 @@ class QuoteController extends BaseController
 
 		$recordsQuery = Quote::query();
 
+		/* Filter by status */
+		if ($request->has('status')) {
+			$recordsQuery->where('status', $request->status);
+		}
+
+		if ($request->has('from_date') && $request->has('to_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->whereBetween('created_at', [$from, $to]);
+		} elseif ($request->has('from_date')) {
+			$from = $request->from_date . ' 00:00:00';
+			$recordsQuery->where('created_at', '>=', $from);
+		} elseif ($request->has('to_date')) {
+			$to = $request->to_date . ' 23:59:59';
+			$recordsQuery->where('created_at', '<=', $to);
+		}
+
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Join if customer_name is involved in search or sort */
@@ -59,21 +78,21 @@ class QuoteController extends BaseController
 			]);
 
 			/* Filter by status */
-			if ($request->has('status')) {
-				$recordsQuery->where('quotes.status', $request->status);
-			}
+			// if ($request->has('status')) {
+			// 	$recordsQuery->where('quotes.status', $request->status);
+			// }
 
-			if ($request->has('from_date') && $request->has('to_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->whereBetween('quotes.created_at', [$from, $to]);
-			} elseif ($request->has('from_date')) {
-				$from = $request->from_date . ' 00:00:00';
-				$recordsQuery->where('quotes.created_at', '>=', $from);
-			} elseif ($request->has('to_date')) {
-				$to = $request->to_date . ' 23:59:59';
-				$recordsQuery->where('quotes.created_at', '<=', $to);
-			}
+			// if ($request->has('from_date') && $request->has('to_date')) {
+			// 	$from = $request->from_date . ' 00:00:00';
+			// 	$to = $request->to_date . ' 23:59:59';
+			// 	$recordsQuery->whereBetween('quotes.created_at', [$from, $to]);
+			// } elseif ($request->has('from_date')) {
+			// 	$from = $request->from_date . ' 00:00:00';
+			// 	$recordsQuery->where('quotes.created_at', '>=', $from);
+			// } elseif ($request->has('to_date')) {
+			// 	$to = $request->to_date . ' 23:59:59';
+			// 	$recordsQuery->where('quotes.created_at', '<=', $to);
+			// }
 
 			/* Global search */
 			if ($request->filled('global')) {
@@ -144,7 +163,7 @@ class QuoteController extends BaseController
 					}
 				}
 
-				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+				foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 					if (isset($record->$key)) {
 						$record->$key = number_format($record->$key, 2, '.', '');
 					}
@@ -154,7 +173,7 @@ class QuoteController extends BaseController
 			});
 		} else {
 			/* No pagination: just fetch id and quote_number */
-			$records = Quote::orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
+			$records = $recordsQuery->orderBy('quote_number', 'asc')->get(['id', 'quote_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
 		}
@@ -176,12 +195,16 @@ class QuoteController extends BaseController
 	 *     @OA\RequestBody(
 	 *         required=true,
 	 *         @OA\JsonContent(
-	 *             required={"quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "products"},
+	 *             required={"is_revised", "quote_number", "quote_name", "customer_id", "customer_address_id", "tax_percentage", "status", "products"},
+	 *             @OA\Property(property="is_revised", type="boolean", example=false),
 	 *             @OA\Property(property="quote_number", type="string", example="1111"),
 	 *             @OA\Property(property="quote_name", type="string", example="Kitchen equipment quote"),
 	 *             @OA\Property(property="customer_id", type="integer", example=1),
 	 *             @OA\Property(property="customer_address_id", type="integer", example=1),
 	 *             @OA\Property(property="tax_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="discount_percentage", type="number", format="float", example=5),
+	 *             @OA\Property(property="status", type="string",  example="Pending"),
+	 *             @OA\Property(property="expired_at", type="string", format="date", example="2025-08-09"),
 	 *             @OA\Property(property="payment_terms", type="string", example="Credit Card"),
 	 *             @OA\Property(property="customer_notes", type="string", example="The need for my inner purpose."),
 	 *             @OA\Property(property="internal_notes", type="string", example="Please deliver between 9am-5pm."),
@@ -212,11 +235,15 @@ class QuoteController extends BaseController
 	public function store(Request $request)
 	{
 		$request->validate([
-			'quote_number' => 'required|string|unique:quotes,quote_number',
+			'is_revised' => 'required|boolean',
+			'quote_number' => 'required_if:is_revised,true|string|unique:quotes,quote_number',
 			'quote_name' => 'required|string',
 			'customer_id' => 'required|integer|exists:customers,id',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
+			'discount_percentage' => 'nullable|numeric|min:0',
+			'status' => 'required|in:Pending,Revised',
+			'expired_at' => 'nullable|date',
 			'products' => 'required|array|min:1',
 			'products.*.product_id' => 'required|integer|exists:ec_products,id',
 			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
@@ -253,11 +280,42 @@ class QuoteController extends BaseController
 				$quoteShipping += $product['shipping_charge'];
 			}
 
+			if ($request->is_revised) {
+				if (!Str::startsWith($request->quote_number, 'QT')) {
+					throw ValidationException::withMessages([
+						'quote_number' => ['The quote number must start with "QT".']
+					]);
+				}
+				/* Use provided quote number if it's a revised quote */
+				$quoteNumber = $request->quote_number;
+			} else {
+				/* Generate new quote number */
+				$latestQuote = Quote::where('quote_number', 'NOT LIKE', '%\_v%')
+				->orderBy('id', 'desc')
+				->first();
+
+				if ($latestQuote && preg_match('/^QT(\d+)$/', $latestQuote->quote_number, $matches)) {
+					$nextNumber = (int) $matches[1] + 1;
+					$quoteNumber = 'QT' . $nextNumber;
+				} else {
+					$quoteNumber = 'QT1001';
+				}
+			}
+
 			$taxAmount = round($quoteAmount * ($request->tax_percentage / 100), 2);
 			$totalAmount = $quoteAmount + $taxAmount + $quoteShipping;
 
+			if ($request->discount_percentage) {
+				$discountPercentage = $request->discount_percentage;
+				$discountAmount = round($totalAmount * ($request->discount_percentage / 100), 2);
+				$amountAfterDiscount = $totalAmount - $discountAmount;
+ 			} else {
+ 				$discountPercentage = null;
+				$discountAmount = null;
+				$amountAfterDiscount = null;
+ 			}
 			$quote = Quote::create([
-				'quote_number' => $request->quote_number,
+				'quote_number' => $quoteNumber,
 				'quote_name' => $request->quote_name,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
@@ -266,12 +324,17 @@ class QuoteController extends BaseController
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
 				'total_amount' => $totalAmount,
+
+				'discount_percentage' => $discountPercentage,
+				'discount_amount' => $discountAmount,
+				'amount_after_discount' => $amountAfterDiscount,
+
 				'total_products' => $totalProducts,
 				'payment_terms' => $request->payment_terms,
 				'customer_notes' => $request->customer_notes,
 				'internal_notes' => $request->internal_notes,
-				'status' => 'Pending',
-				'expired_at' => now()->addDays(7),
+				'status' => $request->status,
+				'expired_at' => $request->expired_at ?? now()->addDays(7),
 				'created_by' => auth()->id(),
 			]);
 
@@ -334,7 +397,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}
@@ -417,7 +480,7 @@ class QuoteController extends BaseController
 			}
 		}
 
-		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+		foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 			if (isset($quote->$key)) {
 				$quote->$key = number_format($quote->$key, 2, '.', '');
 			}
@@ -577,7 +640,7 @@ class QuoteController extends BaseController
 				}
 			}
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount'] as $key) {
+			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'discount_amount', 'amount_after_discount'] as $key) {
 				if (isset($quote->$key)) {
 					$quote->$key = number_format($quote->$key, 2, '.', '');
 				}

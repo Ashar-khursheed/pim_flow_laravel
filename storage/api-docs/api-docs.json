@@ -1632,6 +1632,24 @@
                 }
             }
         },
+        "/api/auth/send-customers-reset-link": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Send password reset links to all customers",
+                "description": "Generates and emails password reset links to all registered customers.",
+                "operationId": "4a9da8909593fa99cd8734b396bb62fe",
+                "responses": {
+                    "200": {
+                        "description": "Reset link sent",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/blog-categories": {
             "get": {
                 "tags": [
@@ -13921,6 +13939,92 @@
                 }
             }
         },
+        "/api/frontend/glitch-errors": {
+            "get": {
+                "tags": [
+                    "FrontEnd-GlitchErrors"
+                ],
+                "summary": "Get all glitch errors with pagination and filters",
+                "operationId": "8ab4ce0108a649238c5f519c07b8c6c4",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "FrontEnd-GlitchErrors"
+                ],
+                "summary": "Create a new glitch error",
+                "operationId": "43ff1d79b8eda1fbfdfd50db7654ead0",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "description"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "user@example.com"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Page not loading properly."
+                                    },
+                                    "images[]": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/google-reviews": {
             "get": {
                 "tags": [
@@ -14541,6 +14645,47 @@
                     },
                     "404": {
                         "description": "Address not found or API failed"
+                    }
+                }
+            }
+        },
+        "/api/frontend/menu-banners": {
+            "get": {
+                "tags": [
+                    "Frontend Menu Banners"
+                ],
+                "summary": "Get all menu banners grouped by category_id",
+                "operationId": "448927fbaa798c14107d7664c48ea52f",
+                "responses": {
+                    "200": {
+                        "description": "Grouped list of banners"
+                    }
+                }
+            }
+        },
+        "/api/frontend/menu-banners/category/{category_id}": {
+            "get": {
+                "tags": [
+                    "Frontend Menu Banners"
+                ],
+                "summary": "Get all banners by category ID",
+                "operationId": "5aa7052320be7fe938265b0580d478fa",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Banners found"
+                    },
+                    "404": {
+                        "description": "No banners found"
                     }
                 }
             }
@@ -17266,17 +17411,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "quote_number",
                                     "quote_name",
                                     "customer_address_id",
                                     "tax_percentage",
                                     "products"
                                 ],
                                 "properties": {
-                                    "quote_number": {
-                                        "type": "string",
-                                        "example": "1111"
-                                    },
                                     "quote_name": {
                                         "type": "string",
                                         "example": "Kitchen equipment quote"
@@ -17393,6 +17533,117 @@
                 "responses": {
                     "200": {
                         "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "FrontEnd-Quotes"
+                ],
+                "summary": "Update an existing quote",
+                "operationId": "01aefd9f33dbc2912d96dec85787fbae",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Quote ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "quote_name",
+                                    "customer_address_id",
+                                    "tax_percentage",
+                                    "products"
+                                ],
+                                "properties": {
+                                    "quote_name": {
+                                        "type": "string",
+                                        "example": "Kitchen equipment quote"
+                                    },
+                                    "customer_address_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "tax_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "payment_terms": {
+                                        "type": "string",
+                                        "example": "Credit Card"
+                                    },
+                                    "customer_notes": {
+                                        "type": "string",
+                                        "example": "The need for my inner purpose."
+                                    },
+                                    "internal_notes": {
+                                        "type": "string",
+                                        "example": "Please deliver between 9am-5pm."
+                                    },
+                                    "products": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "product_id",
+                                                "vendor_id",
+                                                "quantity",
+                                                "unit_price",
+                                                "shipping_charge"
+                                            ],
+                                            "properties": {
+                                                "product_id": {
+                                                    "type": "integer",
+                                                    "example": 2001
+                                                },
+                                                "vendor_id": {
+                                                    "type": "integer",
+                                                    "example": 22
+                                                },
+                                                "quantity": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "unit_price": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 4000
+                                                },
+                                                "shipping_charge": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 50
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Updated successfully",
                         "content": {
                             "application/json": {}
                         }
@@ -26801,14 +27052,20 @@
                         "application/json": {
                             "schema": {
                                 "required": [
+                                    "is_revised",
                                     "quote_number",
                                     "quote_name",
                                     "customer_id",
                                     "customer_address_id",
                                     "tax_percentage",
+                                    "status",
                                     "products"
                                 ],
                                 "properties": {
+                                    "is_revised": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
                                     "quote_number": {
                                         "type": "string",
                                         "example": "1111"
@@ -26829,6 +27086,20 @@
                                         "type": "number",
                                         "format": "float",
                                         "example": 5
+                                    },
+                                    "discount_percentage": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 5
+                                    },
+                                    "status": {
+                                        "type": "string",
+                                        "example": "Pending"
+                                    },
+                                    "expired_at": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-08-09"
                                     },
                                     "payment_terms": {
                                         "type": "string",
@@ -33066,6 +33337,10 @@
             "description": "Geolocation"
         },
         {
+            "name": "FrontEnd-GlitchErrors",
+            "description": "FrontEnd-GlitchErrors"
+        },
+        {
             "name": "Google Reviews",
             "description": "Google Reviews"
         },
@@ -33076,6 +33351,10 @@
         {
             "name": "Frontend-Location",
             "description": "Frontend-Location"
+        },
+        {
+            "name": "Frontend Menu Banners",
+            "description": "Frontend Menu Banners"
         },
         {
             "name": "FrontEnd-Orders",

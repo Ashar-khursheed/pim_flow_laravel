@@ -25,7 +25,7 @@ class ProductErrorMail extends Notification implements ShouldQueue
     public function toMail($notifiable)
     {
         return (new MailMessage)
-            ->subject('New Product Error Reported')
+            ->subject("Product Error Report Received — Thank You for Flagging It")
             ->view('emails.product_error_reported', ['data' => $this->data]);
     }
 }

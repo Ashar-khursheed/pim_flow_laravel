@@ -1,51 +1,44 @@
 <?php
 
-namespace App\Notifications\Orders;
+namespace App\Mail\Order;
 
 use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
 use Carbon\Carbon;
 
-class OrderPlacedMail extends Notification implements ShouldQueue
+use App\Models\FrontEnd\Order;
+
+class OrderPlacedMail extends Mailable
 {
-	use Queueable;
+	use Queueable, SerializesModels;
 
 	public $order;
 
-	public function __construct($order)
+	/**
+	 * Create a new message instance.
+	 */
+	public function __construct(Order $order)
 	{
 		$this->order = $order;
 	}
 
-	/**
-	 * Get the notification's delivery channels.
-	 *
-	 * @return array<int, string>
-	 */
-	public function via($notifiable)
+	public function build()
 	{
-		return ['mail'];
-	}
+		$order = $this->order;
 
-	/**
-	 * Get the mail representation of the notification.
-	 */
-	public function toMail($notifiable)
-	{
 		$backendURL = config('app.backend_url');
 		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		$name = $notifiable->name ?? 'User';
+		$name = $order->customer->name ?? 'User';
 		$orderUrl = url("/my-order");
 
-		$orderNumber = $this->order->order_number;
-		$orderDate = Carbon::parse($this->order->created_at)->format('D, M d, Y');
+		$orderNumber = $order->order_number;
+		$orderDate = Carbon::parse($order->created_at)->format('D, M d, Y');
 		$currency = config('app.website') == 'UAE' ? 'AED' : '$';
-		$paidAmount = number_format($this->order->paid_amount ?? 0, 2, '.', ',');
-		$paymentMethod = optional($this->order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
+		$paidAmount = $order->paid_amount ?? 0;
+		$paymentMethod = optional($order->payments()->latest()->first())->payment_mode ?? 'Cash On Delivery';
 
-		$customerAddress = $this->order->customerAddress;
+		$customerAddress = $order->customerAddress;
 		$address = $customerAddress->address ?? '';
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
@@ -53,7 +46,7 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 
 		$products = collect();
 
-		foreach ($this->order->orderProducts as $orderProduct) {
+		foreach ($order->orderProducts as $orderProduct) {
 			$productSupplierDetail = $orderProduct->vendorProductSupplier;
 			$productDetail = $orderProduct->product;
 
@@ -64,14 +57,14 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 				$product->image = is_array($images) ? ($images[0] ?? null) : null;
 				$product->name = $productDetail->name;
 				$product->expectedShippingDate = $productSupplierDetail
-				? getDateRange($this->order->created_at, $productSupplierDetail->delivery_days)
+				? getDateRange($order->created_at, $productSupplierDetail->delivery_days)
 				: null;
 
 				/* Original Price (before discount) */
 				$originalPrice = $productSupplierDetail->price ?? $orderProduct->unit_price;
 
-				$product->priceBeforeDiscount = number_format($originalPrice, 2, '.', ',');
-				$product->unitPrice = number_format($orderProduct->unit_price, 2, '.', ',');
+				$product->priceBeforeDiscount = $originalPrice;
+				$product->unitPrice = $orderProduct->unit_price;
 
 				if (
 					$productSupplierDetail &&
@@ -79,37 +72,33 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 					$productSupplierDetail->price > 0 &&
 					$orderProduct->unit_price > 0
 				) {
-					$product->discount = number_format(
-						(($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100,
-						2
-					);
+					$product->discount = (($productSupplierDetail->price - $orderProduct->unit_price) / $productSupplierDetail->price) * 100;
+
 				} else {
 					$product->discount = 0;
 				}
 
 				$product->quantity = (int) $orderProduct->quantity;
-				$product->total = number_format($orderProduct->amount, 2, '.', ',');
+				$product->total = $orderProduct->amount;
 
 				$products->push($product);
 			}
 		}
 
-		/* Total price before discount */
-		$totalPriceWithoutDiscount = number_format($products->sum(function ($p) {
+		/* Total price before discount (raw value) */
+		$totalPriceWithoutDiscount = $products->sum(function ($p) {
 			return (float) $p->priceBeforeDiscount * $p->quantity;
-		}), 2, '.', ',');
+		});
 
 		/* Total saved = original total - actual subtotal */
-		$totalSaved = number_format(
-			max(0, $totalPriceWithoutDiscount - ($this->order->amount ?? 0)), 2, '.', ','
-		);
+		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
 
-		$subTotal = number_format($this->order->amount ?? 0, 2, '.', ',');
-		$shippingCharge = number_format($this->order->shipping_charge ?? 0, 2, '.', ',');
+		$subTotal = $order->amount ?? 0;
+		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
-		$taxPercent = $this->order->tax_percentage;
-		$taxAmount = number_format($this->order->tax_amount ?? 0, 2, '.', ',');
-		$total = number_format($this->order->total_amount ?? 0, 2, '.', ',');
+		$taxPercent = $order->tax_percentage;
+		$taxAmount = $order->tax_amount ?? 0;
+		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
@@ -144,21 +133,8 @@ class OrderPlacedMail extends Notification implements ShouldQueue
 			'siteEmail' => $siteEmail,
 		];
 
-		return (new MailMessage)
-		->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
-		->markdown('emails.orders.order-placed', $params);
-	}
-
-
-	/**
-	 * Get the array representation of the notification.
-	 *
-	 * @return array<string, mixed>
-	 */
-	public function toArray(object $notifiable): array
-	{
-		return [
-			//
-		];
+		return $this->subject("Your HorecaStore Order #{$orderNumber} Has Been Successfully Placed")
+		->markdown('emails.orders.order-placed')
+		->with($params);
 	}
 }

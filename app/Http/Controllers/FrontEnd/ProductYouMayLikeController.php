@@ -105,14 +105,33 @@ class ProductYouMayLikeController extends Controller
     {
         try {
             // Get product ID from route param or request input
-            $productId = $product_id ?? $request->input('product_id');
+                        $input = $product_id ?? $request->input('product_id');
 
-            if (!$productId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product ID is required',
-                ], 400);
-            }
+                if (!$input) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product ID or slug is required',
+                    ], 400);
+                }
+
+                // Determine if input is numeric (ID) or string (slug)
+                if (is_numeric($input)) {
+                    $productId = (int) $input;
+                } else {
+                    // Fetch by slug via seoUrl relationship
+                    $product = Product::whereHas('seoUrl', function ($q) use ($input) {
+                        $q->where('url', $input);
+                    })->first();
+
+                    if (!$product) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product not found by slug',
+                        ], 404);
+                    }
+
+                    $productId = $product->id;
+                }
 
             $userId = Auth::id();
             $isUserLoggedIn = $userId !== null;
@@ -202,7 +221,7 @@ class ProductYouMayLikeController extends Controller
             // Load additional relationships for paginated products
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers'])
+                ->with(['reviews:id,product_id,star', 'currency' ,'productSuppliers', 'seoUrl'])
                 ->get()
                 ->keyBy('id');
 
@@ -253,6 +272,7 @@ class ProductYouMayLikeController extends Controller
                 return [
                     'id' => $product->id,
                     'name' => $product->name,
+                    'url' => $product->seoUrl->url ?? null,
                     'images' => $images,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
@@ -312,6 +332,7 @@ class ProductYouMayLikeController extends Controller
             ], 500);
         }
     }
+  
 
     /**
      * Return empty pagination structure.
@@ -467,16 +488,36 @@ class ProductYouMayLikeController extends Controller
     public function getProductsYouMayLikeGuest(Request $request, $product_id = null)
     {
         try {
-            $productId = $product_id ?? $request->input('product_id');
-    
-            if (!$productId) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Product ID is required',
-                ], 400);
-            }
-    
-            Log::info('Fetching recommendations for product:', ['product_id' => $productId]);
+            $input = $product_id ?? $request->input('product_id');
+
+                if (!$input) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Product ID or slug is required',
+                    ], 400);
+                }
+
+                // Determine if input is numeric (ID) or string (slug)
+                if (is_numeric($input)) {
+                    $productId = (int) $input;
+                } else {
+                    // Fetch by slug via seoUrl relationship
+                    $product = Product::whereHas('seoUrl', function ($q) use ($input) {
+                        $q->where('url', $input);
+                    })->first();
+
+                    if (!$product) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Product not found by slug',
+                        ], 404);
+                    }
+
+                    $productId = $product->id;
+                }
+
+                Log::info('Fetching recommendations for product:', ['product_id' => $productId]);
+
     
             // Step 1: Find the main "product_you_may_likes" record for this product
             $productYouMayLike = DB::table('product_you_may_likes')
@@ -550,7 +591,7 @@ class ProductYouMayLikeController extends Controller
     
             $productIds = $paginatedProducts->pluck('id')->toArray();
             $productsWithRelations = Product::whereIn('id', $productIds)
-            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers'])
+            ->with(['reviews:id,product_id,star', 'currency', 'productSuppliers' , 'seoUrl'])
                 ->get()
                 ->keyBy('id');
     
@@ -588,6 +629,7 @@ class ProductYouMayLikeController extends Controller
                     'id' => $product->id,
                     'name' => $product->name,
                     'images' => $images,
+                    'url' => $product->seoUrl->url ?? null,
                     'video_url' => $product->video_url,
                     'video_path' => $videos,
                     'sku' => $product->sku,
@@ -645,5 +687,6 @@ class ProductYouMayLikeController extends Controller
             ], 500);
         }
     }
+
     
 }

@@ -28,7 +28,7 @@
 				<table class="container" width="650" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border: 1px solid #eaeaea; font-family: 'Noto Sans', sans-serif;">
 					<tr>
 						<td style="padding: 20px; font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 20px;">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120" />
+							<img src="{{ $logoUrl }}" alt="Logo" width="120" />
 						</td>
 					</tr>
 
@@ -75,7 +75,7 @@
 										{{ $product->quantity }}
 									</td>
 									<td align="right" style="font-family: 'Noto Sans', sans-serif; font-size:14px; line-height:20px; width:18%;">
-										{{ $currency }} {{ $product->total }}
+										{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}
 									</td>
 								</tr>
 								@endforeach

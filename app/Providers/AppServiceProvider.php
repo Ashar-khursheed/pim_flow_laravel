@@ -73,7 +73,6 @@ use App\Models\VendorDocument;
 use App\Models\Website;
 use App\Models\Zipcode;
 
-
 class AppServiceProvider extends ServiceProvider
 {
 	/**

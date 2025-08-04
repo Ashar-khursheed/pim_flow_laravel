@@ -13,6 +13,7 @@ use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\GuestRecentlyViewedProduct;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cookie;
+use App\Models\SeoManagement;
 
 class RecentlyViewedProductController extends Controller
 {
@@ -53,27 +54,43 @@ class RecentlyViewedProductController extends Controller
      * )
      */
 
-    public function addToRecent(Request $request)
-    {
-        $request->validate([
-            'product_id' => 'required|exists:ec_products,id', // Validates if the product exists
-        ]);
+  public function addToRecent(Request $request)
+{
+    $request->validate([
+        'product_id' => 'required|string', // accept both ID or slug
+    ]);
 
-        $productId = $request->input('product_id');
-        $userId = Auth::id(); // Use Auth if the user is logged in
+    $input = $request->input('product_id');
 
-        if ($userId) {
-            // Add the product to the recently viewed list
-            RecentlyViewedProduct::updateOrCreate(
-                ['customer_id' => $userId, 'product_id' => $productId],
-                ['updated_at' => now()] // Updates the timestamp if already exists
-            );
+    // Resolve product ID
+    if (is_numeric($input)) {
+        $productId = (int) $input;
+    } else {
+        $product = Product::whereHas('seoUrl', function ($query) use ($input) {
+            $query->where('url', $input);
+        })->first();
 
-            return response()->json(['message' => 'Product added to recently viewed list.'], 200);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found.'], 404);
         }
 
-        return response()->json(['message' => 'User not authenticated.'], 401);
+        $productId = $product->id;
     }
+
+    $userId = Auth::id();
+
+    if ($userId) {
+        RecentlyViewedProduct::updateOrCreate(
+            ['customer_id' => $userId, 'product_id' => $productId],
+            ['updated_at' => now()]
+        );
+
+        return response()->json(['message' => 'Product added to recently viewed list.'], 200);
+    }
+
+    return response()->json(['message' => 'User not authenticated.'], 401);
+}
+
 
 
 
@@ -150,7 +167,8 @@ class RecentlyViewedProductController extends Controller
                 'product.reviews',
                 'product.currency',
                 'product.sellingUnitAttribute',
-                'product.productAttributes.attributeDetails'
+                'product.productAttributes.attributeDetails',
+                'product.seoUrl',
             ])
                 ->where('customer_id', $userId)
                 ->latest()
@@ -170,11 +188,11 @@ class RecentlyViewedProductController extends Controller
                 'data' => $recentlyViewed->map(function ($viewed) use ($wishlistIds) {
                     $product = $viewed->product;
 
-            
-                    // Check if the product is null
-                    if (!$product) {
-                        return null; // Or handle it as needed (e.g., skip this entry, log it, etc.)
+                    // ✅ Skip null or unpublished products
+                    if (!$product || $product->status !== 'published') {
+                        return null;
                     }
+
                     $imageArray = is_array($product->images) ? $product->images : json_decode($product->images, true);
                     $cleanedImages = collect($imageArray)->map(function ($item) {
                         if (is_string($item) && str_starts_with($item, '[')) {
@@ -201,9 +219,10 @@ class RecentlyViewedProductController extends Controller
 
             
                     return [
-                        'product_id' => $product->id,
+                        'id' => $product->id,
                         'name' => $product->name,
                         'sku' => $product->sku,
+                        'url' => $product->seoUrl->url ?? null,
                         'total_reviews' => $product->reviews->count(),
                         'avg_rating' => $product->reviews->count() > 0 ? $product->reviews->avg('star') : null,
                         'left_stock' => $product->left_stock ?? 0,
@@ -263,63 +282,51 @@ class RecentlyViewedProductController extends Controller
      *     )
      * )
      */
-    // public function saveGuestProductView(Request $request)
-    // {
-    //     $productId = $request->input('product_id');
-    //     $guestToken = $request->input('guest_token');
-    
-    //     if (!$productId || !Product::find($productId)) {
-    //         return response()->json(['message' => 'Invalid product ID.'], 400);
-    //     }
-    
-    //     // If token not provided, create one
-    //     if (!$guestToken) {
-    //         $guestToken = Str::uuid()->toString();
-    //     }
-    
-    //     // Save the guest product view
-    //     GuestRecentlyViewedProduct::create([
-    //         'guest_token' => $guestToken,
-    //         'product_id' => $productId,
-    //     ]);
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'guest_token' => $guestToken, // send back token to store on frontend
-    //     ]);
-    // }
+
     public function saveGuestProductView(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $guestToken = $request->input('guest_token');
+{
+    $url = $request->input('product_id'); // frontend sends full URL here
+    $guestToken = $request->input('guest_token');
 
-        if (!$productId || !Product::find($productId)) {
-            return response()->json(['message' => 'Invalid product ID.'], 400);
-        }
+    // Find SEO record by URL
+    $seo = SeoManagement::where('url', $url)->first();
 
-        // If token not provided, create one
-        if (!$guestToken) {
-            $guestToken = Str::uuid()->toString();
-        }
+    if (!$seo) {
+        return response()->json(['message' => 'Product not found by URL.'], 404);
+    }
 
-        // ✅ Check if the combination already exists
-        $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
-            ->where('product_id', $productId)
-            ->exists();
+    // Now fetch the product using relational_id (assumed to be product_id)
+    $product = Product::where('id', $seo->relational_id)
+                      ->where('status', 'published')
+                      ->first();
 
-        if (!$exists) {
-            GuestRecentlyViewedProduct::create([
-                'guest_token' => $guestToken,
-                'product_id' => $productId,
-            ]);
-        }
+    if (!$product) {
+        return response()->json(['message' => 'Invalid or unpublished product.'], 400);
+    }
 
-        return response()->json([
-            'success' => true,
-            'guest_token' => $guestToken, // send back token to store on frontend
+    // Generate guest token if not provided
+    if (!$guestToken) {
+        $guestToken = Str::uuid()->toString();
+    }
+
+    // Check if this view already exists
+    $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
+        ->where('product_id', $product->id)
+        ->exists();
+
+    if (!$exists) {
+        GuestRecentlyViewedProduct::create([
+            'guest_token' => $guestToken,
+            'product_id' => $product->id,
         ]);
     }
-    
+
+    return response()->json([
+        'success' => true,
+        'guest_token' => $guestToken,
+    ]);
+}
+
     /**
      * @OA\Get(
      *     path="/api/frontend/guest/recent-products",
@@ -395,7 +402,7 @@ class RecentlyViewedProductController extends Controller
 
       private function getGuestRecentlyViewedData(string $guestToken): array
         {
-            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers')
+            $recentlyViewed = GuestRecentlyViewedProduct::with('product.reviews', 'product.currency' ,'product.productSuppliers', 'product.seoUrl')
                 ->where('guest_token', $guestToken)
                 ->latest()
                 ->get();
@@ -432,9 +439,10 @@ class RecentlyViewedProductController extends Controller
 
 
                 $data[] = [
-                    'product_id' => $product->id,
+                    'id' => $product->id,
                     'name' => $product->name,
                     'sku' => $product->sku,
+                    'url' => $product->seoUrl->url ?? null,
                     'total_reviews' => $product->reviews->count(),
                     'avg_rating' => $product->reviews->avg('star'),
                     'left_stock' => $product->left_stock ?? 0,
@@ -442,7 +450,7 @@ class RecentlyViewedProductController extends Controller
                     'in_wishlist' => false,
                     'images' => $cleanedImages,
                     "selling_type"=> $sellingType,
-                'vendor_sku' => $firstSupplier->vendor_sku ?? null,
+                    'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                     'price' => (float) ($firstSupplier->price ?? 0),
                     "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
                     "original_price"=> (float) ($firstSupplier->price ?? 0),

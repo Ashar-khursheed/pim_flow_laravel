@@ -3,7 +3,7 @@
 
 <head>
 	<meta charset="UTF-8" />
-	<title>Quotation Ready - HORECA</title>
+	<title>Quotation Ready - HorecaStore</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 	<style>
 		@media only screen and (max-width: 580px) {
@@ -27,7 +27,7 @@
 				<table class="wrapper" width="650" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #eaeaea; padding:20px; font-family:'Noto Sans', sans-serif;  background:#ffffff; ">
 					<tr>
 						<td style="padding-bottom: 20px;">
-							<img src="{{ $logoUrl }}" alt="HORECA Logo" width="120" style="font-family:'Noto Sans', sans-serif;">
+							<img src="{{ $logoUrl }}" alt="Logo" width="120" style="font-family:'Noto Sans', sans-serif;">
 						</td>
 					</tr>
 					<tr>
@@ -184,7 +184,7 @@
 								We strive to respond to all quotation requests promptly. However, in rare cases, delays may occur. We appreciate your understanding.
 							</p>
 							<p style="margin:5px 0;">
-								©{{ now()->year }} {{ $siteName }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of Horeca Store LLC or its affiliates.
+								©{{ now()->year }} {{ $siteName }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
 							<p style="margin:8px 0 0;">
 								This message was sent from a notification-only address. Please do not reply directly. For support, contact us at
