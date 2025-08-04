@@ -2024,7 +2024,40 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
         \Log::info($query->getBindings());
     }
 
-    
+    /**
+     * @OA\Get(
+     *     path="/api/product-info/{slug}",
+     *     operationId="getProductInfoBySlug",
+     *     tags={"Frontend-Product"},
+     *     summary="Get product info by URL slug",
+     *     description="Returns brand, delivery days, return policy, and shipping info for a product using slug from seo_management table.",
+     *     @OA\Parameter(
+     *         name="slug",
+     *         in="path",
+     *         description="Slug from the SEO management table (url column)",
+     *         required=true,
+     *         @OA\Schema(type="string")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Product details found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="brand", type="string", example="Apple"),
+     *             @OA\Property(property="delivery_days", type="string", example="2-4 Business Days"),
+     *             @OA\Property(property="return_policy", type="string", example="15 Days Return"),
+     *             @OA\Property(property="shipping", type="string", example="Free Shipping")
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Invalid product URL or product not found",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="message", type="string", example="Product not found")
+     *         )
+     *     )
+     * )
+     */
+        
     public function getProductInfoBySlug($slug)
     {
         // Get the product ID from seo_management table

@@ -16548,6 +16548,73 @@
                 }
             }
         },
+        "/api/product-info/{slug}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get product info by URL slug",
+                "description": "Returns brand, delivery days, return policy, and shipping info for a product using slug from seo_management table.",
+                "operationId": "getProductInfoBySlug",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug from the SEO management table (url column)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product details found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "brand": {
+                                            "type": "string",
+                                            "example": "Apple"
+                                        },
+                                        "delivery_days": {
+                                            "type": "string",
+                                            "example": "2-4 Business Days"
+                                        },
+                                        "return_policy": {
+                                            "type": "string",
+                                            "example": "15 Days Return"
+                                        },
+                                        "shipping": {
+                                            "type": "string",
+                                            "example": "Free Shipping"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invalid product URL or product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/product-errors": {
             "get": {
                 "tags": [
