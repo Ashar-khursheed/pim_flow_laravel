@@ -118,8 +118,8 @@ def load_click_counts():
 async def lifespan(app: FastAPI):
     global product_skus, product_names, embeddings, click_counts, model
     df_sql = load_products_from_sql(
-        "pim-flow-db.ch0qsm2uacmv.us-west-1.rds.amazonaws.com", 3306,
-        "pim_flow_db", "admin", "Yellowgrapes3322", SQL
+        "horecadb.ch0qsm2uacmv.us-west-1.rds.amazonaws.com", 3306,
+        "horecadb", "admin", "Mangoorange9987", SQL
     )
     product_skus, product_names, embeddings = load_products_and_embeddings(df_sql)
     click_counts = load_click_counts()
