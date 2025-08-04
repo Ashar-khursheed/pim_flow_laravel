@@ -47,7 +47,7 @@
 								Reset My Password
 							</a>
 							<p style="font-size: 13px; margin-top: 10px; color: #444444; font-family: 'Noto Sans', sans-serif;">
-								(This secure link will expire shortly for your protection.)
+								(This secure link will expire in 7 days for your account protection.)
 							</p>
 						</td>
 					</tr>
