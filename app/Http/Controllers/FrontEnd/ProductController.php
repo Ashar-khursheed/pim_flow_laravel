@@ -2078,7 +2078,7 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
             'Brand' => $product->brand ? $product->brand->name : null,
             'Delivery_days' => $product->productSuppliers->first()->delivery_days ?? null,
             'Return_policy' => $product->productSuppliers->first()->return_policy ?? null,
-           'Free shipping' => ($product->productSuppliers->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
+           'Free_shipping' => ($product->productSuppliers->first()->free_shipping ?? null) == 1 ? 'Yes' : 'No',
 
         ]);
     }
