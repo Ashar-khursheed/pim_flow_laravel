@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\SeoManagement;
 use OpenApi\Annotations as OA;
-
+use Illuminate\Support\Facades\Http;
 class SeoManagementController extends Controller
 {
     /**
@@ -174,15 +174,15 @@ public function getParagraphData(Request $request, $identifier)
 
     $seoQuery = SEOManagement::query();
 
-    // Check if identifier is a URL or slug-like path
-    if (filter_var($identifier, FILTER_VALIDATE_URL) || str_contains($identifier, '/')) {
-        $identifier = parse_url($identifier, PHP_URL_PATH); // optional: clean domain
-        $seoQuery->where('url', $identifier);
-    } else {
-        $seoQuery->where('relational_id', $identifier);
+    // If a full URL is passed, extract only the path
+    if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        $identifier = parse_url($identifier, PHP_URL_PATH);
     }
 
-    // Apply optional filter for relational_type
+    // Now treat identifier as a slug/path and match using 'slug' column
+    $seoQuery->where('slug', ltrim($identifier, '/'));
+
+    // Apply optional relational_type filter
     if ($relationalType) {
         $seoQuery->where('relational_type', $relationalType);
     }
@@ -235,4 +235,6 @@ public function getParagraphData(Request $request, $identifier)
             'schema' => $item->schema
         ];
     }
+
+
 }
