@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import pymysql
 import uvicorn
+import random
 
 
 # === Config === (Change path here)
@@ -20,7 +21,14 @@ TOP_K           = 50
 
 #loading the data from sql
 SQL = """
-select id as product_id, name as product_name, sku from ec_products where status="published"
+SELECT 
+    p.id AS product_id, 
+    p.name AS product_name, 
+    p.sku,
+    s.url AS product_url
+FROM ec_products p
+LEFT JOIN seo_management s ON s.relational_id = p.id
+WHERE p.status = "published"
 """
 
 def load_products_from_sql(host, port, database, username, password, sql_query):
@@ -72,7 +80,8 @@ def load_products_and_embeddings(df):
         print("✅ Using existing embeddings and name list.")
         embs = np.load(EMBEDDINGS_FILE)
 
-    return skus, names, embs
+    urls = df['product_url'].astype(str).fillna("").tolist()
+    return skus, names, urls, embs
 
 # def load_products_and_embeddings(df):
 #     # df = pd.read_csv(PRODUCT_FILE, dtype={"sku": str})
@@ -149,6 +158,7 @@ class SearchResult(BaseModel):
     sku:    str
     name:   str
     clicks: int
+    url: str
 
 # === Endpoints ===
 @app.get("/", tags=["root"])
@@ -156,25 +166,34 @@ async def root():
     return {"message": "Welcome to Product Search API"}
 
 @app.get("/search", response_model=List[SearchResult], tags=["search"])
-def search(query: str):
+def search(query: str = ""):
     if not query.strip():
-        return []
+        # Return 5 random products
+        random_indices = random.sample(range(len(product_skus)), 5)
+        return [
+            SearchResult(
+                sku=product_skus[i],
+                name=product_names[i],
+                clicks=click_counts.get(product_skus[i], 0),
+                url=product_urls[i]
+            )
+            for i in random_indices
+        ]
 
-    q_emb  = model.encode([query], convert_to_numpy=True).flatten()
+    q_emb = model.encode([query], convert_to_numpy=True).flatten()
     tokens = query.lower().split()
 
     scored = []
-    for sku, name, emb in zip(product_skus, product_names, embeddings):
-        kw     = sum(1 for t in tokens if t in name.lower())
-        sim    = float(np.dot(emb, q_emb))
+    for sku, name, url, emb in zip(product_skus, product_names, product_urls, embeddings):
+        kw = sum(1 for t in tokens if t in name.lower())
+        sim = float(np.dot(emb, q_emb))
         clicks = click_counts.get(sku, 0)
-        scored.append((kw, sim, clicks, sku, name))
+        scored.append((kw, sim, clicks, sku, name, url))
 
-    # keyword + semantic sort, take top K
     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
     topk = scored[:TOP_K]
 
-    # re-rank by clicks (preserving relevance within same click-count)
+    # Group by click count
     buckets = {}
     for item in topk:
         buckets.setdefault(item[2], []).append(item)
@@ -184,8 +203,8 @@ def search(query: str):
         final.extend(buckets[count])
 
     return [
-        SearchResult(sku=sku, name=name, clicks=ctr)
-        for _, _, ctr, sku, name in final
+        SearchResult(sku=sku, name=name, clicks=ctr, url=url)
+        for _, _, ctr, sku, name, url in final
     ]
 
 # === Run via PyCharm “Run” or `python nlp_v5.py` ===
