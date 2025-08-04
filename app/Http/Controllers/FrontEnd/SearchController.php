@@ -625,16 +625,16 @@ class SearchController extends Controller
         return response()->json(['products' => $products]);
     }
   
-      public function searchnlp(Request $request)
-    {
-        $query = $request->input('query');
+    //   public function searchnlp(Request $request)
+    // {
+    //     $query = $request->input('query');
 
-        $response = Http::get(env('SEARCH_API_URL') . '/search', [
-            'query' => $query
-        ]);
+    //     $response = Http::get(env('SEARCH_API_URL') . '/search', [
+    //         'query' => $query
+    //     ]);
 
-        return response()->json($response->json());
-    }
+    //     return response()->json($response->json());
+    // }
     
 
 }
