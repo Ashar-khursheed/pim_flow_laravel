@@ -625,7 +625,7 @@ class SearchController extends Controller
         return response()->json(['products' => $products]);
     }
   
-    //   public function searchnlp(Request $request)
+    //   public function searchnlp(Request $request) s
     // {
     //     $query = $request->input('query');
 
