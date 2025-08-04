@@ -180,7 +180,7 @@ public function getParagraphData(Request $request, $identifier)
     }
 
     // Now treat identifier as a slug/path and match using 'slug' column
-    $seoQuery->where('slug', ltrim($identifier, '/'));
+    $seoQuery->where('url', ltrim($identifier, '/'));
 
     // Apply optional relational_type filter
     if ($relationalType) {
