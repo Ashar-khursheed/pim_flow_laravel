@@ -18,7 +18,6 @@ use Illuminate\Bus\Batch;
 use App\Jobs\Auth\CommonPasswordResetMailJob;
 
 use App\Notifications\ResetPasswordNotification;
-use App\Notifications\CommonPasswordResetMail;
 
 class AuthController extends BaseController
 {
