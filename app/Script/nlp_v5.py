@@ -9,7 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import pymysql
 import uvicorn
-import random
 
 
 # === Config === (Change path here)
@@ -27,7 +26,7 @@ SELECT
     p.sku,
     s.url AS product_url
 FROM ec_products p
-LEFT JOIN seo_management s ON s.relational_id = p.id
+LEFT JOIN seo_management s ON s.relational_id = p.id 
 WHERE p.status = "published"
 """
 
@@ -55,15 +54,13 @@ def load_products_and_embeddings(df):
     df['sku'] = df['sku'].str.strip().str.upper()
     names = df['product_name'].astype(str).tolist()
     skus = df['sku'].tolist()
+    urls = df['product_url'].astype(str).tolist()  # <- add this
 
     regenerate = False
 
-    # Check if both files exist
     if os.path.exists(EMBEDDINGS_FILE) and os.path.exists(NAMES_FILE):
         with open(NAMES_FILE, 'r', encoding='utf-8') as f:
             saved_names = f.read().splitlines()
-
-        # Check if saved names match current df
         if len(saved_names) != len(names):
             regenerate = True
     else:
@@ -80,7 +77,6 @@ def load_products_and_embeddings(df):
         print("✅ Using existing embeddings and name list.")
         embs = np.load(EMBEDDINGS_FILE)
 
-    urls = df['product_url'].astype(str).fillna("").tolist()
     return skus, names, urls, embs
 
 # def load_products_and_embeddings(df):
@@ -125,14 +121,17 @@ def load_click_counts():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global product_skus, product_names, embeddings, click_counts, model
+    global product_skus, product_names, product_urls, embeddings, click_counts, model
+
     df_sql = load_products_from_sql(
         "horecadb.ch0qsm2uacmv.us-west-1.rds.amazonaws.com", 3306,
         "horecadb", "admin", "Mangoorange9987", SQL
     )
-    product_skus, product_names, embeddings = load_products_and_embeddings(df_sql)
+
+    product_skus, product_names, product_urls, embeddings = load_products_and_embeddings(df_sql)
     click_counts = load_click_counts()
     model = SentenceTransformer('all-MiniLM-L6-v2')
+
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -166,34 +165,25 @@ async def root():
     return {"message": "Welcome to Product Search API"}
 
 @app.get("/search", response_model=List[SearchResult], tags=["search"])
-def search(query: str = ""):
+def search(query: str):
     if not query.strip():
-        # Return 5 random products
-        random_indices = random.sample(range(len(product_skus)), 5)
-        return [
-            SearchResult(
-                sku=product_skus[i],
-                name=product_names[i],
-                clicks=click_counts.get(product_skus[i], 0),
-                url=product_urls[i]
-            )
-            for i in random_indices
-        ]
+        return []
 
-    q_emb = model.encode([query], convert_to_numpy=True).flatten()
+    q_emb  = model.encode([query], convert_to_numpy=True).flatten()
     tokens = query.lower().split()
 
     scored = []
-    for sku, name, url, emb in zip(product_skus, product_names, product_urls, embeddings):
-        kw = sum(1 for t in tokens if t in name.lower())
-        sim = float(np.dot(emb, q_emb))
+    for sku, name,url, emb in zip(product_skus, product_names, embeddings):
+        kw     = sum(1 for t in tokens if t in name.lower())
+        sim    = float(np.dot(emb, q_emb))
         clicks = click_counts.get(sku, 0)
-        scored.append((kw, sim, clicks, sku, name, url))
+        scored.append((kw, sim, clicks, sku, name))
 
+    # keyword + semantic sort, take top K
     scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
     topk = scored[:TOP_K]
 
-    # Group by click count
+    # re-rank by clicks (preserving relevance within same click-count)
     buckets = {}
     for item in topk:
         buckets.setdefault(item[2], []).append(item)
