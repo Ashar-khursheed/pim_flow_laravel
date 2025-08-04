@@ -139,7 +139,7 @@ app = FastAPI(lifespan=lifespan)
 # enable CORS for your React dev server
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
