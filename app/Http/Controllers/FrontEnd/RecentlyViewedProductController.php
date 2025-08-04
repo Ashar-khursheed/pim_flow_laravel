@@ -13,6 +13,7 @@ use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\GuestRecentlyViewedProduct;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cookie;
+use App\Models\SeoManagement;
 
 class RecentlyViewedProductController extends Controller
 {
@@ -307,38 +308,49 @@ class RecentlyViewedProductController extends Controller
     //     ]);
     // }
     public function saveGuestProductView(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $guestToken = $request->input('guest_token');
+{
+    $url = $request->input('product_id'); // frontend sends full URL here
+    $guestToken = $request->input('guest_token');
 
-       $product = Product::where('id', $productId)->where('status', 'published')->first();
-        if (!$product) {
-            return response()->json(['message' => 'Invalid or unpublished product.'], 400);
-        }
+    // Find SEO record by URL
+    $seo = SeoManagement::where('url', $url)->first();
 
-        // If token not provided, create one
-        if (!$guestToken) {
-            $guestToken = Str::uuid()->toString();
-        }
+    if (!$seo) {
+        return response()->json(['message' => 'Product not found by URL.'], 404);
+    }
 
-        // ✅ Check if the combination already exists
-        $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
-            ->where('product_id', $productId)
-            ->exists();
+    // Now fetch the product using relational_id (assumed to be product_id)
+    $product = Product::where('id', $seo->relational_id)
+                      ->where('status', 'published')
+                      ->first();
 
-        if (!$exists) {
-            GuestRecentlyViewedProduct::create([
-                'guest_token' => $guestToken,
-                'product_id' => $productId,
-            ]);
-        }
+    if (!$product) {
+        return response()->json(['message' => 'Invalid or unpublished product.'], 400);
+    }
 
-        return response()->json([
-            'success' => true,
-            'guest_token' => $guestToken, // send back token to store on frontend
+    // Generate guest token if not provided
+    if (!$guestToken) {
+        $guestToken = Str::uuid()->toString();
+    }
+
+    // Check if this view already exists
+    $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
+        ->where('product_id', $product->id)
+        ->exists();
+
+    if (!$exists) {
+        GuestRecentlyViewedProduct::create([
+            'guest_token' => $guestToken,
+            'product_id' => $product->id,
         ]);
     }
-    
+
+    return response()->json([
+        'success' => true,
+        'guest_token' => $guestToken,
+    ]);
+}
+
     /**
      * @OA\Get(
      *     path="/api/frontend/guest/recent-products",
