@@ -8,6 +8,7 @@ use App\Models\GroupedProduct;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Brand;
+use App\Models\SeoManagement;
 use App\Models\Review;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB; // Add this line
