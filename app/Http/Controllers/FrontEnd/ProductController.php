@@ -2075,10 +2075,10 @@ public function getCategoryWiseRandomProducts(Request $request, $category)
         }
 
         return response()->json([
-            'brand' => $product->brand ? $product->brand->name : null,
-            'delivery_days' => $product->supplier->delivery_days ?? null,
-            'return_policy' => $product->supplier->return_policy ?? null,
-            'shipping' => $product->supplier->shipping ?? null,
+            'Brand' => $product->brand ? $product->brand->name : null,
+            'Delivery_days' => $product->productSuppliers->first()->delivery_days ?? null,
+            'Return_policy' => $product->productSuppliers->first()->return_policy ?? null,
+            'Free shipping' => $product->productSuppliers->first()->shipping ?? null,
         ]);
     }
 
