@@ -9,15 +9,13 @@ use Illuminate\Support\Str;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
-use App\Models\User;
-use App\Models\FrontEnd\Customer;
-
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
+use App\Models\User;
+use App\Models\FrontEnd\Customer;
 use App\Jobs\Auth\CommonPasswordResetMailJob;
-
-use App\Notifications\ResetPasswordNotification;
+use App\Jobs\Auth\ResetPasswordMailJob;
 
 class AuthController extends BaseController
 {
@@ -198,13 +196,16 @@ class AuthController extends BaseController
 			]);
 		}
 
-		$token = Str::random(60);
-		$user->passwordResetToken()->updateOrCreate([], [
-			'token' => Hash::make($token),
-			'created_at' => now()
-		]);
+		$batch = Bus::batch([])->before(function (Batch $batch) {
+		})->catch(function (Batch $batch, Throwable $e) {
+		})->finally(function (Batch $batch) {
+		})->name('Reset Password Mail')->dispatch();
 
-		$user->notify(new ResetPasswordNotification($token, $request->email, $request->type));
+		$batch->options['queue'] = 'RST_PWD_MAIL';
+		$batch->add(new ResetPasswordMailJob([
+			'recordId' => $user->id,
+			'userType' => $request->type,
+		]));
 
 		return response()->json([
 			'success' => true,

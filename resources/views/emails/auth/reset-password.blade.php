@@ -53,7 +53,7 @@
             <!-- Security Box -->
             <div class="footer-box" style="font-size: 13px; color: #333333; background-color: #f0f0f0; padding: 15px; border-radius: 6px;">
                 <p style="margin: 0 0 10px;"><strong>Is this link safe?</strong></p>
-                <p style="margin: 0 0 10px;">The password reset link in this email starts with: <strong>{{ $finalUrl }}</strong></p>
+                <p style="margin: 0 0 10px;">The password reset link in this email starts with: <strong>{{ $frontEndUrl }}</strong></p>
                 <p style="margin: 0 0 10px;">For your security, you can also copy and paste the following URL into your browser:</p>
                 <p style="margin: 0 0 10px;"><a href="{{ $resetUrl }}" style="color: #186737;">{{ $resetUrl }}</a></p>
                 <p style="margin: 0;">If you didn’t request a password reset, you can safely ignore this email.</p>
