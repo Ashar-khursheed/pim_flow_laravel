@@ -638,7 +638,7 @@ class SearchController extends Controller
 
         $scriptPath = base_path('app/Script/nlpmobile.py');
 
-        $process = new Process(['python3', $scriptPath, $query]);
+        $process = new Process(['/var/www/html/pim_flow_laravel/app/Script/venv/bin/python3', $scriptPath, $query]);
         $process->run();
 
         if (!$process->isSuccessful()) {
