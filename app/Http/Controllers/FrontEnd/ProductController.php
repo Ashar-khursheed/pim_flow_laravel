@@ -256,37 +256,76 @@ class ProductController extends Controller
 
                         // Custom sorting for documents
                          // Custom sorting for documents
-                         $desiredOrder = [
-                            'Technical Specification Sheet',
-                            'Warranty Information',
-                            'Horeca Buying Guide',
-                            'Setup & Usage Instructions',
-                            'Product Installation Guide',
-                            'Installation & Elevation Diagram',
-                            'Spare Parts List',
-                            'Product Brochure',
-                        ];
+                        //  $desiredOrder = [
+                        //     'Technical Specification Sheet',
+                        //     'Warranty Information',
+                        //     'Horeca Buying Guide',
+                        //     'Setup & Usage Instructions',
+                        //     'Product Installation Guide',
+                        //     'Installation & Elevation Diagram',
+                        //     'Spare Parts List',
+                        //     'Product Brochure',
+                        // ];
 
-                        $documents = json_decode($product->documents, true);
-                        if (is_array($documents)) {
-                            // Remove .pdf extension from titles
-                            foreach ($documents as &$doc) {
-                                $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-                            }
+                        // $documents = json_decode($product->documents, true);
+                        // if (is_array($documents)) {
+                        //     // Remove .pdf extension from titles
+                        //     foreach ($documents as &$doc) {
+                        //         $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                        //     }
 
-                            // Sort documents by desired order
-                            usort($documents, function ($a, $b) use ($desiredOrder) {
-                                $posA = array_search($a['title'], $desiredOrder);
-                                $posB = array_search($b['title'], $desiredOrder);
-                                $posA = $posA === false ? PHP_INT_MAX : $posA;
-                                $posB = $posB === false ? PHP_INT_MAX : $posB;
-                                return $posA <=> $posB;
-                            });
+                        //     // Sort documents by desired order
+                        //     usort($documents, function ($a, $b) use ($desiredOrder) {
+                        //         $posA = array_search($a['title'], $desiredOrder);
+                        //         $posB = array_search($b['title'], $desiredOrder);
+                        //         $posA = $posA === false ? PHP_INT_MAX : $posA;
+                        //         $posB = $posB === false ? PHP_INT_MAX : $posB;
+                        //         return $posA <=> $posB;
+                        //     });
 
-                            $product->documents = $documents;
-                        } else {
-                            $product->documents = [];
+                        //     $product->documents = $documents;
+                        // } else {
+                        //     $product->documents = [];
+                        // }
+                        $desiredOrder = [
+                        'Technical Specification Sheet',
+                        'Warranty Information',
+                        'Horeca Buying Guide',
+                        'Setup & Usage Instructions',
+                        'Product Installation Guide',
+                        'Installation & Elevation Diagram',
+                        'Spare Parts List',
+                        'Product Brochure',
+                    ];
+
+                    $documents = json_decode($product->documents, true);
+
+                    if (is_array($documents)) {
+                        foreach ($documents as &$doc) {
+                            // Remove .pdf extension from title
+                            $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+
+                            // Extract filename from the full S3 URL
+                            $filename = basename($doc['url']);
+
+                            // Replace URL with your Laravel route
+                            $doc['url'] = url('/media/' . $filename);
                         }
+
+                        // Sort by desired order
+                        usort($documents, function ($a, $b) use ($desiredOrder) {
+                            $posA = array_search($a['title'], $desiredOrder);
+                            $posB = array_search($b['title'], $desiredOrder);
+                            $posA = $posA === false ? PHP_INT_MAX : $posA;
+                            $posB = $posB === false ? PHP_INT_MAX : $posB;
+                            return $posA <=> $posB;
+                        });
+
+                        $product->documents = $documents;
+                    } else {
+                        $product->documents = [];
+                    }
+
                         
                        
                         // $documents = json_decode($product->documents, true);
