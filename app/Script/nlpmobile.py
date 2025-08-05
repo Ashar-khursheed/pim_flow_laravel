@@ -1,4 +1,9 @@
 import os
+
+# ✅ Fix for permission denied and model cache issues
+os.environ['HF_HOME'] = '/tmp/huggingface'
+os.environ['TRANSFORMERS_CACHE'] = '/tmp/huggingface'
+
 import numpy as np
 import pandas as pd
 import pymysql
