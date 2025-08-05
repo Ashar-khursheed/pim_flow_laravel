@@ -89,8 +89,9 @@ def load_embeddings():
     names = df['product_name'].astype(str).tolist()
     skus = df['sku'].tolist()
 
-    if not os.path.exists(EMBEDDINGS_FILE) or not os.path.exists(NAMES_FILE) or \
-            (os.path.exists(NAMES_FILE) and len(open(NAMES_FILE, 'r', encoding='utf-8').readlines()) != len(names)):
+    # Only recompute if missing
+    if not os.path.exists(EMBEDDINGS_FILE) or not os.path.exists(NAMES_FILE):
+
         model = SentenceTransformer('all-MiniLM-L6-v2')
         embs = model.encode(names, convert_to_numpy=True)
         np.save(EMBEDDINGS_FILE, embs)

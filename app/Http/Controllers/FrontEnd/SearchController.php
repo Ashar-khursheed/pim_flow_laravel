@@ -671,8 +671,7 @@ public function searchnlp(Request $request)
             'ps.sale_price',
             'ps.delivery_days',
             'ps.warranty_information',
-            'sm.url as seo_url',
-            'ep.clicks',
+            'sm.url as seo_url'
         ])
         ->where('ep.status', 'published');
 
