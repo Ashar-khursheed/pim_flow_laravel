@@ -61,10 +61,10 @@ class ProductErrorController extends Controller
             $data = $productError->toArray();
 
             // Send email to user if provided
-            if ($productError->email) {
-                Notification::route('mail', $productError->email)
-                    ->notify(new ProductErrorMail($data));
-            }
+            // if ($productError->email) {
+            //     Notification::route('mail', $productError->email)
+            //         ->notify(new ProductErrorMail($data));
+            // }
 
             // Determine BCC based on title
             $title = strtolower(trim($productError->title));
@@ -109,7 +109,7 @@ class ProductErrorController extends Controller
             ], 201);
         }
 
-    
+
 
     /**
      * @OA\Get(

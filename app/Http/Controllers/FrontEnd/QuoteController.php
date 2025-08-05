@@ -285,7 +285,7 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			auth()->user()->notify(new QuotePlacedMail($quote, false));
+			// auth()->user()->notify(new QuotePlacedMail($quote, false));
 
 			DB::commit();
 
@@ -655,7 +655,7 @@ class QuoteController extends BaseController
 				'message' => "Quote not found."
 			]);
 		}
-		auth()->user()->notify(new QuotePlacedMail($quote));
+		// auth()->user()->notify(new QuotePlacedMail($quote));
 
 		return response()->json([
 			'success' => true,

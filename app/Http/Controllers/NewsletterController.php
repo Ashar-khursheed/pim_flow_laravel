@@ -75,8 +75,8 @@ class NewsletterController extends Controller
 		$newsletter = Newsletter::create($request->all());
 
 		// Send confirmation email using Notification
-		Notification::route('mail', $newsletter->email)
-		->notify(new NewsLetterMail($newsletter->toArray()));
+		// Notification::route('mail', $newsletter->email)
+		// ->notify(new NewsLetterMail($newsletter->toArray()));
 
 		return response()->json([
 			'success' => true,
