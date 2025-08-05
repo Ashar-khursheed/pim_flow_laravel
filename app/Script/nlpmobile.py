@@ -9,7 +9,7 @@ from dotenv import load_dotenv
 # === Load .env ===
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-load_dotenv(dotenv_path='.env') 
+load_dotenv(dotenv_path='/var/www/html/pim_flow_laravel/.env')
 
 # === Config ===
 CLICK_FILE = os.path.join(BASE_DIR, "product_clicks.csv")
