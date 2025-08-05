@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
+
 class SearchController extends Controller
 {
     /**
@@ -625,16 +628,91 @@ class SearchController extends Controller
         return response()->json(['products' => $products]);
     }
   
-    //   public function searchnlp(Request $request) s
+    public function searchnlp(Request $request)
+    {
+          $query = $request->query('q', '');
+
+        if (!$query) {
+            return response()->json(['error' => 'Query parameter `q` is required.'], 400);
+        }
+
+        $scriptPath = base_path('app/Script/nlpmobile.py');
+
+        $process = new Process(['/var/www/html/pim_flow_laravel/app/Script/venv/bin/python3', $scriptPath, $query]);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        $data = json_decode($output, true);
+
+        return response()->json($data);
+    }
+    // public function searchnlp(Request $request)
     // {
-    //     $query = $request->input('query');
+    //     $query = trim($request->query('q', ''));
 
-    //     $response = Http::get(env('SEARCH_API_URL') . '/search', [
-    //         'query' => $query
-    //     ]);
+    //     if (!$query) {
+    //         return response()->json(['error' => 'Query parameter `q` is required.'], 400);
+    //     }
 
-    //     return response()->json($response->json());
+    //     $tokens = explode(' ', strtolower($query));
+
+    //     // Start building the query
+    //     $productQuery = DB::table('ec_products as ep')
+    //         ->join('product_suppliers as ps', 'ep.id', '=', 'ps.product_id')
+    //         ->leftJoin('seo_management as sm', 'sm.relational_id', '=', 'ep.id')
+    //         ->select([
+    //             'ep.name as product_name',
+    //             'ep.sku',
+    //             'ps.price',
+    //             'ps.sale_price',
+    //             'ps.delivery_days',
+    //             'ps.warranty_information',
+    //             'sm.url as seo_url'
+    //         ])
+    //         ->where('ep.status', 'published');
+
+    //     // Add a dynamic "where" clause using tokens
+    //     $productQuery->where(function ($q) use ($tokens) {
+    //         foreach ($tokens as $token) {
+    //             $q->orWhere('ep.name', 'LIKE', "%$token%");
+    //         }
+    //     });
+
+    //     // Fetch limited results
+    //     $products = $productQuery->limit(100)->get();
+
+    //     // You can still calculate `kw` in PHP if needed
+    //     $results = $products->map(function ($product) use ($tokens) {
+    //         $name = strtolower($product->product_name);
+    //         $kw_matches = collect($tokens)->filter(fn($token) => str_contains($name, $token))->count();
+
+    //         return [
+    //             'product_name' => $product->product_name,
+    //             'sku' => $product->sku,
+    //             'clicks' => (int)($product->clicks ?? 0),
+    //             'price' => $product->price,
+    //             'sale_price' => $product->sale_price,
+    //             'delivery_days' => $product->delivery_days,
+    //             'warranty_information' => $product->warranty_information,
+    //             'seo_url' => $product->seo_url,
+    //             'kw' => $kw_matches,
+    //         ];
+    //     });
+
+    //     $sorted = $results
+    //         ->filter(fn($item) => $item['kw'] > 0)
+    //         ->sortByDesc(fn($item) => [$item['kw'], $item['clicks']])
+    //         ->values()
+    //         ->take(40);
+
+    //     return response()->json($sorted);
     // }
+
+
     
 
 }
