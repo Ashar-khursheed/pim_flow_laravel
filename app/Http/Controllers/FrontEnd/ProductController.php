@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB; // Add this line
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 
 class ProductController extends Controller
@@ -316,7 +317,7 @@ class ProductController extends Controller
                         //     // Save back to product
                         //     $product->documents = $documents;
                         // }
-                        $desiredOrder = [
+              $desiredOrder = [
     'Technical Specification Sheet',
     'Warranty Information',
     'Horeca Buying Guide',
@@ -334,15 +335,15 @@ $documents = is_string($product->documents)
 
 if (is_array($documents)) {
     foreach ($documents as &$doc) {
-        // Strip ".pdf" from title
+        // Remove ".pdf" from title
         if (isset($doc['title'])) {
             $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
         }
 
-        // If 'url' exists, replace it with your custom media URL
-        if (isset($doc['url'])) {
-            $filename = basename($doc['url']);
-            $doc['url'] = url('/media/' . $filename); // example: https://thehorecastore.com/media/filename.pdf
+        // ✅ Modify the 'path' key instead of 'url'
+        if (isset($doc['path'])) {
+            $filename = basename($doc['path']);
+            $doc['path'] = url('/media/' . $filename); // e.g. https://thehorecastore.com/media/file.pdf
         }
     }
 
