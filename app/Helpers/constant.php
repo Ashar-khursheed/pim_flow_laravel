@@ -504,6 +504,11 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'sales@thehorecastore.com',
 		];
 
+		// $mails = [
+		// 	'aksitbhardwaj@gmail.com',
+		// 	'webdeveloper04@horecastore.ae',
+		// ];
+
 		return $mails;
 	}
 }
