@@ -343,7 +343,7 @@ if (is_array($documents)) {
         // ✅ Modify the 'path' key instead of 'url'
         if (isset($doc['path'])) {
             $filename = basename($doc['path']);
-           $doc['path'] = 'https://www.thehorecastore.com/media/' . $filename; // e.g. https://thehorecastore.com/media/file.pdf
+            $doc['path'] = url('/media/' . $filename); // e.g. https://thehorecastore.com/media/file.pdf
         }
     }
 
