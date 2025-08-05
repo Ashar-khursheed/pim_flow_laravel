@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB; // Add this line
 use App\Models\FrontEnd\Customer;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 
 class ProductController extends Controller
@@ -342,7 +343,7 @@ if (is_array($documents)) {
         // ✅ Modify the 'path' key instead of 'url'
         if (isset($doc['path'])) {
             $filename = basename($doc['path']);
-            $doc['path'] = url('/media/' . $filename); // e.g. https://thehorecastore.com/media/file.pdf
+           $doc['path'] = 'https://www.thehorecastore.com/media/' . $filename; // e.g. https://thehorecastore.com/media/file.pdf
         }
     }
 
