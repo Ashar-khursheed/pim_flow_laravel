@@ -636,7 +636,7 @@ class SearchController extends Controller
             return response()->json(['error' => 'Query parameter `q` is required.'], 400);
         }
 
-        $scriptPath = base_path('app/Script/search_products.py');
+        $scriptPath = base_path('app/Script/nlpmobile.py');
 
         $process = new Process(['python3', $scriptPath, $query]);
         $process->run();
