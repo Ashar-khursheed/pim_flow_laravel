@@ -345,22 +345,73 @@ class CartController extends Controller
             ->keyBy('id');
 
         // Process each cart item
+        // $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        //     $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
+        //     $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+        
+        
+        //     $discountIds = $productDiscounts[$item->product->id] ?? [];
+        //     $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+        //     $item->product->url = $item->product->seoUrl->url ?? null;
+
+        
+        //     // ✅ Replace `currency` object with just symbol
+        //     $symbol = optional($item->product->currency)->symbol;
+        
+        //     $item->product->unsetRelation('currency');
+             
+        //     $item->product->currency = $symbol;
+        //     $firstSupplier = $item->product->productSuppliers->first();
+
+        //     if ($firstSupplier) {
+        //         $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+        //         $item->product->price = (float) $firstSupplier->price;
+        //         $item->product->sale_price = (float) $firstSupplier->sale_price;
+        //         $item->product->original_price = (float) $firstSupplier->price;
+        //         $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+        //         $item->product->best_price = (float) $firstSupplier->price;
+        //         $item->product->vendor_id = $firstSupplier->vendor_id;
+        //         $item->product->map = (float) $firstSupplier->map;
+        //         $item->product->inventory = $firstSupplier->inventory;
+        //         $item->product->in_stock = $firstSupplier->in_stock;
+        //         $item->product->delivery_days = $firstSupplier->delivery_days;
+        //         $item->product->return_policy = $firstSupplier->return_policy;
+        //         $item->product->free_shipping = $firstSupplier->free_shipping;
+        //         $item->product->warranty_information = $firstSupplier->warranty_information;
+        //     } else {
+        //         // Default safe fallback values (optional)
+        //         $item->product->vendor_sku = null;
+        //         $item->product->price = null;
+        //         $item->product->sale_price = null;
+        //         $item->product->original_price = null;
+        //         $item->product->front_sale_price = null;
+        //         $item->product->best_price = null;
+        //         $item->product->vendor_id = null;
+        //         $item->product->map = null;
+        //         $item->product->inventory = null;
+        //         $item->product->in_stock = null;
+        //         $item->product->delivery_days = null;
+        //         $item->product->return_policy = null;
+        //         $item->product->free_shipping = null;
+        //         $item->product->warranty_information = null;
+        //     }
+
+
+
+        // });
         $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-        
-        
+
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
             $item->product->url = $item->product->seoUrl->url ?? null;
 
-        
             // ✅ Replace `currency` object with just symbol
             $symbol = optional($item->product->currency)->symbol;
-        
             $item->product->unsetRelation('currency');
-             
             $item->product->currency = $symbol;
+
             $firstSupplier = $item->product->productSuppliers->first();
 
             if ($firstSupplier) {
@@ -379,7 +430,7 @@ class CartController extends Controller
                 $item->product->free_shipping = $firstSupplier->free_shipping;
                 $item->product->warranty_information = $firstSupplier->warranty_information;
             } else {
-                // Default safe fallback values (optional)
+                // Default fallback values
                 $item->product->vendor_sku = null;
                 $item->product->price = null;
                 $item->product->sale_price = null;
@@ -396,9 +447,20 @@ class CartController extends Controller
                 $item->product->warranty_information = null;
             }
 
-
-
+            // ✅ Add selling unit
+            $sellingUnit = null;
+            if ($item->product->sellingUnitAttribute && $item->product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $item->product->sellingUnitAttribute->attribute_value;
+                if (strpos($fullValue, '/') !== false) {
+                    $parts = explode('/', $fullValue);
+                    $sellingUnit = trim($parts[1]);
+                } else {
+                    $sellingUnit = $fullValue;
+                }
+            }
+            $item->product->selling_unit = $sellingUnit;
         });
+
         
         
 
