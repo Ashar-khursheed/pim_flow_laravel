@@ -23,10 +23,10 @@ SELECT
     ep.id AS product_id, 
     ep.name AS product_name, 
     ep.sku, 
-    ep.sale_price, 
-    ep.price, 
-    ep.delivery_days, 
-    ep.warranty_information,
+    ps.sale_price, 
+    ps.price, 
+    ps.delivery_days, 
+    ps.warranty_information,
     sm.url AS seo_url
 FROM ec_products AS ep
 JOIN product_suppliers AS ps ON ep.id = ps.product_id
