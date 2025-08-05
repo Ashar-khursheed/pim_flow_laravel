@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
+
 class SearchController extends Controller
 {
     /**
@@ -625,16 +628,29 @@ class SearchController extends Controller
         return response()->json(['products' => $products]);
     }
   
-    //   public function searchnlp(Request $request) s
-    // {
-    //     $query = $request->input('query');
+    public function searchnlp(Request $request)
+    {
+          $query = $request->query('q', '');
 
-    //     $response = Http::get(env('SEARCH_API_URL') . '/search', [
-    //         'query' => $query
-    //     ]);
+        if (!$query) {
+            return response()->json(['error' => 'Query parameter `q` is required.'], 400);
+        }
 
-    //     return response()->json($response->json());
-    // }
+        $scriptPath = base_path('app/Script/search_products.py');
+
+        $process = new Process(['python3', $scriptPath, $query]);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        $data = json_decode($output, true);
+
+        return response()->json($data);
+    }
+    
     
 
 }
