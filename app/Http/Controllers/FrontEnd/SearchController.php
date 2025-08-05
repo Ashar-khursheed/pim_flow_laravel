@@ -650,7 +650,7 @@ class SearchController extends Controller
 
     //     return response()->json($data);
     // }
-    public function searchnlp(Request $request)
+public function searchnlp(Request $request)
 {
     $query = trim($request->query('q', ''));
 
@@ -660,8 +660,8 @@ class SearchController extends Controller
 
     $tokens = explode(' ', strtolower($query));
 
-    // Fetch products with supplier + SEO data
-    $products = DB::table('ec_products as ep')
+    // Start building the query
+    $productQuery = DB::table('ec_products as ep')
         ->join('product_suppliers as ps', 'ep.id', '=', 'ps.product_id')
         ->leftJoin('seo_management as sm', 'sm.relational_id', '=', 'ep.id')
         ->select([
@@ -672,12 +672,21 @@ class SearchController extends Controller
             'ps.delivery_days',
             'ps.warranty_information',
             'sm.url as seo_url',
-            'ep.clicks', // assuming `clicks` column exists in `ec_products`
+            'ep.clicks',
         ])
-        ->where('ep.status', 'published')
-        ->get();
+        ->where('ep.status', 'published');
 
-    // Score products using keyword matches
+    // Add a dynamic "where" clause using tokens
+    $productQuery->where(function ($q) use ($tokens) {
+        foreach ($tokens as $token) {
+            $q->orWhere('ep.name', 'LIKE', "%$token%");
+        }
+    });
+
+    // Fetch limited results
+    $products = $productQuery->limit(100)->get();
+
+    // You can still calculate `kw` in PHP if needed
     $results = $products->map(function ($product) use ($tokens) {
         $name = strtolower($product->product_name);
         $kw_matches = collect($tokens)->filter(fn($token) => str_contains($name, $token))->count();
@@ -695,15 +704,15 @@ class SearchController extends Controller
         ];
     });
 
-    // Sort: by keyword matches > clicks descending
     $sorted = $results
-        ->filter(fn($item) => $item['kw'] > 0) // optional: only include matching products
+        ->filter(fn($item) => $item['kw'] > 0)
         ->sortByDesc(fn($item) => [$item['kw'], $item['clicks']])
         ->values()
-        ->take(40); // top 40
+        ->take(40);
 
     return response()->json($sorted);
 }
+
 
     
 
