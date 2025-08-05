@@ -5,13 +5,18 @@ namespace App\Http\Controllers\FrontEnd;
 use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Google_Client;
-use App\Models\FrontEnd\Customer;
-use Illuminate\Support\Str;
-use App\Notifications\GuestWelcomeMail;
-use App\Notifications\WelcomeMail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
+use Google_Client;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Models\FrontEnd\Customer;
+
+use App\Jobs\Welcome\GuestWelcomeMailJob;
+use App\Jobs\Welcome\WelcomeMailJob;
 
 class CustomerController extends BaseController
 {
@@ -72,7 +77,17 @@ class CustomerController extends BaseController
 				'profile_img' => $request->input('profile_img'),
 			]);
 			$guestCustomer->save();
-			$guestCustomer->notify(new GuestWelcomeMail($randomPassword));
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Welcome Mails')->dispatch();
+
+			$batch->options['queue'] = 'GUST_WLCM_MAIL';
+			$batch->add(new GuestWelcomeMailJob([
+				'recordId' => $guestCustomer->id,
+				'randomPassword' => $randomPassword,
+			]));
 
 			$this->sendToOdoo($guestCustomer);
 
@@ -118,7 +133,15 @@ class CustomerController extends BaseController
 			]);
 			$customer->save();
 
-			$customer->notify(new WelcomeMail());
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Welcome Mails')->dispatch();
+
+			$batch->options['queue'] = 'WLCM_MAIL';
+			$batch->add(new WelcomeMailJob([
+				'recordId' => $customer->id,
+			]));
 
 			$this->sendToOdoo($customer);
 
@@ -406,7 +429,18 @@ class CustomerController extends BaseController
 			}
 
 			$token = $customer->createToken('apple-login')->plainTextToken;
-			// $customer->notify(new WelcomeMail());
+
+
+			// $batch = Bus::batch([])->before(function (Batch $batch) {
+			// })->catch(function (Batch $batch, Throwable $e) {
+			// })->finally(function (Batch $batch) {
+			// })->name('Welcome Mails')->dispatch();
+
+			// $batch->options['queue'] = 'WLCM_MAIL';
+			// $batch->add(new WelcomeMailJob([
+			// 	'recordId' => $customer->id,
+			// ]));
+
 			return response()->json([
 				'user' => $customer,
 				'token' => $token,
@@ -448,18 +482,24 @@ class CustomerController extends BaseController
 				$customer = Customer::create([
 					'name' => $name,
 					'email' => $email,
-					'password' => null, // ✅ no password
-					'is_social_login' => true, // ✅ flag that it’s a Google login
+					'password' => null,
+					'is_social_login' => true,
 					'type' => 'Private',
 					'dob' => $dob,
 					'country_code' => $countryCode,
 					'mobile_number' => $mobileNumber,
 					'profile_img' => $googleProfileImg,
 				]);
-				$customer->notify(new WelcomeMail());
 
-				// Optional: send a welcome message, without any password
-				// $customer->notify(new GuestWelcomeMail());
+				$batch = Bus::batch([])->before(function (Batch $batch) {
+				})->catch(function (Batch $batch, Throwable $e) {
+				})->finally(function (Batch $batch) {
+				})->name('Welcome Mails')->dispatch();
+
+				$batch->options['queue'] = 'WLCM_MAIL';
+				$batch->add(new WelcomeMailJob([
+					'recordId' => $customer->id,
+				]));
 
 			} catch (\Exception $e) {
 				\Log::error('Google Login Registration Failed: ' . $e->getMessage());
