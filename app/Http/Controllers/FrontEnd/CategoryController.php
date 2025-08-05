@@ -1480,14 +1480,18 @@ class CategoryController extends Controller
 		'Commercial Chef Base',
 		'Work Top Refrigerators',
 		'Undercounter Refrigerators',
-		'Bar Refrigeration',
 		'Pizza Prep Tables',
 		'Beer Dispensers',
 		'Glass Chillers and Frosters',
 		'Milk Cooler',
 		'Commercial Grills & Griddles',
-		'Commercial Fryer',
 		'Commercial Food Processors',
+		'Commercial Espresso Machines',
+		'Commercial Gas And Electric Range',
+		'Deck Ovens',
+		'Commercial Gas Fryers',
+		'Back Bar Coolers',
+		'Planetary Mixer'
 	];
 
 	// Get only published leaf categories (no children), eager load seoUrl
