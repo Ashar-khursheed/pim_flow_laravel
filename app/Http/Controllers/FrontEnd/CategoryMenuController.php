@@ -147,7 +147,7 @@ class CategoryMenuController extends Controller
         return [
             'id' => $category->id,
             'name' => $category->name,
-            // 'slug' => $category->seo_slug, // Replace original slug with SEO URL
+            'slug' => $category->seo_slug, // Replace original slug with SEO URL
             'parent_id' => $category->parent_id,
             'image' => $category->image,
             'children' => $category->children,
@@ -231,7 +231,7 @@ class CategoryMenuController extends Controller
             $categoryMap[$category->id] = [
                 'id' => $category->id,
                 'name' => $category->name,
-                'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
+                // 'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
                 'parent_id' => $category->parent_id,
                 'productCount' => $category->products_count,
                 'image' => $category->image,
