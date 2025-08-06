@@ -226,13 +226,15 @@ class CategoryMenuController extends Controller
     {
         $tree = [];
         $categoryMap = [];
+          $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
+    $category->seo_slug = $seo?->url ?? null;
 
         // Create a lookup table for fast access
         foreach ($categories as $category) {
             $categoryMap[$category->id] = [
                 'id' => $category->id,
                 'name' => $category->name,
-                'slug' => $category->slug,
+                'slug' => $category->seo_slug,
                 'parent_id' => $category->parent_id,
                 'productCount' => $category->products_count, // Eager-loaded product count
                 'image' =>  $category->image,
