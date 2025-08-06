@@ -1447,39 +1447,111 @@ class CategoryController extends Controller
 	// 	return response()->json($limitedCategories);
 	// }
 
-	public function fetchCategories(Request $request)
+// 	public function fetchCategories(Request $request)
+// {
+// 	$limit = 15;
+
+// 	// Define allowed category names
+// 	$allowedNames = [
+// 		'Reach-In Refrigerators',
+// 		'Commercial Chef Base',
+// 		'Work Top Refrigerators',
+// 		'Undercounter Refrigerators',
+// 		'Pizza Prep Tables',
+// 		'Beer Dispensers',
+// 		'Glass Chillers and Frosters',
+// 		'Milk Cooler',
+// 		'Commercial Grills & Griddles',
+// 		'Commercial Food Processors',
+// 		'Commercial Espresso Machines',
+// 		'Commercial Gas And Electric Range',
+// 		'Deck Ovens',
+// 		'Commercial Gas Fryers',
+// 		'Back Bar Coolers',
+// 		'Planetary Mixer'
+// 	];
+
+// 	// Get only published leaf categories (no children), eager load seoUrl
+// 	$leafCategories = Category::where('status', 'published')
+// 		->whereDoesntHave('children')
+// 		->whereIn('name', $allowedNames) // 🔥 Only get allowed categories
+// 		->with(['seoUrl:id,relational_id,url'])
+// 		->get(['id', 'name', 'parent_id', 'image']);
+
+// 	// Limit results (optional if you want max 15)
+// 	$limitedCategories = $leafCategories->take($limit);
+
+// 	foreach ($limitedCategories as $category) {
+// 		$category->slug = optional($category->seoUrl)->url;
+// 		unset($category->seoUrl);
+
+// 		$category->productCount = $category->products()
+// 			->where('status', 'published')
+// 			->count();
+
+// 		$hierarchy = [];
+// 		$current = $category;
+
+// 		while ($current && $current->parent_id) {
+// 			$parent = Category::where('id', $current->parent_id)
+// 				->where('status', 'published')
+// 				->with(['seoUrl:id,relational_id,url'])
+// 				->first(['id', 'name', 'parent_id']);
+
+// 			if ($parent) {
+// 				$hierarchy[] = [
+// 					'id' => $parent->id,
+// 					'name' => $parent->name,
+// 					'slug' => optional($parent->seoUrl)->url,
+// 				];
+// 				$current = $parent;
+// 			} else {
+// 				break;
+// 			}
+// 		}
+
+// 		$category->hierarchy = array_reverse($hierarchy);
+// 	}
+
+// 	return response()->json($limitedCategories);
+// }
+public function fetchCategories(Request $request)
 {
 	$limit = 15;
 
-	// Define allowed category names
 	$allowedNames = [
 		'Reach-In Refrigerators',
-		'Commercial Chef Base',
-		'Work Top Refrigerators',
-		'Undercounter Refrigerators',
 		'Pizza Prep Tables',
+		'Work Top Refrigerators',
+		'Commercial Chef Base',
+		'Undercounter Refrigerators',
 		'Beer Dispensers',
+		'Back Bar Coolers',
 		'Glass Chillers and Frosters',
 		'Milk Cooler',
 		'Commercial Grills & Griddles',
-		'Commercial Food Processors',
-		'Commercial Espresso Machines',
+		'Commercial Gas Fryers',
 		'Commercial Gas And Electric Range',
 		'Deck Ovens',
-		'Commercial Gas Fryers',
-		'Back Bar Coolers',
-		'Planetary Mixer'
+		'Commercial Food Processors',
+		'Planetary Mixer',
+		'Commercial Espresso Machines',
 	];
 
-	// Get only published leaf categories (no children), eager load seoUrl
+	// Fetch matching leaf categories
 	$leafCategories = Category::where('status', 'published')
 		->whereDoesntHave('children')
-		->whereIn('name', $allowedNames) // 🔥 Only get allowed categories
+		->whereIn('name', $allowedNames)
 		->with(['seoUrl:id,relational_id,url'])
 		->get(['id', 'name', 'parent_id', 'image']);
 
-	// Limit results (optional if you want max 15)
-	$limitedCategories = $leafCategories->take($limit);
+	// Sort categories in the same order as in $allowedNames
+	$sortedCategories = collect($allowedNames)->map(function ($name) use ($leafCategories) {
+		return $leafCategories->firstWhere('name', $name);
+	})->filter(); // remove any nulls in case some names aren't found
+
+	// Limit results
+	$limitedCategories = $sortedCategories->take($limit);
 
 	foreach ($limitedCategories as $category) {
 		$category->slug = optional($category->seoUrl)->url;
@@ -1513,7 +1585,7 @@ class CategoryController extends Controller
 		$category->hierarchy = array_reverse($hierarchy);
 	}
 
-	return response()->json($limitedCategories);
+	return response()->json($limitedCategories->values());
 }
 
 
