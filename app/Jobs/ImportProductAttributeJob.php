@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\Http;
 
 use App\Models\TransactionLog;
 use App\Models\Product;
-use App\Models\MeasurementUnit;
+use App\Models\MeasurementType;
 
 class ImportProductAttributeJob implements ShouldQueue
 {
@@ -39,7 +39,14 @@ class ImportProductAttributeJob implements ShouldQueue
 	public function handle()
 	{
 		$log = TransactionLog::where('identifier', $this->batch()->id)->first();
-		$measurementNameIds = MeasurementUnit::pluck('id', 'name')->toArray();
+		$measurementType = MeasurementType::with('units:measurement_type_id,id,name')->get()->toArray();
+		$measurementTypeIdArray = [];
+		foreach ($measurementType as $type) {
+			foreach ($type['units'] as $unit) {
+				$measurementTypeIdArray[$type['id']][$unit['name']] = $unit['id'];
+			}
+		}
+
 		$descArray = json_decode($log->description, true) ?? ["Errors" => ''];
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
@@ -80,6 +87,12 @@ class ImportProductAttributeJob implements ShouldQueue
 			/* Validate Required Attribute */
 			$productCategoryAttributes = $product->productCategoryAttributes()
 			->reject(fn($attribute) => $attribute['type'] === 'multiselect')
+			->map(function ($attribute) {
+				$attribute->measurement_type_id = $attribute->type === 'measurement'
+				? $attribute->measurementUnits->first()->type->id ?? null
+				: null;
+				return $attribute;
+			})
 			->values();
 			$productCategoryAttributeNames = $productCategoryAttributes->pluck('name')->toArray();
 
@@ -132,8 +145,8 @@ class ImportProductAttributeJob implements ShouldQueue
 							if ($categoryAttribute->type === 'measurement') {
 								$columnName = $categoryAttribute->name . ' Measurement Unit';
 								$attributeMeasurement = trim($rowData[$columnName] ?? '');
-								$attributeMeasurementId = $measurementNameIds[$attributeMeasurement] ?? null;
 
+								$attributeMeasurementId = $measurementTypeIdArray[$categoryAttribute->measurement_type_id][$attributeMeasurement] ?? null;
 								/* Both value and measurement unit are required */
 								if (($attributeValue && !$attributeMeasurementId) || (!$attributeValue && $attributeMeasurementId)) {
 									DB::rollBack();
