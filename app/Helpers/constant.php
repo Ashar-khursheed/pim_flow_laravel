@@ -504,6 +504,9 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'aksitbhardwaj@gmail.com',
 			'asharKhursheed26@gmail.com',
 			'sales@thehorecastore.com',
+			'qa03@thehorecastore.com',
+			'qa04@thehorecastore.com',
+			'qa05@thehorecastore.com',
 		];
 
 		// $mails = [
