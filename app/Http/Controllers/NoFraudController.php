@@ -90,7 +90,7 @@ public function screenTransaction(Request $request)
         'billing_zip' => 'required|string|max:20',
         'billing_country' => 'required|string|size:2',
         'card_last4' => 'required|string|size:4',
-        'card_bin' => 'required|string|min:6|max:8',
+        'card_bin' => 'nullable|string|min:6|max:8',
     ]);
 
     if ($validator->fails()) {
