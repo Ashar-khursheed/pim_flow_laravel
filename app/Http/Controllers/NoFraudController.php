@@ -4,15 +4,16 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use App\Models\NoFraudResponse;
-
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Validator;
 class NoFraudController extends Controller
 {
- /**
+   /**
  * @OA\Post(
  *     path="/api/screen-transaction",
  *     operationId="screenTransaction",
  *     tags={"NoFraud"},
+ *     security={{"bearerAuth":{}}},
  *     summary="Send transaction data to NoFraud API and save the response",
  *     description="This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
  *     @OA\RequestBody(
@@ -23,7 +24,8 @@ class NoFraudController extends Controller
  *             @OA\Property(property="order_id", type="string", example="ORDER123"),
  *             @OA\Property(property="amount", type="number", format="float", example=49.99),
  *             
- *             @OA\Property(property="billing_name", type="string", example="John Doe"),
+ *             @OA\Property(property="billing_first_name", type="string", example="John"),
+ *             @OA\Property(property="billing_last_name", type="string", example="Doe"),
  *             @OA\Property(property="billing_email", type="string", format="email", example="john@example.com"),
  *             @OA\Property(property="billing_phone", type="string", example="1234567890"),
  *             @OA\Property(property="billing_address", type="string", example="123 Main St"),
@@ -32,7 +34,8 @@ class NoFraudController extends Controller
  *             @OA\Property(property="billing_zip", type="string", example="10001"),
  *             @OA\Property(property="billing_country", type="string", example="US"),
  *             
- *             @OA\Property(property="shipping_name", type="string", example="John Doe"),
+ *             @OA\Property(property="shipping_first_name", type="string", example="John"),
+ *             @OA\Property(property="shipping_last_name", type="string", example="Doe"),
  *             @OA\Property(property="shipping_address", type="string", example="123 Main St"),
  *             @OA\Property(property="shipping_city", type="string", example="New York"),
  *             @OA\Property(property="shipping_state", type="string", example="NY"),
@@ -40,27 +43,28 @@ class NoFraudController extends Controller
  *             @OA\Property(property="shipping_country", type="string", example="US"),
  *             
  *             @OA\Property(property="card_bin", type="string", example="411111"),
- *             @OA\Property(property="card_last4", type="string", example="4242")
+ *             @OA\Property(property="card_last4", type="string", example="4242"),
+ *             @OA\Property(property="card_type", type="string", example="Visa"),
+ *             @OA\Property(property="card_expiration", type="string", example="0925")
  *         )
- *     ),
- *     @OA\Parameter(
- *         name="X-Nofraud-Api-Key",
- *         in="header",
- *         required=true,
- *         description="Your NoFraud live API key",
- *         @OA\Schema(type="string", example="your_live_api_key_here")
  *     ),
  *     @OA\Response(
  *         response=200,
  *         description="Transaction screened successfully",
  *         @OA\JsonContent(
  *             @OA\Property(property="status", type="string", example="success"),
+ *             @OA\Property(property="decision", type="string", example="pass"),
  *             @OA\Property(property="nofraud_result", type="object")
  *         )
  *     ),
  *     @OA\Response(
  *         response=400,
- *         description="Invalid request"
+ *         description="Invalid request",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="string", example="error"),
+ *             @OA\Property(property="message", type="string", example="Validation failed"),
+ *             @OA\Property(property="errors", type="object")
+ *         )
  *     ),
  *     @OA\Response(
  *         response=500,
@@ -69,88 +73,194 @@ class NoFraudController extends Controller
  * )
  */
 
-public function screenTransaction(Request $request)
+
+  public function screenTransaction(Request $request)
 {
-    $payload = [
-        'nf-token' => env('NOFRAUD_API_KEY'),
-        'amount' => $request->amount ?? 49.99,
-        'currencyCode' => 'USD',
-        'customerIP' => $request->ip(),
+    // Validate required fields
+    $validator = Validator::make($request->all(), [
+        'order_id' => 'required|string',
+        'amount' => 'required|numeric|min:0.01',
+        'billing_first_name' => 'required|string|max:100',
+        'billing_last_name' => 'required|string|max:100',
+        'billing_email' => 'required|email',
+        'billing_phone' => 'required|string|max:20',
+        'billing_address' => 'required|string|max:255',
+        'billing_city' => 'required|string|max:100',
+        'billing_state' => 'required|string|max:10',
+        'billing_zip' => 'required|string|max:20',
+        'billing_country' => 'required|string|size:2',
+        'card_last4' => 'required|string|size:4',
+        'card_bin' => 'required|string|min:6|max:8',
+    ]);
 
-        'billTo' => [
-            'firstName' => $request->billing_first_name ?? 'John',
-            'lastName' => $request->billing_last_name ?? 'Doe',
-            'company' => $request->billing_company ?? 'ACME Inc.',
-            'address' => $request->billing_address ?? '123 Main St',
-            'city' => $request->billing_city ?? 'New York',
-            'state' => $request->billing_state ?? 'NY',
-            'zip' => $request->billing_zip ?? '10001',
-            'country' => $request->billing_country ?? 'US',
-            'phoneNumber' => $request->billing_phone ?? '1234567890',
-        ],
+    if ($validator->fails()) {
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Validation failed',
+            'errors' => $validator->errors()
+        ], 400);
+    }
 
-        'shipTo' => [
-            'firstName' => $request->shipping_first_name ?? 'John',
-            'lastName' => $request->shipping_last_name ?? 'Doe',
-            'company' => $request->shipping_company ?? 'ACME Inc.',
-            'address' => $request->shipping_address ?? '456 Another St',
-            'city' => $request->shipping_city ?? 'Los Angeles',
-            'state' => $request->shipping_state ?? 'CA',
-            'zip' => $request->shipping_zip ?? '90001',
-            'country' => $request->shipping_country ?? 'US',
-        ],
-
-        'payment' => [
-            'method' => 'Credit Card',
-            'creditCard' => [
-                'last4' => $request->card_last4 ?? '4242',
-                'bin' => $request->card_bin ?? '411111',
-                'cardType' => 'Visa',
-                'expirationDate' => '0925',
-                'cardNumber' => '4111111111111111', // optional, only if allowed
-                'cardCode' => '999',
+    try {
+        // Build the payload for NoFraud API
+        $payload = [
+            'nf-token' => config('services.nofraud.api_key'),
+            'amount' => $request->amount,
+            'currencyCode' => $request->currency_code ?? 'USD',
+            'customerIP' => $request->ip(),
+            
+            'billTo' => [
+                'firstName' => $request->billing_first_name,
+                'lastName' => $request->billing_last_name,
+                'company' => $request->billing_company ?? '',
+                'address' => $request->billing_address,
+                'city' => $request->billing_city,
+                'state' => $request->billing_state,
+                'zip' => $request->billing_zip,
+                'country' => $request->billing_country,
+                'phoneNumber' => $request->billing_phone,
             ],
-        ],
 
-        'order' => [
-            'invoiceNumber' => $request->order_id ?? 'ORD-' . time(),
-            'orderType' => 'one-time',
-        ],
+            'shipTo' => [
+                'firstName' => $request->shipping_first_name ?? $request->billing_first_name,
+                'lastName' => $request->shipping_last_name ?? $request->billing_last_name,
+                'company' => $request->shipping_company ?? $request->billing_company ?? '',
+                'address' => $request->shipping_address ?? $request->billing_address,
+                'city' => $request->shipping_city ?? $request->billing_city,
+                'state' => $request->shipping_state ?? $request->billing_state,
+                'zip' => $request->shipping_zip ?? $request->billing_zip,
+                'country' => $request->shipping_country ?? $request->billing_country,
+            ],
 
-        'customer' => [
-            'id' => 'user-123',
-            'email' => $request->billing_email ?? 'john@example.com',
-            'joinedOn' => now()->subMonths(6)->format('m/d/Y'),
-            'lastSignIn' => now()->format('m/d/Y'),
-            'lastPurchaseDate' => now()->subDays(5)->format('m/d/Y'),
-            'totalPreviousPurchases' => 3,
-            'totalPurchaseValue' => 1200.00,
-        ],
-    ];
+            'payment' => [
+                'method' => 'Credit Card',
+                'creditCard' => [
+                    'last4' => $request->card_last4,
+                    'bin' => $request->card_bin,
+                    'cardType' => $request->card_type ?? $this->getCardTypeFromBin($request->card_bin),
+                    'expirationDate' => $request->card_expiration ?? null,
+                ],
+            ],
 
-    $response = Http::withHeaders([
-        'Content-Type' => 'application/json',
-    ])->post(env('NOFRAUD_API_URL'), $payload);
+            'order' => [
+                'invoiceNumber' => $request->order_id,
+                'orderType' => $request->order_type ?? 'one-time',
+                'description' => $request->order_description ?? 'Online Order',
+            ],
 
-    if ($response->successful()) {
-        $result = $response->json();
+            'customer' => [
+                'id' => $request->customer_id ?? 'guest-' . uniqid(),
+                'email' => $request->billing_email,
+                'joinedOn' => $request->customer_joined_date ? 
+                    date('m/d/Y', strtotime($request->customer_joined_date)) : null,
+                'lastSignIn' => $request->customer_last_signin ? 
+                    date('m/d/Y', strtotime($request->customer_last_signin)) : null,
+                'lastPurchaseDate' => $request->customer_last_purchase ? 
+                    date('m/d/Y', strtotime($request->customer_last_purchase)) : null,
+                'totalPreviousPurchases' => $request->customer_total_purchases ?? 0,
+                'totalPurchaseValue' => $request->customer_total_value ?? 0,
+            ],
+        ];
 
-        NoFraudResponse::create([
-            'order_id' => $payload['order']['invoiceNumber'],
-            'response' => json_encode($result),
+        // Remove null values to avoid API issues
+        $payload = $this->removeNullValues($payload);
+
+        Log::info('NoFraud API Request', ['payload' => $payload]);
+
+        // Make the API call
+        $response = Http::timeout(30)
+            ->withHeaders([
+                'Content-Type' => 'application/json',
+                'Accept' => 'application/json',
+            ])
+            ->post(config('services.nofraud.api_url'), $payload);
+
+        if ($response->successful()) {
+            $result = $response->json();
+            
+            Log::info('NoFraud API Response', ['response' => $result]);
+
+            // Save the response to database
+            try {
+                \App\Models\NoFraudResponse::create([
+                    'order_id' => $request->order_id,
+                    'request_data' => json_encode($payload),
+                    'response_data' => json_encode($result),
+                    'decision' => $result['decision'] ?? 'unknown',
+                    'score' => $result['score'] ?? null,
+                    'created_at' => now(),
+                ]);
+            } catch (\Exception $e) {
+                Log::error('Failed to save NoFraud response to database', ['error' => $e->getMessage()]);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'decision' => $result['decision'] ?? 'unknown',
+                'score' => $result['score'] ?? null,
+                'nofraud_result' => $result,
+            ]);
+        }
+
+        // Handle API errors
+        $errorMessage = 'NoFraud API request failed';
+        $errorDetails = $response->body();
+        
+        Log::error('NoFraud API Error', [
+            'status' => $response->status(),
+            'body' => $errorDetails
         ]);
 
         return response()->json([
-            'status' => 'success',
-            'nofraud_result' => $result,
-        ]);
-    }
+            'status' => 'error',
+            'message' => $errorMessage,
+            'details' => $response->status() >= 500 ? 'Service temporarily unavailable' : $errorDetails,
+        ], $response->status());
 
-    return response()->json([
-        'status' => 'error',
-        'message' => 'NoFraud API request failed.',
-        'details' => $response->body(),
-    ], $response->status());
+    } catch (\Exception $e) {
+        Log::error('NoFraud API Exception', ['error' => $e->getMessage()]);
+        
+        return response()->json([
+            'status' => 'error',
+            'message' => 'An unexpected error occurred while processing the transaction',
+        ], 500);
+    }
+}
+
+/**
+ * Remove null values from array recursively
+ */
+private function removeNullValues($array)
+{
+    foreach ($array as $key => $value) {
+        if (is_array($value)) {
+            $array[$key] = $this->removeNullValues($value);
+        } elseif (is_null($value)) {
+            unset($array[$key]);
+        }
+    }
+    return $array;
+}
+
+/**
+ * Get card type from BIN
+ */
+private function getCardTypeFromBin($bin)
+{
+    $firstDigit = substr($bin, 0, 1);
+    $firstTwo = substr($bin, 0, 2);
+    
+    if ($firstDigit == '4') {
+        return 'Visa';
+    } elseif (in_array($firstTwo, ['51', '52', '53', '54', '55']) || ($firstTwo >= '22' && $firstTwo <= '27')) {
+        return 'MasterCard';
+    } elseif (in_array($firstTwo, ['34', '37'])) {
+        return 'American Express';
+    } elseif ($firstTwo == '60') {
+        return 'Discover';
+    }
+    
+    return 'Unknown';
 }
 
 

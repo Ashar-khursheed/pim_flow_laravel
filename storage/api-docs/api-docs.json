@@ -22377,18 +22377,6 @@
                 "summary": "Send transaction data to NoFraud API and save the response",
                 "description": "This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
                 "operationId": "screenTransaction",
-                "parameters": [
-                    {
-                        "name": "X-Nofraud-Api-Key",
-                        "in": "header",
-                        "description": "Your NoFraud live API key",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "example": "your_live_api_key_here"
-                        }
-                    }
-                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -22416,9 +22404,13 @@
                                         "format": "float",
                                         "example": 49.99
                                     },
-                                    "billing_name": {
+                                    "billing_first_name": {
                                         "type": "string",
-                                        "example": "John Doe"
+                                        "example": "John"
+                                    },
+                                    "billing_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
                                     },
                                     "billing_email": {
                                         "type": "string",
@@ -22449,9 +22441,13 @@
                                         "type": "string",
                                         "example": "US"
                                     },
-                                    "shipping_name": {
+                                    "shipping_first_name": {
                                         "type": "string",
-                                        "example": "John Doe"
+                                        "example": "John"
+                                    },
+                                    "shipping_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
                                     },
                                     "shipping_address": {
                                         "type": "string",
@@ -22480,6 +22476,14 @@
                                     "card_last4": {
                                         "type": "string",
                                         "example": "4242"
+                                    },
+                                    "card_type": {
+                                        "type": "string",
+                                        "example": "Visa"
+                                    },
+                                    "card_expiration": {
+                                        "type": "string",
+                                        "example": "0925"
                                     }
                                 },
                                 "type": "object"
@@ -22498,6 +22502,10 @@
                                             "type": "string",
                                             "example": "success"
                                         },
+                                        "decision": {
+                                            "type": "string",
+                                            "example": "pass"
+                                        },
                                         "nofraud_result": {
                                             "type": "object"
                                         }
@@ -22508,12 +22516,37 @@
                         }
                     },
                     "400": {
-                        "description": "Invalid request"
+                        "description": "Invalid request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     },
                     "500": {
                         "description": "NoFraud API error"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/orders": {
