@@ -22374,8 +22374,8 @@
                 "tags": [
                     "NoFraud"
                 ],
-                "summary": "Send transaction data to NoFraud API and save the response",
-                "description": "This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
+                "summary": "Screen transaction with NoFraud API",
+                "description": "Send billing, shipping, and card details to the NoFraud API to screen for fraud. Stores and returns the decision.",
                 "operationId": "screenTransaction",
                 "requestBody": {
                     "required": true,
@@ -22443,19 +22443,19 @@
                                     },
                                     "shipping_address": {
                                         "type": "string",
-                                        "example": "123 Main St"
+                                        "example": "456 Another St"
                                     },
                                     "shipping_city": {
                                         "type": "string",
-                                        "example": "New York"
+                                        "example": "Los Angeles"
                                     },
                                     "shipping_state": {
                                         "type": "string",
-                                        "example": "NY"
+                                        "example": "CA"
                                     },
                                     "shipping_zip": {
                                         "type": "string",
-                                        "example": "10001"
+                                        "example": "90001"
                                     },
                                     "shipping_country": {
                                         "type": "string",
@@ -22487,6 +22487,20 @@
                                             "example": "success"
                                         },
                                         "nofraud_result": {
+                                            "properties": {
+                                                "decision": {
+                                                    "type": "string",
+                                                    "example": "pass"
+                                                },
+                                                "risk_score": {
+                                                    "type": "number",
+                                                    "example": 12.3
+                                                },
+                                                "details": {
+                                                    "type": "string",
+                                                    "example": "No fraud detected"
+                                                }
+                                            },
                                             "type": "object"
                                         }
                                     },
