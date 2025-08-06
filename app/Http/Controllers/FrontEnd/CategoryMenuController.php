@@ -222,35 +222,63 @@ class CategoryMenuController extends Controller
     /**
      * Build a hierarchical category tree efficiently.
      */
-    private function buildCategoryTree($categories)
-    {
-        $tree = [];
-        $categoryMap = [];
+    // private function buildCategoryTree($categories)
+    // {
+    //     $tree = [];
+    //     $categoryMap = [];
 
-        // Create a lookup table for fast access
-        foreach ($categories as $category) {
-            $categoryMap[$category->id] = [
-                'id' => $category->id,
-                'name' => $category->name,
-                'slug' => $category->slug,
-                'parent_id' => $category->parent_id,
-                'productCount' => $category->products_count, // Eager-loaded product count
-                'image' =>  $category->image,
-                'children' => [],
-            ];
-        }
+    //     // Create a lookup table for fast access
+    //     foreach ($categories as $category) {
+    //         $categoryMap[$category->id] = [
+    //             'id' => $category->id,
+    //             'name' => $category->name,
+    //             'slug' => $category->slug,
+    //             'parent_id' => $category->parent_id,
+    //             'productCount' => $category->products_count, // Eager-loaded product count
+    //             'image' =>  $category->image,
+    //             'children' => [],
+    //         ];
+    //     }
 
-        // Build the tree using the lookup table
-        foreach ($categoryMap as &$category) {
-            if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
-                $categoryMap[$category['parent_id']]['children'][] = &$category;
-            } else {
-                $tree[] = &$category;
-            }
-        }
+    //     // Build the tree using the lookup table
+    //     foreach ($categoryMap as &$category) {
+    //         if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
+    //             $categoryMap[$category['parent_id']]['children'][] = &$category;
+    //         } else {
+    //             $tree[] = &$category;
+    //         }
+    //     }
 
-        return $tree;
+    //     return $tree;
+    // }
+    private function buildCategoryTree($categories) 
+{
+    $tree = [];
+    $categoryMap = [];
+
+    foreach ($categories as $category) {
+        $categoryMap[$category->id] = [
+            'id' => $category->id,
+            'name' => $category->name,
+            'slug' => optional($category->seoUrl)->url ?? '', // <-- Slug from SEO table
+            'parent_id' => $category->parent_id,
+            'productCount' => $category->products_count,
+            'image' => $category->image,
+            'children' => [],
+        ];
     }
+
+    foreach ($categoryMap as &$category) {
+        if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
+            $categoryMap[$category['parent_id']]['children'][] = &$category;
+        } else {
+            $tree[] = &$category;
+        }
+    }
+
+    return $tree;
+}
+
 
     /**
  * @OA\Schema(
