@@ -39,7 +39,7 @@ use App\Models\SeoManagement;
  *     @OA\Property(property="total_reviews", type="integer", example=10),
  *     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
  *     @OA\Property(property="best_price", type="number", format="float", example=80.00),
- *     @OA\Property(property="best_delivery_date", type="string", nullable=true),
+ *     @OA\Property(property="delivery_days", type="string", nullable=true),
  *     @OA\Property(property="in_wishlist", type="boolean", example=true),
  *     @OA\Property(property="categories", type="array", @OA\Items(ref="#/components/schemas/Category")),
  *     @OA\Property(property="brand", ref="#/components/schemas/Brand")
