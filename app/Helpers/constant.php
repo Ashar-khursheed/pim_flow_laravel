@@ -498,6 +498,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 	function glitch_error_reporting_mails() {
 		$mails = [
 			'nomanpeera@horecastore.ae',
+			'ofm@thehorecastore.com',
+			'ofs@thehorecastore.com',
 			'nomanpeera@gmail.com',
 			'aksitbhardwaj@gmail.com',
 			'asharKhursheed26@gmail.com',

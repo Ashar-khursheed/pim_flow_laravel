@@ -27727,6 +27727,58 @@
                 ]
             }
         },
+        "/api/report/orders": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get order report within a date range",
+                "operationId": "9bf64e1ca9dd4e22c271418173a24b54",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/return-products/{id}/inspect": {
             "put": {
                 "tags": [
@@ -33558,6 +33610,10 @@
         {
             "name": "Redirect Links",
             "description": "Redirect Links"
+        },
+        {
+            "name": "Reports",
+            "description": "Reports"
         },
         {
             "name": "Roles and Permissions",
