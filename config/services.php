@@ -75,6 +75,10 @@ return [
     'place_id' => env('GOOGLE_PLACE_ID'),
     ],
 
+     'nofraud' => [
+        'api_key' => env('NOFRAUD_API_KEY'),
+        'api_url' => env('NOFRAUD_API_URL', 'https://api.nofraud.com/'),
+    ],
 
 
 

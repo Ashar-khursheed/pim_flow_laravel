@@ -63,6 +63,7 @@ use App\Http\Controllers\UnisourceShipmentController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\MenuBannerController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\NoFraudController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -164,6 +165,8 @@ Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoB
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+
 
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
@@ -415,6 +418,8 @@ Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'get
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
     Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);

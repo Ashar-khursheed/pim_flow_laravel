@@ -163,29 +163,6 @@ class CategoryController extends Controller
 	}
 
 
-
-	// private function getImageUrl($imagePath)
-	// {
-	// 	if (!$imagePath) {
-	// 		return null; // Return null if there's no image path
-	// 	}
-
-	// 	// Check if the image exists in the 'products' directory inside storage
-	// 	$productsPath = public_path("storage/products/{$imagePath}");
-	// 	if (file_exists($productsPath)) {
-	// 		return url("storage/products/{$imagePath}");
-	// 	}
-
-	// 	// Check if the image exists in the general 'storage' directory inside storage
-	// 	$generalStoragePath = public_path("storage/{$imagePath}");
-	// 	if (file_exists($generalStoragePath)) {
-	// 		return url("storage/{$imagePath}");
-	// 	}
-
-	// 	return null; // Return null if the image doesn't exist
-	// }
-
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/categories/{id}",

@@ -22369,6 +22369,186 @@
                 ]
             }
         },
+        "/api/screen-transaction": {
+            "post": {
+                "tags": [
+                    "NoFraud"
+                ],
+                "summary": "Send transaction data to NoFraud API and save the response",
+                "description": "This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
+                "operationId": "screenTransaction",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "amount",
+                                    "billing_name",
+                                    "billing_email",
+                                    "billing_phone",
+                                    "billing_address",
+                                    "billing_city",
+                                    "billing_state",
+                                    "billing_zip",
+                                    "billing_country"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORDER123"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 49.99
+                                    },
+                                    "billing_first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "billing_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "billing_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "billing_phone": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "billing_address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "billing_city": {
+                                        "type": "string",
+                                        "example": "New York"
+                                    },
+                                    "billing_state": {
+                                        "type": "string",
+                                        "example": "NY"
+                                    },
+                                    "billing_zip": {
+                                        "type": "string",
+                                        "example": "10001"
+                                    },
+                                    "billing_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "shipping_first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "shipping_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "shipping_address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "shipping_city": {
+                                        "type": "string",
+                                        "example": "New York"
+                                    },
+                                    "shipping_state": {
+                                        "type": "string",
+                                        "example": "NY"
+                                    },
+                                    "shipping_zip": {
+                                        "type": "string",
+                                        "example": "10001"
+                                    },
+                                    "shipping_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "card_bin": {
+                                        "type": "string",
+                                        "example": "411111"
+                                    },
+                                    "card_last4": {
+                                        "type": "string",
+                                        "example": "4242"
+                                    },
+                                    "card_type": {
+                                        "type": "string",
+                                        "example": "Visa"
+                                    },
+                                    "card_expiration": {
+                                        "type": "string",
+                                        "example": "0925"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction screened successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "decision": {
+                                            "type": "string",
+                                            "example": "pass"
+                                        },
+                                        "nofraud_result": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "NoFraud API error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/orders": {
             "get": {
                 "tags": [
@@ -33570,6 +33750,10 @@
         {
             "name": "Menu Banners",
             "description": "Menu Banners"
+        },
+        {
+            "name": "NoFraud",
+            "description": "NoFraud"
         },
         {
             "name": "Orders",

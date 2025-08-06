@@ -101,10 +101,12 @@ class Category extends Model
 	{
 		return $this->morphOne(SeoManagement::class, 'relational');
 	}
-		public function seoUrl()
-	{
-		return $this->hasOne(SeoManagement::class, 'relational_id', 'id');
-	}
+	public function seoUrl()
+{
+    return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+                ->where('relational_type', 'Category');
+}
+
 
 
 	public function subCategories()

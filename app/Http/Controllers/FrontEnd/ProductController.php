@@ -318,48 +318,48 @@ class ProductController extends Controller
                         //     $product->documents = $documents;
                         // }
               $desiredOrder = [
-    'Technical Specification Sheet',
-    'Warranty Information',
-    'Horeca Buying Guide',
-    'Setup & Usage Instructions',
-    'Product Installation Guide',
-    'Installation & Elevation Diagram',
-    'Spare Parts List',
-    'Product Brochure',
-];
+                    'Technical Specification Sheet',
+                    'Warranty Information',
+                    'Horeca Buying Guide',
+                    'Setup & Usage Instructions',
+                    'Product Installation Guide',
+                    'Installation & Elevation Diagram',
+                    'Spare Parts List',
+                    'Product Brochure',
+                ];
 
-// Decode documents if it's a string
-$documents = is_string($product->documents)
-    ? json_decode($product->documents, true)
-    : $product->documents;
+                // Decode documents if it's a string
+                $documents = is_string($product->documents)
+                    ? json_decode($product->documents, true)
+                    : $product->documents;
 
-if (is_array($documents)) {
-    foreach ($documents as &$doc) {
-        // Remove ".pdf" from title
-        if (isset($doc['title'])) {
-            $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
-        }
+                if (is_array($documents)) {
+                    foreach ($documents as &$doc) {
+                        // Remove ".pdf" from title
+                        if (isset($doc['title'])) {
+                            $doc['title'] = preg_replace('/\.pdf$/i', '', $doc['title']);
+                        }
 
-        // ✅ Modify the 'path' key instead of 'url'
-        if (isset($doc['path'])) {
-            $filename = basename($doc['path']);
-            $doc['path'] = url('/media/' . $filename); // e.g. https://thehorecastore.com/media/file.pdf
-        }
-    }
+                        // ✅ Modify the 'path' key instead of 'url'
+                        if (isset($doc['path'])) {
+                            $filename = basename($doc['path']);
+                            $doc['path'] = url('/media/' . $filename); // e.g. https://thehorecastore.com/media/file.pdf
+                        }
+                    }
 
-    // Sort by desired title order
-    usort($documents, function ($a, $b) use ($desiredOrder) {
-        $posA = isset($a['title']) ? array_search($a['title'], $desiredOrder) : PHP_INT_MAX;
-        $posB = isset($b['title']) ? array_search($b['title'], $desiredOrder) : PHP_INT_MAX;
-        $posA = $posA === false ? PHP_INT_MAX : $posA;
-        $posB = $posB === false ? PHP_INT_MAX : $posB;
-        return $posA <=> $posB;
-    });
+                    // Sort by desired title order
+                    usort($documents, function ($a, $b) use ($desiredOrder) {
+                        $posA = isset($a['title']) ? array_search($a['title'], $desiredOrder) : PHP_INT_MAX;
+                        $posB = isset($b['title']) ? array_search($b['title'], $desiredOrder) : PHP_INT_MAX;
+                        $posA = $posA === false ? PHP_INT_MAX : $posA;
+                        $posB = $posB === false ? PHP_INT_MAX : $posB;
+                        return $posA <=> $posB;
+                    });
 
-    $product->documents = $documents;
-} else {
-    $product->documents = [];
-}
+                    $product->documents = $documents;
+                } else {
+                    $product->documents = [];
+                }
 
 
                         // Handle videos
