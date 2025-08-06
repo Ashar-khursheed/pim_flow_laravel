@@ -206,7 +206,8 @@ class CategoryMenuController extends Controller
                 // Add URL to each category
                 return $this->buildCategoryTree(
                     $categories->map(function ($category) {
-                        $category->slug = optional($category->seoUrl)->url;
+                       $category->seo_slug = optional($category->seoUrl)->url;
+
                         return $category;
                     })
                 );
