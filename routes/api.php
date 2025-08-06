@@ -62,6 +62,8 @@ use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
 use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\MenuBannerController ;
+use App\Http\Controllers\NoFraudController ;
+
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -163,6 +165,9 @@ Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoB
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+
+Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
