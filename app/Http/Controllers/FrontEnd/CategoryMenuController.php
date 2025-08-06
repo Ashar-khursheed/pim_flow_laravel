@@ -55,37 +55,21 @@ class CategoryMenuController extends Controller
      * )
      */
 
-    public function showCategoryBySlug($seoUrl)
-{
-    // Find the SEO record by URL
-    $seoRecord = SeoManagement::where('url', $seoUrl)
-        ->where('relational_type', 'category') // if you use a type column
-        ->first();
-
-    if (!$seoRecord) {
-        return response()->json(['message' => 'SEO URL not found'], 404);
-    }
-
-    // Find the category using the relational_id
-    $category = Category::where('id', $seoRecord->relational_id)
-        ->where('status', 'published')
-        ->first();
-
-    if (!$category) {
-        return response()->json(['message' => 'Category not found'], 404);
-    }
-
-    // Fetch children of this category recursively
-    $categoryWithChildren = $this->getCategoryWithChildren($category);
-
-    return response()->json($categoryWithChildren);
-}
-    // public function showCategoryBySlug($slug)
+    // public function showCategoryBySlug($seoUrl)
     // {
-    //     // Fetch the category by slug
-    //     $category = Category::where('slug', $slug)
-    //                     ->where('status', 'published')
-    //                     ->first();
+    //     // Find the SEO record by URL
+    //     $seoRecord = SeoManagement::where('url', $seoUrl)
+    //         ->where('relational_type', 'category') // if you use a type column
+    //         ->first();
+
+    //     if (!$seoRecord) {
+    //         return response()->json(['message' => 'SEO URL not found'], 404);
+    //     }
+
+    //     // Find the category using the relational_id
+    //     $category = Category::where('id', $seoRecord->relational_id)
+    //         ->where('status', 'published')
+    //         ->first();
 
     //     if (!$category) {
     //         return response()->json(['message' => 'Category not found'], 404);
@@ -94,9 +78,36 @@ class CategoryMenuController extends Controller
     //     // Fetch children of this category recursively
     //     $categoryWithChildren = $this->getCategoryWithChildren($category);
 
-    //     // Return the category with children and their respective children
     //     return response()->json($categoryWithChildren);
     // }
+    public function showCategoryBySlug($seoUrl)
+{
+    // Find the SEO record by URL
+    $seoRecord = SeoManagement::where('url', $seoUrl)
+        ->where('relational_type', 'Category') // match case with relationship
+        ->first();
+
+    if (!$seoRecord) {
+        return response()->json(['message' => 'SEO URL not found'], 404);
+    }
+
+    // Find the category using the relational_id
+    $category = Category::with('seoUrl') // eager-load SEO URL
+        ->where('id', $seoRecord->relational_id)
+        ->where('status', 'published')
+        ->first();
+
+    if (!$category) {
+        return response()->json(['message' => 'Category not found'], 404);
+    }
+
+    // Fetch children recursively with SEO URLs
+    $categoryWithChildren = $this->getCategoryWithChildren($category);
+
+    return response()->json($categoryWithChildren);
+}
+
+
 
     /**
      * Recursive function to fetch category and its children recursively.
@@ -106,42 +117,42 @@ class CategoryMenuController extends Controller
      */
    
     private function getCategoryWithChildren($category)
-{
-    // Get the children of the category
-    $children = Category::where('parent_id', $category->id)
-        ->where('status', 'published')
-        ->get();
+    {
+        // Get the children of the category
+        $children = Category::where('parent_id', $category->id)
+            ->where('status', 'published')
+            ->get();
 
-    // Iterate through each child and fetch its children recursively
-    foreach ($children as $child) {
-        // Recursively get children for the child category
-        $child->setRelation('children', $this->getCategoryWithChildren($child));
+        // Iterate through each child and fetch its children recursively
+        foreach ($children as $child) {
+            // Recursively get children for the child category
+            $child->setRelation('children', $this->getCategoryWithChildren($child));
 
-        // Attach SEO URL instead of slug
-        $seo = $child->seoUrl; // Assumes you have the seoUrl() relationship
-        $child->seo_slug = $seo?->url ?? null;
+            // Attach SEO URL instead of slug
+            $seo = $child->seoUrl; // Assumes you have the seoUrl() relationship
+            $child->seo_slug = $seo?->url ?? null;
+        }
+
+        // Add image URL for the current category
+        $category->image = $category->image;
+
+        // Add the children to the current category
+        $category->children = $children;
+
+        // Attach SEO URL instead of slug for the current category
+        $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
+        $category->seo_slug = $seo?->url ?? null;
+
+        // Return the modified structure
+        return [
+            'id' => $category->id,
+            'name' => $category->name,
+            'slug' => $category->seo_slug, // Replace original slug with SEO URL
+            'parent_id' => $category->parent_id,
+            'image' => $category->image,
+            'children' => $category->children,
+        ];
     }
-
-    // Add image URL for the current category
-    $category->image = $category->image;
-
-    // Add the children to the current category
-    $category->children = $children;
-
-    // Attach SEO URL instead of slug for the current category
-    $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
-    $category->seo_slug = $seo?->url ?? null;
-
-    // Return the modified structure
-    return [
-        'id' => $category->id,
-        'name' => $category->name,
-        'slug' => $category->seo_slug, // Replace original slug with SEO URL
-        'parent_id' => $category->parent_id,
-        'image' => $category->image,
-        'children' => $category->children,
-    ];
-}
 
 
 
@@ -184,60 +195,60 @@ class CategoryMenuController extends Controller
      */
    
     public function getCategoriesWithChildren(Request $request)
-{
-    $filterId = $request->get('id');
+    {
+        $filterId = $request->get('id');
 
-    $query = Category::select(['id', 'name', 'parent_id', 'image'])
-        ->withCount('products')
-        ->with(['seoUrl' => function ($query) {
-            $query->select('id', 'relational_id', 'url')
-                  ->where('relational_type', Category::class); // or 'Category'
-        }])
-        ->where('status', 'published');
+        $query = Category::select(['id', 'name', 'parent_id', 'image'])
+            ->withCount('products')
+            ->with(['seoUrl' => function ($query) {
+                $query->select('id', 'relational_id', 'url')
+                    ->where('relational_type', Category::class); // or 'Category'
+            }])
+            ->where('status', 'published');
 
-    if ($filterId) {
-        $query->where(function ($q) use ($filterId) {
-            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+        if ($filterId) {
+            $query->where(function ($q) use ($filterId) {
+                $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+            });
+        }
+
+        $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+
+        $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+            $categories = $query->get();
+            return $this->buildCategoryTree($categories);
         });
+
+        return response()->json($categoriesTree);
     }
-
-    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
-
-    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-        $categories = $query->get();
-        return $this->buildCategoryTree($categories);
-    });
-
-    return response()->json($categoriesTree);
-}
 
   private function buildCategoryTree($categories) 
-{
-    $tree = [];
-    $categoryMap = [];
+    {
+        $tree = [];
+        $categoryMap = [];
 
-    foreach ($categories as $category) {
-        $categoryMap[$category->id] = [
-            'id' => $category->id,
-            'name' => $category->name,
-            'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
-            'parent_id' => $category->parent_id,
-            'productCount' => $category->products_count,
-            'image' => $category->image,
-            'children' => [],
-        ];
-    }
-
-    foreach ($categoryMap as &$category) {
-        if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
-            $categoryMap[$category['parent_id']]['children'][] = &$category;
-        } else {
-            $tree[] = &$category;
+        foreach ($categories as $category) {
+            $categoryMap[$category->id] = [
+                'id' => $category->id,
+                'name' => $category->name,
+                'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
+                'parent_id' => $category->parent_id,
+                'productCount' => $category->products_count,
+                'image' => $category->image,
+                'children' => [],
+            ];
         }
-    }
 
-    return $tree;
-}
+        foreach ($categoryMap as &$category) {
+            if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
+                $categoryMap[$category['parent_id']]['children'][] = &$category;
+            } else {
+                $tree[] = &$category;
+            }
+        }
+
+        return $tree;
+    }
 
 
     /**
