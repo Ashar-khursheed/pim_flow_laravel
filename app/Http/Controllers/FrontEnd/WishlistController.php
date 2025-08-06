@@ -156,7 +156,7 @@ class WishlistController extends Controller
     {
         $userId = Auth::id();
 
-        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand')
+        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand' , 'seoUrl' )
             ->where('customer_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -206,7 +206,8 @@ class WishlistController extends Controller
                 $symbol = optional($product->currency)->symbol;
                 $product->unsetRelation('currency');
                 $product->currency = $symbol;
-                
+                $product->url = optional($product->seoUrl)->url;
+
                 $sellingType = null;
         
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
