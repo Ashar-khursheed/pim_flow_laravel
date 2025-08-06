@@ -1419,56 +1419,125 @@ class CategoryController extends Controller
 	 * )
 	 */
 
+	// public function fetchCategories(Request $request)
+	// {
+	// 	$limit = 15;
+
+	// 	// Get only published leaf categories (no children), eager load seoUrl
+	// 	$leafCategories = Category::where('status', 'published')
+	// 		->whereDoesntHave('children')
+	// 		->with(['seoUrl:id,relational_id,url'])
+	// 		->get(['id', 'name', 'parent_id', 'image']); // ⛔ omit 'slug'
+
+	// 	// Limit results
+	// 	$limitedCategories = $leafCategories->take($limit);
+
+	// 	foreach ($limitedCategories as $category) {
+	// 		// Use SEO URL as slug
+	// 		$category->slug = optional($category->seoUrl)->url;
+	// 		unset($category->seoUrl); // optional: clean up relation from response
+
+	// 		// Add product count
+	// 		$category->productCount = $category->products()
+	// 			->where('status', 'published')
+	// 			->count();
+
+	// 		// Build hierarchy
+	// 		$hierarchy = [];
+	// 		$current = $category;
+
+	// 		while ($current && $current->parent_id) {
+	// 			$parent = Category::where('id', $current->parent_id)
+	// 				->where('status', 'published')
+	// 				->with(['seoUrl:id,relational_id,url'])
+	// 				->first(['id', 'name', 'parent_id']); // ⛔ omit 'slug'
+
+	// 			if ($parent) {
+	// 				$hierarchy[] = [
+	// 					'id' => $parent->id,
+	// 					'name' => $parent->name,
+	// 					'slug' => optional($parent->seoUrl)->url, // only SEO url as slug
+	// 				];
+	// 				$current = $parent;
+	// 			} else {
+	// 				break;
+	// 			}
+	// 		}
+
+	// 		$category->hierarchy = array_reverse($hierarchy);
+	// 	}
+
+	// 	return response()->json($limitedCategories);
+	// }
+
 	public function fetchCategories(Request $request)
-	{
-		$limit = 15;
+{
+	$limit = 15;
 
-		// Get only published leaf categories (no children), eager load seoUrl
-		$leafCategories = Category::where('status', 'published')
-			->whereDoesntHave('children')
-			->with(['seoUrl:id,relational_id,url'])
-			->get(['id', 'name', 'parent_id', 'image']); // ⛔ omit 'slug'
+	// Define allowed category names
+	$allowedNames = [
+		'Reach-In Refrigerators',
+		'Commercial Chef Base',
+		'Work Top Refrigerators',
+		'Undercounter Refrigerators',
+		'Pizza Prep Tables',
+		'Beer Dispensers',
+		'Glass Chillers and Frosters',
+		'Milk Cooler',
+		'Commercial Grills & Griddles',
+		'Commercial Food Processors',
+		'Commercial Espresso Machines',
+		'Commercial Gas And Electric Range',
+		'Deck Ovens',
+		'Commercial Gas Fryers',
+		'Back Bar Coolers',
+		'Planetary Mixer'
+	];
 
-		// Limit results
-		$limitedCategories = $leafCategories->take($limit);
+	// Get only published leaf categories (no children), eager load seoUrl
+	$leafCategories = Category::where('status', 'published')
+		->whereDoesntHave('children')
+		->whereIn('name', $allowedNames) // 🔥 Only get allowed categories
+		->with(['seoUrl:id,relational_id,url'])
+		->get(['id', 'name', 'parent_id', 'image']);
 
-		foreach ($limitedCategories as $category) {
-			// Use SEO URL as slug
-			$category->slug = optional($category->seoUrl)->url;
-			unset($category->seoUrl); // optional: clean up relation from response
+	// Limit results (optional if you want max 15)
+	$limitedCategories = $leafCategories->take($limit);
 
-			// Add product count
-			$category->productCount = $category->products()
+	foreach ($limitedCategories as $category) {
+		$category->slug = optional($category->seoUrl)->url;
+		unset($category->seoUrl);
+
+		$category->productCount = $category->products()
+			->where('status', 'published')
+			->count();
+
+		$hierarchy = [];
+		$current = $category;
+
+		while ($current && $current->parent_id) {
+			$parent = Category::where('id', $current->parent_id)
 				->where('status', 'published')
-				->count();
+				->with(['seoUrl:id,relational_id,url'])
+				->first(['id', 'name', 'parent_id']);
 
-			// Build hierarchy
-			$hierarchy = [];
-			$current = $category;
-
-			while ($current && $current->parent_id) {
-				$parent = Category::where('id', $current->parent_id)
-					->where('status', 'published')
-					->with(['seoUrl:id,relational_id,url'])
-					->first(['id', 'name', 'parent_id']); // ⛔ omit 'slug'
-
-				if ($parent) {
-					$hierarchy[] = [
-						'id' => $parent->id,
-						'name' => $parent->name,
-						'slug' => optional($parent->seoUrl)->url, // only SEO url as slug
-					];
-					$current = $parent;
-				} else {
-					break;
-				}
+			if ($parent) {
+				$hierarchy[] = [
+					'id' => $parent->id,
+					'name' => $parent->name,
+					'slug' => optional($parent->seoUrl)->url,
+				];
+				$current = $parent;
+			} else {
+				break;
 			}
-
-			$category->hierarchy = array_reverse($hierarchy);
 		}
 
-		return response()->json($limitedCategories);
+		$category->hierarchy = array_reverse($hierarchy);
 	}
+
+	return response()->json($limitedCategories);
+}
 
 
 
