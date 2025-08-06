@@ -184,74 +184,34 @@ class CategoryMenuController extends Controller
      */
    
     public function getCategoriesWithChildren(Request $request)
-        {
-            $filterId = $request->get('id');
+{
+    $filterId = $request->get('id');
 
-            $query = Category::select(['id', 'name', 'parent_id', 'image'])
-                ->withCount('products')
-                ->with(['seoUrl:id,relational_id,url']) // Eager load URL
-                ->where('status', 'published');
+    $query = Category::select(['id', 'name', 'parent_id', 'image'])
+        ->withCount('products')
+        ->with(['seoUrl' => function ($query) {
+            $query->select('id', 'relational_id', 'url')
+                  ->where('relational_type', Category::class); // or 'Category'
+        }])
+        ->where('status', 'published');
 
-            if ($filterId) {
-                $query->where(function ($q) use ($filterId) {
-                    $q->where('id', $filterId)->orWhere('parent_id', $filterId);
-                });
-            }
+    if ($filterId) {
+        $query->where(function ($q) use ($filterId) {
+            $q->where('id', $filterId)->orWhere('parent_id', $filterId);
+        });
+    }
 
-            $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
+    $cacheKey = $filterId ? "categories_tree_$filterId" : "categories_tree_all";
 
-            $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
-                $categories = $query->get();
+    $categoriesTree = Cache::remember($cacheKey, now()->addMinutes(10), function () use ($query) {
+        $categories = $query->get();
+        return $this->buildCategoryTree($categories);
+    });
 
-                // Add URL to each category
-                return $this->buildCategoryTree(
-                    $categories->map(function ($category) {
-                        $category->slug = optional($category->seoUrl)->url;
-                        return $category;
-                    })
-                );
-            });
+    return response()->json($categoriesTree);
+}
 
-            return response()->json($categoriesTree);
-        }
-
-
-
-
-
-    /**
-     * Build a hierarchical category tree efficiently.
-     */
-    // private function buildCategoryTree($categories)
-    // {
-    //     $tree = [];
-    //     $categoryMap = [];
-
-    //     // Create a lookup table for fast access
-    //     foreach ($categories as $category) {
-    //         $categoryMap[$category->id] = [
-    //             'id' => $category->id,
-    //             'name' => $category->name,
-    //             'slug' => $category->slug,
-    //             'parent_id' => $category->parent_id,
-    //             'productCount' => $category->products_count, // Eager-loaded product count
-    //             'image' =>  $category->image,
-    //             'children' => [],
-    //         ];
-    //     }
-
-    //     // Build the tree using the lookup table
-    //     foreach ($categoryMap as &$category) {
-    //         if ($category['parent_id'] && isset($categoryMap[$category['parent_id']])) {
-    //             $categoryMap[$category['parent_id']]['children'][] = &$category;
-    //         } else {
-    //             $tree[] = &$category;
-    //         }
-    //     }
-
-    //     return $tree;
-    // }
-    private function buildCategoryTree($categories) 
+  private function buildCategoryTree($categories) 
 {
     $tree = [];
     $categoryMap = [];
@@ -260,7 +220,7 @@ class CategoryMenuController extends Controller
         $categoryMap[$category->id] = [
             'id' => $category->id,
             'name' => $category->name,
-            'slug' => optional($category->seoUrl)->url ?? '', // <-- Slug from SEO table
+            'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
             'parent_id' => $category->parent_id,
             'productCount' => $category->products_count,
             'image' => $category->image,
