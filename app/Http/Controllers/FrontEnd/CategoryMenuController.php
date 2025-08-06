@@ -80,24 +80,7 @@ class CategoryMenuController extends Controller
 
     return response()->json($categoryWithChildren);
 }
-    // public function showCategoryBySlug($slug)
-    // {
-    //     // Fetch the category by slug
-    //     $category = Category::where('slug', $slug)
-    //                     ->where('status', 'published')
-    //                     ->first();
-
-    //     if (!$category) {
-    //         return response()->json(['message' => 'Category not found'], 404);
-    //     }
-
-    //     // Fetch children of this category recursively
-    //     $categoryWithChildren = $this->getCategoryWithChildren($category);
-
-    //     // Return the category with children and their respective children
-    //     return response()->json($categoryWithChildren);
-    // }
-
+   
     /**
      * Recursive function to fetch category and its children recursively.
      *
@@ -110,6 +93,7 @@ class CategoryMenuController extends Controller
     // Get the children of the category
     $children = Category::where('parent_id', $category->id)
         ->where('status', 'published')
+          ->with('seoUrl')
         ->get();
 
     // Iterate through each child and fetch its children recursively
@@ -117,8 +101,7 @@ class CategoryMenuController extends Controller
         // Recursively get children for the child category
         $child->setRelation('children', $this->getCategoryWithChildren($child));
 
-        // Attach SEO URL instead of slug
-        $seo = $child->seoUrl; // Assumes you have the seoUrl() relationship
+         $seo = $child->seoUrl;
         $child->seo_slug = $seo?->url ?? null;
     }
 
