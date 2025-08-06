@@ -22501,7 +22501,12 @@
                     "500": {
                         "description": "NoFraud API error"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/orders": {

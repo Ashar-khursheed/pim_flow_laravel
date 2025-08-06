@@ -13,6 +13,7 @@ class NoFraudController extends Controller
      *     path="/api/screen-transaction",
      *     operationId="screenTransaction",
      *     tags={"NoFraud"},
+     *     security={{"bearerAuth":{}}},
      *     summary="Send transaction data to NoFraud API and save the response",
      *     description="This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
      *     @OA\RequestBody(
