@@ -87,45 +87,46 @@ class CategoryMenuController extends Controller
      * @param  \Botble\Ecommerce\Models\ProductCategory  $category
      * @return array
      */
-   
-    private function getCategoryWithChildren($category)
+   private function getCategoryWithChildren($category)
 {
-    // Get the children of the category
+    // Eager load SEO
+    $category->loadMissing('seoUrl');
+
+    // Get SEO slug for current category
+    $seo = $category->seoUrl;
+    $seoSlug = $seo?->url ?? $category->slug;
+
+    // Get children with SEO eager loaded
     $children = Category::where('parent_id', $category->id)
         ->where('status', 'published')
-          ->with('seoUrl')
+        ->with('seoUrl')
         ->get();
 
-    // Iterate through each child and fetch its children recursively
+    // Transform children recursively
+    $childrenArray = [];
     foreach ($children as $child) {
-        // Recursively get children for the child category
-        $child->setRelation('children', $this->getCategoryWithChildren($child));
+        $childSeo = $child->seoUrl;
+        $childSeoSlug = $childSeo?->url ?? $child->slug;
 
-         $seo = $child->seoUrl;
-        $child->seo_slug = $seo?->url ?? null;
+        $childrenArray[] = [
+            'id' => $child->id,
+            'name' => $child->name,
+            'slug' => $childSeoSlug,
+            'parent_id' => $child->parent_id,
+            'image' => $child->image,
+            'children' => $this->getCategoryWithChildren($child), // recursive call
+        ];
     }
 
-    // Add image URL for the current category
-    $category->image = $category->image;
-
-    // Add the children to the current category
-    $category->children = $children;
-
-    // Attach SEO URL instead of slug for the current category
-    $seo = $category->seoUrl; // Assumes you have the seoUrl() relationship
-    $category->seo_slug = $seo?->url ?? null;
-
-    // Return the modified structure
     return [
         'id' => $category->id,
         'name' => $category->name,
-        'slug' => $category->seo_slug, // Replace original slug with SEO URL
+        'slug' => $seoSlug,
         'parent_id' => $category->parent_id,
         'image' => $category->image,
-        'children' => $category->children,
+        'children' => $childrenArray,
     ];
 }
-
 
 
 
