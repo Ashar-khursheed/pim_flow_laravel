@@ -203,6 +203,9 @@ class SeoManagementController extends Controller
                 'popular_tags' => is_string($item->popular_tags)
                     ? json_decode($item->popular_tags, true)
                     : ($item->popular_tags ?? []),
+                'popularTag_details' => is_string($item->popularTag_details)
+                ? json_decode($item->popularTag_details, true)
+                : ($item->popularTag_details ?? []),
             ];
         });
 
@@ -211,6 +214,7 @@ class SeoManagementController extends Controller
             'data' => $seoData
         ]);
     }
+
 
 
     private function filterFields($item)
