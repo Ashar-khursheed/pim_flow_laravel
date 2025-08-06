@@ -6,6 +6,9 @@
 **Description:**
 {{ $description }}
 
+**Device:**
+{{ $device }}
+
 @if(!empty($images))
 **Attached Images:**
 @foreach($images as $image)
