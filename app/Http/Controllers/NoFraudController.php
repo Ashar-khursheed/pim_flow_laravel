@@ -61,60 +61,61 @@ class NoFraudController extends Controller
      *     )
      * )
      */
-    public function screenTransaction(Request $request)
-    {
-        $transactionData = [
-            'order_id' => $request->order_id ?? 'ORD-' . time(),
-            'amount' => $request->amount ?? 49.99,
-            'currency' => 'USD',
-            'billing' => [
-                'name' => $request->billing_name ?? 'John Doe',
-                'email' => $request->billing_email ?? 'john@example.com',
-                'phone' => $request->billing_phone ?? '1234567890',
-                'address1' => $request->billing_address ?? '123 Main St',
-                'city' => $request->billing_city ?? 'New York',
-                'state' => $request->billing_state ?? 'NY',
-                'zip' => $request->billing_zip ?? '10001',
-                'country' => $request->billing_country ?? 'US',
-            ],
-            'shipping' => [
-                'name' => $request->shipping_name ?? 'John Doe',
-                'address1' => $request->shipping_address ?? '123 Main St',
-                'city' => $request->shipping_city ?? 'New York',
-                'state' => $request->shipping_state ?? 'NY',
-                'zip' => $request->shipping_zip ?? '10001',
-                'country' => $request->shipping_country ?? 'US',
-            ],
-            'card' => [
-                'bin' => $request->card_bin ?? '411111',
-                'last4' => $request->card_last4 ?? '1111',
-            ],
-        ];
+ public function screenTransaction(Request $request)
+{
+    $transactionData = [
+        'nf-token' => env('NOFRAUD_API_KEY'), // ✅ Correct way to send the API key
+        'order_id' => $request->order_id ?? 'ORD-' . time(),
+        'amount' => $request->amount ?? 49.99,
+        'currency' => 'USD',
+        'billing' => [
+            'name' => $request->billing_name ?? 'John Doe',
+            'email' => $request->billing_email ?? 'john@example.com',
+            'phone' => $request->billing_phone ?? '1234567890',
+            'address1' => $request->billing_address ?? '123 Main St',
+            'city' => $request->billing_city ?? 'New York',
+            'state' => $request->billing_state ?? 'NY',
+            'zip' => $request->billing_zip ?? '10001',
+            'country' => $request->billing_country ?? 'US',
+        ],
+        'shipping' => [
+            'name' => $request->shipping_name ?? 'John Doe',
+            'address1' => $request->shipping_address ?? '123 Main St',
+            'city' => $request->shipping_city ?? 'New York',
+            'state' => $request->shipping_state ?? 'NY',
+            'zip' => $request->shipping_zip ?? '10001',
+            'country' => $request->shipping_country ?? 'US',
+        ],
+        'card' => [
+            'bin' => $request->card_bin ?? '411111',
+            'last4' => $request->card_last4 ?? '1111',
+        ],
+    ];
 
-        $response = Http::withHeaders([
-            'Authorization' => 'Bearer ' . env('NOFRAUD_API_KEY'),
-            'Accept'        => 'application/json',
-            'Content-Type'  => 'application/json',
-        ])->post(env('NOFRAUD_API_URL'), $transactionData);
+    $response = Http::withHeaders([
+        'Content-Type' => 'application/json',
+        'Accept' => 'application/json',
+    ])->post(env('NOFRAUD_API_URL'), $transactionData);
 
-        if ($response->successful()) {
-            $result = $response->json();
+    if ($response->successful()) {
+        $result = $response->json();
 
-            NoFraudResponse::create([
-                'order_id' => $transactionData['order_id'],
-                'response' => json_encode($result),
-            ]);
-
-            return response()->json([
-                'status' => 'success',
-                'nofraud_result' => $result,
-            ]);
-        }
+        NoFraudResponse::create([
+            'order_id' => $transactionData['order_id'],
+            'response' => json_encode($result),
+        ]);
 
         return response()->json([
-            'status' => 'error',
-            'message' => 'NoFraud API request failed.',
-            'details' => $response->body(),
-        ], $response->status());
+            'status' => 'success',
+            'nofraud_result' => $result,
+        ]);
     }
+
+    return response()->json([
+        'status' => 'error',
+        'message' => 'NoFraud API request failed.',
+        'details' => $response->body(),
+    ], $response->status());
+}
+
 }
