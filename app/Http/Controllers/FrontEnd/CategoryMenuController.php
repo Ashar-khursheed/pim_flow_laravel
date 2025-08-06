@@ -202,7 +202,7 @@ class CategoryMenuController extends Controller
             ->withCount('products')
             ->with(['seoUrl' => function ($query) {
                 $query->select('id', 'relational_id', 'url')
-                    ->where('relational_type', Category::class); // or 'Category'
+                    ->where('relational_type', 'Category'); // or 'Category'
             }])
             ->where('status', 'published');
 
@@ -231,7 +231,7 @@ class CategoryMenuController extends Controller
             $categoryMap[$category->id] = [
                 'id' => $category->id,
                 'name' => $category->name,
-                // 'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
+                'slug' => optional($category->seoUrl)->url ?? '', // using relation directly
                 'parent_id' => $category->parent_id,
                 'productCount' => $category->products_count,
                 'image' => $category->image,
