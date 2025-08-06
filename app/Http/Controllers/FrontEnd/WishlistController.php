@@ -157,7 +157,7 @@ class WishlistController extends Controller
     {
         $userId = Auth::id();
 
-        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand' , 'seoUrl' )
+        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand' , 'product.seoUrl' )
             ->where('customer_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
