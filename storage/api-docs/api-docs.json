@@ -9224,7 +9224,7 @@
                                                                     "format": "float",
                                                                     "example": 899.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "string",
                                                                     "example": "2024-01-15"
                                                                 },
@@ -9414,7 +9414,7 @@
                                                                     "format": "float",
                                                                     "example": 799.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "string",
                                                                     "example": "2024-01-10"
                                                                 },
@@ -9789,7 +9789,7 @@
                                                         "format": "float",
                                                         "example": 999.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "example": null,
                                                         "nullable": true
@@ -11727,7 +11727,7 @@
                                                                     "format": "float",
                                                                     "example": 899.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "integer",
                                                                     "example": 3
                                                                 },
@@ -11849,7 +11849,7 @@
                                                                     "format": "float",
                                                                     "example": 799.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "integer",
                                                                     "example": 5
                                                                 },
@@ -16346,7 +16346,7 @@
                                                         "format": "float",
                                                         "example": 90
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2024-06-20"
@@ -16486,7 +16486,7 @@
                                                         "type": "number",
                                                         "example": 90
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2024-06-20"
@@ -17906,7 +17906,7 @@
                                                         "format": "float",
                                                         "example": 89.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "example": "2025-06-10"
                                                     },
@@ -18095,7 +18095,7 @@
                                                         "format": "float",
                                                         "example": 89.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2025-06-20"
@@ -33227,7 +33227,7 @@
                         "format": "float",
                         "example": 80
                     },
-                    "best_delivery_date": {
+                    "delivery_days": {
                         "type": "string",
                         "nullable": true
                     },
