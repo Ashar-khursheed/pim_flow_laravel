@@ -80,32 +80,32 @@ class CategoryMenuController extends Controller
 
     //     return response()->json($categoryWithChildren);
     // }
-//     public function showCategoryBySlug($seoUrl)
-// {
-//     // Find the SEO record by URL
-//     $seoRecord = SeoManagement::where('url', $seoUrl)
-//         ->where('relational_type', 'Category') // match case with relationship
-//         ->first();
+    public function showCategoryBySlug($seoUrl)
+{
+    // Find the SEO record by URL
+    $seoRecord = SeoManagement::where('url', $seoUrl)
+        ->where('relational_type', 'Category') // match case with relationship
+        ->first();
 
-//     if (!$seoRecord) {
-//         return response()->json(['message' => 'SEO URL not found'], 404);
-//     }
+    if (!$seoRecord) {
+        return response()->json(['message' => 'SEO URL not found'], 404);
+    }
 
-//     // Find the category using the relational_id
-//     $category = Category::with('seoUrl') // eager-load SEO URL
-//         ->where('id', $seoRecord->relational_id)
-//         ->where('status', 'published')
-//         ->first();
+    // Find the category using the relational_id
+    $category = Category::with('seoUrl') // eager-load SEO URL
+        ->where('id', $seoRecord->relational_id)
+        ->where('status', 'published')
+        ->first();
 
-//     if (!$category) {
-//         return response()->json(['message' => 'Category not found'], 404);
-//     }
+    if (!$category) {
+        return response()->json(['message' => 'Category not found'], 404);
+    }
 
-//     // Fetch children recursively with SEO URLs
-//     $categoryWithChildren = $this->getCategoryWithChildren($category);
+    // Fetch children recursively with SEO URLs
+    $categoryWithChildren = $this->getCategoryWithChildren($category);
 
-//     return response()->json($categoryWithChildren);
-// }
+    return response()->json($categoryWithChildren);
+}
 
 
 
@@ -147,7 +147,7 @@ class CategoryMenuController extends Controller
         return [
             'id' => $category->id,
             'name' => $category->name,
-            'slug' => $category->seo_slug, // Replace original slug with SEO URL
+            // 'slug' => $category->seo_slug, // Replace original slug with SEO URL
             'parent_id' => $category->parent_id,
             'image' => $category->image,
             'children' => $category->children,
