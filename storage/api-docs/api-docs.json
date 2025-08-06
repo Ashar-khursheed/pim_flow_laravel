@@ -22369,7 +22369,7 @@
                 ]
             }
         },
-        "/screen-transaction": {
+        "/api/screen-transaction": {
             "post": {
                 "tags": [
                     "NoFraud"

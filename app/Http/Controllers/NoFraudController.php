@@ -10,7 +10,7 @@ class NoFraudController extends Controller
 {
     /**
      * @OA\Post(
-     *     path="/screen-transaction",
+     *     path="/api/screen-transaction",
      *     operationId="screenTransaction",
      *     tags={"NoFraud"},
      *     summary="Send transaction data to NoFraud API and save the response",
