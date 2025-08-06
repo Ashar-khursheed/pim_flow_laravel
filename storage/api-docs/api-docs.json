@@ -14002,6 +14002,10 @@
                                         "type": "string",
                                         "example": "Page not loading properly."
                                     },
+                                    "device": {
+                                        "type": "string",
+                                        "example": "Android."
+                                    },
                                     "images[]": {
                                         "type": "array",
                                         "items": {
