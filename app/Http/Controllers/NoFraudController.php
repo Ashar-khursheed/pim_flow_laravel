@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 class NoFraudController extends Controller
 {
-   /**
+  /**
  * @OA\Post(
  *     path="/api/screen-transaction",
  *     operationId="screenTransaction",
@@ -74,7 +74,7 @@ class NoFraudController extends Controller
  */
 
 
-  public function screenTransaction(Request $request)
+public function screenTransaction(Request $request)
 {
     // Validate required fields
     $validator = Validator::make($request->all(), [
@@ -104,8 +104,8 @@ class NoFraudController extends Controller
     try {
         // Build the payload for NoFraud API
         $payload = [
-            'nf-token' => config('services.nofraud.api_key'),
-            'amount' => $request->amount,
+            'nf-token' => env('NOFRAUD_API_KEY'),
+            'amount' => number_format((float)$request->amount, 2, '.', ''),
             'currencyCode' => $request->currency_code ?? 'USD',
             'customerIP' => $request->ip(),
             
@@ -262,7 +262,4 @@ private function getCardTypeFromBin($bin)
     
     return 'Unknown';
 }
-
-
-
 }
