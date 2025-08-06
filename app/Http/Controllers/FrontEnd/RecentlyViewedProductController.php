@@ -461,7 +461,7 @@ class RecentlyViewedProductController extends Controller
                     'map' => (float) ($firstSupplier->map ?? 0),
                     'inventory' => $firstSupplier->inventory ?? null,
                     'in_stock' => $firstSupplier->in_stock ?? null,
-                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'delivery_days' => $firstSupplier->delivery_days ?? null,
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,
