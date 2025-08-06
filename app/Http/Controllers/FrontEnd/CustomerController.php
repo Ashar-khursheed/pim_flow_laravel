@@ -83,7 +83,7 @@ class CustomerController extends BaseController
 			})->finally(function (Batch $batch) {
 			})->name('Welcome Mails')->dispatch();
 
-			$batch->options['queue'] = 'GUST_WLCM_MAIL';
+			$batch->options['queue'] = 'GUST_WLCM';
 			$batch->add(new GuestWelcomeMailJob([
 				'recordId' => $guestCustomer->id,
 				'randomPassword' => $randomPassword,
@@ -138,7 +138,7 @@ class CustomerController extends BaseController
 			})->finally(function (Batch $batch) {
 			})->name('Welcome Mails')->dispatch();
 
-			$batch->options['queue'] = 'WLCM_MAIL';
+			$batch->options['queue'] = 'WLCM';
 			$batch->add(new WelcomeMailJob([
 				'recordId' => $customer->id,
 			]));
@@ -436,7 +436,7 @@ class CustomerController extends BaseController
 			// })->finally(function (Batch $batch) {
 			// })->name('Welcome Mails')->dispatch();
 
-			// $batch->options['queue'] = 'WLCM_MAIL';
+			// $batch->options['queue'] = 'WLCM';
 			// $batch->add(new WelcomeMailJob([
 			// 	'recordId' => $customer->id,
 			// ]));
@@ -496,7 +496,7 @@ class CustomerController extends BaseController
 				})->finally(function (Batch $batch) {
 				})->name('Welcome Mails')->dispatch();
 
-				$batch->options['queue'] = 'WLCM_MAIL';
+				$batch->options['queue'] = 'WLCM';
 				$batch->add(new WelcomeMailJob([
 					'recordId' => $customer->id,
 				]));

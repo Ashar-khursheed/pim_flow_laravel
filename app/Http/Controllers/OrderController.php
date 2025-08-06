@@ -351,7 +351,7 @@ class OrderController extends Controller
 
 			})->name('Order Place')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PLC_MAIL';
+			$batch->options['queue'] = 'ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
 			]));
@@ -775,28 +775,28 @@ class OrderController extends Controller
 			})->name('Order Mails')->dispatch();
 
 			if ($request->status == 'Confirmed') {
-				$batch->options['queue'] = 'ORD_CNF_MAIL';
+				$batch->options['queue'] = 'ORD_CNF';
 				$batch->add(new OrderConfirmationMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Out for delivery') {
-				$batch->options['queue'] = 'ORD_OUT_MAIL';
+				$batch->options['queue'] = 'ORD_OUT';
 				$batch->add(new OutDeliveryMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Delivered') {
-				$batch->options['queue'] = 'ORD_DLVR_MAIL';
+				$batch->options['queue'] = 'ORD_DLVR';
 				$batch->add(new OrderDeliveredMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Cancelled') {
-				$batch->options['queue'] = 'ORD_CNCL_MAIL';
+				$batch->options['queue'] = 'ORD_CNCL';
 				$batch->add(new OrderCancelledMailJob([
 					'recordId' => $order->id
 				]));
@@ -938,7 +938,7 @@ class OrderController extends Controller
 
 			})->name('Order Mails')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PART_CNCL_MAIL';
+			$batch->options['queue'] = 'ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,
 				'reason' => $request->notes,

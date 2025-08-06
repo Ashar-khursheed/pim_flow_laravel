@@ -101,7 +101,7 @@ class OrderPlacedMail extends Mailable
 		$total = $order->total_amount ?? 0;
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,

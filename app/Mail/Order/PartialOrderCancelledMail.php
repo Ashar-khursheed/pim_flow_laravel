@@ -94,6 +94,7 @@ class PartialOrderCancelledMail extends Mailable
 		$orderListUrl = url("/registration/all-orders");
 		$checkoutURL = url("/checkout");
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
 
 		$params = [
 			'logoUrl' => $logoUrl,
@@ -111,6 +112,7 @@ class PartialOrderCancelledMail extends Mailable
 			'orderUrl' => $orderListUrl,
 			'checkoutURL' => $checkoutURL,
 			'siteUrl' => $siteUrl,
+			'siteEmail' => $siteEmail,
 		];
 
 		return $this->subject("Some Products from Your HorecaStore Order #{$orderNumber} Have Been Cancelled")
