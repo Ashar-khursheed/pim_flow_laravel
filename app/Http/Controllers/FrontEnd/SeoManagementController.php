@@ -168,49 +168,92 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getParagraphData(Request $request, $identifier)
-    {
-        $relationalType = $request->query('relational_type'); // optional filter
+    // public function getParagraphData(Request $request, $identifier)
+    // {
+    //     $relationalType = $request->query('relational_type'); // optional filter
 
-        $seoQuery = SEOManagement::query();
+    //     $seoQuery = SEOManagement::query();
 
-        // If a full URL is passed, extract only the path
-        if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-            $identifier = parse_url($identifier, PHP_URL_PATH);
-        }
+    //     // If a full URL is passed, extract only the path
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $identifier = parse_url($identifier, PHP_URL_PATH);
+    //     }
 
-        // Now treat identifier as a slug/path and match using 'slug' column
-        $seoQuery->where('url', ltrim($identifier, '/'));
+    //     // Now treat identifier as a slug/path and match using 'slug' column
+    //     $seoQuery->where('url', ltrim($identifier, '/'));
 
-        // Apply optional relational_type filter
-        if ($relationalType) {
-            $seoQuery->where('relational_type', $relationalType);
-        }
+    //     // Apply optional relational_type filter
+    //     if ($relationalType) {
+    //         $seoQuery->where('relational_type', $relationalType);
+    //     }
 
-        $seoData = $seoQuery->get()->map(function ($item) {
-            return [
-                'id' => $item->id,
-                'relational_id' => $item->relational_id,
-                'relational_type' => $item->relational_type,
-                'internal_links' => $item->internal_links,
-                'cat_desc' => $item->cat_desc,
-                'paragraph_1' => $item->paragraph_1,
-                'paragraph_2' => $item->paragraph_2,
-                'paragraph_3' => $item->paragraph_3,
-                'paragraph_4' => $item->paragraph_4,
-                'banner_image_file' => $item->banner_image_file,
-                'banner_image_alt_text' => $item->banner_image_alt_text,
-                'popular_tags' => is_string($item->popular_tags)
-                    ? json_decode($item->popular_tags, true)
-                    : ($item->popular_tags ?? []),
-            ];
-        });
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //         return [
+    //             'id' => $item->id,
+    //             'relational_id' => $item->relational_id,
+    //             'relational_type' => $item->relational_type,
+    //             'internal_links' => $item->internal_links,
+    //             'cat_desc' => $item->cat_desc,
+    //             'paragraph_1' => $item->paragraph_1,
+    //             'paragraph_2' => $item->paragraph_2,
+    //             'paragraph_3' => $item->paragraph_3,
+    //             'paragraph_4' => $item->paragraph_4,
+    //             'banner_image_file' => $item->banner_image_file,
+    //             'banner_image_alt_text' => $item->banner_image_alt_text,
+    //             'popular_tags' => is_string($item->popular_tags)
+    //                 ? json_decode($item->popular_tags, true)
+    //                 : ($item->popular_tags ?? []),
+    //         ];
+    //     });
 
-        return response()->json([
-            'status' => true,
-            'data' => $seoData
-        ]);
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $seoData
+    //     ]);
+    // }
+public function getParagraphData(Request $request, $identifier)
+{
+    $relationalType = $request->query('relational_type'); // optional filter
+
+    $seoQuery = SEOManagement::query();
+
+    // If a full URL is passed, extract only the path
+    if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        $identifier = parse_url($identifier, PHP_URL_PATH);
     }
+
+    // Now treat identifier as a slug/path and match using 'slug' column
+    $seoQuery->where('url', ltrim($identifier, '/'));
+
+    // Apply optional relational_type filter
+    if ($relationalType) {
+        $seoQuery->where('relational_type', $relationalType);
+    }
+
+    $seoData = $seoQuery->get()->map(function ($item) {
+        return [
+            'id' => $item->id,
+            'relational_id' => $item->relational_id,
+            'relational_type' => $item->relational_type,
+            'internal_links' => $item->internal_links,
+            'cat_desc' => $item->cat_desc,
+            'paragraph_1' => $item->paragraph_1,
+            'paragraph_2' => $item->paragraph_2,
+            'paragraph_3' => $item->paragraph_3,
+            'paragraph_4' => $item->paragraph_4,
+            'banner_image_file' => $item->banner_image_file,
+            'banner_image_alt_text' => $item->banner_image_alt_text,
+            'popular_tags' => is_string($item->popularTag_details)
+                ? json_decode($item->popularTag_details, true)
+                : ($item->popularTag_details ?? []),
+        ];
+    });
+
+    return response()->json([
+        'status' => true,
+        'data' => $seoData
+    ]);
+}
 
 
     private function filterFields($item)
