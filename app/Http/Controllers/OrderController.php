@@ -324,7 +324,7 @@ class OrderController extends Controller
 			$record->updated_by = $record->updator->name ?? null;
 
 			// ✅ Add NoFraud result
-			$record->nofraud_result = $record->nofraudResponse->response ?? null;
+			$record->nofraud_result = $record->nofraudResponse ? json_decode($record->nofraudResponse->response) : null;
 			unset($record->nofraudResponse);
 
 			unset($record->creator, $record->updator);
