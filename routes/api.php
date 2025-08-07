@@ -64,6 +64,7 @@ use App\Http\Controllers\QuoteController;
 use App\Http\Controllers\MenuBannerController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NoFraudController;
+use App\Http\Controllers\LogDownloadController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -162,6 +163,8 @@ Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 Route::apiResource('newsletters', NewsletterController::class);
 
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
+
+Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
