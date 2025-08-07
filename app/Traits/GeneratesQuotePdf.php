@@ -42,6 +42,7 @@ trait GeneratesQuotePdf
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 		$siteURL = url('/');
 
+		$customerType = $customer->type;
 		$customerName = $customer->type === 'Private' ? $customer->name : $customer->business_name;
 		$customerAddressDetail = $quote->customerAddress;
 		$customerAddress = $customerAddressDetail->address ?? '';
@@ -68,7 +69,7 @@ trait GeneratesQuotePdf
 				$product->name = $productDetail->name;
 				$product->brandName = $productDetail->brand->name ?? null;
 				$product->sku = $productDetail->sku;
-				$product->warrantyInfo = $productSupplierDetail->warranty_information ?? null;
+				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
 				$product->shippingCharge = $quoteProduct->shipping_charge == 0
 				? 'FREE SHIPPING'
 				: $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');

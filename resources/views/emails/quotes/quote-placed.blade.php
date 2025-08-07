@@ -139,7 +139,7 @@
 
 					<tr>
 						<td valign="top" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 25px; display: flex; align-items: center; margin-top: 10px; margin-bottom: 5px;">
-							<img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px; max-width: 24px; width: 24px; height: 24px;">
+							{{-- <img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px; max-width: 24px; width: 24px; height: 24px;"> --}}
 							<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
 								Your Quotation is Ready
 							</strong>
