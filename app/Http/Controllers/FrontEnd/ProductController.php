@@ -1448,10 +1448,21 @@ class ProductController extends Controller
     //         ]
     //     ]);
     // }
-    public function brandSummaryStats($id)
+  public function brandSummaryStats($id)
 {
-    // Try finding the brand by ID or slug
-    $brand = Brand::where('id', $id)->orWhere('slug', $id)->first();
+    // Try to find SEO entry first (slug-style URL)
+    $seoEntry = DB::table('seo_management')
+        ->where('url', $id)
+        ->where('relational_type', 'Brand')
+        ->first();
+
+    if ($seoEntry) {
+        // Use relational_id from SEO table
+        $brand = Brand::find($seoEntry->relational_id);
+    } else {
+        // Fallback: try to find brand by numeric ID
+        $brand = Brand::find($id);
+    }
 
     if (!$brand) {
         return response()->json([
@@ -1459,12 +1470,6 @@ class ProductController extends Controller
             'message' => 'Brand not found',
         ], 404);
     }
-
-    // Get SEO entry by URL (slug or ID) and relational_type = 'Brand'
-    $seoEntry = DB::table('seo_management')
-        ->where('url', $id)
-        ->where('relational_type', 'Brand')
-        ->first();
 
     // Get product IDs related to the brand
     $productIds = Product::where('brand_id', $brand->id)->pluck('id');
@@ -1477,7 +1482,6 @@ class ProductController extends Controller
         ->whereIn('product_id', $productIds)
         ->count();
 
-    // Response
     return response()->json([
         'success' => true,
         'message' => 'Brand summary fetched successfully',
@@ -1486,7 +1490,6 @@ class ProductController extends Controller
             'brand_name' => $brand->name,
             'total_units_sold' => $totalUnitsSold,
             'total_reviews' => $totalReviews,
-            'seo' => $seoEntry, // include SEO entry
         ]
     ]);
 }
