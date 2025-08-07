@@ -6,15 +6,22 @@ use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\FrontEnd\Quote;
-use App\Models\FrontEnd\CustomerAddress;
-use App\Notifications\QuotePlacedMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\GeneratesQuotePdf;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Models\FrontEnd\Quote;
+use App\Models\FrontEnd\CustomerAddress;
+use App\Models\ProductSupplier;
+
+use App\Jobs\Quote\QuotePlacedMailJob;
 
 class QuoteController extends BaseController
 {
 	use GeneratesQuotePdf;
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/quotes",
@@ -192,6 +199,9 @@ class QuoteController extends BaseController
 	 */
 	public function store(Request $request)
 	{
+		// $records = ProductSupplier::limit(10)->get(['product_id', 'vendor_id', 'unit_price']);
+
+		// dd(json_encode($records));
 		$request->validate([
 			'quote_name' => 'required|string',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -285,9 +295,17 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			// auth()->user()->notify(new QuotePlacedMail($quote, false));
-
 			DB::commit();
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Order Mails')->dispatch();
+
+			$batch->options['queue'] = 'QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
 
 			$quote->load([
 				'customer:id,name,email,type,country_code,mobile_number',
