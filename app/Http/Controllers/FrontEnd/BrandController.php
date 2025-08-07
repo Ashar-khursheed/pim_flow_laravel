@@ -1261,44 +1261,53 @@ class BrandController extends Controller
      * )
      */
 
-     public function getAllBrandsAlphabetically(Request $request): JsonResponse
-     {
-         $letter = strtoupper($request->query('letter')); // e.g. ?letter=B
+    public function getAllBrandsAlphabetically(Request $request): JsonResponse
+{
+    $letter = strtoupper($request->query('letter')); // e.g. ?letter=B
 
-         $brandsQuery = Brand::where('status', 'published')
-             ->whereNotNull('thumbnail') // Only include brands with a thumbnail
-             ->select('id', 'name', 'logo', 'thumbnail', 'ar_thumbnail')
-             ->orderBy('name');
+    $brandsQuery = Brand::where('status', 'published')
+        ->whereNotNull('thumbnail') // Only include brands with a thumbnail
+        ->select('id', 'name', 'logo', 'thumbnail', 'ar_thumbnail')
+        ->orderBy('name');
 
-         if ($letter) {
-             $brandsQuery->where('name', 'LIKE', $letter . '%');
-         }
+    if ($letter) {
+        $brandsQuery->where('name', 'LIKE', $letter . '%');
+    }
 
-         $brands = $brandsQuery->get()->map(function ($brand) {
-             $brand->logo = $brand->logo ? asset($brand->logo) : null;
-             $brand->thumbnail = $brand->thumbnail ? asset($brand->thumbnail) : null;
-             $brand->ar_thumbnail = $brand->ar_thumbnail ? asset($brand->ar_thumbnail) : null;
-             return $brand;
-         });
+    $brands = $brandsQuery->get()->map(function ($brand) {
+        $brand->logo = $brand->logo ? asset($brand->logo) : null;
+        $brand->thumbnail = $brand->thumbnail ? asset($brand->thumbnail) : null;
+        $brand->ar_thumbnail = $brand->ar_thumbnail ? asset($brand->ar_thumbnail) : null;
 
-         if ($letter) {
-             return response()->json([
-                 'success' => true,
-                 'message' => "Brands starting with letter '$letter'.",
-                 'data' => $brands
-             ]);
-         } else {
-             $grouped = $brands->groupBy(function ($brand) {
-                 return strtoupper(substr($brand->name, 0, 1));
-             })->sortKeys();
+        // 👇 Add the slug from seo_management
+        $seoEntry = DB::table('seo_management')
+            ->where('relational_id', $brand->id)
+            ->where('relational_type', 'Brand')
+            ->first();
 
-             return response()->json([
-                 'success' => true,
-                 'message' => 'Brands grouped alphabetically.',
-                 'data' => $grouped
-             ]);
-         }
-     }
+        $brand->slug = $seoEntry?->url ?? null;
+
+        return $brand;
+    });
+
+    if ($letter) {
+        return response()->json([
+            'success' => true,
+            'message' => "Brands starting with letter '$letter'.",
+            'data' => $brands
+        ]);
+    } else {
+        $grouped = $brands->groupBy(function ($brand) {
+            return strtoupper(substr($brand->name, 0, 1));
+        })->sortKeys();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Brands grouped alphabetically.',
+            'data' => $grouped
+        ]);
+    }
+}
 
 
 
