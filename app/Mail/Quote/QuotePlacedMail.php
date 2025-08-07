@@ -14,17 +14,14 @@ use App\Traits\GeneratesQuotePdf;
 class QuotePlacedMail extends Mailable
 {
 	use Queueable, SerializesModels, GeneratesQuotePdf;
-
 	public $quote;
-	public $sendToCc;
 
 	/**
 	 * Create a new message instance.
 	 */
-	public function __construct(Quote $quote, bool $sendToCc = true)
+	public function __construct(Quote $quote)
 	{
 		$this->quote = $quote;
-		$this->sendToCc = $sendToCc;
 	}
 
 	public function build()
@@ -57,8 +54,6 @@ class QuotePlacedMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		$ccEmails = $quote->quoteEmails->pluck('email')->toArray();
-
 		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
 
 		$mail = $this->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Generated")
@@ -67,10 +62,6 @@ class QuotePlacedMail extends Mailable
 		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
 			'mime' => 'application/pdf',
 		]);
-
-		if ($this->sendToCc) {
-			$mail->cc($ccEmails);
-		}
 
 		return $mail;
 	}

@@ -199,9 +199,6 @@ class QuoteController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		// $records = ProductSupplier::limit(10)->get(['product_id', 'vendor_id', 'unit_price']);
-
-		// dd(json_encode($records));
 		$request->validate([
 			'quote_name' => 'required|string',
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
@@ -300,7 +297,7 @@ class QuoteController extends BaseController
 			$batch = Bus::batch([])->before(function (Batch $batch) {
 			})->catch(function (Batch $batch, Throwable $e) {
 			})->finally(function (Batch $batch) {
-			})->name('Order Mails')->dispatch();
+			})->name('Quote Mails')->dispatch();
 
 			$batch->options['queue'] = 'QOT_PLC';
 			$batch->add(new QuotePlacedMailJob([
@@ -673,7 +670,17 @@ class QuoteController extends BaseController
 				'message' => "Quote not found."
 			]);
 		}
-		// auth()->user()->notify(new QuotePlacedMail($quote));
+
+		$batch = Bus::batch([])->before(function (Batch $batch) {
+		})->catch(function (Batch $batch, Throwable $e) {
+		})->finally(function (Batch $batch) {
+		})->name('Quote Mails')->dispatch();
+
+		$batch->options['queue'] = 'QOT_PLC';
+		$batch->add(new QuotePlacedMailJob([
+			'recordId' => $quote->id,
+			'sendToCc' => true
+		]));
 
 		return response()->json([
 			'success' => true,

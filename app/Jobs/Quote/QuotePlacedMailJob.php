@@ -16,12 +16,16 @@ use App\Mail\Quote\QuotePlacedMail;
 class QuotePlacedMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
-	public $timeout = 600;
-	public $quoteId;
 
-	public function __construct($data)
+	public $timeout = 600;
+
+	protected int $quoteId;
+	protected bool $sendToCc;
+
+	public function __construct(array $data)
 	{
 		$this->quoteId = $data['recordId'];
+		$this->sendToCc = $data['sendToCc'] ?? false;
 	}
 
 	public function handle(): void
@@ -33,16 +37,16 @@ class QuotePlacedMailJob implements ShouldQueue
 			return;
 		}
 
-		if (!empty($quote)) {
-			$to = $quote->customer->email;
-			Mail::to($to)->send(new QuotePlacedMail($quote));
-			// Mail::to($to)->send(
-			// 	(
-			// 		new QuoteCancelledMail($quote)
-			// 	)
-			// 	->from('quotes@thehorecastore.com', 'HorecaStore Quote Updates')
-			// 	->replyTo('quotes@thehorecastore.com')
-			// );
+		$to = $quote->customer->email ?? null;
+
+		if ($to) {
+			$ccEmails = [];
+
+			if ($this->sendToCc) {
+				$ccEmails = $quote->quoteEmails->pluck('email')->filter()->unique()->toArray();
+			}
+
+			Mail::to($to)->cc($ccEmails)->send(new QuotePlacedMail($quote));
 		}
 	}
 
