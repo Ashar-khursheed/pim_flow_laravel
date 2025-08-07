@@ -184,7 +184,7 @@ public function screenTransaction(Request $request)
             try {
                 \App\Models\NoFraudResponse::create([
                     'order_id' => $request->order_id,
-                    'response' => $result['nofraud_result'], // Only the 'nofraud_result' part
+                   'response' => $result, // Only the 'nofraud_result' part
                     'created_at' => now(),
                 ]);
             } catch (\Exception $e) {
