@@ -81,7 +81,7 @@ public function screenTransaction(Request $request)
         'order_id' => 'required|string',
         'amount' => 'required|numeric|min:0.01',
         'billing_first_name' => 'required|string|max:100',
-        'billing_last_name' => 'required|string|max:100',
+        'billing_last_name' => 'nullable|string|max:100',
         'billing_email' => 'required|email',
         'billing_phone' => 'required|string|max:20',
         'billing_address' => 'required|string|max:255',
@@ -184,10 +184,7 @@ public function screenTransaction(Request $request)
             try {
                 \App\Models\NoFraudResponse::create([
                     'order_id' => $request->order_id,
-                    'request_data' => json_encode($payload),
-                    'response_data' => json_encode($result),
-                    'decision' => $result['decision'] ?? 'unknown',
-                    'score' => $result['score'] ?? null,
+                   'response' => $result, // Only the 'nofraud_result' part
                     'created_at' => now(),
                 ]);
             } catch (\Exception $e) {
