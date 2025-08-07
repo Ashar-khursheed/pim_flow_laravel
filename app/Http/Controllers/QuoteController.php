@@ -662,7 +662,6 @@ class QuoteController extends BaseController
 		}
 	}
 
-
 	/**
 	 * Remove the specified resource from storage.
 	 */

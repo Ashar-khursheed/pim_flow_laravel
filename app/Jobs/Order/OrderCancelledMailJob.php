@@ -35,7 +35,6 @@ class OrderCancelledMailJob implements ShouldQueue
 
 		if (!empty($order)) {
 			$to = $order->customer->email;
-			Mail::to($to)->send(new OrderCancelledMail($order));
 			Mail::to($to)->send(
 				(
 					new OrderCancelledMail($order)
@@ -47,7 +46,6 @@ class OrderCancelledMailJob implements ShouldQueue
 			$recipients = order_cc_mails();
 			$to = array_shift($recipients);
 			$cc = $recipients;
-			// Mail::to($to)->cc($cc)->send(new OrderCancelledMail($order));
 			Mail::to($to)->cc($cc)->send(
 				(
 					new OrderCancelledMail($order)

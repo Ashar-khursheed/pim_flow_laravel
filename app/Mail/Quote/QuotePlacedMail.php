@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Mail\Quote;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Mail\Mailable;
+use Illuminate\Queue\SerializesModels;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+
+use App\Models\FrontEnd\Quote;
+use App\Traits\GeneratesQuotePdf;
+
+class QuotePlacedMail extends Mailable
+{
+	use Queueable, SerializesModels, GeneratesQuotePdf;
+
+	public $quote;
+	public $sendToCc;
+
+	/**
+	 * Create a new message instance.
+	 */
+	public function __construct(Quote $quote, bool $sendToCc = true)
+	{
+		$this->quote = $quote;
+		$this->sendToCc = $sendToCc;
+	}
+
+	public function build()
+	{
+		$quote = $this->quote;
+
+		$pdfParams = $this->generateQuotePdfParams($quote->id);
+
+		$quoteNumber = $quote->quote_number;
+		$backendURL = config('app.backend_url');
+		$logoUrl = $backendURL . (config('app.website') == 'UAE' ? '/uae_logo.png' : '/us_logo.png');
+		$name = $quote->customer->type === 'Private' ? $quote->customer->name : $quote->customer->business_name;
+		$rightPngURL = $backendURL. '/right.png';
+		$mailIconURL = $backendURL. '/right.png';
+
+		$downloadLink = url('/my-quotes');
+		$orderLink = url('/checkout');
+
+		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+
+		$mailParams = [
+			'logoUrl' => $logoUrl,
+			'name' => $name,
+			'rightPngURL' => $rightPngURL,
+			'mailIconURL' => $mailIconURL,
+			'downloadLink' => $downloadLink,
+			'orderLink' => $orderLink,
+			'siteUrl' => $siteUrl,
+			'siteEmail' => $siteEmail,
+		];
+
+		$ccEmails = $quote->quoteEmails->pluck('email')->toArray();
+
+		$pdf = Pdf::loadView('pdf.quote', $pdfParams);
+
+		$mail = $this->subject("Your HorecaStore Quote #{$quoteNumber} Has Been Successfully Generated")
+		->markdown('emails.quotes.quote-placed')
+		->with($mailParams)
+		->attachData($pdf->output(), "Quote_{$quoteNumber}.pdf", [
+			'mime' => 'application/pdf',
+		]);
+
+		if ($this->sendToCc) {
+			$mail->cc($ccEmails);
+		}
+
+		return $mail;
+	}
+}

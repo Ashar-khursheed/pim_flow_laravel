@@ -36,18 +36,19 @@ trait GeneratesQuotePdf
 		$pdfLogoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
 
 		$companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC' : 'THE HORECA STORE INC';
-		$street = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
-		$city = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
-		$phone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
+		$companyStreet = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
+		$companyCity = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
+		$companyPhone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 		$siteURL = url('/');
 
-		$name = $customer->type === 'Private' ? $customer->name : $customer->business_name;
-		$customerAddress = $quote->customerAddress;
-		$address = $customerAddress->address ?? '';
-		$customerCity = $customerAddress->city ?? '';
-		$country = $customerAddress->country ?? '';
-		$email = $customer->email ?? '';
+		$customerName = $customer->type === 'Private' ? $customer->name : $customer->business_name;
+		$customerAddressDetail = $quote->customerAddress;
+		$customerAddress = $customerAddressDetail->address ?? '';
+		$customerCity = $customerAddressDetail->city ?? '';
+		$customerCountry = $customerAddressDetail->country ?? '';
+		$customerPhone = ($customer->country_code && $customer->mobile_number) ? $customer->country_code . ' ' . $customer->mobile_number : '';
+		$customerEmail = $customer->email ?? '';
 
 		$createdAt = $quote->created_at->format('M d Y');
 		$expiredAt = Carbon::parse($quote->expired_at)->format('M d Y');
@@ -117,18 +118,21 @@ trait GeneratesQuotePdf
 
 		$pdfParams = [
 			'pdfLogoUrl' => $pdfLogoUrl,
+
 			'companyName' => $companyName,
-			'street' => $street,
-			'city' => $city,
-			'phone' => $phone,
+			'companyStreet' => $companyStreet,
+			'companyCity' => $companyCity,
+			'companyPhone' => $companyPhone,
+
 			'siteEmail' => $siteEmail,
 			'siteURL' => $siteURL,
 
-			'name' => $name,
-			'address' => $address,
-			'city' => $customerCity,
-			'country' => $country,
-			'email' => $email,
+			'customerName' => $customerName,
+			'customerAddress' => $customerAddress,
+			'customerCity' => $customerCity,
+			'customerCountry' => $customerCountry,
+			'customerPhone' => $customerPhone,
+			'customerEmail' => $customerEmail,
 
 			'createdAt' => $createdAt,
 			'expiredAt' => $expiredAt,
