@@ -313,17 +313,36 @@ class RedirectLinkController extends Controller
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
-	public function getByFrom($from)
+// 	public function getByFrom($from)
+// {
+//     $from = '/' . ltrim($from, '/'); // Ensures one leading slash
+
+//     $redirect = RedirectLink::where('from', $from)->first();
+
+//     if ($redirect) {
+//         return response()->json(['to' => $redirect->to]);
+//     }
+
+//     return response()->json(['message' => 'Not found'], 404);
+// }
+public function getByFrom($from)
 {
-    $from = '/' . ltrim($from, '/'); // Ensures one leading slash
+    $from = '/' . ltrim($from, '/'); // Ensure one leading slash
 
     $redirect = RedirectLink::where('from', $from)->first();
 
     if ($redirect) {
-        return response()->json(['to' => $redirect->to]);
+        return response()->json([
+            'success' => true,
+            'to' => $redirect->to
+        ]);
     }
 
-    return response()->json(['message' => 'Not found'], 404);
+    return response()->json([
+        'success' => false,
+        'message' => 'Not found'
+    ], 404);
 }
+
 
 }
