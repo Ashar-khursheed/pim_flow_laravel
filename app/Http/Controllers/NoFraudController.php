@@ -184,10 +184,7 @@ public function screenTransaction(Request $request)
             try {
                 \App\Models\NoFraudResponse::create([
                     'order_id' => $request->order_id,
-                    'request_data' => json_encode($payload),
-                    'response_data' => json_encode($result),
-                    'decision' => $result['decision'] ?? 'unknown',
-                    'score' => $result['score'] ?? null,
+                    'response' => $result['nofraud_result'], // Only the 'nofraud_result' part
                     'created_at' => now(),
                 ]);
             } catch (\Exception $e) {
