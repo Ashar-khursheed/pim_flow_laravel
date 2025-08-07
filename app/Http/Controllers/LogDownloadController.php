@@ -11,7 +11,7 @@ class LogDownloadController extends Controller
 	/**
 	 * @OA\Get(
 	 *     path="/api/logs/download",
-	 *     tags={"Logs"},
+	 *     tags={"Auth"},
 	 *     summary="Download Laravel log by date",
 	 *     description="Downloads the log file for a given date in YYYY-MM-DD format",
 	 *     @OA\Parameter(name="date", in="query", required=true, description="Date of the log file (YYYY-MM-DD)", @OA\Schema(type="string", format="date")),
