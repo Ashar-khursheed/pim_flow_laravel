@@ -1418,36 +1418,78 @@ class ProductController extends Controller
      *     )
      * )
      */
+    // public function brandSummaryStats($id)
+    // {
+    //     $brand = Brand::find($id);
+
+    //     if (!$brand) {
+    //         return response()->json([
+    //             'success' => false,
+    //             'message' => 'Brand not found',
+    //         ], 404);
+    //     }
+
+    //     $productIds = Product::where('brand_id', $id)->pluck('id');
+
+    //     $totalUnitsSold = Product::whereIn('id', $productIds)->sum('units_sold');
+
+    //     $totalReviews = DB::table('ec_reviews')
+    //         ->whereIn('product_id', $productIds)
+    //         ->count();
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'message' => 'Brand summary fetched successfully',
+    //         'data' => [
+    //             'brand_id' => $id,
+    //             'brand_name' => $brand->name,
+    //             'total_units_sold' => $totalUnitsSold,
+    //             'total_reviews' => $totalReviews,
+    //         ]
+    //     ]);
+    // }
     public function brandSummaryStats($id)
-    {
-        $brand = Brand::find($id);
+{
+    // Try finding the brand by ID or slug
+    $brand = Brand::where('id', $id)->orWhere('slug', $id)->first();
 
-        if (!$brand) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Brand not found',
-            ], 404);
-        }
-
-        $productIds = Product::where('brand_id', $id)->pluck('id');
-
-        $totalUnitsSold = Product::whereIn('id', $productIds)->sum('units_sold');
-
-        $totalReviews = DB::table('ec_reviews')
-            ->whereIn('product_id', $productIds)
-            ->count();
-
+    if (!$brand) {
         return response()->json([
-            'success' => true,
-            'message' => 'Brand summary fetched successfully',
-            'data' => [
-                'brand_id' => $id,
-                'brand_name' => $brand->name,
-                'total_units_sold' => $totalUnitsSold,
-                'total_reviews' => $totalReviews,
-            ]
-        ]);
+            'success' => false,
+            'message' => 'Brand not found',
+        ], 404);
     }
+
+    // Get SEO entry by URL (slug or ID) and relational_type = 'Brand'
+    $seoEntry = DB::table('seo_management')
+        ->where('url', $id)
+        ->where('relational_type', 'Brand')
+        ->first();
+
+    // Get product IDs related to the brand
+    $productIds = Product::where('brand_id', $brand->id)->pluck('id');
+
+    // Calculate total units sold
+    $totalUnitsSold = Product::whereIn('id', $productIds)->sum('units_sold');
+
+    // Count total reviews
+    $totalReviews = DB::table('ec_reviews')
+        ->whereIn('product_id', $productIds)
+        ->count();
+
+    // Response
+    return response()->json([
+        'success' => true,
+        'message' => 'Brand summary fetched successfully',
+        'data' => [
+            'brand_id' => $brand->id,
+            'brand_name' => $brand->name,
+            'total_units_sold' => $totalUnitsSold,
+            'total_reviews' => $totalReviews,
+            'seo' => $seoEntry, // include SEO entry
+        ]
+    ]);
+}
 
     /**
      * @OA\Get(
