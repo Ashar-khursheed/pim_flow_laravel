@@ -315,6 +315,8 @@ class RedirectLinkController extends Controller
 
 	public function getByFrom($from)
 {
+    $from = '/' . ltrim($from, '/'); // Ensures one leading slash
+
     $redirect = RedirectLink::where('from', $from)->first();
 
     if ($redirect) {
