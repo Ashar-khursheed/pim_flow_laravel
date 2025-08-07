@@ -21749,7 +21749,7 @@
         "/api/logs/download": {
             "get": {
                 "tags": [
-                    "Logs"
+                    "Auth"
                 ],
                 "summary": "Download Laravel log by date",
                 "description": "Downloads the log file for a given date in YYYY-MM-DD format",
@@ -33776,10 +33776,6 @@
         {
             "name": "Locations",
             "description": "Locations"
-        },
-        {
-            "name": "Logs",
-            "description": "Logs"
         },
         {
             "name": "Measurement",
