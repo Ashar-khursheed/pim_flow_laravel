@@ -834,7 +834,7 @@ class ProductController extends BaseController
 		$userRole = $user ? $user->getRoleNames()->first() : null;
 		$allowedRoles = [
 			'Super Admin',
-			// 'Admin',
+			 'Admin',
 			'Graphic Designer Manager'
 		];  // Define which roles can modify images
 		$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
