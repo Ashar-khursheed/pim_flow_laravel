@@ -36,7 +36,6 @@ class UnisourceShipmentController extends Controller
             return $data['token'] ?? null;
 
         } catch (\Exception $e) {
-            \Log::error('Unisource Login Error: ' . $e->getMessage());
             return null;
         }
     }
@@ -46,7 +45,6 @@ class UnisourceShipmentController extends Controller
      */
     public function debugPayload(Request $request)
     {
-        Log::info('Debug payload received:', $request->all());
         
         // Validate the request
         $validator = $this->validateRequest($request);
@@ -199,8 +197,7 @@ class UnisourceShipmentController extends Controller
             // Transform the payload for Unisource API
             $payload = $this->transformPayload($request->all());
             
-            // Log the payload for debugging
-            Log::info('Unisource API Payload:', $payload);
+
             
             // Create HTTP client
             $client = new Client([
@@ -220,8 +217,7 @@ class UnisourceShipmentController extends Controller
 
             $responseData = json_decode($response->getBody(), true);
             
-            // Log successful response
-            Log::info('Unisource API Success Response:', $responseData);
+    
 
             return response()->json([
                 'success' => true,
@@ -235,11 +231,7 @@ class UnisourceShipmentController extends Controller
                 $errorResponse = json_decode($e->getResponse()->getBody(), true);
             }
             
-            Log::error('Unisource API Client Error:', [
-                'status_code' => $e->getCode(),
-                'message' => $e->getMessage(),
-                'response' => $errorResponse
-            ]);
+        
 
             return response()->json([
                 'success' => false,
@@ -249,12 +241,7 @@ class UnisourceShipmentController extends Controller
 
         } catch (Exception $e) {
             // Handle server errors and other exceptions
-            Log::error('Unisource API Server Error:', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine()
-            ]);
-
+           
             return response()->json([
                 'success' => false,
                 'error' => $e->getMessage()
@@ -349,12 +336,7 @@ class UnisourceShipmentController extends Controller
                 $validator->errors()->add('stops', 'At least 2 stops are required.');
                 return;
             }
-            
-            // Debug: Log the stops data
-            Log::info('Stops validation debug:', [
-                'stops_count' => count($stops),
-                'stops_data' => $stops
-            ]);
+           
             
             // Check for at least one pickup and one delivery stop
             $hasPickup = false;
@@ -370,10 +352,7 @@ class UnisourceShipmentController extends Controller
                 
                 $stopType = $stop['stopType'] ?? '';
                 
-                Log::info("Stop {$index} validation:", [
-                    'stopType' => $stopType,
-                    'stop_keys' => array_keys($stop)
-                ]);
+             
                 
                 // Validate stopType exists and is valid
                 if (empty($stopType)) {
@@ -404,11 +383,7 @@ class UnisourceShipmentController extends Controller
                 }
             }
             
-            Log::info('Stop type validation results:', [
-                'hasPickup' => $hasPickup,
-                'hasDelivery' => $hasDelivery,
-                'total_stops' => count($stops)
-            ]);
+           
             
             // Only check for pickup/delivery if we have valid stops
             if (count($stops) >= 2) {
@@ -457,7 +432,6 @@ class UnisourceShipmentController extends Controller
         foreach ($data['stops'] as $index => $stop) {
             // Ensure stopType is present and not empty
             if (empty($stop['stopType'])) {
-                Log::error("Stop {$index} has empty stopType", ['stop' => $stop]);
                 throw new \Exception("Stop {$index} is missing required stopType");
             }
             
@@ -511,12 +485,7 @@ class UnisourceShipmentController extends Controller
             $payload['commodities'][] = $transformedCommodity;
         }
 
-        // Log the final payload
-        Log::info('Transformed payload:', [
-            'stops' => $payload['stops'],
-            'stop_types' => array_column($payload['stops'], 'stopType')
-        ]);
-
+       
         return $payload;
     }
 

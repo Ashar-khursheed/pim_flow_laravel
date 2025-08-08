@@ -89,4 +89,67 @@ class GeoController extends Controller
         }
         return null;
     }
+
+  public function addressAutocomplete(Request $request)
+    {
+        $request->validate([
+            'input' => 'required|string',
+        ]);
+
+        $input = $request->query('input');
+        $apiKey = config('services.google_maps.key');
+
+        // Step 1: Autocomplete API
+        $autocompleteResponse = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            'input' => $input,
+            'key' => $apiKey,
+            'types' => 'geocode',
+            'components' => 'country:us',
+        ]);
+
+        if ($autocompleteResponse->failed()) {
+            return response()->json(['error' => 'Failed to fetch autocomplete suggestions'], 500);
+        }
+
+        $autocompleteData = $autocompleteResponse->json();
+
+        if (empty($autocompleteData['predictions'])) {
+            return response()->json(['predictions' => []]);
+        }
+
+        $firstPrediction = $autocompleteData['predictions'][0];
+        $placeId = $firstPrediction['place_id'];
+
+        // Step 2: Place Details API for first suggestion
+        $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
+            'place_id' => $placeId,
+            'key' => $apiKey,
+            'fields' => 'address_component,formatted_address',
+        ]);
+
+        if ($placeResponse->failed()) {
+            return response()->json([
+                'predictions' => $autocompleteData['predictions'],
+                'details' => null,
+                'error' => 'Failed to fetch place details'
+            ], 500);
+        }
+
+        $placeData = $placeResponse->json()['result'] ?? [];
+        $components = $placeData['address_components'] ?? [];
+
+        $details = [
+            'address' => $placeData['formatted_address'] ?? null,
+            'zip' => $this->getComponent($components, 'postal_code'),
+            'city' => $this->getComponent($components, 'locality'),
+            'state' => $this->getComponent($components, 'administrative_area_level_1'),
+            'country' => $this->getComponent($components, 'country'),
+        ];
+
+        return response()->json([
+            'predictions' => $autocompleteData['predictions'],
+            'details' => $details,
+        ]);
+    }
+
 }

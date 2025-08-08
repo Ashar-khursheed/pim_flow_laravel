@@ -352,7 +352,6 @@ class CustomerController extends Controller
 public function filterByDate(Request $request)
 {
     // Add this at the very beginning to confirm the method is being called
-    \Log::info('filterByDate method called');
 
     try {
         $request->validate([
@@ -365,20 +364,12 @@ public function filterByDate(Request $request)
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        // Debug: Check what we're working with
-        \Log::info('Filter parameters:', [
-            'date_type' => $dateType,
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-        ]);
-
+ 
         // First, let's check if there are ANY customers in the database
         $totalCustomers = Customer::count();
-        \Log::info('Total customers in database: ' . $totalCustomers);
 
         // Check a few sample customers and their dates
         $sampleCustomers = Customer::take(5)->get(['id', 'created_at', 'updated_at']);
-        \Log::info('Sample customers:', $sampleCustomers->toArray());
 
         // Build the query step by step for debugging
         $query = Customer::query();
@@ -394,8 +385,7 @@ public function filterByDate(Request $request)
             Carbon::parse($endDate)->endOfDay()
         ])->getBindings();
 
-        \Log::info('SQL Query: ' . $sqlQuery);
-        \Log::info('Bindings: ', $bindings);
+    
 
         // Execute the query
         $customers = Customer::whereBetween($dateType, [
@@ -403,11 +393,7 @@ public function filterByDate(Request $request)
             Carbon::parse($endDate)->endOfDay()
         ])->get();
 
-        \Log::info('Query results:', [
-            'count' => $customers->count(),
-            'first_few' => $customers->take(3)->toArray()
-        ]);
-
+     
         // Return proper response
         return response()->json([
             'success' => true,
@@ -422,9 +408,7 @@ public function filterByDate(Request $request)
         ]);
 
     } catch (\Exception $e) {
-        \Log::error('Error in filterByDate: ' . $e->getMessage());
-        \Log::error('Stack trace: ' . $e->getTraceAsString());
-
+       
         return response()->json([
             'success' => false,
             'message' => 'An error occurred: ' . $e->getMessage(),

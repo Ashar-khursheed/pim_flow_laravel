@@ -165,7 +165,6 @@ public function screenTransaction(Request $request)
         // Remove null values to avoid API issues
         $payload = $this->removeNullValues($payload);
 
-        Log::info('NoFraud API Request', ['payload' => $payload]);
 
         // Make the API call
         $response = Http::timeout(30)
@@ -178,7 +177,6 @@ public function screenTransaction(Request $request)
         if ($response->successful()) {
             $result = $response->json();
             
-            Log::info('NoFraud API Response', ['response' => $result]);
 
             // Save the response to database
             try {
@@ -188,7 +186,6 @@ public function screenTransaction(Request $request)
                     'created_at' => now(),
                 ]);
             } catch (\Exception $e) {
-                Log::error('Failed to save NoFraud response to database', ['error' => $e->getMessage()]);
             }
 
             return response()->json([
@@ -203,10 +200,7 @@ public function screenTransaction(Request $request)
         $errorMessage = 'NoFraud API request failed';
         $errorDetails = $response->body();
         
-        Log::error('NoFraud API Error', [
-            'status' => $response->status(),
-            'body' => $errorDetails
-        ]);
+       
 
         return response()->json([
             'status' => 'error',
@@ -215,7 +209,6 @@ public function screenTransaction(Request $request)
         ], $response->status());
 
     } catch (\Exception $e) {
-        Log::error('NoFraud API Exception', ['error' => $e->getMessage()]);
         
         return response()->json([
             'status' => 'error',
