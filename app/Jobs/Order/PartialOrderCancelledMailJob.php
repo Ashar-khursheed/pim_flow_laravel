@@ -36,26 +36,28 @@ class PartialOrderCancelledMailJob implements ShouldQueue
 		}
 
 		if (!empty($orderProduct)) {
+			$fromEmail = config('app.website') === 'UAE' ? 'orders@horecastore.ae' : 'orders@thehorecastore.com';
+			$fromName = 'HorecaStore Order Updates';
+			$replyToEmail = $fromEmail;
+
 			$to = $orderProduct->order->customer->email;
-			// Mail::to($to)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 			Mail::to($to)->send(
 				(
 					new PartialOrderCancelledMail($orderProduct, $this->reason)
 				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
 			);
 
 			$recipients = order_cc_mails();
 			$to = array_shift($recipients);
 			$cc = $recipients;
-			// Mail::to($to)->cc($cc)->send(new PartialOrderCancelledMail($orderProduct, $this->reason));
 			Mail::to($to)->cc($cc)->send(
 				(
 					new PartialOrderCancelledMail($orderProduct, $this->reason)
 				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
 			);
 		}
 	}
