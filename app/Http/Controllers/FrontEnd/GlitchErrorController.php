@@ -121,7 +121,7 @@ class GlitchErrorController extends BaseController
 
 		})->name('Glitch Errors')->dispatch();
 
-		$batch->options['queue'] = 'GLITCH';
+		$batch->options['queue'] = config('app.website') . '_GLITCH';
 		$batch->add(new SendGlitchErrorReportMailJob([
 			'recordId' => $record->id
 		]));

@@ -201,7 +201,7 @@ class AuthController extends BaseController
 		})->finally(function (Batch $batch) {
 		})->name('Reset Password Mail')->dispatch();
 
-		$batch->options['queue'] = 'RST_PWD';
+		$batch->options['queue'] = config('app.website') . '_RST_PWD';
 		$batch->add(new ResetPasswordMailJob([
 			'recordId' => $user->id,
 			'userType' => $request->type,
@@ -298,7 +298,7 @@ class AuthController extends BaseController
 			})->name('Common Password Mail')->dispatch();
 
 			foreach ($customers as $customer) {
-				$batch->options['queue'] = 'COMM_PWD';
+				$batch->options['queue'] = config('app.website') . '_COMM_PWD';
 				$batch->add(new CommonPasswordResetMailJob([
 					'recordId' => $customer->id
 				]));

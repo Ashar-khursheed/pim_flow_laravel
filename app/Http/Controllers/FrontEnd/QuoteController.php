@@ -299,7 +299,7 @@ class QuoteController extends BaseController
 			})->finally(function (Batch $batch) {
 			})->name('Quote Mails')->dispatch();
 
-			$batch->options['queue'] = 'QOT_PLC';
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
 			$batch->add(new QuotePlacedMailJob([
 				'recordId' => $quote->id
 			]));
@@ -676,7 +676,7 @@ class QuoteController extends BaseController
 		})->finally(function (Batch $batch) {
 		})->name('Quote Mails')->dispatch();
 
-		$batch->options['queue'] = 'QOT_PLC';
+		$batch->options['queue'] = config('app.website') . '_QOT_PLC';
 		$batch->add(new QuotePlacedMailJob([
 			'recordId' => $quote->id,
 			'sendToCc' => true
