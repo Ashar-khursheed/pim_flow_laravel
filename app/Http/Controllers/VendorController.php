@@ -749,7 +749,7 @@ class VendorController extends BaseController
 				$request->file('upload_file'),
 				$vendorFileFormatArray,
 				'Vendor', /* Module name */
-				'JOB_VENDOR', /* Job name */
+				'config('app.website') . '_VENDOR', /* Job name */
 				'Import Vendors', /* Batch name */
 				ImportVendorJob::class
 			);

@@ -1644,7 +1644,7 @@ class ProductController extends BaseController
 				$request->file('upload_file'),
 				$productFileFormatArray,
 				'Product', /* Module name */
-				'JOB_PRODUCT', /* Job name */
+				'config('app.website') . '_PRODUCT', /* Job name */
 				'Import Products', /* Batch name */
 				ImportProductJob::class
 			);

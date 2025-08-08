@@ -136,10 +136,10 @@ class SeoManagementController extends Controller
 	// 			'banner_image_alt_text' => 'nullable|string',
 	// 			'banner_slug' => 'nullable|string', // ✅ NEW
 	// 			'popularTag_details' => 'nullable|json', // ✅ NEW
-				
-				
+
+
 	// 		]);
-			
+
 
 	// 		/* Prepare the data for creating the SEO management record */
 	// 		$seoData = collect($validated)->except(['secondary_keywords', 'og_image_file'])->toArray();
@@ -186,16 +186,16 @@ class SeoManagementController extends Controller
 
 	// 		if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
 	// 			$storage = app('Illuminate\Support\Facades\Storage');
-			
+
 	// 			// Define folder path for upload
 	// 			$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
-			
+
 	// 			// Store the file on S3
 	// 			$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
-			
+
 	// 			// Generate S3 URL
 	// 			$bannerImageUrl = $storage::disk('s3')->url($bannerImagePath);
-			
+
 	// 			// Store in DB fields
 	// 			$seoData['banner_image_file'] = $bannerImageUrl;
 	// 		}
@@ -410,23 +410,23 @@ class SeoManagementController extends Controller
 				'message' => "You don't have permission to access this module.",
 			]);
 		}
-	
+
 		$relationalType = $request->query('relational_type');
-	
+
 		$seoRecord = SeoManagement::with('secondaryKeywordDetails')
 			->where('relational_id', $relation_id)
 			->when($relationalType, function ($query, $relationalType) {
 				return $query->where('relational_type', $relationalType);
 			})
 			->first();
-	
+
 		if (!$seoRecord) {
 			return response()->json([
 				'success' => false,
 				'message' => 'SEO record not found for the given relation ID and type.'
 			], 404);
 		}
-	
+
 		$schema = [
 			"@context" => "https://schema.org",
 			"@type" => "Product",
@@ -458,16 +458,16 @@ class SeoManagementController extends Controller
 			],
 			"availability" => "https://schema.org/InStock"
 		];
-	
+
 		$cleanedSchema = json_encode($schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-	
+
 		return response()->json([
 			'success' => true,
 			'data' => $seoRecord,
 			'schema' => $cleanedSchema
 		], 200);
 	}
-	
+
 
 	/**
 	 * @OA\Post(
@@ -577,12 +577,12 @@ class SeoManagementController extends Controller
 	// 			'google_shopping_feed_description' => 'nullable|string',
 	// 			'short_title_variant' => 'nullable|string',
 	// 			'gen_type' => 'nullable|integer',
-				
+
 	// 		]);
 
 	// 		/* Find the existing SEO record by ID */
 	// 		$seo = SeoManagement::findOrFail($id);
-		
+
 
 	// 		/* Check if relational_type and relational_id match */
 	// 		if ($seo->relational_type !== $validated['relational_type'] || $seo->relational_id != $validated['relational_id']) {
@@ -596,16 +596,16 @@ class SeoManagementController extends Controller
 	// 		$seoData = $validated;
 
 	// 		$optionalParagraphs = ['paragraph_1', 'paragraph_2', 'paragraph_3', 'paragraph_4'];
-			
+
 	// 		foreach ($optionalParagraphs as $field) {
 	// 			if (!$request->has($field)) {
 	// 				$seoData[$field] = ''; // force empty if not sent at all
 	// 			}
 	// 		}
-			
+
 	// 		// Remove any keys we still want to skip
 	// 		$seoData = collect($seoData)->except(['secondary_keywords', 'og_image_file'])->toArray();
-			
+
 
 	// 		/* Convert indexing boolean */
 	// 		$seoData['indexing'] = (int) ($validated['indexing'] == '1' || $validated['indexing'] == 'true' ? 1 : 0);
@@ -652,7 +652,7 @@ class SeoManagementController extends Controller
 	// 		// Overwrite even if empty string — but skip only if it's explicitly null
 	// 		$seo->$key = $value ?? '';
 	// 	}
-		
+
 
 
 	// 		/* Generate schema and add it to the data (as an array) */
@@ -851,7 +851,7 @@ class SeoManagementController extends Controller
 	// 	}
 
 	// 	try {
-			
+
 	// 		$rules = [
 	// 			'relational_id' => 'required|integer',
 	// 			'url' => 'required|string',
@@ -950,14 +950,14 @@ class SeoManagementController extends Controller
 
 
 
-			
+
 	// 		// if ($request->hasFile('banner_image_file') && $request->file('banner_image_file')->isValid()) {
 	// 		// 	$storage = app('Illuminate\Support\Facades\Storage');
 	// 		// 	$folderPath = env('STORAGE_ENV', 'default') . "/seo-banners";
 	// 		// 	$bannerImagePath = $request->file('banner_image_file')->store($folderPath, 's3');
 	// 		// 	$seoData['banner_image_file'] = $storage::disk('s3')->url($bannerImagePath);
 	// 		// }
-			
+
 
 	// 		foreach ($seoData as $key => $value) {
 	// 			$seo->$key = $value ?? '';
@@ -1143,7 +1143,7 @@ class SeoManagementController extends Controller
 				$request->file('upload_file'),
 				$seoFileFormatArray,
 				'SEO Management', /* Module name */
-				'JOB_SEO_MGMT', /* Job name */
+				'config('app.website') . '_SEO_MGMT', /* Job name */
 				'Import SEO Management', /* Batch name */
 				ImportSeoDetailJob::class
 			);
