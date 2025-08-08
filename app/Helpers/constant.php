@@ -501,8 +501,8 @@ if (!function_exists('glitch_error_reporting_mails')) {
 			'ofm@thehorecastore.com',
 			'ofs@thehorecastore.com',
 			'nomanpeera@gmail.com',
-			'aksitbhardwaj@gmail.com',
-			'asharKhursheed26@gmail.com',
+			'webdeveloper01@horecastore.ae',
+			'webdeveloper04@horecastore.ae',
 			'sales@thehorecastore.com',
 			'qa03@thehorecastore.com',
 			'qa04@thehorecastore.com',
@@ -528,6 +528,10 @@ if (!function_exists('order_cc_mails')) {
 			'mfaizan@rapid-supplies.com',
 			'ofs02@thehorecastore.com'
 		];
+		// $mails = [
+		// 	'webdeveloper01@horecastore.ae',
+		// 	'webdeveloper04@horecastore.ae',
+		// ];
 
 		return $mails;
 	}
