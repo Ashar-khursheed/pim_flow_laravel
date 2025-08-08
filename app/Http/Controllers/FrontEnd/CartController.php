@@ -345,22 +345,73 @@ class CartController extends Controller
             ->keyBy('id');
 
         // Process each cart item
+        // $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        //     $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
+        //     $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+        
+        
+        //     $discountIds = $productDiscounts[$item->product->id] ?? [];
+        //     $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+        //     $item->product->url = $item->product->seoUrl->url ?? null;
+
+        
+        //     // ✅ Replace `currency` object with just symbol
+        //     $symbol = optional($item->product->currency)->symbol;
+        
+        //     $item->product->unsetRelation('currency');
+             
+        //     $item->product->currency = $symbol;
+        //     $firstSupplier = $item->product->productSuppliers->first();
+
+        //     if ($firstSupplier) {
+        //         $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+        //         $item->product->price = (float) $firstSupplier->price;
+        //         $item->product->sale_price = (float) $firstSupplier->sale_price;
+        //         $item->product->original_price = (float) $firstSupplier->price;
+        //         $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+        //         $item->product->best_price = (float) $firstSupplier->price;
+        //         $item->product->vendor_id = $firstSupplier->vendor_id;
+        //         $item->product->map = (float) $firstSupplier->map;
+        //         $item->product->inventory = $firstSupplier->inventory;
+        //         $item->product->in_stock = $firstSupplier->in_stock;
+        //         $item->product->delivery_days = $firstSupplier->delivery_days;
+        //         $item->product->return_policy = $firstSupplier->return_policy;
+        //         $item->product->free_shipping = $firstSupplier->free_shipping;
+        //         $item->product->warranty_information = $firstSupplier->warranty_information;
+        //     } else {
+        //         // Default safe fallback values (optional)
+        //         $item->product->vendor_sku = null;
+        //         $item->product->price = null;
+        //         $item->product->sale_price = null;
+        //         $item->product->original_price = null;
+        //         $item->product->front_sale_price = null;
+        //         $item->product->best_price = null;
+        //         $item->product->vendor_id = null;
+        //         $item->product->map = null;
+        //         $item->product->inventory = null;
+        //         $item->product->in_stock = null;
+        //         $item->product->delivery_days = null;
+        //         $item->product->return_policy = null;
+        //         $item->product->free_shipping = null;
+        //         $item->product->warranty_information = null;
+        //     }
+
+
+
+        // });
         $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
             $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
             $item->product->images = collect(json_decode($item->product->images, true) ?? []);
-        
-        
+
             $discountIds = $productDiscounts[$item->product->id] ?? [];
             $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
             $item->product->url = $item->product->seoUrl->url ?? null;
 
-        
             // ✅ Replace `currency` object with just symbol
             $symbol = optional($item->product->currency)->symbol;
-        
             $item->product->unsetRelation('currency');
-             
             $item->product->currency = $symbol;
+
             $firstSupplier = $item->product->productSuppliers->first();
 
             if ($firstSupplier) {
@@ -379,7 +430,7 @@ class CartController extends Controller
                 $item->product->free_shipping = $firstSupplier->free_shipping;
                 $item->product->warranty_information = $firstSupplier->warranty_information;
             } else {
-                // Default safe fallback values (optional)
+                // Default fallback values
                 $item->product->vendor_sku = null;
                 $item->product->price = null;
                 $item->product->sale_price = null;
@@ -396,9 +447,20 @@ class CartController extends Controller
                 $item->product->warranty_information = null;
             }
 
-
-
+            // ✅ Add selling unit
+            $sellingUnit = null;
+            if ($item->product->sellingUnitAttribute && $item->product->sellingUnitAttribute->attribute_value) {
+                $fullValue = $item->product->sellingUnitAttribute->attribute_value;
+                if (strpos($fullValue, '/') !== false) {
+                    $parts = explode('/', $fullValue);
+                    $sellingUnit = trim($parts[1]);
+                } else {
+                    $sellingUnit = $fullValue;
+                }
+            }
+            $item->product->selling_unit = $sellingUnit;
         });
+
         
         
 
@@ -560,124 +622,7 @@ class CartController extends Controller
      *     security={{"bearerAuth": {}}}
      * )
      */
-    // public function updateCartQuantity(Request $request)
-    // {
-    //     $request->validate([
-    //         'product_id' => 'required|exists:ec_products,id',
-    //         'quantity' => 'required|integer|min:1',
-    //     ]);
-    
-    //     $productId = $request->input('product_id');
-    //     $quantity = $request->input('quantity');
-    
-    //     if (Auth::check()) {
-    //         $userId = auth()->id();
-    //         $cartItem = Cart::where('user_id', $userId)->where('product_id', $productId)->with('product.currency')->first();
-    //     } else {
-    //         $sessionId = $request->session()->getId();
-    //         $cartItem = Cart::where('session_id', $sessionId)->where('product_id', $productId)->with('product.currency')->first();
-    //     }
-    
-    //     if ($cartItem) {
-    //         $cartItem->quantity = $quantity;
-    //         $cartItem->update();
-    
-    //         return response()->json([
-    //             'success' => true,
-    //             'data' => [
-    //                 'id' => $cartItem->id,
-    //                 'user_id' => $cartItem->user_id,
-    //                 'session_id' => $cartItem->session_id,
-    //                 'product_id' => $cartItem->product_id,
-    //                 'quantity' => $cartItem->quantity,
-    //                 'currency_title' => $cartItem->product->currency->symbol ?? null, // Currency title inside data
-    //                 'created_at' => $cartItem->created_at,
-    //                 'updated_at' => $cartItem->updated_at,
-    //             ],
-    //         ]);
-    //     }
-    
-    //     return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-    // }
-
-    // public function updateCartQuantity(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'product_id' => 'required|exists:ec_products,id',
-    //         'quantity' => 'required|integer|min:1',
-    //     ]);
-
-    //     $productId = $validated['product_id'];
-    //     $quantity = $validated['quantity'];
-
-    //     // Determine user context
-    //     $cartQuery = Cart::query()->where('product_id', $productId);
-
-    //     if (Auth::check()) {
-    //         $cartQuery->where('user_id', auth()->id());
-    //     } else {
-    //         $cartQuery->where('session_id', $request->session()->getId());
-    //     }
-
-    //     // Load cart item with currency in same query
-    //     $cartItem = $cartQuery->with('product:id,currency_id', 'product.currency:id,symbol')->first();
-
-    //     if (!$cartItem) {
-    //         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-    //     }
-
-    //     // Update only if needed to reduce DB writes
-    //     if ($cartItem->quantity !== $quantity) {
-    //         $cartItem->update(['quantity' => $quantity]);
-    //     }
-
-    //     return response()->json([
-    //         'success' => true,
-    //         'data' => [
-    //             'id' => $cartItem->id,
-    //             'user_id' => $cartItem->user_id,
-    //             'session_id' => $cartItem->session_id,
-    //             'product_id' => $cartItem->product_id,
-    //             'quantity' => $cartItem->quantity,
-    //             'currency_title' => $cartItem->product->currency->symbol ?? null,
-    //             'created_at' => $cartItem->created_at,
-    //             'updated_at' => $cartItem->updated_at,
-    //         ],
-    //     ]);
-    // }
-//     public function updateCartQuantity(Request $request)
-// {
-//     $validated = $request->validate([
-//         'product_id' => 'required|exists:ec_products,id',
-//         'quantity' => 'required|integer|min:1',
-//     ]);
-
-//     $productId = $validated['product_id'];
-//     $quantity = $validated['quantity'];
-
-//     // Choose key (user or session)
-//     $cartQuery = Cart::query()->where('product_id', $productId);
-
-//     if (Auth::check()) {
-//         $cartQuery->where('user_id', auth()->id());
-//     } else {
-//         $cartQuery->where('session_id', $request->session()->getId());
-//     }
-
-//     // Only fetch id and quantity — minimal data
-//     $cartItem = $cartQuery->select('id', 'quantity')->first();
-
-//     if (!$cartItem) {
-//         return response()->json(['success' => false, 'message' => 'Item not found in cart.'], 404);
-//     }
-
-//     // Direct DB update without loading the full model
-//     if ($cartItem->quantity !== $quantity) {
-//         Cart::where('id', $cartItem->id)->update(['quantity' => $quantity]);
-//     }
-
-//     return response()->json(['success' => true]);
-// }
+ 
     public function updateCartQuantity(Request $request)
     {
         $start = microtime(true);

@@ -139,7 +139,7 @@
 
 					<tr>
 						<td valign="top" style="font-family: 'Noto Sans', sans-serif; font-size: 14px; line-height: 25px; display: flex; align-items: center; margin-top: 10px; margin-bottom: 5px;">
-							<img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px; max-width: 24px; width: 24px; height: 24px;">
+							{{-- <img src="{{ $mailIconURL }}" alt="" width="24" height="24" style="margin-right: 5px; max-width: 24px; width: 24px; height: 24px;"> --}}
 							<strong style="color:black; font-weight:600; font-family: 'Noto Sans', sans-serif;">
 								Your Quotation is Ready
 							</strong>
@@ -184,11 +184,13 @@
 								We strive to respond to all quotation requests promptly. However, in rare cases, delays may occur. We appreciate your understanding.
 							</p>
 							<p style="margin:5px 0;">
-								©{{ now()->year }} {{ $siteName }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
+								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
 							</p>
-							<p style="margin:8px 0 0;">
-								This message was sent from a notification-only address. Please do not reply directly. For support, contact us at
-								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family:'Noto Sans', sans-serif;">{{ $siteEmail }}</a>.
+							<p style="margin: 8px 0 0; font-size:12px; font-family: 'Noto Sans', sans-serif;">
+								For support or inquiries, contact us at
+								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
+									{{ $siteEmail }}
+								</a>.
 							</p>
 						</td>
 					</tr>

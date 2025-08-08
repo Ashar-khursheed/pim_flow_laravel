@@ -69,6 +69,7 @@ class GlitchErrorController extends BaseController
 	 *                 required={"email", "description"},
 	 *                 @OA\Property(property="email", type="string", format="email", example="user@example.com"),
 	 *                 @OA\Property(property="description", type="string", example="Page not loading properly."),
+	 *                 @OA\Property(property="device", type="string", example="Android."),
 	 *                 @OA\Property(property="images[]", type="array", @OA\Items(type="string", format="binary"))
 	 *             )
 	 *         )
@@ -108,6 +109,7 @@ class GlitchErrorController extends BaseController
 		$record = GlitchError::create([
 			'email' => $request->email,
 			'description' => $request->description,
+			'device' => $request->device,
 			'images' => $images,
 		]);
 
@@ -119,7 +121,7 @@ class GlitchErrorController extends BaseController
 
 		})->name('Glitch Errors')->dispatch();
 
-		$batch->options['queue'] = 'GLITCH_MAIL';
+		$batch->options['queue'] = config('app.website') . '_GLITCH';
 		$batch->add(new SendGlitchErrorReportMailJob([
 			'recordId' => $record->id
 		]));

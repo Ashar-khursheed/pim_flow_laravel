@@ -121,7 +121,6 @@ class ClaudeAIController extends Controller
     
             return $this->handleAIResponse($aiResponse);
         } catch (\Exception $e) {
-            Log::error('AI Service Error', ['error' => $e->getMessage()]);
     
             return response()->json([
                 'status' => 'error',
@@ -149,7 +148,6 @@ class ClaudeAIController extends Controller
             $parsedResponse = json_decode($responseText, true, 512, JSON_THROW_ON_ERROR);
             return response()->json(['status' => 'success'] + $parsedResponse);
         } catch (\Exception $e) {
-            Log::error('JSON Parsing Error', ['error' => $e->getMessage(), 'response_text' => $responseText]);
     
             return response()->json([
                 'status' => 'error',

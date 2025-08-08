@@ -34,13 +34,29 @@ class OrderPlacedMailJob implements ShouldQueue
 		}
 
 		if (!empty($order)) {
+			$fromEmail = config('app.website') === 'UAE' ? 'orders@horecastore.ae' : 'orders@thehorecastore.com';
+			$fromName = 'HorecaStore Order Updates';
+			$replyToEmail = $fromEmail;
+
 			$to = $order->customer->email;
-			Mail::to($to)->send(new OrderPlacedMail($order));
+			Mail::to($to)->send(
+				(
+					new OrderPlacedMail($order)
+				)
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
+			);
 
 			$recipients = order_cc_mails();
 			$to = array_shift($recipients);
 			$cc = $recipients;
-			Mail::to($to)->cc($cc)->send(new OrderPlacedMail($order));
+			Mail::to($to)->cc($cc)->send(
+				(
+					new OrderPlacedMail($order)
+				)
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
+			);
 		}
 	}
 

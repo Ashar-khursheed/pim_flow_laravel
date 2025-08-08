@@ -9,13 +9,26 @@ use Illuminate\Support\Facades\Response;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Blog;
+use Illuminate\Support\Facades\Storage;
 
 
 
 
 
+Route::get('/media/{filename}', function ($filename) {
+    $path = "production/documents/{$filename}";
 
+    if (!Storage::disk('s3')->exists($path)) {
+        abort(404, 'File not found');
+    }
 
+    $fileContent = Storage::disk('s3')->get($path);
+    $mimeType = Storage::disk('s3')->mimeType($path);
+
+    return response($fileContent, 200)
+        ->header('Content-Type', $mimeType)
+        ->header('Content-Disposition', 'inline; filename="'.$filename.'"');
+});
 
 Route::get('/robots.txt', function (Request $request) {
     $host = $request->getHost();

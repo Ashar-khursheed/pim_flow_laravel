@@ -5,6 +5,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\FrontEnd\Wishlist;
+use App\Models\SeoManagement;
 use App\Models\Product;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -156,7 +157,7 @@ class WishlistController extends Controller
     {
         $userId = Auth::id();
 
-        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand')
+        $wishlistItems = Wishlist::with('product.currency', 'product.productSuppliers', 'product.brand' , 'product.seoUrl' )
             ->where('customer_id', $userId)
             ->orderBy('created_at', 'desc')
             ->get();
@@ -206,7 +207,8 @@ class WishlistController extends Controller
                 $symbol = optional($product->currency)->symbol;
                 $product->unsetRelation('currency');
                 $product->currency = $symbol;
-                
+                $product->url = optional($product->seoUrl)->url;
+
                 $sellingType = null;
         
                 if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {

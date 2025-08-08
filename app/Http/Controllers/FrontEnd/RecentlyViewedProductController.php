@@ -13,6 +13,7 @@ use OpenApi\Annotations as OA;
 use App\Models\FrontEnd\GuestRecentlyViewedProduct;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Cookie;
+use App\Models\SeoManagement;
 
 class RecentlyViewedProductController extends Controller
 {
@@ -131,7 +132,7 @@ class RecentlyViewedProductController extends Controller
      *                     @OA\Property(property="sku", type="string", example="SP123"),
      *                     @OA\Property(property="price", type="number", format="float", example=99.99),
      *                     @OA\Property(property="sale_price", type="number", format="float", example=89.99),
-     *                     @OA\Property(property="best_delivery_date", type="string", example="2025-06-10"),
+     *                     @OA\Property(property="delivery_days", type="string", example="2025-06-10"),
      *                     @OA\Property(property="total_reviews", type="integer", example=5),
      *                     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
      *                     @OA\Property(property="left_stock", type="integer", example=10),
@@ -241,7 +242,7 @@ class RecentlyViewedProductController extends Controller
                          'map' => (float) $firstSupplier->map ?? null,
                          'inventory' => $firstSupplier->inventory ?? null,
                          'in_stock' => $firstSupplier->in_stock ?? null,
-                         'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                         'delivery_days' => $firstSupplier->delivery_days ?? null,
                          'return_policy' => $firstSupplier->return_policy ?? null,
                          'free_shipping' => $firstSupplier->free_shipping ?? null,
                          'warranty_information' => $firstSupplier->warranty_information ?? null,
@@ -281,64 +282,51 @@ class RecentlyViewedProductController extends Controller
      *     )
      * )
      */
-    // public function saveGuestProductView(Request $request)
-    // {
-    //     $productId = $request->input('product_id');
-    //     $guestToken = $request->input('guest_token');
-    
-    //     if (!$productId || !Product::find($productId)) {
-    //         return response()->json(['message' => 'Invalid product ID.'], 400);
-    //     }
-    
-    //     // If token not provided, create one
-    //     if (!$guestToken) {
-    //         $guestToken = Str::uuid()->toString();
-    //     }
-    
-    //     // Save the guest product view
-    //     GuestRecentlyViewedProduct::create([
-    //         'guest_token' => $guestToken,
-    //         'product_id' => $productId,
-    //     ]);
-    
-    //     return response()->json([
-    //         'success' => true,
-    //         'guest_token' => $guestToken, // send back token to store on frontend
-    //     ]);
-    // }
+
     public function saveGuestProductView(Request $request)
-    {
-        $productId = $request->input('product_id');
-        $guestToken = $request->input('guest_token');
+{
+    $url = $request->input('product_id'); // frontend sends full URL here
+    $guestToken = $request->input('guest_token');
 
-       $product = Product::where('id', $productId)->where('status', 'published')->first();
-        if (!$product) {
-            return response()->json(['message' => 'Invalid or unpublished product.'], 400);
-        }
+    // Find SEO record by URL
+    $seo = SeoManagement::where('url', $url)->first();
 
-        // If token not provided, create one
-        if (!$guestToken) {
-            $guestToken = Str::uuid()->toString();
-        }
+    if (!$seo) {
+        return response()->json(['message' => 'Product not found by URL.'], 404);
+    }
 
-        // ✅ Check if the combination already exists
-        $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
-            ->where('product_id', $productId)
-            ->exists();
+    // Now fetch the product using relational_id (assumed to be product_id)
+    $product = Product::where('id', $seo->relational_id)
+                      ->where('status', 'published')
+                      ->first();
 
-        if (!$exists) {
-            GuestRecentlyViewedProduct::create([
-                'guest_token' => $guestToken,
-                'product_id' => $productId,
-            ]);
-        }
+    if (!$product) {
+        return response()->json(['message' => 'Invalid or unpublished product.'], 400);
+    }
 
-        return response()->json([
-            'success' => true,
-            'guest_token' => $guestToken, // send back token to store on frontend
+    // Generate guest token if not provided
+    if (!$guestToken) {
+        $guestToken = Str::uuid()->toString();
+    }
+
+    // Check if this view already exists
+    $exists = GuestRecentlyViewedProduct::where('guest_token', $guestToken)
+        ->where('product_id', $product->id)
+        ->exists();
+
+    if (!$exists) {
+        GuestRecentlyViewedProduct::create([
+            'guest_token' => $guestToken,
+            'product_id' => $product->id,
         ]);
     }
-    
+
+    return response()->json([
+        'success' => true,
+        'guest_token' => $guestToken,
+    ]);
+}
+
     /**
      * @OA\Get(
      *     path="/api/frontend/guest/recent-products",
@@ -360,7 +348,7 @@ class RecentlyViewedProductController extends Controller
      *                     @OA\Property(property="sku", type="string", example="SKU123"),
      *                     @OA\Property(property="price", type="number", format="float", example=99.99),
      *                     @OA\Property(property="sale_price", type="number", format="float", example=89.99),
-     *                     @OA\Property(property="best_delivery_date", type="string", format="date", example="2025-06-20"),
+     *                     @OA\Property(property="delivery_days", type="string", format="date", example="2025-06-20"),
      *                     @OA\Property(property="total_reviews", type="integer", example=15),
      *                     @OA\Property(property="avg_rating", type="number", format="float", example=4.5),
      *                     @OA\Property(property="left_stock", type="integer", example=10),
@@ -473,7 +461,7 @@ class RecentlyViewedProductController extends Controller
                     'map' => (float) ($firstSupplier->map ?? 0),
                     'inventory' => $firstSupplier->inventory ?? null,
                     'in_stock' => $firstSupplier->in_stock ?? null,
-                    'best_delivery_date' => $firstSupplier->delivery_days ?? null,
+                    'delivery_days' => $firstSupplier->delivery_days ?? null,
                     'return_policy' => $firstSupplier->return_policy ?? null,
                     'free_shipping' => $firstSupplier->free_shipping ?? null,
                     'warranty_information' => $firstSupplier->warranty_information ?? null,

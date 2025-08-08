@@ -1632,6 +1632,24 @@
                 }
             }
         },
+        "/api/auth/send-customers-reset-link": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Send password reset links to all customers",
+                "description": "Generates and emails password reset links to all registered customers.",
+                "operationId": "4a9da8909593fa99cd8734b396bb62fe",
+                "responses": {
+                    "200": {
+                        "description": "Reset link sent",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/blog-categories": {
             "get": {
                 "tags": [
@@ -4762,20 +4780,20 @@
                 ]
             }
         },
-        "/api/category-banners/{category_id}": {
+        "/api/category-banners": {
             "get": {
                 "tags": [
                     "Category Banners"
                 ],
                 "summary": "List category banners",
                 "description": "Fetch category banners with pagination, sorting and search",
-                "operationId": "5b4cdf6bba24464c3d63b85abc98d2c5",
+                "operationId": "cef101f73fa299efd3b89c7eee928960",
                 "parameters": [
                     {
                         "name": "category_id",
-                        "in": "path",
-                        "description": "Category ID",
-                        "required": true,
+                        "in": "query",
+                        "description": "Category ID to filter",
+                        "required": false,
                         "schema": {
                             "type": "integer"
                         }
@@ -4843,9 +4861,7 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/category-banners": {
+            },
             "post": {
                 "tags": [
                     "Category Banners"
@@ -4895,6 +4911,91 @@
                                         },
                                         "data": {
                                             "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/category-banners/show/{category_id}": {
+            "get": {
+                "tags": [
+                    "Category Banners"
+                ],
+                "summary": "Show all banners for a category",
+                "description": "Retrieve all banners for a given category ID",
+                "operationId": "0901755cc320facb781948e5a1275bb2",
+                "parameters": [
+                    {
+                        "name": "category_id",
+                        "in": "path",
+                        "description": "The ID of the category",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "category_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "image_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "image_alt_text": {
+                                                        "type": "string"
+                                                    },
+                                                    "position": {
+                                                        "type": "integer"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "category": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
                                         }
                                     },
                                     "type": "object"
@@ -9123,7 +9224,7 @@
                                                                     "format": "float",
                                                                     "example": 899.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "string",
                                                                     "example": "2024-01-15"
                                                                 },
@@ -9313,7 +9414,7 @@
                                                                     "format": "float",
                                                                     "example": 799.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "string",
                                                                     "example": "2024-01-10"
                                                                 },
@@ -9688,7 +9789,7 @@
                                                         "format": "float",
                                                         "example": 999.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "example": null,
                                                         "nullable": true
@@ -11626,7 +11727,7 @@
                                                                     "format": "float",
                                                                     "example": 899.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "integer",
                                                                     "example": 3
                                                                 },
@@ -11748,7 +11849,7 @@
                                                                     "format": "float",
                                                                     "example": 799.99
                                                                 },
-                                                                "best_delivery_date": {
+                                                                "delivery_days": {
                                                                     "type": "integer",
                                                                     "example": 5
                                                                 },
@@ -13900,6 +14001,10 @@
                                     "description": {
                                         "type": "string",
                                         "example": "Page not loading properly."
+                                    },
+                                    "device": {
+                                        "type": "string",
+                                        "example": "Android."
                                     },
                                     "images[]": {
                                         "type": "array",
@@ -16245,7 +16350,7 @@
                                                         "format": "float",
                                                         "example": 90
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2024-06-20"
@@ -16385,7 +16490,7 @@
                                                         "type": "number",
                                                         "example": 90
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2024-06-20"
@@ -16443,6 +16548,73 @@
                     },
                     "404": {
                         "description": "Not Found - No products found"
+                    }
+                }
+            }
+        },
+        "/api/product-info/{slug}": {
+            "get": {
+                "tags": [
+                    "Frontend-Product"
+                ],
+                "summary": "Get product info by URL slug",
+                "description": "Returns brand, delivery days, return policy, and shipping info for a product using slug from seo_management table.",
+                "operationId": "getProductInfoBySlug",
+                "parameters": [
+                    {
+                        "name": "slug",
+                        "in": "path",
+                        "description": "Slug from the SEO management table (url column)",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product details found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "brand": {
+                                            "type": "string",
+                                            "example": "Apple"
+                                        },
+                                        "delivery_days": {
+                                            "type": "string",
+                                            "example": "2-4 Business Days"
+                                        },
+                                        "return_policy": {
+                                            "type": "string",
+                                            "example": "15 Days Return"
+                                        },
+                                        "shipping": {
+                                            "type": "string",
+                                            "example": "Free Shipping"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Invalid product URL or product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Product not found"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -17738,7 +17910,7 @@
                                                         "format": "float",
                                                         "example": 89.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "example": "2025-06-10"
                                                     },
@@ -17927,7 +18099,7 @@
                                                         "format": "float",
                                                         "example": 89.99
                                                     },
-                                                    "best_delivery_date": {
+                                                    "delivery_days": {
                                                         "type": "string",
                                                         "format": "date",
                                                         "example": "2025-06-20"
@@ -21574,6 +21746,36 @@
                 ]
             }
         },
+        "/api/logs/download": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Download Laravel log by date",
+                "description": "Downloads the log file for a given date in YYYY-MM-DD format",
+                "operationId": "bb49555c010311f7411e4de6fb711468",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Date of the log file (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/measurement-types": {
             "get": {
                 "tags": [
@@ -22192,6 +22394,186 @@
                 "responses": {
                     "204": {
                         "description": "Successfully deleted"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/screen-transaction": {
+            "post": {
+                "tags": [
+                    "NoFraud"
+                ],
+                "summary": "Send transaction data to NoFraud API and save the response",
+                "description": "This endpoint sends billing, shipping, and card data to NoFraud for fraud screening. It returns the screening decision and stores it in the database.",
+                "operationId": "screenTransaction",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "order_id",
+                                    "amount",
+                                    "billing_name",
+                                    "billing_email",
+                                    "billing_phone",
+                                    "billing_address",
+                                    "billing_city",
+                                    "billing_state",
+                                    "billing_zip",
+                                    "billing_country"
+                                ],
+                                "properties": {
+                                    "order_id": {
+                                        "type": "string",
+                                        "example": "ORDER123"
+                                    },
+                                    "amount": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 49.99
+                                    },
+                                    "billing_first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "billing_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "billing_email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "john@example.com"
+                                    },
+                                    "billing_phone": {
+                                        "type": "string",
+                                        "example": "1234567890"
+                                    },
+                                    "billing_address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "billing_city": {
+                                        "type": "string",
+                                        "example": "New York"
+                                    },
+                                    "billing_state": {
+                                        "type": "string",
+                                        "example": "NY"
+                                    },
+                                    "billing_zip": {
+                                        "type": "string",
+                                        "example": "10001"
+                                    },
+                                    "billing_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "shipping_first_name": {
+                                        "type": "string",
+                                        "example": "John"
+                                    },
+                                    "shipping_last_name": {
+                                        "type": "string",
+                                        "example": "Doe"
+                                    },
+                                    "shipping_address": {
+                                        "type": "string",
+                                        "example": "123 Main St"
+                                    },
+                                    "shipping_city": {
+                                        "type": "string",
+                                        "example": "New York"
+                                    },
+                                    "shipping_state": {
+                                        "type": "string",
+                                        "example": "NY"
+                                    },
+                                    "shipping_zip": {
+                                        "type": "string",
+                                        "example": "10001"
+                                    },
+                                    "shipping_country": {
+                                        "type": "string",
+                                        "example": "US"
+                                    },
+                                    "card_bin": {
+                                        "type": "string",
+                                        "example": "411111"
+                                    },
+                                    "card_last4": {
+                                        "type": "string",
+                                        "example": "4242"
+                                    },
+                                    "card_type": {
+                                        "type": "string",
+                                        "example": "Visa"
+                                    },
+                                    "card_expiration": {
+                                        "type": "string",
+                                        "example": "0925"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Transaction screened successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "success"
+                                        },
+                                        "decision": {
+                                            "type": "string",
+                                            "example": "pass"
+                                        },
+                                        "nofraud_result": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "error"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Validation failed"
+                                        },
+                                        "errors": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "NoFraud API error"
                     }
                 },
                 "security": [
@@ -27559,6 +27941,58 @@
                 ]
             }
         },
+        "/api/report/orders": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get order report within a date range",
+                "operationId": "9bf64e1ca9dd4e22c271418173a24b54",
+                "parameters": [
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/return-products/{id}/inspect": {
             "put": {
                 "tags": [
@@ -29766,6 +30200,157 @@
                     },
                     "404": {
                         "description": "Supplier not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/temp-products": {
+            "get": {
+                "tags": [
+                    "Temp Products"
+                ],
+                "summary": "Get all temp-products with pagination and filters",
+                "operationId": "8aac5da6828576ff7c1da6d0d8566889",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "description": "Filter by temp product status.",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for all fields",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "name",
+                                "category",
+                                "brand",
+                                "vendor",
+                                "sku",
+                                "creator",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Temp Products"
+                ],
+                "summary": "Create a new Temp Product",
+                "operationId": "a22b5d9f1caa54894a533271a8b28a2b",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "category_id",
+                                    "brand_id",
+                                    "vendor_id",
+                                    "sku"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Red Cotton Shirt"
+                                    },
+                                    "category_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "brand_id": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "vendor_id": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "RCSHIRT-001"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Created successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -32676,7 +33261,7 @@
                         "format": "float",
                         "example": 80
                     },
-                    "best_delivery_date": {
+                    "delivery_days": {
                         "type": "string",
                         "nullable": true
                     },
@@ -33201,6 +33786,10 @@
             "description": "Menu Banners"
         },
         {
+            "name": "NoFraud",
+            "description": "NoFraud"
+        },
+        {
             "name": "Orders",
             "description": "Orders"
         },
@@ -33241,6 +33830,10 @@
             "description": "Redirect Links"
         },
         {
+            "name": "Reports",
+            "description": "Reports"
+        },
+        {
             "name": "Roles and Permissions",
             "description": "Roles and Permissions"
         },
@@ -33259,6 +33852,10 @@
         {
             "name": "Supplier Scores",
             "description": "Supplier Scores"
+        },
+        {
+            "name": "Temp Products",
+            "description": "Temp Products"
         },
         {
             "name": "Unisource",

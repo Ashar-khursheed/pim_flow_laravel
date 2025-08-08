@@ -6,15 +6,22 @@ use App\Http\Controllers\BaseController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use App\Models\FrontEnd\Quote;
-use App\Models\FrontEnd\CustomerAddress;
-use App\Notifications\QuotePlacedMail;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Traits\GeneratesQuotePdf;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
+
+use App\Models\FrontEnd\Quote;
+use App\Models\FrontEnd\CustomerAddress;
+use App\Models\ProductSupplier;
+
+use App\Jobs\Quote\QuotePlacedMailJob;
 
 class QuoteController extends BaseController
 {
 	use GeneratesQuotePdf;
+
 	/**
 	 * @OA\Get(
 	 *     path="/api/frontend/quotes",
@@ -285,9 +292,17 @@ class QuoteController extends BaseController
 				]);
 			}
 
-			auth()->user()->notify(new QuotePlacedMail($quote, false));
-
 			DB::commit();
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Quote Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+			$batch->add(new QuotePlacedMailJob([
+				'recordId' => $quote->id
+			]));
 
 			$quote->load([
 				'customer:id,name,email,type,country_code,mobile_number',
@@ -655,7 +670,17 @@ class QuoteController extends BaseController
 				'message' => "Quote not found."
 			]);
 		}
-		auth()->user()->notify(new QuotePlacedMail($quote));
+
+		$batch = Bus::batch([])->before(function (Batch $batch) {
+		})->catch(function (Batch $batch, Throwable $e) {
+		})->finally(function (Batch $batch) {
+		})->name('Quote Mails')->dispatch();
+
+		$batch->options['queue'] = config('app.website') . '_QOT_PLC';
+		$batch->add(new QuotePlacedMailJob([
+			'recordId' => $quote->id,
+			'sendToCc' => true
+		]));
 
 		return response()->json([
 			'success' => true,

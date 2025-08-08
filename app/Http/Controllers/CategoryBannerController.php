@@ -11,18 +11,18 @@ class CategoryBannerController extends Controller
 {
     /**
      * @OA\Get(
-     *     path="/api/category-banners/{category_id}",
+     *     path="/api/category-banners",
      *     tags={"Category Banners"},
      *     summary="List category banners",
      *     security={{"bearerAuth":{}}},
      *     description="Fetch category banners with pagination, sorting and search",
      *     @OA\Parameter(
-     *         name="category_id",
-     *         in="path",
-     *         required=true,
-     *         description="Category ID",
-     *         @OA\Schema(type="integer")
-     *     ),
+    *         name="category_id",
+    *         in="query",
+    *         required=false,
+    *         description="Category ID to filter",
+    *         @OA\Schema(type="integer")
+    *     ),
      *     @OA\Parameter(
      *         name="search",
      *         in="query",
@@ -57,10 +57,13 @@ class CategoryBannerController extends Controller
      *     )
      * )
      */
-    public function index(Request $request, $category_id)
+    public function index(Request $request)
     {
-        $query = CategoryBanner::with('category')
-            ->where('category_id', $category_id);
+        $query = CategoryBanner::with('category');
+    
+        if ($request->filled('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
     
         if ($request->filled('search')) {
             $searchTerm = $request->search;
@@ -87,6 +90,57 @@ class CategoryBannerController extends Controller
             'data' => $banners,
         ]);
     }
+    
+
+    /**
+     * @OA\Get(
+     *     path="/api/category-banners/show/{category_id}",
+     *     tags={"Category Banners"},
+     *     summary="Show all banners for a category",
+     *     description="Retrieve all banners for a given category ID",
+     *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="category_id",
+     *         in="path",
+     *         required=true,
+     *         description="The ID of the category",
+     *         @OA\Schema(type="integer")
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Success",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="success", type="boolean"),
+     *             @OA\Property(property="data", type="array", @OA\Items(
+     *                 @OA\Property(property="id", type="integer"),
+     *                 @OA\Property(property="category_id", type="integer"),
+     *                 @OA\Property(property="image_url", type="string"),
+     *                 @OA\Property(property="image_alt_text", type="string"),
+     *                 @OA\Property(property="position", type="integer"),
+     *                 @OA\Property(property="created_at", type="string", format="date-time"),
+     *                 @OA\Property(property="updated_at", type="string", format="date-time"),
+     *                 @OA\Property(property="category", type="object",
+     *                     @OA\Property(property="id", type="integer"),
+     *                     @OA\Property(property="name", type="string")
+     *                 )
+     *             ))
+     *         )
+     *     )
+     * )
+     */
+    public function show($category_id)
+    {
+        $banners = CategoryBanner::with('category')
+            ->where('category_id', $category_id)
+            ->orderBy('position')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $banners,
+        ]);
+    }
+
     
 
     /**

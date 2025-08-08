@@ -9,6 +9,7 @@ class GlitchError extends Model
     protected $fillable = [
         'email',
         'description',
+        'device',
         'images',
     ];
 }

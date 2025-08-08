@@ -7,10 +7,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
+
+use Illuminate\Support\Facades\Bus;
+use Illuminate\Bus\Batch;
 
 use App\Models\User;
 use App\Models\FrontEnd\Customer;
-use App\Notifications\ResetPasswordNotification;
+use App\Jobs\Auth\CommonPasswordResetMailJob;
+use App\Jobs\Auth\ResetPasswordMailJob;
 
 class AuthController extends BaseController
 {
@@ -97,8 +102,8 @@ class AuthController extends BaseController
 			'success' => true,
 			'has_permission' => $hasPermission,
 			'message' => $hasPermission
-				? "User has the '{$permission}' permission."
-				: "User does not have the '{$permission}' permission.",
+			? "User has the '{$permission}' permission."
+			: "User does not have the '{$permission}' permission.",
 		]);
 	}
 
@@ -191,13 +196,16 @@ class AuthController extends BaseController
 			]);
 		}
 
-		$token = Str::random(60);
-		$user->passwordResetToken()->updateOrCreate([], [
-			'token' => Hash::make($token),
-			'created_at' => now()
-		]);
+		$batch = Bus::batch([])->before(function (Batch $batch) {
+		})->catch(function (Batch $batch, Throwable $e) {
+		})->finally(function (Batch $batch) {
+		})->name('Reset Password Mail')->dispatch();
 
-		$user->notify(new ResetPasswordNotification($token, $request->email, $request->type));
+		$batch->options['queue'] = config('app.website') . '_RST_PWD';
+		$batch->add(new ResetPasswordMailJob([
+			'recordId' => $user->id,
+			'userType' => $request->type,
+		]));
 
 		return response()->json([
 			'success' => true,
@@ -239,21 +247,21 @@ class AuthController extends BaseController
 		if (!$user || !$user->passwordResetToken) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Invalid token or email.'
+				'message' => 'The provided email or reset token is invalid.'
 			]);
 		}
 
 		if (!Hash::check($request->token, $user->passwordResetToken->token)) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Invalid token.'
+				'message' => 'Your reset token is incorrect or has expired. Please request a new one.'
 			]);
 		}
 
-		if (now()->diffInMinutes($user->passwordResetToken->created_at) > 60) {
+		if (now()->diffInMinutes($user->passwordResetToken->created_at) > 10080) {
 			return response()->json([
 				'success' => false,
-				'message' => 'Token expired.'
+				'message' => 'Your reset token has expired. Please request a new one from the "Forgot Password" section.'
 			]);
 		}
 
@@ -262,11 +270,52 @@ class AuthController extends BaseController
 
 		$user->passwordResetToken->delete();
 
-        $user->tokens()->delete();
+		$user->tokens()->delete();
 
 		return response()->json([
 			'success' => true,
 			'message' => 'Password has been reset.'
 		]);
+	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/auth/send-customers-reset-link",
+	 *     summary="Send password reset links to all customers",
+	 *     description="Generates and emails password reset links to all registered customers.",
+	 *     tags={"Auth"},
+	 *     @OA\Response(response=200, description="Reset link sent", @OA\MediaType(mediaType="application/json")),
+	 * )
+	 */
+	public function sendAllCustomersResetLinkEmail()
+	{
+		try {
+			$customers = Customer::all();
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Common Password Mail')->dispatch();
+
+			foreach ($customers as $customer) {
+				$batch->options['queue'] = config('app.website') . '_COMM_PWD';
+				$batch->add(new CommonPasswordResetMailJob([
+					'recordId' => $customer->id
+				]));
+			}
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Reset link sent to all customers.'
+			], 200);
+		} catch (\Exception $e) {
+			Log::error('Error sending reset links to customers: ' . $e->getMessage());
+
+			return response()->json([
+				'success' => false,
+				'message' => 'Failed to send reset links.',
+				'error' => $e->getMessage()
+			], 500);
+		}
 	}
 }

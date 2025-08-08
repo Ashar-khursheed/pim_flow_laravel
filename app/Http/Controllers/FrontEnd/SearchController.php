@@ -16,6 +16,9 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Symfony\Component\Process\Exception\ProcessFailedException;
+use Symfony\Component\Process\Process;
+
 class SearchController extends Controller
 {
     /**
@@ -128,7 +131,7 @@ class SearchController extends Controller
             return [
                 'id' => $product->id,
                 'name' => $product->name,
-              'url' => $product->seoUrl->url ?? null,
+                'url' => $product->seoUrl->url ?? null,
                 'sku' => $product->sku,
                 'images' => json_decode($product->images) ?? [],
                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
@@ -465,176 +468,7 @@ class SearchController extends Controller
         
         return response()->json($response);
     }
-//    public function search(Request $request)
-//     {
-//         $query = $request->input('query');
-//         $defaultImage = asset('images/default-thumbnail.jpg');
 
-//         $imageUrl = function ($img) use ($defaultImage) {
-//             if (!$img) return $defaultImage;
-//             $imagePath = public_path('storage/' . ltrim($img, '/'));
-//             return File::exists($imagePath) ? asset('storage/' . ltrim($img, '/')) : $defaultImage;
-//         };
-
-//         $mapProduct = function ($product) {
-//             $firstSupplier = $product->productSuppliers->first();
-//             return [
-//                 'id' => $product->id,
-//                 'name' => $product->name,
-//                 'url' => $product->url,
-//                 'sku' => $product->sku,
-//                 'images' => json_decode($product->images) ?? [],
-//                 'original_price' => $firstSupplier ? (float) $firstSupplier->price : null,
-//                 'front_sale_price' => $firstSupplier ? (float) ($firstSupplier->sale_price ?? $firstSupplier->price) : null,
-//                 'vendor_id' => $firstSupplier?->vendor_id,
-//                 'currency_title' => $product->currency->symbol ?? null,
-//                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
-//                 'price' => $firstSupplier ? (float) $firstSupplier->price : null,
-//                 'sale_price' => $firstSupplier->sale_price ?? null,
-//                 'map' => $firstSupplier->map ?? null,
-//                 'inventory' => $firstSupplier->inventory ?? null,
-//                 'in_stock' => $firstSupplier->in_stock ?? null,
-//                 'delivery_days' => $firstSupplier->delivery_days ?? null,
-//                 'return_policy' => $firstSupplier->return_policy ?? null,
-//                 'free_shipping' => $firstSupplier->free_shipping ?? null,
-//                 'warranty_information' => $firstSupplier->warranty_information ?? null,
-//                 'brand' => $product->brand ? [
-//                     'id' => $product->brand->id,
-//                     'name' => $product->brand->name,
-//                     'slug' => optional($product->brand->slug)->key,
-//                 ] : null,
-//             ];
-//         };
-
-//         $claudeSuggestions = Cache::remember('claude_suggestions_' . md5($query), 300, function () use ($query) {
-//             try {
-//                 $response = Http::withHeaders([
-//                     'x-api-key' => env('CLAUDE_API_KEY'),
-//                     'anthropic-version' => '2023-06-01',
-//                     'Content-Type' => 'application/json',
-//                 ])->post('https://api.anthropic.com/v1/messages', [
-//                     'model' => 'claude-3-opus-20240229',
-//                     'max_tokens' => 100,
-//                     'messages' => [[
-//                         'role' => 'user',
-//                         'content' => "You are a search assistant. Based on this user query: \"{$query}\", extract 3 alternative or more relevant product search keywords or corrected spellings. Output as a JSON array of strings only. Do not explain."
-//                     ]]
-//                 ]);
-
-//                 if ($response->successful()) {
-//                     $content = $response->json();
-//                     preg_match('/\[(.*?)\]/s', $content['content'][0]['text'], $matches);
-//                     return isset($matches[0]) ? json_decode($matches[0], true) : [];
-//                 }
-//             } catch (\Exception $e) {
-//                 return [];
-//             }
-
-//             return [];
-//         });
-
-//         $generateSearchTerms = function ($query) use ($claudeSuggestions) {
-//             $terms = [];
-//             $cleanQuery = strtolower(trim($query));
-//             $terms[] = $cleanQuery;
-
-//             $words = explode(' ', $cleanQuery);
-//             if (count($words) > 1) {
-//                 foreach ($words as $word) {
-//                     if (strlen($word) > 2) {
-//                         $terms[] = $word;
-//                     }
-//                 }
-//             }
-
-//             if (strlen($cleanQuery) > 3) {
-//                 $terms[] = substr($cleanQuery, 0, -1);
-//                 $terms[] = substr($cleanQuery, 1);
-//             }
-
-//             if (!empty($claudeSuggestions)) {
-//                 $terms = array_merge($terms, $claudeSuggestions);
-//             }
-
-//             return array_unique($terms);
-//         };
-
-//         // Generate search terms using Claude suggestions
-//         $searchTerms = $generateSearchTerms($query);
-
-//         // Initialize empty collections
-//         $products = collect();
-//         $categories = collect();
-//         $brands = collect();
-//         $totalResults = 0;
-
-//         // Search products using generated terms
-//         if (!empty($searchTerms)) {
-//             $productQuery = Product::with(['productSuppliers', 'brand', 'currency'])
-//                 ->where(function ($q) use ($searchTerms) {
-//                     foreach ($searchTerms as $term) {
-//                         $q->orWhere('name', 'LIKE', "%{$term}%")
-//                         ->orWhere('sku', 'LIKE', "%{$term}%")
-//                         ->orWhere('description', 'LIKE', "%{$term}%");
-//                     }
-//                 });
-
-//             // Get products
-//             $products = $productQuery->get()->map($mapProduct);
-//             $totalResults += $products->count();
-
-//             // Search categories
-//             $categoryQuery = Category::where(function ($q) use ($searchTerms) {
-//                 foreach ($searchTerms as $term) {
-//                     $q->orWhere('name', 'LIKE', "%{$term}%")
-//                     ->orWhere('description', 'LIKE', "%{$term}%");
-//                 }
-//             });
-
-//             $categories = $categoryQuery->get()->map(function ($category) {
-//                 return [
-//                     'id' => $category->id,
-//                     'name' => $category->name,
-//                     'slug' => $category->slug,
-//                     'description' => $category->description,
-//                 ];
-//             });
-
-//             // Search brands
-//             $brandQuery = Brand::where(function ($q) use ($searchTerms) {
-//                 foreach ($searchTerms as $term) {
-//                     $q->orWhere('name', 'LIKE', "%{$term}%");
-//                 }
-//             });
-
-//             $brands = $brandQuery->get()->map(function ($brand) {
-//                 return [
-//                     'id' => $brand->id,
-//                     'name' => $brand->name,
-//                     'slug' => optional($brand->slug)->key,
-//                 ];
-//             });
-
-//             $totalResults += $categories->count() + $brands->count();
-//         }
-
-//         // Prepare response
-//         $response = [
-//             'products' => $products,
-//             'categories' => $categories,
-//             'brands' => $brands,
-//             'query' => $query,
-//             'total_results' => $totalResults,
-//             'search_terms_used' => $searchTerms,
-//         ];
-
-//         if (!empty($claudeSuggestions)) {
-//             $response['suggestions'] = $claudeSuggestions;
-//             $response['message'] = "Did you mean: " . implode(', ', $claudeSuggestions) . "?";
-//         }
-
-//         return response()->json($response);
-//     }
 
     /**
      * @OA\Get(
@@ -794,6 +628,101 @@ class SearchController extends Controller
         return response()->json(['products' => $products]);
     }
   
+    public function searchnlp(Request $request)
+    {
+          $query = $request->query('q', '');
+
+        if (!$query) {
+            return response()->json(['error' => 'Query parameter `q` is required.'], 400);
+        }
+
+        $scriptPath = base_path('app/Script/nlpmobile.py');
+
+        $process = new Process(['/var/www/html/pim_flow_laravel/app/Script/venv/bin/python3', $scriptPath, $query]);
+        $process->run();
+
+        if (!$process->isSuccessful()) {
+            throw new ProcessFailedException($process);
+        }
+
+        $output = $process->getOutput();
+        $data = json_decode($output, true);
+
+        return response()->json($data);
+    }
+    // public function searchnlp(Request $request)
+    // {
+    //     $query = trim($request->query('q', ''));
+
+    //     if (!$query) {
+    //         return response()->json(['error' => 'Query parameter `q` is required.'], 400);
+    //     }
+
+    //     $tokens = explode(' ', strtolower($query));
+
+    //     // Start building the query
+    //     $productQuery = DB::table('ec_products as ep')
+    //         ->join('product_suppliers as ps', 'ep.id', '=', 'ps.product_id')
+    //         ->leftJoin('seo_management as sm', 'sm.relational_id', '=', 'ep.id')
+    //         ->select([
+    //             'ep.name as product_name',
+    //             'ep.sku',
+    //             'ps.price',
+    //             'ps.sale_price',
+    //             'ps.delivery_days',
+    //             'ps.warranty_information',
+    //             'sm.url as seo_url'
+    //         ])
+    //         ->where('ep.status', 'published');
+
+    //     // Add a dynamic "where" clause using tokens
+    //     $productQuery->where(function ($q) use ($tokens) {
+    //         foreach ($tokens as $token) {
+    //             $q->orWhere('ep.name', 'LIKE', "%$token%");
+    //         }
+    //     });
+
+    //     // Fetch limited results
+    //     $products = $productQuery->limit(100)->get();
+
+    //     // You can still calculate `kw` in PHP if needed
+    //     $results = $products->map(function ($product) use ($tokens) {
+    //         $name = strtolower($product->product_name);
+    //         $kw_matches = collect($tokens)->filter(fn($token) => str_contains($name, $token))->count();
+
+    //         return [
+    //             'product_name' => $product->product_name,
+    //             'sku' => $product->sku,
+    //             'clicks' => (int)($product->clicks ?? 0),
+    //             'price' => $product->price,
+    //             'sale_price' => $product->sale_price,
+    //             'delivery_days' => $product->delivery_days,
+    //             'warranty_information' => $product->warranty_information,
+    //             'seo_url' => $product->seo_url,
+    //             'kw' => $kw_matches,
+    //         ];
+    //     });
+
+    //     $sorted = $results
+    //         ->filter(fn($item) => $item['kw'] > 0)
+    //         ->sortByDesc(fn($item) => [$item['kw'], $item['clicks']])
+    //         ->values()
+    //         ->take(40);
+
+    //     return response()->json($sorted);
+    // }
+
+//   public function searchnlp(Request $request)
+//     {
+//         $query = $request->input('query');
+
+//         $response = Http::get(env('SEARCH_API_URL') . '/search', [
+//             'query' => $query
+//         ]);
+
+//         return response()->json($response->json());
+//     }
+    
     
 
 }

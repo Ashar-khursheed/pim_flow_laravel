@@ -103,4 +103,11 @@ class Order extends Model
 	{
 		return $date->format('Y-m-d H:i:s');
 	}
+	// In app/Models/Order.php
+
+	public function nofraudResponse()
+	{
+		return $this->hasOne(\App\Models\NoFraudResponse::class, 'order_id', 'order_number');
+	}
+
 }

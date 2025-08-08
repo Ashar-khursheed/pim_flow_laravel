@@ -325,7 +325,6 @@ class CategoryController extends BaseController
 			], 201);
 
 		} catch (\Exception $e) {
-			Log::error('Error creating category: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -548,7 +547,6 @@ class CategoryController extends BaseController
 			], 200);
 
 		} catch (\Exception $e) {
-			Log::error('Error updating category: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -659,7 +657,6 @@ class CategoryController extends BaseController
 			// Rollback transaction on error
 			\DB::rollBack();
 
-			Log::error('Error deleting category: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -785,7 +782,6 @@ class CategoryController extends BaseController
 		} catch (\Exception $e) {
 			\DB::rollBack();
 
-			Log::error('Error reordering categories: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -881,7 +877,6 @@ class CategoryController extends BaseController
 				\DB::rollBack();
 			}
 
-			Log::error('Error moving category up: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -977,7 +972,6 @@ class CategoryController extends BaseController
 				\DB::rollBack();
 			}
 
-			Log::error('Error moving category down: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,

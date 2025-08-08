@@ -651,7 +651,7 @@ class AttributeController extends BaseController
 				$request->file('upload_file'),
 				$attributeFileFormatArray,
 				'Product Attribute', /* Module name */
-				'JOB_ATTRIBUTE', /* Job name */
+				config('app.website') . '_ATTRIBUTE', /* Job name */
 				'Import Product Attributes', /* Batch name */
 				ImportProductAttributeJob::class
 			);

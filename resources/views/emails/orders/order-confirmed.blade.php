@@ -104,11 +104,18 @@
 					</tr>
 				</table>
 
-				<table border="0" cellpadding="0" cellspacing="0" width="600" style="border-top: 2px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-family: 'Noto Sans', sans-serif;">
+				<table width="650" cellspacing="0" cellpadding="0" border="0" style="padding:10px; border-top:3px solid #E2E8F0; background-color: rgba(226, 232, 240, 0.3); font-size:11px; color:#3F3F3F;">
 					<tr>
-						<td align="left" style="padding: 20px; font-size: 12px; color:#3F3F3F; font-family: 'Noto Sans', sans-serif;">
-							<p style="margin: 0;font-size:12px; font-family: 'Noto Sans', sans-serif;">©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.</p>
-							<p style="margin: 8px 0 0; font-size:12px; font-family: 'Noto Sans', sans-serif;">This message was sent from a notification-only address. Please do not reply directly to this email. For support or inquiries, contact us at {{ $siteEmail }}</p>
+						<td>
+							<p style="margin: 0;font-size:12px; font-family: 'Noto Sans', sans-serif;">
+								©{{ now()->year }} {{ $siteUrl }}. All rights reserved. HorecaStore, TheHorecaStore.com, and the HorecaStore.ae logo are trademarks of HorecaStore LLC or its affiliates.
+							</p>
+							<p style="margin: 8px 0 0; font-size:12px; font-family: 'Noto Sans', sans-serif;">
+								For support or inquiries, contact us at
+								<a href="mailto:{{ $siteEmail }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">
+									{{ $siteEmail }}
+								</a>.
+							</p>
 						</td>
 					</tr>
 				</table>

@@ -261,7 +261,7 @@ class RedirectLinkController extends Controller
 				$request->file('upload_file'),
 				$redirectLinkFileFormatArray,
 				'Redirect Link', /* Module name */
-				'JOB_REDIRECT_LINK', /* Job name */
+				config('app.website') . '_REDIRECT_LINK', /* Job name */
 				'Import Redirect Links', /* Batch name */
 				ImportRedirectLinkJob::class
 			);
@@ -313,15 +313,36 @@ class RedirectLinkController extends Controller
 		return $excelRepo->downloadFile($fileName, $spreadsheet);
 	}
 
-	public function getByFrom($from)
+// 	public function getByFrom($from)
+// {
+//     $from = '/' . ltrim($from, '/'); // Ensures one leading slash
+
+//     $redirect = RedirectLink::where('from', $from)->first();
+
+//     if ($redirect) {
+//         return response()->json(['to' => $redirect->to]);
+//     }
+
+//     return response()->json(['message' => 'Not found'], 404);
+// }
+public function getByFrom($from)
 {
+    $from = '/' . ltrim($from, '/'); // Ensure one leading slash
+
     $redirect = RedirectLink::where('from', $from)->first();
 
     if ($redirect) {
-        return response()->json(['to' => $redirect->to]);
+        return response()->json([
+            'success' => true,
+            'to' => $redirect->to
+        ]);
     }
 
-    return response()->json(['message' => 'Not found'], 404);
+    return response()->json([
+        'success' => false,
+        'message' => 'Not found'
+    ], 404);
 }
+
 
 }

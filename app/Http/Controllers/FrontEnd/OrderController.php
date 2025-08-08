@@ -636,7 +636,7 @@ class OrderController extends BaseController
 
 			})->name('Order Mails')->dispatch();
 
-			$batch->options['queue'] = 'ORD_CNCL_MAIL';
+			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 			$batch->add(new OrderCancelledMailJob([
 				'recordId' => $order->id
 			]));

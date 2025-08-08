@@ -36,18 +36,21 @@ trait GeneratesQuotePdf
 		$pdfLogoUrl = public_path((config('app.website') == 'UAE' ? 'uae_logo.png' : 'us_logo.png'));
 
 		$companyName = config('app.website') == 'UAE' ? 'THE HORECA STORE INC' : 'THE HORECA STORE INC';
-		$street = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
-		$city = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
-		$phone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
+		$companyStreet = config('app.website') == 'UAE' ? '8800 Bissonnet Street, Ste A,' : '8800 Bissonnet Street, Ste A,';
+		$companyCity = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
+		$companyPhone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
 		$siteURL = url('/');
 
-		$name = $customer->type === 'Private' ? $customer->name : $customer->business_name;
-		$customerAddress = $quote->customerAddress;
-		$address = $customerAddress->address ?? '';
-		$customerCity = $customerAddress->city ?? '';
-		$country = $customerAddress->country ?? '';
-		$email = $customer->email ?? '';
+		$customerType = $customer->type;
+		$customerBusinessName = $customer->business_name;
+		$customerName = $customer->name;
+		$customerAddressDetail = $quote->customerAddress;
+		$customerAddress = $customerAddressDetail->address ?? '';
+		$customerCity = $customerAddressDetail->city ?? '';
+		$customerCountry = $customerAddressDetail->country ?? '';
+		$customerPhone = ($customer->country_code && $customer->mobile_number) ? $customer->country_code . ' ' . $customer->mobile_number : '';
+		$customerEmail = $customer->email ?? '';
 
 		$createdAt = $quote->created_at->format('M d Y');
 		$expiredAt = Carbon::parse($quote->expired_at)->format('M d Y');
@@ -67,7 +70,7 @@ trait GeneratesQuotePdf
 				$product->name = $productDetail->name;
 				$product->brandName = $productDetail->brand->name ?? null;
 				$product->sku = $productDetail->sku;
-				$product->warrantyInfo = $productSupplierDetail->warranty_information ?? null;
+				$product->warrantyInfo = $productDetail->warrantyAttribute->attribute_value ?? '';
 				$product->shippingCharge = $quoteProduct->shipping_charge == 0
 				? 'FREE SHIPPING'
 				: $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
@@ -110,6 +113,8 @@ trait GeneratesQuotePdf
 		? convertNumberToWords($total, "AED", "Fils")
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
+		$payNowUrl = url('/download-quotation/' . $quote->id);
+
 		$beneficiaryAddress = config('app.website') == 'UAE' ? '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
 		$accountNo = config('app.website') == 'UAE' ? '6130 9953 3' : '6130 9953 3';
 		$bankName = config('app.website') == 'UAE' ? 'JP Morgan Chase Bank' : 'JP Morgan Chase Bank';
@@ -117,18 +122,23 @@ trait GeneratesQuotePdf
 
 		$pdfParams = [
 			'pdfLogoUrl' => $pdfLogoUrl,
+
 			'companyName' => $companyName,
-			'street' => $street,
-			'city' => $city,
-			'phone' => $phone,
+			'companyStreet' => $companyStreet,
+			'companyCity' => $companyCity,
+			'companyPhone' => $companyPhone,
+
 			'siteEmail' => $siteEmail,
 			'siteURL' => $siteURL,
 
-			'name' => $name,
-			'address' => $address,
-			'city' => $customerCity,
-			'country' => $country,
-			'email' => $email,
+			'customerType' => $customerType,
+			'customerBusinessName' => $customerBusinessName,
+			'customerName' => $customerName,
+			'customerAddress' => $customerAddress,
+			'customerCity' => $customerCity,
+			'customerCountry' => $customerCountry,
+			'customerPhone' => $customerPhone,
+			'customerEmail' => $customerEmail,
 
 			'createdAt' => $createdAt,
 			'expiredAt' => $expiredAt,
@@ -146,6 +156,7 @@ trait GeneratesQuotePdf
 			'taxAmount' => $taxAmount,
 			'total' => $total,
 			'totalInWords' => $totalInWords,
+			'payNowUrl' => $payNowUrl,
 
 			'beneficiaryAddress' => $beneficiaryAddress,
 			'accountNo' => $accountNo,

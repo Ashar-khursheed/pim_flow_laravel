@@ -61,7 +61,10 @@ use App\Http\Controllers\ReturnOrderProductController;
 use App\Http\Controllers\ProductTitleFormulaController;
 use App\Http\Controllers\UnisourceShipmentController;
 use App\Http\Controllers\QuoteController;
-use App\Http\Controllers\MenuBannerController ;
+use App\Http\Controllers\MenuBannerController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\NoFraudController;
+use App\Http\Controllers\LogDownloadController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -159,8 +162,14 @@ Route::get('/cities/{countryId}', [LocationController::class, 'getCityList']);
 Route::get('/zipcodes/{cityId}', [LocationController::class, 'getZipcodeList']);
 Route::apiResource('newsletters', NewsletterController::class);
 
+Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
+
+Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+
 
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
@@ -172,14 +181,15 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	});
 
 	Route::prefix('category-banners')->group(function () {
-		Route::get('/{category_id}', [CategoryBannerController::class, 'index']);
+		Route::get('/', [CategoryBannerController::class, 'index']);
 		Route::post('/', [CategoryBannerController::class, 'store']);
+		Route::get('/show/{category_id}', [CategoryBannerController::class, 'show']);
 		Route::put('/{id}', [CategoryBannerController::class, 'update']);
 		Route::delete('/{id}', [CategoryBannerController::class, 'destroy']);
 	});
 
 	Route::apiResource('payments', PaymentController::class);
-
+	Route::get('report/orders', [ReportController::class, 'index']);
 
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);
@@ -405,11 +415,14 @@ Route::post('frontend/register', [F_CustomerController::class, 'register']);
 Route::post('/auth/forgot-password', [AuthController::class, 'sendResetLinkEmail']);
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword']);
 Route::post('frontend/auth/google', [F_CustomerController::class, 'googleLogin']);
+Route::get('/auth/send-customers-reset-link', [AuthController::class, 'sendAllCustomersResetLinkEmail']);
 
 Route::get('/frontend/support-categories', [F_SupportMetaController::class, 'getCategories']);
 Route::get('/frontend/support-priorities', [F_SupportMetaController::class, 'getPriorities']);
 
 Route::middleware(['auth:front-end-api', 'customer.guard'])->group(function () {
+
+Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction']);
 
 	Route::get('/frontend/invoices', [F_InvoiceController::class, 'index']);
     Route::get('/frontend/invoices/{id}', [F_InvoiceController::class, 'show']);
@@ -598,7 +611,7 @@ Route::prefix('/frontend/blogs')->group(function () {
 
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
-Route::get('/frontend/category/{slug}/blogs', [F_BlogController::class, 'blogsByCategorySlug']);
+Route::get('/frontend/category/{slug}/blog', [F_BlogController::class, 'blogsByCategorySlug']);
 Route::get('/frontend/categories-with-blogs', [F_BlogController::class, 'categoryWiseBlogs']);
 
 Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
@@ -610,6 +623,7 @@ Route::get('/frontend/brands/{id}/summary', [F_ProductController::class, 'brandS
 Route::get('/frontend/search', [F_SearchController::class, 'search']);
 Route::get('/frontend/search-categories', [F_SearchController::class, 'searchCategories']);
 Route::get('/frontend/search/products', [F_SearchController::class, 'getProductsOnly']);
+Route::get('/frontend/nlp-search', [F_SearchController::class, 'searchnlp']);
 
 Route::post('/frontend/payment-square', [F_SquarePaymentController::class, 'createPayment']);
 
@@ -638,6 +652,7 @@ Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheck
 Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
+Route::get('/address-autocomplete', [F_GeoController::class, 'addressAutocomplete']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);

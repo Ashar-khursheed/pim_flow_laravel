@@ -49,6 +49,171 @@ class OrderController extends Controller
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
+	// public function index(Request $request)
+	// {
+	// 	if ($request->filled('from_date') && $request->filled('to_date')) {
+	// 		$from = $request->from_date . ' 00:00:00';
+	// 		$to = $request->to_date . ' 23:59:59';
+
+	// 		$recordsQuery = Order::query();
+	// 		/* Filter by status */
+	// 		if ($request->has('status')) {
+	// 			$recordsQuery->where('status', $request->status);
+	// 		}
+	// 		$recordsQuery = $recordsQuery->whereBetween('created_at', [$from, $to])->pluck('id');
+
+	// 		return response()->json([
+	// 			'success' => true,
+	// 			'message' => __('msg_rec_list'),
+	// 			'data' => $recordsQuery,
+	// 		]);
+	// 	}
+
+	// 	$searchableColumns = ['id', 'order_number', 'customer_name'];
+	// 	$sortableColumns = array_merge($searchableColumns, ['shipping_charge', 'total_amount', 'total_products', 'created_at', 'updated_at']);
+
+	// 	$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
+	// 	$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
+
+	// 	/* Check if pagination requested */
+	// 	$recordsQuery = Order::query();
+
+	// 	/* Filter by status */
+	// 	if ($request->has('status')) {
+	// 		$recordsQuery->where('status', $request->status);
+	// 	}
+
+	// 	if ($request->filled('page') && $request->filled('length')) {
+
+	// 		/* Join if customer_name is involved in search or sort */
+	// 		if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
+	// 			$recordsQuery->leftJoin('customers', 'orders.customer_id', '=', 'customers.id');
+	// 			$recordsQuery->select('orders.*');
+	// 		}
+
+	// 		/* Eager load relationships */
+	// 		$recordsQuery->with([
+	// 			'customer:id,name',
+	// 			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+	// 			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+	// 			'orderProducts.product.brand:id,name',
+	// 			'orderProducts.product.currency:id,symbol',
+	// 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
+	// 			'shipments',
+	// 			'creator',
+	// 			'updator',
+	// 		    'nofraudResponse' // 👈 add this line
+
+	// 		]);
+
+	// 		/* Filter by payment status */
+	// 		if ($request->has('payment_status')) {
+	// 			switch ($request->payment_status) {
+	// 				case 'Paid':
+	// 				$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+	// 				break;
+	// 				case 'Unpaid':
+	// 				$recordsQuery->where('orders.paid_amount', 0);
+	// 				break;
+	// 				case 'Partially Paid':
+	// 				$recordsQuery->where('orders.paid_amount', '>', 0)
+	// 				->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+	// 				break;
+	// 			}
+	// 		}
+
+	// 		/* Global search */
+	// 		if ($request->filled('global')) {
+	// 			$search = $request->input('global');
+	// 			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+	// 				foreach ($searchableColumns as $col) {
+	// 					if ($col === 'customer_name') {
+	// 						$q->orWhereHas('customer', function ($sub) use ($search) {
+	// 							$sub->where('name', 'like', '%' . $search . '%');
+	// 						});
+	// 					} else {
+	// 						$q->orWhere("orders.$col", 'like', '%' . $search . '%');
+	// 					}
+	// 				}
+	// 			});
+	// 		}
+
+	// 		/* Sorting */
+	// 		if ($sortBy === 'customer_name') {
+	// 			$recordsQuery->orderBy('customers.name', $sortDir);
+	// 		} else {
+	// 			$recordsQuery->orderBy("orders.$sortBy", $sortDir);
+	// 		}
+
+	// 		/* Pagination */
+	// 		$length = (int) $request->input('length');
+	// 		$page = (int) $request->input('page');
+
+	// 		$totalRecords = (clone $recordsQuery)->count();
+	// 		$totalPages = (int) ceil($totalRecords / $length);
+
+	// 		if ($page > $totalPages && $totalPages > 0) {
+	// 			$page = 1;
+	// 		}
+
+	// 		$records = $recordsQuery
+	// 		->offset(($page - 1) * $length)
+	// 		->limit($length)
+	// 		->get();
+
+	// 		/* Transform results */
+	// 		$records->transform(function ($record) {
+	// 			$record->customer_name = $record->customer->name ?? null;
+	// 			$record->created_by = $record->creator->name ?? null;
+	// 			$record->updated_by = $record->updator->name ?? null;
+
+	// 			unset($record->creator, $record->updator);
+
+	// 			/* Process each product in order products */
+	// 			foreach ($record->orderProducts as $orderProduct) {
+	// 				$product = $orderProduct->product;
+	// 				if ($product) {
+	// 					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+	// 					$product->brand_name = $product->brand->name ?? null;
+	// 					$product->currency_symbol = $product->currency->symbol ?? null;
+	// 					unset($product->brand, $product->currency);
+	// 				}
+	// 				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+	// 				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+	// 				? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+	// 				: null;
+
+	// 				/* Format numeric values to 2 decimal places */
+	// 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+	// 					if (isset($quoteProduct->$key)) {
+	// 						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+	// 					}
+	// 				}
+	// 			}
+
+	// 			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+	// 				if (isset($record->$key)) {
+	// 					$record->$key = number_format($record->$key, 2, '.', '');
+	// 				}
+	// 			}
+
+	// 			return $record;
+	// 		});
+	// 	} else {
+	// 		/* No pagination: just fetch id and order_number */
+	// 		$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
+	// 		$totalRecords = $records->count();
+	// 		$totalPages = 1;
+	// 	}
+
+	// 	return response()->json([
+	// 		'success' => true,
+	// 		'message' => __('msg_rec_list'),
+	// 		'data' => $records,
+	// 		'total_pages' => $totalPages,
+	// 		'total_records' => $totalRecords,
+	// 	]);
+	// }
 	public function index(Request $request)
 	{
 		if ($request->filled('from_date') && $request->filled('to_date')) {
@@ -56,10 +221,11 @@ class OrderController extends Controller
 			$to = $request->to_date . ' 23:59:59';
 
 			$recordsQuery = Order::query();
-			/* Filter by status */
+
 			if ($request->has('status')) {
 				$recordsQuery->where('status', $request->status);
 			}
+
 			$recordsQuery = $recordsQuery->whereBetween('created_at', [$from, $to])->pluck('id');
 
 			return response()->json([
@@ -75,23 +241,19 @@ class OrderController extends Controller
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		/* Check if pagination requested */
 		$recordsQuery = Order::query();
 
-		/* Filter by status */
 		if ($request->has('status')) {
 			$recordsQuery->where('status', $request->status);
 		}
 
 		if ($request->filled('page') && $request->filled('length')) {
 
-			/* Join if customer_name is involved in search or sort */
 			if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
 				$recordsQuery->leftJoin('customers', 'orders.customer_id', '=', 'customers.id');
 				$recordsQuery->select('orders.*');
 			}
 
-			/* Eager load relationships */
 			$recordsQuery->with([
 				'customer:id,name',
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
@@ -101,26 +263,25 @@ class OrderController extends Controller
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at',
 				'shipments',
 				'creator',
-				'updator'
+				'updator',
+				'nofraudResponse' // ✅ Include NoFraud relationship
 			]);
 
-			/* Filter by payment status */
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-					break;
+						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+						break;
 					case 'Unpaid':
-					$recordsQuery->where('orders.paid_amount', 0);
-					break;
+						$recordsQuery->where('orders.paid_amount', 0);
+						break;
 					case 'Partially Paid':
-					$recordsQuery->where('orders.paid_amount', '>', 0)
-					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-					break;
+						$recordsQuery->where('orders.paid_amount', '>', 0)
+							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+						break;
 				}
 			}
 
-			/* Global search */
 			if ($request->filled('global')) {
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
@@ -136,14 +297,12 @@ class OrderController extends Controller
 				});
 			}
 
-			/* Sorting */
 			if ($sortBy === 'customer_name') {
 				$recordsQuery->orderBy('customers.name', $sortDir);
 			} else {
 				$recordsQuery->orderBy("orders.$sortBy", $sortDir);
 			}
 
-			/* Pagination */
 			$length = (int) $request->input('length');
 			$page = (int) $request->input('page');
 
@@ -155,19 +314,32 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-			->offset(($page - 1) * $length)
-			->limit($length)
-			->get();
+				->offset(($page - 1) * $length)
+				->limit($length)
+				->get();
 
-			/* Transform results */
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
 				$record->created_by = $record->creator->name ?? null;
 				$record->updated_by = $record->updator->name ?? null;
 
+				// ✅ Add NoFraud result
+			$response = $record->nofraudResponse->response ?? null;
+
+			if (is_string($response)) {
+				$data = json_decode($response, true);
+			} elseif (is_array($response)) {
+				$data = $response;
+			} else {
+				$data = [];
+			}
+
+			$record->nofraud_decision = $data['decision'] ?? null;
+			unset($record->nofraudResponse);
+
+
 				unset($record->creator, $record->updator);
 
-				/* Process each product in order products */
 				foreach ($record->orderProducts as $orderProduct) {
 					$product = $orderProduct->product;
 					if ($product) {
@@ -178,13 +350,12 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-					: null;
+						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+						: null;
 
-					/* Format numeric values to 2 decimal places */
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-						if (isset($quoteProduct->$key)) {
-							$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+						if (isset($orderProduct->$key)) {
+							$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
 						}
 					}
 				}
@@ -198,7 +369,6 @@ class OrderController extends Controller
 				return $record;
 			});
 		} else {
-			/* No pagination: just fetch id and order_number */
 			$records = $recordsQuery->orderBy('order_number', 'asc')->get(['id', 'order_number']);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -212,6 +382,7 @@ class OrderController extends Controller
 			'total_records' => $totalRecords,
 		]);
 	}
+
 
 	/**
 	 * @OA\Post(
@@ -351,7 +522,7 @@ class OrderController extends Controller
 
 			})->name('Order Place')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PLC_MAIL';
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
 			]));
@@ -775,28 +946,28 @@ class OrderController extends Controller
 			})->name('Order Mails')->dispatch();
 
 			if ($request->status == 'Confirmed') {
-				$batch->options['queue'] = 'ORD_CNF_MAIL';
+				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
 				$batch->add(new OrderConfirmationMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Out for delivery') {
-				$batch->options['queue'] = 'ORD_OUT_MAIL';
+				$batch->options['queue'] = config('app.website') . '_ORD_OUT';
 				$batch->add(new OutDeliveryMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Delivered') {
-				$batch->options['queue'] = 'ORD_DLVR_MAIL';
+				$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
 				$batch->add(new OrderDeliveredMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Cancelled') {
-				$batch->options['queue'] = 'ORD_CNCL_MAIL';
+				$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 				$batch->add(new OrderCancelledMailJob([
 					'recordId' => $order->id
 				]));
@@ -938,7 +1109,7 @@ class OrderController extends Controller
 
 			})->name('Order Mails')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PART_CNCL_MAIL';
+			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,
 				'reason' => $request->notes,
