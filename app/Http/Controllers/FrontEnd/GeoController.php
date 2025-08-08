@@ -103,7 +103,6 @@ class GeoController extends Controller
         $autocompleteResponse = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
             'input' => $input,
             'key' => $apiKey,
-            'types' => 'establishment',
             'components' => 'country:us',
         ]);
 
@@ -151,5 +150,6 @@ class GeoController extends Controller
             'details' => $details,
         ]);
     }
+
 
 }
