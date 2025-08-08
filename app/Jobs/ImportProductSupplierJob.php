@@ -56,6 +56,8 @@ class ImportProductSupplierJob implements ShouldQueue
 		$previousSuccessCount = $descArray["Success Count"] ?? 0;
 		$previousFailedCount = $descArray["Failed Count"] ?? 0;
 
+		Log::info('Product Supplier Job:', ['previousSuccessCount' => $previousSuccessCount, 'previousFailedCount' => $previousFailedCount]);
+
 		$deliveryTimeOptions = app_constants('DELIVERY_DAYS');
 		$warrantyOptions = app_constants('WARRANTY_OPTIONS');
 		$returnPolicies = app_constants('RETURN_POLICY');
