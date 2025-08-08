@@ -40,13 +40,23 @@ class QuotePlacedMailJob implements ShouldQueue
 		$to = $quote->customer->email ?? null;
 
 		if ($to) {
+			$fromEmail = config('app.website') === 'UAE' ? 'quotes@horecastore.ae' : 'quotes@thehorecastore.com';
+			$fromName = 'HorecaStore Quotes Updates';
+			$replyToEmail = $fromEmail;
+
 			$ccEmails = [];
 
 			if ($this->sendToCc) {
 				$ccEmails = $quote->quoteEmails->pluck('email')->filter()->unique()->toArray();
 			}
 
-			Mail::to($to)->cc($ccEmails)->send(new QuotePlacedMail($quote));
+			Mail::to($to)->cc($ccEmails)->send(
+				(
+					new QuotePlacedMail($quote)
+				)
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
+			);
 		}
 	}
 
