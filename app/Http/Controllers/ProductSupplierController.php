@@ -690,7 +690,7 @@ class ProductSupplierController extends BaseController
 				$request->file('upload_file'),
 				$supplierFormatArray,
 				'Product Supplier', /* Module name */
-				'JOB_PROD_SUPPLIER', /* Job name */
+				config('app.website') . '_PROD_SUPPLIER', /* Job name */
 				'Import Product Suppliers', /* Batch name */
 				ImportProductSupplierJob::class
 			);

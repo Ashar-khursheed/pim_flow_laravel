@@ -114,7 +114,7 @@ class ExcelImporterService
 			$chunkData = $this->excelRepo->loadExcelFileData($realPath, $worksheetName, $startRow, $endRow, $lastColumnLetter);
 
 			if (!empty($chunkData)) {
-				Log::info('Product Supplier Job Creation:', ['startRow' => $startRow, 'endRow' => $endRow, 'lastColumnLetter' => $lastColumnLetter]);
+				Log::info($module.' Job Creation:', ['startRow' => $startRow, 'endRow' => $endRow, 'lastColumnLetter' => $lastColumnLetter]);
 
 				$batch->options['queue'] = $queue;
 				$batch->add(new $jobClass([

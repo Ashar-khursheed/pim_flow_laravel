@@ -145,7 +145,7 @@ class AppKeywordController extends BaseController
 				$request->file('upload_file'),
 				$keywordFileFormatArray,
 				'Keyword', /* Module name */
-				'JOB_KEYWORD', /* Job name */
+				config('app.website') . '_KEYWORD', /* Job name */
 				'Import Keywords', /* Batch name */
 				ImportKeywordJob::class
 			);

@@ -261,7 +261,7 @@ class RedirectLinkController extends Controller
 				$request->file('upload_file'),
 				$redirectLinkFileFormatArray,
 				'Redirect Link', /* Module name */
-				'JOB_REDIRECT_LINK', /* Job name */
+				config('app.website') . '_REDIRECT_LINK', /* Job name */
 				'Import Redirect Links', /* Batch name */
 				ImportRedirectLinkJob::class
 			);
