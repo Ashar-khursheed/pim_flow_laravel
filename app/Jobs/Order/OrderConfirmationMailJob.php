@@ -12,10 +12,13 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Order;
 use App\Mail\Order\OrderConfirmationMail;
+use App\Traits\SendsOrderMails;
 
 class OrderConfirmationMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+	use SendsOrderMails;
+
 	public $timeout = 600;
 	public $orderId;
 
@@ -33,29 +36,10 @@ class OrderConfirmationMailJob implements ShouldQueue
 			return;
 		}
 
-		if (!empty($order)) {
-			$to = $order->customer->email;
-			// Mail::to($to)->send(new OrderConfirmationMail($order));
-			Mail::to($to)->send(
-				(
-					new OrderConfirmationMail($order)
-				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
-			);
-
-			$recipients = order_cc_mails();
-			$to = array_shift($recipients);
-			$cc = $recipients;
-			// Mail::to($to)->cc($cc)->send(new OrderConfirmationMail($order));
-			Mail::to($to)->cc($cc)->send(
-				(
-					new OrderConfirmationMail($order)
-				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
-			);
-		}
+		$this->sendOrderMail(
+			$order->customer->email,
+			new OrderConfirmationMail($order)
+		);
 	}
 
 	public function failed(\Throwable $exception): void

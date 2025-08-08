@@ -41,8 +41,6 @@ class ResetPasswordMail extends Mailable
 		$backendUrl = config('app.backend_url');
 
 		$logoUrl = $backendUrl . (config('app.website') === 'UAE' ? '/uae_logo.png' : '/us_logo.png');
-		// $siteUrl = config('app.website') === 'UAE' ? 'HorecaStore.ae' : 'Thehorecastore.com';
-		// $siteEmail = config('app.website') === 'UAE' ? 'hello@horecastore.ae' : 'sales@thehorecastore.com';
 
 		return $this->subject('Reset Your HORECA Store Password')
 			->markdown('emails.auth.reset-password')
@@ -51,8 +49,6 @@ class ResetPasswordMail extends Mailable
 				'resetUrl' => $resetUrl,
 				'frontEndUrl' => $frontEndUrl,
 				'logoUrl' => $logoUrl,
-				// 'siteUrl' => $siteUrl,
-				// 'siteEmail' => $siteEmail,
 			]);
 	}
 }

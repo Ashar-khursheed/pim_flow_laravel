@@ -12,10 +12,13 @@ use Illuminate\Bus\Batchable;
 use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Order;
 use App\Mail\Order\OrderCancelledMail;
+use App\Traits\SendsOrderMails;
 
 class OrderCancelledMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+	use SendsOrderMails;
+
 	public $timeout = 600;
 	public $orderId;
 
@@ -33,27 +36,10 @@ class OrderCancelledMailJob implements ShouldQueue
 			return;
 		}
 
-		if (!empty($order)) {
-			$to = $order->customer->email;
-			Mail::to($to)->send(
-				(
-					new OrderCancelledMail($order)
-				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
-			);
-
-			$recipients = order_cc_mails();
-			$to = array_shift($recipients);
-			$cc = $recipients;
-			Mail::to($to)->cc($cc)->send(
-				(
-					new OrderCancelledMail($order)
-				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
-			);
-		}
+		$this->sendOrderMail(
+			$order->customer->email,
+			new OrderCancelledMail($order)
+		);
 	}
 
 	public function failed(\Throwable $exception): void

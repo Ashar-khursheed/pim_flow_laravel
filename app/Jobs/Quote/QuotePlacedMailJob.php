@@ -8,14 +8,13 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Bus\Queueable;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Bus\Batchable;
-
-use Illuminate\Support\Facades\Mail;
 use App\Models\FrontEnd\Quote;
 use App\Mail\Quote\QuotePlacedMail;
+use App\Traits\SendsQuoteMails;
 
 class QuotePlacedMailJob implements ShouldQueue
 {
-	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
+	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable, SendsQuoteMails;
 
 	public $timeout = 600;
 
@@ -37,31 +36,28 @@ class QuotePlacedMailJob implements ShouldQueue
 			return;
 		}
 
-		$to = $quote->customer->email ?? null;
-
-		if ($to) {
-			$ccEmails = [];
-
-			if ($this->sendToCc) {
-				$ccEmails = $quote->quoteEmails->pluck('email')->filter()->unique()->toArray();
-			}
-
-			Mail::to($to)->cc($ccEmails)->send(new QuotePlacedMail($quote));
+		$ccEmails = [];
+		if ($this->sendToCc) {
+			$ccEmails = $quote->quoteEmails->pluck('email')->filter()->unique()->toArray();
 		}
+
+		$this->sendQuoteMail(
+			$quote->customer->email,
+			new QuotePlacedMail($quote),
+			$ccEmails
+		);
 	}
 
 	public function failed(\Throwable $exception): void
 	{
 		$jobName = class_basename($this);
 
-		$errorDetails = [
-			'job' => $jobName,
+		logger()->error("{$jobName} failed", [
+			'job'     => $jobName,
 			'message' => $exception->getMessage(),
-			'file' => $exception->getFile(),
-			'line' => $exception->getLine(),
-			'trace' => $exception->getTraceAsString(),
-		];
-
-		logger()->error("{$jobName} failed", $errorDetails);
+			'file'    => $exception->getFile(),
+			'line'    => $exception->getLine(),
+			'trace'   => $exception->getTraceAsString(),
+		]);
 	}
 }
