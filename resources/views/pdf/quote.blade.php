@@ -10,31 +10,33 @@
 	<script src="https://cdn.tailwindcss.com"></script>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
 
-	$chunks = [];
-	$offset = 0;
-	$totalProducts = $products->count();
-	$pattern = [5];
+$chunks = [];
+$offset = 0;
+$totalProducts = $products->count();
+$pattern = [5];
 
-	while (array_sum($pattern) < $totalProducts) {
-		$pattern[] = 6;
-	}
+while (array_sum($pattern) < $totalProducts) {
+	$pattern[] = 6;
+}
 
-	foreach ($pattern as $size) {
-		if ($offset >= $totalProducts) break;
-		$chunks[] = $products->slice($offset, $size);
-		$offset += $size;
-	}
-	$pageNumber = 1;
+foreach ($pattern as $size) {
+	if ($offset >= $totalProducts) break;
+	$chunks[] = $products->slice($offset, $size);
+	$offset += $size;
+}
+$pageNumber = 1;
 @endphp
 <body>
 	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto;  font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
 		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 10px 0; box-sizing: border-box;background-color: white;">
-		@foreach($chunks as $index => $chunk)
+			@foreach($chunks as $index => $chunk)
+
 			@if($index > 0)
-				<div style="page-break-before: always;"></div>
+			<div style="page-break-before: always;"></div>
 			@endif
+
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
@@ -169,11 +171,11 @@
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; vertical-align:middle; font-family: 'Inter', sans-serif;">
 							@if (!empty($product->base64_image))
-								<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto; font-family: 'Inter', sans-serif;">
+							<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto; font-family: 'Inter', sans-serif;">
 							@else
-								<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280; font-family: 'Inter', sans-serif;">
-									No Image
-								</div>
+							<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280; font-family: 'Inter', sans-serif;">
+								No Image
+							</div>
 							@endif
 						</td>
 
@@ -200,7 +202,8 @@
 			</table>
 			@php($pageNumber++)
 			@endif
-		@endforeach
+
+			@endforeach
 
 
 			@if(($index === 0 && count($chunk) == 5) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
