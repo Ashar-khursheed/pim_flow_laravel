@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 use Illuminate\Support\Facades\Validator;
 use App\Models\TransactionLog;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ExcelImporterService
@@ -113,6 +114,8 @@ class ExcelImporterService
 			$chunkData = $this->excelRepo->loadExcelFileData($realPath, $worksheetName, $startRow, $endRow, $lastColumnLetter);
 
 			if (!empty($chunkData)) {
+				Log::info('Product Supplier Job Creation:', ['startRow' => $startRow, 'endRow' => $endRow, 'lastColumnLetter' => $lastColumnLetter]);
+
 				$batch->options['queue'] = $queue;
 				$batch->add(new $jobClass([
 					'fileFormatArray' => $fileFormatArray,
