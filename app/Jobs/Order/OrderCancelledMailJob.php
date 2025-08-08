@@ -34,13 +34,17 @@ class OrderCancelledMailJob implements ShouldQueue
 		}
 
 		if (!empty($order)) {
+			$fromEmail = config('app.website') === 'UAE' ? 'orders@horecastore.ae' : 'orders@thehorecastore.com';
+			$fromName = 'HorecaStore Order Updates';
+			$replyToEmail = $fromEmail;
+
 			$to = $order->customer->email;
 			Mail::to($to)->send(
 				(
 					new OrderCancelledMail($order)
 				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
 			);
 
 			$recipients = order_cc_mails();
@@ -50,8 +54,8 @@ class OrderCancelledMailJob implements ShouldQueue
 				(
 					new OrderCancelledMail($order)
 				)
-				->from('orders@thehorecastore.com', 'HorecaStore Order Updates')
-				->replyTo('orders@thehorecastore.com')
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
 			);
 		}
 	}
