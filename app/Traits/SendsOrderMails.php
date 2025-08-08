@@ -8,12 +8,16 @@ trait SendsOrderMails
 {
 	protected function sendOrderMail($recipientEmail, $mailable)
 	{
-		$fromEmail = config('app.website') === 'UAE' ? 'orders@horecastore.ae' : 'orders@thehorecastore.com';
+		$fromEmail = config('app.website') === 'UAE'
+		? 'orders@horecastore.ae'
+		: 'orders@thehorecastore.com';
 		$fromName = 'HorecaStore Order Updates';
 		$replyToEmail = $fromEmail;
 
 		Mail::to($recipientEmail)->send(
-			($mailable)->from($fromEmail, $fromName)->replyTo($replyToEmail)
+			$mailable
+			->from($fromEmail, $fromName)
+			->replyTo($replyToEmail)
 		);
 
 		$recipients = order_cc_mails();
@@ -22,8 +26,11 @@ trait SendsOrderMails
 			$cc = $recipients;
 
 			Mail::to($to)->cc($cc)->send(
-				($mailable)->from($fromEmail, $fromName)->replyTo($replyToEmail)
+				$mailable
+				->from($fromEmail, $fromName)
+				->replyTo($replyToEmail)
 			);
 		}
 	}
+
 }
