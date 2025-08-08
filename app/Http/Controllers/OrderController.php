@@ -511,7 +511,7 @@ class OrderController extends Controller
 
 			})->name('Order Place')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PLC';
+			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
 			$batch->add(new OrderPlacedMailJob([
 				'recordId' => $order->id
 			]));
@@ -935,28 +935,28 @@ class OrderController extends Controller
 			})->name('Order Mails')->dispatch();
 
 			if ($request->status == 'Confirmed') {
-				$batch->options['queue'] = 'ORD_CNF';
+				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
 				$batch->add(new OrderConfirmationMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Out for delivery') {
-				$batch->options['queue'] = 'ORD_OUT';
+				$batch->options['queue'] = config('app.website') . '_ORD_OUT';
 				$batch->add(new OutDeliveryMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Delivered') {
-				$batch->options['queue'] = 'ORD_DLVR';
+				$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
 				$batch->add(new OrderDeliveredMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
 			if ($request->status == 'Cancelled') {
-				$batch->options['queue'] = 'ORD_CNCL';
+				$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
 				$batch->add(new OrderCancelledMailJob([
 					'recordId' => $order->id
 				]));
@@ -1098,7 +1098,7 @@ class OrderController extends Controller
 
 			})->name('Order Mails')->dispatch();
 
-			$batch->options['queue'] = 'ORD_PART_CNCL';
+			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
 			$batch->add(new PartialOrderCancelledMailJob([
 				'recordId' => $orderProduct->id,
 				'reason' => $request->notes,

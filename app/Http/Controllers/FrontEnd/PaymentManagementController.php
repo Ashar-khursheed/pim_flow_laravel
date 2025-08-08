@@ -223,7 +223,7 @@ class PaymentManagementController extends Controller
 
             })->name('Order Place')->dispatch();
 
-            $batch->options['queue'] = 'ORD_PLC';
+            $batch->options['queue'] = config('app.website') . '_ORD_PLC';
             $batch->add(new OrderPlacedMailJob([
                 'recordId' => $validated['order_id']
             ]));
