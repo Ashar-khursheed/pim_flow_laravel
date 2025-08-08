@@ -107,7 +107,7 @@ class Order extends Model
 
 	public function nofraudResponse()
 	{
-		return $this->hasOne(\App\Models\NoFraudResponse::class, 'order_id', 'order_id');
+		return $this->hasOne(\App\Models\NoFraudResponse::class, 'order_id', 'order_number');
 	}
 
 }
