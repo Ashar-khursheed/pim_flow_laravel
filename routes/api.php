@@ -611,7 +611,7 @@ Route::prefix('/frontend/blogs')->group(function () {
 
 });
 Route::get('/frontend/blog-categories', [F_BlogController::class, 'categories']);
-Route::get('/frontend/category/{slug}/blogs', [F_BlogController::class, 'blogsByCategorySlug']);
+Route::get('/frontend/category/{slug}/blog', [F_BlogController::class, 'blogsByCategorySlug']);
 Route::get('/frontend/categories-with-blogs', [F_BlogController::class, 'categoryWiseBlogs']);
 
 Route::get('/frontend/sliders', [F_SliderController::class, 'index']);
