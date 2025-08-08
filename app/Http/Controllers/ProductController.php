@@ -849,7 +849,7 @@ class ProductController extends BaseController
 
 		/* Handle categories - IMPROVED VERSION */
 		if ($request->has('categories')) {
-			
+
 
 			$categories = $request->input('categories');
 
@@ -1639,7 +1639,7 @@ class ProductController extends BaseController
 				$request->file('upload_file'),
 				$productFileFormatArray,
 				'Product', /* Module name */
-				'config('app.website') . '_PRODUCT', /* Job name */
+				config('app.website') . '_PRODUCT', /* Job name */
 				'Import Products', /* Batch name */
 				ImportProductJob::class
 			);

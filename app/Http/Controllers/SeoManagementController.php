@@ -1141,7 +1141,7 @@ class SeoManagementController extends Controller
 				$request->file('upload_file'),
 				$seoFileFormatArray,
 				'SEO Management', /* Module name */
-				'config('app.website') . '_SEO_MGMT', /* Job name */
+				config('app.website') . '_SEO_MGMT', /* Job name */
 				'Import SEO Management', /* Batch name */
 				ImportSeoDetailJob::class
 			);
