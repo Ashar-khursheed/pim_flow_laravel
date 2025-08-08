@@ -712,7 +712,17 @@ class SearchController extends Controller
     //     return response()->json($sorted);
     // }
 
+//   public function searchnlp(Request $request)
+//     {
+//         $query = $request->input('query');
 
+//         $response = Http::get(env('SEARCH_API_URL') . '/search', [
+//             'query' => $query
+//         ]);
+
+//         return response()->json($response->json());
+//     }
+    
     
 
 }

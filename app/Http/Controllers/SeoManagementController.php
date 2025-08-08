@@ -375,7 +375,6 @@ class SeoManagementController extends Controller
 			], 201);
 
 		} catch (\Exception $e) {
-			\Log::error('SEO Management creation error: ' . $e->getMessage());
 
 			return response()->json([
 				'success' => false,
@@ -832,7 +831,6 @@ class SeoManagementController extends Controller
 			], 200);
 
 		} catch (\Exception $e) {
-			\Log::error('SEO Management update error: ' . $e->getMessage());
 			return response()->json([
 				'success' => false,
 				'message' => 'Failed to update SEO record',

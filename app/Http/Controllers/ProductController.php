@@ -807,7 +807,6 @@ class ProductController extends BaseController
 	public function update(Request $request, $productId)
 	{
 		/* Log the incoming request for debugging */
-		\Log::info('Product update request:', $request->all());
 
 		$product = Product::find($productId);
 
@@ -850,11 +849,7 @@ class ProductController extends BaseController
 
 		/* Handle categories - IMPROVED VERSION */
 		if ($request->has('categories')) {
-			// Log incoming data for debugging
-			\Log::info('Categories input:', [
-				'raw' => $request->input('categories'),
-				'type' => gettype($request->input('categories'))
-			]);
+			
 
 			$categories = $request->input('categories');
 

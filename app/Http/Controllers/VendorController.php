@@ -350,7 +350,6 @@ class VendorController extends BaseController
 			$file = $request->file($key);
 			$image = imagecreatefromstring(file_get_contents($file->getRealPath()));
 			if (!$image) {
-				Log::error('Failed to create image from file.');
 				return null;
 			}
 
@@ -371,7 +370,6 @@ class VendorController extends BaseController
 
 			return Storage::disk('s3')->url($path);
 		} catch (\Exception $e) {
-			Log::error('uploadImageToWebpS3FromFile error: ' . $e->getMessage());
 			return null;
 		}
 	}
@@ -385,7 +383,6 @@ class VendorController extends BaseController
 		try {
 			$file = $request->file($key);
 			if ($file->getClientOriginalExtension() !== 'pdf') {
-				Log::warning("Rejected non-PDF upload for key '{$key}'");
 				return null;
 			}
 
@@ -397,7 +394,6 @@ class VendorController extends BaseController
 
 			return Storage::disk('s3')->url($path);
 		} catch (\Exception $e) {
-			Log::error("uploadPdfToS3FromFile error ({$key}): " . $e->getMessage());
 			return null;
 		}
 	}

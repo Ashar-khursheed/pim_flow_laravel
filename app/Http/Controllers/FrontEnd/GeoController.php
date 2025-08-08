@@ -89,4 +89,27 @@ class GeoController extends Controller
         }
         return null;
     }
+
+    public function addressAutocomplete(Request $request)
+    {
+        $request->validate([
+            'input' => 'required|string',
+        ]);
+
+        $input = $request->query('input');
+        $apiKey = config('services.google_maps.key');
+
+        $response = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            'input' => $input,
+            'key' => $apiKey,
+            'types' => 'geocode', // restricts to addresses only
+            'components' => 'country:us', // optional: restrict to a specific country
+        ]);
+
+        if ($response->failed()) {
+            return response()->json(['error' => 'Failed to fetch autocomplete suggestions'], 500);
+        }
+
+        return response()->json($response->json());
+    }
 }

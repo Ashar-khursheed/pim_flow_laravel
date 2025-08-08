@@ -649,6 +649,7 @@ Route::post('frontend/tamara/checkout', [F_TamaraController::class, 'createCheck
 Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhook']);
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
+Route::get('/address-autocomplete', [F_GeoController::class, 'addressAutocomplete']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);

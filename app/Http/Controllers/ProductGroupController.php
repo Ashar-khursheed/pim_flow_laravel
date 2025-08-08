@@ -127,7 +127,6 @@ class ProductGroupController extends Controller
 
          // Check if the process ran successfully
          if (!$process->isSuccessful()) {
-             Log::error("Python script execution failed: " . $process->getErrorOutput());
              return response()->json(['error' => 'Python script execution failed', 'details' => $process->getErrorOutput()], 500);
          }
 
@@ -350,13 +349,7 @@ class ProductGroupController extends Controller
 
     public function updateProductGroupItemParent($groupId, $itemId, Request $request)
     {
-        // Log the incoming request and parameters
-        \Log::info('Updating ProductGroupItem Parent', [
-            'group_id' => $groupId,
-            'item_id' => $itemId,
-            'new_group_id' => $request->new_group_id
-        ]);
-
+   
         // Validate incoming request data
         $request->validate([
             'new_group_id' => 'required|integer|exists:product_groups,id',
@@ -367,8 +360,7 @@ class ProductGroupController extends Controller
                                 ->where('product_id', $itemId)
                                 ->first();
 
-        // Log the result to see if it's found
-        \Log::info('Found ProductGroupItem:', ['item' => $item]);
+      
 
         if (!$item) {
             return response()->json(['message' => 'Product Group Item not found'], 404);
@@ -433,10 +425,7 @@ class ProductGroupController extends Controller
 
      public function removeProductGroupItemParent($groupId, $itemId)
     {
-        \Log::info('Removing parent from ProductGroupItem', [
-            'group_id' => $groupId,
-            'item_id' => $itemId
-        ]);
+ 
 
         // Find the product group item
         $item = ProductGroupItem::where('group_id', $groupId)
