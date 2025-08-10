@@ -188,7 +188,7 @@ $pageNumber = 1;
 				</tbody>
 			</table>
 
-			@if(($index === 0 && count($chunk) == 5) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
 			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<td style="text-align: left;">
@@ -206,7 +206,7 @@ $pageNumber = 1;
 			@endforeach
 
 
-			@if(($index === 0 && count($chunk) == 5) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
 			@if(($index === 0 && count($chunk) == 4) || ($index === count($chunks)-1 && in_array(count($chunk), [5])))
 			<div style="page-break-before: always;"></div>
 			@endif
@@ -316,7 +316,7 @@ $pageNumber = 1;
 				</tr>
 			</table>
 
-			@if($index === count($chunks)-1 && in_array(count($chunk), [2, 3, 4]))
+			@if(($index === 0 && in_array(count($chunk), [1, 2, 3])) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [2, 3, 4])))
 			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<td style="text-align: left;">

@@ -40,7 +40,7 @@ class QuotePlacedMailJob implements ShouldQueue
 		$to = $quote->customer->email ?? null;
 
 		if ($to) {
-			$fromEmail = config('app.website') === 'UAE' ? 'quotes@horecastore.ae' : 'quotes@thehorecastore.com';
+			$fromEmail = config('app.website') === 'UAE' ? 'yourquote@horecastore.ae' : 'yourquote@thehorecastore.com';
 			$fromName = 'HorecaStore Quotes Updates';
 			$replyToEmail = $fromEmail;
 
