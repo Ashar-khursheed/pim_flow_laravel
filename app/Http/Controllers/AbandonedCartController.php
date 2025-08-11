@@ -80,46 +80,50 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
-    public function index(Request $request)
-    {
-        $threshold = Carbon::now()->subHours(1);
+  public function index(Request $request)
+{
+    $threshold = Carbon::now()->subHours(1);
 
-        $query = Cart::with([
-            'customer',
-            'customer.addresses',
-            'product.brand',
-        ])->where('created_at', '<=', $threshold);
+    $query = Cart::with([
+        'customer',
+        'customer.addresses',
+        'product' => function ($q) {
+            $q->select('id', 'sku', 'name', 'images', 'brand_id')
+              ->with(['brand:id,name']);
+        },
+    ])->where('created_at', '<=', $threshold);
 
-        // Search filter
-        if ($request->filled('search')) {
-            $searchTerm = $request->search;
-            $query->whereHas('customer', function ($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%");
-            })->orWhereHas('product', function ($q) use ($searchTerm) {
-                $q->where('name', 'like', "%{$searchTerm}%");
-            });
-        }
-
-        // Sorting
-        $sortBy = $request->get('sort_by', 'created_at');
-        $sortOrder = $request->get('sort_order', 'desc');
-        $allowedSortFields = ['created_at', 'quantity', 'id'];
-
-        if (!in_array($sortBy, $allowedSortFields)) {
-            $sortBy = 'created_at';
-        }
-
-        $query->orderBy($sortBy, $sortOrder);
-
-        // Pagination
-        $perPage = $request->get('per_page', 10);
-        $carts = $query->paginate($perPage);
-
-        return response()->json([
-            'status' => true,
-            'data' => $carts
-        ]);
+    // Search filter
+    if ($request->filled('search')) {
+        $searchTerm = $request->search;
+        $query->whereHas('customer', function ($q) use ($searchTerm) {
+            $q->where('name', 'like', "%{$searchTerm}%");
+        })->orWhereHas('product', function ($q) use ($searchTerm) {
+            $q->where('name', 'like', "%{$searchTerm}%");
+        });
     }
+
+    // Sorting
+    $sortBy = $request->get('sort_by', 'created_at');
+    $sortOrder = $request->get('sort_order', 'desc');
+    $allowedSortFields = ['created_at', 'quantity', 'id'];
+
+    if (!in_array($sortBy, $allowedSortFields)) {
+        $sortBy = 'created_at';
+    }
+
+    $query->orderBy($sortBy, $sortOrder);
+
+    // Pagination
+    $perPage = $request->get('per_page', 10);
+    $carts = $query->paginate($perPage);
+
+    return response()->json([
+        'status' => true,
+        'data' => $carts
+    ]);
+}
+
    
     /**
      * @OA\Get(
