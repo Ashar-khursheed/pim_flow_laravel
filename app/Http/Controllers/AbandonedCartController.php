@@ -120,4 +120,76 @@ class AbandonedCartController extends Controller
             'data' => $carts
         ]);
     }
+   
+    /**
+     * @OA\Get(
+     *     path="/api/abandoned-carts/{id}",
+     *     tags={"Carts"},
+     *     summary="Get details of a specific abandoned cart",
+     *     description="Returns abandoned cart details by ID with customer info, addresses, product, and brand",
+     *     @OA\Parameter(
+     *         name="id",
+     *         in="path",
+     *         description="Cart ID",
+     *         required=true,
+     *         @OA\Schema(type="integer", example=1)
+     *     ),
+     *     @OA\Response(
+     *         response=200,
+     *         description="Abandoned cart details",
+     *         @OA\JsonContent(
+     *             @OA\Property(property="status", type="boolean", example=true),
+     *             @OA\Property(property="data", type="object",
+     *                 @OA\Property(property="id", type="integer", example=1),
+     *                 @OA\Property(property="quantity", type="integer", example=2),
+     *                 @OA\Property(property="created_at", type="string", example="2025-08-10T12:00:00Z"),
+     *                 @OA\Property(property="customer", type="object",
+     *                     @OA\Property(property="id", type="integer", example=5),
+     *                     @OA\Property(property="name", type="string", example="John Doe"),
+     *                     @OA\Property(property="addresses", type="array", @OA\Items(
+     *                         @OA\Property(property="address", type="string", example="123 Main Street"),
+     *                         @OA\Property(property="city", type="string", example="New York")
+     *                     ))
+     *                 ),
+     *                 @OA\Property(property="product", type="object",
+     *                     @OA\Property(property="name", type="string", example="Nike Shoes"),
+     *                     @OA\Property(property="sku", type="string", example="NK123"),
+     *                     @OA\Property(property="brand", type="object",
+     *                         @OA\Property(property="name", type="string", example="Nike")
+     *                     )
+     *                 )
+     *             )
+     *         )
+     *     ),
+     *     @OA\Response(
+     *         response=404,
+     *         description="Cart not found"
+     *     )
+     * )
+     */
+    public function show($id)
+    {
+        $threshold = Carbon::now()->subHours(1);
+
+        $cart = Cart::with([
+                'customer',
+                'customer.addresses',
+                'product.brand',
+            ])
+            ->where('created_at', '<=', $threshold)
+            ->find($id);
+
+        if (!$cart) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cart not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => true,
+            'data' => $cart
+        ]);
+    }
+
 }
