@@ -131,7 +131,7 @@ class AbandonedCartController extends Controller
         // Get all abandoned carts with relations
         $carts = Cart::with([
             'customer:id,name,email',
-            'customer.addresses:id,customer_id,address,city',
+            'customer.customerAddress:id,customer_id,address,city',
             'product' => function ($q) {
                 $q->select('id', 'sku', 'name', 'images', 'brand_id')
                 ->with(['brand:id,name']);
