@@ -135,7 +135,11 @@ class Product extends Model
 
 	public function seoProductUrl()
 	{
-		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')->where('relational_type', 'Product');
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')
+		->where(function ($query) {
+			$query->where('relational_type', 'Product')
+			->orWhere('relational_type', 'App\Models\Product');
+		});
 	}
 
 	public function productAttributes()
@@ -236,10 +240,10 @@ class Product extends Model
 
 	public function isInWishlist($customerId)
 	{
-	    if ($customerId) {
-	        return $this->wishlist()->where('user_id', $customerId)->exists();
-	    }
-	    return false;
+		if ($customerId) {
+			return $this->wishlist()->where('user_id', $customerId)->exists();
+		}
+		return false;
 	}
 
 	public function slugData()
