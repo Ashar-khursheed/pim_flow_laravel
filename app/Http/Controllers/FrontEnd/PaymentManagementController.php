@@ -197,6 +197,7 @@ class PaymentManagementController extends Controller
                 'payment_date' => 'required|date|before_or_equal:today',
                 'notes' => 'nullable|string|max:1000',
                 'payment_details' => 'nullable|array|max:2000',
+                'payment_method' => 'nullable|string|max:255'
             ]);
 
             // Add authenticated user ID (assumes customer authentication)
@@ -315,6 +316,7 @@ class PaymentManagementController extends Controller
             'payment_date' => 'sometimes|required|date',
             'notes' => 'nullable|string',
             'payment_details' => 'nullable|json',
+            'payment_method' => 'nullable|string'
         ]);
 
         $payment->update($validated);

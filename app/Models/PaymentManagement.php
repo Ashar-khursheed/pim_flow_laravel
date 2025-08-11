@@ -17,6 +17,7 @@ class PaymentManagement extends Model
         'payment_date',
         'notes',
         'payment_details',
+        'payment_method'
     ];
 
     public function order()
