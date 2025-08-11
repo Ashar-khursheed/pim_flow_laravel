@@ -80,115 +80,131 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
+
+
 //   public function index(Request $request)
 //     {
 //         $threshold = Carbon::now()->subHours(1);
 
-//         $query = Cart::with([
-//             'customer',
-//             'customer.addresses',
+//         // Get unique customer IDs for pagination
+//         $perPage = $request->get('per_page', 10);
+
+//         $customerIds = Cart::where('created_at', '<=', $threshold)
+//             ->select('user_id')
+//             ->distinct()
+//             ->paginate($perPage);
+
+//         // Fetch carts for those customers
+//         $carts = Cart::with([
+//             'customer:id,name,email',
+//             // 'customer.customerAddress',
 //             'product' => function ($q) {
 //                 $q->select('id', 'sku', 'name', 'images', 'brand_id')
 //                 ->with(['brand:id,name']);
 //             },
-//         ])->where('created_at', '<=', $threshold);
+//         ])
+//         ->whereIn('user_id', $customerIds->pluck('user_id'))
+//         ->where('created_at', '<=', $threshold)
+//         ->get()
+//         ->groupBy('user_id');
 
-//         // Search filter
-//         if ($request->filled('search')) {
-//             $searchTerm = $request->search;
-//             $query->whereHas('customer', function ($q) use ($searchTerm) {
-//                 $q->where('name', 'like', "%{$searchTerm}%");
-//             })->orWhereHas('product', function ($q) use ($searchTerm) {
-//                 $q->where('name', 'like', "%{$searchTerm}%");
-//             });
-//         }
+//         // Transform into customer-wise structure
+//         $result = $carts->map(function ($items) {
+//             $customer = $items->first()->customer;
 
-//         // Sorting
-//         $sortBy = $request->get('sort_by', 'created_at');
-//         $sortOrder = $request->get('sort_order', 'desc');
-//         $allowedSortFields = ['created_at', 'quantity', 'id'];
+//             return [
+//                 'customer' => $customer,
+//                 'carts' => $items->map(function ($cart) {
+//                     $images = collect(json_decode($cart->product->images, true) ?: [])
+//                         ->map(fn($url) => ['url' => $url])
+//                         ->toArray();
 
-//         if (!in_array($sortBy, $allowedSortFields)) {
-//             $sortBy = 'created_at';
-//         }
+//                     return [
+//                         'id' => $cart->id,
+//                         'quantity' => $cart->quantity,
+//                         'created_at' => $cart->created_at,
+//                         'product' => [
+//                             'id' => $cart->product->id,
+//                             'sku' => $cart->product->sku,
+//                             'name' => $cart->product->name,
+//                             'images' => $images,
+//                             'brand' => $cart->product->brand,
+//                         ]
+//                     ];
+//                 })->values()
+//             ];
+//         })->values();
 
-//         $query->orderBy($sortBy, $sortOrder);
-
-//         // Pagination
-//         $perPage = $request->get('per_page', 10);
-//         $carts = $query->paginate($perPage);
-
+//         // Replace data with paginated meta
 //         return response()->json([
 //             'status' => true,
-//             'data' => $carts
+//             'data' => $result,
+//             'pagination' => [
+//                 'total' => $customerIds->total(),
+//                 'per_page' => $customerIds->perPage(),
+//                 'current_page' => $customerIds->currentPage(),
+//                 'last_page' => $customerIds->lastPage(),
+//             ]
 //         ]);
 //     }
+public function index(Request $request)
+{
+    $threshold = Carbon::now()->subHours(1);
+    $perPage = $request->get('per_page', 10);
 
-  public function index(Request $request)
-    {
-        $threshold = Carbon::now()->subHours(1);
+    // Get distinct customer IDs who have carts before the threshold, paginated
+    $customerIds = Cart::where('created_at', '<=', $threshold)
+        ->select('user_id')
+        ->distinct()
+        ->pluck('user_id'); // Get all distinct user_ids (not paginated)
 
-        // Get unique customer IDs for pagination
-        $perPage = $request->get('per_page', 10);
+    // Paginate the Customer model based on these IDs
+    $customers = \App\Models\Customer::whereIn('id', $customerIds)
+        ->paginate($perPage);
 
-        $customerIds = Cart::where('created_at', '<=', $threshold)
-            ->select('user_id')
-            ->distinct()
-            ->paginate($perPage);
+    // Eager load carts for these customers filtered by threshold
+    $customers->load(['carts' => function($query) use ($threshold) {
+        $query->where('created_at', '<=', $threshold)
+              ->with(['product.brand']);
+    }]);
 
-        // Fetch carts for those customers
-        $carts = Cart::with([
-            'customer:id,name,email',
-            // 'customer.customerAddress',
-            'product' => function ($q) {
-                $q->select('id', 'sku', 'name', 'images', 'brand_id')
-                ->with(['brand:id,name']);
-            },
-        ])
-        ->whereIn('user_id', $customerIds->pluck('user_id'))
-        ->where('created_at', '<=', $threshold)
-        ->get()
-        ->groupBy('user_id');
+    // Transform data
+    $result = $customers->map(function ($customer) {
+        return [
+            'customer' => $customer,
+            'carts' => $customer->carts->map(function ($cart) {
+                $images = collect(json_decode($cart->product->images, true) ?: [])
+                    ->map(fn($url) => ['url' => $url])
+                    ->toArray();
 
-        // Transform into customer-wise structure
-        $result = $carts->map(function ($items) {
-            $customer = $items->first()->customer;
+                return [
+                    'id' => $cart->id,
+                    'quantity' => $cart->quantity,
+                    'created_at' => $cart->created_at,
+                    'product' => [
+                        'id' => $cart->product->id,
+                        'sku' => $cart->product->sku,
+                        'name' => $cart->product->name,
+                        'images' => $images,
+                        'brand' => $cart->product->brand,
+                    ],
+                ];
+            })->values(),
+        ];
+    })->values();
 
-            return [
-                'customer' => $customer,
-                'carts' => $items->map(function ($cart) {
-                    $images = collect(json_decode($cart->product->images, true) ?: [])
-                        ->map(fn($url) => ['url' => $url])
-                        ->toArray();
+    return response()->json([
+        'status' => true,
+        'data' => $result,
+        'pagination' => [
+            'total' => $customers->total(),
+            'per_page' => $customers->perPage(),
+            'current_page' => $customers->currentPage(),
+            'last_page' => $customers->lastPage(),
+        ],
+    ]);
+}
 
-                    return [
-                        'id' => $cart->id,
-                        'quantity' => $cart->quantity,
-                        'created_at' => $cart->created_at,
-                        'product' => [
-                            'id' => $cart->product->id,
-                            'sku' => $cart->product->sku,
-                            'name' => $cart->product->name,
-                            'images' => $images,
-                            'brand' => $cart->product->brand,
-                        ]
-                    ];
-                })->values()
-            ];
-        })->values();
-
-        // Replace data with paginated meta
-        return response()->json([
-            'status' => true,
-            'data' => $result,
-            'pagination' => [
-                'total' => $customerIds->total(),
-                'per_page' => $customerIds->perPage(),
-                'current_page' => $customerIds->currentPage(),
-                'last_page' => $customerIds->lastPage(),
-            ]
-        ]);
-    }
 
    
     /**
@@ -238,58 +254,136 @@ class AbandonedCartController extends Controller
      *     )
      * )
      */
-  public function show($customerId)
+   public function show($customerId)
+    {
+        $threshold = Carbon::now()->subHours(1);
+
+        // Get all abandoned carts for a specific customer
+        $carts = Cart::with([
+            'customer:id,name,email',
+            'customer.customerAddress',
+            'product' => function ($q) {
+                $q->select('id', 'sku', 'name', 'images', 'brand_id')
+                ->with(['brand:id,name']);
+            },
+        ])
+        ->where('created_at', '<=', $threshold)
+        ->where('user_id', $customerId)
+        ->get();
+
+        if ($carts->isEmpty()) {
+            return response()->json([
+                'status' => false,
+                'message' => 'No abandoned carts found for this customer'
+            ], 404);
+        }
+
+        // Transform into same structure as index
+        $customer = $carts->first()->customer;
+
+        $result = [
+            'customer' => $customer,
+            'carts' => $carts->map(function ($cart) {
+                $images = collect(json_decode($cart->product->images, true) ?: [])
+                    ->map(fn($url) => ['url' => $url])
+                    ->toArray();
+
+                return [
+                    'id' => $cart->id,
+                    'quantity' => $cart->quantity,
+                    'created_at' => $cart->created_at,
+                    'product' => [
+                        'id' => $cart->product->id,
+                        'sku' => $cart->product->sku,
+                        'name' => $cart->product->name,
+                        'images' => $images,
+                        'brand' => $cart->product->brand,
+                    ]
+                ];
+            })->values()
+        ];
+
+        return response()->json([
+            'status' => true,
+            'data' => $result
+        ]);
+    }
+
+/**
+ * @OA\Get(
+ *     path="/api/customers-by-date-range",
+ *     summary="Get customer IDs with carts within a date range",
+ *     tags={"Carts"},
+ *     @OA\Parameter(
+ *         name="start_date",
+ *         in="query",
+ *         description="Start date in YYYY-MM-DD format",
+ *         required=true,
+ *         @OA\Schema(type="string", format="date")
+ *     ),
+ *     @OA\Parameter(
+ *         name="end_date",
+ *         in="query",
+ *         description="End date in YYYY-MM-DD format (must be after or equal to start_date)",
+ *         required=true,
+ *         @OA\Schema(type="string", format="date")
+ *     ),
+ *     @OA\Response(
+ *         response=200,
+ *         description="List of customer IDs found",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=true),
+ *             @OA\Property(
+ *                 property="data",
+ *                 type="array",
+ *                 @OA\Items(type="integer", example=123)
+ *             )
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="No customers found in the date range",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="status", type="boolean", example=false),
+ *             @OA\Property(property="message", type="string", example="No customers found with carts in this date range")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error",
+ *         @OA\JsonContent(
+ *             @OA\Property(property="message", type="string", example="The start_date field is required."),
+ *             @OA\Property(property="errors", type="object")
+ *         )
+ *     )
+ * )
+ */
+public function getCustomersByDateRange(Request $request)
 {
-    $threshold = Carbon::now()->subHours(1);
+    // Validate input dates (optional but recommended)
+    $request->validate([
+        'start_date' => 'required|date',
+        'end_date' => 'required|date|after_or_equal:start_date',
+    ]);
 
-    // Get all abandoned carts for a specific customer
-    $carts = Cart::with([
-        'customer:id,name,email',
-        'customer.customerAddress',
-        'product' => function ($q) {
-            $q->select('id', 'sku', 'name', 'images', 'brand_id')
-              ->with(['brand:id,name']);
-        },
-    ])
-    ->where('created_at', '<=', $threshold)
-    ->where('user_id', $customerId)
-    ->get();
+    $startDate = Carbon::parse($request->start_date)->startOfDay();
+    $endDate = Carbon::parse($request->end_date)->endOfDay();
 
-    if ($carts->isEmpty()) {
+    // Fetch distinct user_ids from carts created within the date range
+    $customerIds = Cart::whereBetween('created_at', [$startDate, $endDate])
+        ->distinct()
+        ->pluck('user_id');
+
+    if ($customerIds->isEmpty()) {
         return response()->json([
             'status' => false,
-            'message' => 'No abandoned carts found for this customer'
+            'message' => 'No customers found with carts in this date range'
         ], 404);
     }
 
-    // Transform into same structure as index
-    $customer = $carts->first()->customer;
-
-    $result = [
-        'customer' => $customer,
-        'carts' => $carts->map(function ($cart) {
-            $images = collect(json_decode($cart->product->images, true) ?: [])
-                ->map(fn($url) => ['url' => $url])
-                ->toArray();
-
-            return [
-                'id' => $cart->id,
-                'quantity' => $cart->quantity,
-                'created_at' => $cart->created_at,
-                'product' => [
-                    'id' => $cart->product->id,
-                    'sku' => $cart->product->sku,
-                    'name' => $cart->product->name,
-                    'images' => $images,
-                    'brand' => $cart->product->brand,
-                ]
-            ];
-        })->values()
-    ];
-
     return response()->json([
         'status' => true,
-        'data' => $result
+        'data' => $customerIds,
     ]);
 }
 
