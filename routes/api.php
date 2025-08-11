@@ -121,7 +121,7 @@ use App\Models\Lead;
 use App\Models\Utm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-
+use App\Http\Controllers\FrontEnd\CustomerEventController;
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
@@ -157,6 +157,12 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 });
 
+
+
+
+
+
+Route::post('frontend/customer-events', [CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     $url = $request->query('url');
