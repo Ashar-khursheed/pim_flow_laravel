@@ -15,7 +15,7 @@
 	$chunks = [];
 	$offset = 0;
 	$total = $products->count();
-	$pattern = [3];
+	$pattern = [5];
 
 	while (array_sum($pattern) < $total) {
 		$pattern[] = 4;

@@ -10,11 +10,33 @@
 	<script src="https://cdn.tailwindcss.com"></script>
 </head>
 @php
-	use Illuminate\Support\Str;
+use Illuminate\Support\Str;
+
+$chunks = [];
+$offset = 0;
+$totalProducts = $products->count();
+$pattern = [5];
+
+while (array_sum($pattern) < $totalProducts) {
+	$pattern[] = 6;
+}
+
+foreach ($pattern as $size) {
+	if ($offset >= $totalProducts) break;
+	$chunks[] = $products->slice($offset, $size);
+	$offset += $size;
+}
+$pageNumber = 1;
 @endphp
 <body>
 	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto;  font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
-		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;background-color: white;">
+		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 10px 0; box-sizing: border-box;background-color: white;">
+			@foreach($chunks as $index => $chunk)
+
+			@if($index > 0)
+			<div style="page-break-before: always;"></div>
+			@endif
+
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
 				<tr>
 					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
@@ -38,32 +60,40 @@
 				</tr>
 			</table>
 
+			@if($index === 0)
 			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<td style="width: 49%; border: 1px solid black; vertical-align: top; padding: 0;">
 						<table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Inter', sans-serif;">
 							<tr>
 								<td colspan="1" style="background-color: #d9d9d9; text-align: center; font-weight: 600; font-size: 14px; padding: 10px 8px 8px;">
-									Prepared For
+									Prepared For({{ ucfirst(strtolower($customerType)) }})
 								</td>
 							</tr>
+							@if($customerBusinessName)
 							<tr>
-								<td style="padding: 6px 0.5rem;; font-weight: 700; text-transform: uppercase;">
+								<td style="padding: 2px 0.5rem;font-weight: 700;text-transform: uppercase;margin: 0;">
+									{{ $customerBusinessName }}
+								</td>
+							</tr>
+							@endif
+							<tr>
+								<td style="padding: 2px 0.5rem;font-weight: 700;text-transform: uppercase;margin: 0;">
 									{{ $customerName }}
 								</td>
 							</tr>
 							<tr>
-								<td style="padding: 0 0.5rem;">
+								<td style="padding: 2px 0.5rem; margin: 0;">
 									{{ $customerAddress }}, {{ $customerCity }}, {{ $customerCountry }}
 								</td>
 							</tr>
 							<tr>
-								<td style="padding: 1rem 0.5rem 0.1rem;">
+								<td style="padding: 5px 0.5rem 0px; margin: 0;">
 									<strong>Telephone::</strong> {{ $customerPhone }}
 								</td>
 							</tr>
 							<tr>
-								<td style="padding: 0.1rem 0.5rem;">
+								<td style="padding: 2px 0.5rem 0px; margin: 0;">
 									<strong>Email:</strong> {{ $customerEmail }}
 								</td>
 							</tr>
@@ -96,6 +126,7 @@
 					</td>
 				</tr>
 			</table>
+			@endif
 
 			<table style="width:100%; border-collapse:collapse; border:1px solid black; font-size:11px; font-family: 'Inter', sans-serif;">
 				<thead>
@@ -110,40 +141,41 @@
 					</tr>
 				</thead>
 				<tbody>
-					@foreach($products as $index1 => $product)
+					@foreach($chunk as $index1 => $product)
 					<tr style="background-color:white; font-family: 'Inter', sans-serif;">
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $index1+1 }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  font-family: 'Inter', sans-serif;">
 							<div style="margin-bottom:4px; font-family: 'Inter', sans-serif;">
-								<p style="font-weight:bold; font-size:13px; margin-bottom:2px; font-family: 'Inter', sans-serif;">
-									{{ Str::limit($product->name, 90, '...') }}
+								<p style="font-weight:bold; font-size:13px;margin-top:2px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
+									{{ Str::limit($product->name, 70, '...') }}
 								</p>
-								<p style="font-size:11px; margin-bottom:2px; font-family: 'Inter', sans-serif;">
+								<p style="font-size:11px; margin-top:3px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
 									<span style="font-weight:bold; font-family: 'Inter', sans-serif;">Brand:</span>
-									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ $product->brandName }}</span> |
+									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ Str::limit($product->brandName, 40, '...') }}</span>
+								</p>
+								<p style="font-size:11px; margin-top:3px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
 									<span style="font-weight:bold; font-family: 'Inter', sans-serif;">SKU #:</span>
-									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ $product->sku }}</span>
+									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ Str::limit($product->sku, 40, '...') }}</span>
 								</p>
-								<p style="font-size:11px; margin-bottom:3px; font-family: 'Inter', sans-serif;">
-									<span style="font-weight:bold; font-family: 'Inter', sans-serif;">Warranty :</span>
-									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ $product->warrantyInfo }}</span>
+								<p style="font-size:11px; margin-top:3px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
+									<span style="font-weight:bold; font-family: 'Inter', sans-serif;">Warranty:</span>
+									<span style="color:#dc2626; font-family: 'Inter', sans-serif;">{{ Str::limit($product->warrantyInfo, 35, '...') }}</span>
 								</p>
-								<p style="font-size:11px; margin-bottom:3px; font-family: 'Inter', sans-serif;">
-									<span style="font-weight:bold; color:#186737; font-family: 'Inter', sans-serif;">{{ $product->shippingCharge }}</span>
+								<p style="font-size:11px; margin-top:3px; margin-bottom:0px; font-family: 'Inter', sans-serif;">
 									<span style="font-weight:bold; font-family: 'Inter', sans-serif;">Mostly Ships in {{ $product->deliveryDays }}</span>
 								</p>
-								<a href="{{ $product->productURL }}" target="_blank" rel="noopener noreferrer" style="color:#2563eb; font-size:9.7px;">
+								<a href="{{ $product->productURL }}" target="_blank" rel="noopener noreferrer" style="margin-top:3px; margin-bottom:0px; color:#2563eb; font-size:9.7px;">
 									Click here for more details
 								</a>
 							</div>
 						</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; vertical-align:middle; font-family: 'Inter', sans-serif;">
 							@if (!empty($product->base64_image))
-								<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto; font-family: 'Inter', sans-serif;">
+							<img src="{{ $product->base64_image }}" alt="Product Image" style="max-width: 60px; max-height: 60px; width: auto; height: auto; font-family: 'Inter', sans-serif;">
 							@else
-								<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280; font-family: 'Inter', sans-serif;">
-									No Image
-								</div>
+							<div style="width: 60px; height: 60px; background-color: #f3f4f6; border: 1px solid #d1d5db; text-align: center; line-height: 60px; font-size: 10px; color: #6b7280; font-family: 'Inter', sans-serif;">
+								No Image
+							</div>
 							@endif
 						</td>
 
@@ -156,41 +188,88 @@
 				</tbody>
 			</table>
 
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+				<tr>
+					<td style="text-align: left;">
+						Order Online for Fast Shipping & Lower Prices at
+						<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #186737; font-family: 'Inter', sans-serif;">{{ $siteURL }}</a>
+					</td>
+					<td style="text-align: right; font-family: 'Inter', sans-serif;">
+						Page {{ $index+1 }}
+					</td>
+				</tr>
+			</table>
+			@php($pageNumber++)
+			@endif
+
+			@endforeach
+
+
+			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
+			@if(($index === 0 && count($chunk) == 4) || ($index === count($chunks)-1 && in_array(count($chunk), [5])))
+			<div style="page-break-before: always;"></div>
+			@endif
+
+			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
+				<tr>
+					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
+						<img alt="logo" src="{{ $pdfLogoUrl }}" width="120"/>
+					</td>
+
+					<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
+						<h1 style="font-size: 16px; font-weight: 700; margin: 0;">SALES QUOTATION</h1>
+						<p style="font-size: 13px; font-weight: 700; color: #186737; margin: 4px 0 0;">Best Price. Zero Hassle.</p>
+					</td>
+
+					<!-- Contact Info Column -->
+					<td style="width: 33.33%; text-align: right; font-size: 11px; padding: 0.5rem; vertical-align: top;">
+						<p style="font-weight: 700; margin: 0;">{{ $companyName }}.</p>
+						<p style="margin: 0;">{{ $companyStreet }}</p>
+						<p style="margin: 0;">{{ $companyCity }}</p>
+						<p style="margin: 0;">Phone: {{ $companyPhone }}</p>
+						<p style="margin: 0;">Email: {{ $siteEmail }}</p>
+						<p style="margin: 0;">{{ $siteURL }}</p>
+					</td>
+				</tr>
+			</table>
+			@endif
+
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; font-family: 'Inter', sans-serif;">
 				<tr>
-					<td style="width: 60%; vertical-align: top; border: 1px solid black; padding: 16px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
-						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;">TERMS OF SALE</p>
-						<ul style="margin-top: 8px; font-size: 12px; list-style: none; padding: 0; font-family: 'Inter', sans-serif;">
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+					<td style="width: 60%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
+						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin-top: 0px;">TERMS OF SALE</p>
+						<ul style="font-size: 12px; list-style: none; padding: 0; font-family: 'Inter', sans-serif;">
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Kindly include our Order No & Date while processing the payment through bank transfer.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Stock levels change daily; availability confirmed only at the point of purchase with valid LPO or Advance Payment.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Lead times are from the receipt of payment unless agreed otherwise.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Lead times are based on manufacturing times and may be subject to change.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Once items are available, delivery must be accepted/received within 2 weeks.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; margin-bottom: 0px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>If delivery is delayed by the customer, storage charges may apply. Installation not included unless agreed.</span>
 							</li>
 						</ul>
 					</td>
 
 					<!-- Invoice Summary Column -->
-					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; padding: 0; font-family: 'Inter', sans-serif;">
-						<div style="padding: 16px; font-family: 'Inter', sans-serif;">
+					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
+						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
 							<table style="width: 100%; font-size: 12px; font-family: 'Inter', sans-serif;">
 								<tbody>
 									<tr>
@@ -205,77 +284,131 @@
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $taxAmount }}</td>
 									</tr>
+									{{-- <tr style="color: #FF0000; background-color: #E7E7E7;">
+										<td style="text-align: left; padding-top: 8px; padding-bottom: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+											NET TOTAL INCL.{{ $taxName }}
+										</td>
+										<td style="text-align: right; padding-top: 8px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">
+											{{ $total }}
+										</td>
+									</tr>
+									<tr>
+										<td colspan="2" style="padding-top: 8px; padding-bottom: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+											{{ $totalInWords }}
+										</td>
+									</tr> --}}
 								</tbody>
 							</table>
 						</div>
-						<p style="display: flex; justify-content: space-between; color: #FF0000; background-color: #E7E7E7; padding: 8px 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+						<p style="display: flex; justify-content: space-between; color: #FF0000; background-color: #E7E7E7; padding: 8px 8px; font-weight: 600; font-family: 'Inter', sans-serif; margin: 0px; ">
 							<span>NET TOTAL INCL.{{ $taxName }}</span>
-							<span>{{ $total }}</span>
+							<span>&nbsp;&nbsp;&nbsp;{{ $total }}</span>
 						</p>
-						<div style="text-align: right; padding: 8px 8px 8px 16px; font-family: 'Inter', sans-serif;">
-							<p style="font-weight: 600;">
-								{{ $totalInWords }}
-							</p>
+						<p style="margin: 0px; padding: 5px 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
+							<span>{{ $totalInWords }}</span>
+						</p>
+						<div style="text-align: right; margin-top: 0px;  padding: 8px 8px 8px 16px; font-family: 'Inter', sans-serif;">
+							<a href="{{ $payNowUrl }}" target="_blank" rel="noopener noreferrer" style="box-sizing:border-box;background-color:#26683a;color:#ffffff;padding:10px 20px;text-decoration:none;font-size:14px;border-radius:5px;display:inline-block;font-family:'Noto Sans',sans-serif">
+								Pay Now
+							</a>
 						</div>
 					</td>
 				</tr>
 			</table>
 
+			@if(($index === 0 && in_array(count($chunk), [1, 2, 3])) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [2, 3, 4])))
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+				<tr>
+					<td style="text-align: left;">
+						Order Online for Fast Shipping & Lower Prices at
+						<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #186737; font-family: 'Inter', sans-serif;">{{ $siteURL }}</a>
+					</td>
+					<td style="text-align: right; font-family: 'Inter', sans-serif;">
+						Page {{ $pageNumber++ }}
+					</td>
+				</tr>
+			</table>
+
+			<div style="page-break-before: always;"></div>
+			<table style="width: 100%; border-collapse: collapse; margin-bottom: 1rem; font-size: 14px;">
+				<tr>
+					<td style="width: 33.33%; padding: 0.2rem 0.5rem ; vertical-align: top;">
+						<img alt="logo" src="{{ $pdfLogoUrl }}" width="120"/>
+					</td>
+
+					<td style="width: 33.33%; text-align: center; padding: 0.5rem; vertical-align: top;">
+						<h1 style="font-size: 16px; font-weight: 700; margin: 0;">SALES QUOTATION</h1>
+						<p style="font-size: 13px; font-weight: 700; color: #186737; margin: 4px 0 0;">Best Price. Zero Hassle.</p>
+					</td>
+
+					<!-- Contact Info Column -->
+					<td style="width: 33.33%; text-align: right; font-size: 11px; padding: 0.5rem; vertical-align: top;">
+						<p style="font-weight: 700; margin: 0;">{{ $companyName }}.</p>
+						<p style="margin: 0;">{{ $companyStreet }}</p>
+						<p style="margin: 0;">{{ $companyCity }}</p>
+						<p style="margin: 0;">Phone: {{ $companyPhone }}</p>
+						<p style="margin: 0;">Email: {{ $siteEmail }}</p>
+						<p style="margin: 0;">{{ $siteURL }}</p>
+					</td>
+				</tr>
+			</table>
+			@endif
+
 			<table style="width: 100%; border-spacing: 0; margin-top: 0px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<!-- Bank Details Table Cell -->
-					<td style="width: 50%; vertical-align: top; padding: 15px 0px; font-family: 'Inter', sans-serif;">
+					<td style="width: 42%; vertical-align: middle; padding: 15px 0px; font-family: 'Inter', sans-serif;">
 						<table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid black; font-family: 'Inter', sans-serif;">
 							<tr>
-								<td colspan="2" style="background-color: #d9d9d9; text-align: center; padding: 8px; font-weight: 600; font-size: 1rem; font-family: 'Inter', sans-serif;">
-									Bank Details
+								<td colspan="2" style="background-color: #d9d9d9; text-align: center; padding: 8px; font-weight: 600; font-size: 15px; font-family: 'Inter', sans-serif;">
+									Payment via bank transfer
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Account Name
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 16px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									{{ $companyName }}
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Beneficiary Address
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 16px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									{{ $beneficiaryAddress }}
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Account No
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 16px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									{{ $accountNo }}
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Bank
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 16px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									{{ $bankName }}
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									Routing Code
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 16px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									{{ $routingCode }}
 								</td>
 							</tr>
 							<tr>
-								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; white-space: nowrap; font-family: 'Inter', sans-serif;">
+								<td style="background-color: #E7E7E7; border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; width: 40%;">
 									In Case Of Cheque Payment
 								</td>
-								<td style="border-top: 1px solid black; padding: 4px 8px 20px 4px; font-weight: 600; font-family: 'Inter', sans-serif;">
+								<td style="border-top: 1px solid black; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
 									Please prepare all cheques in favor of <br>
 									<span style="color: #FF0000;">{{ $companyName }}</span>
 								</td>
@@ -284,17 +417,17 @@
 					</td>
 
 					<!-- Payment Terms Table Cell -->
-					<td style="width: 50%; vertical-align: top; padding: 15px 0px 15px 15px; font-family: 'Inter', sans-serif;">
-						<table style="width: 100%; border: 1px solid black; background-color: white; font-size: 12px; border-collapse: collapse; font-family: 'Inter', sans-serif;">
+					<td style="width: 58%; vertical-align: top; padding: 15px 0px 15px 15px; font-family: 'Inter', sans-serif;">
+						<table style="width: 100%; border: 1px solid black; background-color: white; font-size: 12px; border-collapse: collapse; font-family: 'Inter', sans-serif; height: 250px;">
 							<thead>
 								<tr style="background-color: #d9d9d9; font-family: 'Inter', sans-serif;">
-									<th colspan="2" style="text-align: center; padding: 8px; font-weight: 600; font-size: 16px; font-family: 'Inter', sans-serif;">
+									<th colspan="2" style="text-align: center; padding: 8px; font-weight: 600; font-size: 15px; font-family: 'Inter', sans-serif;">
 										Customer Payment Terms & Order Processing Timeline
 									</th>
 								</tr>
 							</thead>
 							<tbody>
-								<tr>
+								<tr style="vertical-align: top;">
 									<td colspan="2" style="padding: 8px; font-size: 12px; line-height: 1.6; border-top: 1px solid black; font-family: 'Inter', sans-serif;">
 										<strong>Bank Transfer (Wire/Local):</strong> Orders are processed after 2–3 business days upon receipt of funds.<br>
 										<strong>ACH Payments:</strong> Orders are processed after 3 business days from payment receipt.<br>
@@ -311,9 +444,21 @@
 				</tr>
 			</table>
 
-			<p style="font-weight: 600; text-align: center; margin-bottom: 20px; font-family: 'Inter', sans-serif;">
+			<p style="font-weight: 600; text-align: center; margin-bottom: 10px; font-family: 'Inter', sans-serif;">
 				This is a system generated Invoice. Hence, no stamp or signature required.
 			</p>
+
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+				<tr>
+					<td style="text-align: left;">
+						Order Online for Fast Shipping & Lower Prices at
+						<a href="{{ $siteURL }}" target="_blank" rel="noopener noreferrer" style="color: #186737; font-family: 'Inter', sans-serif;">{{ $siteURL }}</a>
+					</td>
+					<td style="text-align: right; font-family: 'Inter', sans-serif;">
+						Page {{ $pageNumber }}
+					</td>
+				</tr>
+			</table>
 		</div>
 	</div>
 </body>

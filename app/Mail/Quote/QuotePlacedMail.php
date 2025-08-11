@@ -38,10 +38,10 @@ class QuotePlacedMail extends Mailable
 		$mailIconURL = $backendURL. '/right.png';
 
 		$downloadLink = url('/my-quotes');
-		$orderLink = url('/checkout');
+		$orderLink = url('/download-quotation/' . $quote->id);
 
 		$siteUrl = config('app.website') == 'UAE' ? 'HorecaStore.ae':'Thehorecastore.com';
-		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'orders@thehorecastore.com';
+		$siteEmail = config('app.website') == 'UAE' ? 'yourquote@horecastore.ae':'yourquote@thehorecastore.com';
 
 		$mailParams = [
 			'logoUrl' => $logoUrl,

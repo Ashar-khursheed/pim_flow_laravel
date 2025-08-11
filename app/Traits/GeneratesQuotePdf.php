@@ -20,7 +20,7 @@ trait GeneratesQuotePdf
 
 		/* Load relationships */
 		$quote->load([
-			'customer:id,name,email,type,country_code,mobile_number',
+			'customer:id,name,business_name,email,type,country_code,mobile_number',
 			'customerAddress',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
@@ -43,7 +43,8 @@ trait GeneratesQuotePdf
 		$siteURL = url('/');
 
 		$customerType = $customer->type;
-		$customerName = $customer->type === 'Private' ? $customer->name : $customer->business_name;
+		$customerBusinessName = $customer->business_name;
+		$customerName = $customer->name;
 		$customerAddressDetail = $quote->customerAddress;
 		$customerAddress = $customerAddressDetail->address ?? '';
 		$customerCity = $customerAddressDetail->city ?? '';
@@ -112,6 +113,8 @@ trait GeneratesQuotePdf
 		? convertNumberToWords($total, "AED", "Fils")
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
+		$payNowUrl = url('/download-quotation/' . $quote->id);
+
 		$beneficiaryAddress = config('app.website') == 'UAE' ? '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
 		$accountNo = config('app.website') == 'UAE' ? '6130 9953 3' : '6130 9953 3';
 		$bankName = config('app.website') == 'UAE' ? 'JP Morgan Chase Bank' : 'JP Morgan Chase Bank';
@@ -128,6 +131,8 @@ trait GeneratesQuotePdf
 			'siteEmail' => $siteEmail,
 			'siteURL' => $siteURL,
 
+			'customerType' => $customerType,
+			'customerBusinessName' => $customerBusinessName,
 			'customerName' => $customerName,
 			'customerAddress' => $customerAddress,
 			'customerCity' => $customerCity,
@@ -151,6 +156,7 @@ trait GeneratesQuotePdf
 			'taxAmount' => $taxAmount,
 			'total' => $total,
 			'totalInWords' => $totalInWords,
+			'payNowUrl' => $payNowUrl,
 
 			'beneficiaryAddress' => $beneficiaryAddress,
 			'accountNo' => $accountNo,
