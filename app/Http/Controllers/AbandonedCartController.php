@@ -139,7 +139,7 @@ class AbandonedCartController extends Controller
     // Fetch carts for those customers
     $carts = Cart::with([
         'customer:id,name,email',
-        'customer.customerAddress',
+        // 'customer.customerAddress',
         'product' => function ($q) {
             $q->select('id', 'sku', 'name', 'images', 'brand_id')
               ->with(['brand:id,name']);
