@@ -300,7 +300,6 @@
                         "name": "start_date",
                         "in": "query",
                         "description": "Start date in YYYY-MM-DD format",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -310,7 +309,6 @@
                         "name": "end_date",
                         "in": "query",
                         "description": "End date in YYYY-MM-DD format (must be after or equal to start_date)",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"

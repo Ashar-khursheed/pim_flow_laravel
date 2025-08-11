@@ -217,7 +217,8 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
-
+    Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
+	
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
     Route::post('/', [MenuBannerController::class, 'store']);

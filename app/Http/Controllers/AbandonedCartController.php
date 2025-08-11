@@ -319,14 +319,12 @@ public function index(Request $request)
  *         name="start_date",
  *         in="query",
  *         description="Start date in YYYY-MM-DD format",
- *         required=true,
  *         @OA\Schema(type="string", format="date")
  *     ),
  *     @OA\Parameter(
  *         name="end_date",
  *         in="query",
  *         description="End date in YYYY-MM-DD format (must be after or equal to start_date)",
- *         required=true,
  *         @OA\Schema(type="string", format="date")
  *     ),
  *     @OA\Response(
@@ -363,8 +361,8 @@ public function getCustomersByDateRange(Request $request)
 {
     // Validate input dates (optional but recommended)
     $request->validate([
-        'start_date' => 'required|date',
-        'end_date' => 'required|date|after_or_equal:start_date',
+        'start_date' => 'nullable|date',
+        'end_date' => 'nullable|date|after_or_equal:start_date',
     ]);
 
     $startDate = Carbon::parse($request->start_date)->startOfDay();
