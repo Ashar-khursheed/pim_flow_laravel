@@ -115,9 +115,12 @@ use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
-
+use App\Http\Controllers\FrontEnd\CustomerEventController;
 
 use Illuminate\Support\Facades\Http;
+
+
+Route::post('frontend/customer-events', [CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     $url = $request->query('url');

@@ -54,10 +54,12 @@ class CustomerEventController extends Controller
 			'extra_data' => 'nullable|array',
 		]);
 
-		CustomerEvent::create($data);
+		$record = CustomerEvent::create($data);
 
 		return response()->json([
-			'message' => 'Customer event recorded successfully'
+			'success' => true,
+			'message' => 'Customer event recorded successfully.',
+			'data' => $record
 		], 201);
 	}
 

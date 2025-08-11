@@ -18,6 +18,10 @@ class CustomerEvent extends Model
 		'extra_data',
 	];
 
+	protected $casts = [
+		'extra_data' => 'array',
+	];
+
 	public function customer()
 	{
 		return $this->belongsTo(Customer::class);
