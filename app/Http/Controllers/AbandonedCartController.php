@@ -314,6 +314,7 @@ public function index(Request $request)
  *     path="/api/customers-by-date-range",
  *     summary="Get customer IDs with carts within a date range",
  *     tags={"Carts"},
+ *     security={{"bearerAuth":{}}},
  *     @OA\Parameter(
  *         name="start_date",
  *         in="query",

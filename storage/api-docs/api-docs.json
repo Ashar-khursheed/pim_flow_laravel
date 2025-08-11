@@ -380,7 +380,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/keywords/export": {
