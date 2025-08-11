@@ -65,6 +65,7 @@ use App\Http\Controllers\MenuBannerController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NoFraudController;
 use App\Http\Controllers\LogDownloadController;
+use App\Http\Controllers\Api\AbandonedCartController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -115,6 +116,9 @@ use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
+
+
+
 
 
 use Illuminate\Support\Facades\Http;
@@ -170,6 +174,7 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
+	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
