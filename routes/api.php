@@ -116,12 +116,50 @@ use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
+use App\Http\Middleware\CaptureUtm;
+use App\Models\Lead;
+use App\Models\Utm;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use App\Http\Controllers\FrontEnd\CustomerEventController;
 
+Route::middleware([CaptureUtm::class])->group(function () {
+
+    Route::post('/store-lead', function (Request $request) {
+        $sessionId = $request->header('X-Session-ID') ?? $request->session()->getId();
+
+        $lead = Lead::create([
+            'session_id' => $sessionId,
+            'name'       => $request->input('name'),
+            'email'      => $request->input('email'),
+        ]);
+
+        return response()->json(['message' => 'Lead stored', 'lead' => $lead]);
+    });
+
+    Route::get('/utm-stats', function () {
+        $visitors = DB::table('utms')
+            ->select('utm_source', DB::raw('count(distinct session_id) as total_visitors'))
+            ->groupBy('utm_source')
+            ->get();
+
+        $conversionsRaw = DB::table('leads')->select('session_id')->get();
+
+        $conversions = $conversionsRaw->groupBy(function ($item) {
+            return Utm::where('session_id', $item->session_id)->value('utm_source') ?? 'unknown';
+        })->map->count();
+
+        return response()->json([
+            'visitors'    => $visitors,
+            'conversions' => $conversions,
+        ]);
+    });
+
+});
 
 
 
-use Illuminate\Support\Facades\Http;
+
 
 
 Route::post('frontend/customer-events', [CustomerEventController::class, 'store']);
