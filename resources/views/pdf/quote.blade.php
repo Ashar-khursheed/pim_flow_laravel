@@ -67,7 +67,7 @@ $pageNumber = 1;
 						<table style="width: 100%; border-collapse: collapse; font-size: 14px; font-family: 'Inter', sans-serif;">
 							<tr>
 								<td colspan="1" style="background-color: #d9d9d9; text-align: center; font-weight: 600; font-size: 14px; padding: 10px 8px 8px;">
-									Prepared For({{$customerType}})
+									Prepared For({{ ucfirst(strtolower($customerType)) }})
 								</td>
 							</tr>
 							@if($customerBusinessName)
@@ -238,37 +238,37 @@ $pageNumber = 1;
 			<table style="width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 15px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<td style="width: 60%; vertical-align: top; border: 1px solid black; padding: 10px; background-color: #ffffff; font-family: 'Inter', sans-serif;">
-						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;">TERMS OF SALE</p>
-						<ul style="margin-top: 8px; font-size: 12px; list-style: none; padding: 0; font-family: 'Inter', sans-serif;">
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+						<p style="font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif; margin-top: 0px;">TERMS OF SALE</p>
+						<ul style="font-size: 12px; list-style: none; padding: 0; font-family: 'Inter', sans-serif;">
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Kindly include our Order No & Date while processing the payment through bank transfer.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Stock levels change daily; availability confirmed only at the point of purchase with valid LPO or Advance Payment.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Lead times are from the receipt of payment unless agreed otherwise.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Lead times are based on manufacturing times and may be subject to change.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>Once items are available, delivery must be accepted/received within 2 weeks.</span>
 							</li>
-							<li style="display: flex; align-items: flex-start; margin-bottom: 8px; font-family: 'Inter', sans-serif;">
-								<span style="font-size: 13px; margin-right: 8px; margin-top: -1px; font-family: 'Inter', sans-serif;">•</span>
+							<li style="display: flex; align-items: flex-start; margin-top: 3px; margin-bottom: 0px; font-family: 'Inter', sans-serif;">
+								<span style="font-size: 13px; margin-right: 8px; font-family: 'Inter', sans-serif;">•</span>
 								<span>If delivery is delayed by the customer, storage charges may apply. Installation not included unless agreed.</span>
 							</li>
 						</ul>
 					</td>
 
 					<!-- Invoice Summary Column -->
-					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; padding: 10px; font-family: 'Inter', sans-serif;">
+					<td style="width: 40%; vertical-align: top; border: 1px solid black; background-color: #ffffff; font-family: 'Inter', sans-serif;">
 						<div style="padding: 10px; font-family: 'Inter', sans-serif;">
 							<table style="width: 100%; font-size: 12px; font-family: 'Inter', sans-serif;">
 								<tbody>

@@ -20,7 +20,7 @@ trait GeneratesQuotePdf
 
 		/* Load relationships */
 		$quote->load([
-			'customer:id,name,email,type,country_code,mobile_number',
+			'customer:id,name,business_name,email,type,country_code,mobile_number',
 			'customerAddress',
 			'quoteProducts:id,quote_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount',
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
