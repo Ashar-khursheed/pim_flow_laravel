@@ -15,8 +15,8 @@ class ReportController extends BaseController
 	 *     path="/api/report/orders",
 	 *     summary="Get order report within a date range",
 	 *     tags={"Reports"},
-	 *     @OA\Parameter(name="from_date", in="query", required=true, @OA\Schema(type="string", format="date"), description="Start date (YYYY-MM-DD)"),
-	 *     @OA\Parameter(name="to_date", in="query", required=true, @OA\Schema(type="string", format="date"), description="End date (YYYY-MM-DD)"),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date"), description="Start date (YYYY-MM-DD)"),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date"), description="End date (YYYY-MM-DD)"),
 	 *     @OA\Parameter(name="status", in="query", required=false, @OA\Schema(type="string")),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -26,12 +26,10 @@ class ReportController extends BaseController
 	{
 		/* Validate request data */
 		$request->validate([
-			'from_date' => 'required|date',
-			'to_date' => 'required|date',
+			'from_date' => 'nullable|date',
+			'to_date'   => 'nullable|date',
+			'status'    => 'nullable|string'
 		]);
-
-		$from = $request->from_date . ' 00:00:00';
-		$to = $request->to_date . ' 23:59:59';
 
 		$orderQuery = Order::query();
 		$returnProductQuery = ReturnOrderProduct::query();
@@ -43,8 +41,13 @@ class ReportController extends BaseController
 		}
 
 		/* Filter by date range */
-		$orderQuery->whereBetween('created_at', [$from, $to]);
-		$returnProductQuery->whereBetween('created_at', [$from, $to]);
+		if ($request->filled('from_date') || $request->filled('to_date')) {
+			$from = $request->from_date ? $request->from_date . ' 00:00:00' : '1970-01-01 00:00:00';
+			$to   = $request->to_date   ? $request->to_date   . ' 23:59:59' : now()->endOfDay()->toDateTimeString();
+
+			$orderQuery->whereBetween('created_at', [$from, $to]);
+			$returnProductQuery->whereBetween('created_at', [$from, $to]);
+		}
 
 		/* Aggregations */
 		$orderCount = $orderQuery->count();

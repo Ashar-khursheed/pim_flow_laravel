@@ -28220,7 +28220,6 @@
                         "name": "from_date",
                         "in": "query",
                         "description": "Start date (YYYY-MM-DD)",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"
@@ -28230,7 +28229,6 @@
                         "name": "to_date",
                         "in": "query",
                         "description": "End date (YYYY-MM-DD)",
-                        "required": true,
                         "schema": {
                             "type": "string",
                             "format": "date"
