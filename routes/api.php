@@ -126,7 +126,7 @@ use App\Http\Controllers\FrontEnd\CustomerEventController;
 Route::middleware([CaptureUtm::class])->group(function () {
 
     Route::post('/store-lead', function (Request $request) {
-        $sessionId = $request->header('X-Session-ID') ?? $request->session()->getId();
+        $sessionId = $request->header('X-Session-ID') ?? Str::uuid()->toString();
 
         $lead = Lead::create([
             'session_id' => $sessionId,
