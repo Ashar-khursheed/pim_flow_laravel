@@ -11,14 +11,14 @@ return new class extends Migration
      */
    public function up()
     {
-        Schema::table('payments_managment', function (Blueprint $table) {
+        Schema::table('payments_management', function (Blueprint $table) {
             $table->string('payment_method')->nullable()->after('id'); // or after any existing column
         });
     }
 
     public function down()
     {
-        Schema::table('payments_managment', function (Blueprint $table) {
+        Schema::table('payments_management', function (Blueprint $table) {
             $table->dropColumn('payment_method');
         });
     }
