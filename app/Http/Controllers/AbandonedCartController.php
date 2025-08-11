@@ -125,6 +125,7 @@ class AbandonedCartController extends Controller
      * @OA\Get(
      *     path="/api/abandoned-carts/{id}",
      *     tags={"Carts"},
+     *   security={{"bearerAuth":{}}},
      *     summary="Get details of a specific abandoned cart",
      *     description="Returns abandoned cart details by ID with customer info, addresses, product, and brand",
      *     @OA\Parameter(
