@@ -125,70 +125,70 @@ class AbandonedCartController extends Controller
 //     }
 
   public function index(Request $request)
-{
-    $threshold = Carbon::now()->subHours(1);
+    {
+        $threshold = Carbon::now()->subHours(1);
 
-    // Get unique customer IDs for pagination
-    $perPage = $request->get('per_page', 10);
+        // Get unique customer IDs for pagination
+        $perPage = $request->get('per_page', 10);
 
-    $customerIds = Cart::where('created_at', '<=', $threshold)
-        ->select('user_id')
-        ->distinct()
-        ->paginate($perPage);
+        $customerIds = Cart::where('created_at', '<=', $threshold)
+            ->select('user_id')
+            ->distinct()
+            ->paginate($perPage);
 
-    // Fetch carts for those customers
-    $carts = Cart::with([
-        'customer:id,name,email',
-        // 'customer.customerAddress',
-        'product' => function ($q) {
-            $q->select('id', 'sku', 'name', 'images', 'brand_id')
-              ->with(['brand:id,name']);
-        },
-    ])
-    ->whereIn('user_id', $customerIds->pluck('user_id'))
-    ->where('created_at', '<=', $threshold)
-    ->get()
-    ->groupBy('user_id');
+        // Fetch carts for those customers
+        $carts = Cart::with([
+            'customer:id,name,email',
+            // 'customer.customerAddress',
+            'product' => function ($q) {
+                $q->select('id', 'sku', 'name', 'images', 'brand_id')
+                ->with(['brand:id,name']);
+            },
+        ])
+        ->whereIn('user_id', $customerIds->pluck('user_id'))
+        ->where('created_at', '<=', $threshold)
+        ->get()
+        ->groupBy('user_id');
 
-    // Transform into customer-wise structure
-    $result = $carts->map(function ($items) {
-        $customer = $items->first()->customer;
+        // Transform into customer-wise structure
+        $result = $carts->map(function ($items) {
+            $customer = $items->first()->customer;
 
-        return [
-            'customer' => $customer,
-            'carts' => $items->map(function ($cart) {
-                $images = collect(json_decode($cart->product->images, true) ?: [])
-                    ->map(fn($url) => ['url' => $url])
-                    ->toArray();
+            return [
+                'customer' => $customer,
+                'carts' => $items->map(function ($cart) {
+                    $images = collect(json_decode($cart->product->images, true) ?: [])
+                        ->map(fn($url) => ['url' => $url])
+                        ->toArray();
 
-                return [
-                    'id' => $cart->id,
-                    'quantity' => $cart->quantity,
-                    'created_at' => $cart->created_at,
-                    'product' => [
-                        'id' => $cart->product->id,
-                        'sku' => $cart->product->sku,
-                        'name' => $cart->product->name,
-                        'images' => $images,
-                        'brand' => $cart->product->brand,
-                    ]
-                ];
-            })->values()
-        ];
-    })->values();
+                    return [
+                        'id' => $cart->id,
+                        'quantity' => $cart->quantity,
+                        'created_at' => $cart->created_at,
+                        'product' => [
+                            'id' => $cart->product->id,
+                            'sku' => $cart->product->sku,
+                            'name' => $cart->product->name,
+                            'images' => $images,
+                            'brand' => $cart->product->brand,
+                        ]
+                    ];
+                })->values()
+            ];
+        })->values();
 
-    // Replace data with paginated meta
-    return response()->json([
-        'status' => true,
-        'data' => $result,
-        'pagination' => [
-            'total' => $customerIds->total(),
-            'per_page' => $customerIds->perPage(),
-            'current_page' => $customerIds->currentPage(),
-            'last_page' => $customerIds->lastPage(),
-        ]
-    ]);
-}
+        // Replace data with paginated meta
+        return response()->json([
+            'status' => true,
+            'data' => $result,
+            'pagination' => [
+                'total' => $customerIds->total(),
+                'per_page' => $customerIds->perPage(),
+                'current_page' => $customerIds->currentPage(),
+                'last_page' => $customerIds->lastPage(),
+            ]
+        ]);
+    }
 
    
     /**
