@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Product;
 use App\Models\FrontEnd\Customer;
-
 class Cart extends Model
 {
     use HasFactory;
@@ -28,4 +27,12 @@ class Cart extends Model
     {
         return $this->belongsTo(Product::class, 'product_id', 'id'); // Ensure proper relationship
     }
+
+    public function customer()
+    {
+        return $this->belongsTo(Customer::class);
+    }
+
+
+
 }
