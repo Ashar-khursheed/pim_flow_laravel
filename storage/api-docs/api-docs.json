@@ -13688,6 +13688,101 @@
                 ]
             }
         },
+        "/api/frontend/customer-events": {
+            "post": {
+                "tags": [
+                    "FrontEnd-Customer Events"
+                ],
+                "summary": "Track a customer event",
+                "description": "Store a customer interaction event for analytics",
+                "operationId": "3010e7267c4bb4e46e46ef203aeca660",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "event_type": {
+                                        "type": "string",
+                                        "example": "click"
+                                    },
+                                    "event_time": {
+                                        "type": "string",
+                                        "format": "date-time",
+                                        "example": "2025-07-25 14:23:00"
+                                    },
+                                    "page": {
+                                        "type": "string",
+                                        "example": "/product/123"
+                                    },
+                                    "element": {
+                                        "type": "string",
+                                        "example": "#add-to-cart-button",
+                                        "nullable": true
+                                    },
+                                    "customer_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "nullable": true
+                                    },
+                                    "session_id": {
+                                        "type": "string",
+                                        "example": "abc123xyz"
+                                    },
+                                    "ip_address": {
+                                        "type": "string",
+                                        "example": "192.168.1.100"
+                                    },
+                                    "user_agent": {
+                                        "type": "string",
+                                        "example": "Mozilla/5.0 ..."
+                                    },
+                                    "extra_data": {
+                                        "properties": {
+                                            "product_id": {
+                                                "type": "integer",
+                                                "example": 123
+                                            },
+                                            "product_name": {
+                                                "type": "string",
+                                                "example": "Apple iPhone 14"
+                                            },
+                                            "referrer": {
+                                                "type": "string",
+                                                "example": "https://google.com"
+                                            },
+                                            "time_spent_seconds": {
+                                                "type": "integer",
+                                                "example": 45
+                                            },
+                                            "conversion_value": {
+                                                "type": "number",
+                                                "format": "float",
+                                                "example": 599.99
+                                            },
+                                            "conversion_type": {
+                                                "type": "string",
+                                                "example": "purchase"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Event tracked successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                }
+            }
+        },
         "/api/frontend/discounts": {
             "get": {
                 "tags": [
@@ -33656,6 +33751,10 @@
         {
             "name": "Frontend CustomerDocuments",
             "description": "Frontend CustomerDocuments"
+        },
+        {
+            "name": "FrontEnd-Customer Events",
+            "description": "FrontEnd-Customer Events"
         },
         {
             "name": "Frontend-Discounts",

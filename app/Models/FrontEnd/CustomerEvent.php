@@ -1,0 +1,25 @@
+<?php
+
+namespace App\Models\FrontEnd;
+
+use Illuminate\Database\Eloquent\Model;
+
+class CustomerEvent extends Model
+{
+	protected $fillable = [
+		'event_type',
+		'event_time',
+		'page',
+		'element',
+		'customer_id',
+		'session_id',
+		'ip_address',
+		'user_agent',
+		'extra_data',
+	];
+
+	public function customer()
+	{
+		return $this->belongsTo(Customer::class);
+	}
+}
