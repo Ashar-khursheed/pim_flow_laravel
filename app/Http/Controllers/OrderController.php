@@ -622,6 +622,7 @@ class OrderController extends Controller
 			'creator',
 			'updator',
 			'tracking',
+			'nofraudResponse' 
 		]);
 
 		/* Mutate the data for each order product */
@@ -641,6 +642,10 @@ class OrderController extends Controller
 			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
+
+				$orderProduct -> nofraudResponse->response ?? null;
+				$orderProduct-> nofraud_decision = $data['decision'] ?? null;
+				unset($orderProduct->nofraudResponse);
 
 			/* Format numeric values to 2 decimal places */
 			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
