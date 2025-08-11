@@ -27,6 +27,7 @@ trait GeneratesQuotePdf
 			'quoteProducts.product.brand:id,name',
 			'quoteProducts.product.currency:id,symbol',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'quoteProducts.product.seoProductUrl:id,relational_id,url',
 			'quoteEmails',
 		]);
 
@@ -76,7 +77,7 @@ trait GeneratesQuotePdf
 				: $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
-				$product->productURL = url('/product/' . $productDetail->id);
+				$product->productURL = url('/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id);
 
 				$images = is_array($productDetail->images)
 				? $productDetail->images
