@@ -175,6 +175,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
+	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
 
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
