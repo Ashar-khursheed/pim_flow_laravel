@@ -65,7 +65,7 @@ use App\Http\Controllers\MenuBannerController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NoFraudController;
 use App\Http\Controllers\LogDownloadController;
-use App\Http\Controllers\Api\AbandonedCartController;
+use App\Http\Controllers\AbandonedCartController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
