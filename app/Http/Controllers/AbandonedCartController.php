@@ -144,14 +144,26 @@ class AbandonedCartController extends Controller
         // Transform into customer-wise structure
         $result = $carts->map(function ($items) {
             $customer = $items->first()->customer;
+
             return [
                 'customer' => $customer,
                 'carts' => $items->map(function ($cart) {
+                    // Decode images JSON and wrap each in an object
+                    $images = collect(json_decode($cart->product->images, true) ?: [])
+                        ->map(fn($url) => ['url' => $url])
+                        ->toArray();
+
                     return [
                         'id' => $cart->id,
                         'quantity' => $cart->quantity,
                         'created_at' => $cart->created_at,
-                        'product' => $cart->product
+                        'product' => [
+                            'id' => $cart->product->id,
+                            'sku' => $cart->product->sku,
+                            'name' => $cart->product->name,
+                            'images' => $images,
+                            'brand' => $cart->product->brand,
+                        ]
                     ];
                 })->values()
             ];
