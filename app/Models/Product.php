@@ -133,6 +133,11 @@ class Product extends Model
 		return $this->hasOne(SeoManagement::class, 'relational_id', 'id');
 	}
 
+	public function seoProductUrl()
+	{
+		return $this->hasOne(SeoManagement::class, 'relational_id', 'id')->where('relational_type', 'Product');
+	}
+
 	public function productAttributes()
 	{
 		return $this->hasMany(ProductAttribute::class);
