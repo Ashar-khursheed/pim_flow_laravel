@@ -1412,47 +1412,156 @@ class CategoryController extends Controller
         ->keyBy('measurement_type');
 
     // Helper function to convert attribute values
-    $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
-        foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
-            if (stripos($attributeName, $measurementType) !== false || 
-                stripos($attributeName, 'weight') !== false && $measurementType === 'mass' ||
-                stripos($attributeName, 'length') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'height') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'width') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'volume') !== false && $measurementType === 'volume' ||
-                stripos($attributeName, 'capacity') !== false && $measurementType === 'volume') {
+   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+    foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
+        $shouldConvert = false;
+        
+        // Enhanced attribute name to measurement type mapping
+        switch (strtolower($measurementType)) {
+            case 'length':
+                $shouldConvert = (
+                    stripos($attributeName, 'length') !== false ||
+                    stripos($attributeName, 'height') !== false ||
+                    stripos($attributeName, 'width') !== false ||
+                    stripos($attributeName, 'depth') !== false ||
+                    stripos($attributeName, 'diameter') !== false ||
+                    stripos($attributeName, 'dimension') !== false ||
+                    stripos($attributeName, 'size') !== false
+                );
+                break;
                 
-                if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
-                    $numericValue = (float)$matches[1];
-                    $originalUnit = $matches[2];
-                    $targetUnit = $priority->primary_unit;
-                    
-                    $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
-                    
-                    if (is_numeric($convertedValue)) {
-                        $roundedValue = (int)round($convertedValue);
-                        return [
-                            'converted_value' => $roundedValue,
-                            'unit' => $targetUnit,
-                            'symbol' => $priority->primary_symbol,
-                            'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => true
-                        ];
-                    }
-                }
-            }
+            case 'mass':
+            case 'weight':
+                $shouldConvert = (
+                    stripos($attributeName, 'weight') !== false ||
+                    stripos($attributeName, 'mass') !== false
+                );
+                break;
+                
+            case 'volume':
+                $shouldConvert = (
+                    stripos($attributeName, 'volume') !== false ||
+                    stripos($attributeName, 'capacity') !== false ||
+                    stripos($attributeName, 'liquid') !== false
+                );
+                break;
+                
+            case 'area':
+                $shouldConvert = (
+                    stripos($attributeName, 'area') !== false ||
+                    stripos($attributeName, 'surface') !== false
+                );
+                break;
+                
+            default:
+                // Direct name match
+                $shouldConvert = stripos($attributeName, $measurementType) !== false;
+                break;
         }
         
-        return [
-            'converted_value' => $originalValue,
-            'unit' => null,
-            'symbol' => '',
-            'display_value' => $originalValue,
-            'original_value' => $originalValue,
-            'conversion_applied' => false
-        ];
-    };
+        if ($shouldConvert) {
+            // Extract numeric value and unit from original value
+            if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+                $numericValue = (float)$matches[1];
+                $originalUnit = $matches[2];
+                $targetUnit = $priority->primary_unit;
+                
+                // Convert using your convert_unit function
+                $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
+                
+                if (is_numeric($convertedValue)) {
+                    $roundedValue = (int)round($convertedValue);
+                    return [
+                        'converted_value' => $roundedValue,
+                        'unit' => $targetUnit,
+                        'symbol' => $priority->primary_symbol,
+                        'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => true
+                    ];
+                }
+            } else if (is_numeric($originalValue)) {
+                // If it's just a number without unit, assume it's already in the target unit
+                $roundedValue = (int)round((float)$originalValue);
+                return [
+                    'converted_value' => $roundedValue,
+                    'unit' => $priority->primary_unit,
+                    'symbol' => $priority->primary_symbol,
+                    'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false // No conversion needed, just added unit
+                ];
+            }
+        }
+    }
+    
+    // Return original value if no conversion needed/possible
+    return [
+        'converted_value' => $originalValue,
+        'unit' => null,
+        'symbol' => '',
+        'display_value' => $originalValue,
+        'original_value' => $originalValue,
+        'conversion_applied' => false
+    ];
+};
+
+// Also add debugging to see what's in your category measurement priorities
+// Add this temporarily after getting $categoryMeasurementPriorities to check what you have:
+
+// Debug: Check what measurement priorities are available
+$debugMeasurementTypes = [];
+foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
+    $debugMeasurementTypes[] = [
+        'measurement_type' => $measurementType,
+        'primary_unit' => $priority->primary_unit,
+        'primary_symbol' => $priority->primary_symbol
+    ];
+}
+
+// You can temporarily log this or return it in the response to see what's available:
+// Log::info('Available measurement types for category ' . $category->id, $debugMeasurementTypes);
+
+// Alternative approach if the above doesn't work - hardcode common units for width:
+$convertAttributeValueFallback = function($attributeName, $originalValue) {
+    // Define common unit mappings
+    $commonUnits = [
+        'length' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'width' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'height' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'depth' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
+        'capacity' => ['symbol' => 'L', 'name' => 'liters'],
+        'volume' => ['symbol' => 'L', 'name' => 'liters'],
+    ];
+    
+    // Check if attribute name matches any common unit types
+    foreach ($commonUnits as $unitType => $unitInfo) {
+        if (stripos($attributeName, $unitType) !== false) {
+            if (is_numeric($originalValue)) {
+                $roundedValue = (int)round((float)$originalValue);
+                return [
+                    'converted_value' => $roundedValue,
+                    'unit' => $unitInfo['name'],
+                    'symbol' => $unitInfo['symbol'],
+                    'display_value' => $roundedValue . ' ' . $unitInfo['symbol'],
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+        }
+    }
+    
+    // Return original if no match
+    return [
+        'converted_value' => $originalValue,
+        'unit' => null,
+        'symbol' => '',
+        'display_value' => $originalValue,
+        'original_value' => $originalValue,
+        'conversion_applied' => false
+    ];
+};
 
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
