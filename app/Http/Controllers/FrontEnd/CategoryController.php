@@ -2113,7 +2113,7 @@ $convertAttributeValueFallback = function($attributeName, $originalValue) {
                                     'max' => $max,
                                     'product_count' => $productCount,
                                     'display_value' => $displayValue,
-                                    'unit' => $unit
+                                    'symbol' => $unit
                                 ];
                             })->filter(function($range) use ($isFilterSelected) {
                                 return $isFilterSelected || $range['product_count'] > 0;
@@ -2151,7 +2151,7 @@ $convertAttributeValueFallback = function($attributeName, $originalValue) {
                                             'product_count' => $productCount,
                                             'display_value' => $displayValue,
                                             'selected' => true,
-                                            'unit' => $unit
+                                            'symbol' => $unit
                                         ];
                                     }
                                 }
