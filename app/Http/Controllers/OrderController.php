@@ -622,7 +622,8 @@ class OrderController extends Controller
 			'creator',
 			'updator',
 			'tracking',
-			'nofraudResponse' 
+			'nofraudResponse',
+			 'utm' 
 		]);
 
 		/* Mutate the data for each order product */
