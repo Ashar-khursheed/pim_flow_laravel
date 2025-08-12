@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\CategoryMeasurementUnitPriority;
 use App\Models\Category;
-use App\Models\MeasurementType;
 use App\Models\MeasurementUnit;
 
 use App\Jobs\ImportCategoryPriorityJob;
@@ -355,14 +354,6 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	 */
 	public function import(Request $request, ExcelImporterService $excelImporter)
 	{
-		$measurementType = MeasurementType::with('units:measurement_type_id,id,name')->get()->toArray();
-		$measurementTypeIdArray = [];
-		foreach ($measurementType as $type) {
-			foreach ($type['units'] as $unit) {
-				$measurementTypeIdArray[$type['id']][$unit['name']] = $unit['id'];
-			}
-		}
-		dd($measurementTypeIdArray);
 		/* Validate request data */
 		$request->validate([
 			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
