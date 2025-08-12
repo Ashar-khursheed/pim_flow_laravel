@@ -1369,9 +1369,10 @@ class CategoryController extends Controller
 	// 		'debug_info' => $debugInfo
 	// 	]);
 	// }
+
 	public function getSpecificationFilters1(Request $request)
 {
-    // Existing validation code
+    // Validation
     $validator = Validator::make($request->all(), [
         'category_id' => 'required|string',
         'filters' => 'nullable|array',
@@ -1401,69 +1402,161 @@ class CategoryController extends Controller
         return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
     }
 
-    // NEW: Get category measurement unit priorities
-    $categoryMeasurementPriorities = DB::table('category_measurement_unit_priorities as cmup')
-        ->join('measurement_types as mt', 'mt.id', '=', 'cmup.measurement_type_id')
-        ->join('measurement_units as mu_primary', 'mu_primary.id', '=', 'cmup.measurement_unit_primary_id')
-        ->where('cmup.category_id', $category->id)
-        ->select('mt.name as measurement_type', 'mu_primary.name as primary_unit', 'mu_primary.symbol as primary_symbol')
-        ->get()
-        ->keyBy('measurement_type');
-
-    $debugInfo['category_measurement_priorities'] = $categoryMeasurementPriorities->toArray();
-
-    // Helper function to convert attribute values
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
-        // Check if this attribute has a measurement type priority
-        foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
-            // You might need to map attribute names to measurement types
-            // This is a simple example - adjust based on your attribute naming convention
-            if (stripos($attributeName, $measurementType) !== false || 
-                stripos($attributeName, 'weight') !== false && $measurementType === 'mass' ||
-                stripos($attributeName, 'length') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'height') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'width') !== false && $measurementType === 'length' ||
-                stripos($attributeName, 'volume') !== false && $measurementType === 'volume' ||
-                stripos($attributeName, 'capacity') !== false && $measurementType === 'volume') {
+    foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
+        $shouldConvert = false;
+        
+        // Enhanced attribute name to measurement type mapping
+        switch (strtolower($measurementType)) {
+            case 'length':
+                $shouldConvert = (
+                    stripos($attributeName, 'length') !== false ||
+                    stripos($attributeName, 'height') !== false ||
+                    stripos($attributeName, 'width') !== false ||
+                    stripos($attributeName, 'depth') !== false ||
+                    stripos($attributeName, 'diameter') !== false ||
+                    stripos($attributeName, 'dimension') !== false ||
+                    stripos($attributeName, 'size') !== false
+                );
+                break;
                 
-                // Extract numeric value and unit from original value
-                if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
-                    $numericValue = (float)$matches[1];
-                    $originalUnit = $matches[2];
-                    $targetUnit = $priority->primary_unit;
-                    
-                    // Convert using your convert_unit function
-                    $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
-                    
-                    if (is_numeric($convertedValue)) {
-                        return [
-                            'converted_value' => round($convertedValue, 2),
-                            'unit' => $targetUnit,
-                            'symbol' => $priority->primary_symbol,
-                            'display_value' => round($convertedValue, 2) . ' ' . $priority->primary_symbol,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => true
-                        ];
-                    }
-                }
-            }
+            case 'mass':
+            case 'weight':
+                $shouldConvert = (
+                    stripos($attributeName, 'weight') !== false ||
+                    stripos($attributeName, 'mass') !== false
+                );
+                break;
+                
+            case 'volume':
+                $shouldConvert = (
+                    stripos($attributeName, 'volume') !== false ||
+                    stripos($attributeName, 'capacity') !== false ||
+                    stripos($attributeName, 'liquid') !== false
+                );
+                break;
+                
+            case 'area':
+                $shouldConvert = (
+                    stripos($attributeName, 'area') !== false ||
+                    stripos($attributeName, 'surface') !== false
+                );
+                break;
+                
+            default:
+                // Direct name match
+                $shouldConvert = stripos($attributeName, $measurementType) !== false;
+                break;
         }
         
-        // Return original value if no conversion needed/possible
-        return [
-            'converted_value' => $originalValue,
-            'unit' => null,
-            'symbol' => '',
-            'display_value' => $originalValue,
-            'original_value' => $originalValue,
-            'conversion_applied' => false
-        ];
-    };
+        if ($shouldConvert) {
+            // Extract numeric value and unit from original value
+            if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+                $numericValue = (float)$matches[1];
+                $originalUnit = $matches[2];
+                $targetUnit = $priority->primary_unit;
+                
+                // Convert using your convert_unit function
+                $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
+                
+                if (is_numeric($convertedValue)) {
+                    $roundedValue = (int)round($convertedValue);
+                    return [
+                        'converted_value' => $roundedValue,
+                        'unit' => $targetUnit,
+                        'symbol' => $priority->primary_symbol,
+                        'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => true
+                    ];
+                }
+            } else if (is_numeric($originalValue)) {
+                // If it's just a number without unit, assume it's already in the target unit
+                $roundedValue = (int)round((float)$originalValue);
+                return [
+                    'converted_value' => $roundedValue,
+                    'unit' => $priority->primary_unit,
+                    'symbol' => $priority->primary_symbol,
+                    'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false // No conversion needed, just added unit
+                ];
+            }
+        }
+    }
+    
+    // Return original value if no conversion needed/possible
+    return [
+        'converted_value' => $originalValue,
+        'unit' => null,
+        'symbol' => '',
+        'display_value' => $originalValue,
+        'original_value' => $originalValue,
+        'conversion_applied' => false
+    ];
+};
 
-    // Rest of your existing code for getting products and categories...
+// Also add debugging to see what's in your category measurement priorities
+// Add this temporarily after getting $categoryMeasurementPriorities to check what you have:
+
+// Debug: Check what measurement priorities are available
+$debugMeasurementTypes = [];
+foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
+    $debugMeasurementTypes[] = [
+        'measurement_type' => $measurementType,
+        'primary_unit' => $priority->primary_unit,
+        'primary_symbol' => $priority->primary_symbol
+    ];
+}
+
+// You can temporarily log this or return it in the response to see what's available:
+// Log::info('Available measurement types for category ' . $category->id, $debugMeasurementTypes);
+
+// Alternative approach if the above doesn't work - hardcode common units for width:
+$convertAttributeValueFallback = function($attributeName, $originalValue) {
+    // Define common unit mappings
+    $commonUnits = [
+        'length' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'width' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'height' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'depth' => ['symbol' => 'cm', 'name' => 'centimeters'],
+        'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
+        'capacity' => ['symbol' => 'L', 'name' => 'liters'],
+        'volume' => ['symbol' => 'L', 'name' => 'liters'],
+    ];
+    
+    // Check if attribute name matches any common unit types
+    foreach ($commonUnits as $unitType => $unitInfo) {
+        if (stripos($attributeName, $unitType) !== false) {
+            if (is_numeric($originalValue)) {
+                $roundedValue = (int)round((float)$originalValue);
+                return [
+                    'converted_value' => $roundedValue,
+                    'unit' => $unitInfo['name'],
+                    'symbol' => $unitInfo['symbol'],
+                    'display_value' => $roundedValue . ' ' . $unitInfo['symbol'],
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+        }
+    }
+    
+    // Return original if no match
+    return [
+        'converted_value' => $originalValue,
+        'unit' => null,
+        'symbol' => '',
+        'display_value' => $originalValue,
+        'original_value' => $originalValue,
+        'conversion_applied' => false
+    ];
+};
+
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
-    // Get all child categories based on parent_id
+    
+    // Get all child categories
     $childCategories = Category::where('parent_id', $category->id)->get();
     $childCategoryIds = $childCategories->pluck('id')->toArray();
 
@@ -1478,16 +1571,6 @@ class CategoryController extends Controller
     // Combine products from current category and all child categories
     $allCategoryProductIds = array_unique(array_merge($currentCategoryProducts, $childProductIds));
 
-    // Debug info for verification
-    $debugInfo = [
-        'category_id' => $request->category_id,
-        'current_category_product_count' => count($currentCategoryProducts),
-        'child_categories' => $childCategoryIds,
-        'child_categories_count' => count($childCategoryIds),
-        'child_products_count' => count($childProductIds),
-        'total_products' => count($allCategoryProductIds)
-    ];
-
     if (empty($allCategoryProductIds)) {
         return response()->json([
             'success' => true,
@@ -1500,18 +1583,17 @@ class CategoryController extends Controller
                 'filter_name' => 'Rating',
                 'filter_type' => 'rating',
                 'filter_values' => [5, 4, 3, 2, 1],
-            ],
-            'debug_info' => $debugInfo
+            ]
         ]);
     }
 
-    // Start with all category product IDs (including child categories)
+    // Start with all category product IDs
     $filteredProductIds = collect($allCategoryProductIds);
 
-    // Group filters by specification name for proper application
+    // Group filters by specification name
     $groupedFilters = [];
     $rangeFiltersByAttribute = [];
-    $selectedFilters = []; // Track selected filters
+    $selectedFilters = [];
 
     if ($request->has('filters') && is_array($request->filters)) {
         foreach ($request->filters as $filter) {
@@ -1522,16 +1604,13 @@ class CategoryController extends Controller
             $specName = $filter['specification_name'];
             $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
 
-            // Track selected filters
             $selectedFilters[$specName] = $specValues;
 
-            // Check if this is a range filter
             $isRangeFilter = false;
             foreach ($specValues as $value) {
                 if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                     $isRangeFilter = true;
 
-                    // Store range filters by attribute name
                     if (!isset($rangeFiltersByAttribute[$specName])) {
                         $rangeFiltersByAttribute[$specName] = [];
                     }
@@ -1539,7 +1618,6 @@ class CategoryController extends Controller
                 }
             }
 
-            // If not a range filter, add to regular grouped filters
             if (!$isRangeFilter) {
                 if (!isset($groupedFilters[$specName])) {
                     $groupedFilters[$specName] = [];
@@ -1549,27 +1627,19 @@ class CategoryController extends Controller
         }
     }
 
-    $debugInfo['grouped_filters'] = $groupedFilters;
-    $debugInfo['range_filters_by_attribute'] = $rangeFiltersByAttribute;
-    $debugInfo['selected_filters'] = $selectedFilters;
-
-    // Apply regular attribute filters if provided, grouped by specification name
+    // Apply regular attribute filters
     foreach ($groupedFilters as $specName => $specValues) {
-        // Find attribute ID based on name
         $attribute = Attribute::where('name', $specName)->first();
         if (!$attribute) {
             continue;
         }
 
-        // NEW: Convert filter values if needed for comparison
         $convertedSpecValues = [];
         foreach ($specValues as $specValue) {
             $conversionResult = $convertAttributeValue($specName, $specValue);
-            // For filtering, we might need to check both original and converted values
-            $convertedSpecValues[] = $conversionResult['original_value']; // Use original for now
+            $convertedSpecValues[] = $conversionResult['original_value'];
         }
 
-        // Find product IDs that match this attribute and values
         $matchingProductIds = DB::table('product_attributes as pa')
             ->where('pa.attribute_id', $attribute->id)
             ->whereIn('pa.attribute_value', $convertedSpecValues)
@@ -1577,10 +1647,8 @@ class CategoryController extends Controller
             ->pluck('pa.product_id')
             ->unique();
 
-        // Intersect with our running list of product IDs
         $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
 
-        // If no products match these filters, return empty results early
         if ($filteredProductIds->isEmpty()) {
             return response()->json([
                 'success' => true,
@@ -1593,58 +1661,62 @@ class CategoryController extends Controller
                     'filter_name' => 'Rating',
                     'filter_type' => 'rating',
                     'filter_values' => [5, 4, 3, 2, 1],
-                ],
-                'debug_info' => array_merge($debugInfo, ['filter_applied' => $specName, 'empty_after' => true])
+                ]
             ]);
         }
     }
 
-    // Apply range filters by attribute
+    // Apply range filters
     foreach ($rangeFiltersByAttribute as $specName => $ranges) {
-        // Find attribute ID based on name
         $attribute = Attribute::where('name', $specName)->first();
         if (!$attribute) {
             continue;
         }
 
-        // Start with the base query
         $query = DB::table('product_attributes as pa')
             ->where('pa.attribute_id', $attribute->id)
             ->whereIn('pa.product_id', $filteredProductIds);
 
-        // Build range conditions for this attribute - using OR between ranges of the same attribute
         $rangeConditions = [];
         foreach ($ranges as $range) {
-            $min = $range['min'];
-            $max = $range['max'];
+            $min = (int)$range['min'];
+            $max = (int)$range['max'];
 
-            // NEW: Convert range values if needed
             $minConversion = $convertAttributeValue($specName, $min);
             $maxConversion = $convertAttributeValue($specName, $max);
             
             if ($minConversion['conversion_applied']) {
-                $min = $minConversion['converted_value'];
-                $max = $maxConversion['converted_value'];
+                $convertedMin = (int)round((float)$minConversion['converted_value']);
+                $convertedMax = (int)round((float)$maxConversion['converted_value']);
+                
+                $rangeConditions[] = "pa.product_id IN (
+                    SELECT DISTINCT pa2.product_id 
+                    FROM product_attributes pa2 
+                    WHERE pa2.attribute_id = {$attribute->id}
+                    AND (
+                        (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa2.attribute_value AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+                        OR
+                        (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+                         CAST(REGEXP_REPLACE(pa2.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+                    )
+                )";
+            } else {
+                $rangeConditions[] = "(
+                    (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+                    OR
+                    (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+                     CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+                )";
             }
-
-            // For numeric attribute values, handle different formats
-            $rangeConditions[] = "(CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN $min AND $max OR
-                CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9].*', '') AS DECIMAL(10,2)) BETWEEN $min AND $max)";
         }
 
-        // Only add WHERE condition if we have range conditions
         if (count($rangeConditions) > 0) {
-            // Use OR between ranges of the same attribute
             $query->whereRaw('(' . implode(' OR ', $rangeConditions) . ')');
         }
 
-        // Get products that match ANY of the ranges for this attribute
         $matchingProductIds = $query->pluck('pa.product_id')->unique();
-
-        // Intersect with our running list of product IDs
         $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
 
-        // If no products match these filters, return empty results early
         if ($filteredProductIds->isEmpty()) {
             return response()->json([
                 'success' => true,
@@ -1657,14 +1729,12 @@ class CategoryController extends Controller
                     'filter_name' => 'Rating',
                     'filter_type' => 'rating',
                     'filter_values' => [5, 4, 3, 2, 1],
-                ],
-                'debug_info' => array_merge($debugInfo, ['range_filter_applied' => $specName, 'empty_after_range' => true])
+                ]
             ]);
         }
     }
 
-    // Rest of your existing filtering code (brand, price, rating)...
-    // Apply brand filter before rating filter
+    // Apply brand filter
     if ($request->has('brand_id') && $request->brand_id) {
         $brandFilteredIds = Product::whereIn('id', $filteredProductIds)
             ->whereIn('brand_id', $request->brand_id)
@@ -1684,35 +1754,16 @@ class CategoryController extends Controller
                     'filter_name' => 'Rating',
                     'filter_type' => 'rating',
                     'filter_values' => [5, 4, 3, 2, 1],
-                ],
-                'debug_info' => array_merge($debugInfo, ['empty_after_brand' => true])
+                ]
             ]);
         }
     }
 
-    // Price filtering code remains the same...
+    // Apply price filter
     if ($request->has('price_min') || $request->has('price_max')) {
         $min = $request->input('price_min', 0);
         $max = $request->input('price_max', PHP_INT_MAX);
 
-        // Debug the price filtering
-        $debugInfo['price_filter_applied'] = [
-            'min' => $min,
-            'max' => $max,
-            'input_product_count' => $filteredProductIds->count()
-        ];
-
-        // First, let's check what price data we have
-        $priceCheckQuery = DB::table('product_suppliers as ps')
-            ->whereIn('ps.product_id', $filteredProductIds->toArray())
-            ->select('ps.product_id', 'ps.price', 'ps.sale_price',
-                    DB::raw('CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END as effective_price'))
-            ->get();
-
-        $debugInfo['price_check_sample'] = $priceCheckQuery->take(5)->toArray();
-        $debugInfo['price_check_count'] = $priceCheckQuery->count();
-
-        // Filter products based on price range
         $priceFilteredIds = DB::table('product_suppliers as ps')
             ->whereIn('ps.product_id', $filteredProductIds->toArray())
             ->where(function($query) use ($min, $max) {
@@ -1721,54 +1772,42 @@ class CategoryController extends Controller
             ->pluck('ps.product_id')
             ->unique();
 
-        $debugInfo['price_filtered_count'] = $priceFilteredIds->count();
-        $debugInfo['price_filtered_sample'] = $priceFilteredIds->take(5)->toArray();
-
-        // If no results, try alternative approach
         if ($priceFilteredIds->isEmpty()) {
-                // Try using COALESCE instead
-                $priceFilteredIds = DB::table('product_suppliers as ps')
-                    ->whereIn('ps.product_id', $filteredProductIds->toArray())
-                    ->whereRaw("COALESCE(ps.sale_price, ps.price) BETWEEN ? AND ?", [$min, $max])
-                    ->pluck('ps.product_id')
+            $priceFilteredIds = DB::table('product_suppliers as ps')
+                ->whereIn('ps.product_id', $filteredProductIds->toArray())
+                ->whereRaw("COALESCE(ps.sale_price, ps.price) BETWEEN ? AND ?", [$min, $max])
+                ->pluck('ps.product_id')
+                ->unique();
+            
+            if ($priceFilteredIds->isEmpty()) {
+                $priceFilteredIds = DB::table('ec_products as p')
+                    ->whereIn('p.id', $filteredProductIds->toArray())
+                    ->whereRaw("COALESCE(p.sale_price, p.price) BETWEEN ? AND ?", [$min, $max])
+                    ->pluck('p.id')
                     ->unique();
-                
-                $debugInfo['price_filtered_coalesce_count'] = $priceFilteredIds->count();
-                
-                // If still no results, try checking the products table directly
-                if ($priceFilteredIds->isEmpty()) {
-                    $priceFilteredIds = DB::table('ec_products as p')
-                        ->whereIn('p.id', $filteredProductIds->toArray())
-                        ->whereRaw("COALESCE(p.sale_price, p.price) BETWEEN ? AND ?", [$min, $max])
-                        ->pluck('p.id')
-                        ->unique();
-                    
-                    $debugInfo['price_filtered_products_table_count'] = $priceFilteredIds->count();
-                    $debugInfo['used_products_table_for_price'] = true;
-                }
             }
+        }
 
-            $filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+        $filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
 
-            if ($filteredProductIds->isEmpty()) {
-                return response()->json([
-                    'success' => true,
-                    'filters' => [],
-                    'products' => [],
-                    'brands' => [],
-                    'price_min' => 0,
-                    'price_max' => 0,
-                    'rating_filter' => [
-                        'filter_name' => 'Rating',
-                        'filter_type' => 'rating',
-                        'filter_values' => [5, 4, 3, 2, 1],
-                    ],
-                    'debug_info' => array_merge($debugInfo, ['empty_after_price' => true])
-                ]);
-            }
+        if ($filteredProductIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'filters' => [],
+                'products' => [],
+                'brands' => [],
+                'price_min' => 0,
+                'price_max' => 0,
+                'rating_filter' => [
+                    'filter_name' => 'Rating',
+                    'filter_type' => 'rating',
+                    'filter_values' => [5, 4, 3, 2, 1],
+                ]
+            ]);
+        }
     }
 
-    // If a rating filter is applied, filter the already filtered product IDs
+    // Apply rating filter
     if ($request->has('rating') && $request->rating) {
         $ratingFilteredIds = DB::table('ec_reviews')
             ->whereIn('product_id', $filteredProductIds)
@@ -1782,7 +1821,7 @@ class CategoryController extends Controller
         if ($filteredProductIds->isEmpty()) {
             return response()->json([
                 'success' => true,
-                'message' => 'No products found with ' . $request->rating . ' star' . ($request->rating == 1 ? '' : 's') . ' rating. Try adjusting your filters.',
+                'message' => 'No products found with ' . $request->rating . ' star' . ($request->rating == 1 ? '' : 's') . ' rating.',
                 'filters' => [],
                 'products' => [],
                 'brands' => [],
@@ -1792,17 +1831,12 @@ class CategoryController extends Controller
                     'filter_name' => 'Rating',
                     'filter_type' => 'rating',
                     'filter_values' => [5, 4, 3, 2, 1],
-                ],
-                'debug_info' => array_merge($debugInfo, ['empty_after_rating' => true, 'applied_rating' => $request->rating])
+                ]
             ]);
         }
     }
 
-    // Now we have the final filtered product IDs - use these for both products and filters
-    $debugInfo['filtered_product_ids_count'] = $filteredProductIds->count();
-
-    // Rest of your product fetching and sorting code remains the same...
-    // Fetching products based on filters
+    // Fetch products
     $products = Product::whereIn('id', $filteredProductIds)
         ->where('status', 'published')
         ->with(['currency', 'reviews', 'productSuppliers', 'brand', 'seoUrl', 'productAttributes' => function ($query) {
@@ -1811,11 +1845,10 @@ class CategoryController extends Controller
             });
         }]);
 
-    // Apply sorting (your existing sorting code)...
+    // Apply sorting
     $sortBy = $request->input('sort_by', 'created_at');
     $sortByType = $request->input('sort_by_type', 'desc');
 
-    // Handle price_order parameter - this takes precedence over sort_by
     if ($request->has('price_order')) {
         $priceOrder = $request->input('price_order');
         $sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
@@ -1823,11 +1856,8 @@ class CategoryController extends Controller
     }
 
     if ($sortBy == 'price') {
-        // For price sorting, we need to get the best price for each product
-        // Get the filtered product IDs
         $productIds = $filteredProductIds->toArray();
         
-        // Build a fresh query for price sorting
         $products = Product::with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
                 $query->whereHas('attributeDetails', function ($q) {
                     $q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -1845,20 +1875,12 @@ class CategoryController extends Controller
     ->where('ec_products.status', 'published')
     ->groupBy('ec_products.id')
     ->orderBy('best_price', $sortByType);
-    
-    // Now paginate the query
-
-    $paginatedProducts = $products->paginate($perPage);
-    
     } else {
-        // For other sorting (created_at, name, etc.)
-        // Make sure to prefix the column with table name if needed
         $orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
             ? "ec_products.{$sortBy}" 
             : $sortBy;
         
         $products = $products->orderBy($orderColumn, $sortByType);
-        $paginatedProducts = $products->paginate($perPage);
     }
         
     $paginatedProducts = $products->paginate($perPage);
@@ -1869,17 +1891,13 @@ class CategoryController extends Controller
         [];
 
     $modifiedProducts = $paginatedProducts->getCollection()->map(function ($product) use ($wishlistProductIds) {
-        // Your existing product modification code...
-        // Calculate reviews data
         $totalReviews = $product->reviews->count();
         $avgRating = $totalReviews > 0 ? round($product->reviews->avg('star')) : null;
 
-        // Clean images
         $cleanedImages = is_string($product->images)
             ? json_decode($product->images, true)
             : (array) $product->images;
 
-        // Calculate left stock
         $firstSupplier = $product->productSuppliers->first();
         $leftStock = $firstSupplier->quantity ?? 0;
 
@@ -1897,14 +1915,13 @@ class CategoryController extends Controller
             ];
         }
 
-        // Calculate per unit price
         $unitsPerCase = null;
         $packType = null;
 
-        if (!empty($details->per_unit_price_attributes)) {
-            $unitsPerCase = collect($details->per_unit_price_attributes)
+        if (!empty($product->productAttributes)) {
+            $unitsPerCase = $product->productAttributes
                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
-            $packType = collect($details->per_unit_price_attributes)
+            $packType = $product->productAttributes
                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
         }
 
@@ -1921,8 +1938,6 @@ class CategoryController extends Controller
                 $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
             }
         }
-
-        $product->per_unit_price = $perUnitPrice;
 
         return [
             'id' => $product->id,
@@ -1945,8 +1960,7 @@ class CategoryController extends Controller
                 : $product->price,
             'in_wishlist' => in_array($product->id, $wishlistProductIds),
             'selling_type' => $sellingType,
-            'per_unit_price' => $product->per_unit_price,
-            // FIX: Use null-safe access for all supplier properties
+            'per_unit_price' => $perUnitPrice,
             'vendor_sku' => $firstSupplier?->vendor_sku ?? null,
             'price' => (float) ($firstSupplier?->price ?? 0),
             'sale_price' => (float) ($firstSupplier?->sale_price ?? 0),
@@ -1966,57 +1980,41 @@ class CategoryController extends Controller
 
     $paginatedProducts->setCollection($modifiedProducts);
 
-    // Initialize filters array
+    // Build filters
     $filters = [];
 
-    // Get subcategory for this category
     $subCategory = DB::table('sub_categories')
         ->where('category_id', $request->category_id)
         ->first();
 
-    $debugInfo['has_subcategory'] = $subCategory ? true : false;
-
-    // Only process attribute filters if subcategory exists
     if ($subCategory) {
         $attributeIdsField = null;
         $attributeIds = [];
 
-        // Check which attribute ID field exists
         if (property_exists($subCategory, 'attributes_ids') || isset($subCategory->attributes_ids)) {
             $attributeIdsField = 'attributes_ids';
         } else if (property_exists($subCategory, 'attributes_jd') || isset($subCategory->attributes_jd)) {
             $attributeIdsField = 'attributes_jd';
         }
 
-        $debugInfo['attribute_ids_field'] = $attributeIdsField;
-
-        // Process attribute IDs if the field exists and has value
         if ($attributeIdsField && !empty($subCategory->$attributeIdsField)) {
             $attributeIdsValue = $subCategory->$attributeIdsField;
 
-            // Parse attribute IDs based on data type
             if (is_string($attributeIdsValue)) {
                 $attributeIds = json_decode($attributeIdsValue, true);
-                $debugInfo['json_decode_error'] = json_last_error_msg();
 
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $attributeIds = explode(',', $attributeIdsValue);
-                    $debugInfo['using_comma_separated'] = true;
                 } else if (count($attributeIds) === 1 && is_string($attributeIds[0]) && strpos($attributeIds[0], ',') !== false) {
                     $attributeIds = explode(',', $attributeIds[0]);
-                    $debugInfo['using_nested_comma_separated'] = true;
                 }
             } else {
                 $attributeIds = $attributeIdsValue;
             }
 
-            // Ensure we have an array of integers
             $attributeIds = array_map('intval', (array)$attributeIds);
-            $debugInfo['attribute_ids_parsed'] = $attributeIds;
 
-            // Only proceed if we have valid attribute IDs
             if (!empty($attributeIds)) {
-                // MODIFIED: Get attribute values based on whether filter is selected or not
                 foreach ($attributeIds as $attributeId) {
                     $attribute = Attribute::find($attributeId);
                     if (!$attribute) {
@@ -2026,8 +2024,6 @@ class CategoryController extends Controller
                     $attributeName = $attribute->name;
                     $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-                    // If filter is selected, get ALL values from category (not dynamic)
-                    // If filter is not selected, get values from filtered products (dynamic)
                     $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
 
                     $attributeValues = DB::table('product_attributes as pa')
@@ -2038,13 +2034,7 @@ class CategoryController extends Controller
                         ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id')
                         ->get();
 
-                    $debugInfo['attribute_values_count_' . $attributeName] = $attributeValues->count();
-                    $debugInfo['is_filter_selected_' . $attributeName] = $isFilterSelected;
-                    $debugInfo['product_ids_used_' . $attributeName] = $isFilterSelected ? 'all_category' : 'filtered';
-
-                    // If we have any attribute values
                     if ($attributeValues->count() > 0) {
-                        // NEW: Apply unit conversion to attribute values
                         $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
                             $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value);
                             return (object)[
@@ -2060,22 +2050,17 @@ class CategoryController extends Controller
                             ];
                         });
 
-                        // Use converted display values for filter options
                         $uniqueValues = $convertedAttributeValues->pluck('display_value')->unique()->filter()->values();
 
-                        $debugInfo['converted_values_sample_' . $attributeName] = $convertedAttributeValues->take(5)->toArray();
-
-                        // Helper function to extract clean numeric value from converted values
                         $extractNumericValue = function($value) {
                             if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
-                                return (float)$matches[1];
+                                return (int)round((float)$matches[1]);
                             } else if (is_numeric($value)) {
-                                return (float)$value;
+                                return (int)round((float)$value);
                             }
                             return $value;
                         };
 
-                        // Check if all converted values are numeric-like
                         $numericValues = true;
                         $cleanedValues = $uniqueValues->map(function($val) use ($extractNumericValue, &$numericValues) {
                             $cleanedVal = $extractNumericValue($val);
@@ -2085,60 +2070,50 @@ class CategoryController extends Controller
                             return $cleanedVal;
                         });
 
-                        // For range filters - sort by min value ascending
                         if ($numericValues && $cleanedValues->count() > 2) {
                             $sorted = $cleanedValues->filter(function($value) {
                                 return is_numeric($value);
                             })->map(function($val) {
-                                return (float)$val;
+                                return (int)$val;
                             })->unique()->sort()->values();
 
-                            $debugInfo['numeric_values_' . $attributeName] = $sorted->toArray();
-
-                            // Calculate ranges based on actual data
                             $chunkCount = min(5, ceil($sorted->count() / 2));
                             $chunkSize = ceil($sorted->count() / $chunkCount);
 
-                            // Check if this attribute has selected range filters
                             $selectedRanges = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
 
                             $ranges = $sorted->chunk($chunkSize)->map(function ($chunk) use ($attributeName, $filteredProductIds, $isFilterSelected, $convertedAttributeValues) {
-                                $min = $chunk->first();
-                                $max = $chunk->last();
+                                $min = (int)$chunk->first();
+                                $max = (int)$chunk->last();
 
-                                // Count products - always from filtered results for actual count
-                                // For converted values, we need to check against converted values
                                 $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($min, $max) {
-                                    $numericValue = is_numeric($item->converted_value) ? (float)$item->converted_value : null;
+                                    $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
                                     return $numericValue !== null && $numericValue >= $min && $numericValue <= $max;
                                 });
 
                                 $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
 
-                                // Get the unit from converted values for display
                                 $sampleConvertedValue = $matchingConvertedValues->first();
                                 $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
+
+                                $displayValue = $min == $max ? $min . ' ' . $unit : $min . ' - ' . $max . ' ' . $unit;
 
                                 return [
                                     'min' => $min,
                                     'max' => $max,
                                     'product_count' => $productCount,
-                                    'display_value' => $min == $max ? $min . ' ' . $unit : "$min - $max $unit",
+                                    'display_value' => $displayValue,
                                     'unit' => $unit
                                 ];
                             })->filter(function($range) use ($isFilterSelected) {
-                                // If filter is selected, show all ranges (even with 0 count)
-                                // If filter is not selected, only show ranges with products
                                 return $isFilterSelected || $range['product_count'] > 0;
                             })->sortBy('min')->values()->toArray();
 
-                            // Add selected ranges that might not have products in current filter
                             foreach ($selectedRanges as $selectedRange) {
                                 if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
-                                    $selectedMin = $selectedRange['min'];
-                                    $selectedMax = $selectedRange['max'];
+                                    $selectedMin = (int)$selectedRange['min'];
+                                    $selectedMax = (int)$selectedRange['max'];
 
-                                    // Check if this selected range is already in the ranges array
                                     $rangeExists = false;
                                     foreach ($ranges as $range) {
                                         if ($range['min'] == $selectedMin && $range['max'] == $selectedMax) {
@@ -2147,10 +2122,9 @@ class CategoryController extends Controller
                                         }
                                     }
 
-                                    // If selected range doesn't exist, add it with current count
                                     if (!$rangeExists) {
                                         $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($selectedMin, $selectedMax) {
-                                            $numericValue = is_numeric($item->converted_value) ? (float)$item->converted_value : null;
+                                            $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
                                             return $numericValue !== null && $numericValue >= $selectedMin && $numericValue <= $selectedMax;
                                         });
 
@@ -2159,24 +2133,24 @@ class CategoryController extends Controller
                                         $sampleConvertedValue = $matchingConvertedValues->first();
                                         $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
 
+                                        $displayValue = $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : $selectedMin . ' - ' . $selectedMax . ' ' . $unit;
+
                                         $ranges[] = [
                                             'min' => $selectedMin,
                                             'max' => $selectedMax,
                                             'product_count' => $productCount,
-                                            'display_value' => $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : "$selectedMin - $selectedMax $unit",
-                                            'selected' => true, // Mark as selected
+                                            'display_value' => $displayValue,
+                                            'selected' => true,
                                             'unit' => $unit
                                         ];
                                     }
                                 }
                             }
 
-                            // Sort ranges again after adding selected ones
                             usort($ranges, function($a, $b) {
                                 return $a['min'] - $b['min'];
                             });
 
-                            // Only add if we have valid ranges
                             if (!empty($ranges)) {
                                 $filters[] = [
                                     'specification_name' => $attributeName,
@@ -2185,19 +2159,14 @@ class CategoryController extends Controller
                                 ];
                             }
                         } else {
-                            // For fixed values - use converted display values
                             $valueCountMap = [];
-
-                            // Get selected values for this attribute
                             $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
 
                             foreach ($uniqueValues as $displayValue) {
-                                // Find the original value that corresponds to this display value
                                 $correspondingItem = $convertedAttributeValues->firstWhere('display_value', $displayValue);
                                 
                                 if (!$correspondingItem) continue;
 
-                                // Count products for this specific converted value
                                 $productCount = $convertedAttributeValues
                                     ->where('display_value', $displayValue)
                                     ->whereIn('product_id', $filteredProductIds)
@@ -2205,12 +2174,10 @@ class CategoryController extends Controller
                                     ->unique()
                                     ->count();
 
-                                // If filter is selected, show all values (even with 0 count)
-                                // If filter is not selected, only show values with products
                                 if ($isFilterSelected || $productCount > 0) {
                                     $valueCountMap[] = [
-                                        'value' => $correspondingItem->attribute_value, // Store original value for filtering
-                                        'display_value' => $displayValue, // Use converted value for display
+                                        'value' => $correspondingItem->attribute_value,
+                                        'display_value' => $displayValue,
                                         'converted_value' => $correspondingItem->converted_value,
                                         'unit' => $correspondingItem->unit,
                                         'symbol' => $correspondingItem->symbol,
@@ -2221,9 +2188,7 @@ class CategoryController extends Controller
                                 }
                             }
 
-                            // Add selected values that might not have products in current filter
                             foreach ($selectedValues as $selectedValue) {
-                                // Check if this selected value is already in the valueCountMap
                                 $valueExists = false;
                                 foreach ($valueCountMap as $valueCount) {
                                     if ($valueCount['value'] == $selectedValue) {
@@ -2232,7 +2197,6 @@ class CategoryController extends Controller
                                     }
                                 }
 
-                                // If selected value doesn't exist, add it with current count
                                 if (!$valueExists) {
                                     $conversionResult = $convertAttributeValue($attributeName, $selectedValue);
                                     
@@ -2257,15 +2221,13 @@ class CategoryController extends Controller
                                 }
                             }
 
-                            // Sort by converted numeric value if possible, otherwise by display value
                             usort($valueCountMap, function($a, $b) {
                                 if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
-                                    return (float)$a['converted_value'] - (float)$b['converted_value'];
+                                    return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
                                 }
                                 return strcmp($a['display_value'], $b['display_value']);
                             });
 
-                            // Only add if we have valid values
                             if (!empty($valueCountMap)) {
                                 $filters[] = [
                                     'specification_name' => $attributeName,
@@ -2280,28 +2242,24 @@ class CategoryController extends Controller
         }
     }
 
-    // Get brands for the filtered products (existing code remains the same)
+    // Get brands
     $selectedBrandIds = $request->brand_id ?? [];
 
-    // Get brands from all category products (not filtered) to show all available brands
     $brands = DB::table('ec_products as p')
         ->join('ec_brands as b', 'b.id', '=', 'p.brand_id')
-        ->whereIn('p.id', $allCategoryProductIds) // Use all category products instead of filtered
+        ->whereIn('p.id', $allCategoryProductIds)
         ->where('p.status', 'published')
         ->select('b.id', 'b.name')
         ->groupBy('b.id', 'b.name')
         ->orderBy('b.name')
         ->get()
         ->map(function($brand) use ($filteredProductIds, $selectedBrandIds) {
-            // Count products for this brand from filtered results
             $productCount = DB::table('ec_products')
             ->where('brand_id', $brand->id)
             ->whereIn('id', $filteredProductIds->toArray())
             ->where('status', 'published')
             ->count();
             
-            // Show all brands but with their actual count from filtered results
-            // If brand is selected, show it even if count is 0
             $isSelected = in_array($brand->id, $selectedBrandIds);
             
             return [
@@ -2314,119 +2272,40 @@ class CategoryController extends Controller
         })
         ->toArray();
 
-    // Get price range for the filtered products (existing code remains the same)
+    // Get price range
     $productIdsArray = $filteredProductIds->toArray();
 
-    // First, let's check if we have any product suppliers for these products
     $supplierExists = DB::table('product_suppliers')
         ->whereIn('product_id', $productIdsArray)
         ->exists();
 
-    $debugInfo['supplier_exists'] = $supplierExists;
-
     if ($supplierExists) {
-        // Let's get detailed information about the supplier data
-        $detailedSuppliers = DB::table('product_suppliers')
+        $priceRange = DB::table('product_suppliers')
             ->whereIn('product_id', $productIdsArray)
-            ->select('product_id', 'price', 'sale_price', 
-                    DB::raw('COALESCE(sale_price, price) as effective_price'))
-            ->get();
+            ->where(function($query) {
+                $query->where('price', '>', 0)
+                    ->orWhere('sale_price', '>', 0);
+            })
+            ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+            ->first();
 
-    $debugInfo['detailed_suppliers'] = $detailedSuppliers->toArray();
-    
-    // Count how many have non-zero prices
-    $nonZeroPrices = $detailedSuppliers->filter(function($supplier) {
-        return $supplier->price > 0 || $supplier->sale_price > 0;
-    });
-    
-    $debugInfo['non_zero_price_count'] = $nonZeroPrices->count();
-    $debugInfo['total_supplier_records'] = $detailedSuppliers->count();
-    
-    // Get some sample non-zero prices if they exist
-    $sampleNonZero = $nonZeroPrices->take(5)->toArray();
-    $debugInfo['sample_non_zero_prices'] = $sampleNonZero;
-    
-    // Try different approaches to get the price range
-    
-    // Approach 1: Using COALESCE (current approach)
-    $priceRange1 = DB::table('product_suppliers')
-    ->whereIn('product_id', $productIdsArray)
-    ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-    ->first();
-
-    // Approach 2: Using CASE WHEN
-    $priceRange2 = DB::table('product_suppliers')
-        ->whereIn('product_id', $productIdsArray)
-        ->selectRaw('MIN(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as min_price, 
-                    MAX(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as max_price')
-        ->first();
-    
-    // Approach 3: Only where prices are greater than 0
-    $priceRange3 = DB::table('product_suppliers')
-        ->whereIn('product_id', $productIdsArray)
-        ->where(function($query) {
-            $query->where('price', '>', 0)
-                ->orWhere('sale_price', '>', 0);
-        })
-        ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
-        ->first();
-    
-    $debugInfo['price_range_approaches'] = [
-        'approach_1_coalesce' => $priceRange1,
-        'approach_2_case_when' => $priceRange2,
-        'approach_3_non_zero_only' => $priceRange3
-    ];
-
-    // Use the approach that gives us non-zero results
-    $priceRange = $priceRange3 && ($priceRange3->min_price > 0 || $priceRange3->max_price > 0) 
-                ? $priceRange3 
-                : ($priceRange2 && ($priceRange2->min_price > 0 || $priceRange2->max_price > 0) 
-                    ? $priceRange2 
-                    : $priceRange1);
-    
-    $debugInfo['price_source'] = 'product_suppliers';
-    $debugInfo['selected_approach'] = $priceRange === $priceRange3 ? 'approach_3' : 
-                                    ($priceRange === $priceRange2 ? 'approach_2' : 'approach_1');
-    
-        } else {
-            // Fallback to products table if no suppliers found
-            $priceRange = DB::table('ec_products')
-                ->whereIn('id', $filteredProductIds)
-                ->where('status', 'published')
-                ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+        if (!$priceRange || ($priceRange->min_price <= 0 && $priceRange->max_price <= 0)) {
+            $priceRange = DB::table('product_suppliers')
+                ->whereIn('product_id', $productIdsArray)
+                ->selectRaw('MIN(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as min_price, 
+                            MAX(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as max_price')
                 ->first();
-            
-            $debugInfo['price_source'] = 'ec_products';
+        }
+    } else {
+        $priceRange = DB::table('ec_products')
+            ->whereIn('id', $filteredProductIds)
+            ->where('status', 'published')
+            ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+            ->first();
     }
-
-    // Additional debugging to see what's happening
-    $debugInfo['price_range_query'] = [
-        'filtered_product_ids_count' => count($filteredProductIds),
-        'price_range_result' => $priceRange,
-        'raw_min' => $priceRange ? $priceRange->min_price : 'null',
-        'raw_max' => $priceRange ? $priceRange->max_price : 'null'
-    ];
 
     $priceMin = $priceRange ? (float)$priceRange->min_price : 0;
     $priceMax = $priceRange ? (float)$priceRange->max_price : 0;
-
-    $debugInfo['final_price_min'] = $priceMin;
-    $debugInfo['final_price_max'] = $priceMax;
-
-    // If we still have zero prices, let's check the actual data structure
-    if ($priceMin == 0 && $priceMax == 0) {
-        // Check if products have prices in the main products table
-        $productPrices = DB::table('ec_products')
-            ->whereIn('id', array_slice($productIdsArray, 0, 5))
-            ->select('id', 'price', 'sale_price')
-            ->get();
-        
-        $debugInfo['sample_product_prices'] = $productPrices->toArray();
-        
-        // Check table structure
-        $supplierColumns = DB::select("DESCRIBE product_suppliers");
-        $debugInfo['supplier_table_structure'] = $supplierColumns;
-    }
 
     // Rating filter
     $ratingFilter = [
@@ -2443,11 +2322,9 @@ class CategoryController extends Controller
         'price_min' => $priceMin,
         'price_max' => $priceMax,
         'rating_filter' => $ratingFilter,
-        'category_measurement_priorities' => $categoryMeasurementPriorities->toArray(), // NEW: Include conversion info
-        'debug_info' => $debugInfo
+        'category_measurement_priorities' => $categoryMeasurementPriorities->toArray()
     ]);
 }
-
 
 	/**
 	 * @OA\Get(
