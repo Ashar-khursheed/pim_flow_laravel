@@ -370,7 +370,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 			$excelImporter->processExcelImport(
 				$request->file('upload_file'),
 				$catPriorityFileFormatArray,
-				'Product', /* Module name */
+				'Category Priority', /* Module name */
 				config('app.website') . '_CAT_PRIORITY', /* Job name */
 				'Import Category Priorities', /* Batch name */
 				ImportCategoryPriorityJob::class
