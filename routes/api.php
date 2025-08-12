@@ -66,6 +66,7 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NoFraudController;
 use App\Http\Controllers\LogDownloadController;
 use App\Http\Controllers\AbandonedCartController;
+use App\Http\Controllers\UtmController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -214,6 +215,7 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+    Route::get('/utms', [UtmController::class, 'index']);
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);

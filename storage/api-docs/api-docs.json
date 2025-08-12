@@ -31624,6 +31624,94 @@
                 ]
             }
         },
+        "/api/utms": {
+            "get": {
+                "tags": [
+                    "UTM Analytics"
+                ],
+                "summary": "Get UTM source and campaign counts",
+                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \r\n *                  If no dates are provided, returns counts for all available records.",
+                "operationId": "19b4cc9b790897a9e287a56c7bdb1b1d",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Filter records starting from this date (YYYY-MM-DD). If omitted, all records are included.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-08-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Filter records up to this date (YYYY-MM-DD). If omitted, all records are included.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-08-10"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "utm_source_count": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "utm_source": {
+                                                        "type": "string",
+                                                        "example": "google"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "utm_campaign_count": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "utm_campaign": {
+                                                        "type": "string",
+                                                        "example": "summer_sale"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer",
+                                                        "example": 98
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid date format or bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/vendors": {
             "get": {
                 "tags": [
@@ -34335,6 +34423,10 @@
         {
             "name": "Users",
             "description": "Users"
+        },
+        {
+            "name": "UTM Analytics",
+            "description": "UTM Analytics"
         },
         {
             "name": "Vendors",
