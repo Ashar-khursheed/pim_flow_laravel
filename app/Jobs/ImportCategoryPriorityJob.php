@@ -45,9 +45,9 @@ class ImportCategoryPriorityJob implements ShouldQueue
 
 		$measurementTypeIdNames = MeasurementType::pluck('name', 'id')->toArray();
 		$productFamilyIdNames = Category::whereDoesntHave('children')->pluck('name', 'id')->toArray();
-		$measurementType = MeasurementType::with('units:measurement_type_id,id,name')->get()->toArray();
+		$measurementTypes = MeasurementType::with('units:measurement_type_id,id,name')->get()->toArray();
 		$measurementTypeIdArray = [];
-		foreach ($measurementType as $type) {
+		foreach ($measurementTypes as $type) {
 			foreach ($type['units'] as $unit) {
 				$measurementTypeIdArray[$type['id']][$unit['name']] = $unit['id'];
 			}
@@ -157,6 +157,10 @@ class ImportCategoryPriorityJob implements ShouldQueue
 						'created_by' => $this->userId,
 					]);
 				}
+
+				DB::commit();
+
+				$success++;
 			} catch (Throwable $e) {
 				DB::rollBack();
 
