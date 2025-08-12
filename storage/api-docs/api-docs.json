@@ -31673,7 +31673,7 @@
                 ],
                 "summary": "Get UTM source and campaign counts",
                 "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \r\n *                  If no dates are provided, returns counts for all available records.",
-                "operationId": "19b4cc9b790897a9e287a56c7bdb1b1d",
+                "operationId": "096fed29ae98d22859add1856943f772",
                 "parameters": [
                     {
                         "name": "start_date",

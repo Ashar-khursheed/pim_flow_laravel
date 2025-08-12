@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 
 class Utmcontroller extends Controller
 {
-    /**
+/**
  * @OA\Get(
  *     path="/api/utms",
  *     security={{"bearerAuth":{}}},
