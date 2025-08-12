@@ -220,7 +220,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
     Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
-	
+
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
     Route::post('/', [MenuBannerController::class, 'store']);
@@ -299,6 +299,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
 	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
 
+	Route::post('/measurement-unit-priorities/import', [CategoryMeasurementUnitPriorityController::class, 'import']);
 	Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);
