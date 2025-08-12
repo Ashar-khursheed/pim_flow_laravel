@@ -6561,6 +6561,48 @@
                 ]
             }
         },
+        "/api/measurement-unit-priorities/import": {
+            "post": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Import measurement unit priorities from an excel file",
+                "operationId": "f89da0eb2c87879d93988be1383cde21",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages": {
             "get": {
                 "tags": [
