@@ -8,7 +8,7 @@ use App\Models\Utm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class UtmController extends Controller
+class Utmcontroller extends Controller
 {
     /**
  * @OA\Get(
