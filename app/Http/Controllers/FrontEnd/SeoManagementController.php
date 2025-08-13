@@ -104,31 +104,64 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
-    public function getByRelationalId($identifier)
-    {
-        $seoQuery = SeoManagement::with('seo_secondary_keywords');
+    // public function getByRelationalId($identifier)
+    // {
+    //     $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
-        // Check if it's a full URL
-        if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-            $path = parse_url($identifier, PHP_URL_PATH); // Extract just the path
-            $seoQuery->where('url', $path);
-        } elseif (is_numeric($identifier)) {
-            // If it's a number, assume it's the relational ID
-            $seoQuery->where('relational_id', $identifier);
-        } else {
-            // Try matching it with the 'url' first
-            $seoQuery->where('url', $identifier);
+    //     // Check if it's a full URL
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $path = parse_url($identifier, PHP_URL_PATH); // Extract just the path
+    //         $seoQuery->where('url', $path);
+    //     } elseif (is_numeric($identifier)) {
+    //         // If it's a number, assume it's the relational ID
+    //         $seoQuery->where('relational_id', $identifier);
+    //     } else {
+    //         // Try matching it with the 'url' first
+    //         $seoQuery->where('url', $identifier);
+    //     }
+
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //         return $this->filterFields($item);
+    //     });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $seoData
+    //     ]);
+    // }
+    public function getByRelationalId($identifier)
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords');
+
+    if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        $path = parse_url($identifier, PHP_URL_PATH);
+        $seoQuery->where('url', $path);
+    } elseif (is_numeric($identifier)) {
+        $seoQuery->where('relational_id', $identifier);
+    } else {
+        $seoQuery->where('url', $identifier);
+    }
+
+    $seoData = $seoQuery->get()->map(function ($item) {
+        $filtered = $this->filterFields($item);
+
+        // If the field is a JSON string, decode it
+        if (!empty($filtered['seo_script']) && is_string($filtered['seo_script'])) {
+            $decoded = json_decode($filtered['seo_script'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $filtered['seo_script'] = $decoded;
+            }
         }
 
-        $seoData = $seoQuery->get()->map(function ($item) {
-            return $this->filterFields($item);
-        });
+        return $filtered;
+    });
 
-        return response()->json([
-            'status' => true,
-            'data' => $seoData
-        ]);
-    }
+    return response()->json([
+        'status' => true,
+        'data' => $seoData
+    ]);
+}
+
 
 
     /**
