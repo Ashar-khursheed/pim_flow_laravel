@@ -264,7 +264,8 @@ class OrderController extends Controller
 				'shipments',
 				'creator',
 				'updator',
-				'nofraudResponse' // ✅ Include NoFraud relationship
+				'nofraudResponse',
+				 'utm'  // ✅ Include NoFraud relationship
 			]);
 
 			if ($request->has('payment_status')) {
