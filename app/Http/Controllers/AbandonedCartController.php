@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\FrontEnd\Cart;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use App\Models\FrontEnd\Customer;
+
 
 class AbandonedCartController extends Controller
 {
