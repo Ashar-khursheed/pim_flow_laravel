@@ -142,13 +142,37 @@ class SeoManagementController extends Controller
         $seoQuery->where('url', $identifier);
     }
 
-   $seoData = $seoQuery->get()->map(function ($item) {
+//    $seoData = $seoQuery->get()->map(function ($item) {
+//     $filtered = $this->filterFields($item);
+
+//     // Decode schema if it's a JSON string
+//     if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+//         $decoded = json_decode($filtered['schema'], true);
+//         if (json_last_error() === JSON_ERROR_NONE) {
+//             $filtered['schema'] = $decoded;
+//         }
+//     }
+
+//     return $filtered;
+// });
+$seoData = $seoQuery->get()->map(function ($item) {
     $filtered = $this->filterFields($item);
 
-    // Decode schema if it's a JSON string
+    // Decode schema JSON
     if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
         $decoded = json_decode($filtered['schema'], true);
         if (json_last_error() === JSON_ERROR_NONE) {
+
+            // Dynamically set full URL based on type
+            if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+                $baseUrl = 'https://www.thehorecastore.com/';
+                if (strtolower($decoded['@type']) === 'product') {
+                    $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+                } elseif (strtolower($decoded['@type']) === 'category') {
+                    $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+                }
+            }
+
             $filtered['schema'] = $decoded;
         }
     }
