@@ -470,15 +470,15 @@ class CartController extends Controller
     //         'data' => $cartItems,
     //     ]);
     // }
-    public function viewCart(Request $request)
+public function viewCart(Request $request)
 {
     $userId = auth()->id();
     $isUserLoggedIn = $userId !== null;
 
     Log::info('User logged in:', ['user_id' => $userId]);
 
-    // ✅ ADD THIS: Generate cart ID
-    $cartId = $this->generateCartId($userId, $request);
+    // ✅ Simple cart ID generation (no session storage needed)
+    $cartId = $this->generateSimpleCartId($userId);
 
     // Get wishlist product IDs
     $wishlistProductIds = $isUserLoggedIn
@@ -579,22 +579,27 @@ class CartController extends Controller
     return response()->json([
         'success' => true,
         'data' => $cartItems,
-        'cart_id' => $cartId, // ✅ ADD THIS
-        'checkout_url' => "https://thehorecastore.com/Checkout/{$cartId}" // ✅ ADD THIS
+        'cart_id' => $cartId,
+        'checkout_url' => "https://thehorecastore.com/Checkout/{$cartId}"
     ]);
 }
 
-// ✅ ADD THIS METHOD
-private function generateCartId($userId, $request)
+// ✅ SUPER SIMPLE: No sessions, no validation needed
+private function generateSimpleCartId($userId)
 {
     $timestamp = time();
+    $random = uniqid();
     
     if ($userId) {
-        return 'cart_' . md5($userId . $request->session()->getId() . $timestamp) . '_' . $timestamp;
+        // For logged users: user-based ID
+        return "user_{$userId}_{$timestamp}_{$random}";
     } else {
-        return 'guest_' . md5($request->session()->getId() . $timestamp) . '_' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
+        // For guests: just timestamp + random
+        return "guest_{$timestamp}_{$random}";
     }
 }
+
+
 
     /**
      * @OA\Delete(
