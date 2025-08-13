@@ -41,7 +41,7 @@ trait GeneratesQuotePdf
 		$companyCity = config('app.website') == 'UAE' ? 'Houston, Texas 77074' : 'Houston, Texas 77074';
 		$companyPhone = config('app.website') == 'UAE' ? '1 (866) 446-7322' : '1 (866) 446-7322';
 		$siteEmail = config('app.website') == 'UAE' ? 'hello@horecastore.ae':'sales@thehorecastore.com';
-		$siteURL = url('/');
+		$siteURL = config('app.url') . '/';
 
 		$customerType = $customer->type;
 		$customerBusinessName = $customer->business_name;
@@ -77,7 +77,7 @@ trait GeneratesQuotePdf
 				: $currency . ' ' . number_format($quoteProduct->shipping_charge, 2, '.', ',');
 
 				$product->deliveryDays = $productSupplierDetail->delivery_days ?? null;
-				$product->productURL = url('/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id);
+				$product->productURL = config('app.url') . '/products/' . $productDetail->seoProductUrl->url ?? $productDetail->id;
 
 				$images = is_array($productDetail->images)
 				? $productDetail->images
@@ -114,7 +114,7 @@ trait GeneratesQuotePdf
 		? convertNumberToWords($total, "AED", "Fils")
 		: convertNumberToWords($total, "U.S. Dollars", "Cents");
 
-		$payNowUrl = url('/download-quotation/' . $quote->id);
+		$payNowUrl = config('app.url') . '/download-quotation/' . $quote->id;
 
 		$beneficiaryAddress = config('app.website') == 'UAE' ? '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435' : '8800 BISSONNET ST STE A, HOUSTON TX 77074-2435';
 		$accountNo = config('app.website') == 'UAE' ? '6130 9953 3' : '6130 9953 3';

@@ -6561,6 +6561,48 @@
                 ]
             }
         },
+        "/api/measurement-unit-priorities/import": {
+            "post": {
+                "tags": [
+                    "Measurement Unit Priorities"
+                ],
+                "summary": "Import measurement unit priorities from an excel file",
+                "operationId": "f89da0eb2c87879d93988be1383cde21",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "upload_file"
+                                ],
+                                "properties": {
+                                    "upload_file": {
+                                        "description": "xlsx file (.xlsx) max 2MB",
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Imported successfully",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/category-pages": {
             "get": {
                 "tags": [
@@ -7825,6 +7867,174 @@
                     },
                     "422": {
                         "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-events": {
+            "get": {
+                "tags": [
+                    "Customer Events"
+                ],
+                "summary": "Get Customer Event List",
+                "description": "Fetches a list of customer events.",
+                "operationId": "0e8360a4dee4cd8c7192fc7eaef696b3",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number for pagination",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 1
+                    },
+                    {
+                        "name": "length",
+                        "in": "query",
+                        "description": "Number of records per page.",
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        },
+                        "example": 20
+                    },
+                    {
+                        "name": "global",
+                        "in": "query",
+                        "description": "Global search for All field",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "event_type",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page_url",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "element",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "customer_name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ip_address",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_agent",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column name to sort by",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "id",
+                                "event_type",
+                                "page_url",
+                                "element",
+                                "customer_name",
+                                "session_id",
+                                "ip_address",
+                                "user_agent",
+                                "created_at",
+                                "updated_at"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "sort_dir",
+                        "in": "query",
+                        "description": "Sort direction (asc or desc)",
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        },
+                        "example": "asc"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-events/{id}": {
+            "get": {
+                "tags": [
+                    "Customer Events"
+                ],
+                "summary": "Get customer event details",
+                "operationId": "7162a85821b6c209e1dfe9125abbb825",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
+                        "content": {
+                            "application/json": {}
+                        }
                     }
                 },
                 "security": [
@@ -14076,12 +14286,7 @@
                                         "type": "string",
                                         "example": "click"
                                     },
-                                    "event_time": {
-                                        "type": "string",
-                                        "format": "date-time",
-                                        "example": "2025-07-25 14:23:00"
-                                    },
-                                    "page": {
+                                    "page_url": {
                                         "type": "string",
                                         "example": "/product/123"
                                     },
@@ -31624,6 +31829,94 @@
                 ]
             }
         },
+        "/api/utms": {
+            "get": {
+                "tags": [
+                    "UTM Analytics"
+                ],
+                "summary": "Get UTM source and campaign counts",
+                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \n *                  If no dates are provided, returns counts for all available records.",
+                "operationId": "096fed29ae98d22859add1856943f772",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Filter records starting from this date (YYYY-MM-DD). If omitted, all records are included.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-08-01"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "Filter records up to this date (YYYY-MM-DD). If omitted, all records are included.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2025-08-10"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "utm_source_count": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "utm_source": {
+                                                        "type": "string",
+                                                        "example": "google"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer",
+                                                        "example": 123
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        },
+                                        "utm_campaign_count": {
+                                            "type": "array",
+                                            "items": {
+                                                "properties": {
+                                                    "utm_campaign": {
+                                                        "type": "string",
+                                                        "example": "summer_sale"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer",
+                                                        "example": 98
+                                                    }
+                                                },
+                                                "type": "object"
+                                            }
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid date format or bad request"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/vendors": {
             "get": {
                 "tags": [
@@ -34053,6 +34346,10 @@
             "description": "Customers"
         },
         {
+            "name": "Customer Events",
+            "description": "Customer Events"
+        },
+        {
             "name": "Dashboard",
             "description": "Dashboard"
         },
@@ -34335,6 +34632,10 @@
         {
             "name": "Users",
             "description": "Users"
+        },
+        {
+            "name": "UTM Analytics",
+            "description": "UTM Analytics"
         },
         {
             "name": "Vendors",

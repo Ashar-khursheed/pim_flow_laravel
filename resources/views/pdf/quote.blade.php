@@ -30,7 +30,7 @@ $pageNumber = 1;
 @endphp
 <body>
 	<div id="targetDiv" style="width: auto; min-height: 290mm; margin: 0px auto;  font-size: 12px; line-height: 1.3; font-family: Outfit;background-color: white;">
-		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 10px 0; box-sizing: border-box;background-color: white;">
+		<div style="min-height: 1070px; height: 1070px; display: flex; flex-direction: column; padding: 10px 0; box-sizing: border-box;background-color: white; position: relative;">
 			@foreach($chunks as $index => $chunk)
 
 			@if($index > 0)
@@ -189,7 +189,7 @@ $pageNumber = 1;
 			</table>
 
 			@if(($index === 0 && in_array(count($chunk), [4, 5])) || ($index > 0 && count($chunk) == 6) || ($index === count($chunks)-1 && in_array(count($chunk), [5, 6])))
-			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif; position: absolute; bottom: 70px;">
 				<tr>
 					<td style="text-align: left;">
 						Order Online for Fast Shipping & Lower Prices at
@@ -284,40 +284,44 @@ $pageNumber = 1;
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
 										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $taxAmount }}</td>
 									</tr>
-									{{-- <tr style="color: #FF0000; background-color: #E7E7E7;">
-										<td style="text-align: left; padding-top: 8px; padding-bottom: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
-											NET TOTAL INCL.{{ $taxName }}
-										</td>
-										<td style="text-align: right; padding-top: 8px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">
-											{{ $total }}
-										</td>
-									</tr>
-									<tr>
-										<td colspan="2" style="padding-top: 8px; padding-bottom: 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
-											{{ $totalInWords }}
-										</td>
-									</tr> --}}
 								</tbody>
 							</table>
 						</div>
-						<p style="display: flex; justify-content: space-between; color: #FF0000; background-color: #E7E7E7; padding: 8px 8px; font-weight: 600; font-family: 'Inter', sans-serif; margin: 0px; ">
-							<span>NET TOTAL INCL.{{ $taxName }}</span>
-							<span>&nbsp;&nbsp;&nbsp;{{ $total }}</span>
-						</p>
-						<p style="margin: 0px; padding: 5px 8px; font-weight: 600; font-family: 'Inter', sans-serif;">
-							<span>{{ $totalInWords }}</span>
-						</p>
-						<div style="text-align: right; margin-top: 0px;  padding: 8px 8px 8px 16px; font-family: 'Inter', sans-serif;">
-							<a href="{{ $payNowUrl }}" target="_blank" rel="noopener noreferrer" style="box-sizing:border-box;background-color:#26683a;color:#ffffff;padding:10px 20px;text-decoration:none;font-size:14px;border-radius:5px;display:inline-block;font-family:'Noto Sans',sans-serif">
-								Pay Now
-							</a>
-						</div>
+
+						<!-- Net Total Row -->
+						<table width="100%" style="color: #FF0000; background-color: #E7E7E7; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; border-collapse: collapse; margin: 0;">
+							<tr>
+								<td style="text-align: left;">NET TOTAL INCL.{{ $taxName }}</td>
+								<td style="text-align: right;">{{ $total }}</td>
+							</tr>
+						</table>
+
+						<!-- Total in Words Row -->
+						<table width="100%" style="border-collapse: collapse; margin: 0; font-weight: 600; font-family: 'Inter', sans-serif;">
+							<tr>
+								<td style="padding: 5px 8px; text-align: left;">
+									{{ $totalInWords }}
+								</td>
+							</tr>
+						</table>
+
+						<!-- Pay Now Button Row -->
+						<table width="100%" style="border-collapse: collapse; margin: 0; font-family: 'Inter', sans-serif;">
+							<tr>
+								<td style="text-align: right; padding: 8px 8px 8px 16px;">
+									<a href="{{ $payNowUrl }}" target="_blank" rel="noopener noreferrer"
+									   style="background-color: #26683a; color: #ffffff; padding: 10px 20px; text-decoration: none; font-size: 14px; border-radius: 5px; display: inline-block; font-family: 'Noto Sans', sans-serif;">
+										Pay Now
+									</a>
+								</td>
+							</tr>
+						</table>
 					</td>
 				</tr>
 			</table>
 
 			@if(($index === 0 && in_array(count($chunk), [1, 2, 3])) || ($index != 0 && $index === count($chunks)-1 && in_array(count($chunk), [2, 3, 4])))
-			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif; position: absolute; bottom: 70px;">
 				<tr>
 					<td style="text-align: left;">
 						Order Online for Fast Shipping & Lower Prices at
@@ -357,7 +361,7 @@ $pageNumber = 1;
 			<table style="width: 100%; border-spacing: 0; margin-top: 0px; font-family: 'Inter', sans-serif;">
 				<tr>
 					<!-- Bank Details Table Cell -->
-					<td style="width: 42%; vertical-align: middle; padding: 15px 0px; font-family: 'Inter', sans-serif;">
+					<td style="width: 42%; vertical-align: top; padding: 15px 0px; font-family: 'Inter', sans-serif;">
 						<table style="width: 100%; border-collapse: collapse; font-size: 12px; border: 1px solid black; font-family: 'Inter', sans-serif;">
 							<tr>
 								<td colspan="2" style="background-color: #d9d9d9; text-align: center; padding: 8px; font-weight: 600; font-size: 15px; font-family: 'Inter', sans-serif;">
@@ -444,11 +448,11 @@ $pageNumber = 1;
 				</tr>
 			</table>
 
-			<p style="font-weight: 600; text-align: center; margin-bottom: 10px; font-family: 'Inter', sans-serif;">
+			<p style="font-weight: 600; text-align: center; margin: 0 auto; margin-bottom: 10px; font-family: 'Inter', sans-serif; position: absolute; bottom: 50px; width: 100%;">
 				This is a system generated Invoice. Hence, no stamp or signature required.
 			</p>
 
-			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif;">
+			<table style="width: 100%; border-top: 1px solid black; margin-top: 10px; padding-top: 2px; font-size: 12px; font-family: 'Inter', sans-serif; position: absolute; bottom: 60px;">
 				<tr>
 					<td style="text-align: left;">
 						Order Online for Fast Shipping & Lower Prices at

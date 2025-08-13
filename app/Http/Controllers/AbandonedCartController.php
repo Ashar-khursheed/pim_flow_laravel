@@ -256,60 +256,119 @@ public function index(Request $request)
      *     )
      * )
      */
-   public function show($customerId)
-    {
-        $threshold = Carbon::now()->subHours(1);
+//    public function show($customerId)
+//     {
+//         $threshold = Carbon::now()->subHours(1);
 
-        // Get all abandoned carts for a specific customer
-        $carts = Cart::with([
-            'customer:id,name,email',
-            'customer.customerAddress',
-            'product' => function ($q) {
-                $q->select('id', 'sku', 'name', 'images', 'brand_id')
-                ->with(['brand:id,name']);
-            },
-        ])
-        ->where('created_at', '<=', $threshold)
-        ->where('user_id', $customerId)
-        ->get();
+//         // Get all abandoned carts for a specific customer
+//         $carts = Cart::with([
+//             'customer:id,name,email',
+//             'customer.customerAddress',
+//             'product' => function ($q) {
+//                 $q->select('id', 'sku', 'name', 'images', 'brand_id')
+//                 ->with(['brand:id,name']);
+//             },
+//         ])
+//         ->where('created_at', '<=', $threshold)
+//         ->where('user_id', $customerId)
+//         ->get();
 
-        if ($carts->isEmpty()) {
-            return response()->json([
-                'status' => false,
-                'message' => 'No abandoned carts found for this customer'
-            ], 404);
-        }
+//         if ($carts->isEmpty()) {
+//             return response()->json([
+//                 'status' => false,
+//                 'message' => 'No abandoned carts found for this customer'
+//             ], 404);
+//         }
 
-        // Transform into same structure as index
-        $customer = $carts->first()->customer;
+//         // Transform into same structure as index
+//         $customer = $carts->first()->customer;
 
-        $result = [
-            'customer' => $customer,
-            'carts' => $carts->map(function ($cart) {
-                $images = collect(json_decode($cart->product->images, true) ?: [])
-                    ->map(fn($url) => ['url' => $url])
-                    ->toArray();
+//         $result = [
+//             'customer' => $customer,
+//             'carts' => $carts->map(function ($cart) {
+//                 $images = collect(json_decode($cart->product->images, true) ?: [])
+//                     ->map(fn($url) => ['url' => $url])
+//                     ->toArray();
 
-                return [
-                    'id' => $cart->id,
-                    'quantity' => $cart->quantity,
-                    'created_at' => $cart->created_at,
-                    'product' => [
-                        'id' => $cart->product->id,
-                        'sku' => $cart->product->sku,
-                        'name' => $cart->product->name,
-                        'images' => $images,
-                        'brand' => $cart->product->brand,
-                    ]
-                ];
-            })->values()
-        ];
+//                 return [
+//                     'id' => $cart->id,
+//                     'quantity' => $cart->quantity,
+//                     'created_at' => $cart->created_at,
+//                     'product' => [
+//                         'id' => $cart->product->id,
+//                         'sku' => $cart->product->sku,
+//                         'name' => $cart->product->name,
+//                         'images' => $images,
+//                         'brand' => $cart->product->brand,
+//                     ]
+//                 ];
+//             })->values()
+//         ];
 
+//         return response()->json([
+//             'status' => true,
+//             'data' => $result
+//         ]);
+//     }
+public function show($customerId)
+{
+    $threshold = Carbon::now()->subHours(1);
+
+    // Get all abandoned carts for a specific customer
+    $carts = Cart::with([
+        'customer:id,name,email',
+        'customer.customerAddress',
+        'product' => function ($q) {
+            $q->select('id', 'sku', 'name', 'images', 'brand_id')
+                ->with([
+                    'brand:id,name',
+                    'productSuppliers:id,product_id,price,sale_price' // eager load suppliers
+                ]);
+        },
+    ])
+    ->where('created_at', '<=', $threshold)
+    ->where('user_id', $customerId)
+    ->get();
+
+    if ($carts->isEmpty()) {
         return response()->json([
-            'status' => true,
-            'data' => $result
-        ]);
+            'status' => false,
+            'message' => 'No abandoned carts found for this customer'
+        ], 404);
     }
+
+    $customer = $carts->first()->customer;
+
+    $result = [
+        'customer' => $customer,
+        'carts' => $carts->map(function ($cart) {
+            $images = collect(json_decode($cart->product->images, true) ?: [])
+                ->map(fn($url) => ['url' => $url])
+                ->toArray();
+
+            return [
+                'id' => $cart->id,
+                'quantity' => $cart->quantity,
+                'created_at' => $cart->created_at,
+                'product' => [
+                    'id' => $cart->product->id,
+                    'sku' => $cart->product->sku,
+                    'name' => $cart->product->name,
+                    'images' => $images,
+                    'brand' => $cart->product->brand,
+                    'price' => optional($cart->product->productSuppliers->first())->price, // only index 0 price
+                    'sale_price' => optional($cart->product->productSuppliers->first())->sale_price, 
+                ]
+            ];
+        })->values()
+    ];
+
+    return response()->json([
+        'status' => true,
+        'data' => $result
+    ]);
+}
+
 
 /**
  * @OA\Get(

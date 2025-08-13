@@ -66,6 +66,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\NoFraudController;
 use App\Http\Controllers\LogDownloadController;
 use App\Http\Controllers\AbandonedCartController;
+use App\Http\Controllers\Utmcontroller;
+use App\Http\Controllers\CustomerEventController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -116,12 +118,12 @@ use App\Http\Controllers\FrontEnd\InvoiceController  as F_InvoiceController;
 use App\Http\Controllers\FrontEnd\GoogleReviewController as F_GoogleReviewController;
 use App\Http\Controllers\FrontEnd\MenuBannerController as F_MenuBannerController ;
 use App\Http\Controllers\FrontEnd\GlitchErrorController;
+use App\Http\Controllers\FrontEnd\CustomerEventController as F_CustomerEventController;
 use App\Http\Middleware\CaptureUtm;
 use App\Models\Lead;
 use App\Models\Utm;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
-use App\Http\Controllers\FrontEnd\CustomerEventController;
 
 Route::middleware([CaptureUtm::class])->group(function () {
 
@@ -162,7 +164,7 @@ Route::middleware([CaptureUtm::class])->group(function () {
 
 
 
-Route::post('frontend/customer-events', [CustomerEventController::class, 'store']);
+Route::post('frontend/customer-events', [F_CustomerEventController::class, 'store']);
 
 Route::get('/proxy-image', function (Illuminate\Http\Request $request) {
     $url = $request->query('url');
@@ -214,11 +216,14 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+	Route::apiResource('customer-events', CustomerEventController::class);
+
+    Route::get('/utms', [Utmcontroller::class, 'index']);
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
     Route::get('/customers-by-date-range', [AbandonedCartController::class, 'getCustomersByDateRange']);
-	
+
 	Route::prefix('menu-banners')->group(function () {
     // Create banner
     Route::post('/', [MenuBannerController::class, 'store']);
@@ -297,6 +302,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::get('/measurement-units', [MeasurementController::class, 'getMeasurementUnitsByType']);
 	Route::get('/measurement-type-categories', [MeasurementController::class, 'getCategoriesByMeasurementType']);
 
+	Route::post('/measurement-unit-priorities/import', [CategoryMeasurementUnitPriorityController::class, 'import']);
 	Route::resource('measurement-unit-priorities', CategoryMeasurementUnitPriorityController::class);
 
 	Route::delete('category-attributes/{id}/remove-attribute-group/{attribute_group_id}', [CategoryAttributeController::class, 'removeAttributeGroup']);

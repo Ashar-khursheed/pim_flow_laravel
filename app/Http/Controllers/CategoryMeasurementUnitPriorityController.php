@@ -7,6 +7,9 @@ use App\Models\CategoryMeasurementUnitPriority;
 use App\Models\Category;
 use App\Models\MeasurementUnit;
 
+use App\Jobs\ImportCategoryPriorityJob;
+use App\Services\ExcelImporterService;
+
 class CategoryMeasurementUnitPriorityController extends BaseController
 {
 	/**
@@ -328,5 +331,63 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 			'message' => __("msg_update"),
 			'data' => $priority
 		]);
+	}
+
+	/**
+	 * @OA\Post(
+	 *     path="/api/measurement-unit-priorities/import",
+	 *     summary="Import measurement unit priorities from an excel file",
+	 *     tags={"Measurement Unit Priorities"},
+	 *     @OA\RequestBody(
+	 *         required=true,
+	 *         @OA\MediaType(
+	 *             mediaType="multipart/form-data",
+	 *             @OA\Schema(
+	 *                 required={"upload_file"},
+	 *                 @OA\Property(property="upload_file", type="string", format="binary", description="xlsx file (.xlsx) max 2MB"),
+	 *             )
+	 *         )
+	 *     ),
+	 *     @OA\Response(response=200, description="Imported successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function import(Request $request, ExcelImporterService $excelImporter)
+	{
+		/* Validate request data */
+		$request->validate([
+			'upload_file' => 'required|file|mimes:xlsx,xls|max:2048',
+		]);
+
+		try {
+			$catPriorityFileFormatArray = [
+				'Measurement Type' => 'measurementType',
+				'Product Family' => 'productFamily',
+				'Primary Unit' => 'primaryUnit',
+				'Secondary Unit (Optional)' => 'secondaryUnit',
+			];
+
+			$excelImporter->processExcelImport(
+				$request->file('upload_file'),
+				$catPriorityFileFormatArray,
+				'Category Priority', /* Module name */
+				config('app.website') . '_CAT_PRIORITY', /* Job name */
+				'Import Category Priorities', /* Batch name */
+				ImportCategoryPriorityJob::class
+			);
+
+			return response()->json([
+				'success' => true,
+				'message' => 'The import process has been scheduled successfully. Please track it under import log.'
+			]);
+		} catch(\Exception $exception) {
+			$error[] = 'Error: ' . $exception->getMessage();
+			$error[] = 'File: ' . $exception->getFile();
+			$error[] = 'Line: ' . $exception->getLine();
+			return response()->json([
+				'success' => false,
+				'message' => $error
+			]);
+		}
 	}
 }

@@ -32,6 +32,7 @@ class Order extends Model
 		'status',
 		'created_by',
 		'updated_by',
+		'utm_id',
 	];
 
 	public function creator()
@@ -109,5 +110,11 @@ class Order extends Model
 	{
 		return $this->hasOne(\App\Models\NoFraudResponse::class, 'order_id', 'order_number');
 	}
+	
+	public function utm()
+	{
+		return $this->hasOne(\App\Models\Utm::class, 'session_id', 'utm_id');
+	}
+
 
 }

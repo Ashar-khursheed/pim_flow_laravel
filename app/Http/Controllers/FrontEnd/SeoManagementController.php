@@ -104,31 +104,89 @@ class SeoManagementController extends Controller
      *     )
      * )
      */
+    // public function getByRelationalId($identifier)
+    // {
+    //     $seoQuery = SeoManagement::with('seo_secondary_keywords');
+
+    //     // Check if it's a full URL
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $path = parse_url($identifier, PHP_URL_PATH); // Extract just the path
+    //         $seoQuery->where('url', $path);
+    //     } elseif (is_numeric($identifier)) {
+    //         // If it's a number, assume it's the relational ID
+    //         $seoQuery->where('relational_id', $identifier);
+    //     } else {
+    //         // Try matching it with the 'url' first
+    //         $seoQuery->where('url', $identifier);
+    //     }
+
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //         return $this->filterFields($item);
+    //     });
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $seoData
+    //     ]);
+    // }
     public function getByRelationalId($identifier)
-    {
-        $seoQuery = SeoManagement::with('seo_secondary_keywords');
+{
+    $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
-        // Check if it's a full URL
-        if (filter_var($identifier, FILTER_VALIDATE_URL)) {
-            $path = parse_url($identifier, PHP_URL_PATH); // Extract just the path
-            $seoQuery->where('url', $path);
-        } elseif (is_numeric($identifier)) {
-            // If it's a number, assume it's the relational ID
-            $seoQuery->where('relational_id', $identifier);
-        } else {
-            // Try matching it with the 'url' first
-            $seoQuery->where('url', $identifier);
-        }
-
-        $seoData = $seoQuery->get()->map(function ($item) {
-            return $this->filterFields($item);
-        });
-
-        return response()->json([
-            'status' => true,
-            'data' => $seoData
-        ]);
+    if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        $path = parse_url($identifier, PHP_URL_PATH);
+        $seoQuery->where('url', $path);
+    } elseif (is_numeric($identifier)) {
+        $seoQuery->where('relational_id', $identifier);
+    } else {
+        $seoQuery->where('url', $identifier);
     }
+
+//    $seoData = $seoQuery->get()->map(function ($item) {
+//     $filtered = $this->filterFields($item);
+
+//     // Decode schema if it's a JSON string
+//     if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+//         $decoded = json_decode($filtered['schema'], true);
+//         if (json_last_error() === JSON_ERROR_NONE) {
+//             $filtered['schema'] = $decoded;
+//         }
+//     }
+
+//     return $filtered;
+// });
+$seoData = $seoQuery->get()->map(function ($item) {
+    $filtered = $this->filterFields($item);
+
+    // Decode schema JSON
+    if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+        $decoded = json_decode($filtered['schema'], true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+
+            // Dynamically set full URL based on type
+            if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+                $baseUrl = 'https://www.thehorecastore.com/';
+                if (strtolower($decoded['@type']) === 'product') {
+                    $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+                } elseif (strtolower($decoded['@type']) === 'category') {
+                    $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+                }
+            }
+
+            $filtered['schema'] = $decoded;
+        }
+    }
+
+    return $filtered;
+});
+
+
+    return response()->json([
+        'status' => true,
+        'data' => $seoData
+    ]);
+}
+
 
 
     /**
