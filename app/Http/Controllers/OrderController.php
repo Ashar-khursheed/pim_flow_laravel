@@ -507,18 +507,16 @@ class OrderController extends Controller
 
 			OrderTracking::create([
 				'order_id' => $order->id,
-				'status' => 'Order Created',
+				'status' => 'Order Created By Backend Panel',
 				'description' => 'Order has been successfully created',
+				'created_by' => auth()->id()
 			]);
 
 			DB::commit();
 
 			$batch = Bus::batch([])->before(function (Batch $batch) {
-
 			})->catch(function (Batch $batch, Throwable $e) {
-
 			})->finally(function (Batch $batch) {
-
 			})->name('Order Place')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
@@ -776,7 +774,8 @@ class OrderController extends Controller
 				'separate_deliveries' => $request->get('separate_deliveries', false),
 				'paid_amount' => $paidAmount,
 				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount
+				'pending_amount' => $pendingAmount,
+				'updated_by' => auth()->id()
 			]);
 
 			/* Delete existing products and re-insert */
@@ -803,6 +802,7 @@ class OrderController extends Controller
 				'order_id' => $order->id,
 				'status' => 'Order Updated By Backend Panel',
 				'description' => 'Order has been successfully updated',
+				'created_by' => auth()->id()
 			]);
 
 			DB::commit();
@@ -936,9 +936,10 @@ class OrderController extends Controller
 
 		/* Add tracking */
 		OrderTracking::create([
-			'order_id' => $order->id,
-			'status' => $request->status,
-			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+			'order_id'   => $order->id,
+			'status'     => 'Order status changed to ' . $request->status . ' by backend panel',
+			'description'=> $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+			'created_by' => auth()->id(),
 		]);
 
 		if (in_array($request->status, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
@@ -1094,15 +1095,14 @@ class OrderController extends Controller
 
 		/* Add tracking entry */
 		OrderTracking::create([
-			'order_id' => $order->id,
-			'status' => "Product Status Updated",
-			'description' => $request->notes ?? "Product '{$orderProduct->name}' status changed from {$oldStatus} to {$request->status}",
-			'metadata' => [
-				'product_id' => $orderProduct->id,
-				'product_name' => $orderProduct->name,
-				'old_status' => $oldStatus,
-				'new_status' => $request->status
-			]
+			'order_id'   => $order->id,
+			'status'     => 'Order product status changed to ' . $request->status . ' by backend panel',
+			'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$request->status}",
+			'metadata'   => json_encode([
+				'order_product_id' => $orderProduct->id,
+				'product_name'     => $orderProduct->product->name ?? '',
+			]),
+			'created_by' => auth()->id(),
 		]);
 
 		if ($request->status == 'Cancelled') {
@@ -1236,9 +1236,10 @@ class OrderController extends Controller
 
 			/* Add tracking entry */
 			OrderTracking::create([
-				'order_id' => $order->id,
-				'status' => $order->status,
-				'description' => $request->notes ?? 'Shipment created with tracking number: ' . $request->tracking_number,
+				'order_id'   => $order->id,
+				'status'     => 'Order shipment created by backend panel',
+				'description'=> 'Order Shipment created with tracking number: ' . $request->tracking_number,
+				'created_by' => auth()->id(),
 			]);
 
 			DB::commit();
