@@ -142,19 +142,20 @@ class SeoManagementController extends Controller
         $seoQuery->where('url', $identifier);
     }
 
-    $seoData = $seoQuery->get()->map(function ($item) {
-        $filtered = $this->filterFields($item);
+   $seoData = $seoQuery->get()->map(function ($item) {
+    $filtered = $this->filterFields($item);
 
-        // If the field is a JSON string, decode it
-        if (!empty($filtered['seo_script']) && is_string($filtered['seo_script'])) {
-            $decoded = json_decode($filtered['seo_script'], true);
-            if (json_last_error() === JSON_ERROR_NONE) {
-                $filtered['seo_script'] = $decoded;
-            }
+    // Decode schema if it's a JSON string
+    if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+        $decoded = json_decode($filtered['schema'], true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            $filtered['schema'] = $decoded;
         }
+    }
 
-        return $filtered;
-    });
+    return $filtered;
+});
+
 
     return response()->json([
         'status' => true,
