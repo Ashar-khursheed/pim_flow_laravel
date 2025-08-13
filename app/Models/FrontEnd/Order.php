@@ -32,6 +32,7 @@ class Order extends Model
 		'status',
 		'created_by',
 		'updated_by',
+		'utm_id',
 	];
 
 	public function creator()
