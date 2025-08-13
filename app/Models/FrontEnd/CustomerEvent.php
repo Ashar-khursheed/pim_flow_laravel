@@ -8,7 +8,7 @@ class CustomerEvent extends Model
 {
 	protected $fillable = [
 		'event_type',
-		'page',
+		'page_url',
 		'element',
 		'customer_id',
 		'session_id',

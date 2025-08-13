@@ -35,35 +35,26 @@ class CustomerEventController extends BaseController
 
 		$recordsQuery = CustomerEvent::query();
 
-		if ($hasGroup === false) {
-			$recordsQuery->whereNull('attribute_group_id');
-		} elseif ($hasGroup === true) {
-			$recordsQuery->whereNotNull('attribute_group_id');
-		}
-
-		if (!empty($request->attribute_group_id)) {
-			$recordsQuery->where('attribute_group_id', $request->attribute_group_id);
+		/* Apply global or column-specific filters */
+		if ($request->filled('global')) {
+			$search = $request->input('global');
+			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+				foreach ($searchableColumns as $col) {
+					$q->orWhere($col, 'LIKE', '%' . $search . '%');
+				}
+			});
+		} else {
+			foreach ($searchableColumns as $col) {
+				if ($request->filled($col)) {
+					$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
+				}
+			}
 		}
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
 			$recordsQuery->with(['attributeGroup:id,name', 'creator:id,first_name,last_name', 'updator:id,first_name,last_name']);
 
-			/* Apply global or column-specific filters */
-			if ($request->filled('global')) {
-				$search = $request->input('global');
-				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-					foreach ($searchableColumns as $col) {
-						$q->orWhere($col, 'LIKE', '%' . $search . '%');
-					}
-				});
-			} else {
-				foreach ($searchableColumns as $col) {
-					if ($request->filled($col)) {
-						$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
-					}
-				}
-			}
 
 			/* Apply sorting */
 			$recordsQuery->orderBy($sortBy, $sortDir);

@@ -14,7 +14,7 @@ return new class extends Migration
 		Schema::create('customer_events', function (Blueprint $table) {
 			$table->id();
 			$table->string('event_type');
-			$table->text('page');
+			$table->text('page_url');
 			$table->string('element')->nullable();
 			$table->foreignId('customer_id')->nullable();
 			$table->string('session_id')->nullable();

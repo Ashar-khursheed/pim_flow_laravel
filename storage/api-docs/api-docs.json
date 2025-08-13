@@ -14232,7 +14232,7 @@
                                         "type": "string",
                                         "example": "click"
                                     },
-                                    "page": {
+                                    "page_url": {
                                         "type": "string",
                                         "example": "/product/123"
                                     },

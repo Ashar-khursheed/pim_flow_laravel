@@ -18,7 +18,7 @@ class CustomerEventController extends Controller
 	 *         required=true,
 	 *         @OA\JsonContent(
 	 *             @OA\Property(property="event_type", type="string", example="click"),
-	 *             @OA\Property(property="page", type="string", example="/product/123"),
+	 *             @OA\Property(property="page_url", type="string", example="/product/123"),
 	 *             @OA\Property(property="element", type="string", nullable=true, example="#add-to-cart-button"),
 	 *             @OA\Property(property="customer_id", type="integer", nullable=true, example=1),
 	 *             @OA\Property(property="session_id", type="string", example="abc123xyz"),
@@ -43,7 +43,7 @@ class CustomerEventController extends Controller
 	{
 		$data = $request->validate([
 			'event_type' => 'required',
-			'page' => 'required|string|max:255',
+			'page_url' => 'required|string|max:255',
 			'element' => 'nullable|string|max:255',
 			'customer_id' => 'nullable|exists:customers,id',
 			'session_id' => 'required|string|max:100',
