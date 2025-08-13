@@ -265,21 +265,21 @@ class OrderController extends Controller
 				'creator',
 				'updator',
 				'nofraudResponse',
-				 'utm'  // ✅ Include NoFraud relationship
+				'utm'
 			]);
 
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-						break;
+					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					break;
 					case 'Unpaid':
-						$recordsQuery->where('orders.paid_amount', 0);
-						break;
+					$recordsQuery->where('orders.paid_amount', 0);
+					break;
 					case 'Partially Paid':
-						$recordsQuery->where('orders.paid_amount', '>', 0)
-							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-						break;
+					$recordsQuery->where('orders.paid_amount', '>', 0)
+					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					break;
 				}
 			}
 
@@ -315,28 +315,27 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-				->offset(($page - 1) * $length)
-				->limit($length)
-				->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
 				$record->created_by = $record->creator->name ?? null;
 				$record->updated_by = $record->updator->name ?? null;
 
-				// ✅ Add NoFraud result
-			$response = $record->nofraudResponse->response ?? null;
+				$response = $record->nofraudResponse->response ?? null;
 
-			if (is_string($response)) {
-				$data = json_decode($response, true);
-			} elseif (is_array($response)) {
-				$data = $response;
-			} else {
-				$data = [];
-			}
+				if (is_string($response)) {
+					$data = json_decode($response, true);
+				} elseif (is_array($response)) {
+					$data = $response;
+				} else {
+					$data = [];
+				}
 
-			$record->nofraud_decision = $data['decision'] ?? null;
-			unset($record->nofraudResponse);
+				$record->nofraud_decision = $data['decision'] ?? null;
+				unset($record->nofraudResponse);
 
 
 				unset($record->creator, $record->updator);
@@ -351,8 +350,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-						: null;
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($orderProduct->$key)) {
@@ -383,7 +382,6 @@ class OrderController extends Controller
 			'total_records' => $totalRecords,
 		]);
 	}
-
 
 	/**
 	 * @OA\Post(
@@ -624,7 +622,7 @@ class OrderController extends Controller
 			'updator',
 			'tracking',
 			'nofraudResponse',
-			 'utm' 
+			'utm'
 		]);
 
 		/* Mutate the data for each order product */
@@ -645,9 +643,9 @@ class OrderController extends Controller
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 
-				$orderProduct -> nofraudResponse->response ?? null;
-				$orderProduct-> nofraud_decision = $data['decision'] ?? null;
-				unset($orderProduct->nofraudResponse);
+			$orderProduct -> nofraudResponse->response ?? null;
+			$orderProduct-> nofraud_decision = $data['decision'] ?? null;
+			unset($orderProduct->nofraudResponse);
 
 			/* Format numeric values to 2 decimal places */
 			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
