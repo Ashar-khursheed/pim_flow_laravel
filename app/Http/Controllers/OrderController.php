@@ -1237,6 +1237,7 @@ class OrderController extends Controller
 			/* Add tracking entry */
 			OrderTracking::create([
 				'order_id'   => $order->id,
+				'shipment_id'   => $shipment->id,
 				'status'     => 'Order shipment created by backend panel',
 				'description'=> 'Order Shipment created with tracking number: ' . $request->tracking_number,
 				'created_by' => auth()->id(),
