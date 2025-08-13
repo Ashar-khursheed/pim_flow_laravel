@@ -303,173 +303,298 @@ class CartController extends Controller
      *     security={{"bearerAuth": {}}}
      * )
      */
-    public function viewCart(Request $request)
-    {
-        $userId = auth()->id();
-        $isUserLoggedIn = $userId !== null;
+    // public function viewCart(Request $request)
+    // {
+    //     $userId = auth()->id();
+    //     $isUserLoggedIn = $userId !== null;
 
-        Log::info('User logged in:', ['user_id' => $userId]);
+    //     Log::info('User logged in:', ['user_id' => $userId]);
 
-        // Get wishlist product IDs
-        $wishlistProductIds = $isUserLoggedIn
-            ? DB::table('ec_wish_lists')
-                ->where('customer_id', $userId)
-                ->pluck('product_id')
-                ->map(fn($id) => (int) $id)
-                ->toArray()
-            : session()->get('guest_wishlist', []);
+    //     // Get wishlist product IDs
+    //     $wishlistProductIds = $isUserLoggedIn
+    //         ? DB::table('ec_wish_lists')
+    //             ->where('customer_id', $userId)
+    //             ->pluck('product_id')
+    //             ->map(fn($id) => (int) $id)
+    //             ->toArray()
+    //         : session()->get('guest_wishlist', []);
 
-        // Fetch cart items with product and currency details
-        $cartItems = Auth::check()
-            ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
-            : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
+    //     // Fetch cart items with product and currency details
+    //     $cartItems = Auth::check()
+    //         ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
+    //         : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
 
-        // Fetch applicable discounts for the user
-        $userDiscountIds = DB::table('ec_discount_customers')
-            ->where('customer_id', $userId)
-            ->pluck('discount_id')
-            ->toArray();
+    //     // Fetch applicable discounts for the user
+    //     $userDiscountIds = DB::table('ec_discount_customers')
+    //         ->where('customer_id', $userId)
+    //         ->pluck('discount_id')
+    //         ->toArray();
 
-        // Fetch applicable product discounts (allow multiple discounts per product)
-        $productDiscounts = DB::table('ec_discount_products')
-            ->whereIn('product_id', $cartItems->pluck('product.id'))
-            ->select('product_id', 'discount_id')
-            ->get()
-            ->groupBy('product_id')
-            ->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
+    //     // Fetch applicable product discounts (allow multiple discounts per product)
+    //     $productDiscounts = DB::table('ec_discount_products')
+    //         ->whereIn('product_id', $cartItems->pluck('product.id'))
+    //         ->select('product_id', 'discount_id')
+    //         ->get()
+    //         ->groupBy('product_id')
+    //         ->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
 
-        // Get all discounts from the discount table
-        $discounts = DB::table('ec_discounts')
-            ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
-            ->get()
-            ->keyBy('id');
+    //     // Get all discounts from the discount table
+    //     $discounts = DB::table('ec_discounts')
+    //         ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
+    //         ->get()
+    //         ->keyBy('id');
 
-        // Process each cart item
-        // $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
-        //     $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
-        //     $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+    //     // Process each cart item
+    //     // $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
+    //     //     $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
+    //     //     $item->product->images = collect(json_decode($item->product->images, true) ?? []);
         
         
-        //     $discountIds = $productDiscounts[$item->product->id] ?? [];
-        //     $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
-        //     $item->product->url = $item->product->seoUrl->url ?? null;
+    //     //     $discountIds = $productDiscounts[$item->product->id] ?? [];
+    //     //     $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+    //     //     $item->product->url = $item->product->seoUrl->url ?? null;
 
         
-        //     // ✅ Replace `currency` object with just symbol
-        //     $symbol = optional($item->product->currency)->symbol;
+    //     //     // ✅ Replace `currency` object with just symbol
+    //     //     $symbol = optional($item->product->currency)->symbol;
         
-        //     $item->product->unsetRelation('currency');
+    //     //     $item->product->unsetRelation('currency');
              
-        //     $item->product->currency = $symbol;
-        //     $firstSupplier = $item->product->productSuppliers->first();
+    //     //     $item->product->currency = $symbol;
+    //     //     $firstSupplier = $item->product->productSuppliers->first();
 
-        //     if ($firstSupplier) {
-        //         $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
-        //         $item->product->price = (float) $firstSupplier->price;
-        //         $item->product->sale_price = (float) $firstSupplier->sale_price;
-        //         $item->product->original_price = (float) $firstSupplier->price;
-        //         $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-        //         $item->product->best_price = (float) $firstSupplier->price;
-        //         $item->product->vendor_id = $firstSupplier->vendor_id;
-        //         $item->product->map = (float) $firstSupplier->map;
-        //         $item->product->inventory = $firstSupplier->inventory;
-        //         $item->product->in_stock = $firstSupplier->in_stock;
-        //         $item->product->delivery_days = $firstSupplier->delivery_days;
-        //         $item->product->return_policy = $firstSupplier->return_policy;
-        //         $item->product->free_shipping = $firstSupplier->free_shipping;
-        //         $item->product->warranty_information = $firstSupplier->warranty_information;
-        //     } else {
-        //         // Default safe fallback values (optional)
-        //         $item->product->vendor_sku = null;
-        //         $item->product->price = null;
-        //         $item->product->sale_price = null;
-        //         $item->product->original_price = null;
-        //         $item->product->front_sale_price = null;
-        //         $item->product->best_price = null;
-        //         $item->product->vendor_id = null;
-        //         $item->product->map = null;
-        //         $item->product->inventory = null;
-        //         $item->product->in_stock = null;
-        //         $item->product->delivery_days = null;
-        //         $item->product->return_policy = null;
-        //         $item->product->free_shipping = null;
-        //         $item->product->warranty_information = null;
-        //     }
+    //     //     if ($firstSupplier) {
+    //     //         $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+    //     //         $item->product->price = (float) $firstSupplier->price;
+    //     //         $item->product->sale_price = (float) $firstSupplier->sale_price;
+    //     //         $item->product->original_price = (float) $firstSupplier->price;
+    //     //         $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+    //     //         $item->product->best_price = (float) $firstSupplier->price;
+    //     //         $item->product->vendor_id = $firstSupplier->vendor_id;
+    //     //         $item->product->map = (float) $firstSupplier->map;
+    //     //         $item->product->inventory = $firstSupplier->inventory;
+    //     //         $item->product->in_stock = $firstSupplier->in_stock;
+    //     //         $item->product->delivery_days = $firstSupplier->delivery_days;
+    //     //         $item->product->return_policy = $firstSupplier->return_policy;
+    //     //         $item->product->free_shipping = $firstSupplier->free_shipping;
+    //     //         $item->product->warranty_information = $firstSupplier->warranty_information;
+    //     //     } else {
+    //     //         // Default safe fallback values (optional)
+    //     //         $item->product->vendor_sku = null;
+    //     //         $item->product->price = null;
+    //     //         $item->product->sale_price = null;
+    //     //         $item->product->original_price = null;
+    //     //         $item->product->front_sale_price = null;
+    //     //         $item->product->best_price = null;
+    //     //         $item->product->vendor_id = null;
+    //     //         $item->product->map = null;
+    //     //         $item->product->inventory = null;
+    //     //         $item->product->in_stock = null;
+    //     //         $item->product->delivery_days = null;
+    //     //         $item->product->return_policy = null;
+    //     //         $item->product->free_shipping = null;
+    //     //         $item->product->warranty_information = null;
+    //     //     }
 
 
 
-        // });
-        $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
-            $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
-            $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+    //     // });
+    //     $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
+    //         $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
+    //         $item->product->images = collect(json_decode($item->product->images, true) ?? []);
 
-            $discountIds = $productDiscounts[$item->product->id] ?? [];
-            $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
-            $item->product->url = $item->product->seoUrl->url ?? null;
+    //         $discountIds = $productDiscounts[$item->product->id] ?? [];
+    //         $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+    //         $item->product->url = $item->product->seoUrl->url ?? null;
 
-            // ✅ Replace `currency` object with just symbol
-            $symbol = optional($item->product->currency)->symbol;
-            $item->product->unsetRelation('currency');
-            $item->product->currency = $symbol;
+    //         // ✅ Replace `currency` object with just symbol
+    //         $symbol = optional($item->product->currency)->symbol;
+    //         $item->product->unsetRelation('currency');
+    //         $item->product->currency = $symbol;
 
-            $firstSupplier = $item->product->productSuppliers->first();
+    //         $firstSupplier = $item->product->productSuppliers->first();
 
-            if ($firstSupplier) {
-                $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
-                $item->product->price = (float) $firstSupplier->price;
-                $item->product->sale_price = (float) $firstSupplier->sale_price;
-                $item->product->original_price = (float) $firstSupplier->price;
-                $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
-                $item->product->best_price = (float) $firstSupplier->price;
-                $item->product->vendor_id = $firstSupplier->vendor_id;
-                $item->product->map = (float) $firstSupplier->map;
-                $item->product->inventory = $firstSupplier->inventory;
-                $item->product->in_stock = $firstSupplier->in_stock;
-                $item->product->delivery_days = $firstSupplier->delivery_days;
-                $item->product->return_policy = $firstSupplier->return_policy;
-                $item->product->free_shipping = $firstSupplier->free_shipping;
-                $item->product->warranty_information = $firstSupplier->warranty_information;
+    //         if ($firstSupplier) {
+    //             $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+    //             $item->product->price = (float) $firstSupplier->price;
+    //             $item->product->sale_price = (float) $firstSupplier->sale_price;
+    //             $item->product->original_price = (float) $firstSupplier->price;
+    //             $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+    //             $item->product->best_price = (float) $firstSupplier->price;
+    //             $item->product->vendor_id = $firstSupplier->vendor_id;
+    //             $item->product->map = (float) $firstSupplier->map;
+    //             $item->product->inventory = $firstSupplier->inventory;
+    //             $item->product->in_stock = $firstSupplier->in_stock;
+    //             $item->product->delivery_days = $firstSupplier->delivery_days;
+    //             $item->product->return_policy = $firstSupplier->return_policy;
+    //             $item->product->free_shipping = $firstSupplier->free_shipping;
+    //             $item->product->warranty_information = $firstSupplier->warranty_information;
+    //         } else {
+    //             // Default fallback values
+    //             $item->product->vendor_sku = null;
+    //             $item->product->price = null;
+    //             $item->product->sale_price = null;
+    //             $item->product->original_price = null;
+    //             $item->product->front_sale_price = null;
+    //             $item->product->best_price = null;
+    //             $item->product->vendor_id = null;
+    //             $item->product->map = null;
+    //             $item->product->inventory = null;
+    //             $item->product->in_stock = null;
+    //             $item->product->delivery_days = null;
+    //             $item->product->return_policy = null;
+    //             $item->product->free_shipping = null;
+    //             $item->product->warranty_information = null;
+    //         }
+
+    //         // ✅ Add selling unit
+    //         $sellingUnit = null;
+    //         if ($item->product->sellingUnitAttribute && $item->product->sellingUnitAttribute->attribute_value) {
+    //             $fullValue = $item->product->sellingUnitAttribute->attribute_value;
+    //             if (strpos($fullValue, '/') !== false) {
+    //                 $parts = explode('/', $fullValue);
+    //                 $sellingUnit = trim($parts[1]);
+    //             } else {
+    //                 $sellingUnit = $fullValue;
+    //             }
+    //         }
+    //         $item->product->selling_unit = $sellingUnit;
+    //     });
+
+        
+        
+
+
+    //     return response()->json([
+    //         'success' => true,
+    //         'data' => $cartItems,
+    //     ]);
+    // }
+    public function viewCart(Request $request)
+{
+    $userId = auth()->id();
+    $isUserLoggedIn = $userId !== null;
+
+    Log::info('User logged in:', ['user_id' => $userId]);
+
+    // ✅ ADD THIS: Generate cart ID
+    $cartId = $this->generateCartId($userId, $request);
+
+    // Get wishlist product IDs
+    $wishlistProductIds = $isUserLoggedIn
+        ? DB::table('ec_wish_lists')
+            ->where('customer_id', $userId)
+            ->pluck('product_id')
+            ->map(fn($id) => (int) $id)
+            ->toArray()
+        : session()->get('guest_wishlist', []);
+
+    // Fetch cart items with product and currency details
+    $cartItems = Auth::check()
+        ? Cart::where('user_id', $userId)->with('product.currency' ,'product.productSuppliers','product.seoUrl')->get()
+        : Cart::where('session_id', $request->session()->getId())->with('product.currency','product.productSuppliers','product.seoUrl')->get();
+
+    // Fetch applicable discounts for the user
+    $userDiscountIds = DB::table('ec_discount_customers')
+        ->where('customer_id', $userId)
+        ->pluck('discount_id')
+        ->toArray();
+
+    // Fetch applicable product discounts (allow multiple discounts per product)
+    $productDiscounts = DB::table('ec_discount_products')
+        ->whereIn('product_id', $cartItems->pluck('product.id'))
+        ->select('product_id', 'discount_id')
+        ->get()
+        ->groupBy('product_id')
+        ->map(fn($discounts) => $discounts->pluck('discount_id')->toArray());
+
+    // Get all discounts from the discount table
+    $discounts = DB::table('ec_discounts')
+        ->whereIn('id', array_merge($userDiscountIds, $productDiscounts->flatten()->toArray()))
+        ->get()
+        ->keyBy('id');
+
+    $cartItems->each(function ($item) use ($wishlistProductIds, $productDiscounts, $discounts) {
+        $item->product->in_wishlist = in_array($item->product->id, $wishlistProductIds);
+        $item->product->images = collect(json_decode($item->product->images, true) ?? []);
+
+        $discountIds = $productDiscounts[$item->product->id] ?? [];
+        $item->product->discounts = collect($discountIds)->map(fn($id) => $discounts[$id] ?? null)->filter()->values();
+        $item->product->url = $item->product->seoUrl->url ?? null;
+
+        // ✅ Replace `currency` object with just symbol
+        $symbol = optional($item->product->currency)->symbol;
+        $item->product->unsetRelation('currency');
+        $item->product->currency = $symbol;
+
+        $firstSupplier = $item->product->productSuppliers->first();
+
+        if ($firstSupplier) {
+            $item->product->vendor_sku = $firstSupplier->vendor_sku ?? null;
+            $item->product->price = (float) $firstSupplier->price;
+            $item->product->sale_price = (float) $firstSupplier->sale_price;
+            $item->product->original_price = (float) $firstSupplier->price;
+            $item->product->front_sale_price = (float) ($firstSupplier->sale_price ?? $firstSupplier->price);
+            $item->product->best_price = (float) $firstSupplier->price;
+            $item->product->vendor_id = $firstSupplier->vendor_id;
+            $item->product->map = (float) $firstSupplier->map;
+            $item->product->inventory = $firstSupplier->inventory;
+            $item->product->in_stock = $firstSupplier->in_stock;
+            $item->product->delivery_days = $firstSupplier->delivery_days;
+            $item->product->return_policy = $firstSupplier->return_policy;
+            $item->product->free_shipping = $firstSupplier->free_shipping;
+            $item->product->warranty_information = $firstSupplier->warranty_information;
+        } else {
+            // Default fallback values
+            $item->product->vendor_sku = null;
+            $item->product->price = null;
+            $item->product->sale_price = null;
+            $item->product->original_price = null;
+            $item->product->front_sale_price = null;
+            $item->product->best_price = null;
+            $item->product->vendor_id = null;
+            $item->product->map = null;
+            $item->product->inventory = null;
+            $item->product->in_stock = null;
+            $item->product->delivery_days = null;
+            $item->product->return_policy = null;
+            $item->product->free_shipping = null;
+            $item->product->warranty_information = null;
+        }
+
+        // ✅ Add selling unit
+        $sellingUnit = null;
+        if ($item->product->sellingUnitAttribute && $item->product->sellingUnitAttribute->attribute_value) {
+            $fullValue = $item->product->sellingUnitAttribute->attribute_value;
+            if (strpos($fullValue, '/') !== false) {
+                $parts = explode('/', $fullValue);
+                $sellingUnit = trim($parts[1]);
             } else {
-                // Default fallback values
-                $item->product->vendor_sku = null;
-                $item->product->price = null;
-                $item->product->sale_price = null;
-                $item->product->original_price = null;
-                $item->product->front_sale_price = null;
-                $item->product->best_price = null;
-                $item->product->vendor_id = null;
-                $item->product->map = null;
-                $item->product->inventory = null;
-                $item->product->in_stock = null;
-                $item->product->delivery_days = null;
-                $item->product->return_policy = null;
-                $item->product->free_shipping = null;
-                $item->product->warranty_information = null;
+                $sellingUnit = $fullValue;
             }
+        }
+        $item->product->selling_unit = $sellingUnit;
+    });
 
-            // ✅ Add selling unit
-            $sellingUnit = null;
-            if ($item->product->sellingUnitAttribute && $item->product->sellingUnitAttribute->attribute_value) {
-                $fullValue = $item->product->sellingUnitAttribute->attribute_value;
-                if (strpos($fullValue, '/') !== false) {
-                    $parts = explode('/', $fullValue);
-                    $sellingUnit = trim($parts[1]);
-                } else {
-                    $sellingUnit = $fullValue;
-                }
-            }
-            $item->product->selling_unit = $sellingUnit;
-        });
+    return response()->json([
+        'success' => true,
+        'data' => $cartItems,
+        'cart_id' => $cartId, // ✅ ADD THIS
+        'checkout_url' => "https://thehorecastore.com/Checkout/{$cartId}" // ✅ ADD THIS
+    ]);
+}
 
-        
-        
-
-
-        return response()->json([
-            'success' => true,
-            'data' => $cartItems,
-        ]);
+// ✅ ADD THIS METHOD
+private function generateCartId($userId, $request)
+{
+    $timestamp = time();
+    
+    if ($userId) {
+        return 'cart_' . md5($userId . $request->session()->getId() . $timestamp) . '_' . $timestamp;
+    } else {
+        return 'guest_' . md5($request->session()->getId() . $timestamp) . '_' . substr(str_shuffle('abcdefghijklmnopqrstuvwxyz0123456789'), 0, 8);
     }
+}
 
     /**
      * @OA\Delete(
