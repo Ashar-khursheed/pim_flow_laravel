@@ -161,7 +161,7 @@ public function index(Request $request)
         ->pluck('user_id'); // Get all distinct user_ids (not paginated)
 
     // Paginate the Customer model based on these IDs
-    $customers = \App\Models\Customer::whereIn('id', $customerIds)
+    $customers = Customer::whereIn('id', $customerIds)
         ->paginate($perPage);
 
     // Eager load carts for these customers filtered by threshold
