@@ -207,8 +207,6 @@ class OrderController extends BaseController
 		]);
 
 		$customerId = auth()->id();
-		$sessionId = session()->getId();
-		$utm = Utm::where('session_id', $sessionId)->latest()->first();
 		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $customerId)->first();
 
 		if (!$address) {
@@ -263,7 +261,7 @@ class OrderController extends BaseController
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'created_by' => 0,
-				'utm_id' => $utm?->id
+				'utm_id' => $request->utm_id
 			]);
 
 			foreach ($request->products as $product) {
