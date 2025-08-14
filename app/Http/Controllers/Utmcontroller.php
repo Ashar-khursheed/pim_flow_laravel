@@ -243,8 +243,8 @@ public function stats(Request $request)
         ->count();
 
     $conversionRate = $totalSessions > 0
-        ? round(($ordersFromUtm / $totalSessions) * 100)
-        : 0;
+    ? number_format(($ordersFromUtm / $totalSessions) * 100, 2)
+    : 0;
 
     $avgOrderValue = round((clone $ordersQuery)->avg('total_amount'));
     $totalSales = round((clone $ordersQuery)->sum('total_amount'));
