@@ -220,6 +220,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
     Route::get('/utms', [Utmcontroller::class, 'index']);
 	Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
+	Route::get('/analytics/utm-sources', [Utmcontroller::class, 'utmSources']);
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
