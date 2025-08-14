@@ -207,8 +207,8 @@ public function stats(Request $request)
 {
     // Get filter and custom dates from request
     $filter = $request->query('filter', 'lifetime');
-    $fromDate = $request->query('from_date'); // e.g., 2025-08-01
-    $toDate = $request->query('to_date');     // e.g., 2025-08-10
+    $fromDate = $request->query('from_date');
+    $toDate = $request->query('to_date');
 
     // Predefined date ranges
     $dateRanges = [
@@ -236,15 +236,23 @@ public function stats(Request $request)
         $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
     }
 
+    // Total sessions
     $totalSessions = $utmsQuery->count();
 
+    // Orders linked to UTM
     $ordersFromUtm = (clone $ordersQuery)
         ->whereNotNull('utm_id')
         ->count();
 
+    // Total orders (exclude cancelled)
+    $totalOrders = (clone $ordersQuery)
+        ->whereNotIn('status', ['Cancelled', 'Cancelled by Customer'])
+        ->count();
+
+    // Conversion rate (keep decimals)
     $conversionRate = $totalSessions > 0
-    ? number_format(($ordersFromUtm / $totalSessions) * 100, 2)
-    : 0;
+        ? number_format(($ordersFromUtm / $totalSessions) * 100, 2)
+        : 0;
 
     $avgOrderValue = round((clone $ordersQuery)->avg('total_amount'));
     $totalSales = round((clone $ordersQuery)->sum('total_amount'));
@@ -261,6 +269,7 @@ public function stats(Request $request)
         'to_date' => $toDate,
         'total_sessions' => $totalSessions,
         'orders_from_utm' => $ordersFromUtm,
+        'total_orders' => $totalOrders, // new field
         'conversion_rate' => $conversionRate,
         'avg_order_value' => $avgOrderValue,
         'total_sales' => $totalSales,
@@ -268,6 +277,7 @@ public function stats(Request $request)
         'net_sales' => $netSales,
     ]);
 }
+
 
 
     /**
