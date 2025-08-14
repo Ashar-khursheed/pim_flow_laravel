@@ -898,6 +898,13 @@ class OrderController extends Controller
 		$oldStatus = $order->status;
 		$newStatus = $request->status;
 
+		if ($oldStatus == 'Cancelled') {
+			return response()->json([
+				'success' => false,
+				'message' => "Status cannot be changed because the order is already cancelled."
+			]);
+		}
+
 		/* Order Cancellation Validation */
 		if ($newStatus === 'Cancelled') {
 			if ($oldStatus !== 'Pending') {
@@ -1101,14 +1108,6 @@ class OrderController extends Controller
 			]);
 		}
 
-		/* Prevent status update before order is confirmed */
-		if ($order->status === 'Pending') {
-			return response()->json([
-				'success' => false,
-				'message' => "Order Product status cannot be changed until the order is confirmed."
-			]);
-		}
-
 		$request->validate([
 			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Partially Pickups,Out for delivery,Partially Out for delivery,Delivered,Partially Delivered,Cancelled',
 			'notes' => 'nullable|string'
@@ -1116,6 +1115,13 @@ class OrderController extends Controller
 
 		$oldStatus = $orderProduct->status;
 		$newStatus = $request->status;
+
+		if ($oldStatus == 'Cancelled') {
+			return response()->json([
+				'success' => false,
+				'message' => "Status cannot be changed because the order product is already cancelled."
+			]);
+		}
 
 		/* Order Cancellation Validation */
 		if ($newStatus === 'Cancelled') {
@@ -1156,6 +1162,14 @@ class OrderController extends Controller
 				'success' => true,
 				'message' => 'Order product status updated successfully',
 				'data' => $orderProduct->fresh()
+			]);
+		}
+
+		/* Prevent status update before order is confirmed */
+		if ($order->status === 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Order Product status cannot be changed until the order is confirmed."
 			]);
 		}
 
