@@ -1807,48 +1807,28 @@ class ProductController extends BaseController
     $documentPath = 'production/documents';
 
     // Handle images with role-based permission - CORRECTED VERSION
-    if ($request->has('images')) {
-        if ($canModifyImages) {
-            $finalImages = [];
-            foreach ($request->images as $key => $image) {
-                if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-                    // It's a URL, keep it as is
-                    $finalImages[] = $image;
-                } elseif ($request->hasFile("images.$key")) {
-                    // It's an uploaded file, store it to S3
-                    $file = $request->file("images.$key");
-                    $path = $file->store($imagePath, 's3');
-                    $finalImages[] = Storage::disk('s3')->url($path);
-                }
-                // else ignore invalid inputs
+   if ($request->has('images') && !empty(array_filter($request->images))) {
+    if ($canModifyImages) {
+        $finalImages = [];
+        foreach ($request->images as $key => $image) {
+            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                $finalImages[] = $image;
+            } elseif ($request->hasFile("images.$key")) {
+                $file = $request->file("images.$key");
+                $path = $file->store($imagePath, 's3');
+                $finalImages[] = Storage::disk('s3')->url($path);
             }
-
-            // Save as JSON with unescaped slashes
-            $input['images'] = json_encode($finalImages);
-        } else {
-            // User tried to modify images but doesn't have permission - check if they're uploading files
-            $hasNewImageFiles = false;
-            foreach ($request->images as $key => $image) {
-                if ($request->hasFile("images.$key")) {
-                    $hasNewImageFiles = true;
-                    break;
-                }
-            }
-
-            if ($hasNewImageFiles) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to modify product images.'
-                ], 403);
-            }
-
-            // Remove from input to prevent overwriting existing images
-            unset($input['images']);
         }
-    } else {
-        // ✅ CRITICAL: If images not in request, preserve existing images
-        unset($input['images']);
-    }
+        if (!empty($finalImages)) {
+            $input['images'] = json_encode($finalImages);
+				}
+			} else {
+				unset($input['images']);
+			}
+		} else {
+			unset($input['images']); // preserve existing
+		}
+
 
     // Handle videos with role-based permission - CORRECTED VERSION  
     if ($request->has('video_path')) {
