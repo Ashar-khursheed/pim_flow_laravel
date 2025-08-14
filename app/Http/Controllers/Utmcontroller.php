@@ -390,18 +390,18 @@ public function utmSources(Request $request)
             ->get();
 
         $result = $utms->map(function ($row) use ($utmSource) {
-            $totalOrders = DB::table('orders')
+           $totalOrders = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utm_source', $utmSource)
-                ->where('utm_medium', $row->utm_medium)
-                ->where('utm_campaign', $row->utm_campaign)
+                ->where('utms.utm_source', $utmSource)
+                ->where('utms.utm_medium', $row->utm_medium)
+                ->where('utms.utm_campaign', $row->utm_campaign)
                 ->count();
 
             $totalSales = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utm_source', $utmSource)
-                ->where('utm_medium', $row->utm_medium)
-                ->where('utm_campaign', $row->utm_campaign)
+                ->where('utms.utm_source', $utmSource)
+                ->where('utms.utm_medium', $row->utm_medium)
+                ->where('utms.utm_campaign', $row->utm_campaign)
                 ->sum('orders.total_amount');
 
             $conversionRate = $row->total_sessions > 0
