@@ -2244,7 +2244,7 @@ if ($numericValues && $cleanedValues->count() > 2) {
                 'max' => $max,
                 'product_count' => $productCount,
                 'display_value' => $displayValue,
-                'unit' => $unit
+                'symbol' => $unit
             ];
         })->filter(function($range) use ($isFilterSelected) {
             // Filter out null ranges and ranges with same min/max (unless selected)
@@ -2299,7 +2299,7 @@ if ($numericValues && $cleanedValues->count() > 2) {
                         'product_count' => $productCount,
                         'display_value' => $displayValue,
                         'selected' => true,
-                        'unit' => $unit
+                        'symbol' => $unit
                     ];
                 }
             }
