@@ -279,12 +279,110 @@ public function index(Request $request)
 
     //     return response()->json($sources);
     // }
+// public function utmSources(Request $request)
+// {
+//     $utmSource = $request->query('utm_source');
+
+//     if ($utmSource) {
+//         // Detailed data for one UTM source, grouped by medium and campaign
+//         $utms = DB::table('utms')
+//             ->where('utm_source', $utmSource)
+//             ->select('utm_medium', 'utm_campaign', DB::raw('COUNT(*) as total_sessions'))
+//             ->groupBy('utm_medium', 'utm_campaign')
+//             ->get();
+
+//         $result = $utms->map(function ($row) use ($utmSource) {
+//             $totalOrders = DB::table('orders')
+//                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+//                 ->where('utms.utm_source', $utmSource)
+//                 ->where('utms.utm_medium', $row->utm_medium)
+//                 ->where('utms.utm_campaign', $row->utm_campaign)
+//                 ->count();
+
+//             $totalSales = DB::table('orders')
+//                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+//                 ->where('utms.utm_source', $utmSource)
+//                 ->where('utms.utm_medium', $row->utm_medium)
+//                 ->where('utms.utm_campaign', $row->utm_campaign)
+//                 ->sum('orders.total_amount');
+
+//             $conversionRate = $row->total_sessions > 0
+//                 ? round(($totalOrders / $row->total_sessions) * 100, 2)
+//                 : 0;
+
+//             return [
+//                 'utm_source' => $utmSource,
+//                 'utm_type' => $this->detectSourceType($utmSource), // optional type helper
+//                 'utm_medium' => $row->utm_medium,
+//                 'utm_campaign' => $row->utm_campaign,
+//                 'total_sessions' => $row->total_sessions,
+//                 'total_orders' => $totalOrders,
+//                 'total_sales' => round($totalSales, 2),
+//                 'conversion_rate' => $conversionRate
+//             ];
+//         });
+
+//         return response()->json($result);
+//     }
+
+//     // Aggregated data for all sources with medium and campaign breakdown
+//     $sources = DB::table('utms')
+//         ->select('utm_source', 'utm_medium', 'utm_campaign', DB::raw('COUNT(*) as total_sessions'))
+//         ->groupBy('utm_source', 'utm_medium', 'utm_campaign')
+//         ->get()
+//         ->map(function ($row) {
+//             $totalOrders = DB::table('orders')
+//                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+//                 ->where('utms.utm_source', $row->utm_source)
+//                 ->where('utms.utm_medium', $row->utm_medium)
+//                 ->where('utms.utm_campaign', $row->utm_campaign)
+//                 ->count();
+
+//             $totalSales = DB::table('orders')
+//                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+//                 ->where('utms.utm_source', $row->utm_source)
+//                 ->where('utms.utm_medium', $row->utm_medium)
+//                 ->where('utms.utm_campaign', $row->utm_campaign)
+//                 ->sum('orders.total_amount');
+
+//             $conversionRate = $row->total_sessions > 0
+//                 ? round(($totalOrders / $row->total_sessions) * 100, 2)
+//                 : 0;
+
+//             return [
+//                 'utm_source' => $row->utm_source,
+//                 'utm_type' => $this->detectSourceType($row->utm_source), // optional type helper
+//                 'utm_medium' => $row->utm_medium,
+//                 'utm_campaign' => $row->utm_campaign,
+//                 'total_sessions' => $row->total_sessions,
+//                 'total_orders' => $totalOrders,
+//                 'total_sales' => round($totalSales, 2),
+//                 'conversion_rate' => $conversionRate
+//             ];
+//         });
+
+//     return response()->json($sources);
+// }
+
+// /**
+//  * Optional helper to detect source type
+//  */
+// private function detectSourceType($source)
+// {
+//     $source = strtolower($source);
+
+//     if (str_contains($source, 'google')) return 'Search Engine';
+//     if (str_contains($source, 'facebook')) return 'Social Media';
+//     if (str_contains($source, 'linkedin')) return 'Social Media';
+//     if (str_contains($source, 'email')) return 'Email';
+//     return 'Other';
+// }
 public function utmSources(Request $request)
 {
     $utmSource = $request->query('utm_source');
 
     if ($utmSource) {
-        // Detailed data for one UTM source, grouped by medium and campaign
+        // Detailed breakdown for one UTM source (medium + campaign)
         $utms = DB::table('utms')
             ->where('utm_source', $utmSource)
             ->select('utm_medium', 'utm_campaign', DB::raw('COUNT(*) as total_sessions'))
@@ -294,16 +392,16 @@ public function utmSources(Request $request)
         $result = $utms->map(function ($row) use ($utmSource) {
             $totalOrders = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utms.utm_source', $utmSource)
-                ->where('utms.utm_medium', $row->utm_medium)
-                ->where('utms.utm_campaign', $row->utm_campaign)
+                ->where('utm_source', $utmSource)
+                ->where('utm_medium', $row->utm_medium)
+                ->where('utm_campaign', $row->utm_campaign)
                 ->count();
 
             $totalSales = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utms.utm_source', $utmSource)
-                ->where('utms.utm_medium', $row->utm_medium)
-                ->where('utms.utm_campaign', $row->utm_campaign)
+                ->where('utm_source', $utmSource)
+                ->where('utm_medium', $row->utm_medium)
+                ->where('utm_campaign', $row->utm_campaign)
                 ->sum('orders.total_amount');
 
             $conversionRate = $row->total_sessions > 0
@@ -312,7 +410,7 @@ public function utmSources(Request $request)
 
             return [
                 'utm_source' => $utmSource,
-                'utm_type' => $this->detectSourceType($utmSource), // optional type helper
+                'utm_type' => $this->detectSourceType($utmSource),
                 'utm_medium' => $row->utm_medium,
                 'utm_campaign' => $row->utm_campaign,
                 'total_sessions' => $row->total_sessions,
@@ -325,24 +423,20 @@ public function utmSources(Request $request)
         return response()->json($result);
     }
 
-    // Aggregated data for all sources with medium and campaign breakdown
+    // Summary per source (no detailed breakdown)
     $sources = DB::table('utms')
-        ->select('utm_source', 'utm_medium', 'utm_campaign', DB::raw('COUNT(*) as total_sessions'))
-        ->groupBy('utm_source', 'utm_medium', 'utm_campaign')
+        ->select('utm_source', DB::raw('COUNT(*) as total_sessions'))
+        ->groupBy('utm_source')
         ->get()
         ->map(function ($row) {
             $totalOrders = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utms.utm_source', $row->utm_source)
-                ->where('utms.utm_medium', $row->utm_medium)
-                ->where('utms.utm_campaign', $row->utm_campaign)
+                ->where('utm_source', $row->utm_source)
                 ->count();
 
             $totalSales = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                ->where('utms.utm_source', $row->utm_source)
-                ->where('utms.utm_medium', $row->utm_medium)
-                ->where('utms.utm_campaign', $row->utm_campaign)
+                ->where('utm_source', $row->utm_source)
                 ->sum('orders.total_amount');
 
             $conversionRate = $row->total_sessions > 0
@@ -351,9 +445,7 @@ public function utmSources(Request $request)
 
             return [
                 'utm_source' => $row->utm_source,
-                'utm_type' => $this->detectSourceType($row->utm_source), // optional type helper
-                'utm_medium' => $row->utm_medium,
-                'utm_campaign' => $row->utm_campaign,
+                'utm_type' => $this->detectSourceType($row->utm_source),
                 'total_sessions' => $row->total_sessions,
                 'total_orders' => $totalOrders,
                 'total_sales' => round($totalSales, 2),
