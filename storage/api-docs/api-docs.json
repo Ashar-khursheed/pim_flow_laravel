@@ -31997,6 +31997,39 @@
                 }
             }
         },
+        "/api/analytics/utm-sources": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get UTM source analytics or details for a specific source",
+                "description": "When no utm_source is provided, returns aggregated stats for all sources. When utm_source is provided, returns detailed UTM rows for that source along with totals.",
+                "operationId": "936567c87511f50f31dee853e4389013",
+                "parameters": [
+                    {
+                        "name": "utm_source",
+                        "in": "query",
+                        "description": "UTM source to filter by",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "UTM source analytics data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/vendors": {
             "get": {
                 "tags": [
