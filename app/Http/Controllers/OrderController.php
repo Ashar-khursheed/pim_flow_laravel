@@ -265,21 +265,21 @@ class OrderController extends Controller
 				'creator',
 				'updator',
 				'nofraudResponse',
-				 'utm'  // ✅ Include NoFraud relationship
+				'utm'
 			]);
 
 			if ($request->has('payment_status')) {
 				switch ($request->payment_status) {
 					case 'Paid':
-						$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
-						break;
+					$recordsQuery->whereColumn('orders.paid_amount', '>=', 'orders.total_amount');
+					break;
 					case 'Unpaid':
-						$recordsQuery->where('orders.paid_amount', 0);
-						break;
+					$recordsQuery->where('orders.paid_amount', 0);
+					break;
 					case 'Partially Paid':
-						$recordsQuery->where('orders.paid_amount', '>', 0)
-							->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
-						break;
+					$recordsQuery->where('orders.paid_amount', '>', 0)
+					->whereColumn('orders.paid_amount', '<', 'orders.total_amount');
+					break;
 				}
 			}
 
@@ -315,28 +315,27 @@ class OrderController extends Controller
 			}
 
 			$records = $recordsQuery
-				->offset(($page - 1) * $length)
-				->limit($length)
-				->get();
+			->offset(($page - 1) * $length)
+			->limit($length)
+			->get();
 
 			$records->transform(function ($record) {
 				$record->customer_name = $record->customer->name ?? null;
 				$record->created_by = $record->creator->name ?? null;
 				$record->updated_by = $record->updator->name ?? null;
 
-				// ✅ Add NoFraud result
-			$response = $record->nofraudResponse->response ?? null;
+				$response = $record->nofraudResponse->response ?? null;
 
-			if (is_string($response)) {
-				$data = json_decode($response, true);
-			} elseif (is_array($response)) {
-				$data = $response;
-			} else {
-				$data = [];
-			}
+				if (is_string($response)) {
+					$data = json_decode($response, true);
+				} elseif (is_array($response)) {
+					$data = $response;
+				} else {
+					$data = [];
+				}
 
-			$record->nofraud_decision = $data['decision'] ?? null;
-			unset($record->nofraudResponse);
+				$record->nofraud_decision = $data['decision'] ?? null;
+				unset($record->nofraudResponse);
 
 
 				unset($record->creator, $record->updator);
@@ -351,8 +350,8 @@ class OrderController extends Controller
 					}
 					$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 					$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-						? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
-						: null;
+					? getDateRange($record->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
 
 					foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
 						if (isset($orderProduct->$key)) {
@@ -383,7 +382,6 @@ class OrderController extends Controller
 			'total_records' => $totalRecords,
 		]);
 	}
-
 
 	/**
 	 * @OA\Post(
@@ -509,18 +507,16 @@ class OrderController extends Controller
 
 			OrderTracking::create([
 				'order_id' => $order->id,
-				'status' => 'Order Created',
+				'status' => 'Order Created By Backend Panel',
 				'description' => 'Order has been successfully created',
+				'created_by' => auth()->id()
 			]);
 
 			DB::commit();
 
 			$batch = Bus::batch([])->before(function (Batch $batch) {
-
 			})->catch(function (Batch $batch, Throwable $e) {
-
 			})->finally(function (Batch $batch) {
-
 			})->name('Order Place')->dispatch();
 
 			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
@@ -624,7 +620,7 @@ class OrderController extends Controller
 			'updator',
 			'tracking',
 			'nofraudResponse',
-			 'utm' 
+			'utm'
 		]);
 
 		/* Mutate the data for each order product */
@@ -645,9 +641,9 @@ class OrderController extends Controller
 			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
 			: null;
 
-				$orderProduct -> nofraudResponse->response ?? null;
-				$orderProduct-> nofraud_decision = $data['decision'] ?? null;
-				unset($orderProduct->nofraudResponse);
+			$orderProduct -> nofraudResponse->response ?? null;
+			$orderProduct-> nofraud_decision = $data['decision'] ?? null;
+			unset($orderProduct->nofraudResponse);
 
 			/* Format numeric values to 2 decimal places */
 			foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
@@ -778,7 +774,8 @@ class OrderController extends Controller
 				'separate_deliveries' => $request->get('separate_deliveries', false),
 				'paid_amount' => $paidAmount,
 				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount
+				'pending_amount' => $pendingAmount,
+				'updated_by' => auth()->id()
 			]);
 
 			/* Delete existing products and re-insert */
@@ -805,6 +802,7 @@ class OrderController extends Controller
 				'order_id' => $order->id,
 				'status' => 'Order Updated By Backend Panel',
 				'description' => 'Order has been successfully updated',
+				'created_by' => auth()->id()
 			]);
 
 			DB::commit();
@@ -938,9 +936,10 @@ class OrderController extends Controller
 
 		/* Add tracking */
 		OrderTracking::create([
-			'order_id' => $order->id,
-			'status' => $request->status,
-			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+			'order_id'   => $order->id,
+			'status'     => 'Order status changed to ' . $request->status . ' by backend panel',
+			'description'=> $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
+			'created_by' => auth()->id(),
 		]);
 
 		if (in_array($request->status, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
@@ -1096,15 +1095,14 @@ class OrderController extends Controller
 
 		/* Add tracking entry */
 		OrderTracking::create([
-			'order_id' => $order->id,
-			'status' => "Product Status Updated",
-			'description' => $request->notes ?? "Product '{$orderProduct->name}' status changed from {$oldStatus} to {$request->status}",
-			'metadata' => [
-				'product_id' => $orderProduct->id,
-				'product_name' => $orderProduct->name,
-				'old_status' => $oldStatus,
-				'new_status' => $request->status
-			]
+			'order_id'   => $order->id,
+			'status'     => 'Order product status changed to ' . $request->status . ' by backend panel',
+			'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$request->status}",
+			'metadata'   => json_encode([
+				'order_product_id' => $orderProduct->id,
+				'product_name'     => $orderProduct->product->name ?? '',
+			]),
+			'created_by' => auth()->id(),
 		]);
 
 		if ($request->status == 'Cancelled') {
@@ -1238,9 +1236,11 @@ class OrderController extends Controller
 
 			/* Add tracking entry */
 			OrderTracking::create([
-				'order_id' => $order->id,
-				'status' => $order->status,
-				'description' => $request->notes ?? 'Shipment created with tracking number: ' . $request->tracking_number,
+				'order_id'   => $order->id,
+				'shipment_id'   => $shipment->id,
+				'status'     => 'Order shipment created by backend panel',
+				'description'=> 'Order Shipment created with tracking number: ' . $request->tracking_number,
+				'created_by' => auth()->id(),
 			]);
 
 			DB::commit();

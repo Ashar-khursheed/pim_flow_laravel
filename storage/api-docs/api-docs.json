@@ -7914,33 +7914,50 @@
                         }
                     },
                     {
-                        "name": "id",
+                        "name": "event_type",
                         "in": "query",
-                        "description": "Search by attribute id",
-                        "schema": {
-                            "type": "integer"
-                        }
-                    },
-                    {
-                        "name": "name",
-                        "in": "query",
-                        "description": "Search by attribute name",
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "code",
+                        "name": "page_url",
                         "in": "query",
-                        "description": "Search by attribute code",
                         "schema": {
                             "type": "string"
                         }
                     },
                     {
-                        "name": "type",
+                        "name": "element",
                         "in": "query",
-                        "description": "Search by attribute type",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "customer_name",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "session_id",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ip_address",
+                        "in": "query",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "user_agent",
+                        "in": "query",
                         "schema": {
                             "type": "string"
                         }
@@ -7953,9 +7970,13 @@
                             "type": "string",
                             "enum": [
                                 "id",
-                                "name",
-                                "code",
-                                "type",
+                                "event_type",
+                                "page_url",
+                                "element",
+                                "customer_name",
+                                "session_id",
+                                "ip_address",
+                                "user_agent",
                                 "created_at",
                                 "updated_at"
                             ]
@@ -7978,6 +7999,39 @@
                 "responses": {
                     "200": {
                         "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/customer-events/{id}": {
+            "get": {
+                "tags": [
+                    "Customer Events"
+                ],
+                "summary": "Get customer event details",
+                "operationId": "7162a85821b6c209e1dfe9125abbb825",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Event ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Details retrieved successfully",
                         "content": {
                             "application/json": {}
                         }

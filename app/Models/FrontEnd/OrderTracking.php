@@ -4,6 +4,7 @@ namespace App\Models\FrontEnd;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
 
 class OrderTracking extends Model
 {
@@ -12,13 +13,18 @@ class OrderTracking extends Model
 
     protected $fillable = [
         'order_id', 'shipment_id', 'status', 'description',
-        'location', 'tracked_at', 'metadata'
+        'location', 'metadata', 'created_by'
     ];
 
     protected $casts = [
         'tracked_at' => 'datetime',
         'metadata' => 'array',
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     public function order()
     {

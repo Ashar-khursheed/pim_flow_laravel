@@ -16,11 +16,16 @@ class CustomerEventController extends BaseController
 	 *     @OA\Parameter(name="page", in="query", description="Page number for pagination", example=1, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="length", in="query", description="Number of records per page.", example=20, @OA\Schema(type="integer", minimum=1)),
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="id", in="query", description="Search by attribute id", @OA\Schema(type="integer")),
-	 *     @OA\Parameter(name="name", in="query", description="Search by attribute name", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="code", in="query", description="Search by attribute code", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="type", in="query", description="Search by attribute type", @OA\Schema(type="string")),
-	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "name", "code", "type", "created_at", "updated_at"})),
+	 *
+	 *     @OA\Parameter(name="event_type", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="page_url", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="element", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="customer_name", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="session_id", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="ip_address", in="query",  @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="user_agent", in="query",  @OA\Schema(type="string")),
+	 *
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "event_type", "page_url", "element", "customer_name", "session_id", "ip_address", "user_agent", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
 	 *     security={{"bearerAuth":{}}}
@@ -28,36 +33,57 @@ class CustomerEventController extends BaseController
 	 */
 	public function index(Request $request)
 	{
-		$searchableColumns = ['id', 'name', 'code', 'type'];
+		$searchableColumns = ['id', 'event_type', 'page_url', 'element', 'customer_name', 'session_id', 'ip_address', 'user_agent'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
 		$recordsQuery = CustomerEvent::query();
 
-		/* Apply global or column-specific filters */
-		if ($request->filled('global')) {
-			$search = $request->input('global');
-			$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
-				foreach ($searchableColumns as $col) {
-					$q->orWhere($col, 'LIKE', '%' . $search . '%');
-				}
-			});
-		} else {
-			foreach ($searchableColumns as $col) {
-				if ($request->filled($col)) {
-					$recordsQuery->where($col, 'LIKE', '%' . $request->input($col) . '%');
-				}
-			}
-		}
-
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
-			$recordsQuery->with(['attributeGroup:id,name', 'creator:id,first_name,last_name', 'updator:id,first_name,last_name']);
+
+			if ($sortBy === 'customer_name' || ($request->filled('global') && in_array('customer_name', $searchableColumns))) {
+				$recordsQuery->leftJoin('customers', 'customer_events.customer_id', '=', 'customers.id');
+				$recordsQuery->select('customer_events.*');
+			}
+			$recordsQuery->with(['customer:id,name']);
 
 
-			/* Apply sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
+			/* Apply global or column-specific filters */
+			if ($request->filled('global')) {
+				$search = $request->input('global');
+				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
+					foreach ($searchableColumns as $col) {
+						if ($col === 'customer_name') {
+							$q->orWhereHas('customer', function ($sub) use ($search) {
+								$sub->where('name', 'like', '%' . $search . '%');
+							});
+						} else {
+							$q->orWhere("customer_events.$col", 'like', '%' . $search . '%');
+						}
+					}
+				});
+			} else {
+				foreach ($searchableColumns as $col) {
+					if ($request->filled($col)) {
+						$search = $request->input($col);
+						if ($col === 'customer_name') {
+							$recordsQuery->whereHas('customer', function ($sub) use ($search) {
+								$sub->where('name', 'like', '%' . $search . '%');
+							});
+						} else {
+							$recordsQuery->where("customer_events.$col", 'like', '%' . $search . '%');
+						}
+					}
+				}
+			}
+
+			if ($sortBy === 'customer_name') {
+				$recordsQuery->orderBy('customers.name', $sortDir);
+			} else {
+				$recordsQuery->orderBy("customer_events.$sortBy", $sortDir);
+			}
 
 			/* Clone query for counting */
 			$totalRecords = (clone $recordsQuery)->count();
@@ -70,26 +96,17 @@ class CustomerEventController extends BaseController
 				$page = 1;
 			}
 
-			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'name', 'code', 'type', 'attribute_group_id', 'created_by', 'created_at', 'updated_at'
-			]);
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
 
 			/* Add attribute_group_name and created_by */
 			$records->transform(function ($record) {
-				$record->attribute_group_name = $record->attributeGroup->name ?? null;
-				unset($record->attributeGroup);
-				unset($record->attribute_group_id);
-
-				$record->created_by = $record->creator->name ?? null;
-				unset($record->creator);
-
-				$record->updated_by = $record->updator->name ?? null;
-				unset($record->updator);
+				$record->customer_name = $record->customer->name ?? null;
+				unset($record->customer_id);
 				return $record;
 			});
 		} else {
-			$records = $recordsQuery->orderBy('name', 'asc')->get([
-				'id', 'name'
+			$records = $recordsQuery->orderBy('event_type', 'asc')->get([
+				'id', 'event_type'
 			]);
 			$totalRecords = $records->count();
 			$totalPages = 1;
@@ -105,11 +122,41 @@ class CustomerEventController extends BaseController
 	}
 
 	/**
-	 * Display the specified resource.
+	 * @OA\Get(
+	 *     path="/api/customer-events/{id}",
+	 *     summary="Get customer event details",
+	 *     tags={"Customer Events"},
+	 *     security={{"bearerAuth":{}}},
+	 *     @OA\Parameter(
+	 *         name="id",
+	 *         in="path",
+	 *         description="Event ID",
+	 *         required=true,
+	 *         @OA\Schema(type="integer")
+	 *     ),
+	 *     @OA\Response(response=200, description="Details retrieved successfully", @OA\MediaType(mediaType="application/json"))
+	 * )
 	 */
-	public function show(CustomerEvent $customerEvent)
+	public function show($id)
 	{
-		//
+		$customerEvent = CustomerEvent::find($id);
+
+		if (!$customerEvent) {
+			return response()->json([
+				'success' => false,
+				'message' => "Customer event not found."
+			]);
+		}
+
+		/* Load relationships */
+		$customerEvent->load([
+			'customer:id,name'
+		]);
+
+		return response()->json([
+			'success' => true,
+			'data' => $customerEvent
+		]);
 	}
 
 	/**
