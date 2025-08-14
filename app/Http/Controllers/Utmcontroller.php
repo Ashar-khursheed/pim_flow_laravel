@@ -205,8 +205,12 @@ private function roundOneDecimal($value)
 
 public function stats(Request $request)
 {
+    // Get filter and custom dates from request
     $filter = $request->query('filter', 'lifetime');
+    $fromDate = $request->query('from_date'); // e.g., 2025-08-01
+    $toDate = $request->query('to_date');     // e.g., 2025-08-10
 
+    // Predefined date ranges
     $dateRanges = [
         'today' => [Carbon::today(), Carbon::now()],
         'last_3_days' => [Carbon::now()->subDays(2)->startOfDay(), Carbon::now()],
@@ -216,7 +220,13 @@ public function stats(Request $request)
         'lifetime' => [null, null]
     ];
 
-    [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
+    // Use custom date range if provided
+    if ($fromDate && $toDate) {
+        $startDate = Carbon::parse($fromDate)->startOfDay();
+        $endDate = Carbon::parse($toDate)->endOfDay();
+    } else {
+        [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
+    }
 
     $utmsQuery = DB::table('utms');
     $ordersQuery = DB::table('orders');
@@ -247,6 +257,8 @@ public function stats(Request $request)
 
     return response()->json([
         'filter' => $filter,
+        'from_date' => $fromDate,
+        'to_date' => $toDate,
         'total_sessions' => $totalSessions,
         'orders_from_utm' => $ordersFromUtm,
         'conversion_rate' => $conversionRate,
@@ -256,6 +268,7 @@ public function stats(Request $request)
         'net_sales' => $netSales,
     ]);
 }
+
 
     /**
      * @OA\Get(
