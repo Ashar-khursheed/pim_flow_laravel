@@ -193,7 +193,7 @@ class OrderController extends BaseController
 	 */
 	public function store(Request $request)
 	{
-		logger()->info('customer_payload: ', json_encode($request->all()));
+		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
 			'tax_percentage' => 'required|numeric|min:0',
