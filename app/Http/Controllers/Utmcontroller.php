@@ -211,74 +211,150 @@ public function index(Request $request)
      *     )
      * )
      */
-    public function utmSources(Request $request)
-    {
-        $utmSource = $request->query('utm_source');
+    // public function utmSources(Request $request)
+    // {
+    //     $utmSource = $request->query('utm_source');
 
-        if ($utmSource) {
-            // Detailed data for one UTM source
-            $utms = DB::table('utms')
-                ->where('utm_source', $utmSource)
-                ->get();
+    //     if ($utmSource) {
+    //         // Detailed data for one UTM source
+    //         $utms = DB::table('utms')
+    //             ->where('utm_source', $utmSource)
+    //             ->get();
 
-            $totalSessions = $utms->count();
+    //         $totalSessions = $utms->count();
 
-            // Orders linked to this source
+    //         // Orders linked to this source
+    //         $totalOrders = DB::table('orders')
+    //             ->join('utms', 'orders.utm_id', '=', 'utms.id')
+    //             ->where('utms.utm_source', $utmSource)
+    //             ->count();
+
+    //         $totalSales = DB::table('orders')
+    //             ->join('utms', 'orders.utm_id', '=', 'utms.id')
+    //             ->where('utms.utm_source', $utmSource)
+    //             ->sum('orders.total_amount');
+
+    //         $conversionRate = $totalSessions > 0
+    //             ? round(($totalOrders / $totalSessions) * 100, 2)
+    //             : 0;
+
+    //         return response()->json([
+    //             'utm_source' => $utmSource,
+    //             'total_sessions' => $totalSessions,
+    //             'total_orders' => $totalOrders,
+    //             'total_sales' => round($totalSales, 2),
+    //             'conversion_rate' => $conversionRate,
+    //             'details' => $utms // full UTM records
+    //         ]);
+    //     }
+
+    //     // Aggregated data for all sources
+    //     $sources = DB::table('utms')
+    //         ->select('utm_source', DB::raw('COUNT(*) as total_sessions'))
+    //         ->groupBy('utm_source')
+    //         ->get()
+    //         ->map(function ($row) {
+    //             $totalOrders = DB::table('orders')
+    //                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+    //                 ->where('utms.utm_source', $row->utm_source)
+    //                 ->count();
+
+    //             $totalSales = DB::table('orders')
+    //                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
+    //                 ->where('utms.utm_source', $row->utm_source)
+    //                 ->sum('orders.total_amount');
+
+    //             $conversionRate = $row->total_sessions > 0
+    //                 ? round(($totalOrders / $row->total_sessions) * 100, 2)
+    //                 : 0;
+
+    //             return [
+    //                 'utm_source' => $row->utm_source,
+    //                 'total_sessions' => $row->total_sessions,
+    //                 'total_orders' => $totalOrders,
+    //                 'total_sales' => round($totalSales, 2),
+    //                 'conversion_rate' => $conversionRate
+    //             ];
+    //         });
+
+    //     return response()->json($sources);
+    // }
+public function utmSources(Request $request)
+{
+    $utmSource = $request->query('utm_source');
+
+    if ($utmSource) {
+        // Detailed data for one UTM source, grouped by medium
+        $utms = DB::table('utms')
+            ->where('utm_source', $utmSource)
+            ->select('utm_medium', DB::raw('COUNT(*) as total_sessions'))
+            ->groupBy('utm_medium')
+            ->get();
+
+        $result = $utms->map(function ($row) use ($utmSource) {
             $totalOrders = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
                 ->where('utms.utm_source', $utmSource)
+                ->where('utms.utm_medium', $row->utm_medium)
                 ->count();
 
             $totalSales = DB::table('orders')
                 ->join('utms', 'orders.utm_id', '=', 'utms.id')
                 ->where('utms.utm_source', $utmSource)
+                ->where('utms.utm_medium', $row->utm_medium)
                 ->sum('orders.total_amount');
 
-            $conversionRate = $totalSessions > 0
-                ? round(($totalOrders / $totalSessions) * 100, 2)
+            $conversionRate = $row->total_sessions > 0
+                ? round(($totalOrders / $row->total_sessions) * 100, 2)
                 : 0;
 
-            return response()->json([
+            return [
                 'utm_source' => $utmSource,
-                'total_sessions' => $totalSessions,
+                'utm_medium' => $row->utm_medium,
+                'total_sessions' => $row->total_sessions,
                 'total_orders' => $totalOrders,
                 'total_sales' => round($totalSales, 2),
-                'conversion_rate' => $conversionRate,
-                'details' => $utms // full UTM records
-            ]);
-        }
+                'conversion_rate' => $conversionRate
+            ];
+        });
 
-        // Aggregated data for all sources
-        $sources = DB::table('utms')
-            ->select('utm_source', DB::raw('COUNT(*) as total_sessions'))
-            ->groupBy('utm_source')
-            ->get()
-            ->map(function ($row) {
-                $totalOrders = DB::table('orders')
-                    ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                    ->where('utms.utm_source', $row->utm_source)
-                    ->count();
-
-                $totalSales = DB::table('orders')
-                    ->join('utms', 'orders.utm_id', '=', 'utms.id')
-                    ->where('utms.utm_source', $row->utm_source)
-                    ->sum('orders.total_amount');
-
-                $conversionRate = $row->total_sessions > 0
-                    ? round(($totalOrders / $row->total_sessions) * 100, 2)
-                    : 0;
-
-                return [
-                    'utm_source' => $row->utm_source,
-                    'total_sessions' => $row->total_sessions,
-                    'total_orders' => $totalOrders,
-                    'total_sales' => round($totalSales, 2),
-                    'conversion_rate' => $conversionRate
-                ];
-            });
-
-        return response()->json($sources);
+        return response()->json($result);
     }
+
+    // Aggregated data for all sources with medium breakdown
+    $sources = DB::table('utms')
+        ->select('utm_source', 'utm_medium', DB::raw('COUNT(*) as total_sessions'))
+        ->groupBy('utm_source', 'utm_medium')
+        ->get()
+        ->map(function ($row) {
+            $totalOrders = DB::table('orders')
+                ->join('utms', 'orders.utm_id', '=', 'utms.id')
+                ->where('utms.utm_source', $row->utm_source)
+                ->where('utms.utm_medium', $row->utm_medium)
+                ->count();
+
+            $totalSales = DB::table('orders')
+                ->join('utms', 'orders.utm_id', '=', 'utms.id')
+                ->where('utms.utm_source', $row->utm_source)
+                ->where('utms.utm_medium', $row->utm_medium)
+                ->sum('orders.total_amount');
+
+            $conversionRate = $row->total_sessions > 0
+                ? round(($totalOrders / $row->total_sessions) * 100, 2)
+                : 0;
+
+            return [
+                'utm_source' => $row->utm_source,
+                'utm_medium' => $row->utm_medium,
+                'total_sessions' => $row->total_sessions,
+                'total_orders' => $totalOrders,
+                'total_sales' => round($totalSales, 2),
+                'conversion_rate' => $conversionRate
+            ];
+        });
+
+    return response()->json($sources);
+}
 
 
 
