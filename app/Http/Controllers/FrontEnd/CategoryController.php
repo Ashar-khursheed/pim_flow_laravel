@@ -1631,135 +1631,74 @@ public function getSpecificationFilters1(Request $request)
             ]);
         }
     }
-	foreach ($rangeFiltersByAttribute as $specName => $ranges) {
-    $attribute = Attribute::where('name', $specName)->first();
-    if (!$attribute) {
-        continue;
-    }
 
-    // Get all products that have this attribute
-    $productsWithAttribute = DB::table('product_attributes as pa')
-        ->where('pa.attribute_id', $attribute->id)
-        ->whereIn('pa.product_id', $filteredProductIds)
-        ->get(['pa.product_id', 'pa.attribute_value']);
+    // Apply range filters
+    foreach ($rangeFiltersByAttribute as $specName => $ranges) {
+        $attribute = Attribute::where('name', $specName)->first();
+        if (!$attribute) {
+            continue;
+        }
 
-    $matchingProductIds = collect();
+        $query = DB::table('product_attributes as pa')
+            ->where('pa.attribute_id', $attribute->id)
+            ->whereIn('pa.product_id', $filteredProductIds);
 
-    foreach ($ranges as $range) {
-        $min = (int)$range['min'];
-        $max = (int)$range['max'];
+        $rangeConditions = [];
+        foreach ($ranges as $range) {
+            $min = (int)$range['min'];
+            $max = (int)$range['max'];
 
-        // Filter products in PHP instead of complex SQL
-        $rangeMatches = $productsWithAttribute->filter(function($item) use ($min, $max) {
-            $value = trim($item->attribute_value);
+            $minConversion = $convertAttributeValue($specName, $min);
+            $maxConversion = $convertAttributeValue($specName, $max);
             
-            // Handle pure numbers
-            if (is_numeric($value)) {
-                $numericValue = (int)round((float)$value);
-                return $numericValue >= $min && $numericValue <= $max;
-            }
-            
-            // Handle numbers with units (e.g., "25 cm", "30cm")
-            if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
-                $numericValue = (int)round((float)$matches[1]);
-                return $numericValue >= $min && $numericValue <= $max;
-            }
-            
-            return false;
-        })->pluck('product_id');
-
-        $matchingProductIds = $matchingProductIds->merge($rangeMatches);
-    }
-
-    // Apply the filter
-    $filteredProductIds = $filteredProductIds->intersect($matchingProductIds->unique());
-
-    // Early return if no products found
-    if ($filteredProductIds->isEmpty()) {
-        return response()->json([
-            'success' => true,
-            'filters' => [],
-            'products' => [],
-            'price_min' => 0,
-            'price_max' => 0,
-            'brands' => [],
-            'rating_filter' => [
-                'filter_name' => 'Rating',
-                'filter_type' => 'rating',
-                'filter_values' => [5, 4, 3, 2, 1],
-            ],
-            'message' => 'No products found in the range ' . $min . '-' . $max . ' for ' . $specName
-        ]);
-    }
-}
-
-    // // Apply range filters
-    // foreach ($rangeFiltersByAttribute as $specName => $ranges) {
-    //     $attribute = Attribute::where('name', $specName)->first();
-    //     if (!$attribute) {
-    //         continue;
-    //     }
-
-    //     $query = DB::table('product_attributes as pa')
-    //         ->where('pa.attribute_id', $attribute->id)
-    //         ->whereIn('pa.product_id', $filteredProductIds);
-
-    //     $rangeConditions = [];
-    //     foreach ($ranges as $range) {
-    //         $min = (int)$range['min'];
-    //         $max = (int)$range['max'];
-
-    //         $minConversion = $convertAttributeValue($specName, $min);
-    //         $maxConversion = $convertAttributeValue($specName, $max);
-            
-    //         if ($minConversion['conversion_applied']) {
-    //             $convertedMin = (int)round((float)$minConversion['converted_value']);
-    //             $convertedMax = (int)round((float)$maxConversion['converted_value']);
+            if ($minConversion['conversion_applied']) {
+                $convertedMin = (int)round((float)$minConversion['converted_value']);
+                $convertedMax = (int)round((float)$maxConversion['converted_value']);
                 
-    //             $rangeConditions[] = "pa.product_id IN (
-    //                 SELECT DISTINCT pa2.product_id 
-    //                 FROM product_attributes pa2 
-    //                 WHERE pa2.attribute_id = {$attribute->id}
-    //                 AND (
-    //                     (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa2.attribute_value AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
-    //                     OR
-    //                     (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
-    //                      CAST(REGEXP_REPLACE(pa2.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
-    //                 )
-    //             )";
-    //         } else {
-    //             $rangeConditions[] = "(
-    //                 (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
-    //                 OR
-    //                 (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
-    //                  CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
-    //             )";
-    //         }
-    //     }
+                $rangeConditions[] = "pa.product_id IN (
+                    SELECT DISTINCT pa2.product_id 
+                    FROM product_attributes pa2 
+                    WHERE pa2.attribute_id = {$attribute->id}
+                    AND (
+                        (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa2.attribute_value AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+                        OR
+                        (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+                         CAST(REGEXP_REPLACE(pa2.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+                    )
+                )";
+            } else {
+                $rangeConditions[] = "(
+                    (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+                    OR
+                    (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+                     CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+                )";
+            }
+        }
 
-    //     if (count($rangeConditions) > 0) {
-    //         $query->whereRaw('(' . implode(' OR ', $rangeConditions) . ')');
-    //     }
+        if (count($rangeConditions) > 0) {
+            $query->whereRaw('(' . implode(' OR ', $rangeConditions) . ')');
+        }
 
-    //     $matchingProductIds = $query->pluck('pa.product_id')->unique();
-    //     $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
+        $matchingProductIds = $query->pluck('pa.product_id')->unique();
+        $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
 
-    //     if ($filteredProductIds->isEmpty()) {
-    //         return response()->json([
-    //             'success' => true,
-    //             'filters' => [],
-    //             'products' => [],
-    //             'price_min' => 0,
-    //             'price_max' => 0,
-    //             'brands' => [],
-    //             'rating_filter' => [
-    //                 'filter_name' => 'Rating',
-    //                 'filter_type' => 'rating',
-    //                 'filter_values' => [5, 4, 3, 2, 1],
-    //             ]
-    //         ]);
-    //     }
-    // }
+        if ($filteredProductIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'filters' => [],
+                'products' => [],
+                'price_min' => 0,
+                'price_max' => 0,
+                'brands' => [],
+                'rating_filter' => [
+                    'filter_name' => 'Rating',
+                    'filter_type' => 'rating',
+                    'filter_values' => [5, 4, 3, 2, 1],
+                ]
+            ]);
+        }
+    }
 
     // Apply brand filter
     if ($request->has('brand_id') && $request->brand_id) {
