@@ -727,20 +727,114 @@ class OrderController extends Controller
 		}
 
 		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
-			'notes' => 'nullable|string'
+			'status' => 'required|string|in:Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Cancelled',
+			'notes'  => 'nullable|string'
 		]);
+
+		$oldStatus = $order->status;
+		$newStatus = $request->status;
+
+		if ($oldStatus == 'Cancelled') {
+			return response()->json([
+				'success' => false,
+				'message' => "Status cannot be changed because the order is already cancelled."
+			]);
+		}
+
+		/* Order Cancellation Validation */
+		if ($newStatus === 'Cancelled') {
+			if ($oldStatus !== 'Pending') {
+				return response()->json([
+					'success' => false,
+					'message' => "Order can only be cancelled if it is in 'Pending' status."
+				]);
+			}
+			$order->update([
+				'status' => $newStatus,
+			]);
+
+			$order->orderProducts()->update(['status' => $newStatus]);
+
+			/* Add tracking */
+			OrderTracking::create([
+				'order_id'    => $order->id,
+				'status'      => "Order status changed to {$newStatus} by backend panel",
+				'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$newStatus}",
+				'created_by'  => auth()->id(),
+			]);
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Order Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
+			$batch->add(new OrderCancelledMailJob([
+				'recordId' => $order->id
+			]));
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Order status updated successfully',
+				'data' => $order->fresh(['tracking'])
+			]);
+		}
+
+		/* Other status validation flow */
+		$otherStatus = [
+			'Pending',
+			'Confirmed',
+			['Supplier Delivery', 'International', 'Export', 'On hold'],
+			'Ready to ship',
+			'Pickups',
+			'Out for delivery',
+			'Delivered'
+		];
+
+		$findStatusIndex = function($status) use ($otherStatus) {
+			foreach ($otherStatus as $index => $step) {
+				if (is_array($step) && in_array($status, $step)) {
+					return $index;
+				}
+				if ($step === $status) {
+					return $index;
+				}
+			}
+			return null;
+		};
+
+		$oldStatusIndex = $findStatusIndex($oldStatus);
+		$newStatusIndex = $findStatusIndex($newStatus);
+
+		if ($oldStatusIndex < $newStatusIndex - 1) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
+			]);
+		} elseif ($oldStatusIndex == $newStatusIndex) {
+			if($oldStatus == $newStatus) {
+				return response()->json([
+					'success' => false,
+					'message' => "Order is already in '{$oldStatus}' status. Please choose a different status."
+				]);
+			}
+		} elseif ($oldStatusIndex > $newStatusIndex) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot move backwards from '{$oldStatus}' to '{$newStatus}'."
+			]);
+		}
 
 		/* Validate shipment and quantity for delivery-related statuses */
 		$deliveryStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
 
-		if (in_array($request->status, $deliveryStatuses)) {
+		if (in_array($newStatus, $deliveryStatuses)) {
 
 			/* Check if order has any shipments */
 			if (!$order->shipments()->exists()) {
 				return response()->json([
 					'success' => false,
-					'message' => "Cannot mark order as {$request->status} because no shipments are available."
+					'message' => "Order cannot be marked as '{$newStatus}' because no shipments are available."
 				]);
 			}
 
@@ -756,61 +850,49 @@ class OrderController extends Controller
 			if ($totalShippedQuantity !== $order->total_products) {
 				return response()->json([
 					'success' => false,
-					'message' => "Cannot mark order as {$request->status} because total shipped quantity ({$totalShippedQuantity}) does not match total ordered products ({$order->total_products})."
+					'message' => "Order cannot be marked as '{$newStatus}' because total shipped quantity ({$totalShippedQuantity}) does not match the total ordered products ({$order->total_products})."
 				]);
 			}
 		}
 
-		$oldStatus = $order->status;
-
 		/* Update order and products */
 		$order->update([
-			'status' => $request->status,
+			'status' => $newStatus,
 		]);
 
-		$order->orderProducts()->where('status', '!=', 'Cancelled')->update(['status' => $request->status]);
+		$order->orderProducts()->where('status', '!=', 'Cancelled')->update(['status' => $newStatus]);
 
 		/* Add tracking */
 		OrderTracking::create([
-			'order_id'   => $order->id,
-			'status'     => 'Order status changed to ' . $request->status . ' by backend panel',
-			'description'=> $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
-			'created_by' => auth()->id(),
+			'order_id'    => $order->id,
+			'status'      => "Order status changed to {$newStatus} by backend panel",
+			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$newStatus}",
+			'created_by'  => auth()->id(),
 		]);
 
-		if (in_array($request->status, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
+		if (in_array($newStatus, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
 			$batch = Bus::batch([])->before(function (Batch $batch) {
-
 			})->catch(function (Batch $batch, Throwable $e) {
-
 			})->finally(function (Batch $batch) {
-
 			})->name('Order Mails')->dispatch();
 
-			if ($request->status == 'Confirmed') {
+			if ($newStatus == 'Confirmed') {
 				$batch->options['queue'] = config('app.website') . '_ORD_CNF';
 				$batch->add(new OrderConfirmationMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
-			if ($request->status == 'Out for delivery') {
+			if ($newStatus == 'Out for delivery') {
 				$batch->options['queue'] = config('app.website') . '_ORD_OUT';
 				$batch->add(new OutDeliveryMailJob([
 					'recordId' => $order->id
 				]));
 			}
 
-			if ($request->status == 'Delivered') {
+			if ($newStatus == 'Delivered') {
 				$batch->options['queue'] = config('app.website') . '_ORD_DLVR';
 				$batch->add(new OrderDeliveredMailJob([
-					'recordId' => $order->id
-				]));
-			}
-
-			if ($request->status == 'Cancelled') {
-				$batch->options['queue'] = config('app.website') . '_ORD_CNCL';
-				$batch->add(new OrderCancelledMailJob([
 					'recordId' => $order->id
 				]));
 			}
@@ -858,7 +940,64 @@ class OrderController extends Controller
 		if (!$orderProduct) {
 			return response()->json([
 				'success' => false,
-				'message' => "Product not found in the order."
+				'message' => "Order Product not found in the order."
+			]);
+		}
+
+		$request->validate([
+			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Partially Pickups,Out for delivery,Partially Out for delivery,Delivered,Partially Delivered,Cancelled',
+			'notes' => 'nullable|string'
+		]);
+
+		$oldStatus = $orderProduct->status;
+		$newStatus = $request->status;
+
+		if ($oldStatus == 'Cancelled') {
+			return response()->json([
+				'success' => false,
+				'message' => "Status cannot be changed because the order product is already cancelled."
+			]);
+		}
+
+		/* Order Cancellation Validation */
+		if ($newStatus === 'Cancelled') {
+			if ($oldStatus !== 'Pending') {
+				return response()->json([
+					'success' => false,
+					'message' => "Order product can only be cancelled if it is in 'Pending' status."
+				]);
+			}
+			$orderProduct->update([
+				'status' => $newStatus,
+			]);
+
+			/* Add tracking entry */
+			OrderTracking::create([
+				'order_id'   => $order->id,
+				'status'     => "Order status changed to {$newStatus} by backend panel",
+				'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$newStatus}",
+				'metadata'   => json_encode([
+					'order_product_id' => $orderProduct->id,
+					'product_name'     => $orderProduct->product->name ?? '',
+				]),
+				'created_by' => auth()->id(),
+			]);
+
+			$batch = Bus::batch([])->before(function (Batch $batch) {
+			})->catch(function (Batch $batch, Throwable $e) {
+			})->finally(function (Batch $batch) {
+			})->name('Order Mails')->dispatch();
+
+			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
+			$batch->add(new PartialOrderCancelledMailJob([
+				'recordId' => $orderProduct->id,
+				'reason' => $request->notes,
+			]));
+
+			return response()->json([
+				'success' => true,
+				'message' => 'Order product status updated successfully',
+				'data' => $orderProduct->fresh()
 			]);
 		}
 
@@ -866,26 +1005,65 @@ class OrderController extends Controller
 		if ($order->status === 'Pending') {
 			return response()->json([
 				'success' => false,
-				'message' => "Product status cannot be changed until the order is confirmed."
+				'message' => "Order Product status cannot be changed until the order is confirmed."
 			]);
 		}
 
-		$request->validate([
-			'status' => 'required|string|in:Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Partially Pickups,Out for delivery,Partially Out for delivery,Delivered,Partially Delivered,Re-Attempt,Returned,Cancelled,Out of Stock',
-			'notes' => 'nullable|string'
-		]);
+		/* Other status validation flow */
+		$otherStatus = [
+			'Confirmed',
+			['Supplier Delivery', 'International', 'Export', 'On hold'],
+			'Ready to ship',
+			['Pickups','Partially Pickups'],
+			['Out for delivery','Partially Out for delivery'],
+			['Delivered','Partially Delivered'],
+		];
+
+		$findStatusIndex = function($status) use ($otherStatus) {
+			foreach ($otherStatus as $index => $step) {
+				if (is_array($step) && in_array($status, $step)) {
+					return $index;
+				}
+				if ($step === $status) {
+					return $index;
+				}
+			}
+			return null;
+		};
+
+		$oldStatusIndex = $findStatusIndex($oldStatus);
+		$newStatusIndex = $findStatusIndex($newStatus);
+
+		if ($oldStatusIndex < $newStatusIndex - 1) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
+			]);
+		} elseif ($oldStatusIndex == $newStatusIndex) {
+			if($oldStatus == $newStatus) {
+				return response()->json([
+					'success' => false,
+					'message' => "Order product is already in '{$oldStatus}' status. Please choose a different status."
+				]);
+			}
+		} elseif ($oldStatusIndex > $newStatusIndex) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot move backwards from '{$oldStatus}' to '{$newStatus}'."
+			]);
+		}
 
 		$fullStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
 		$partialStatuses = ['Partially Pickups', 'Partially Out for delivery', 'Partially Delivered'];
 
-		if (in_array($request->status, array_merge($fullStatuses, $partialStatuses))) {
+		if (in_array($newStatus, array_merge($fullStatuses, $partialStatuses))) {
 
 			$shipmentProducts = $orderProduct->shipmentProducts;
 
 			if ($shipmentProducts->isEmpty()) {
 				return response()->json([
 					'success' => false,
-					'message' => "Cannot mark product as '{$request->status}' because it has no shipment records."
+					'message' => "Cannot mark product as '{$newStatus}' because it has no shipment records."
 				]);
 			}
 
@@ -894,25 +1072,24 @@ class OrderController extends Controller
 				$totalShipped += $shipmentProduct->quantity;
 			}
 
-			if (in_array($request->status, $fullStatuses)) {
+			if (in_array($newStatus, $fullStatuses)) {
 				if ($totalShipped !== $orderProduct->quantity) {
 					return response()->json([
 						'success' => false,
-						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
+						'message' => "Cannot mark product as '{$newStatus}' because shipped quantity ({$totalShipped}) does not match ordered quantity ({$orderProduct->quantity})."
 					]);
 				}
-			} elseif (in_array($request->status, $partialStatuses)) {
+			} elseif (in_array($newStatus, $partialStatuses)) {
 				if ($totalShipped <= 0 || $totalShipped >= $orderProduct->quantity) {
 					return response()->json([
 						'success' => false,
-						'message' => "Cannot mark product as '{$request->status}' because shipped quantity ({$totalShipped}) must be greater than 0 and less than ordered quantity ({$orderProduct->quantity})."
+						'message' => "Cannot mark product as '{$newStatus}' because shipped quantity ({$totalShipped}) must be greater than 0 and less than ordered quantity ({$orderProduct->quantity})."
 					]);
 				}
 			}
 		}
 
-		$oldStatus = $orderProduct->status;
-		$orderProduct->status = $request->status;
+		$orderProduct->status = $newStatus;
 		$orderProduct->save();
 
 		/* Get all product statuses from this order */
@@ -932,30 +1109,14 @@ class OrderController extends Controller
 		/* Add tracking entry */
 		OrderTracking::create([
 			'order_id'   => $order->id,
-			'status'     => 'Order product status changed to ' . $request->status . ' by backend panel',
-			'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$request->status}",
+			'status'     => 'Order product status changed to ' . $newStatus . ' by backend panel',
+			'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$newStatus}",
 			'metadata'   => json_encode([
 				'order_product_id' => $orderProduct->id,
 				'product_name'     => $orderProduct->product->name ?? '',
 			]),
 			'created_by' => auth()->id(),
 		]);
-
-		if ($request->status == 'Cancelled') {
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-
-			})->catch(function (Batch $batch, Throwable $e) {
-
-			})->finally(function (Batch $batch) {
-
-			})->name('Order Mails')->dispatch();
-
-			$batch->options['queue'] = config('app.website') . '_ORD_PART_CNCL';
-			$batch->add(new PartialOrderCancelledMailJob([
-				'recordId' => $orderProduct->id,
-				'reason' => $request->notes,
-			]));
-		}
 
 		return response()->json([
 			'success' => true,
@@ -1005,21 +1166,13 @@ class OrderController extends Controller
 			], 404);
 		}
 
-		/* Prevent shipment creation before the order is confirmed */
-		if ($order->status === 'Pending') {
+		/* Allow shipment creation only when the order is "Ready to ship" */
+		if ($order->status !== 'Ready to ship') {
 			return response()->json([
 				'success' => false,
-				'message' => 'Shipment cannot be created while the order is still pending confirmation.'
+				'message' => 'Shipment can only be created when the order status is "Ready to ship".'
 			]);
 		}
-
-		/* Allow shipment creation only when the order is "Ready to ship" */
-		// if ($order->status !== 'Ready to ship') {
-		// 	return response()->json([
-		// 		'success' => false,
-		// 		'message' => 'Shipment can only be created when the order status is "Ready to ship".'
-		// 	]);
-		// }
 
 		/* Validate input */
 		$request->validate([
