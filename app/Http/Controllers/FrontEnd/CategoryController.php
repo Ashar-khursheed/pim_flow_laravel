@@ -1370,7 +1370,967 @@ class CategoryController extends Controller
 	// 	]);
 	// }
 
-	public function getSpecificationFilters1(Request $request)
+// 	public function getSpecificationFilters1(Request $request)
+// {
+//     // Validation
+//     $validator = Validator::make($request->all(), [
+//         'category_id' => 'required|string',
+//         'filters' => 'nullable|array',
+//         'price_min' => 'nullable|numeric|min:0',
+//         'price_max' => 'nullable|numeric|min:0',
+//         'price_order' => 'nullable|in:high_to_low,low_to_high',
+//         'brand_id' => 'nullable|array',
+//         'brand_id.*' => 'integer',
+//         'rating' => 'nullable|numeric|min:1|max:5',
+//     ]);
+
+//     if ($validator->fails()) {
+//         return response()->json(['success' => false, 'message' => $validator->errors()], 400);
+//     }
+
+//     $perPage = $request->get('per_page', 10);
+//     $categoryIdentifier = $request->input('category_id');
+//     $category = null;
+
+//     if (is_numeric($categoryIdentifier)) {
+//         $category = Category::find($categoryIdentifier);
+//     } else {
+//         $category = Category::where('slug', $categoryIdentifier)->first();
+//     }
+
+//     if (!$category) {
+//         return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
+//     }
+
+//     // Get category measurement unit priorities
+//     $categoryMeasurementPriorities = DB::table('category_measurement_unit_priorities as cmup')
+//         ->join('measurement_types as mt', 'mt.id', '=', 'cmup.measurement_type_id')
+//         ->join('measurement_units as mu_primary', 'mu_primary.id', '=', 'cmup.measurement_unit_primary_id')
+//         ->where('cmup.category_id', $category->id)
+//         ->select('mt.name as measurement_type', 'mu_primary.name as primary_unit', 'mu_primary.symbol as primary_symbol')
+//         ->get()
+//         ->keyBy('measurement_type');
+
+//     // Enhanced helper function to convert attribute values with fallback units
+//     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+//         // First try the database-configured measurement priorities
+//         foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
+//             $shouldConvert = false;
+            
+//             switch (strtolower($measurementType)) {
+//                 case 'length':
+//                     $shouldConvert = (
+//                         stripos($attributeName, 'length') !== false ||
+//                         stripos($attributeName, 'height') !== false ||
+//                         stripos($attributeName, 'width') !== false ||
+//                         stripos($attributeName, 'depth') !== false ||
+//                         stripos($attributeName, 'diameter') !== false ||
+//                         stripos($attributeName, 'dimension') !== false ||
+//                         stripos($attributeName, 'size') !== false
+//                     );
+//                     break;
+//                 case 'mass':
+//                 case 'weight':
+//                     $shouldConvert = (
+//                         stripos($attributeName, 'weight') !== false ||
+//                         stripos($attributeName, 'mass') !== false
+//                     );
+//                     break;
+//                 case 'volume':
+//                     $shouldConvert = (
+//                         stripos($attributeName, 'volume') !== false ||
+//                         stripos($attributeName, 'capacity') !== false
+//                     );
+//                     break;
+//                 default:
+//                     $shouldConvert = stripos($attributeName, $measurementType) !== false;
+//                     break;
+//             }
+            
+//             if ($shouldConvert) {
+//                 if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+//                     $numericValue = (float)$matches[1];
+//                     $originalUnit = $matches[2];
+//                     $targetUnit = $priority->primary_unit;
+                    
+//                     $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
+                    
+//                     if (is_numeric($convertedValue)) {
+//                         $roundedValue = (int)round($convertedValue);
+//                         return [
+//                             'converted_value' => $roundedValue,
+//                             'unit' => $targetUnit,
+//                             'symbol' => $priority->primary_symbol,
+//                             'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+//                             'original_value' => $originalValue,
+//                             'conversion_applied' => true
+//                         ];
+//                     }
+//                 } else if (is_numeric($originalValue)) {
+//                     $roundedValue = (int)round((float)$originalValue);
+//                     return [
+//                         'converted_value' => $roundedValue,
+//                         'unit' => $priority->primary_unit,
+//                         'symbol' => $priority->primary_symbol,
+//                         'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+//                         'original_value' => $originalValue,
+//                         'conversion_applied' => false
+//                     ];
+//                 }
+//             }
+//         }
+        
+//         // Fallback: Assign common units based on attribute names if no database config found
+//         $fallbackUnits = [
+//             'width' => ['symbol' => 'cm', 'name' => 'centimeters'],
+//             'length' => ['symbol' => 'cm', 'name' => 'centimeters'], 
+//             'height' => ['symbol' => 'cm', 'name' => 'centimeters'],
+//             'depth' => ['symbol' => 'cm', 'name' => 'centimeters'],
+//             'diameter' => ['symbol' => 'cm', 'name' => 'centimeters'],
+//             'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
+//             'capacity' => ['symbol' => 'L', 'name' => 'liters'],
+//             'volume' => ['symbol' => 'L', 'name' => 'liters'],
+//         ];
+        
+//         foreach ($fallbackUnits as $unitType => $unitInfo) {
+//             if (stripos($attributeName, $unitType) !== false) {
+//                 if (is_numeric($originalValue)) {
+//                     $roundedValue = (int)round((float)$originalValue);
+//                     return [
+//                         'converted_value' => $roundedValue,
+//                         'unit' => $unitInfo['name'],
+//                         'symbol' => $unitInfo['symbol'],
+//                         'display_value' => $roundedValue . ' ' . $unitInfo['symbol'],
+//                         'original_value' => $originalValue,
+//                         'conversion_applied' => false
+//                     ];
+//                 }
+//             }
+//         }
+        
+//         // Return original value if no conversion needed/possible
+//         return [
+//             'converted_value' => $originalValue,
+//             'unit' => null,
+//             'symbol' => '',
+//             'display_value' => $originalValue,
+//             'original_value' => $originalValue,
+//             'conversion_applied' => false
+//         ];
+//     };
+
+//     // Get products from current category
+//     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
+    
+//     // Get all child categories
+//     $childCategories = Category::where('parent_id', $category->id)->get();
+//     $childCategoryIds = $childCategories->pluck('id')->toArray();
+
+//     // Get all products from child categories
+//     $childProductIds = [];
+//     if (!empty($childCategoryIds)) {
+//         foreach ($childCategories as $childCategory) {
+//             $childProductIds = array_merge($childProductIds, $childCategory->products()->where('status', 'published')->pluck('id')->all());
+//         }
+//     }
+
+//     // Combine products from current category and all child categories
+//     $allCategoryProductIds = array_unique(array_merge($currentCategoryProducts, $childProductIds));
+
+//     if (empty($allCategoryProductIds)) {
+//         return response()->json([
+//             'success' => true,
+//             'filters' => [],
+//             'products' => [],
+//             'brands' => [],
+//             'price_min' => 0,
+//             'price_max' => 0,
+//             'rating_filter' => [
+//                 'filter_name' => 'Rating',
+//                 'filter_type' => 'rating',
+//                 'filter_values' => [5, 4, 3, 2, 1],
+//             ]
+//         ]);
+//     }
+
+//     // Start with all category product IDs
+//     $filteredProductIds = collect($allCategoryProductIds);
+
+//     // Group filters by specification name
+//     $groupedFilters = [];
+//     $rangeFiltersByAttribute = [];
+//     $selectedFilters = [];
+
+//     if ($request->has('filters') && is_array($request->filters)) {
+//         foreach ($request->filters as $filter) {
+//             if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
+//                 continue;
+//             }
+
+//             $specName = $filter['specification_name'];
+//             $specValues = is_array($filter['specification_value']) ? $filter['specification_value'] : [$filter['specification_value']];
+
+//             $selectedFilters[$specName] = $specValues;
+
+//             $isRangeFilter = false;
+            
+//             // Handle single range filter format (start/end)
+//             if (is_array($filter['specification_value']) && 
+//                 isset($filter['specification_value']['start']) && 
+//                 isset($filter['specification_value']['end'])) {
+                
+//                 $isRangeFilter = true;
+//                 if (!isset($rangeFiltersByAttribute[$specName])) {
+//                     $rangeFiltersByAttribute[$specName] = [];
+//                 }
+//                 $rangeFiltersByAttribute[$specName][] = [
+//                     'min' => (int)$filter['specification_value']['start'],
+//                     'max' => (int)$filter['specification_value']['end']
+//                 ];
+                
+//                 // Update selected filters for proper display
+//                 $selectedFilters[$specName] = [[
+//                     'min' => (int)$filter['specification_value']['start'],
+//                     'max' => (int)$filter['specification_value']['end']
+//                 ]];
+//             } else {
+//                 // Handle array of range filters (min/max format)
+//                 foreach ($specValues as $value) {
+//                     if (is_array($value)) {
+//                         // Check for min/max format
+//                         if (isset($value['min']) && isset($value['max'])) {
+//                             $isRangeFilter = true;
+//                             if (!isset($rangeFiltersByAttribute[$specName])) {
+//                                 $rangeFiltersByAttribute[$specName] = [];
+//                             }
+//                             $rangeFiltersByAttribute[$specName][] = [
+//                                 'min' => (int)$value['min'],
+//                                 'max' => (int)$value['max']
+//                             ];
+//                         }
+//                         // Check for start/end format in array
+//                         else if (isset($value['start']) && isset($value['end'])) {
+//                             $isRangeFilter = true;
+//                             if (!isset($rangeFiltersByAttribute[$specName])) {
+//                                 $rangeFiltersByAttribute[$specName] = [];
+//                             }
+//                             $rangeFiltersByAttribute[$specName][] = [
+//                                 'min' => (int)$value['start'],
+//                                 'max' => (int)$value['end']
+//                             ];
+//                         }
+//                     }
+//                 }
+//             }
+
+//             if (!$isRangeFilter) {
+//                 if (!isset($groupedFilters[$specName])) {
+//                     $groupedFilters[$specName] = [];
+//                 }
+//                 $groupedFilters[$specName] = array_merge($groupedFilters[$specName], $specValues);
+//             }
+//         }
+//     }
+
+//     // Apply regular attribute filters
+//     foreach ($groupedFilters as $specName => $specValues) {
+//         $attribute = Attribute::where('name', $specName)->first();
+//         if (!$attribute) {
+//             continue;
+//         }
+
+//         $convertedSpecValues = [];
+//         foreach ($specValues as $specValue) {
+//             $conversionResult = $convertAttributeValue($specName, $specValue);
+//             $convertedSpecValues[] = $conversionResult['original_value'];
+//         }
+
+//         $matchingProductIds = DB::table('product_attributes as pa')
+//             ->where('pa.attribute_id', $attribute->id)
+//             ->whereIn('pa.attribute_value', $convertedSpecValues)
+//             ->whereIn('pa.product_id', $filteredProductIds)
+//             ->pluck('pa.product_id')
+//             ->unique();
+
+//         $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
+
+//         if ($filteredProductIds->isEmpty()) {
+//             return response()->json([
+//                 'success' => true,
+//                 'filters' => [],
+//                 'products' => [],
+//                 'brands' => [],
+//                 'price_min' => 0,
+//                 'price_max' => 0,
+//                 'rating_filter' => [
+//                     'filter_name' => 'Rating',
+//                     'filter_type' => 'rating',
+//                     'filter_values' => [5, 4, 3, 2, 1],
+//                 ]
+//             ]);
+//         }
+//     }
+
+//     // Apply range filters
+//     foreach ($rangeFiltersByAttribute as $specName => $ranges) {
+//         $attribute = Attribute::where('name', $specName)->first();
+//         if (!$attribute) {
+//             continue;
+//         }
+
+//         $query = DB::table('product_attributes as pa')
+//             ->where('pa.attribute_id', $attribute->id)
+//             ->whereIn('pa.product_id', $filteredProductIds);
+
+//         $rangeConditions = [];
+//         foreach ($ranges as $range) {
+//             $min = (int)$range['min'];
+//             $max = (int)$range['max'];
+
+//             $minConversion = $convertAttributeValue($specName, $min);
+//             $maxConversion = $convertAttributeValue($specName, $max);
+            
+//             if ($minConversion['conversion_applied']) {
+//                 $convertedMin = (int)round((float)$minConversion['converted_value']);
+//                 $convertedMax = (int)round((float)$maxConversion['converted_value']);
+                
+//                 $rangeConditions[] = "pa.product_id IN (
+//                     SELECT DISTINCT pa2.product_id 
+//                     FROM product_attributes pa2 
+//                     WHERE pa2.attribute_id = {$attribute->id}
+//                     AND (
+//                         (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa2.attribute_value AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+//                         OR
+//                         (pa2.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+//                          CAST(REGEXP_REPLACE(pa2.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$convertedMin} AND {$convertedMax})
+//                     )
+//                 )";
+//             } else {
+//                 $rangeConditions[] = "(
+//                     (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*$' AND CAST(pa.attribute_value AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+//                     OR
+//                     (pa.attribute_value REGEXP '^[0-9]+\.?[0-9]*[[:space:]]*[a-zA-Z]+$' AND 
+//                      CAST(REGEXP_REPLACE(pa.attribute_value, '[^0-9.].*', '') AS DECIMAL(10,2)) BETWEEN {$min} AND {$max})
+//                 )";
+//             }
+//         }
+
+//         if (count($rangeConditions) > 0) {
+//             $query->whereRaw('(' . implode(' OR ', $rangeConditions) . ')');
+//         }
+
+//         $matchingProductIds = $query->pluck('pa.product_id')->unique();
+//         $filteredProductIds = $filteredProductIds->intersect($matchingProductIds);
+
+//         if ($filteredProductIds->isEmpty()) {
+//             return response()->json([
+//                 'success' => true,
+//                 'filters' => [],
+//                 'products' => [],
+//                 'price_min' => 0,
+//                 'price_max' => 0,
+//                 'brands' => [],
+//                 'rating_filter' => [
+//                     'filter_name' => 'Rating',
+//                     'filter_type' => 'rating',
+//                     'filter_values' => [5, 4, 3, 2, 1],
+//                 ]
+//             ]);
+//         }
+//     }
+
+//     // Apply brand filter
+//     if ($request->has('brand_id') && $request->brand_id) {
+//         $brandFilteredIds = Product::whereIn('id', $filteredProductIds)
+//             ->whereIn('brand_id', $request->brand_id)
+//             ->pluck('id');
+
+//         $filteredProductIds = $filteredProductIds->intersect($brandFilteredIds);
+
+//         if ($filteredProductIds->isEmpty()) {
+//             return response()->json([
+//                 'success' => true,
+//                 'filters' => [],
+//                 'products' => [],
+//                 'brands' => [],
+//                 'price_min' => 0,
+//                 'price_max' => 0,
+//                 'rating_filter' => [
+//                     'filter_name' => 'Rating',
+//                     'filter_type' => 'rating',
+//                     'filter_values' => [5, 4, 3, 2, 1],
+//                 ]
+//             ]);
+//         }
+//     }
+
+//     // Apply price filter
+//     if ($request->has('price_min') || $request->has('price_max')) {
+//         $min = $request->input('price_min', 0);
+//         $max = $request->input('price_max', PHP_INT_MAX);
+
+//         $priceFilteredIds = DB::table('product_suppliers as ps')
+//             ->whereIn('ps.product_id', $filteredProductIds->toArray())
+//             ->where(function($query) use ($min, $max) {
+//                 $query->whereRaw("CASE WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 THEN ps.sale_price ELSE ps.price END BETWEEN ? AND ?", [$min, $max]);
+//             })
+//             ->pluck('ps.product_id')
+//             ->unique();
+
+//         if ($priceFilteredIds->isEmpty()) {
+//             $priceFilteredIds = DB::table('product_suppliers as ps')
+//                 ->whereIn('ps.product_id', $filteredProductIds->toArray())
+//                 ->whereRaw("COALESCE(ps.sale_price, ps.price) BETWEEN ? AND ?", [$min, $max])
+//                 ->pluck('ps.product_id')
+//                 ->unique();
+            
+//             if ($priceFilteredIds->isEmpty()) {
+//                 $priceFilteredIds = DB::table('ec_products as p')
+//                     ->whereIn('p.id', $filteredProductIds->toArray())
+//                     ->whereRaw("COALESCE(p.sale_price, p.price) BETWEEN ? AND ?", [$min, $max])
+//                     ->pluck('p.id')
+//                     ->unique();
+//             }
+//         }
+
+//         $filteredProductIds = $filteredProductIds->intersect($priceFilteredIds);
+
+//         if ($filteredProductIds->isEmpty()) {
+//             return response()->json([
+//                 'success' => true,
+//                 'filters' => [],
+//                 'products' => [],
+//                 'brands' => [],
+//                 'price_min' => 0,
+//                 'price_max' => 0,
+//                 'rating_filter' => [
+//                     'filter_name' => 'Rating',
+//                     'filter_type' => 'rating',
+//                     'filter_values' => [5, 4, 3, 2, 1],
+//                 ]
+//             ]);
+//         }
+//     }
+
+//     // Apply rating filter
+//     if ($request->has('rating') && $request->rating) {
+//         $ratingFilteredIds = DB::table('ec_reviews')
+//             ->whereIn('product_id', $filteredProductIds)
+//             ->select('product_id')
+//             ->groupBy('product_id')
+//             ->havingRaw('ROUND(AVG(star)) = ?', [$request->rating])
+//             ->pluck('product_id');
+
+//         $filteredProductIds = $filteredProductIds->intersect($ratingFilteredIds);
+
+//         if ($filteredProductIds->isEmpty()) {
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'No products found with ' . $request->rating . ' star' . ($request->rating == 1 ? '' : 's') . ' rating.',
+//                 'filters' => [],
+//                 'products' => [],
+//                 'brands' => [],
+//                 'price_min' => 0,
+//                 'price_max' => 0,
+//                 'rating_filter' => [
+//                     'filter_name' => 'Rating',
+//                     'filter_type' => 'rating',
+//                     'filter_values' => [5, 4, 3, 2, 1],
+//                 ]
+//             ]);
+//         }
+//     }
+
+//     // Fetch products
+//     $products = Product::whereIn('id', $filteredProductIds)
+//         ->where('status', 'published')
+//         ->with(['currency', 'reviews', 'productSuppliers', 'brand', 'seoUrl', 'productAttributes' => function ($query) {
+//             $query->whereHas('attributeDetails', function ($q) {
+//                 $q->whereIn('name', ['Units per Case', 'Pack Type']);
+//             });
+//         }]);
+
+//     // Apply sorting
+//     $sortBy = $request->input('sort_by', 'created_at');
+//     $sortByType = $request->input('sort_by_type', 'desc');
+
+//     if ($request->has('price_order')) {
+//         $priceOrder = $request->input('price_order');
+//         $sortByType = $priceOrder === 'high_to_low' ? 'desc' : 'asc';
+//         $sortBy = 'price';
+//     }
+
+//     if ($sortBy == 'price') {
+//         $productIds = $filteredProductIds->toArray();
+        
+//         $products = Product::with(['currency', 'reviews', 'productSuppliers', 'brand', 'productAttributes' => function ($query) {
+//                 $query->whereHas('attributeDetails', function ($q) {
+//                     $q->whereIn('name', ['Units per Case', 'Pack Type']);
+//                 });
+//             }])
+//             ->leftJoin('product_suppliers as ps', 'ec_products.id', '=', 'ps.product_id')
+//             ->select('ec_products.*',
+//                 DB::raw('MIN(CASE 
+//             WHEN ps.sale_price IS NOT NULL AND ps.sale_price > 0 
+//             THEN ps.sale_price 
+//             ELSE ps.price 
+//         END) as best_price')
+//     )
+//     ->whereIn('ec_products.id', $productIds)
+//     ->where('ec_products.status', 'published')
+//     ->groupBy('ec_products.id')
+//     ->orderBy('best_price', $sortByType);
+//     } else {
+//         $orderColumn = in_array($sortBy, ['created_at', 'updated_at', 'name', 'status']) 
+//             ? "ec_products.{$sortBy}" 
+//             : $sortBy;
+        
+//         $products = $products->orderBy($orderColumn, $sortByType);
+//     }
+        
+//     $paginatedProducts = $products->paginate($perPage);
+
+//     // Get wishlist product IDs
+//     $wishlistProductIds = auth()->check() ?
+//         \App\Models\Wishlist::where('user_id', auth()->id())->pluck('product_id')->toArray() :
+//         [];
+
+//     $modifiedProducts = $paginatedProducts->getCollection()->map(function ($product) use ($wishlistProductIds) {
+//         $totalReviews = $product->reviews->count();
+//         $avgRating = $totalReviews > 0 ? round($product->reviews->avg('star')) : null;
+
+//         $cleanedImages = is_string($product->images)
+//             ? json_decode($product->images, true)
+//             : (array) $product->images;
+
+//         $firstSupplier = $product->productSuppliers->first();
+//         $leftStock = $firstSupplier->quantity ?? 0;
+
+//         $sellingType = null;
+//         if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
+//             $fullValue = $product->sellingUnitAttribute->attribute_value;
+
+//             $attributeUnit = strpos($fullValue, '/') !== false
+//                 ? trim(explode('/', $fullValue)[1])
+//                 : $fullValue;
+
+//             $sellingType = [
+//                 'attribute_value' => $product->sellingUnitAttribute->attribute_value,
+//                 'attribute_value_unit' => $attributeUnit,
+//             ];
+//         }
+
+//         $unitsPerCase = null;
+//         $packType = null;
+
+//         if (!empty($product->productAttributes)) {
+//             $unitsPerCase = $product->productAttributes
+//                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Units per Case');
+//             $packType = $product->productAttributes
+//                 ->first(fn($attr) => $attr->attributeDetails?->name === 'Pack Type');
+//         }
+
+//         $basePrice = null;
+//         if ($firstSupplier) {
+//             $basePrice = ($firstSupplier->sale_price > 0) ? $firstSupplier->sale_price : $firstSupplier->price;
+//         }
+//         $perUnitPrice = null;
+
+//         if ($basePrice && $unitsPerCase && is_numeric($unitsPerCase->attribute_value)) {
+//             $unitValue = (float) $unitsPerCase->attribute_value;
+//             if ($unitValue > 0) {
+//                 $calculated = round($basePrice / $unitValue, 2);
+//                 $perUnitPrice = $calculated . ' ' . '/' . ($packType?->attribute_value ?? '');
+//             }
+//         }
+
+//         return [
+//             'id' => $product->id,
+//             'name' => $product->name,
+//             'images' => $cleanedImages,
+//             'url' => $product->seoUrl->url ?? null,
+//             'video_url' => $product->video_url,
+//             'video_path' => is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []),
+//             'sku' => $product->sku,
+//             'start_date' => $product->start_date,
+//             'end_date' => $product->end_date,
+//             'currency' => $product->currency?->symbol,
+//             'total_reviews' => $totalReviews,
+//             'avg_rating' => $avgRating,
+//             'leftStock' => $leftStock,
+//             'currency_title' => $product->currency
+//                 ? ($product->currency->is_prefix_symbol
+//                     ? $product->currency->symbol
+//                     : ($product->price . ' ' . $product->currency->symbol))
+//                 : $product->price,
+//             'in_wishlist' => in_array($product->id, $wishlistProductIds),
+//             'selling_type' => $sellingType,
+//             'per_unit_price' => $perUnitPrice,
+//             'vendor_sku' => $firstSupplier?->vendor_sku ?? null,
+//             'price' => (float) ($firstSupplier?->price ?? 0),
+//             'sale_price' => (float) ($firstSupplier?->sale_price ?? 0),
+//             'original_price' => (float) ($firstSupplier?->price ?? 0),
+//             'front_sale_price' => (float) ($firstSupplier?->sale_price ?? $firstSupplier?->price ?? 0),
+//             'best_price' => (float) ($firstSupplier?->price ?? 0),
+//             'vendor_id' => $firstSupplier?->vendor_id ?? null,
+//             'map' => $firstSupplier ? (float) $firstSupplier->map : null,
+//             'inventory' => $firstSupplier?->inventory ?? null,
+//             'in_stock' => $firstSupplier?->in_stock ?? null,
+//             'delivery_days' => $firstSupplier?->delivery_days ?? null,
+//             'return_policy' => $firstSupplier?->return_policy ?? null,
+//             'free_shipping' => $firstSupplier?->free_shipping ?? null,
+//             'warranty_information' => $firstSupplier?->warranty_information ?? null,
+//         ];
+//     });
+
+//     $paginatedProducts->setCollection($modifiedProducts);
+
+//     // Build filters
+//     $filters = [];
+
+//     $subCategory = DB::table('sub_categories')
+//         ->where('category_id', $request->category_id)
+//         ->first();
+
+//     if ($subCategory) {
+//         $attributeIdsField = null;
+//         $attributeIds = [];
+
+//         if (property_exists($subCategory, 'attributes_ids') || isset($subCategory->attributes_ids)) {
+//             $attributeIdsField = 'attributes_ids';
+//         } else if (property_exists($subCategory, 'attributes_jd') || isset($subCategory->attributes_jd)) {
+//             $attributeIdsField = 'attributes_jd';
+//         }
+
+//         if ($attributeIdsField && !empty($subCategory->$attributeIdsField)) {
+//             $attributeIdsValue = $subCategory->$attributeIdsField;
+
+//             if (is_string($attributeIdsValue)) {
+//                 $attributeIds = json_decode($attributeIdsValue, true);
+
+//                 if (json_last_error() !== JSON_ERROR_NONE) {
+//                     $attributeIds = explode(',', $attributeIdsValue);
+//                 } else if (count($attributeIds) === 1 && is_string($attributeIds[0]) && strpos($attributeIds[0], ',') !== false) {
+//                     $attributeIds = explode(',', $attributeIds[0]);
+//                 }
+//             } else {
+//                 $attributeIds = $attributeIdsValue;
+//             }
+
+//             $attributeIds = array_map('intval', (array)$attributeIds);
+
+//             if (!empty($attributeIds)) {
+//                 foreach ($attributeIds as $attributeId) {
+//                     $attribute = Attribute::find($attributeId);
+//                     if (!$attribute) {
+//                         continue;
+//                     }
+
+//                     $attributeName = $attribute->name;
+//                     $isFilterSelected = isset($selectedFilters[$attributeName]);
+
+//                     $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
+
+//                     $attributeValues = DB::table('product_attributes as pa')
+//                         ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
+//                         ->whereIn('pa.product_id', $productIdsToUse)
+//                         ->where('pa.attribute_id', $attributeId)
+//                         ->orderBy('pa.attribute_value', 'asc')
+//                         ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id')
+//                         ->get();
+
+//                     if ($attributeValues->count() > 0) {
+//                         $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
+//                             $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value);
+//                             return (object)[
+//                                 'attribute_name' => $item->attribute_name,
+//                                 'attribute_value' => $item->attribute_value,
+//                                 'converted_value' => $conversionResult['converted_value'],
+//                                 'display_value' => $conversionResult['display_value'],
+//                                 'unit' => $conversionResult['unit'],
+//                                 'symbol' => $conversionResult['symbol'],
+//                                 'conversion_applied' => $conversionResult['conversion_applied'],
+//                                 'attribute_id' => $item->attribute_id,
+//                                 'product_id' => $item->product_id
+//                             ];
+//                         });
+
+//                         $uniqueValues = $convertedAttributeValues->pluck('display_value')->unique()->filter()->values();
+
+//                         $extractNumericValue = function($value) {
+//                             if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
+//                                 return (int)round((float)$matches[1]);
+//                             } else if (is_numeric($value)) {
+//                                 return (int)round((float)$value);
+//                             }
+//                             return $value;
+//                         };
+
+//                         $numericValues = true;
+//                         $cleanedValues = $uniqueValues->map(function($val) use ($extractNumericValue, &$numericValues) {
+//                             $cleanedVal = $extractNumericValue($val);
+//                             if (!is_numeric($cleanedVal)) {
+//                                 $numericValues = false;
+//                             }
+//                             return $cleanedVal;
+//                         });
+
+//                         if ($numericValues && $cleanedValues->count() > 2) {
+//                             $sorted = $cleanedValues->filter(function($value) {
+//                                 return is_numeric($value);
+//                             })->map(function($val) {
+//                                 return (int)$val;
+//                             })->unique()->sort()->values();
+
+//                             $chunkCount = min(5, ceil($sorted->count() / 2));
+//                             $chunkSize = ceil($sorted->count() / $chunkCount);
+
+//                             $selectedRanges = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
+
+//                             $ranges = $sorted->chunk($chunkSize)->map(function ($chunk) use ($attributeName, $filteredProductIds, $isFilterSelected, $convertedAttributeValues) {
+//                                 $min = (int)$chunk->first();
+//                                 $max = (int)$chunk->last();
+
+//                                 $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($min, $max) {
+//                                     $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
+//                                     return $numericValue !== null && $numericValue >= $min && $numericValue <= $max;
+//                                 });
+
+//                                 $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
+
+//                                 $sampleConvertedValue = $matchingConvertedValues->first();
+//                                 $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
+
+//                                 $displayValue = $min == $max ? $min . ' ' . $unit : $min . ' - ' . $max . ' ' . $unit;
+
+//                                 return [
+//                                     'min' => $min,
+//                                     'max' => $max,
+//                                     'product_count' => $productCount,
+//                                     'display_value' => $displayValue,
+//                                     'symbol' => $unit
+//                                 ];
+//                             })->filter(function($range) use ($isFilterSelected) {
+//                                 return $isFilterSelected || $range['product_count'] > 0;
+//                             })->sortBy('min')->values()->toArray();
+
+//                             foreach ($selectedRanges as $selectedRange) {
+//                                 if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
+//                                     $selectedMin = (int)$selectedRange['min'];
+//                                     $selectedMax = (int)$selectedRange['max'];
+
+//                                     $rangeExists = false;
+//                                     foreach ($ranges as $range) {
+//                                         if ($range['min'] == $selectedMin && $range['max'] == $selectedMax) {
+//                                             $rangeExists = true;
+//                                             break;
+//                                         }
+//                                     }
+
+//                                     if (!$rangeExists) {
+//                                         $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($selectedMin, $selectedMax) {
+//                                             $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
+//                                             return $numericValue !== null && $numericValue >= $selectedMin && $numericValue <= $selectedMax;
+//                                         });
+
+//                                         $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
+
+//                                         $sampleConvertedValue = $matchingConvertedValues->first();
+//                                         $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
+
+//                                         $displayValue = $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : $selectedMin . ' - ' . $selectedMax . ' ' . $unit;
+
+//                                         $ranges[] = [
+//                                             'min' => $selectedMin,
+//                                             'max' => $selectedMax,
+//                                             'product_count' => $productCount,
+//                                             'display_value' => $displayValue,
+//                                             'selected' => true,
+//                                             'symbol' => $unit
+//                                         ];
+//                                     }
+//                                 }
+//                             }
+
+//                             usort($ranges, function($a, $b) {
+//                                 return $a['min'] - $b['min'];
+//                             });
+
+//                             if (!empty($ranges)) {
+//                                 $filters[] = [
+//                                     'specification_name' => $attributeName,
+//                                     'specification_type' => 'range',
+//                                     'specification_value' => $ranges,
+//                                 ];
+//                             }
+//                         } else {
+//                             $valueCountMap = [];
+//                             $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
+
+//                             foreach ($uniqueValues as $displayValue) {
+//                                 $correspondingItem = $convertedAttributeValues->firstWhere('display_value', $displayValue);
+                                
+//                                 if (!$correspondingItem) continue;
+
+//                                 $productCount = $convertedAttributeValues
+//                                     ->where('display_value', $displayValue)
+//                                     ->whereIn('product_id', $filteredProductIds)
+//                                     ->pluck('product_id')
+//                                     ->unique()
+//                                     ->count();
+
+//                                 if ($isFilterSelected || $productCount > 0) {
+//                                     $valueCountMap[] = [
+//                                         'value' => $correspondingItem->attribute_value,
+//                                         'display_value' => $displayValue,
+//                                         'converted_value' => $correspondingItem->converted_value,
+//                                         'unit' => $correspondingItem->unit,
+//                                         'symbol' => $correspondingItem->symbol,
+//                                         'product_count' => $productCount,
+//                                         'display_with_count' => $displayValue . ' (' . $productCount . ')',
+//                                         'conversion_applied' => $correspondingItem->conversion_applied
+//                                     ];
+//                                 }
+//                             }
+
+//                             foreach ($selectedValues as $selectedValue) {
+//                                 $valueExists = false;
+//                                 foreach ($valueCountMap as $valueCount) {
+//                                     if ($valueCount['value'] == $selectedValue) {
+//                                         $valueExists = true;
+//                                         break;
+//                                     }
+//                                 }
+
+//                                 if (!$valueExists) {
+//                                     $conversionResult = $convertAttributeValue($attributeName, $selectedValue);
+                                    
+//                                     $productCount = $convertedAttributeValues
+//                                         ->where('attribute_value', $selectedValue)
+//                                         ->whereIn('product_id', $filteredProductIds)
+//                                         ->pluck('product_id')
+//                                         ->unique()
+//                                         ->count();
+
+//                                     $valueCountMap[] = [
+//                                         'value' => $selectedValue,
+//                                         'display_value' => $conversionResult['display_value'],
+//                                         'converted_value' => $conversionResult['converted_value'],
+//                                         'unit' => $conversionResult['unit'],
+//                                         'symbol' => $conversionResult['symbol'],
+//                                         'product_count' => $productCount,
+//                                         'display_with_count' => $conversionResult['display_value'] . ' (' . $productCount . ')',
+//                                         'selected' => true,
+//                                         'conversion_applied' => $conversionResult['conversion_applied']
+//                                     ];
+//                                 }
+//                             }
+
+//                             usort($valueCountMap, function($a, $b) {
+//                                 if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
+//                                     return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
+//                                 }
+//                                 return strcmp($a['display_value'], $b['display_value']);
+//                             });
+
+//                             if (!empty($valueCountMap)) {
+//                                 $filters[] = [
+//                                     'specification_name' => $attributeName,
+//                                     'specification_type' => 'fixed',
+//                                     'specification_value' => $valueCountMap,
+//                                 ];
+//                             }
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     // Get brands
+//     $selectedBrandIds = $request->brand_id ?? [];
+
+//     $brands = DB::table('ec_products as p')
+//         ->join('ec_brands as b', 'b.id', '=', 'p.brand_id')
+//         ->whereIn('p.id', $allCategoryProductIds)
+//         ->where('p.status', 'published')
+//         ->select('b.id', 'b.name')
+//         ->groupBy('b.id', 'b.name')
+//         ->orderBy('b.name')
+//         ->get()
+//         ->map(function($brand) use ($filteredProductIds, $selectedBrandIds) {
+//             $productCount = DB::table('ec_products')
+//             ->where('brand_id', $brand->id)
+//             ->whereIn('id', $filteredProductIds->toArray())
+//             ->where('status', 'published')
+//             ->count();
+            
+//             $isSelected = in_array($brand->id, $selectedBrandIds);
+            
+//             return [
+//                 'id' => $brand->id,
+//                 'name' => $brand->name,
+//                 'product_count' => $productCount,
+//                 'display_name' => $brand->name . ' (' . $productCount . ')',
+//                 'is_selected' => $isSelected
+//             ];
+//         })
+//         ->toArray();
+
+//     // Get price range
+//     $productIdsArray = $filteredProductIds->toArray();
+
+//     $supplierExists = DB::table('product_suppliers')
+//         ->whereIn('product_id', $productIdsArray)
+//         ->exists();
+
+//     if ($supplierExists) {
+//         $priceRange = DB::table('product_suppliers')
+//             ->whereIn('product_id', $productIdsArray)
+//             ->where(function($query) {
+//                 $query->where('price', '>', 0)
+//                     ->orWhere('sale_price', '>', 0);
+//             })
+//             ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+//             ->first();
+
+//         if (!$priceRange || ($priceRange->min_price <= 0 && $priceRange->max_price <= 0)) {
+//             $priceRange = DB::table('product_suppliers')
+//                 ->whereIn('product_id', $productIdsArray)
+//                 ->selectRaw('MIN(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as min_price, 
+//                             MAX(CASE WHEN sale_price IS NOT NULL AND sale_price > 0 THEN sale_price ELSE price END) as max_price')
+//                 ->first();
+//         }
+//     } else {
+//         $priceRange = DB::table('ec_products')
+//             ->whereIn('id', $filteredProductIds)
+//             ->where('status', 'published')
+//             ->selectRaw('MIN(COALESCE(sale_price, price)) as min_price, MAX(COALESCE(sale_price, price)) as max_price')
+//             ->first();
+//     }
+
+//     $priceMin = $priceRange ? (float)$priceRange->min_price : 0;
+//     $priceMax = $priceRange ? (float)$priceRange->max_price : 0;
+
+//     // Rating filter
+//     $ratingFilter = [
+//         'filter_name' => 'Rating',
+//         'filter_type' => 'rating',
+//         'filter_values' => [5, 4, 3, 2, 1],
+//     ];
+
+//     return response()->json([
+//         'success' => true,
+//         'filters' => $filters,
+//         'products' => $paginatedProducts,
+//         'brands' => $brands,
+//         'price_min' => $priceMin,
+//         'price_max' => $priceMax,
+//         'rating_filter' => $ratingFilter,
+//         'category_measurement_priorities' => $categoryMeasurementPriorities->toArray()
+//     ]);
+// }
+public function getSpecificationFilters1(Request $request)
 {
     // Validation
     $validator = Validator::make($request->all(), [
@@ -1985,16 +2945,17 @@ class CategoryController extends Controller
 
     $paginatedProducts->setCollection($modifiedProducts);
 
-    // Build filters
+    // Build filters - IMPROVED LOGIC
     $filters = [];
+    $attributeIds = [];
 
+    // First, try to get attributes from sub_categories table
     $subCategory = DB::table('sub_categories')
         ->where('category_id', $request->category_id)
         ->first();
 
     if ($subCategory) {
         $attributeIdsField = null;
-        $attributeIds = [];
 
         if (property_exists($subCategory, 'attributes_ids') || isset($subCategory->attributes_ids)) {
             $attributeIdsField = 'attributes_ids';
@@ -2005,95 +2966,162 @@ class CategoryController extends Controller
         if ($attributeIdsField && !empty($subCategory->$attributeIdsField)) {
             $attributeIdsValue = $subCategory->$attributeIdsField;
 
-            if (is_string($attributeIdsValue)) {
-                $attributeIds = json_decode($attributeIdsValue, true);
-
-                if (json_last_error() !== JSON_ERROR_NONE) {
-                    $attributeIds = explode(',', $attributeIdsValue);
-                } else if (count($attributeIds) === 1 && is_string($attributeIds[0]) && strpos($attributeIds[0], ',') !== false) {
-                    $attributeIds = explode(',', $attributeIds[0]);
+            try {
+                if (is_string($attributeIdsValue)) {
+                    $decoded = json_decode($attributeIdsValue, true);
+                    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                        $attributeIds = $decoded;
+                    } else {
+                        // Fallback to comma-separated
+                        $attributeIds = array_filter(explode(',', $attributeIdsValue));
+                    }
+                } else if (is_array($attributeIdsValue)) {
+                    $attributeIds = $attributeIdsValue;
                 }
-            } else {
-                $attributeIds = $attributeIdsValue;
+                
+                // Clean and validate attribute IDs
+                $attributeIds = array_map('intval', array_filter($attributeIds));
+                $attributeIds = array_filter($attributeIds, function($id) { return $id > 0; });
+            } catch (Exception $e) {
+                \Log::error("Failed to parse attribute IDs for category: " . $request->category_id, [
+                    'error' => $e->getMessage(),
+                    'value' => $attributeIdsValue
+                ]);
+                $attributeIds = [];
+            }
+        }
+    }
+
+    // FALLBACK: If no attributes found from sub_categories, get all attributes used by products in this category
+    if (empty($attributeIds)) {
+        $attributeIds = DB::table('product_attributes as pa')
+            ->join('attributes as a', 'a.id', '=', 'pa.attribute_id')
+            ->whereIn('pa.product_id', $allCategoryProductIds)
+            ->select('a.id')
+            ->distinct()
+            ->pluck('a.id')
+            ->toArray();
+
+        // Log fallback usage for debugging
+        \Log::info("Using fallback attribute logic for category: " . $request->category_id, [
+            'found_attributes' => count($attributeIds),
+            'sub_category_exists' => $subCategory ? 'yes' : 'no'
+        ]);
+    }
+
+    // Build filters if we have attribute IDs
+    if (!empty($attributeIds)) {
+        foreach ($attributeIds as $attributeId) {
+            $attribute = Attribute::find($attributeId);
+            if (!$attribute) {
+                continue;
             }
 
-            $attributeIds = array_map('intval', (array)$attributeIds);
+            $attributeName = $attribute->name;
+            $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-            if (!empty($attributeIds)) {
-                foreach ($attributeIds as $attributeId) {
-                    $attribute = Attribute::find($attributeId);
-                    if (!$attribute) {
-                        continue;
+            $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
+
+            $attributeValues = DB::table('product_attributes as pa')
+                ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
+                ->whereIn('pa.product_id', $productIdsToUse)
+                ->where('pa.attribute_id', $attributeId)
+                ->orderBy('pa.attribute_value', 'asc')
+                ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id')
+                ->get();
+
+            if ($attributeValues->count() > 0) {
+                $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
+                    $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value);
+                    return (object)[
+                        'attribute_name' => $item->attribute_name,
+                        'attribute_value' => $item->attribute_value,
+                        'converted_value' => $conversionResult['converted_value'],
+                        'display_value' => $conversionResult['display_value'],
+                        'unit' => $conversionResult['unit'],
+                        'symbol' => $conversionResult['symbol'],
+                        'conversion_applied' => $conversionResult['conversion_applied'],
+                        'attribute_id' => $item->attribute_id,
+                        'product_id' => $item->product_id
+                    ];
+                });
+
+                $uniqueValues = $convertedAttributeValues->pluck('display_value')->unique()->filter()->values();
+
+                $extractNumericValue = function($value) {
+                    if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
+                        return (int)round((float)$matches[1]);
+                    } else if (is_numeric($value)) {
+                        return (int)round((float)$value);
                     }
+                    return $value;
+                };
 
-                    $attributeName = $attribute->name;
-                    $isFilterSelected = isset($selectedFilters[$attributeName]);
+                $numericValues = true;
+                $cleanedValues = $uniqueValues->map(function($val) use ($extractNumericValue, &$numericValues) {
+                    $cleanedVal = $extractNumericValue($val);
+                    if (!is_numeric($cleanedVal)) {
+                        $numericValues = false;
+                    }
+                    return $cleanedVal;
+                });
 
-                    $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
+                if ($numericValues && $cleanedValues->count() > 2) {
+                    $sorted = $cleanedValues->filter(function($value) {
+                        return is_numeric($value);
+                    })->map(function($val) {
+                        return (int)$val;
+                    })->unique()->sort()->values();
 
-                    $attributeValues = DB::table('product_attributes as pa')
-                        ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
-                        ->whereIn('pa.product_id', $productIdsToUse)
-                        ->where('pa.attribute_id', $attributeId)
-                        ->orderBy('pa.attribute_value', 'asc')
-                        ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id')
-                        ->get();
+                    $chunkCount = min(5, ceil($sorted->count() / 2));
+                    $chunkSize = ceil($sorted->count() / $chunkCount);
 
-                    if ($attributeValues->count() > 0) {
-                        $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
-                            $conversionResult = $convertAttributeValue($attributeName, $item->attribute_value);
-                            return (object)[
-                                'attribute_name' => $item->attribute_name,
-                                'attribute_value' => $item->attribute_value,
-                                'converted_value' => $conversionResult['converted_value'],
-                                'display_value' => $conversionResult['display_value'],
-                                'unit' => $conversionResult['unit'],
-                                'symbol' => $conversionResult['symbol'],
-                                'conversion_applied' => $conversionResult['conversion_applied'],
-                                'attribute_id' => $item->attribute_id,
-                                'product_id' => $item->product_id
-                            ];
+                    $selectedRanges = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
+
+                    $ranges = $sorted->chunk($chunkSize)->map(function ($chunk) use ($attributeName, $filteredProductIds, $isFilterSelected, $convertedAttributeValues) {
+                        $min = (int)$chunk->first();
+                        $max = (int)$chunk->last();
+
+                        $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($min, $max) {
+                            $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
+                            return $numericValue !== null && $numericValue >= $min && $numericValue <= $max;
                         });
 
-                        $uniqueValues = $convertedAttributeValues->pluck('display_value')->unique()->filter()->values();
+                        $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
 
-                        $extractNumericValue = function($value) {
-                            if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
-                                return (int)round((float)$matches[1]);
-                            } else if (is_numeric($value)) {
-                                return (int)round((float)$value);
+                        $sampleConvertedValue = $matchingConvertedValues->first();
+                        $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
+
+                        $displayValue = $min == $max ? $min . ' ' . $unit : $min . ' - ' . $max . ' ' . $unit;
+
+                        return [
+                            'min' => $min,
+                            'max' => $max,
+                            'product_count' => $productCount,
+                            'display_value' => $displayValue,
+                            'symbol' => $unit
+                        ];
+                    })->filter(function($range) use ($isFilterSelected) {
+                        return $isFilterSelected || $range['product_count'] > 0;
+                    })->sortBy('min')->values()->toArray();
+
+                    foreach ($selectedRanges as $selectedRange) {
+                        if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
+                            $selectedMin = (int)$selectedRange['min'];
+                            $selectedMax = (int)$selectedRange['max'];
+
+                            $rangeExists = false;
+                            foreach ($ranges as $range) {
+                                if ($range['min'] == $selectedMin && $range['max'] == $selectedMax) {
+                                    $rangeExists = true;
+                                    break;
+                                }
                             }
-                            return $value;
-                        };
 
-                        $numericValues = true;
-                        $cleanedValues = $uniqueValues->map(function($val) use ($extractNumericValue, &$numericValues) {
-                            $cleanedVal = $extractNumericValue($val);
-                            if (!is_numeric($cleanedVal)) {
-                                $numericValues = false;
-                            }
-                            return $cleanedVal;
-                        });
-
-                        if ($numericValues && $cleanedValues->count() > 2) {
-                            $sorted = $cleanedValues->filter(function($value) {
-                                return is_numeric($value);
-                            })->map(function($val) {
-                                return (int)$val;
-                            })->unique()->sort()->values();
-
-                            $chunkCount = min(5, ceil($sorted->count() / 2));
-                            $chunkSize = ceil($sorted->count() / $chunkCount);
-
-                            $selectedRanges = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
-
-                            $ranges = $sorted->chunk($chunkSize)->map(function ($chunk) use ($attributeName, $filteredProductIds, $isFilterSelected, $convertedAttributeValues) {
-                                $min = (int)$chunk->first();
-                                $max = (int)$chunk->last();
-
-                                $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($min, $max) {
+                            if (!$rangeExists) {
+                                $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($selectedMin, $selectedMax) {
                                     $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
-                                    return $numericValue !== null && $numericValue >= $min && $numericValue <= $max;
+                                    return $numericValue !== null && $numericValue >= $selectedMin && $numericValue <= $selectedMax;
                                 });
 
                                 $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
@@ -2101,146 +3129,107 @@ class CategoryController extends Controller
                                 $sampleConvertedValue = $matchingConvertedValues->first();
                                 $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
 
-                                $displayValue = $min == $max ? $min . ' ' . $unit : $min . ' - ' . $max . ' ' . $unit;
+                                $displayValue = $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : $selectedMin . ' - ' . $selectedMax . ' ' . $unit;
 
-                                return [
-                                    'min' => $min,
-                                    'max' => $max,
+                                $ranges[] = [
+                                    'min' => $selectedMin,
+                                    'max' => $selectedMax,
                                     'product_count' => $productCount,
                                     'display_value' => $displayValue,
+                                    'selected' => true,
                                     'symbol' => $unit
-                                ];
-                            })->filter(function($range) use ($isFilterSelected) {
-                                return $isFilterSelected || $range['product_count'] > 0;
-                            })->sortBy('min')->values()->toArray();
-
-                            foreach ($selectedRanges as $selectedRange) {
-                                if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
-                                    $selectedMin = (int)$selectedRange['min'];
-                                    $selectedMax = (int)$selectedRange['max'];
-
-                                    $rangeExists = false;
-                                    foreach ($ranges as $range) {
-                                        if ($range['min'] == $selectedMin && $range['max'] == $selectedMax) {
-                                            $rangeExists = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (!$rangeExists) {
-                                        $matchingConvertedValues = $convertedAttributeValues->filter(function($item) use ($selectedMin, $selectedMax) {
-                                            $numericValue = is_numeric($item->converted_value) ? (int)round((float)$item->converted_value) : null;
-                                            return $numericValue !== null && $numericValue >= $selectedMin && $numericValue <= $selectedMax;
-                                        });
-
-                                        $productCount = $matchingConvertedValues->whereIn('product_id', $filteredProductIds)->pluck('product_id')->unique()->count();
-
-                                        $sampleConvertedValue = $matchingConvertedValues->first();
-                                        $unit = $sampleConvertedValue ? $sampleConvertedValue->symbol : '';
-
-                                        $displayValue = $selectedMin == $selectedMax ? $selectedMin . ' ' . $unit : $selectedMin . ' - ' . $selectedMax . ' ' . $unit;
-
-                                        $ranges[] = [
-                                            'min' => $selectedMin,
-                                            'max' => $selectedMax,
-                                            'product_count' => $productCount,
-                                            'display_value' => $displayValue,
-                                            'selected' => true,
-                                            'symbol' => $unit
-                                        ];
-                                    }
-                                }
-                            }
-
-                            usort($ranges, function($a, $b) {
-                                return $a['min'] - $b['min'];
-                            });
-
-                            if (!empty($ranges)) {
-                                $filters[] = [
-                                    'specification_name' => $attributeName,
-                                    'specification_type' => 'range',
-                                    'specification_value' => $ranges,
-                                ];
-                            }
-                        } else {
-                            $valueCountMap = [];
-                            $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
-
-                            foreach ($uniqueValues as $displayValue) {
-                                $correspondingItem = $convertedAttributeValues->firstWhere('display_value', $displayValue);
-                                
-                                if (!$correspondingItem) continue;
-
-                                $productCount = $convertedAttributeValues
-                                    ->where('display_value', $displayValue)
-                                    ->whereIn('product_id', $filteredProductIds)
-                                    ->pluck('product_id')
-                                    ->unique()
-                                    ->count();
-
-                                if ($isFilterSelected || $productCount > 0) {
-                                    $valueCountMap[] = [
-                                        'value' => $correspondingItem->attribute_value,
-                                        'display_value' => $displayValue,
-                                        'converted_value' => $correspondingItem->converted_value,
-                                        'unit' => $correspondingItem->unit,
-                                        'symbol' => $correspondingItem->symbol,
-                                        'product_count' => $productCount,
-                                        'display_with_count' => $displayValue . ' (' . $productCount . ')',
-                                        'conversion_applied' => $correspondingItem->conversion_applied
-                                    ];
-                                }
-                            }
-
-                            foreach ($selectedValues as $selectedValue) {
-                                $valueExists = false;
-                                foreach ($valueCountMap as $valueCount) {
-                                    if ($valueCount['value'] == $selectedValue) {
-                                        $valueExists = true;
-                                        break;
-                                    }
-                                }
-
-                                if (!$valueExists) {
-                                    $conversionResult = $convertAttributeValue($attributeName, $selectedValue);
-                                    
-                                    $productCount = $convertedAttributeValues
-                                        ->where('attribute_value', $selectedValue)
-                                        ->whereIn('product_id', $filteredProductIds)
-                                        ->pluck('product_id')
-                                        ->unique()
-                                        ->count();
-
-                                    $valueCountMap[] = [
-                                        'value' => $selectedValue,
-                                        'display_value' => $conversionResult['display_value'],
-                                        'converted_value' => $conversionResult['converted_value'],
-                                        'unit' => $conversionResult['unit'],
-                                        'symbol' => $conversionResult['symbol'],
-                                        'product_count' => $productCount,
-                                        'display_with_count' => $conversionResult['display_value'] . ' (' . $productCount . ')',
-                                        'selected' => true,
-                                        'conversion_applied' => $conversionResult['conversion_applied']
-                                    ];
-                                }
-                            }
-
-                            usort($valueCountMap, function($a, $b) {
-                                if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
-                                    return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
-                                }
-                                return strcmp($a['display_value'], $b['display_value']);
-                            });
-
-                            if (!empty($valueCountMap)) {
-                                $filters[] = [
-                                    'specification_name' => $attributeName,
-                                    'specification_type' => 'fixed',
-                                    'specification_value' => $valueCountMap,
                                 ];
                             }
                         }
+                    }
+
+                    usort($ranges, function($a, $b) {
+                        return $a['min'] - $b['min'];
+                    });
+
+                    if (!empty($ranges)) {
+                        $filters[] = [
+                            'specification_name' => $attributeName,
+                            'specification_type' => 'range',
+                            'specification_value' => $ranges,
+                        ];
+                    }
+                } else {
+                    $valueCountMap = [];
+                    $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
+
+                    foreach ($uniqueValues as $displayValue) {
+                        $correspondingItem = $convertedAttributeValues->firstWhere('display_value', $displayValue);
+                        
+                        if (!$correspondingItem) continue;
+
+                        $productCount = $convertedAttributeValues
+                            ->where('display_value', $displayValue)
+                            ->whereIn('product_id', $filteredProductIds)
+                            ->pluck('product_id')
+                            ->unique()
+                            ->count();
+
+                        if ($isFilterSelected || $productCount > 0) {
+                            $valueCountMap[] = [
+                                'value' => $correspondingItem->attribute_value,
+                                'display_value' => $displayValue,
+                                'converted_value' => $correspondingItem->converted_value,
+                                'unit' => $correspondingItem->unit,
+                                'symbol' => $correspondingItem->symbol,
+                                'product_count' => $productCount,
+                                'display_with_count' => $displayValue . ' (' . $productCount . ')',
+                                'conversion_applied' => $correspondingItem->conversion_applied
+                            ];
+                        }
+                    }
+
+                    foreach ($selectedValues as $selectedValue) {
+                        $valueExists = false;
+                        foreach ($valueCountMap as $valueCount) {
+                            if ($valueCount['value'] == $selectedValue) {
+                                $valueExists = true;
+                                break;
+                            }
+                        }
+
+                        if (!$valueExists) {
+                            $conversionResult = $convertAttributeValue($attributeName, $selectedValue);
+                            
+                            $productCount = $convertedAttributeValues
+                                ->where('attribute_value', $selectedValue)
+                                ->whereIn('product_id', $filteredProductIds)
+                                ->pluck('product_id')
+                                ->unique()
+                                ->count();
+
+                            $valueCountMap[] = [
+                                'value' => $selectedValue,
+                                'display_value' => $conversionResult['display_value'],
+                                'converted_value' => $conversionResult['converted_value'],
+                                'unit' => $conversionResult['unit'],
+                                'symbol' => $conversionResult['symbol'],
+                                'product_count' => $productCount,
+                                'display_with_count' => $conversionResult['display_value'] . ' (' . $productCount . ')',
+                                'selected' => true,
+                                'conversion_applied' => $conversionResult['conversion_applied']
+                            ];
+                        }
+                    }
+
+                    usort($valueCountMap, function($a, $b) {
+                        if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
+                            return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
+                        }
+                        return strcmp($a['display_value'], $b['display_value']);
+                    });
+
+                    if (!empty($valueCountMap)) {
+                        $filters[] = [
+                            'specification_name' => $attributeName,
+                            'specification_type' => 'fixed',
+                            'specification_value' => $valueCountMap,
+                        ];
                     }
                 }
             }
@@ -2327,7 +3316,16 @@ class CategoryController extends Controller
         'price_min' => $priceMin,
         'price_max' => $priceMax,
         'rating_filter' => $ratingFilter,
-        'category_measurement_priorities' => $categoryMeasurementPriorities->toArray()
+        'category_measurement_priorities' => $categoryMeasurementPriorities->toArray(),
+        'debug_info' => [
+            'category_id' => $category->id,
+            'total_products' => count($allCategoryProductIds),
+            'filtered_products' => count($filteredProductIds),
+            'sub_category_exists' => $subCategory ? true : false,
+            'attributes_found' => count($attributeIds),
+            'filters_generated' => count($filters),
+            'fallback_used' => empty($attributeIds) && $subCategory ? false : true
+        ]
     ]);
 }
 
