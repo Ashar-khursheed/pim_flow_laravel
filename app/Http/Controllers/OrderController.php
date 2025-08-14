@@ -891,9 +891,63 @@ class OrderController extends Controller
 		}
 
 		$request->validate([
-			'status' => 'required|string|in:Pending,Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Re-Attempt,Returned,Cancelled',
-			'notes' => 'nullable|string'
+			'status' => 'required|string|in:Confirmed,Supplier Delivery,International,Export,On hold,Ready to ship,Pickups,Out for delivery,Delivered,Cancelled',
+			'notes'  => 'nullable|string'
 		]);
+
+		$oldStatus = $order->status;
+		$newStatus = $request->status;
+
+		/* Order Cancellation Validation */
+		if ($newStatus === 'Cancelled' && $oldStatus !== 'Pending') {
+			return response()->json([
+				'success' => false,
+				'message' => "Order can only be cancelled if it is in 'Pending' status."
+			]);
+		}
+
+		/* Other status validation flow */
+		$otherStatus = [
+			'Pending',
+			'Confirmed',
+			['Supplier Delivery', 'International', 'Export', 'On hold'],
+			'Ready to ship',
+			'Pickups',
+			'Out for delivery',
+			'Delivered'
+		];
+
+		$findStatusIndex = function($status) use ($otherStatus) {
+			foreach ($otherStatus as $index => $step) {
+				if (is_array($step) && in_array($status, $step)) {
+					return $index;
+				}
+				if ($step === $status) {
+					return $index;
+				}
+			}
+			return null;
+		};
+
+		$oldStatusIndex = $findStatusIndex($oldStatus);
+		$newStatusIndex = $findStatusIndex($newStatus);
+
+		if ($oldStatusIndex < $newStatusIndex - 1) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot skip directly from '{$oldStatus}' to '{$newStatus}'. Please follow the correct order flow."
+			]);
+		} elseif ($oldStatusIndex == $newStatusIndex) {
+			return response()->json([
+				'success' => false,
+				'message' => "Order is already in '{$oldStatus}' status. Please choose a different status."
+			]);
+		} elseif ($oldStatusIndex > $newStatusIndex) {
+			return response()->json([
+				'success' => false,
+				'message' => "Invalid status update: You cannot move backwards from '{$oldStatus}' to '{$newStatus}'."
+			]);
+		}
 
 		/* Validate shipment and quantity for delivery-related statuses */
 		$deliveryStatuses = ['Pickups', 'Out for delivery', 'Delivered'];
@@ -904,7 +958,7 @@ class OrderController extends Controller
 			if (!$order->shipments()->exists()) {
 				return response()->json([
 					'success' => false,
-					'message' => "Cannot mark order as {$request->status} because no shipments are available."
+					'message' => "Order cannot be marked as '{$newStatus}' because no shipments are available."
 				]);
 			}
 
@@ -920,35 +974,30 @@ class OrderController extends Controller
 			if ($totalShippedQuantity !== $order->total_products) {
 				return response()->json([
 					'success' => false,
-					'message' => "Cannot mark order as {$request->status} because total shipped quantity ({$totalShippedQuantity}) does not match total ordered products ({$order->total_products})."
+					'message' => "Order cannot be marked as '{$newStatus}' because total shipped quantity ({$totalShippedQuantity}) does not match the total ordered products ({$order->total_products})."
 				]);
 			}
 		}
 
-		$oldStatus = $order->status;
-
 		/* Update order and products */
 		$order->update([
-			'status' => $request->status,
+			'status' => $newStatus,
 		]);
 
-		$order->orderProducts()->where('status', '!=', 'Cancelled')->update(['status' => $request->status]);
+		$order->orderProducts()->where('status', '!=', 'Cancelled')->update(['status' => $newStatus]);
 
 		/* Add tracking */
 		OrderTracking::create([
-			'order_id'   => $order->id,
-			'status'     => 'Order status changed to ' . $request->status . ' by backend panel',
-			'description'=> $request->notes ?? "Order status changed from {$oldStatus} to {$request->status}",
-			'created_by' => auth()->id(),
+			'order_id'    => $order->id,
+			'status'      => "Order status changed to {$newStatus} by backend panel",
+			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$newStatus}",
+			'created_by'  => auth()->id(),
 		]);
 
 		if (in_array($request->status, ['Confirmed', 'Out for delivery', 'Delivered', 'Cancelled'])) {
 			$batch = Bus::batch([])->before(function (Batch $batch) {
-
 			})->catch(function (Batch $batch, Throwable $e) {
-
 			})->finally(function (Batch $batch) {
-
 			})->name('Order Mails')->dispatch();
 
 			if ($request->status == 'Confirmed') {
