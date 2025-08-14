@@ -31835,7 +31835,7 @@
                     "UTM Analytics"
                 ],
                 "summary": "Get UTM source and campaign counts",
-                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \n *                  If no dates are provided, returns counts for all available records.",
+                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \r\n *                  If no dates are provided, returns counts for all available records.",
                 "operationId": "096fed29ae98d22859add1856943f772",
                 "parameters": [
                     {
@@ -31915,6 +31915,86 @@
                         "bearerAuth": []
                     }
                 ]
+            }
+        },
+        "/api/analytics/stats": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get analytics statistics",
+                "description": "Returns marketing and sales statistics including sessions, conversions, and sales with optional date filtering.",
+                "operationId": "867ea2cc3695927ea1e5d40a76d3a89d",
+                "parameters": [
+                    {
+                        "name": "filter",
+                        "in": "query",
+                        "description": "Date range filter for statistics",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "lifetime",
+                            "enum": [
+                                "today",
+                                "last_3_days",
+                                "last_7_days",
+                                "last_15_days",
+                                "last_30_days",
+                                "lifetime"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "filter": {
+                                            "type": "string",
+                                            "example": "last_7_days"
+                                        },
+                                        "total_sessions": {
+                                            "type": "integer",
+                                            "example": 520
+                                        },
+                                        "orders_from_utm": {
+                                            "type": "integer",
+                                            "example": 180
+                                        },
+                                        "conversion_rate": {
+                                            "description": "Percentage",
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 34.62
+                                        },
+                                        "avg_order_value": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 82.5
+                                        },
+                                        "total_sales": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 14850.75
+                                        },
+                                        "sales_through_marketing": {
+                                            "type": "number",
+                                            "format": "float",
+                                            "example": 10400.4
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid filter parameter"
+                    }
+                }
             }
         },
         "/api/vendors": {
@@ -34636,6 +34716,10 @@
         {
             "name": "UTM Analytics",
             "description": "UTM Analytics"
+        },
+        {
+            "name": "Analytics",
+            "description": "Analytics"
         },
         {
             "name": "Vendors",

@@ -219,6 +219,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('customer-events', CustomerEventController::class);
 
     Route::get('/utms', [Utmcontroller::class, 'index']);
+	Route::get('/analytics/stats', [Utmcontroller::class, 'stats']);
 
 	Route::get('/abandoned-carts', [AbandonedCartController::class, 'index']);
 	Route::get('/abandoned-carts/{id}', [AbandonedCartController::class, 'show']);
