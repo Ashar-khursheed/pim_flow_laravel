@@ -1528,620 +1528,627 @@ class ProductController extends BaseController
 	// 	]);
 	// }
 	public function update(Request $request, $productId)
-{
-    /* Log the incoming request for debugging */
+	{
+		/* Log the incoming request for debugging */
 
-    $product = Product::find($productId);
+		$product = Product::find($productId);
 
-    if (!$product) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Product does not exist.'
-        ]);
-    }
-
-    $user = auth()->user();
-    $userRole = $user ? $user->getRoleNames()->first() : null;
-
-    // Restriction for approved products
-    if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
-        return response()->json([
-            'success' => false,
-            'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
-        ], 403);
-    }
-
-    // Get the authenticated user and their role
-    $user = auth()->user();
-    $userRole = $user ? $user->getRoleNames()->first() : null;
-    $allowedRoles = [
-        'Super Admin',
-         'Admin',
-        'Graphic Designer Manager'
-    ];  // Define which roles can modify images
-    $canModifyImages = $userRole && in_array($userRole, $allowedRoles);
-
-    $contentAllowedRoles = [
-        'Super Admin',
-        'Admin',
-        'Content Writing Manager',
-        'Content Writer',
-        'Ecommerce Specialist',
-    ];
-    $canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
-
-    /* Handle categories - IMPROVED VERSION */
-    if ($request->has('categories')) {
-
-        $categories = $request->input('categories');
-
-        // Handle cases where categories might be sent as a JSON string
-        if (is_string($categories) && (
-            strpos($categories, '[') === 0 ||
-            strpos($categories, '{') === 0
-        )) {
-            $categories = json_decode($categories, true);
-        }
-        // Handle comma-separated string format
-        else if (is_string($categories) && strpos($categories, ',') !== false) {
-            $categories = array_map('trim', explode(',', $categories));
-        }
-        // Handle single value
-        else if (is_string($categories) && is_numeric($categories)) {
-            $categories = [(int)$categories];
-        }
-
-        // Ensure we have a valid array
-        if (is_array($categories)) {
-            // Convert all values to integers to ensure proper comparison
-            $categories = array_map('intval', array_filter($categories));
-            $product->categories()->sync($categories);
-        } else {
-            return response()->json([
-                'success' => false,
-                'message' => 'Categories must be provided as a valid array of category IDs.'
-            ], 400);
-        }
-    }
-
-    if ($request->product_attributes) {
-        $productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
-
-        if (is_array($productAttributes) && count($productAttributes) > 0) {
-            $productAttributes = array_filter($productAttributes, function ($value) {
-                return !is_null($value) && $value !== '';
-            });
-
-            $existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
-
-            $attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
-
-            if (!empty($attributesToDelete)) {
-                $product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
-            }
-
-            foreach ($productAttributes as $attributeId => $attributeValue) {
-                $existingAttribute = Attribute::find($attributeId);
-                if (!$existingAttribute) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => "Attribute ID: $attributeId does not exist."
-                    ]);
-                }
-
-                $value = null;
-                $measurementUnitID = null;
-
-                if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
-                    $value = $attributeValue['value'] ?? null;
-                    $measurementUnitID = $attributeValue['measurement_id'] ?? null;
-
-                    /* Validation: Either both should be present, or both should be empty (for delete) */
-                    if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
-                        $messages = [];
-
-                        if (empty($value)) {
-                            $messages[] = "Value not defined for attribute: {$existingAttribute->name}";
-                        }
-                        if (empty($measurementUnitID)) {
-                            $messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
-                        }
-
-                        return response()->json([
-                            'success' => false,
-                            'message' => implode(' | ', $messages)
-                        ], 400);
-                    }
-
-                    if (!$value && !$measurementUnitID) {
-                        /* Both missing = delete the existing attribute */
-                        $product->productAttributes()
-                        ->where('attribute_id', $attributeId)
-                        ->delete();
-                    } else {
-                        /* Both exist = update or create attribute */
-                        $product->productAttributes()->updateOrCreate(
-                            ['attribute_id' => $attributeId],
-                            [
-                                'attribute_value' => $value,
-                                'measurement_unit_id' => $measurementUnitID
-                            ]
-                        );
-                    }
-                } else {
-                    $value = $attributeValue;
-
-                    if (empty($value)) {
-                        /* Delete non-measurement attribute if empty */
-                        $product->productAttributes()
-                        ->where('attribute_id', $attributeId)
-                        ->delete();
-                    } else {
-                        /* Update or create normal attribute */
-                        $product->productAttributes()->updateOrCreate(
-                            ['attribute_id' => $attributeId],
-                            [
-                                'attribute_value' => $value,
-                                'measurement_unit_id' => null
-                            ]
-                        );
-                    }
-                }
-
-                if ($existingAttribute->type === 'select') {
-                    if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
-                        $existingAttribute->attributeValues()->create([
-                            'attribute_value' => $value
-                        ]);
-                    }
-                }
-            }
-        }
-    }
-
-    // Handle FAQs with content writer permission check
-    if ($request->has('faqs')) {
-        $faqs = $request->input('faqs', []);
-        $hasNewFaqData = false;
-
-        // Decode if it's a JSON string
-        if (is_string($faqs)) {
-            $decoded = json_decode($faqs, true);
-            if (json_last_error() !== JSON_ERROR_NONE) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid JSON format for faqs.'
-                ], 400);
-            }
-            $faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
-        }
-
-        // Fetch existing FAQs for comparison
-        $existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
-        $processedFaqIds = [];
-
-        // Check if there are actual changes
-        if (is_array($faqs) && !empty($faqs)) {
-            foreach ($faqs as $faqData) {
-                $id = $faqData['id'] ?? null;
-                $question = trim($faqData['question'] ?? '');
-                $answer = trim($faqData['answer'] ?? '');
-
-                // Create or update
-                if ($id && isset($existingFaqs[$id])) {
-                    $existing = $existingFaqs[$id];
-                    if (
-                        $existing->question !== $question ||
-                        $existing->answer !== $answer ||
-                        $existing->category_id != ($faqData['category_id'] ?? null)
-                    ) {
-                        $hasNewFaqData = true;
-                        break;
-                    }
-                } elseif (!empty($question) || !empty($answer)) {
-                    $hasNewFaqData = true;
-                    break;
-                }
-            }
-        }
-
-        // If user is trying to modify and has no permission
-        if ($hasNewFaqData && !$canModifyContent) {
-            return response()->json([
-                'success' => false,
-                'message' => 'You do not have permission to modify product FAQs.'
-            ], 403);
-        }
-
-        // If no real changes or user has permission, continue saving
-        if ($canModifyContent && is_array($faqs)) {
-            foreach ($faqs as $faqData) {
-                if (!empty($faqData['question']) && !empty($faqData['answer'])) {
-                    if (!empty($faqData['id'])) {
-                        $faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
-                        if ($faq) {
-                            $faq->update([
-                                'question' => $faqData['question'],
-                                'answer' => $faqData['answer'],
-                                'category_id' => $faqData['category_id'] ?? null,
-                                'status' => 'published',
-                            ]);
-                            $processedFaqIds[] = $faq->id;
-                        }
-                    } else {
-                        $newFaq = Faq::create([
-                            'product_id' => $product->id,
-                            'question' => $faqData['question'],
-                            'answer' => $faqData['answer'],
-                            'category_id' => $faqData['category_id'] ?? null,
-                            'status' => 'published',
-                        ]);
-                        $processedFaqIds[] = $newFaq->id;
-                    }
-                }
-            }
-
-            // Remove deleted FAQs
-            $existingFaqIds = $existingFaqs->keys()->toArray();
-            $faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
-            if (!empty($faqsToDelete)) {
-                Faq::where('product_id', $product->id)
-                ->whereIn('id', $faqsToDelete)
-                ->delete();
-            }
-        }
-    }
-
-    /* Get all input data except '_method' */
-    $input = $request->except('_method', 'status');
-    /* Remove 'faqs' from the input before validation */
-
-    $fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
-
-    foreach ($fieldsToUnset as $field) {
-        unset($input[$field]);
-    }
-
-    $imagePath = 'production/products';
-    $videoPath = 'production/videos';
-    $documentPath = 'production/documents';
-
-    // Handle images with role-based permission - CORRECTED VERSION
-   if ($request->has('images') && !empty(array_filter($request->images))) {
-    if ($canModifyImages) {
-        $finalImages = [];
-        foreach ($request->images as $key => $image) {
-            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-                $finalImages[] = $image;
-            } elseif ($request->hasFile("images.$key")) {
-                $file = $request->file("images.$key");
-                $path = $file->store($imagePath, 's3');
-                $finalImages[] = Storage::disk('s3')->url($path);
-            }
-        }
-        if (!empty($finalImages)) {
-            $input['images'] = json_encode($finalImages);
-				}
-			} else {
-				unset($input['images']);
-			}
-		} else {
-			unset($input['images']); // preserve existing
+		if (!$product) {
+			return response()->json([
+				'success' => false,
+				'message' => 'Product does not exist.'
+			]);
 		}
 
+		$user = auth()->user();
+		$userRole = $user ? $user->getRoleNames()->first() : null;
 
-    // Handle videos with role-based permission - CORRECTED VERSION  
-    if ($request->has('video_path')) {
-        if ($canModifyImages) {
-            $finalVideos = [];
-            $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-            foreach ($videoPaths as $key => $video) {
-                if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
-                    // It's a URL, keep as is
-                    $finalVideos[] = $video;
-                } elseif ($request->hasFile("video_path.$key")) {
-                    // It's an uploaded file, upload to S3
-                    $file = $request->file("video_path.$key");
-                    $path = $file->store($videoPath, 's3');
-                    $finalVideos[] = Storage::disk('s3')->url($path);
-                }
-                // ignore invalid inputs
-            }
+		// Restriction for approved products
+		if ($product->approved == 1 && !in_array($userRole, ['Super Admin', 'Admin'])) {
+			return response()->json([
+				'success' => false,
+				'message' => 'This product is approved and can only be updated by Super Admin or Admin.'
+			], 403);
+		}
 
-            $input['video_path'] = json_encode($finalVideos);
-        } else {
-            // User tried to modify videos but doesn't have permission - check if they're uploading files
-            $hasNewVideoFiles = false;
-            $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-            foreach ($videoPaths as $key => $video) {
-                if ($request->hasFile("video_path.$key")) {
-                    $hasNewVideoFiles = true;
-                    break;
-                }
-            }
+		// Get the authenticated user and their role
+		$user = auth()->user();
+		$userRole = $user ? $user->getRoleNames()->first() : null;
+		$allowedRoles = [
+			'Super Admin',
+			'Admin',
+			'Graphic Designer Manager'
+		];  // Define which roles can modify images
+		$canModifyImages = $userRole && in_array($userRole, $allowedRoles);
 
-            if ($hasNewVideoFiles) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'You do not have permission to modify product videos.'
-                ], 403);
-            }
+		$contentAllowedRoles = [
+			'Super Admin',
+			'Admin',
+			'Content Writing Manager',
+			'Content Writer',
+			'Ecommerce Specialist',
+		];
+		$canModifyContent = $userRole && in_array($userRole, $contentAllowedRoles);
 
-            // Remove from input to prevent overwriting existing videos
-            unset($input['video_path']);
-        }
-    } else {
-        // ✅ CRITICAL: If videos not in request, preserve existing videos
-        unset($input['video_path']);
-    }
+		/* Handle categories - IMPROVED VERSION */
+		if ($request->has('categories')) {
 
-    // Handle document upload (keeping existing logic)
-    $existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
-    $existingDocs = is_array($existingDocs) ? $existingDocs : [];
+			$categories = $request->input('categories');
 
-    if ($request->hasFile('documents')) {
-        $uploadedDocs = [];
-        foreach ($request->file('documents') as $doc) {
-            $path = $doc->store($documentPath, 's3');
+			// Handle cases where categories might be sent as a JSON string
+			if (is_string($categories) && (
+				strpos($categories, '[') === 0 ||
+				strpos($categories, '{') === 0
+			)) {
+				$categories = json_decode($categories, true);
+			}
+			// Handle comma-separated string format
+			else if (is_string($categories) && strpos($categories, ',') !== false) {
+				$categories = array_map('trim', explode(',', $categories));
+			}
+			// Handle single value
+			else if (is_string($categories) && is_numeric($categories)) {
+				$categories = [(int)$categories];
+			}
 
-            /* Check if the title is provided, if not, use the document's name */
-            $title = $request->input('title', $doc->getClientOriginalName()); /* default to original name if title is empty */
+			// Ensure we have a valid array
+			if (is_array($categories)) {
+				// Convert all values to integers to ensure proper comparison
+				$categories = array_map('intval', array_filter($categories));
+				$product->categories()->sync($categories);
+			} else {
+				return response()->json([
+					'success' => false,
+					'message' => 'Categories must be provided as a valid array of category IDs.'
+				], 400);
+			}
+		}
 
-            /* If title is still empty, use the document name as title */
-            if (empty($title)) {
-                $title = basename($doc->getClientOriginalName());  /* Use document name if title is empty */
-            }
+		if ($request->product_attributes) {
+			$productAttributes = is_array($request->product_attributes) ? $request->product_attributes : json_decode($request->product_attributes, true);
 
-            /* Create an array with title and path for each uploaded document */
-            $uploadedDocs[] = [
-                'title' => $title,
-                'path' => Storage::disk('s3')->url($path)
-            ];
-        }
+			if (is_array($productAttributes) && count($productAttributes) > 0) {
+				$productAttributes = array_filter($productAttributes, function ($value) {
+					return !is_null($value) && $value !== '';
+				});
 
-        /* Merge with existing documents */
-        $input['documents'] = array_merge($existingDocs, $uploadedDocs);
-    } else {
-        /* Retain existing documents if no new files are uploaded */
-        $input['documents'] = $existingDocs;
-    }
+				$existingProductAttributes = $product->productAttributes->pluck('attribute_value', 'attribute_id')->toArray();
 
-    /* Convert to JSON with unescaped slashes */
-    $input['documents'] = json_encode($input['documents']);
+				$attributesToDelete = array_diff(array_keys($existingProductAttributes), array_keys($productAttributes));
 
-    $input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
-    $input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+				if (!empty($attributesToDelete)) {
+					$product->productAttributes()->whereIn('attribute_id', $attributesToDelete)->delete();
+				}
 
-    /* List of valid fields allowed for updating */
-    $validArray = [ "sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features" , "gen_type" , "approved"];
+				foreach ($productAttributes as $attributeId => $attributeValue) {
+					$existingAttribute = Attribute::find($attributeId);
+					if (!$existingAttribute) {
+						return response()->json([
+							'success' => false,
+							'message' => "Attribute ID: $attributeId does not exist."
+						]);
+					}
 
-    unset($input['product_attributes']);
-    unset($input['vendor_id']);
+					$value = null;
+					$measurementUnitID = null;
 
-    $input = array_intersect_key($input, array_flip($validArray));
+					if ($existingAttribute->type == 'measurement' && is_array($attributeValue)) {
+						$value = $attributeValue['value'] ?? null;
+						$measurementUnitID = $attributeValue['measurement_id'] ?? null;
 
-    /* Initialize an error array to store validation errors */
-    $rowError = [];
+						/* Validation: Either both should be present, or both should be empty (for delete) */
+						if (($value && !$measurementUnitID) || (!$value && $measurementUnitID)) {
+							$messages = [];
 
-    if ($request->has('benefits_features')) {
-        $benefitsInput = $request->input('benefits_features');
+							if (empty($value)) {
+								$messages[] = "Value not defined for attribute: {$existingAttribute->name}";
+							}
+							if (empty($measurementUnitID)) {
+								$messages[] = "Measurement Unit not defined or invalid for attribute: {$existingAttribute->name}";
+							}
 
-        if ($canModifyContent) {
-                // Decode and validate input
-            if (is_string($benefitsInput)) {
-                $decoded = json_decode($benefitsInput, true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $newBenefits = $decoded;
-                } else {
+							return response()->json([
+								'success' => false,
+								'message' => implode(' | ', $messages)
+							], 400);
+						}
+
+						if (!$value && !$measurementUnitID) {
+							/* Both missing = delete the existing attribute */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Both exist = update or create attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => $measurementUnitID
+								]
+							);
+						}
+					} else {
+						$value = $attributeValue;
+
+						if (empty($value)) {
+							/* Delete non-measurement attribute if empty */
+							$product->productAttributes()
+							->where('attribute_id', $attributeId)
+							->delete();
+						} else {
+							/* Update or create normal attribute */
+							$product->productAttributes()->updateOrCreate(
+								['attribute_id' => $attributeId],
+								[
+									'attribute_value' => $value,
+									'measurement_unit_id' => null
+								]
+							);
+						}
+					}
+
+					if ($existingAttribute->type === 'select') {
+						if ($existingAttribute->attributeValues()->where('attribute_value', $value)->doesntExist()) {
+							$existingAttribute->attributeValues()->create([
+								'attribute_value' => $value
+							]);
+						}
+					}
+				}
+			}
+		}
+
+		// Handle FAQs with content writer permission check
+		if ($request->has('faqs')) {
+			$faqs = $request->input('faqs', []);
+			$hasNewFaqData = false;
+
+			// Decode if it's a JSON string
+			if (is_string($faqs)) {
+				$decoded = json_decode($faqs, true);
+				if (json_last_error() !== JSON_ERROR_NONE) {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid JSON format for faqs.'
+					], 400);
+				}
+				$faqs = is_array($decoded) && isset($decoded[0]) ? $decoded : ($decoded['faqs'] ?? []);
+			}
+
+			// Fetch existing FAQs for comparison
+			$existingFaqs = Faq::where('product_id', $product->id)->get()->keyBy('id');
+			$processedFaqIds = [];
+
+			// Check if there are actual changes
+			if (is_array($faqs) && !empty($faqs)) {
+				foreach ($faqs as $faqData) {
+					$id = $faqData['id'] ?? null;
+					$question = trim($faqData['question'] ?? '');
+					$answer = trim($faqData['answer'] ?? '');
+
+					// Create or update
+					if ($id && isset($existingFaqs[$id])) {
+						$existing = $existingFaqs[$id];
+						if (
+							$existing->question !== $question ||
+							$existing->answer !== $answer ||
+							$existing->category_id != ($faqData['category_id'] ?? null)
+						) {
+							$hasNewFaqData = true;
+							break;
+						}
+					} elseif (!empty($question) || !empty($answer)) {
+						$hasNewFaqData = true;
+						break;
+					}
+				}
+			}
+
+			// If user is trying to modify and has no permission
+			if ($hasNewFaqData && !$canModifyContent) {
+				return response()->json([
+					'success' => false,
+					'message' => 'You do not have permission to modify product FAQs.'
+				], 403);
+			}
+
+			// If no real changes or user has permission, continue saving
+			if ($canModifyContent && is_array($faqs)) {
+				foreach ($faqs as $faqData) {
+					if (!empty($faqData['question']) && !empty($faqData['answer'])) {
+						if (!empty($faqData['id'])) {
+							$faq = Faq::where('id', $faqData['id'])->where('product_id', $product->id)->first();
+							if ($faq) {
+								$faq->update([
+									'question' => $faqData['question'],
+									'answer' => $faqData['answer'],
+									'category_id' => $faqData['category_id'] ?? null,
+									'status' => 'published',
+								]);
+								$processedFaqIds[] = $faq->id;
+							}
+						} else {
+							$newFaq = Faq::create([
+								'product_id' => $product->id,
+								'question' => $faqData['question'],
+								'answer' => $faqData['answer'],
+								'category_id' => $faqData['category_id'] ?? null,
+								'status' => 'published',
+							]);
+							$processedFaqIds[] = $newFaq->id;
+						}
+					}
+				}
+
+				// Remove deleted FAQs
+				$existingFaqIds = $existingFaqs->keys()->toArray();
+				$faqsToDelete = array_diff($existingFaqIds, $processedFaqIds);
+				if (!empty($faqsToDelete)) {
+					Faq::where('product_id', $product->id)
+					->whereIn('id', $faqsToDelete)
+					->delete();
+				}
+			}
+		}
+
+		/* Get all input data except '_method' */
+		$input = $request->except('_method', 'status');
+		/* Remove 'faqs' from the input before validation */
+
+		$fieldsToUnset = ['faqs', 'categories']; /* Added categories to fields to unset */
+
+		foreach ($fieldsToUnset as $field) {
+			unset($input[$field]);
+		}
+
+		$imagePath = 'production/products';
+		$videoPath = 'production/videos';
+		$documentPath = 'production/documents';
+
+		// Handle images with role-based permission - CORRECTED VERSION
+		if ($request->has('images') && !empty(array_filter($request->images))) {
+		if ($canModifyImages) {
+			$finalImages = [];
+			foreach ($request->images as $key => $image) {
+				if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+					$finalImages[] = $image;
+				} elseif ($request->hasFile("images.$key")) {
+					$file = $request->file("images.$key");
+					 // ✅ Check file size (max 100 KB)
+                if ($file->getSize() > 102400) {
                     return response()->json([
                         'success' => false,
-                        'message' => 'Invalid JSON format for benefits_features.'
+                        'message' => 'Image size must not exceed 100 KB.'
                     ], 400);
                 }
-            } elseif (is_array($benefitsInput)) {
-                $newBenefits = $benefitsInput;
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid benefits_features format. Must be JSON string or array.'
-                ], 400);
-            }
+					$path = $file->store($imagePath, 's3');
+					$finalImages[] = Storage::disk('s3')->url($path);
+				}
+			}
+			if (!empty($finalImages)) {
+				$input['images'] = json_encode($finalImages);
+					}
+				} else {
+					unset($input['images']);
+				}
+			} else {
+				unset($input['images']); // preserve existing
+			}
 
-                // Ensure it's an array
-            if (!is_array($newBenefits)) {
-                $newBenefits = [];
-            }
 
-                // Get existing saved benefits
-            $existingBenefits = json_decode($product->benefits_features, true);
-            if (!is_array($existingBenefits)) {
-                $existingBenefits = [];
-            }
+		// Handle videos with role-based permission - CORRECTED VERSION  
+		if ($request->has('video_path')) {
+			if ($canModifyImages) {
+				$finalVideos = [];
+				$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+				foreach ($videoPaths as $key => $video) {
+					if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+						// It's a URL, keep as is
+						$finalVideos[] = $video;
+					} elseif ($request->hasFile("video_path.$key")) {
+						// It's an uploaded file, upload to S3
+						$file = $request->file("video_path.$key");
+						$path = $file->store($videoPath, 's3');
+						$finalVideos[] = Storage::disk('s3')->url($path);
+					}
+					// ignore invalid inputs
+				}
 
-                // Only save if changed
-            if ($newBenefits !== $existingBenefits) {
-                $input['benefits_features'] = json_encode($newBenefits);
-            } else {
-                    // No change, so ignore it
-                unset($input['benefits_features']);
-            }
-        } else {
-                // User tried to modify benefits but doesn't have permission
-            unset($input['benefits_features']);
-        }
-    }
+				$input['video_path'] = json_encode($finalVideos);
+			} else {
+				// User tried to modify videos but doesn't have permission - check if they're uploading files
+				$hasNewVideoFiles = false;
+				$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+				foreach ($videoPaths as $key => $video) {
+					if ($request->hasFile("video_path.$key")) {
+						$hasNewVideoFiles = true;
+						break;
+					}
+				}
 
-    if ($request->has('description')) {
-        if ($canModifyContent) {
-            $descriptionInput = $request->input('description');
+				if ($hasNewVideoFiles) {
+					return response()->json([
+						'success' => false,
+						'message' => 'You do not have permission to modify product videos.'
+					], 403);
+				}
 
-                // Decode and validate input
-            if (is_string($descriptionInput)) {
-                $decoded = json_decode($descriptionInput, true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $newDescription = $decoded;
-                } else {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'Invalid JSON format for description.'
-                    ], 400);
-                }
-            } elseif (is_array($descriptionInput)) {
-                $newDescription = $descriptionInput;
-            } else {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid description format. Must be JSON string or array.'
-                ], 400);
-            }
+				// Remove from input to prevent overwriting existing videos
+				unset($input['video_path']);
+			}
+		} else {
+			// ✅ CRITICAL: If videos not in request, preserve existing videos
+			unset($input['video_path']);
+		}
 
-                // Ensure it's an array
-            if (!is_array($newDescription)) {
-                $newDescription = [];
-            }
+		// Handle document upload (keeping existing logic)
+		$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
+		$existingDocs = is_array($existingDocs) ? $existingDocs : [];
 
-                // Save the description
-            $input['description'] = json_encode($newDescription);
-        } else {
-                // User tried to modify description but doesn't have permission
-                // For now, let's just remove it from input to prevent overwriting
-                // This matches the behavior when no actual change is detected
-            unset($input['description']);
-        }
-    }
+		if ($request->hasFile('documents')) {
+			$uploadedDocs = [];
+			foreach ($request->file('documents') as $doc) {
+				$path = $doc->store($documentPath, 's3');
 
-    /* Tax ID validation */
-    if (isset($input['tax_id'])) {
-        $taxArray = Tax::pluck("id")->toArray();
-        if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
-            $rowError[] = "Invalid tax value. Please select a valid tax ID.";
-        } else {
-            $product->tax_id = (int) $input['tax_id'];
-            unset($input['tax_id']); /* Remove processed field */
-        }
-    }
+				/* Check if the title is provided, if not, use the document's name */
+				$title = $request->input('title', $doc->getClientOriginalName()); /* default to original name if title is empty */
 
-    /* Currency ID validation */
-    if (isset($input['currency_id'])) {
-        $currencyArray = Currency::pluck("id")->toArray();
-        if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
-            $rowError[] = "Invalid currency value. Please select a valid currency ID.";
-        } else {
-            $product->currency_id = (int) $input['currency_id'];
-            unset($input['currency_id']); /* Remove processed field */
-        }
-    }
+				/* If title is still empty, use the document name as title */
+				if (empty($title)) {
+					$title = basename($doc->getClientOriginalName());  /* Use document name if title is empty */
+				}
 
-    /* Unit ID validation for length, weight, and shipping */
+				/* Create an array with title and path for each uploaded document */
+				$uploadedDocs[] = [
+					'title' => $title,
+					'path' => Storage::disk('s3')->url($path)
+				];
+			}
 
-    if (isset($input['google_shopping_category'])) {
-        $product->google_shopping_category = $input['google_shopping_category'];
-        unset($input['google_shopping_category']);
-    }
+			/* Merge with existing documents */
+			$input['documents'] = array_merge($existingDocs, $uploadedDocs);
+		} else {
+			/* Retain existing documents if no new files are uploaded */
+			$input['documents'] = $existingDocs;
+		}
 
-    if (isset($input['google_shopping_mpn'])) {
-        $product->google_shopping_mpn = $input['google_shopping_mpn'];
-        unset($input['google_shopping_mpn']);
-    }
+		/* Convert to JSON with unescaped slashes */
+		$input['documents'] = json_encode($input['documents']);
 
-    /* Brand ID validation */
-    if (isset($input['brand_id'])) {
-        $brandArray = Brand::pluck("id")->toArray();
-        if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
-            $brandList = implode(', ', $brandArray);
-            $rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
-        } else {
-            $product->brand_id = (int) $input['brand_id'];
-            unset($input['brand_id']); /* Remove processed field */
-        }
-    }
+		$input['is_variation'] = filter_var($request->input('is_variation'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+		$input['variant_requires_shipping'] = filter_var($request->input('variant_requires_shipping'), FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
 
-    /* If any validation errors exist, return them */
-    if (!empty($rowError)) {
-        return response()->json([
-            'success' => false,
-            'message' => $rowError
-        ]);
-    }
+		/* List of valid fields allowed for updating */
+		$validArray = [ "sku", "status", "barcode", "tax_id", "currency_id", "name", "description", "images", "video_path", "documents", "brand_id", "views", "units_sold", "google_shopping_category", "google_shopping_mpn", "order", "benefits_features" , "gen_type" , "approved"];
 
-    /* Assign remaining valid fields to the product */
-    foreach ($input as $key => $value) {
-        $product->$key = $value;
-    }
+		unset($input['product_attributes']);
+		unset($input['vendor_id']);
 
-    /* Save the product */
-    $product->save();
+		$input = array_intersect_key($input, array_flip($validArray));
 
-    if (isset($request->status)) {
-        $validStatuses = ['draft', 'published', 'pending'];
+		/* Initialize an error array to store validation errors */
+		$rowError = [];
 
-        if (!in_array($request->status, $validStatuses)) {
-            return response()->json([
-                'success' => false,
-                'message' => "Invalid status value. Allowed values: draft, published, pending."
-            ]);
-        }
+		if ($request->has('benefits_features')) {
+			$benefitsInput = $request->input('benefits_features');
 
-        if ($request->status === 'published') {
+			if ($canModifyContent) {
+					// Decode and validate input
+				if (is_string($benefitsInput)) {
+					$decoded = json_decode($benefitsInput, true);
+					if (json_last_error() === JSON_ERROR_NONE) {
+						$newBenefits = $decoded;
+					} else {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for benefits_features.'
+						], 400);
+					}
+				} elseif (is_array($benefitsInput)) {
+					$newBenefits = $benefitsInput;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid benefits_features format. Must be JSON string or array.'
+					], 400);
+				}
 
-            // Reload full product with required relationships
-            $product = Product::with(['productAttributes', 'sellingUnitAttribute', 'productSuppliers'])->find($product->id);
-            $rowError = [];
+					// Ensure it's an array
+				if (!is_array($newBenefits)) {
+					$newBenefits = [];
+				}
 
-            /* Validate images */
-            $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
-            if (empty($images) || count($images) === 0) {
-                $rowError[] = "At least one product image is required to publish.";
-            }
+					// Get existing saved benefits
+				$existingBenefits = json_decode($product->benefits_features, true);
+				if (!is_array($existingBenefits)) {
+					$existingBenefits = [];
+				}
 
-            /* Validate benefits */
-            $benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
-            if (empty($benefits) || count($benefits) < 5) {
-                $rowError[] = "At least 5 benefits & features are required to publish.";
-            }
+					// Only save if changed
+				if ($newBenefits !== $existingBenefits) {
+					$input['benefits_features'] = json_encode($newBenefits);
+				} else {
+						// No change, so ignore it
+					unset($input['benefits_features']);
+				}
+			} else {
+					// User tried to modify benefits but doesn't have permission
+				unset($input['benefits_features']);
+			}
+		}
 
-            /* Validate attributes */
-            if ($product->productAttributes->count() < 5) {
-                $rowError[] = "At least 5 product attributes are required to publish.";
-            }
+		if ($request->has('description')) {
+			if ($canModifyContent) {
+				$descriptionInput = $request->input('description');
 
-            /* Validate selling unit */
-            if (!$product->sellingUnitAttribute) {
-                $rowError[] = "The 'Selling Unit' attribute is required to publish.";
-            }
+					// Decode and validate input
+				if (is_string($descriptionInput)) {
+					$decoded = json_decode($descriptionInput, true);
+					if (json_last_error() === JSON_ERROR_NONE) {
+						$newDescription = $decoded;
+					} else {
+						return response()->json([
+							'success' => false,
+							'message' => 'Invalid JSON format for description.'
+						], 400);
+					}
+				} elseif (is_array($descriptionInput)) {
+					$newDescription = $descriptionInput;
+				} else {
+					return response()->json([
+						'success' => false,
+						'message' => 'Invalid description format. Must be JSON string or array.'
+					], 400);
+				}
 
-            /* Validate product suppliers */
-            if ($product->productSuppliers->isEmpty()) {
-                $rowError[] = "At least one vendor price detail is required to publish.";
-            }
+					// Ensure it's an array
+				if (!is_array($newDescription)) {
+					$newDescription = [];
+				}
 
-            if ($product->productSuppliers->contains(fn ($supplier) => $supplier->in_stock !== 1)) {
-                $rowError[] = "All vendor price entries must have 'in_stock' set to Yes.";
-            }
+					// Save the description
+				$input['description'] = json_encode($newDescription);
+			} else {
+					// User tried to modify description but doesn't have permission
+					// For now, let's just remove it from input to prevent overwriting
+					// This matches the behavior when no actual change is detected
+				unset($input['description']);
+			}
+		}
 
-            if (!empty($rowError)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => implode(', ', $rowError)
-                ]);
-            }
-        }
+		/* Tax ID validation */
+		if (isset($input['tax_id'])) {
+			$taxArray = Tax::pluck("id")->toArray();
+			if (!is_numeric($input['tax_id']) || !in_array((int) $input['tax_id'], $taxArray)) {
+				$rowError[] = "Invalid tax value. Please select a valid tax ID.";
+			} else {
+				$product->tax_id = (int) $input['tax_id'];
+				unset($input['tax_id']); /* Remove processed field */
+			}
+		}
 
-        /* Passed all validations, now update the status */
-        $product->status = $request->status;
-        $product->save();
-    }
+		/* Currency ID validation */
+		if (isset($input['currency_id'])) {
+			$currencyArray = Currency::pluck("id")->toArray();
+			if (!is_numeric($input['currency_id']) || !in_array((int) $input['currency_id'], $currencyArray)) {
+				$rowError[] = "Invalid currency value. Please select a valid currency ID.";
+			} else {
+				$product->currency_id = (int) $input['currency_id'];
+				unset($input['currency_id']); /* Remove processed field */
+			}
+		}
 
-    $product = Product::find($product->id);
+		/* Unit ID validation for length, weight, and shipping */
 
-    /* Return success response */
-    return response()->json([
-        'success' => true,
-        'message' => 'Product updated successfully.',
-        'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
-        'faq' => $faqs ?? null,
-    ]);
-}
+		if (isset($input['google_shopping_category'])) {
+			$product->google_shopping_category = $input['google_shopping_category'];
+			unset($input['google_shopping_category']);
+		}
+
+		if (isset($input['google_shopping_mpn'])) {
+			$product->google_shopping_mpn = $input['google_shopping_mpn'];
+			unset($input['google_shopping_mpn']);
+		}
+
+		/* Brand ID validation */
+		if (isset($input['brand_id'])) {
+			$brandArray = Brand::pluck("id")->toArray();
+			if (!is_numeric($input['brand_id']) || !in_array((int) $input['brand_id'], $brandArray)) {
+				$brandList = implode(', ', $brandArray);
+				$rowError[] = "Invalid brand value. Valid brand IDs are: " . $brandList;
+			} else {
+				$product->brand_id = (int) $input['brand_id'];
+				unset($input['brand_id']); /* Remove processed field */
+			}
+		}
+
+		/* If any validation errors exist, return them */
+		if (!empty($rowError)) {
+			return response()->json([
+				'success' => false,
+				'message' => $rowError
+			]);
+		}
+
+		/* Assign remaining valid fields to the product */
+		foreach ($input as $key => $value) {
+			$product->$key = $value;
+		}
+
+		/* Save the product */
+		$product->save();
+
+		if (isset($request->status)) {
+			$validStatuses = ['draft', 'published', 'pending'];
+
+			if (!in_array($request->status, $validStatuses)) {
+				return response()->json([
+					'success' => false,
+					'message' => "Invalid status value. Allowed values: draft, published, pending."
+				]);
+			}
+
+			if ($request->status === 'published') {
+
+				// Reload full product with required relationships
+				$product = Product::with(['productAttributes', 'sellingUnitAttribute', 'productSuppliers'])->find($product->id);
+				$rowError = [];
+
+				/* Validate images */
+				$images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+				if (empty($images) || count($images) === 0) {
+					$rowError[] = "At least one product image is required to publish.";
+				}
+
+				/* Validate benefits */
+				$benefits = is_array($product->benefits_features) ? $product->benefits_features : json_decode($product->benefits_features, true);
+				if (empty($benefits) || count($benefits) < 5) {
+					$rowError[] = "At least 5 benefits & features are required to publish.";
+				}
+
+				/* Validate attributes */
+				if ($product->productAttributes->count() < 5) {
+					$rowError[] = "At least 5 product attributes are required to publish.";
+				}
+
+				/* Validate selling unit */
+				if (!$product->sellingUnitAttribute) {
+					$rowError[] = "The 'Selling Unit' attribute is required to publish.";
+				}
+
+				/* Validate product suppliers */
+				if ($product->productSuppliers->isEmpty()) {
+					$rowError[] = "At least one vendor price detail is required to publish.";
+				}
+
+				if ($product->productSuppliers->contains(fn ($supplier) => $supplier->in_stock !== 1)) {
+					$rowError[] = "All vendor price entries must have 'in_stock' set to Yes.";
+				}
+
+				if (!empty($rowError)) {
+					return response()->json([
+						'success' => false,
+						'message' => implode(', ', $rowError)
+					]);
+				}
+			}
+
+			/* Passed all validations, now update the status */
+			$product->status = $request->status;
+			$product->save();
+		}
+
+		$product = Product::find($product->id);
+
+		/* Return success response */
+		return response()->json([
+			'success' => true,
+			'message' => 'Product updated successfully.',
+			'product' => $product->load('productAttributes:id,product_id,attribute_id,attribute_value'),
+			'faq' => $faqs ?? null,
+		]);
+	}
 
 	/**
 	 * @OA\Delete(
