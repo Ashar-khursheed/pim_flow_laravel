@@ -759,7 +759,7 @@ class OrderController extends Controller
 			OrderTracking::create([
 				'order_id'    => $order->id,
 				'status'      => "Order status changed to {$newStatus} by backend panel",
-				'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$newStatus}",
+				'description' => "Order status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
 				'created_by'  => auth()->id(),
 			]);
 
@@ -866,7 +866,7 @@ class OrderController extends Controller
 		OrderTracking::create([
 			'order_id'    => $order->id,
 			'status'      => "Order status changed to {$newStatus} by backend panel",
-			'description' => $request->notes ?? "Order status changed from {$oldStatus} to {$newStatus}",
+			'description' => "Order status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
 			'created_by'  => auth()->id(),
 		]);
 
@@ -975,7 +975,7 @@ class OrderController extends Controller
 			OrderTracking::create([
 				'order_id'   => $order->id,
 				'status'     => "Order status changed to {$newStatus} by backend panel",
-				'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$newStatus}",
+				'description' => "Order product status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
 				'metadata'   => json_encode([
 					'order_product_id' => $orderProduct->id,
 					'product_name'     => $orderProduct->product->name ?? '',
@@ -1110,7 +1110,7 @@ class OrderController extends Controller
 		OrderTracking::create([
 			'order_id'   => $order->id,
 			'status'     => 'Order product status changed to ' . $newStatus . ' by backend panel',
-			'description'=> $request->notes ?? "Order product status changed from {$oldStatus} to {$newStatus}",
+			'description' => "Order product status changed from {$oldStatus} to {$newStatus}." . ($request->notes ? " {$request->notes}" : ''),
 			'metadata'   => json_encode([
 				'order_product_id' => $orderProduct->id,
 				'product_name'     => $orderProduct->product->name ?? '',
