@@ -197,11 +197,15 @@ public function index(Request $request)
 //         ]);
 //     }
 
+private function roundOneDecimal($value)
+{
+    return ceil($value * 10) / 10;
+}
+
 public function stats(Request $request)
 {
-    $filter = $request->query('filter', 'lifetime'); // default: lifetime
+    $filter = $request->query('filter', 'lifetime');
 
-    // Date range based on filter
     $dateRanges = [
         'today' => [Carbon::today(), Carbon::now()],
         'last_3_days' => [Carbon::now()->subDays(2)->startOfDay(), Carbon::now()],
@@ -213,7 +217,6 @@ public function stats(Request $request)
 
     [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
 
-    // Base queries
     $utmsQuery = DB::table('utms');
     $ordersQuery = DB::table('orders');
 
@@ -222,34 +225,24 @@ public function stats(Request $request)
         $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
     }
 
-    // Total sessions
     $totalSessions = $utmsQuery->count();
 
-    // Orders from UTM
     $ordersFromUtm = (clone $ordersQuery)
         ->whereNotNull('utm_id')
         ->count();
 
-    // Conversion %
     $conversionRate = $totalSessions > 0
-        ? round(($ordersFromUtm / $totalSessions) * 100, 2)
+        ? $this->roundOneDecimal(($ordersFromUtm / $totalSessions) * 100)
         : 0;
 
-    // Avg order value
-    $avgOrderValue = round((clone $ordersQuery)->avg('total_amount'), 2);
-
-    // Total sales
-    $totalSales = round((clone $ordersQuery)->sum('total_amount'), 2);
-
-    // Sales through marketing
-    $salesThroughMarketing = round((clone $ordersQuery)
+    $avgOrderValue = $this->roundOneDecimal((clone $ordersQuery)->avg('total_amount'));
+    $totalSales = $this->roundOneDecimal((clone $ordersQuery)->sum('total_amount'));
+    $salesThroughMarketing = $this->roundOneDecimal((clone $ordersQuery)
         ->whereNotNull('utm_id')
-        ->sum('total_amount'), 2);
-
-    // Net sales (exclude cancelled orders)
-    $netSales = round((clone $ordersQuery)
+        ->sum('total_amount'));
+    $netSales = $this->roundOneDecimal((clone $ordersQuery)
         ->whereNotIn('status', ['Cancelled', 'Cancelled by Customer'])
-        ->sum('total_amount'), 2);
+        ->sum('total_amount'));
 
     return response()->json([
         'filter' => $filter,
@@ -262,6 +255,7 @@ public function stats(Request $request)
         'net_sales' => $netSales,
     ]);
 }
+
 
 
     /**
