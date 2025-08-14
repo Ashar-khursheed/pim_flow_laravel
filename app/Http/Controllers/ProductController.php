@@ -1087,89 +1087,178 @@ class ProductController extends BaseController
 
 		// Handle images with role-based permission
 		// Handle images with role-based permission - FIXED VERSION
-		if ($request->has('images')) {
-			if ($canModifyImages) {
-				$finalImages = [];
-				foreach ($request->images as $key => $image) {
-					if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
-					// It's a URL, keep it as is
-						$finalImages[] = $image;
-					} elseif ($request->hasFile("images.$key")) {
-					// It's an uploaded file, store it to S3
-						$file = $request->file("images.$key");
-						$path = $file->store($imagePath, 's3');
-						$finalImages[] = Storage::disk('s3')->url($path);
-					}
-				// else ignore invalid inputs
-				}
+		// if ($request->has('images')) {
+		// 	if ($canModifyImages) {
+		// 		$finalImages = [];
+		// 		foreach ($request->images as $key => $image) {
+		// 			if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+		// 			// It's a URL, keep it as is
+		// 				$finalImages[] = $image;
+		// 			} elseif ($request->hasFile("images.$key")) {
+		// 			// It's an uploaded file, store it to S3
+		// 				$file = $request->file("images.$key");
+		// 				$path = $file->store($imagePath, 's3');
+		// 				$finalImages[] = Storage::disk('s3')->url($path);
+		// 			}
+		// 		// else ignore invalid inputs
+		// 		}
 
-			// Save as JSON with unescaped slashes
-				$input['images'] = json_encode($finalImages);
-			} else {
-			// User tried to modify images but doesn't have permission - check if they're uploading files
-				$hasNewImageFiles = false;
-				foreach ($request->images as $key => $image) {
-					if ($request->hasFile("images.$key")) {
-						$hasNewImageFiles = true;
-						break;
-					}
-				}
+		// 	// Save as JSON with unescaped slashes
+		// 		$input['images'] = json_encode($finalImages);
+		// 	} else {
+		// 	// User tried to modify images but doesn't have permission - check if they're uploading files
+		// 		$hasNewImageFiles = false;
+		// 		foreach ($request->images as $key => $image) {
+		// 			if ($request->hasFile("images.$key")) {
+		// 				$hasNewImageFiles = true;
+		// 				break;
+		// 			}
+		// 		}
 
-				if ($hasNewImageFiles) {
-					return response()->json([
-						'success' => false,
-						'message' => 'You do not have permission to modify product images.'
-					], 403);
-				}
+		// 		if ($hasNewImageFiles) {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'You do not have permission to modify product images.'
+		// 			], 403);
+		// 		}
 
-			// Remove from input to prevent overwriting existing images
-				unset($input['images']);
-			}
-		}
+		// 	// Remove from input to prevent overwriting existing images
+		// 		unset($input['images']);
+		// 	}
+		// }
 		// If images not in request at all, existing images are preserved automatically
 
 		// Handle videos with role-based permission - FIXED VERSION
-		if ($request->has('video_path')) {
-			if ($canModifyImages) {
-				$finalVideos = [];
-				$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-				foreach ($videoPaths as $key => $video) {
-					if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
-					// It's a URL, keep as is
-						$finalVideos[] = $video;
-					} elseif ($request->hasFile("video_path.$key")) {
-					// It's an uploaded file, upload to S3
-						$file = $request->file("video_path.$key");
-						$path = $file->store($videoPath, 's3');
-						$finalVideos[] = Storage::disk('s3')->url($path);
-					}
-				// ignore invalid inputs
-				}
+		// if ($request->has('video_path')) {
+		// 	if ($canModifyImages) {
+		// 		$finalVideos = [];
+		// 		$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+		// 		foreach ($videoPaths as $key => $video) {
+		// 			if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+		// 			// It's a URL, keep as is
+		// 				$finalVideos[] = $video;
+		// 			} elseif ($request->hasFile("video_path.$key")) {
+		// 			// It's an uploaded file, upload to S3
+		// 				$file = $request->file("video_path.$key");
+		// 				$path = $file->store($videoPath, 's3');
+		// 				$finalVideos[] = Storage::disk('s3')->url($path);
+		// 			}
+		// 		// ignore invalid inputs
+		// 		}
 
-				$input['video_path'] = json_encode($finalVideos);
-			} else {
-			// User tried to modify videos but doesn't have permission - check if they're uploading files
-				$hasNewVideoFiles = false;
-				$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
-				foreach ($videoPaths as $key => $video) {
-					if ($request->hasFile("video_path.$key")) {
-						$hasNewVideoFiles = true;
-						break;
-					}
-				}
+		// 		$input['video_path'] = json_encode($finalVideos);
+		// 	} else {
+		// 	// User tried to modify videos but doesn't have permission - check if they're uploading files
+		// 		$hasNewVideoFiles = false;
+		// 		$videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+		// 		foreach ($videoPaths as $key => $video) {
+		// 			if ($request->hasFile("video_path.$key")) {
+		// 				$hasNewVideoFiles = true;
+		// 				break;
+		// 			}
+		// 		}
 
-				if ($hasNewVideoFiles) {
-					return response()->json([
-						'success' => false,
-						'message' => 'You do not have permission to modify product videos.'
-					], 403);
-				}
+		// 		if ($hasNewVideoFiles) {
+		// 			return response()->json([
+		// 				'success' => false,
+		// 				'message' => 'You do not have permission to modify product videos.'
+		// 			], 403);
+		// 		}
 
-			// Remove from input to prevent overwriting existing videos
-				unset($input['video_path']);
-			}
+		// 	// Remove from input to prevent overwriting existing videos
+		// 		unset($input['video_path']);
+		// 	}
 
-		}
+		// }
+		// Handle images with role-based permission - FIXED VERSION
+	// Handle images with role-based permission - CORRECTED VERSION
+if ($request->has('images')) {
+    if ($canModifyImages) {
+        $finalImages = [];
+        foreach ($request->images as $key => $image) {
+            if (is_string($image) && filter_var($image, FILTER_VALIDATE_URL)) {
+                // It's a URL, keep it as is
+                $finalImages[] = $image;
+            } elseif ($request->hasFile("images.$key")) {
+                // It's an uploaded file, store it to S3
+                $file = $request->file("images.$key");
+                $path = $file->store($imagePath, 's3');
+                $finalImages[] = Storage::disk('s3')->url($path);
+            }
+            // else ignore invalid inputs
+        }
+
+        // Save as JSON with unescaped slashes
+        $input['images'] = json_encode($finalImages);
+    } else {
+        // User tried to modify images but doesn't have permission - check if they're uploading files
+        $hasNewImageFiles = false;
+        foreach ($request->images as $key => $image) {
+            if ($request->hasFile("images.$key")) {
+                $hasNewImageFiles = true;
+                break;
+            }
+        }
+
+        if ($hasNewImageFiles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product images.'
+            ], 403);
+        }
+
+        // Remove from input to prevent overwriting existing images
+        unset($input['images']);
+    }
+} else {
+    // If images not in request, preserve existing images
+    unset($input['images']);
+}
+
+// Handle videos with role-based permission - CORRECTED VERSION  
+if ($request->has('video_path')) {
+    if ($canModifyImages) {
+        $finalVideos = [];
+        $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+        foreach ($videoPaths as $key => $video) {
+            if (is_string($video) && filter_var($video, FILTER_VALIDATE_URL)) {
+                // It's a URL, keep as is
+                $finalVideos[] = $video;
+            } elseif ($request->hasFile("video_path.$key")) {
+                // It's an uploaded file, upload to S3
+                $file = $request->file("video_path.$key");
+                $path = $file->store($videoPath, 's3');
+                $finalVideos[] = Storage::disk('s3')->url($path);
+            }
+            // ignore invalid inputs
+        }
+
+        $input['video_path'] = json_encode($finalVideos);
+    } else {
+        // User tried to modify videos but doesn't have permission - check if they're uploading files
+        $hasNewVideoFiles = false;
+        $videoPaths = is_array($request->video_path) ? $request->video_path : [$request->video_path];
+        foreach ($videoPaths as $key => $video) {
+            if ($request->hasFile("video_path.$key")) {
+                $hasNewVideoFiles = true;
+                break;
+            }
+        }
+
+        if ($hasNewVideoFiles) {
+            return response()->json([
+                'success' => false,
+                'message' => 'You do not have permission to modify product videos.'
+            ], 403);
+        }
+
+        // Remove from input to prevent overwriting existing videos
+        unset($input['video_path']);
+    }
+} else {
+    // If videos not in request, preserve existing videos
+    unset($input['video_path']);
+}
 			// Handle document upload (keeping existing logic)
 		$existingDocs = is_array($product->documents) ? $product->documents : json_decode($product->documents, true);
 		$existingDocs = is_array($existingDocs) ? $existingDocs : [];
