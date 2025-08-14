@@ -131,65 +131,138 @@ public function index(Request $request)
      *     )
      * )
      */
-    public function stats(Request $request)
-    {
-        $filter = $request->query('filter', 'lifetime'); // default: lifetime
+//    public function stats(Request $request)
+//     {
+//         $filter = $request->query('filter', 'lifetime'); // default: lifetime
 
-        // Date range based on filter
-        $dateRanges = [
-            'today' => [Carbon::today(), Carbon::now()],
-            'last_3_days' => [Carbon::now()->subDays(2)->startOfDay(), Carbon::now()],
-            'last_7_days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()],
-            'last_15_days' => [Carbon::now()->subDays(14)->startOfDay(), Carbon::now()],
-            'last_30_days' => [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()],
-            'lifetime' => [null, null]
-        ];
+//         // Date range based on filter
+//         $dateRanges = [
+//             'today' => [Carbon::today(), Carbon::now()],
+//             'last_3_days' => [Carbon::now()->subDays(2)->startOfDay(), Carbon::now()],
+//             'last_7_days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()],
+//             'last_15_days' => [Carbon::now()->subDays(14)->startOfDay(), Carbon::now()],
+//             'last_30_days' => [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()],
+//             'lifetime' => [null, null]
+//         ];
 
-        [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
+//         [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
 
-        // Apply date filter if not lifetime
-        $utmsQuery = DB::table('utms');
-        $ordersQuery = DB::table('orders');
+//         // Base queries
+//         $utmsQuery = DB::table('utms');
+//         $ordersQuery = DB::table('orders');
 
-        if ($startDate && $endDate) {
-            $utmsQuery->whereBetween('created_at', [$startDate, $endDate]);
-            $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
+//         if ($startDate && $endDate) {
+//             $utmsQuery->whereBetween('created_at', [$startDate, $endDate]);
+//             $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
+//         }
 
-        // Total sessions
-        $totalSessions = $utmsQuery->count();
+//         // Total sessions
+//         $totalSessions = $utmsQuery->count();
 
-        // Orders from UTM
-        $ordersFromUtm = (clone $ordersQuery)
-            ->whereNotNull('utm_id')
-            ->count();
+//         // Orders from UTM
+//         $ordersFromUtm = (clone $ordersQuery)
+//             ->whereNotNull('utm_id')
+//             ->count();
 
-        // Conversion %
-        $conversionRate = $totalSessions > 0
-            ? round(($ordersFromUtm / $totalSessions) * 100, 2)
-            : 0;
+//         // Conversion %
+//         $conversionRate = $totalSessions > 0
+//             ? round(($ordersFromUtm / $totalSessions) * 100, 2)
+//             : 0;
 
-        // Avg order value
-        $avgOrderValue = (clone $ordersQuery)->avg('total_amount');
+//         // Avg order value
+//         $avgOrderValue = (clone $ordersQuery)->avg('total_amount');
 
-        // Total sales
-        $totalSales = (clone $ordersQuery)->sum('total_amount');
+//         // Total sales
+//         $totalSales = (clone $ordersQuery)->sum('total_amount');
 
-        // Sales through marketing
-        $salesThroughMarketing = (clone $ordersQuery)
-            ->whereNotNull('utm_id')
-            ->sum('total_amount');
+//         // Sales through marketing
+//         $salesThroughMarketing = (clone $ordersQuery)
+//             ->whereNotNull('utm_id')
+//             ->sum('total_amount');
 
-        return response()->json([
-            'filter' => $filter,
-            'total_sessions' => $totalSessions,
-            'orders_from_utm' => $ordersFromUtm,
-            'conversion_rate' => $conversionRate,
-            'avg_order_value' => round($avgOrderValue, 2),
-            'total_sales' => round($totalSales, 2),
-            'sales_through_marketing' => round($salesThroughMarketing, 2),
-        ]);
+//         // Net sales (exclude cancelled orders)
+//         $netSales = (clone $ordersQuery)
+//             ->whereNotIn('status', ['Cancelled', 'Cancelled by Customer'])
+//             ->sum('total_amount');
+
+//         return response()->json([
+//             'filter' => $filter,
+//             'total_sessions' => $totalSessions,
+//             'orders_from_utm' => $ordersFromUtm,
+//             'conversion_rate' => $conversionRate,
+//             'avg_order_value' => round($avgOrderValue, 2),
+//             'total_sales' => round($totalSales, 2),
+//             'sales_through_marketing' => round($salesThroughMarketing, 2),
+//             'net_sales' => round($netSales, 2), // new field
+//         ]);
+//     }
+
+public function stats(Request $request)
+{
+    $filter = $request->query('filter', 'lifetime'); // default: lifetime
+
+    // Date range based on filter
+    $dateRanges = [
+        'today' => [Carbon::today(), Carbon::now()],
+        'last_3_days' => [Carbon::now()->subDays(2)->startOfDay(), Carbon::now()],
+        'last_7_days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::now()],
+        'last_15_days' => [Carbon::now()->subDays(14)->startOfDay(), Carbon::now()],
+        'last_30_days' => [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()],
+        'lifetime' => [null, null]
+    ];
+
+    [$startDate, $endDate] = $dateRanges[$filter] ?? [null, null];
+
+    // Base queries
+    $utmsQuery = DB::table('utms');
+    $ordersQuery = DB::table('orders');
+
+    if ($startDate && $endDate) {
+        $utmsQuery->whereBetween('created_at', [$startDate, $endDate]);
+        $ordersQuery->whereBetween('created_at', [$startDate, $endDate]);
     }
+
+    // Total sessions
+    $totalSessions = $utmsQuery->count();
+
+    // Orders from UTM
+    $ordersFromUtm = (clone $ordersQuery)
+        ->whereNotNull('utm_id')
+        ->count();
+
+    // Conversion %
+    $conversionRate = $totalSessions > 0
+        ? round(($ordersFromUtm / $totalSessions) * 100, 2)
+        : 0;
+
+    // Avg order value
+    $avgOrderValue = round((clone $ordersQuery)->avg('total_amount'), 2);
+
+    // Total sales
+    $totalSales = round((clone $ordersQuery)->sum('total_amount'), 2);
+
+    // Sales through marketing
+    $salesThroughMarketing = round((clone $ordersQuery)
+        ->whereNotNull('utm_id')
+        ->sum('total_amount'), 2);
+
+    // Net sales (exclude cancelled orders)
+    $netSales = round((clone $ordersQuery)
+        ->whereNotIn('status', ['Cancelled', 'Cancelled by Customer'])
+        ->sum('total_amount'), 2);
+
+    return response()->json([
+        'filter' => $filter,
+        'total_sessions' => $totalSessions,
+        'orders_from_utm' => $ordersFromUtm,
+        'conversion_rate' => $conversionRate,
+        'avg_order_value' => $avgOrderValue,
+        'total_sales' => $totalSales,
+        'sales_through_marketing' => $salesThroughMarketing,
+        'net_sales' => $netSales,
+    ]);
+}
+
 
     /**
      * @OA\Get(
