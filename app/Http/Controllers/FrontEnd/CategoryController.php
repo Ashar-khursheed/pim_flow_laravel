@@ -2069,7 +2069,7 @@ public function getSpecificationFilters1(Request $request)
                                     'max' => $max,
                                     'product_count' => $productCount,
                                     'display_value' => $displayValue,
-                                    'unit' => $unit
+                                    'symbol' => $unit
                                 ];
                             })->filter(function($range) use ($isFilterSelected) {
                                 return $isFilterSelected || $range['product_count'] > 0;
@@ -2107,7 +2107,7 @@ public function getSpecificationFilters1(Request $request)
                                             'product_count' => $productCount,
                                             'display_value' => $displayValue,
                                             'selected' => true,
-                                            'unit' => $unit
+                                            'symbol' => $unit
                                         ];
                                     }
                                 }
