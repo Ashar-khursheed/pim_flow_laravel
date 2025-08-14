@@ -398,7 +398,7 @@ public function utmSources(Request $request)
     // Helper to apply date filter to a query
     $applyDateFilter = function ($query) use ($startDate, $endDate) {
         if ($startDate && $endDate) {
-            $query->whereBetween('created_at', [$startDate, $endDate]);
+            $query->whereBetween('utms.created_at', [$startDate, $endDate]);
         }
     };
 
