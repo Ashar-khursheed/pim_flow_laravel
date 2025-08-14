@@ -232,15 +232,15 @@ public function stats(Request $request)
         ->count();
 
     $conversionRate = $totalSessions > 0
-        ? $this->roundOneDecimal(($ordersFromUtm / $totalSessions) * 100)
+        ? round(($ordersFromUtm / $totalSessions) * 100)
         : 0;
 
-    $avgOrderValue = $this->roundOneDecimal((clone $ordersQuery)->avg('total_amount'));
-    $totalSales = $this->roundOneDecimal((clone $ordersQuery)->sum('total_amount'));
-    $salesThroughMarketing = $this->roundOneDecimal((clone $ordersQuery)
+    $avgOrderValue = round((clone $ordersQuery)->avg('total_amount'));
+    $totalSales = round((clone $ordersQuery)->sum('total_amount'));
+    $salesThroughMarketing = round((clone $ordersQuery)
         ->whereNotNull('utm_id')
         ->sum('total_amount'));
-    $netSales = $this->roundOneDecimal((clone $ordersQuery)
+    $netSales = round((clone $ordersQuery)
         ->whereNotIn('status', ['Cancelled', 'Cancelled by Customer'])
         ->sum('total_amount'));
 
@@ -255,8 +255,6 @@ public function stats(Request $request)
         'net_sales' => $netSales,
     ]);
 }
-
-
 
     /**
      * @OA\Get(
