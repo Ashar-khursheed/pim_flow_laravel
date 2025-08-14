@@ -113,7 +113,7 @@ class Order extends Model
 	
 	public function utm()
 	{
-		return $this->hasOne(\App\Models\Utm::class, 'session_id', 'utm_id');
+		return $this->hasOne(\App\Models\Utm::class, 'id', 'utm_id');
 	}
 
 
