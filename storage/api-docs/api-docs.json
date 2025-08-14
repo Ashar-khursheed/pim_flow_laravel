@@ -31924,7 +31924,7 @@
                 ],
                 "summary": "Get analytics statistics",
                 "description": "Returns marketing and sales statistics including sessions, conversions, and sales with optional date filtering.",
-                "operationId": "867ea2cc3695927ea1e5d40a76d3a89d",
+                "operationId": "be9195f3857847e38fd70bf1b506ab2c",
                 "parameters": [
                     {
                         "name": "filter",
@@ -31994,7 +31994,12 @@
                     "400": {
                         "description": "Invalid filter parameter"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/analytics/utm-sources": {
@@ -32027,7 +32032,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/vendors": {

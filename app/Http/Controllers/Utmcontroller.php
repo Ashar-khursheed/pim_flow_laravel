@@ -100,6 +100,7 @@ public function index(Request $request)
      *     summary="Get analytics statistics",
      *     description="Returns marketing and sales statistics including sessions, conversions, and sales with optional date filtering.",
      *     tags={"Analytics"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="filter",
      *         in="query",
@@ -262,6 +263,7 @@ public function stats(Request $request)
      *     summary="Get UTM source analytics or details for a specific source",
      *     description="When no utm_source is provided, returns aggregated stats for all sources. When utm_source is provided, returns detailed UTM rows for that source along with totals.",
      *     tags={"Analytics"},
+     *     security={{"bearerAuth":{}}},
      *     @OA\Parameter(
      *         name="utm_source",
      *         in="query",
