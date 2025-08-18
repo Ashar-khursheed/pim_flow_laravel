@@ -372,6 +372,7 @@ class OrderController extends BaseController
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'orderProducts.product.seoUrl:id,relational_id,slug',
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
@@ -383,6 +384,8 @@ class OrderController extends BaseController
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
+			    $product->url = $product->seoUrl->slug ?? null;
+
 				unset($product->brand, $product->currency);
 			}
 			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
