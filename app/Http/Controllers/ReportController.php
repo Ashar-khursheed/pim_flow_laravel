@@ -117,9 +117,12 @@ class ReportController extends BaseController
 		$conversionRate = $utmCount > 0 ? ($orderCount / $utmCount) * 100 : 0;
 
 		/* Customer-level breakdown */
-		$customers = $allOrders->groupBy('customer_id')->map(function ($orders) {
+		$customers = $allOrders
+		->groupBy('customer_id')
+		->map(function ($orders) {
 			$customer = $orders->first()->customer;
 			return [
+				'order_numbers' => $orders->pluck('order_number')->values(),
 				'name' => $customer?->name,
 				'total_orders' => $orders->count(),
 				'total_order_value' => $orders->sum('total_amount'),
