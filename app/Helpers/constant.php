@@ -526,7 +526,8 @@ if (!function_exists('order_cc_mails')) {
 			'shehzad@rapid-supplies.com',
 			'ofs@thehorecastore.com',
 			'mfaizan@rapid-supplies.com',
-			'ofs02@thehorecastore.com'
+			'ofs02@thehorecastore.com',
+			'dmm@thehorecastore.com'
 		];
 		// $mails = [
 		// 	'webdeveloper01@horecastore.ae',
