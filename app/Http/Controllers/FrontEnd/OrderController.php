@@ -372,7 +372,7 @@ class OrderController extends BaseController
 			'orderProducts.product.brand:id,name',
 			'orderProducts.product.currency:id,symbol',
 			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'orderProducts.product.seoUrl:id,relational_id,url',
+			'orderProducts.product.seoUrl:url',
 			'tracking',
 			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 		]);
