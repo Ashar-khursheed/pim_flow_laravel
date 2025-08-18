@@ -129,63 +129,106 @@ class SeoManagementController extends Controller
     //         'data' => $seoData
     //     ]);
     // }
+    // public function getByRelationalId($identifier)
+    // {
+    //     $seoQuery = SeoManagement::with('seo_secondary_keywords');
+
+    //     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+    //         $path = parse_url($identifier, PHP_URL_PATH);
+    //         $seoQuery->where('url', $path);
+    //     } elseif (is_numeric($identifier)) {
+    //         $seoQuery->where('relational_id', $identifier);
+    //     } else {
+    //         $seoQuery->where('url', $identifier);
+    //     }
+
+
+    //     $seoData = $seoQuery->get()->map(function ($item) {
+    //     $filtered = $this->filterFields($item);
+
+    //     // Decode schema JSON
+    //     if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+    //         $decoded = json_decode($filtered['schema'], true);
+    //         if (json_last_error() === JSON_ERROR_NONE) {
+
+    //             // Dynamically set full URL based on type
+    //             if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+    //                 $baseUrl = 'https://www.thehorecastore.com/';
+    //                 if (strtolower($decoded['@type']) === 'product') {
+    //                     $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+    //                 } elseif (strtolower($decoded['@type']) === 'category') {
+    //                     $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+    //                 }
+    //             }
+
+    //             $filtered['schema'] = $decoded;
+    //         }
+    //     }
+
+    //     return $filtered;
+    //  });
+
+
+    //     return response()->json([
+    //         'status' => true,
+    //         'data' => $seoData
+    //     ]);
+    // }
     public function getByRelationalId($identifier)
 {
     $seoQuery = SeoManagement::with('seo_secondary_keywords');
 
     if (filter_var($identifier, FILTER_VALIDATE_URL)) {
+        // Handle full URL
         $path = parse_url($identifier, PHP_URL_PATH);
-        $seoQuery->where('url', $path);
+        $path = ltrim($path, '/');
+
+        $seoQuery->where(function ($q) use ($identifier, $path) {
+            $q->where('url', $identifier)         // full URL
+              ->orWhere('url', '/' . $path)       // with leading slash
+              ->orWhere('url', $path);            // without leading slash
+        });
     } elseif (is_numeric($identifier)) {
+        // Handle numeric relational_id
         $seoQuery->where('relational_id', $identifier);
     } else {
-        $seoQuery->where('url', $identifier);
+        // Handle string identifier like "countertop-gas-ranges"
+        $seoQuery->where(function ($q) use ($identifier) {
+            $path = ltrim($identifier, '/');
+            $q->where('url', $identifier)
+              ->orWhere('url', '/' . $path)
+              ->orWhere('url', $path);
+        });
     }
 
-//    $seoData = $seoQuery->get()->map(function ($item) {
-//     $filtered = $this->filterFields($item);
+    $seoData = $seoQuery->get()->map(function ($item) {
+        $filtered = $this->filterFields($item);
 
-//     // Decode schema if it's a JSON string
-//     if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-//         $decoded = json_decode($filtered['schema'], true);
-//         if (json_last_error() === JSON_ERROR_NONE) {
-//             $filtered['schema'] = $decoded;
-//         }
-//     }
-
-//     return $filtered;
-// });
-$seoData = $seoQuery->get()->map(function ($item) {
-    $filtered = $this->filterFields($item);
-
-    // Decode schema JSON
-    if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
-        $decoded = json_decode($filtered['schema'], true);
-        if (json_last_error() === JSON_ERROR_NONE) {
-
-            // Dynamically set full URL based on type
-            if (!empty($decoded['@type']) && !empty($decoded['url'])) {
-                $baseUrl = 'https://www.thehorecastore.com/';
-                if (strtolower($decoded['@type']) === 'product') {
-                    $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
-                } elseif (strtolower($decoded['@type']) === 'category') {
-                    $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+        // Decode schema JSON
+        if (!empty($filtered['schema']) && is_string($filtered['schema'])) {
+            $decoded = json_decode($filtered['schema'], true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                if (!empty($decoded['@type']) && !empty($decoded['url'])) {
+                    $baseUrl = 'https://www.thehorecastore.com/';
+                    if (strtolower($decoded['@type']) === 'product') {
+                        $decoded['url'] = $baseUrl . 'products/' . ltrim($decoded['url'], '/');
+                    } elseif (strtolower($decoded['@type']) === 'category') {
+                        $decoded['url'] = $baseUrl . 'collections/' . ltrim($decoded['url'], '/');
+                    }
                 }
+                $filtered['schema'] = $decoded;
             }
-
-            $filtered['schema'] = $decoded;
         }
-    }
 
-    return $filtered;
-});
-
+        return $filtered;
+    });
 
     return response()->json([
         'status' => true,
         'data' => $seoData
     ]);
 }
+
 
 
 
