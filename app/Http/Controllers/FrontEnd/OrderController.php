@@ -384,7 +384,7 @@ class OrderController extends BaseController
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
-			    $product->url = $product->seoUrl->slug ?? null;
+			    $product->url = $product->seoUrl->url ?? null;
 
 				unset($product->brand, $product->currency);
 			}
