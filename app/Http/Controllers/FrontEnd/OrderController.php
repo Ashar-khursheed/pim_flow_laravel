@@ -353,72 +353,86 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-	public function show($id)
-	{
-		$order = Order::where('customer_id', auth()->id())->where('id', $id)->first();
-		if (!$order) {
-			return response()->json([
-				'success' => false,
-				'message' => "Order not found."
-			]);
-		}
+public function show($id)
+{
+    $order = Order::where('customer_id', auth()->id())
+        ->where('id', $id)
+        ->first();
 
-		/* Load relationships */
-		$order->load([
-			'customer:id,name,email,type,country_code,mobile_number',
-			'customerAddress',
-			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
-			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-			'orderProducts.product.brand:id,name',
-			'orderProducts.product.currency:id,symbol',
-			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-			'orderProducts.product.seoUrl:url',
-			'tracking',
-			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-		]);
+    if (!$order) {
+        return response()->json([
+            'success' => false,
+            'message' => "Order not found."
+        ]);
+    }
 
-		/* Mutate the data for each order product */
-		foreach ($order->orderProducts as $orderProduct) {
-			$product = $orderProduct->product;
-			if ($product) {
-				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-				$product->brand_name = $product->brand->name ?? null;
-				$product->currency_symbol = $product->currency->symbol ?? null;
-			    $product->url = $product->seoUrl->url ?? null;
+    /* Load relationships */
+    $order->load([
+        'customer:id,name,email,type,country_code,mobile_number',
+        'customerAddress',
+        'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+        'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+        'orderProducts.product.brand:id,name',
+        'orderProducts.product.currency:id,symbol',
+        'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+        'tracking',
+        'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+    ]);
 
-				unset($product->brand, $product->currency);
-			}
-			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
-			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-			: null;
-		}
+    /* Mutate the data for each order product */
+    foreach ($order->orderProducts as $orderProduct) {
+        $product = $orderProduct->product;
+        if ($product) {
+            $product->images = is_array($product->images)
+                ? $product->images
+                : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-		if (
-			$order->status === 'Delivered' &&
-			$orderProduct->product_supplier &&
-			isset($orderProduct->product_supplier['return_policy'])
-		) {
-			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
-			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
-			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
+            $product->brand_name = $product->brand->name ?? null;
+            $product->currency_symbol = $product->currency->symbol ?? null;
 
-			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
-		} else {
-			$orderProduct->is_returnable = 'yes';
-		}
+            // 🔹 Fetch SEO URL directly without relation
+            $seo = \App\Models\SeoManagement::where('relational_id', $product->id)
+                ->where('relational_type', 'Product')
+                ->first();
 
-		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-			if (isset($order->$key)) {
-				$order->$key = number_format($order->$key, 2, '.', '');
-			}
-		}
+            $product->url = $seo->url ?? null;
 
-		return response()->json([
-			'success' => true,
-			'data' => $order
-		]);
-	}
+            unset($product->brand, $product->currency);
+        }
+
+        $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+            ->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+
+        $orderProduct->expectedShippingDate = $orderProduct->product_supplier
+            ? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+            : null;
+    }
+
+    if (
+        $order->status === 'Delivered' &&
+        $orderProduct->product_supplier &&
+        isset($orderProduct->product_supplier['return_policy'])
+    ) {
+        $returnDays = (int) $orderProduct->product_supplier['return_policy'];
+        $deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+        $returnUntil = $deliveryDate->copy()->addDays($returnDays);
+
+        $orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+    } else {
+        $orderProduct->is_returnable = 'yes';
+    }
+
+    foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+        if (isset($order->$key)) {
+            $order->$key = number_format($order->$key, 2, '.', '');
+        }
+    }
+
+    return response()->json([
+        'success' => true,
+        'data' => $order
+    ]);
+}
 
 	/**
 	 * @OA\Put(
