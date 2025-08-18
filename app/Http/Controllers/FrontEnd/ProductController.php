@@ -630,6 +630,7 @@ class ProductController extends Controller
                     'currency' ,
                     'categories',
                     'productSuppliers',
+                     'seoUrl',
                     'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
