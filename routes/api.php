@@ -245,6 +245,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::apiResource('payments', PaymentController::class);
 	Route::get('report/orders', [ReportController::class, 'index']);
+	Route::get('report/utms', [ReportController::class, 'indexUtms']);
 
 	Route::post('/generate-groups', [ProductGroupController::class, 'generateGroups']);
 	Route::get('/product-groups', [ProductGroupController::class, 'getGroupedProductDetails']);

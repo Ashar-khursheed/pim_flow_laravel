@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 use App\Models\FrontEnd\Order;
+use App\Models\Utm;
 use App\Models\FrontEnd\ReturnOrderProduct;
 
 class ReportController extends BaseController
@@ -71,4 +72,89 @@ class ReportController extends BaseController
 			'data' => $data,
 		]);
 	}
+
+	/**
+	 * @OA\Get(
+	 *     path="/api/report/utms",
+	 *     summary="Get utm report within a date range",
+	 *     tags={"Reports"},
+	 *     @OA\Parameter(name="utm_campaign", in="query", required=true, @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date"), description="Start date (YYYY-MM-DD)"),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date"), description="End date (YYYY-MM-DD)"),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function indexUtms(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'utm_campaign' => 'required|string',
+			'from_date' => 'nullable|date',
+			'to_date'   => 'nullable|date',
+		]);
+
+		/* Base query */
+		$recordsQuery = Utm::with('orders')->where('utm_campaign', $request->utm_campaign);
+
+		/* Filter by date range */
+		if ($request->filled('from_date') || $request->filled('to_date')) {
+			$from = $request->from_date ? $request->from_date . ' 00:00:00' : '1970-01-01 00:00:00';
+			$to   = $request->to_date   ? $request->to_date   . ' 23:59:59' : now()->endOfDay()->toDateTimeString();
+
+			$recordsQuery->whereBetween('created_at', [$from, $to]);
+		}
+
+		$utms = $recordsQuery->get();
+
+		/* Aggregations */
+		$utmCount = $utms->count();
+		$allOrders = $utms->flatMap->orders;
+
+		$orderCount = $allOrders->count();
+		$totalOrderAmount = $allOrders->sum('total_amount');
+		$actualTotalOrderAmount = $allOrders->where('status', '!=', 'Cancelled')->sum('total_amount');
+		$conversionRate = $utmCount > 0 ? ($orderCount / $utmCount) * 100 : 0;
+
+		/* Customer-level breakdown */
+		$customers = $allOrders->groupBy('customer_id')->map(function ($orders) {
+			$customer = $orders->first()->customer;
+			return [
+				'name' => $customer?->name,
+				'total_orders' => $orders->count(),
+				'total_order_value' => $orders->sum('total_amount'),
+				'total_order_value_without_cancelled' => $orders->where('status', '!=', 'Cancelled')->sum('total_amount'),
+			];
+		})
+		->values();
+
+		$products = $allOrders->where('status', '!=', 'Cancelled')->flatMap->orderProducts->groupBy('product_id')->map(function ($orderProducts) {
+			$product = $orderProducts->first()->product;
+			return [
+				'product_name' => $product?->name,
+				'sold_count'   => $orderProducts->sum('quantity'),
+			];
+		})
+		->sortByDesc('sold_count')
+		->take(5)
+		->values();
+
+		/* Response data */
+		$data = [
+			'utm_count' => $utmCount,
+			'order_count' => $orderCount,
+			'total_order_amount' => $totalOrderAmount,
+			'actual_total_order_amount' => $actualTotalOrderAmount,
+			'conversion_rate' => round($conversionRate, 2) . '%',
+			'customers' => $customers,
+			'products' => $products,
+		];
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $data,
+		]);
+	}
 }
+
