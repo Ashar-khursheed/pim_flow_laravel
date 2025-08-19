@@ -89,10 +89,9 @@ public function screenTransaction(Request $request)
         'billing_state' => 'required|string|max:10',
         'billing_zip' => 'required|string|max:20',
         'billing_country' => 'required|string|size:2',
-        // 'card_last4' => 'required|string|size:4',
-        // 'card_bin' => 'nullable|string|min:6|max:8',
-        'card_last4' => ['required', 'regex:/^\d{4}$/'],
-        'card_bin'   => ['nullable', 'regex:/^\d{6,8}$/'],
+        'card_last4' => 'required|size:4',
+        'card_bin' => 'nullable|min:6|max:8',
+
     ]);
 
     if ($validator->fails()) {
