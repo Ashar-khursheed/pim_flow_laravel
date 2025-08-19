@@ -386,6 +386,41 @@
                 ]
             }
         },
+        "/api/analytics/report": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Google Analytics Report",
+                "description": "Fetches analytics data from Google Analytics 4 (GA4).",
+                "operationId": "15767f626b1b8e2ebe30c7cb78a5de65",
+                "responses": {
+                    "200": {
+                        "description": "Successful Response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                },
+                                "example": {
+                                    "sessions": 1200,
+                                    "users": 800,
+                                    "pageViews": 3400,
+                                    "bounceRate": 0.45,
+                                    "averageSessionDuration": "3m 24s"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - Invalid credentials"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/keywords/export": {
             "post": {
                 "tags": [
@@ -34517,6 +34552,10 @@
             "description": "Carts"
         },
         {
+            "name": "Analytics",
+            "description": "Analytics"
+        },
+        {
             "name": "Keywords",
             "description": "Keywords"
         },
@@ -34867,10 +34906,6 @@
         {
             "name": "UTM Analytics",
             "description": "UTM Analytics"
-        },
-        {
-            "name": "Analytics",
-            "description": "Analytics"
         },
         {
             "name": "Vendors",

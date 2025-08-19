@@ -68,6 +68,7 @@ use App\Http\Controllers\LogDownloadController;
 use App\Http\Controllers\AbandonedCartController;
 use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
+use App\Http\Controllers\AnalyticsController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -212,9 +213,12 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+Route::get('/analytics/report', [AnalyticsController::class, 'report']);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+	
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
