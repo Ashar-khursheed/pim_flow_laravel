@@ -10,7 +10,7 @@ class GoogleAnalytics
 
     public function __construct()
     {
-        $this->keyFile = storage_path('app/analytics-key.json');
+        $this->keyFile = storage_path('app/Script/analytics-key.json');
         $this->authenticate();
     }
 
