@@ -213,7 +213,16 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
-Route::get('/analytics/report', [AnalyticsController::class, 'report']);
+// Route::get('/analytics/report', [AnalyticsController::class, 'report']);
+
+Route::prefix('analytics')->group(function () {
+    Route::get('/sessions', [AnalyticsController::class, 'sessions']);
+    Route::get('/users', [AnalyticsController::class, 'users']);
+    Route::get('/engagement', [AnalyticsController::class, 'engagement']);
+    Route::get('/conversions', [AnalyticsController::class, 'conversions']);
+    Route::get('/device-sessions', [AnalyticsController::class, 'deviceSessions']);
+    Route::get('/geo', [AnalyticsController::class, 'geo']);
+});
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
