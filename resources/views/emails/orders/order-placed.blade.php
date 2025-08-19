@@ -137,6 +137,9 @@
 										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
 											{{ $country }}, {{ $zipcode }}
 										</p>
+										<p style="font-family: 'Noto Sans', sans-serif; margin:0; color: #26683A; font-weight: 500; font-size:14px; line-height:20px;">
+											{{ $contactNumber }}
+										</p>
 									</td>
 								</tr>
 							</table>

@@ -43,6 +43,7 @@ class OrderPlacedMail extends Mailable
 		$city = $customerAddress->city ?? '';
 		$country = $customerAddress->country ?? '';
 		$zipcode = $customerAddress->zip_code ?? '';
+		$contactNumber = $order->customer->country_code . " " . $order->customer->mobile_number;
 
 		$products = collect();
 
@@ -118,6 +119,7 @@ class OrderPlacedMail extends Mailable
 			'city' => $city,
 			'country' => $country,
 			'zipcode' => $zipcode,
+			'contactNumber' => $contactNumber,
 
 			'products' => $products,
 			'totalSaved' => $totalSaved,
