@@ -28711,6 +28711,64 @@
                 ]
             }
         },
+        "/api/report/customer-utms": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get customer utm report within a date range",
+                "operationId": "c3daff4c3ed1df0944b1ea89aacd95e7",
+                "parameters": [
+                    {
+                        "name": "utm_campaign",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "customer_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/return-products/{id}/inspect": {
             "put": {
                 "tags": [

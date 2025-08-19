@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Hash;
 use App\Models\PasswordResetToken;
 use App\Models\User;
+use App\Models\Newsletter;
 
 
 class Customer extends Authenticatable
@@ -37,7 +38,7 @@ class Customer extends Authenticatable
 		'is_social_login',
 		'apple_id',
 		'business_name'
-		
+
 	];
 
 	/**
@@ -76,6 +77,11 @@ class Customer extends Authenticatable
 	public function orders()
 	{
 		return $this->hasMany(Order::class);
+	}
+
+	public function newsLetter()
+	{
+		return $this->hasOne(Newsletter::class, 'email', 'email');
 	}
 
 	public function passwordResetToken()
