@@ -28661,6 +28661,56 @@
                 ]
             }
         },
+        "/api/report/utms": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Get utm report within a date range",
+                "operationId": "e9190b20c4ba364630d2e99ed02cf7dd",
+                "parameters": [
+                    {
+                        "name": "utm_campaign",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "from_date",
+                        "in": "query",
+                        "description": "Start date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to_date",
+                        "in": "query",
+                        "description": "End date (YYYY-MM-DD)",
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success",
+                        "content": {
+                            "application/json": {}
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
         "/api/return-products/{id}/inspect": {
             "put": {
                 "tags": [
@@ -31835,7 +31885,7 @@
                     "UTM Analytics"
                 ],
                 "summary": "Get UTM source and campaign counts",
-                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign. \r\n *                  If no dates are provided, returns counts for all available records.",
+                "description": "Returns counts of UTM records grouped by utm_source and utm_campaign.\n\t *                  If no dates are provided, returns counts for all available records.",
                 "operationId": "096fed29ae98d22859add1856943f772",
                 "parameters": [
                     {

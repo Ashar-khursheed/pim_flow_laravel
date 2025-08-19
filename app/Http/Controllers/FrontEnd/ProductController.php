@@ -187,6 +187,14 @@ class ProductController extends Controller
                         $product->benefits_features = json_decode($product->benefits_features, true);
 
 
+                          if ($product->seoUrl) {
+                            $product->url = $product->seoUrl->url;
+                            // Remove the full seoUrl object if you only want the URL
+                            unset($product->seoUrl);
+                        } else {
+                            $product->url = null;
+                        }
+    
                         // if (is_string($product->description)) {
                         //     $decoded = json_decode($product->description, true);
                         
@@ -630,6 +638,7 @@ class ProductController extends Controller
                     'currency' ,
                     'categories',
                     'productSuppliers',
+                     'seoUrl',
                     'productAttributes' => function ($query) {
                         $query->whereHas('attributeDetails', function ($q) {
                             $q->whereIn('name', ['Units per Case', 'Pack Type']);
@@ -671,6 +680,13 @@ class ProductController extends Controller
                     $products->getCollection()->transform(function ($product) {
 
                         $product->benefits_features = json_decode($product->benefits_features, true);
+                             if ($product->seoUrl) {
+                            $product->url = $product->seoUrl->url;
+                            // Remove the full seoUrl object if you only want the URL
+                            unset($product->seoUrl);
+                        } else {
+                            $product->url = null;
+                        }
                     
                         // if (is_string($product->description)) {
                         //     $product->description = json_decode($product->description, true);
