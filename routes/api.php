@@ -213,11 +213,12 @@ Route::apiResource('newsletters', NewsletterController::class);
 Route::get('/product-info/{slug}', [F_ProductController::class, 'getProductInfoBySlug']);
 
 Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
+Route::get('/analytics/report', [AnalyticsController::class, 'report']);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
-	Route::get('/analytics/report', [AnalyticsController::class, 'report']);
+	
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
