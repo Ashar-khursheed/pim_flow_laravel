@@ -37,51 +37,33 @@ class AnalyticsController extends Controller
      *     )
      * )
      */
-//   public function report()
-// {
-//     $ga = new GoogleAnalytics();
-//     $propertyId = "441790093"; // Your GA4 property ID
+  public function report()
+{
+    $ga = new GoogleAnalytics();
+    $propertyId = "441790093"; // Your GA4 property ID
 
-//     $data = $ga->getReport(
-//         $propertyId,
-//         ['city', 'country', 'eventName'], // dimensions
-//         ['activeUsers', 'conversions', 'totalRevenue'], // metrics
-//         '2024-08-01',
-//         'today',
-//         [
-//             "filter" => [
-//                 "fieldName" => "eventName",
-//                 "stringFilter" => [
-//                     "matchType" => "EXACT",
-//                     "value" => "purchase"
-//                 ]
-//             ]
-//         ]
-//     );
+    $data = $ga->getReport(
+        $propertyId,
+        ['city', 'country', 'eventName'], // dimensions
+        ['activeUsers', 'conversions', 'totalRevenue'], // metrics
+        '2024-08-01',
+        'today',
+        [
+            "filter" => [
+                "fieldName" => "eventName",
+                "stringFilter" => [
+                    "matchType" => "EXACT",
+                    "value" => "purchase"
+                ]
+            ]
+        ]
+    );
 
-//     return response()->json($data);
-// }
+    return response()->json($data);
+}
 
 
-    private $ga;
-    private $propertyId = "441790093"; // GA4 property ID
-
-    public function __construct()
-    {
-        $this->ga = new GoogleAnalytics();
-    }
-
-    public function sessions() { return response()->json($this->ga->getSessions($this->propertyId)); }
-
-    public function users() { return response()->json($this->ga->getUsers($this->propertyId)); }
-
-    public function engagement() { return response()->json($this->ga->getEngagement($this->propertyId)); }
-
-    public function conversions() { return response()->json($this->ga->getConversions($this->propertyId)); }
-
-    public function deviceSessions() { return response()->json($this->ga->getSessionsByDevice($this->propertyId)); }
-
-    public function geo() { return response()->json($this->ga->getGeo($this->propertyId)); }
+  
 }
 
 
