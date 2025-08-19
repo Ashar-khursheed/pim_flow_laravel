@@ -68,6 +68,7 @@ use App\Http\Controllers\LogDownloadController;
 use App\Http\Controllers\AbandonedCartController;
 use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
+use App\Http\Controllers\AnalyticsController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -215,6 +216,8 @@ Route::get('logs/download', [LogDownloadController::class, 'downloadLog']);
 
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
+
+	Route::get('/analytics/report', [AnalyticsController::class, 'report']);
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
