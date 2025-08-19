@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 use App\Models\FrontEnd\Order;
+use App\Models\FrontEnd\Customer;
 use App\Models\Utm;
 use App\Models\FrontEnd\ReturnOrderProduct;
 
@@ -123,6 +124,7 @@ class ReportController extends BaseController
 			$customer = $orders->first()->customer;
 			return [
 				'order_numbers' => $orders->pluck('order_number')->values(),
+				'id' => $customer?->id,
 				'name' => $customer?->name,
 				'total_orders' => $orders->count(),
 				'total_order_value' => $orders->sum('total_amount'),
@@ -139,7 +141,6 @@ class ReportController extends BaseController
 			];
 		})
 		->sortByDesc('sold_count')
-		->take(5)
 		->values();
 
 		/* Response data */
@@ -159,5 +160,113 @@ class ReportController extends BaseController
 			'data' => $data,
 		]);
 	}
-}
 
+	/**
+	 * @OA\Get(
+	 *     path="/api/report/customer-utms",
+	 *     summary="Get customer utm report within a date range",
+	 *     tags={"Reports"},
+	 *     @OA\Parameter(name="utm_campaign", in="query", required=true, @OA\Schema(type="string")),
+	 *     @OA\Parameter(name="customer_id", in="query", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Parameter(name="from_date", in="query", @OA\Schema(type="string", format="date"), description="Start date (YYYY-MM-DD)"),
+	 *     @OA\Parameter(name="to_date", in="query", @OA\Schema(type="string", format="date"), description="End date (YYYY-MM-DD)"),
+	 *     @OA\Response(response=200, description="Success", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
+	 */
+	public function indexCustomerUtms(Request $request)
+	{
+		/* Validate request data */
+		$request->validate([
+			'customer_id'   => 'required|integer|exists:customers,id',
+			'utm_campaign'  => 'required|string',
+			'from_date'     => 'nullable|date',
+			'to_date'       => 'nullable|date',
+		]);
+
+		/* Base query */
+		$recordsQuery = Utm::with(['orders.orderProducts.product'])
+		->where('utm_campaign', $request->utm_campaign);
+
+		/* Filter by date range */
+		if ($request->filled('from_date') || $request->filled('to_date')) {
+			$from = $request->from_date ? $request->from_date . ' 00:00:00' : '1970-01-01 00:00:00';
+			$to   = $request->to_date   ? $request->to_date   . ' 23:59:59' : now()->endOfDay()->toDateTimeString();
+
+			$recordsQuery->whereBetween('created_at', [$from, $to]);
+		}
+
+		$utms = $recordsQuery->get();
+
+		/* All orders for given customer */
+		$orders = $utms->flatMap->orders->where('customer_id', $request->customer_id);
+
+		/* Aggregations */
+		$totalOrderAmount = $orders->sum('total_amount');
+		$actualTotalOrderAmount = $orders->where('status', '!=', 'Cancelled')->sum('total_amount');
+		$totalOrderCountWithoutCancelled = $orders->where('status', '!=', 'Cancelled')->count();
+
+		/* Customer details */
+		$customer = Customer::with('customerAddress')->find($request->customer_id);
+		$customerCreatedAt = $customer->created_at->format('Y-m-d H:i:s');
+		$customerDefaultAddress = $customer->customerAddress->where('is_default', 1)->first();
+		$emailSubscribed = $customer->newsLetter ? 'Yes' : 'No';
+
+		/* Orders detail */
+		$orderDetails = $orders->map(function ($order) {
+			/* Payment status */
+			if ($order->paid_amount >= $order->total_amount) {
+				$orderPaymentStatus = 'Paid';
+			} elseif ($order->paid_amount == 0) {
+				$orderPaymentStatus = 'Unpaid';
+			} else {
+				$orderPaymentStatus = 'Partially Paid';
+			}
+
+			/* Order products */
+			$orderProducts = $order->orderProducts->map(function ($orderProduct) {
+				$vendorProductSupplier = $orderProduct->getVendorProductSupplierAttribute();
+				return [
+					'product_name'   => $vendorProductSupplier?->name ?? $orderProduct->product?->name,
+					'quantity'       => $orderProduct->quantity,
+					'amount'         => $orderProduct->amount,
+					'shipping_charge'=> $orderProduct->shipping_charge,
+					'total_amount'   => $orderProduct->total_amount,
+				];
+			});
+
+			return [
+				'order_number'                => $order->order_number,
+				'created_at'                  => $order->created_at->format('Y-m-d H:i:s'),
+				'order_payment_status'        => $orderPaymentStatus,
+				'order_amount'                => $order->total_amount,
+				'order_products'              => $orderProducts,
+			];
+		})->sortByDesc('created_at')->values();
+
+		/* Response data */
+		$data = [
+			'stats' => [
+				'total_order_amount' => $totalOrderAmount,
+				'actual_total_order_amount' => $actualTotalOrderAmount,
+				'total_order_count_without_cancelled' => $totalOrderCountWithoutCancelled,
+				'created_at' => $customerCreatedAt,
+			],
+			'orders' => $orderDetails,
+			'customer' => [
+				'name'         => $customer->name,
+				'email'        => $customer->email,
+				'country_code' => $customer->country_code,
+				'mobile_number'=> $customer->mobile_number,
+				'default_address' => $customerDefaultAddress,
+				'email_subscribed' => $emailSubscribed,
+			],
+		];
+
+		return response()->json([
+			'success' => true,
+			'message' => __('msg_rec_list'),
+			'data' => $data,
+		]);
+	}
+}
