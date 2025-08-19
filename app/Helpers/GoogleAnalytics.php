@@ -14,7 +14,7 @@ class GoogleAnalytics
         $this->authenticate();
     }
 
-   private function authenticate()
+    private function authenticate()
     {
         $json = json_decode(file_get_contents($this->keyFile), true);
 
@@ -51,23 +51,36 @@ class GoogleAnalytics
         $this->token = $response['access_token'] ?? null;
     }
 
-
-    public function getReport($propertyId)
-    {
+    /**
+     * Get GA4 Report dynamically
+     */
+    public function getReport(
+        string $propertyId,
+        array $dimensions = ['city', 'country'],
+        array $metrics = ['activeUsers'],
+        string $startDate = '2024-08-01',
+        string $endDate = 'today',
+        array $filters = []
+    ) {
         $url = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
 
+        // Build dimensions
+        $dims = array_map(fn($d) => ['name' => $d], $dimensions);
+        // Build metrics
+        $mets = array_map(fn($m) => ['name' => $m], $metrics);
+
         $postData = [
-            "dimensions" => [
-                ["name" => "city"],
-                ["name" => "country"]
-            ],
-            "metrics" => [
-                ["name" => "activeUsers"]
-            ],
+            "dimensions" => $dims,
+            "metrics"    => $mets,
             "dateRanges" => [
-                ["startDate" => "2024-08-01", "endDate" => "today"]
+                ["startDate" => $startDate, "endDate" => $endDate]
             ]
         ];
+
+        // Add filters if provided
+        if (!empty($filters)) {
+            $postData['dimensionFilter'] = $filters;
+        }
 
         $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
@@ -84,8 +97,7 @@ class GoogleAnalytics
     }
 
     private function base64UrlEncode($data)
-{
-    return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-}
-
+    {
+        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+    }
 }

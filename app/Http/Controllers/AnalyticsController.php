@@ -37,12 +37,29 @@ class AnalyticsController extends Controller
      *     )
      * )
      */
-    public function report()
-    {
-        $ga = new GoogleAnalytics();
-        $propertyId = "441790093"; // Your GA4 property ID
-        $data = $ga->getReport($propertyId);
+  public function report()
+{
+    $ga = new GoogleAnalytics();
+    $propertyId = "441790093"; // Your GA4 property ID
 
-        return response()->json($data);
-    }
+    $data = $ga->getReport(
+        $propertyId,
+        ['city', 'country', 'eventName'], // dimensions
+        ['activeUsers', 'conversions', 'totalRevenue'], // metrics
+        '2024-08-01',
+        'today',
+        [
+            "filter" => [
+                "fieldName" => "eventName",
+                "stringFilter" => [
+                    "matchType" => "EXACT",
+                    "value" => "purchase"
+                ]
+            ]
+        ]
+    );
+
+    return response()->json($data);
+}
+
 }
