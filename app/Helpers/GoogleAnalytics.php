@@ -79,49 +79,185 @@ class GoogleAnalytics
     /**
      * Get basic overview metrics
      */
-    public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        try {
-            $request = new RunReportRequest();
-            $request->setDateRanges([
-                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-            ]);
-            $request->setMetrics([
-                new Metric(['name' => 'sessions']),
-                new Metric(['name' => 'totalUsers']),
-                new Metric(['name' => 'newUsers']),
-                new Metric(['name' => 'screenPageViews']),
-                new Metric(['name' => 'bounceRate']),
-                new Metric(['name' => 'averageSessionDuration'])
-            ]);
+    // public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    // {
+    //     try {
+    //         $request = new RunReportRequest();
+    //         $request->setDateRanges([
+    //             new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+    //         ]);
+    //         $request->setMetrics([
+    //             new Metric(['name' => 'sessions']),
+    //             new Metric(['name' => 'totalUsers']),
+    //             new Metric(['name' => 'newUsers']),
+    //             new Metric(['name' => 'screenPageViews']),
+    //             new Metric(['name' => 'bounceRate']),
+    //             new Metric(['name' => 'averageSessionDuration'])
+    //         ]);
 
-            $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+    //         $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
 
-            $row = $response->getRows()[0] ?? null;
-            if (!$row) {
-                return $this->getDefaultOverview();
-            }
+    //         $row = $response->getRows()[0] ?? null;
+    //         if (!$row) {
+    //             return $this->getDefaultOverview();
+    //         }
 
-            $metrics = $row->getMetricValues();
-            $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
-            $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
+    //         $metrics = $row->getMetricValues();
+    //         $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
+    //         $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
             
-            return [
-                'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
-                'totalUsers' => $totalUsers,
-                'newUsers' => $newUsers,
-                'returningUsers' => max(0, $totalUsers - $newUsers),
-                'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
-                'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
-                'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
-                'conversions' => 0, // Will get separately
-                'totalRevenue' => 0.0 // Will get separately
-            ];
-        } catch (\Exception $e) {
-            return $this->getDefaultOverview($e->getMessage());
-        }
-    }
+    //         return [
+    //             'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+    //             'totalUsers' => $totalUsers,
+    //             'newUsers' => $newUsers,
+    //             'returningUsers' => max(0, $totalUsers - $newUsers),
+    //             'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
+    //             'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
+    //             'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
+    //             'conversions' => 0, // Will get separately
+    //             'totalRevenue' => 0.0 // Will get separately
+    //         ];
+    //     } catch (\Exception $e) {
+    //         return $this->getDefaultOverview($e->getMessage());
+    //     }
+    // }
+   public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today') {
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration']),
+            // Add conversion metrics
+            new Metric(['name' => 'conversions']),
+            new Metric(['name' => 'totalRevenue'])
+        ]);
 
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        $row = $response->getRows()[0] ?? null;
+
+        if (!$row) {
+            return $this->getDefaultOverview();
+        }
+
+        $metrics = $row->getMetricValues();
+        $totalUsers = $this->safeGetMetric($metrics, 1, 'int', 0);
+        $newUsers = $this->safeGetMetric($metrics, 2, 'int', 0);
+
+        return [
+            'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+            'totalUsers' => $totalUsers,
+            'newUsers' => $newUsers,
+            'returningUsers' => max(0, $totalUsers - $newUsers),
+            'pageViews' => $this->safeGetMetric($metrics, 3, 'int', 0),
+            'bounceRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
+            'avgSessionDuration' => $this->safeGetMetric($metrics, 5, 'float', 0),
+            'conversions' => $this->safeGetMetric($metrics, 6, 'int', 0), // Now fetching real data
+            'totalRevenue' => $this->safeGetMetric($metrics, 7, 'float', 0.0) // Now fetching real data
+        ];
+
+    } catch (\Exception $e) {
+        return $this->getDefaultOverview($e->getMessage());
+    }
+}
+
+// Alternative approach if you need specific conversion events
+public function getOverviewWithSpecificConversions($propertyId, $startDate = '30daysAgo', $endDate = 'today') {
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration']),
+            new Metric(['name' => 'conversions']),
+            new Metric(['name' => 'totalRevenue'])
+        ]);
+
+        // If you want to filter by specific conversion events
+        $request->setDimensions([
+            new Dimension(['name' => 'eventName'])
+        ]);
+        
+        // Filter for specific conversion events
+        $request->setDimensionFilter(
+            new FilterExpression([
+                'filter' => new Filter([
+                    'field_name' => 'eventName',
+                    'string_filter' => new StringFilter([
+                        'match_type' => StringFilter\MatchType::EXACT,
+                        'value' => 'purchase' // or your specific conversion event
+                    ])
+                ])
+            ])
+        );
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        
+        // Process multiple rows if filtering by event
+        $totalConversions = 0;
+        $totalRevenue = 0.0;
+        
+        foreach ($response->getRows() as $row) {
+            $metrics = $row->getMetricValues();
+            $totalConversions += $this->safeGetMetric($metrics, 6, 'int', 0);
+            $totalRevenue += $this->safeGetMetric($metrics, 7, 'float', 0.0);
+        }
+
+        // Get basic metrics from first row or separate call
+        $basicMetricsRequest = new RunReportRequest();
+        $basicMetricsRequest->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        $basicMetricsRequest->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'newUsers']),
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration'])
+        ]);
+
+        $basicResponse = $this->analyticsData->properties->runReport("properties/{$propertyId}", $basicMetricsRequest);
+        $basicRow = $basicResponse->getRows()[0] ?? null;
+
+        if (!$basicRow) {
+            return $this->getDefaultOverview();
+        }
+
+        $basicMetrics = $basicRow->getMetricValues();
+        $totalUsers = $this->safeGetMetric($basicMetrics, 1, 'int', 0);
+        $newUsers = $this->safeGetMetric($basicMetrics, 2, 'int', 0);
+
+        return [
+            'sessions' => $this->safeGetMetric($basicMetrics, 0, 'int', 0),
+            'totalUsers' => $totalUsers,
+            'newUsers' => $newUsers,
+            'returningUsers' => max(0, $totalUsers - $newUsers),
+            'pageViews' => $this->safeGetMetric($basicMetrics, 3, 'int', 0),
+            'bounceRate' => round($this->safeGetMetric($basicMetrics, 4, 'float', 0) * 100, 2),
+            'avgSessionDuration' => $this->safeGetMetric($basicMetrics, 5, 'float', 0),
+            'conversions' => $totalConversions,
+            'totalRevenue' => $totalRevenue
+        ];
+
+    } catch (\Exception $e) {
+        return $this->getDefaultOverview($e->getMessage());
+    }
+}
     /**
      * Get default overview data
      */
