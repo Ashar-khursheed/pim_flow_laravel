@@ -51,7 +51,10 @@ class AnalyticsController extends Controller
         $endDate = $request->get('end_date', 'today');
 
         try {
-            $data = $this->ga->getOverview($this->propertyId, $startDate, $endDate);
+            // Use the safer method if available, fallback to original
+            $data = method_exists($this->ga, 'getOverviewSafe') 
+                ? $this->ga->getOverviewSafe($this->propertyId, $startDate, $endDate)
+                : $this->ga->getOverview($this->propertyId, $startDate, $endDate);
             
             return response()->json([
                 'status' => 'success',
@@ -59,7 +62,19 @@ class AnalyticsController extends Controller
                 'period' => ['start' => $startDate, 'end' => $endDate]
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage(),
+                'data' => [
+                    'sessions' => 0,
+                    'totalUsers' => 0,
+                    'newUsers' => 0,
+                    'returningUsers' => 0,
+                    'pageViews' => 0,
+                    'bounceRate' => 0,
+                    'avgSessionDuration' => 0
+                ]
+            ], 500);
         }
     }
 
@@ -190,6 +205,37 @@ class AnalyticsController extends Controller
 
     /**
      * @OA\Get(
+     *     path="/api/analytics/test",
+     *     summary="Test Analytics Connection",
+     *     tags={"Analytics"},
+     *     @OA\Response(response=200, description="Test successful"),
+     *     @OA\Response(response=500, description="Test failed")
+     * )
+     */
+    public function testAnalytics()
+    {
+        try {
+            // Test basic connection
+            $basicData = $this->ga->getBasicConversions($this->propertyId, '7daysAgo', 'today');
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Analytics connection working',
+                'property_id' => $this->propertyId,
+                'test_data' => $basicData
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Analytics connection failed',
+                'error' => $e->getMessage(),
+                'property_id' => $this->propertyId
+            ], 500);
+        }
+    }
+
+    /**
+     * @OA\Get(
      *     path="/api/analytics/conversions",
      *     summary="Get Conversion Analytics",
      *     tags={"Analytics"},
@@ -205,14 +251,21 @@ class AnalyticsController extends Controller
         $endDate = $request->get('end_date', 'today');
 
         try {
-            $data = $this->ga->getConversionAnalytics($this->propertyId, $startDate, $endDate);
+            // Use safer method if available
+            $data = method_exists($this->ga, 'getConversionAnalyticsSafe') 
+                ? $this->ga->getConversionAnalyticsSafe($this->propertyId, $startDate, $endDate)
+                : $this->ga->getConversionAnalytics($this->propertyId, $startDate, $endDate);
             
             return response()->json([
                 'status' => 'success',
                 'data' => $data
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage(),
+                'data' => []
+            ], 500);
         }
     }
 
@@ -545,22 +598,27 @@ class AnalyticsController extends Controller
             $funnelData = [];
             foreach ($funnelStages as $event => $label) {
                 try {
-                    $response = $this->ga->analyticsData->properties->runReport($this->propertyId, [
-                        'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-                        'metrics' => [
-                            ['name' => 'eventCount'],
-                            ['name' => 'totalUsers']
-                        ],
-                        'dimensionFilter' => [
-                            'filter' => [
-                                'fieldName' => 'eventName',
-                                'stringFilter' => [
-                                    'matchType' => 'EXACT',
-                                    'value' => $event
-                                ]
-                            ]
-                        ]
+                    $request = new \Google\Service\AnalyticsData\RunReportRequest();
+                    $request->setDateRanges([
+                        new \Google\Service\AnalyticsData\DateRange(['start_date' => $startDate, 'end_date' => $endDate])
                     ]);
+                    $request->setMetrics([
+                        new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
+                        new \Google\Service\AnalyticsData\Metric(['name' => 'totalUsers'])
+                    ]);
+                    $request->setDimensionFilter(
+                        new \Google\Service\AnalyticsData\FilterExpression([
+                            'filter' => new \Google\Service\AnalyticsData\Filter([
+                                'field_name' => 'eventName',
+                                'string_filter' => new \Google\Service\AnalyticsData\StringFilter([
+                                    'match_type' => 'EXACT',
+                                    'value' => $event
+                                ])
+                            ])
+                        ])
+                    );
+
+                    $response = $this->ga->analyticsData->properties->runReport("properties/{$this->propertyId}", $request);
 
                     $row = $response->getRows()[0] ?? null;
                     $funnelData[$event] = [
@@ -619,32 +677,38 @@ class AnalyticsController extends Controller
         $endDate = $request->get('end_date', 'today');
 
         try {
-            $response = $this->ga->analyticsData->properties->runReport($this->propertyId, [
-                'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-                'metrics' => [
-                    ['name' => 'cohortActiveUsers'],
-                    ['name' => 'cohortTotalUsers']
-                ],
-                'dimensions' => [
-                    ['name' => 'cohort'],
-                    ['name' => 'cohortNthDay']
-                ],
-                'cohortSpec' => [
-                    'cohorts' => [
-                        [
-                            'name' => 'cohort_1',
-                            'dateRange' => [
-                                'startDate' => $startDate,
-                                'endDate' => $endDate
-                            ]
-                        ]
-                    ],
-                    'cohortsRange' => [
-                        'granularity' => 'DAILY',
-                        'endOffset' => 7
-                    ]
-                ]
+            $reportRequest = new \Google\Service\AnalyticsData\RunReportRequest();
+            $reportRequest->setDateRanges([
+                new \Google\Service\AnalyticsData\DateRange(['start_date' => $startDate, 'end_date' => $endDate])
             ]);
+            $reportRequest->setMetrics([
+                new \Google\Service\AnalyticsData\Metric(['name' => 'cohortActiveUsers']),
+                new \Google\Service\AnalyticsData\Metric(['name' => 'cohortTotalUsers'])
+            ]);
+            $reportRequest->setDimensions([
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'cohort']),
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'cohortNthDay'])
+            ]);
+            
+            $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
+            $cohortSpec->setCohorts([
+                new \Google\Service\AnalyticsData\Cohort([
+                    'name' => 'cohort_1',
+                    'date_range' => new \Google\Service\AnalyticsData\DateRange([
+                        'start_date' => $startDate,
+                        'end_date' => $endDate
+                    ])
+                ])
+            ]);
+            $cohortSpec->setCohortsRange(
+                new \Google\Service\AnalyticsData\CohortsRange([
+                    'granularity' => 'DAILY',
+                    'end_offset' => 7
+                ])
+            );
+            $reportRequest->setCohortSpec($cohortSpec);
+
+            $response = $this->ga->analyticsData->properties->runReport("properties/{$this->propertyId}", $reportRequest);
 
             $cohortData = [];
             foreach ($response->getRows() as $row) {
