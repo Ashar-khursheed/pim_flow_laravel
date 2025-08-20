@@ -569,93 +569,61 @@ class AnalyticsController extends Controller
         }
     }
 
-    /**
+   /**
      * @OA\Get(
      *     path="/api/analytics/ecommerce-funnel",
      *     summary="Get E-commerce Funnel Analytics",
      *     tags={"Analytics"},
      *     @OA\Parameter(name="start_date", in="query", required=false, @OA\Schema(type="string")),
      *     @OA\Parameter(name="end_date", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="mock", in="query", required=false, @OA\Schema(type="boolean", description="Use mock data for testing")),
      *     @OA\Response(response=200, description="E-commerce funnel data"),
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-   /**
- * Get e-commerce funnel data
- */
-public function getEcommerceFunnel($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-{
-    $funnelStages = [
-        'view_item' => 'Product Views',
-        'add_to_cart' => 'Add to Cart',
-        'view_cart' => 'Cart Views',
-        'begin_checkout' => 'Checkout Started',
-        'add_shipping_info' => 'Shipping Added',
-        'add_payment_info' => 'Payment Added',
-        'purchase' => 'Purchase Completed'
-    ];
+    public function ecommerceFunnel(Request $request)
+    {
+        $startDate = $request->get('start_date', '30daysAgo');
+        $endDate = $request->get('end_date', 'today');
+        $useMock = $request->get('mock', false);
 
-    $funnelData = [];
-    foreach ($funnelStages as $event => $label) {
         try {
-            $request = new RunReportRequest();
-            $request->setDateRanges([
-                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+            // Set a timeout for the operation
+            set_time_limit(30); // 30 seconds max
+            
+            if ($useMock || !method_exists($this->ga, 'getEcommerceFunnel')) {
+                // Use mock data for testing
+                $data = $this->ga->getBasicEcommerceFunnel($this->propertyId, $startDate, $endDate);
+            } else {
+                // Use real GA4 data
+                $data = $this->ga->getEcommerceFunnel($this->propertyId, $startDate, $endDate);
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'funnel_data' => $data['funnel_data'],
+                'conversion_rates' => $data['conversion_rates'],
+                'insights' => $data['insights'],
+                'period' => ['start' => $startDate, 'end' => $endDate],
+                'generated_at' => now()->toISOString()
             ]);
-            $request->setMetrics([
-                new Metric(['name' => 'eventCount']),
-                new Metric(['name' => 'totalUsers'])
-            ]);
-            $request->setDimensionFilter(
-                new FilterExpression([
-                    'filter' => new Filter([
-                        'field_name' => 'eventName',
-                        'string_filter' => new StringFilter([
-                            'match_type' => 'EXACT',
-                            'value' => $event
-                        ])
-                    ])
-                ])
-            );
-
-            $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
-
-            $row = $response->getRows()[0] ?? null;
-            $funnelData[$event] = [
-                'label' => $label,
-                'events' => $row ? (int)$row->getMetricValues()[0]->getValue() : 0,
-                'users' => $row ? (int)$row->getMetricValues()[1]->getValue() : 0
-            ];
+            
         } catch (\Exception $e) {
-            $funnelData[$event] = [
-                'label' => $label,
-                'events' => 0,
-                'users' => 0,
-                'error' => $e->getMessage()
-            ];
+            return response()->json([
+                'status' => 'error',
+                'error' => $e->getMessage(),
+                'funnel_data' => [],
+                'conversion_rates' => [],
+                'insights' => [
+                    'total_started' => 0,
+                    'total_completed' => 0,
+                    'overall_conversion_rate' => 0
+                ],
+                'period' => ['start' => $startDate, 'end' => $endDate]
+            ], 500);
         }
     }
 
-    // Calculate conversion rates
-    $conversions = [];
-    $stages = array_keys($funnelStages);
-    for ($i = 1; $i < count($stages); $i++) {
-        $current = $funnelData[$stages[$i]]['users'];
-        $previous = $funnelData[$stages[$i-1]]['users'];
-        $conversions[$stages[$i]] = $previous > 0 ? round(($current / $previous) * 100, 2) : 0;
-    }
-
-    return [
-        'funnel_data' => $funnelData,
-        'conversion_rates' => $conversions,
-        'insights' => [
-            'total_started' => $funnelData['view_item']['users'],
-            'total_completed' => $funnelData['purchase']['users'],
-            'overall_conversion_rate' => $funnelData['view_item']['users'] > 0 ? 
-                round(($funnelData['purchase']['users'] / $funnelData['view_item']['users']) * 100, 2) : 0
-        ]
-    ];
-}
     /**
      * @OA\Get(
      *     path="/api/analytics/cohort-analysis",
