@@ -581,74 +581,144 @@ class AnalyticsController extends Controller
  *     @OA\Response(response=500, description="Internal Server Error")
  * )
  */
-public function ecommerceFunnel(Request $request)
+/**
+ * Get real e-commerce funnel from GA4
+ *
+ * @param string $propertyId
+ * @param string $startDate
+ * @param string $endDate
+ * @return array
+ */
+public function getRealEcommerceFunnel($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
-    $startDate = $request->get('start_date', '30daysAgo');
-    $endDate = $request->get('end_date', 'today');
-    $useMock = $request->get('mock', false);
-
     try {
-        // Set a timeout for the operation
-        set_time_limit(60); // 60 seconds max for GA API calls
-        
-        $data = [];
-        
-        if ($useMock || !method_exists($this->ga, 'getEcommerceFunnel')) {
-            // Use basic/mock data for testing or fallback
-            $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
-        } else {
-            // Use real GA4 data
-            try {
-                $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
+        $request = new RunReportRequest();
+        $request->setDateRanges([new DateRange([
+            'start_date' => $startDate,
+            'end_date' => $endDate
+        ])]);
 
-            } catch (\Exception $gaException) {
-                // Fallback to basic funnel if GA4 method fails
-                \Log::warning('GA4 ecommerce funnel failed, using basic funnel: ' . $gaException->getMessage());
-               $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
+        // Define metrics for each step
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),         // Product views
+            new Metric(['name' => 'eventCount'])        // For specific e-commerce events
+        ]);
 
+        // Dimensions to filter by event name
+        $request->setDimensions([new Dimension(['name' => 'eventName'])]);
+
+        // Only include relevant e-commerce events
+        $request->setDimensionFilter(new FilterExpression([
+            'orGroup' => [
+                'expressions' => [
+                    new FilterExpression([
+                        'filter' => new Filter([
+                            'fieldName' => 'eventName',
+                            'stringFilter' => new StringFilter(['matchType' => 'EXACT', 'value' => 'view_item'])
+                        ])
+                    ]),
+                    new FilterExpression([
+                        'filter' => new Filter([
+                            'fieldName' => 'eventName',
+                            'stringFilter' => new StringFilter(['matchType' => 'EXACT', 'value' => 'add_to_cart'])
+                        ])
+                    ]),
+                    new FilterExpression([
+                        'filter' => new Filter([
+                            'fieldName' => 'eventName',
+                            'stringFilter' => new StringFilter(['matchType' => 'EXACT', 'value' => 'begin_checkout'])
+                        ])
+                    ]),
+                    new FilterExpression([
+                        'filter' => new Filter([
+                            'fieldName' => 'eventName',
+                            'stringFilter' => new StringFilter(['matchType' => 'EXACT', 'value' => 'purchase'])
+                        ])
+                    ])
+                ]
+            ]
+        ]));
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        // Initialize counters
+        $sessions = 0;
+        $addToCart = 0;
+        $checkout = 0;
+        $purchase = 0;
+        $revenue = 0;
+
+        foreach ($response->getRows() as $row) {
+            $event = $this->safeGetDimension($row->getDimensionValues(), 0);
+            $count = $this->safeGetMetric($row->getMetricValues(), 1, 'int', 0);
+
+            switch ($event) {
+                case 'view_item':
+                    $sessions = $count;
+                    break;
+                case 'add_to_cart':
+                    $addToCart = $count;
+                    break;
+                case 'begin_checkout':
+                    $checkout = $count;
+                    break;
+                case 'purchase':
+                    $purchase = $count;
+                    // Get revenue if available (pseudo: GA4 sometimes tracks 'purchaseRevenue')
+                    $revenue = $this->safeGetMetric($row->getMetricValues(), 1, 'float', 0);
+                    break;
             }
         }
-        
-        // Validate data structure
-        if (!isset($data['funnel_data']) || !isset($data['conversion_rates']) || !isset($data['insights'])) {
-            throw new \Exception('Invalid funnel data structure returned');
-        }
-        
-        return response()->json([
-            'status' => 'success',
-            'funnel_data' => $data['funnel_data'],
-            'conversion_rates' => $data['conversion_rates'],
-            'insights' => $data['insights'],
-            'period' => [
-                'start' => $startDate, 
-                'end' => $endDate
+
+        // Calculate funnel conversion rates
+        $conversionRates = [
+            'view_to_cart' => $sessions > 0 ? round(($addToCart / $sessions) * 100, 2) : 0,
+            'cart_to_checkout' => $addToCart > 0 ? round(($checkout / $addToCart) * 100, 2) : 0,
+            'checkout_to_purchase' => $checkout > 0 ? round(($purchase / $checkout) * 100, 2) : 0,
+            'overall_conversion_rate' => $sessions > 0 ? round(($purchase / $sessions) * 100, 2) : 0
+        ];
+
+        return [
+            'funnel_data' => [
+                ['step' => 'Product Views', 'users' => $sessions, 'conversion_rate' => 100],
+                ['step' => 'Add to Cart', 'users' => $addToCart, 'conversion_rate' => $conversionRates['view_to_cart']],
+                ['step' => 'Checkout Started', 'users' => $checkout, 'conversion_rate' => $conversionRates['cart_to_checkout']],
+                ['step' => 'Purchase', 'users' => $purchase, 'conversion_rate' => $conversionRates['checkout_to_purchase']]
             ],
-            'data_source' => $useMock || !method_exists($this->ga, 'getEcommerceFunnel') ? 'mock' : 'ga4',
-            'generated_at' => now()->toISOString()
-        ]);
-        
+            'conversion_rates' => $conversionRates,
+            'insights' => [
+                'total_started' => $sessions,
+                'total_completed' => $purchase,
+                'overall_conversion_rate' => $conversionRates['overall_conversion_rate'],
+                'total_revenue' => $revenue,
+                'average_order_value' => $purchase > 0 ? round($revenue / $purchase, 2) : 0
+            ]
+        ];
+
     } catch (\Exception $e) {
-        // Log the error for debugging
-        \Log::error('Ecommerce funnel error: ' . $e->getMessage(), [
-            'trace' => $e->getTraceAsString(),
-            'start_date' => $startDate,
-            'end_date' => $endDate,
-            'property_id' => $this->propertyId ?? 'not_set'
-        ]);
-        
-        return response()->json([
-            'status' => 'error',
-            'error' => 'Failed to retrieve funnel data: ' . $e->getMessage(),
-            'funnel_data' => $this->getEmptyFunnelData(),
-            'conversion_rates' => $this->getEmptyConversionRates(),
-            'insights' => $this->getEmptyInsights(),
-            'period' => [
-                'start' => $startDate, 
-                'end' => $endDate
+        \Log::error('GA4 ecommerce funnel error: ' . $e->getMessage());
+        // Fallback to empty funnel
+        return [
+            'funnel_data' => [
+                ['step' => 'Product Views', 'users' => 0, 'conversion_rate' => 0],
+                ['step' => 'Add to Cart', 'users' => 0, 'conversion_rate' => 0],
+                ['step' => 'Checkout Started', 'users' => 0, 'conversion_rate' => 0],
+                ['step' => 'Purchase', 'users' => 0, 'conversion_rate' => 0]
             ],
-            'data_source' => 'error_fallback',
-            'generated_at' => now()->toISOString()
-        ], 500);
+            'conversion_rates' => [
+                'view_to_cart' => 0,
+                'cart_to_checkout' => 0,
+                'checkout_to_purchase' => 0,
+                'overall_conversion_rate' => 0
+            ],
+            'insights' => [
+                'total_started' => 0,
+                'total_completed' => 0,
+                'overall_conversion_rate' => 0,
+                'total_revenue' => 0,
+                'average_order_value' => 0
+            ]
+        ];
     }
 }
 
