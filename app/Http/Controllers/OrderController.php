@@ -370,6 +370,17 @@ class OrderController extends Controller
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 			]);
 
+			try {
+				$paymentLink = app(\App\Http\Controllers\SquarePaymentController::class)
+					->createPaymentLink($order);
+
+				$order->payment_link = $paymentLink;
+				$order->save();
+			} catch (\Exception $e) {
+				\Log::error('Square payment link generation failed: '.$e->getMessage());
+				$paymentLink = null;
+			}
+
 			/* Mutate the data for each order product */
 			foreach ($order->orderProducts as $orderProduct) {
 				$product = $orderProduct->product;
@@ -401,7 +412,9 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order
+				'data' => $order,
+				'payment_link' => $paymentLink
+
 			], 201);
 
 		} catch (\Exception $e) {

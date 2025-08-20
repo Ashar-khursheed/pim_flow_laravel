@@ -12,7 +12,9 @@ use Square\Types\Currency;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 use Square\Environment;
-
+use Square\Models\CreatePaymentLinkRequest;
+use Square\Models\Order;
+use Square\Models\OrderLineItem;
 
 
 class SquarePaymentController extends Controller
@@ -149,6 +151,45 @@ class SquarePaymentController extends Controller
                     'file' => $e->getFile() . ':' . $e->getLine(),
                 ]
             ], 500);
+        }
+    }
+
+    public function createPaymentLink(Order $order)
+    {
+        try {
+            $lineItems = [];
+
+            foreach ($order->orderProducts as $item) {
+                $lineItems[] = new OrderLineItem($item->quantity, [
+                    'name' => $item->product->name,
+                    'basePriceMoney' => new Money([
+                        'amount' => (int) round($item->unit_price * 100),
+                        'currency' => $item->product->currency->code ?? 'USD'
+                    ])
+                ]);
+            }
+
+            $orderObj = new Order(env('SQUARE_LOCATION_ID'));
+            $orderObj->setLineItems($lineItems);
+
+            $request = new CreatePaymentLinkRequest();
+            $request->setOrder($orderObj);
+            $request->setCheckoutOptions([
+                'redirect_url' => url('/payment-success?order_id=' . $order->id)
+            ]);
+
+            $response = $this->client->getPaymentLinksApi()->createPaymentLink($request);
+
+            if ($response->isSuccess()) {
+                return $response->getResult()->getPaymentLink()->getUrl();
+            }
+
+            $errors = $response->getErrors();
+            throw new \Exception($errors[0]->getDetail() ?? 'Failed to create payment link');
+
+        } catch (\Exception $e) {
+            \Log::error('Square payment link error: ' . $e->getMessage());
+            return null;
         }
     }
 } 
