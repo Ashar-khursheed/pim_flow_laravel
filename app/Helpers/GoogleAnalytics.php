@@ -26,227 +26,432 @@ class GoogleAnalytics
     }
 
     /**
-     * Total sessions by date
+     * Get basic overview metrics
      */
-    public function getSessions($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        $response = $this->analyticsData->properties->runReport($propertyId, [
-            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-            'metrics' => [['name' => 'sessions']],
-            'dimensions' => [['name' => 'date']],
-        ]);
-
-        return $response->getRows();
-    }
-
-    /**
-     * Users: total, new, returning
-     */
-    public function getUsers($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        $response = $this->analyticsData->properties->runReport($propertyId, [
-            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-            'metrics' => [['name' => 'totalUsers'], ['name' => 'newUsers']],
-        ]);
-
-        $rows = $response->getRows();
-        $totalUsers = $rows[0]->getMetricValues()[0]->getValue();
-        $newUsers = $rows[0]->getMetricValues()[1]->getValue();
-        $returningUsers = $totalUsers - $newUsers;
-
-        return [
-            'totalUsers' => (int)$totalUsers,
-            'newUsers' => (int)$newUsers,
-            'returningUsers' => (int)$returningUsers,
-        ];
-    }
-
-    /**
-     * Bounce rate & average session duration
-     */
-    public function getEngagement($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    public function getOverview($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
         $response = $this->analyticsData->properties->runReport($propertyId, [
             'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
             'metrics' => [
+                ['name' => 'sessions'],
+                ['name' => 'totalUsers'],
+                ['name' => 'newUsers'],
+                ['name' => 'screenPageViews'],
                 ['name' => 'bounceRate'],
-                ['name' => 'averageSessionDuration']
+                ['name' => 'averageSessionDuration'],
+                ['name' => 'conversions'],
+                ['name' => 'totalRevenue']
             ]
         ]);
 
-        $rows = $response->getRows();
+        $row = $response->getRows()[0] ?? null;
+        if (!$row) return null;
+
+        $metrics = $row->getMetricValues();
         return [
-            'bounceRate' => (float)$rows[0]->getMetricValues()[0]->getValue(),
-            'avgSessionDuration' => (float)$rows[0]->getMetricValues()[1]->getValue(), // in seconds
+            'sessions' => (int)$metrics[0]->getValue(),
+            'totalUsers' => (int)$metrics[1]->getValue(),
+            'newUsers' => (int)$metrics[2]->getValue(),
+            'returningUsers' => (int)$metrics[1]->getValue() - (int)$metrics[2]->getValue(),
+            'pageViews' => (int)$metrics[3]->getValue(),
+            'bounceRate' => round((float)$metrics[4]->getValue() * 100, 2),
+            'avgSessionDuration' => (float)$metrics[5]->getValue(),
+            'conversions' => (int)$metrics[6]->getValue(),
+            'totalRevenue' => (float)$metrics[7]->getValue()
         ];
     }
 
     /**
-     * Revenue / conversions / purchases
+     * Get sessions by date (day-wise data)
      */
-    public function getConversions($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    public function getSessionsByDate($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        $response = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [
+                ['name' => 'sessions'],
+                ['name' => 'totalUsers'],
+                ['name' => 'conversions'],
+                ['name' => 'totalRevenue']
+            ],
+            'dimensions' => [['name' => 'date']],
+            'orderBys' => [['dimension' => ['dimensionName' => 'date']]]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $date = $row->getDimensionValues()[0]->getValue();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'date' => $date,
+                'sessions' => (int)$metrics[0]->getValue(),
+                'users' => (int)$metrics[1]->getValue(),
+                'conversions' => (int)$metrics[2]->getValue(),
+                'revenue' => (float)$metrics[3]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get detailed device analytics
+     */
+    public function getDeviceAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        $response = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [
+                ['name' => 'sessions'],
+                ['name' => 'totalUsers'],
+                ['name' => 'bounceRate'],
+                ['name' => 'averageSessionDuration'],
+                ['name' => 'conversions'],
+                ['name' => 'totalRevenue']
+            ],
+            'dimensions' => [
+                ['name' => 'deviceCategory'],
+                ['name' => 'operatingSystem'],
+                ['name' => 'browser']
+            ]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'device' => $dimensions[0]->getValue(),
+                'os' => $dimensions[1]->getValue(),
+                'browser' => $dimensions[2]->getValue(),
+                'sessions' => (int)$metrics[0]->getValue(),
+                'users' => (int)$metrics[1]->getValue(),
+                'bounceRate' => round((float)$metrics[2]->getValue() * 100, 2),
+                'avgSessionDuration' => (float)$metrics[3]->getValue(),
+                'conversions' => (int)$metrics[4]->getValue(),
+                'revenue' => (float)$metrics[5]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get detailed geographic analytics
+     */
+    public function getGeographicAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        $response = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [
+                ['name' => 'sessions'],
+                ['name' => 'totalUsers'],
+                ['name' => 'conversions'],
+                ['name' => 'totalRevenue'],
+                ['name' => 'averageSessionDuration']
+            ],
+            'dimensions' => [
+                ['name' => 'country'],
+                ['name' => 'region'],
+                ['name' => 'city']
+            ],
+            'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'country' => $dimensions[0]->getValue(),
+                'region' => $dimensions[1]->getValue(),
+                'city' => $dimensions[2]->getValue(),
+                'sessions' => (int)$metrics[0]->getValue(),
+                'users' => (int)$metrics[1]->getValue(),
+                'conversions' => (int)$metrics[2]->getValue(),
+                'revenue' => (float)$metrics[3]->getValue(),
+                'avgSessionDuration' => (float)$metrics[4]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get conversion analytics with funnel data
+     */
+    public function getConversionAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
         $response = $this->analyticsData->properties->runReport($propertyId, [
             'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
             'metrics' => [
                 ['name' => 'conversions'],
-                ['name' => 'purchaseRevenue']
+                ['name' => 'totalRevenue'],
+                ['name' => 'purchaseRevenue'],
+                ['name' => 'addToCarts'],
+                ['name' => 'checkouts']
             ],
+            'dimensions' => [['name' => 'conversionEventName']]
         ]);
 
-        $rows = $response->getRows();
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $eventName = $row->getDimensionValues()[0]->getValue();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'eventName' => $eventName,
+                'conversions' => (int)$metrics[0]->getValue(),
+                'totalRevenue' => (float)$metrics[1]->getValue(),
+                'purchaseRevenue' => (float)$metrics[2]->getValue(),
+                'addToCarts' => (int)$metrics[3]->getValue(),
+                'checkouts' => (int)$metrics[4]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get abandoned cart analytics
+     */
+    public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        // Get add_to_cart events
+        $addToCartResponse = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [['name' => 'eventCount']],
+            'dimensionFilter' => [
+                'filter' => [
+                    'fieldName' => 'eventName',
+                    'stringFilter' => [
+                        'matchType' => 'EXACT',
+                        'value' => 'add_to_cart'
+                    ]
+                ]
+            ]
+        ]);
+
+        // Get purchase events
+        $purchaseResponse = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [['name' => 'eventCount']],
+            'dimensionFilter' => [
+                'filter' => [
+                    'fieldName' => 'eventName',
+                    'stringFilter' => [
+                        'matchType' => 'EXACT',
+                        'value' => 'purchase'
+                    ]
+                ]
+            ]
+        ]);
+
+        // Get begin_checkout events
+        $checkoutResponse = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [['name' => 'eventCount']],
+            'dimensionFilter' => [
+                'filter' => [
+                    'fieldName' => 'eventName',
+                    'stringFilter' => [
+                        'matchType' => 'EXACT',
+                        'value' => 'begin_checkout'
+                    ]
+                ]
+            ]
+        ]);
+
+        $addToCarts = $addToCartResponse->getRows()[0]->getMetricValues()[0]->getValue() ?? 0;
+        $purchases = $purchaseResponse->getRows()[0]->getMetricValues()[0]->getValue() ?? 0;
+        $checkouts = $checkoutResponse->getRows()[0]->getMetricValues()[0]->getValue() ?? 0;
+
+        $cartAbandonmentRate = $addToCarts > 0 ? (($addToCarts - $checkouts) / $addToCarts) * 100 : 0;
+        $checkoutAbandonmentRate = $checkouts > 0 ? (($checkouts - $purchases) / $checkouts) * 100 : 0;
+
         return [
-            'conversions' => (int)$rows[0]->getMetricValues()[0]->getValue(),
-            'totalRevenue' => (float)$rows[0]->getMetricValues()[1]->getValue(),
+            'addToCarts' => (int)$addToCarts,
+            'checkouts' => (int)$checkouts,
+            'purchases' => (int)$purchases,
+            'abandonedCarts' => (int)($addToCarts - $checkouts),
+            'abandonedCheckouts' => (int)($checkouts - $purchases),
+            'cartAbandonmentRate' => round($cartAbandonmentRate, 2),
+            'checkoutAbandonmentRate' => round($checkoutAbandonmentRate, 2),
+            'conversionRate' => $addToCarts > 0 ? round(($purchases / $addToCarts) * 100, 2) : 0
         ];
     }
 
     /**
-     * Sessions by device category
+     * Get traffic source analytics
      */
-    public function getSessionsByDevice($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    public function getTrafficSources($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
         $response = $this->analyticsData->properties->runReport($propertyId, [
             'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-            'metrics' => [['name' => 'sessions']],
-            'dimensions' => [['name' => 'deviceCategory']],
+            'metrics' => [
+                ['name' => 'sessions'],
+                ['name' => 'totalUsers'],
+                ['name' => 'conversions'],
+                ['name' => 'totalRevenue']
+            ],
+            'dimensions' => [
+                ['name' => 'sessionDefaultChannelGroup'],
+                ['name' => 'sessionSource'],
+                ['name' => 'sessionMedium']
+            ],
+            'orderBys' => [['metric' => ['metricName' => 'sessions'], 'desc' => true]]
         ]);
 
         $data = [];
         foreach ($response->getRows() as $row) {
-            $device = $row->getDimensionValues()[0]->getValue();
-            $sessions = $row->getMetricValues()[0]->getValue();
-            $data[$device] = (int)$sessions;
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'channelGroup' => $dimensions[0]->getValue(),
+                'source' => $dimensions[1]->getValue(),
+                'medium' => $dimensions[2]->getValue(),
+                'sessions' => (int)$metrics[0]->getValue(),
+                'users' => (int)$metrics[1]->getValue(),
+                'conversions' => (int)$metrics[2]->getValue(),
+                'revenue' => (float)$metrics[3]->getValue()
+            ];
         }
-
         return $data;
     }
 
     /**
-     * Sessions by geography: country / city
+     * Get page analytics
      */
-    public function getGeo($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    public function getPageAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
         $response = $this->analyticsData->properties->runReport($propertyId, [
             'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
-            'metrics' => [['name' => 'sessions']],
-            'dimensions' => [['name' => 'country'], ['name' => 'city']],
+            'metrics' => [
+                ['name' => 'screenPageViews'],
+                ['name' => 'uniquePageViews'],
+                ['name' => 'averageTimeOnPage'],
+                ['name' => 'exits']
+            ],
+            'dimensions' => [
+                ['name' => 'pageTitle'],
+                ['name' => 'pagePath']
+            ],
+            'orderBys' => [['metric' => ['metricName' => 'screenPageViews'], 'desc' => true]],
+            'limit' => 50
         ]);
 
         $data = [];
         foreach ($response->getRows() as $row) {
-            $country = $row->getDimensionValues()[0]->getValue();
-            $city = $row->getDimensionValues()[1]->getValue();
-            $sessions = $row->getMetricValues()[0]->getValue();
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
             $data[] = [
-                'country' => $country,
-                'city' => $city,
-                'sessions' => (int)$sessions,
+                'pageTitle' => $dimensions[0]->getValue(),
+                'pagePath' => $dimensions[1]->getValue(),
+                'pageViews' => (int)$metrics[0]->getValue(),
+                'uniquePageViews' => (int)$metrics[1]->getValue(),
+                'avgTimeOnPage' => (float)$metrics[2]->getValue(),
+                'exits' => (int)$metrics[3]->getValue()
             ];
         }
+        return $data;
+    }
 
+    /**
+     * Get event analytics
+     */
+    public function getEventAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        $response = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [
+                ['name' => 'eventCount'],
+                ['name' => 'eventCountPerUser'],
+                ['name' => 'eventValue']
+            ],
+            'dimensions' => [
+                ['name' => 'eventName'],
+                ['name' => 'customEvent:event_category']
+            ],
+            'orderBys' => [['metric' => ['metricName' => 'eventCount'], 'desc' => true]]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'eventName' => $dimensions[0]->getValue(),
+                'eventCategory' => $dimensions[1]->getValue(),
+                'eventCount' => (int)$metrics[0]->getValue(),
+                'eventCountPerUser' => (float)$metrics[1]->getValue(),
+                'eventValue' => (float)$metrics[2]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get real-time analytics
+     */
+    public function getRealTimeAnalytics($propertyId)
+    {
+        $response = $this->analyticsData->properties->runRealtimeReport($propertyId, [
+            'metrics' => [
+                ['name' => 'activeUsers'],
+                ['name' => 'screenPageViews']
+            ],
+            'dimensions' => [
+                ['name' => 'country'],
+                ['name' => 'deviceCategory']
+            ]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'country' => $dimensions[0]->getValue(),
+                'device' => $dimensions[1]->getValue(),
+                'activeUsers' => (int)$metrics[0]->getValue(),
+                'pageViews' => (int)$metrics[1]->getValue()
+            ];
+        }
+        return $data;
+    }
+
+    /**
+     * Get audience demographics
+     */
+    public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    {
+        $response = $this->analyticsData->properties->runReport($propertyId, [
+            'dateRanges' => [['startDate' => $startDate, 'endDate' => $endDate]],
+            'metrics' => [
+                ['name' => 'totalUsers'],
+                ['name' => 'sessions']
+            ],
+            'dimensions' => [
+                ['name' => 'userAgeBracket'],
+                ['name' => 'userGender']
+            ]
+        ]);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'ageBracket' => $dimensions[0]->getValue(),
+                'gender' => $dimensions[1]->getValue(),
+                'users' => (int)$metrics[0]->getValue(),
+                'sessions' => (int)$metrics[1]->getValue()
+            ];
+        }
         return $data;
     }
 }
-
-// namespace App\Helpers;
-
-// class GoogleAnalytics
-// {
-//     private $keyFile;
-//     private $scopes = ['https://www.googleapis.com/auth/analytics.readonly'];
-//     private $token;
-
-//     public function __construct()
-//     {
-//         $this->keyFile = base_path('app/Script/analytics-key.json');
-//         $this->authenticate();
-//     }
-
-//     private function authenticate()
-//     {
-//         $json = json_decode(file_get_contents($this->keyFile), true);
-
-//         $jwtHeader = $this->base64UrlEncode(json_encode([
-//             'alg' => 'RS256',
-//             'typ' => 'JWT'
-//         ]));
-
-//         $now = time();
-//         $jwtClaim = $this->base64UrlEncode(json_encode([
-//             "iss" => $json['client_email'],
-//             "scope" => implode(' ', $this->scopes),
-//             "aud" => "https://oauth2.googleapis.com/token",
-//             "exp" => $now + 3600,
-//             "iat" => $now,
-//         ]));
-
-//         $signatureInput = $jwtHeader . '.' . $jwtClaim;
-
-//         openssl_sign($signatureInput, $signature, openssl_pkey_get_private($json['private_key']), 'sha256WithRSAEncryption');
-//         $jwtAssertion = $signatureInput . '.' . $this->base64UrlEncode($signature);
-
-//         // Exchange JWT for access token
-//         $ch = curl_init('https://oauth2.googleapis.com/token');
-//         curl_setopt($ch, CURLOPT_POST, true);
-//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-//         curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query([
-//             'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-//             'assertion'  => $jwtAssertion,
-//         ]));
-//         $response = json_decode(curl_exec($ch), true);
-//         curl_close($ch);
-
-//         $this->token = $response['access_token'] ?? null;
-//     }
-
-//     /**
-//      * Get GA4 Report dynamically
-//      */
-//     public function getReport(
-//         string $propertyId,
-//         array $dimensions = ['city', 'country'],
-//         array $metrics = ['activeUsers'],
-//         string $startDate = '2024-08-01',
-//         string $endDate = 'today',
-//         array $filters = []
-//     ) {
-//         $url = "https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport";
-
-//         // Build dimensions
-//         $dims = array_map(fn($d) => ['name' => $d], $dimensions);
-//         // Build metrics
-//         $mets = array_map(fn($m) => ['name' => $m], $metrics);
-
-//         $postData = [
-//             "dimensions" => $dims,
-//             "metrics"    => $mets,
-//             "dateRanges" => [
-//                 ["startDate" => $startDate, "endDate" => $endDate]
-//             ]
-//         ];
-
-//         // Add filters if provided
-//         if (!empty($filters)) {
-//             $postData['dimensionFilter'] = $filters;
-//         }
-
-//         $ch = curl_init($url);
-//         curl_setopt($ch, CURLOPT_HTTPHEADER, [
-//             "Authorization: Bearer " . $this->token,
-//             "Content-Type: application/json"
-//         ]);
-//         curl_setopt($ch, CURLOPT_POST, true);
-//         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-//         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($postData));
-//         $response = json_decode(curl_exec($ch), true);
-//         curl_close($ch);
-
-//         return $response;
-//     }
-
-//     private function base64UrlEncode($data)
-//     {
-//         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
-//     }
-// }
