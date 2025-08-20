@@ -589,7 +589,7 @@ class AnalyticsController extends Controller
  * @param string $endDate
  * @return array
  */
-public function getRealEcommerceFunnel($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+public function ecommerceFunnel($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     try {
         $request = new RunReportRequest();
