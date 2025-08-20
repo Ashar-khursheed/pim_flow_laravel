@@ -495,7 +495,7 @@ class OrderController extends Controller
 		PaymentManagement::create([
 			'order_id' => $order->id,
 			'transaction_id' => $transactionId,
-			'payment_mode' => 'Manual/Test',
+			'payment_mode' => 'Square',
 			'amount' => $order->total_amount,
 			'status' => 'Paid',
 			'notes' => 'Payment marked manually/test'
