@@ -85,7 +85,7 @@ class CouponController extends Controller
 
    /**
  * @OA\Get(
- *   path="/frontend/coupons",
+ *   path="/frontend/coupons/",
  *   tags={"FrontEnd-Coupon"},
  *   summary="Get all coupons",
  *    security={{"bearerAuth":{}}},
