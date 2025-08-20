@@ -499,7 +499,8 @@ class GoogleAnalytics
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
-    $client->setAuthConfig($this->keyFile);
+    $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+
     $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
 
     $analyticsData = new \Google\Service\AnalyticsData($client);
