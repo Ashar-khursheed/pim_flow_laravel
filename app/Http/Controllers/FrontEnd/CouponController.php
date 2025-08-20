@@ -86,7 +86,7 @@ class CouponController extends Controller
    /**
  * @OA\Get(
  *   path="/coupons",
- *   tags={"Coupons"},
+ *   tags={"FrontEnd-Coupon"},
  *   summary="Get all coupons",
  *   @OA\Response(
  *     response=200,

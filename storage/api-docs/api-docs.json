@@ -14221,7 +14221,7 @@
         "/coupons": {
             "get": {
                 "tags": [
-                    "Coupons"
+                    "FrontEnd-Coupon"
                 ],
                 "summary": "Get all coupons",
                 "operationId": "0f96b97445343da27a69244423c7f099",
@@ -35471,10 +35471,6 @@
         {
             "name": "FrontEnd-Coupon",
             "description": "FrontEnd-Coupon"
-        },
-        {
-            "name": "Coupons",
-            "description": "Coupons"
         },
         {
             "name": "Frontend-Customer-Address",
