@@ -8,6 +8,7 @@ use App\Models\FrontEnd\OrderProduct;
 use App\Models\FrontEnd\OrderTracking;
 
 use App\Models\FrontEnd\Payment;
+use App\Models\PaymentManagement;
 use App\Models\FrontEnd\Shipment;
 use App\Models\FrontEnd\ShipmentProduct;
 use App\Models\FrontEnd\CustomerAddress;
@@ -491,7 +492,7 @@ class OrderController extends Controller
 			'payment_link' => null
 		]);
 
-		Payment::create([
+		PaymentManagement::create([
 			'order_id' => $order->id,
 			'transaction_id' => $transactionId,
 			'payment_mode' => 'Manual/Test',
