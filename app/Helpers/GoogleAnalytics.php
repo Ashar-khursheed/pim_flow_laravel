@@ -550,18 +550,37 @@ class GoogleAnalytics
             ]
         ];
     }
+public function getRealTimeAnalytics($propertyId)
+{
+    $client = new BetaAnalyticsDataClient([
+        'credentials' => storage_path('app/analytics-key.json')
+    ]);
 
-    public function getRealTimeAnalytics($propertyId)
-    {
-        return [
-            [
-                'country' => 'Unknown',
-                'device' => 'Unknown',
-                'activeUsers' => 0,
-                'pageViews' => 0
-            ]
+    $request = new RunRealtimeReportRequest([
+        'property' => "properties/{$propertyId}",
+        'dimensions' => [
+            ['name' => 'country'],
+            ['name' => 'deviceCategory'],
+        ],
+        'metrics' => [
+            ['name' => 'activeUsers']
+        ],
+    ]);
+
+    $response = $client->runRealtimeReport($request);
+
+    $data = [];
+
+    foreach ($response->rows as $row) {
+        $data[] = [
+            'country' => $row->dimensionValues[0]->value,
+            'device' => $row->dimensionValues[1]->value,
+            'activeUsers' => (int)$row->metricValues[0]->value
         ];
     }
+
+    return $data;
+}
 
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
