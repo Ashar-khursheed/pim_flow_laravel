@@ -135,7 +135,7 @@ class CouponController extends Controller
     public function store(Request $request)
     {
     $validated = $request->validate([
-        'code' => 'required|string|unique:discounts,code',
+        'code' => 'required|string|unique:ec_discounts,code',
         'value' => 'required|numeric|min:0',
         'min_order_price' => 'nullable|numeric|min:0',
         'quantity' => 'nullable|integer|min:1',
@@ -220,7 +220,7 @@ public function update(Request $request, $id)
     $coupon = Discount::findOrFail($id);
 
     $validated = $request->validate([
-        'code' => 'sometimes|required|string|unique:discounts,code,' . $coupon->id,
+        'code' => 'sometimes|required|string|unique:ec_discounts,code,' . $coupon->id,
         'value' => 'sometimes|required|numeric|min:0',
         'min_order_price' => 'nullable|numeric|min:0',
         'quantity' => 'nullable|integer|min:1',
