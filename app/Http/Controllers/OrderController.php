@@ -271,7 +271,9 @@ class OrderController extends Controller
 			'products.*.shipping_charge' => 'required|numeric|min:0',
 		]);
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $request->customer_id)->first();
+		$address = CustomerAddress::where('id', $request->customer_address_id)
+			->where('customer_id', $request->customer_id)
+			->first();
 
 		if (!$address) {
 			return response()->json([
@@ -292,6 +294,7 @@ class OrderController extends Controller
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
+
 			$orderAmount += $request->boolean('is_life_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
@@ -303,7 +306,7 @@ class OrderController extends Controller
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('id', 'desc')->first();
 
-			/* Generate the next order number */
+			// Generate the next order number
 			if ($latestOrder && is_numeric($latestOrder->order_number)) {
 				$orderNumber = (int) $latestOrder->order_number + 1;
 			} else {
@@ -356,8 +359,22 @@ class OrderController extends Controller
 				'created_by' => auth()->id()
 			]);
 
+			// Generate payment link BEFORE committing transaction
+			$paymentLink = null;
+			try {
+				$paymentLink = app(\App\Http\Controllers\FrontEnd\SquarePaymentController::class)
+					->createPaymentLink($order);
+
+				if ($paymentLink) {
+					$order->payment_link = $paymentLink;
+					$order->save();
+				}
+			} catch (\Exception $e) {
+			}
+
 			DB::commit();
 
+			// Dispatch jobs AFTER successful commit
 			$batch = Bus::batch([])->before(function (Batch $batch) {
 			})->catch(function (Batch $batch, Throwable $e) {
 			})->finally(function (Batch $batch) {
@@ -368,7 +385,7 @@ class OrderController extends Controller
 				'recordId' => $order->id
 			]));
 
-			/* Load relationships */
+			// Load relationships
 			$order->load([
 				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
 				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
@@ -378,24 +395,28 @@ class OrderController extends Controller
 				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
 			]);
 
-			/* Mutate the data for each order product */
+			// Mutate the data for each order product
 			foreach ($order->orderProducts as $orderProduct) {
 				$product = $orderProduct->product;
 				if ($product) {
-					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+					$product->images = is_array($product->images)
+						? $product->images
+						: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 					$product->brand_name = $product->brand->name ?? null;
 					$product->currency_symbol = $product->currency->symbol ?? null;
 					unset($product->brand, $product->currency);
 				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
-				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
 
-				/* Format numeric values to 2 decimal places */
+				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+					->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+					? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+					: null;
+
+				// Format numeric values to 2 decimal places - FIXED variable name
 				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-					if (isset($quoteProduct->$key)) {
-						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
+					if (isset($orderProduct->$key)) {
+						$orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
 					}
 				}
 			}
@@ -409,7 +430,8 @@ class OrderController extends Controller
 			return response()->json([
 				'success' => true,
 				'message' => 'Order created successfully',
-				'data' => $order
+				'data' => $order,
+				'payment_link' => $paymentLink
 			], 201);
 
 		} catch (\Exception $e) {

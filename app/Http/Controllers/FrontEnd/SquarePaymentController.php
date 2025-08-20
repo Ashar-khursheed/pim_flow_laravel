@@ -13,7 +13,8 @@ use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 use Square\Environment;
 
-
+// CORRECT imports for Payment Links
+use Square\Models\CreatePaymentLinkRequest;
 
 class SquarePaymentController extends Controller
 {
@@ -151,4 +152,118 @@ class SquarePaymentController extends Controller
             ], 500);
         }
     }
-} 
+ /**
+     * Create a payment link for an order using Square Checkout API
+     */
+    public function createPaymentLink(\App\Models\FrontEnd\Order $order)
+    {
+        try {
+            // Check if Square is properly configured
+            $locationId = env('SQUARE_LOCATION_ID');
+            $accessToken = env('SQUARE_ACCESS_TOKEN');
+            
+            if (!$locationId || !$accessToken) {
+                throw new \Exception('Square credentials not configured: Location ID or Access Token missing');
+            }
+
+            \Log::info('Creating payment link for order: ' . $order->id . ' with location: ' . $locationId);
+
+            // Use cURL method as it's more reliable than SDK for payment links
+            return $this->createPaymentLinkCurl($order);
+
+        } catch (\Exception $e) {
+            \Log::error('Square payment link error: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return null;
+        }
+    }
+
+    /**
+     * Alternative method using cURL for payment links (if SDK doesn't work)
+     */
+    public function createPaymentLinkCurl($order)
+    {
+        try {
+            $accessToken = env('SQUARE_ACCESS_TOKEN');
+            $locationId = env('SQUARE_LOCATION_ID');
+            
+            if (!$accessToken || !$locationId) {
+                throw new \Exception('Square credentials not configured');
+            }
+
+            $totalAmount = (int) round($order->total_amount * 100);
+            
+            // Handle both real orders and test objects
+            if (is_object($order) && isset($order->orderProducts)) {
+                $product = $order->orderProducts->first();
+                $itemName = $order->orderProducts->count() > 1 
+                    ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
+                    : ($product->product->name ?? "Order #" . $order->order_number);
+            } else {
+                $itemName = "Order #" . $order->order_number;
+            }
+
+            $data = [
+                'idempotency_key' => (string) Str::uuid(),
+                'quick_pay' => [
+                    'name' => $itemName,
+                    'price_money' => [
+                        'amount' => $totalAmount,
+                        'currency' => 'USD'
+                    ],
+                    'location_id' => $locationId
+                ],
+                'checkout_options' => [
+                    'redirect_url' => url('/payment-success?order_id=' . $order->id)
+                ]
+            ];
+
+            \Log::info('Square payment link request data: ' . json_encode($data));
+
+            $ch = curl_init();
+            curl_setopt_array($ch, [
+                CURLOPT_URL => 'https://connect.squareup.com/v2/online-checkout/payment-links',
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_POST => true,
+                CURLOPT_POSTFIELDS => json_encode($data),
+                CURLOPT_HTTPHEADER => [
+                    'Authorization: Bearer ' . $accessToken,
+                    'Content-Type: application/json',
+                    'Square-Version: 2025-07-16'
+                ],
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => true
+            ]);
+
+            $response = curl_exec($ch);
+            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
+
+            \Log::info('Square API response code: ' . $httpCode);
+            \Log::info('Square API response: ' . $response);
+
+            if ($curlError) {
+                throw new \Exception('cURL error: ' . $curlError);
+            }
+
+            if ($httpCode === 200) {
+                $result = json_decode($response, true);
+                if (isset($result['payment_link']['url'])) {
+                    \Log::info('Payment link created successfully: ' . $result['payment_link']['url']);
+                    return $result['payment_link']['url'];
+                } else {
+                    \Log::error('No payment link URL in response: ' . json_encode($result));
+                    return null;
+                }
+            } else {
+                \Log::error('Square API error (HTTP ' . $httpCode . '): ' . $response);
+                return null;
+            }
+
+        } catch (\Exception $e) {
+            \Log::error('Square payment link cURL error: ' . $e->getMessage());
+            return null;
+        }
+    }
+}

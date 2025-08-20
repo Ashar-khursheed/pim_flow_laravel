@@ -386,34 +386,513 @@
                 ]
             }
         },
-        "/api/analytics/report": {
+        "/api/analytics/overview": {
             "get": {
                 "tags": [
                     "Analytics"
                 ],
-                "summary": "Get Google Analytics Report",
-                "description": "Fetches analytics data from Google Analytics 4 (GA4).",
-                "operationId": "15767f626b1b8e2ebe30c7cb78a5de65",
-                "responses": {
-                    "200": {
-                        "description": "Successful Response",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object"
-                                },
-                                "example": {
-                                    "sessions": 1200,
-                                    "users": 800,
-                                    "pageViews": 3400,
-                                    "bounceRate": 0.45,
-                                    "averageSessionDuration": "3m 24s"
-                                }
-                            }
+                "summary": "Get Analytics Overview",
+                "operationId": "61ac7ba417060e0c11a5fe00d77745f6",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "description": "Start date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "30daysAgo"
                         }
                     },
-                    "401": {
-                        "description": "Unauthorized - Invalid credentials"
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "description": "End date",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "today"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/sessions-by-date": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Sessions by Date",
+                "operationId": "9e173e045085d94bd81e5007e1110a0c",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful Response"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/device": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Device Analytics",
+                "operationId": "0d86f4156ef9fb0c9c53d9407d987fb5",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Device analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/geographic": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Geographic Analytics",
+                "operationId": "a0c62c4f5637bbf20f248121a7d8ddd5",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Geographic analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/test": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Test Analytics Connection",
+                "operationId": "8bbefb3c6a6ce74d04dbb1428503f4a7",
+                "responses": {
+                    "200": {
+                        "description": "Test successful"
+                    },
+                    "500": {
+                        "description": "Test failed"
+                    }
+                }
+            }
+        },
+        "/api/analytics/conversions": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Conversion Analytics",
+                "operationId": "299878703c4d1cd65c45eb4889ea1c75",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Conversion analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/abandoned-cart": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Abandoned Cart Analytics",
+                "operationId": "c4f5a39afe82520bb59bf0c7d3c94586",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Abandoned cart analytics"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/traffic-sources": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Traffic Sources Analytics",
+                "operationId": "7b27c66c4ea8d28a6345ad49104eb0f8",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Traffic sources data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/pages": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Page Analytics",
+                "operationId": "82f7bad90f1b537927a8a29adbea5298",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/events": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Event Analytics",
+                "operationId": "f695a2cb06354c3585864e498660899b",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Event analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/realtime": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Real-time Analytics",
+                "operationId": "e65ab13cf35eeceb27e16373777a4608",
+                "responses": {
+                    "200": {
+                        "description": "Real-time analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/demographics": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Audience Demographics",
+                "operationId": "9915e46db2313b33c749bcadef4d9871",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Demographics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/custom-report": {
+            "post": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Custom Analytics Report",
+                "operationId": "6e69a3c09fdbe475cdbbee9d3aa4e82c",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "metrics"
+                                ],
+                                "properties": {
+                                    "metrics": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "dimensions": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "start_date": {
+                                        "type": "string"
+                                    },
+                                    "end_date": {
+                                        "type": "string"
+                                    },
+                                    "filters": {
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Custom report data"
+                    },
+                    "422": {
+                        "description": "Validation Error"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/ecommerce-funnel": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get E-commerce Funnel Analytics",
+                "operationId": "bbad980363dd62b3c8ad04650b8b4787",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "E-commerce funnel data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/cohort-analysis": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Cohort Analysis",
+                "operationId": "25e6d5142c77f922ab4c9999f653e3c9",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cohort analysis data"
                     },
                     "500": {
                         "description": "Internal Server Error"
