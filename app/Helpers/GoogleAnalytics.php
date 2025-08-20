@@ -553,7 +553,7 @@ class GoogleAnalytics
 public function getRealTimeAnalytics($propertyId)
 {
     $client = new BetaAnalyticsDataClient([
-        'credentials' => storage_path('app/analytics-key.json')
+        'credentials' => storage_path('app/Script/analytics-key.json')
     ]);
 
     $request = new RunRealtimeReportRequest([
