@@ -498,7 +498,7 @@ class OrderController extends Controller
 			'payment_mode' => 'Credit Card',
 			'payment_method' => 'Square',
 			'amount' => $order->total_amount,
-			'status' => 'Paid',
+			'status' => 'Completed',
 			'notes' => 'Payment marked manually/test'
 		]);
 
