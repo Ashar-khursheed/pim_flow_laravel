@@ -2579,7 +2579,7 @@ private function getAllCategoryProductIds($categoryId)
         ->toArray();
     
     // Get all child categories
-    $childCategoryIds = DB::table('ec_categories')
+    $childCategoryIds = DB::table('categories')
         ->where('parent_id', $categoryId)
         ->pluck('id')
         ->toArray();
