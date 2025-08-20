@@ -88,6 +88,7 @@ class CouponController extends Controller
  *   path="/coupons",
  *   tags={"FrontEnd-Coupon"},
  *   summary="Get all coupons",
+ *    security={{"bearerAuth":{}}},
  *   @OA\Response(
  *     response=200,
  *     description="Successful response",
