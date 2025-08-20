@@ -454,7 +454,7 @@ class GoogleAnalytics
     //             : 'success'
     //     ];
     // }
-  public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
     $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
@@ -471,8 +471,8 @@ class GoogleAnalytics
         ],
         'dimensions' => [
             new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'userId']),   // only works if you set user_id in GA4
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']), // product name
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'ga_session_id']), // instead of userId
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']),      // product name
         ],
         'metrics' => [
             new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
@@ -491,7 +491,7 @@ class GoogleAnalytics
 
     foreach ($response->getRows() as $row) {
         $eventName = $row->getDimensionValues()[0]->getValue();
-        $userId    = $row->getDimensionValues()[1]->getValue() ?: 'anonymous';
+        $sessionId = $row->getDimensionValues()[1]->getValue();
         $itemName  = $row->getDimensionValues()[2]->getValue();
         $count     = (int) $row->getMetricValues()[0]->getValue();
 
@@ -505,10 +505,10 @@ class GoogleAnalytics
 
         if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
             $details[] = [
-                'event'  => $eventName,
-                'userId' => $userId,
-                'item'   => $itemName,
-                'count'  => $count,
+                'event'     => $eventName,
+                'sessionId' => $sessionId,
+                'item'      => $itemName,
+                'count'     => $count,
             ];
         }
     }
