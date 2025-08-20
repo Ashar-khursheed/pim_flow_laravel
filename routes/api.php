@@ -264,6 +264,9 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
     Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
 });
 
+	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
+
 	Route::apiResource('customer-events', CustomerEventController::class);
 
     Route::get('/utms', [Utmcontroller::class, 'index']);

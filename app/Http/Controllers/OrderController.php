@@ -325,6 +325,7 @@ class OrderController extends Controller
 				'pending_amount' => $pendingAmount,
 				'status' => 'Pending',
 				'created_by' => auth()->id(),
+				'payment_link' => $paymentLink ?? null,
 			]);
 
 			foreach ($request->products as $product) {
@@ -437,6 +438,72 @@ class OrderController extends Controller
 			], 500);
 		}
 	}
+
+	public function handleSquareWebhook(Request $request)
+	{
+		$data = $request->all();
+
+		// Example: Square sends the order_id or payment link ID
+		$orderId = $data['order_id'] ?? null;
+		$transactionId = $data['transaction_id'] ?? null;
+
+		if (!$orderId) {
+			return response()->json(['success' => false, 'message' => 'Order ID missing'], 400);
+		}
+
+		$order = Order::where('id', $orderId)->first();
+		if (!$order) {
+			return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+		}
+
+		// Mark order as paid and remove payment link
+		$order->update([
+			'is_paid' => true,
+			'paid_amount' => $order->total_amount,
+			'pending_amount' => 0,
+			'payment_link' => null
+		]);
+
+		Payment::create([
+			'order_id' => $order->id,
+			'transaction_id' => $transactionId,
+			'payment_mode' => 'Square',
+			'amount' => $order->total_amount,
+			'status' => 'Paid',
+			'notes' => 'Payment completed via Square'
+		]);
+
+		return response()->json(['success' => true, 'message' => 'Payment recorded']);
+	}
+
+	public function markOrderPaid($orderId, $transactionId = null)
+	{
+		$order = Order::find($orderId);
+
+		if (!$order) {
+			return response()->json(['success' => false, 'message' => 'Order not found'], 404);
+		}
+
+		$order->update([
+			'is_paid' => true,
+			'paid_amount' => $order->total_amount,
+			'pending_amount' => 0,
+			'payment_link' => null
+		]);
+
+		Payment::create([
+			'order_id' => $order->id,
+			'transaction_id' => $transactionId,
+			'payment_mode' => 'Manual/Test',
+			'amount' => $order->total_amount,
+			'status' => 'Paid',
+			'notes' => 'Payment marked manually/test'
+		]);
+
+		return response()->json(['success' => true, 'message' => 'Order marked as paid.']);
+	}
+
+
 
 	/**
 	 * @OA\Get(
