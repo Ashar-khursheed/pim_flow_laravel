@@ -2492,17 +2492,31 @@ public function getSpecificationFilters1(Request $request)
     $perPage = $request->get('per_page', 10);
     $categoryIdentifier = $request->input('category_id');
     
-    // Cache category lookup
-    $cacheKey = "category_" . $categoryIdentifier;
-    $category = Cache::remember($cacheKey, 300, function() use ($categoryIdentifier) {
-        if (is_numeric($categoryIdentifier)) {
-            return Category::find($categoryIdentifier);
-        }
-        return Category::where('slug', $categoryIdentifier)->first();
-    });
+    // Get category without caching to avoid stale data issues
+    $category = null;
+    if (is_numeric($categoryIdentifier)) {
+        $category = Category::find($categoryIdentifier);
+    } else {
+        $category = Category::where('slug', $categoryIdentifier)->first();
+    }
 
+    // Debug logging
     if (!$category) {
-        return response()->json(['success' => false, 'message' => 'Category does not exist.'], 400);
+        \Log::warning("Category not found", [
+            'category_identifier' => $categoryIdentifier,
+            'is_numeric' => is_numeric($categoryIdentifier),
+            'categories_count' => Category::count(),
+            'slug_search_result' => Category::where('slug', 'LIKE', "%{$categoryIdentifier}%")->pluck('slug')->toArray()
+        ]);
+        
+        return response()->json([
+            'success' => false, 
+            'message' => 'Category does not exist.',
+            'debug' => [
+                'searched_for' => $categoryIdentifier,
+                'similar_slugs' => Category::where('slug', 'LIKE', "%{$categoryIdentifier}%")->pluck('slug')->take(5)->toArray()
+            ]
+        ], 400);
     }
 
     // Get all category product IDs in one optimized query
@@ -2553,6 +2567,36 @@ public function getSpecificationFilters1(Request $request)
     ]);
 }
 
+// private function getAllCategoryProductIds($categoryId)
+// {
+//     // Get products from current category
+//     $currentCategoryProducts = DB::table('ec_products as p')
+//         ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
+//         ->where('pc.category_id', $categoryId)
+//         ->where('p.status', 'published')
+//         ->pluck('p.id')
+//         ->toArray();
+    
+//     // Get all child categories
+//     $childCategoryIds = DB::table('ec_categories')
+//         ->where('parent_id', $categoryId)
+//         ->pluck('id')
+//         ->toArray();
+
+//     // Get products from child categories
+//     $childProductIds = [];
+//     if (!empty($childCategoryIds)) {
+//         $childProductIds = DB::table('ec_products as p')
+//             ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
+//             ->whereIn('pc.category_id', $childCategoryIds)
+//             ->where('p.status', 'published')
+//             ->pluck('p.id')
+//             ->toArray();
+//     }
+
+//     // Combine and return unique product IDs
+//     return array_unique(array_merge($currentCategoryProducts, $childProductIds));
+// }
 private function getAllCategoryProductIds($categoryId)
 {
     return Cache::remember("category_products_{$categoryId}", 300, function() use ($categoryId) {
@@ -2609,6 +2653,7 @@ private function parseFilters($filters)
 
     return compact('groupedFilters', 'rangeFilters', 'selectedFilters');
 }
+
 
 private function applyFilters($productIds, $filterData, $request)
 {
@@ -3109,6 +3154,9 @@ private function getEmptyResponse()
         ]
     ]);
 }
+
+
+
 // public function getSpecificationFilters1(Request $request)
 // {
 //     // Validation
