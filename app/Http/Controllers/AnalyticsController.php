@@ -880,75 +880,77 @@ private function getBiggestDropOff($views, $carts, $checkouts, $purchases)
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-    public function cohortAnalysis(Request $request)
-    {
-        $startDate = $request->get('start_date', '60daysAgo');
-        $endDate = $request->get('end_date', 'today');
+  public function cohortAnalysis(Request $request)
+{
+    $startDate = $request->get('start_date', '60daysAgo');
+    $endDate = $request->get('end_date', 'today');
 
-        try {
-            $reportRequest = new \Google\Service\AnalyticsData\RunReportRequest();
-            $reportRequest->setDateRanges([
-                new \Google\Service\AnalyticsData\DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-            ]);
-            $reportRequest->setMetrics([
-                new \Google\Service\AnalyticsData\Metric(['name' => 'cohortActiveUsers']),
-                new \Google\Service\AnalyticsData\Metric(['name' => 'cohortTotalUsers'])
-            ]);
-            $reportRequest->setDimensions([
-                new \Google\Service\AnalyticsData\Dimension(['name' => 'cohort']),
-                new \Google\Service\AnalyticsData\Dimension(['name' => 'cohortNthDay'])
-            ]);
-            
-          $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
-$cohortSpec->setCohorts([
-    new \Google\Service\AnalyticsData\Cohort([
-        'name' => 'cohort_1',
-        'dimension' => 'firstSessionDate', // REQUIRED
-        'dateRange' => new \Google\Service\AnalyticsData\DateRange([
-            'startDate' => $startDate,
-            'endDate' => $endDate
-        ])
-    ])
-]);
+    try {
+        $reportRequest = new \Google\Service\AnalyticsData\RunReportRequest();
 
-$cohortSpec->setCohortsRange(
-    new \Google\Service\AnalyticsData\CohortsRange([
-        'granularity' => 'DAILY',
-        'endOffset' => 7
-    ])
-);
+        // ❌ DO NOT set top-level dateRanges for cohort reports
+        // $reportRequest->setDateRanges([...]);  <-- remove this
 
-$reportRequest->setCohortSpec($cohortSpec);
+        $reportRequest->setMetrics([
+            new \Google\Service\AnalyticsData\Metric(['name' => 'cohortActiveUsers']),
+            new \Google\Service\AnalyticsData\Metric(['name' => 'cohortTotalUsers'])
+        ]);
 
-           $response = $this->ga->getAnalyticsData()
-        ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
+        $reportRequest->setDimensions([
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'cohort']),
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'cohortNthDay'])
+        ]);
 
+        // ✅ Define cohortSpec properly
+        $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
+        $cohortSpec->setCohorts([
+            new \Google\Service\AnalyticsData\Cohort([
+                'name' => 'cohort_1',
+                'dimension' => 'firstSessionDate',
+                'dateRange' => new \Google\Service\AnalyticsData\DateRange([
+                    'startDate' => $startDate,
+                    'endDate' => $endDate
+                ])
+            ])
+        ]);
 
-            $cohortData = [];
-            foreach ($response->getRows() as $row) {
-                $dimensions = $row->getDimensionValues();
-                $metrics = $row->getMetricValues();
-                
-                $cohort = $dimensions[0]->getValue();
-                $nthDay = $dimensions[1]->getValue();
-                $activeUsers = (int)$metrics[0]->getValue();
-                $totalUsers = (int)$metrics[1]->getValue();
-                
-                $cohortData[] = [
-                    'cohort' => $cohort,
-                    'day' => $nthDay,
-                    'active_users' => $activeUsers,
-                    'total_users' => $totalUsers,
-                    'retention_rate' => $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100, 2) : 0
-                ];
-            }
+        $cohortSpec->setCohortsRange(
+            new \Google\Service\AnalyticsData\CohortsRange([
+                'granularity' => 'DAILY',
+                'endOffset' => 7
+            ])
+        );
 
-            return response()->json([
-                'status' => 'success',
-                'data' => $cohortData
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+        $reportRequest->setCohortSpec($cohortSpec);
+
+        $response = $this->ga->getAnalyticsData()
+            ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
+
+        $cohortData = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+
+            $cohort = $dimensions[0]->getValue();
+            $nthDay = $dimensions[1]->getValue();
+            $activeUsers = (int)$metrics[0]->getValue();
+            $totalUsers = (int)$metrics[1]->getValue();
+
+            $cohortData[] = [
+                'cohort' => $cohort,
+                'day' => $nthDay,
+                'active_users' => $activeUsers,
+                'total_users' => $totalUsers,
+                'retention_rate' => $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100, 2) : 0
+            ];
         }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => $cohortData
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 }
