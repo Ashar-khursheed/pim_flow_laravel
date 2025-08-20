@@ -169,7 +169,7 @@ class OrderController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
-	 *             @OA\Property(property="is_life_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_lift_gate", type="boolean", example=true),
 	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
@@ -198,7 +198,7 @@ class OrderController extends BaseController
 		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'is_life_gate' => 'nullable|boolean',
+			'is_lift_gate' => 'nullable|boolean',
 			'is_residential_address' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
@@ -233,7 +233,7 @@ class OrderController extends BaseController
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
-			$orderAmount += $request->boolean('is_life_gate') ? 75 : 0;
+			$orderAmount += $request->boolean('is_lift_gate') ? 75 : 0;
 			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
 
 			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
@@ -257,7 +257,7 @@ class OrderController extends BaseController
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
-				'is_life_gate' => $request->is_life_gate,
+				'is_lift_gate' => $request->is_lift_gate,
 				'is_residential_address' => $request->is_residential_address,
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,

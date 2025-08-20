@@ -203,10 +203,10 @@
 
 									<td valign="top" width="50%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
-											@if ($lifeGateCharge > 0)
+											@if ($liftGateCharge > 0)
 											<tr>
-												<td style="font-family: 'Noto Sans',  sans-serif; ">Life Gate Charge</td>
-												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($lifeGateCharge, 2, '.', ',') }}</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Lift Gate Charge</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($liftGateCharge, 2, '.', ',') }}</td>
 											</tr>
 											@endif
 

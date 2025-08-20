@@ -19,7 +19,7 @@ class Order extends Model
 		'customer_id',
 		'customer_address_id',
 		'shipping_charge',
-		'is_life_gate',
+		'is_lift_gate',
 		'is_residential_address',
 		'amount',
 		'tax_percentage',

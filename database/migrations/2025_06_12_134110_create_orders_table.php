@@ -19,7 +19,7 @@ return new class extends Migration
 			$table->text('customer_address_id');
 
 			$table->decimal('shipping_charge', 10, 2);
-			$table->boolean('is_life_gate')->nullable();
+			$table->boolean('is_lift_gate')->nullable();
 			$table->boolean('is_residential_address')->nullable();
 			$table->decimal('amount', 10, 2);
 			$table->decimal('tax_percentage', 10, 2);

@@ -94,7 +94,7 @@ class OrderPlacedMail extends Mailable
 		/* Total saved = original total - actual subtotal */
 		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
 
-		$lifeGateCharge = $order->is_life_gate ? 75 : 0;
+		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
 		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
 
 		$subTotal = $order->amount ?? 0;
@@ -127,7 +127,7 @@ class OrderPlacedMail extends Mailable
 			'products' => $products,
 			'totalSaved' => $totalSaved,
 
-			'lifeGateCharge' => $lifeGateCharge,
+			'liftGateCharge' => $liftGateCharge,
 			'residentialAddressCharge' => $residentialAddressCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
