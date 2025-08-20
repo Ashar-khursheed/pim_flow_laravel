@@ -2492,31 +2492,7 @@ public function getSpecificationFilters1(Request $request)
     $perPage = $request->get('per_page', 10);
     $categoryIdentifier = $request->input('category_id');
     
-    // Debug the category lookup to understand the data structure
-    $categoryIdentifier = $request->input('category_id');
-    
-    // Let's check all possible ways this category might exist
-    $debugInfo = [
-        'searched_for' => $categoryIdentifier,
-        'category_by_id' => is_numeric($categoryIdentifier) ? Category::find($categoryIdentifier) : null,
-        'category_by_slug' => Category::where('slug', $categoryIdentifier)->first(),
-        'all_category_slugs' => Category::pluck('slug')->take(10)->toArray(),
-        'seo_url_check' => DB::table('seo_urls')->where('url', $categoryIdentifier)->first(),
-        'categories_with_seo' => DB::table('ec_categories as c')
-            ->leftJoin('seo_urls as su', function($join) {
-                $join->on('su.reference_id', '=', 'c.id')
-                     ->where('su.reference_type', '=', 'category');
-            })
-            ->where(function($query) use ($categoryIdentifier) {
-                $query->where('c.slug', $categoryIdentifier)
-                      ->orWhere('su.url', $categoryIdentifier)
-                      ->orWhere('c.id', $categoryIdentifier);
-            })
-            ->select('c.id', 'c.name', 'c.slug', 'su.url as seo_url')
-            ->first()
-    ];
-
-    // Try the same logic as your working function
+    // Use the correct relationship and table names
     $category = Category::where('id', $categoryIdentifier)
         ->orWhere('slug', $categoryIdentifier)
         ->orWhereHas('seoUrl', function($q) use ($categoryIdentifier) {
@@ -2525,6 +2501,18 @@ public function getSpecificationFilters1(Request $request)
         ->first();
 
     if (!$category) {
+        // Additional debug to check SeoManagement table directly
+        $seoCheck = DB::table('seo_management')
+            ->where('url', $categoryIdentifier)
+            ->where('relational_type', 'Category')
+            ->first();
+            
+        $debugInfo = [
+            'searched_for' => $categoryIdentifier,
+            'seo_management_check' => $seoCheck,
+            'category_slugs_sample' => Category::pluck('slug')->take(5)->toArray()
+        ];
+        
         return response()->json([
             'success' => false, 
             'message' => 'Category does not exist.',
