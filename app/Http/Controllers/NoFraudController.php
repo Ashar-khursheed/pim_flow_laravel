@@ -77,21 +77,23 @@ class NoFraudController extends Controller
 public function screenTransaction(Request $request)
 {
     // Validate required fields
- $validator = Validator::make($request->all(), [
-    'order_id'            => 'string',
-    'amount'              => 'numeric|min:0.01',
-    'billing_first_name'  => 'string|max:100',
-    'billing_last_name'   => 'string|max:100',
-    'billing_email'       => 'email',
-    'billing_phone'       => 'string|max:20',
-    'billing_address'     => 'string|max:255',
-    'billing_city'        => 'string|max:100',
-    'billing_state'       => 'string|max:10',
-    'billing_zip'         => 'string|max:20',
-    'billing_country'     => 'string|size:2',
-    'card_bin'            => 'digits_between:6,8',
-    'card_last4'          => 'digits:4',
-]);
+    $validator = Validator::make($request->all(), [
+        'order_id' => 'required|string',
+        'amount' => 'required|numeric|min:0.01',
+        'billing_first_name' => 'required|string|max:100',
+        'billing_last_name' => 'nullable|string|max:100',
+        'billing_email' => 'required|email',
+        'billing_phone' => 'required|string|max:20',
+        'billing_address' => 'required|string|max:255',
+        'billing_city' => 'required|string|max:100',
+        'billing_state' => 'required|string|max:10',
+        'billing_zip' => 'required|string|max:20',
+        'billing_country' => 'required|string|size:2',
+        'card_bin' => 'nullable|digits_between:6,8',
+        'card_last4' => 'required|digits:4',
+
+
+    ]);
 
     if ($validator->fails()) {
         return response()->json([
