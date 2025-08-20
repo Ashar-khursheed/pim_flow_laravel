@@ -14218,23 +14218,92 @@
                 }
             }
         },
-        "/api/frontend/coupons/": {
+        "/api/frontend/coupons": {
             "get": {
                 "tags": [
                     "FrontEnd-Coupon"
                 ],
-                "summary": "Get all coupons",
-                "operationId": "394d3b8232db91c1e5bec519ea42050f",
+                "summary": "Get paginated coupons with search & sorting",
+                "operationId": "0157f95d4dae30e9b0193a58c9e0681f",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number (pagination)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by coupon code or title",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "SUMMER"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort direction asc/desc",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "desc"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "array",
-                                    "items": {
-                                        "$ref": "#/components/schemas/Coupon"
-                                    }
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
                                 }
                             }
                         }
@@ -14245,9 +14314,7 @@
                         "bearerAuth": []
                     }
                 ]
-            }
-        },
-        "/api/frontend/coupons": {
+            },
             "post": {
                 "tags": [
                     "FrontEnd-Coupon"

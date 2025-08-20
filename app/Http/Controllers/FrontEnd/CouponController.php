@@ -83,28 +83,87 @@ class CouponController extends Controller
         ]);
     }
 
-   /**
+ /**
  * @OA\Get(
- *   path="/api/frontend/coupons/",
+ *   path="/api/frontend/coupons",
  *   tags={"FrontEnd-Coupon"},
- *   summary="Get all coupons",
- *    security={{"bearerAuth":{}}},
+ *   summary="Get paginated coupons with search & sorting",
+ *   security={{"bearerAuth":{}}},
+ *   @OA\Parameter(
+ *     name="page",
+ *     in="query",
+ *     description="Page number (pagination)",
+ *     required=false,
+ *     @OA\Schema(type="integer", example=1)
+ *   ),
+ *   @OA\Parameter(
+ *     name="per_page",
+ *     in="query",
+ *     description="Items per page",
+ *     required=false,
+ *     @OA\Schema(type="integer", example=10)
+ *   ),
+ *   @OA\Parameter(
+ *     name="search",
+ *     in="query",
+ *     description="Search by coupon code or title",
+ *     required=false,
+ *     @OA\Schema(type="string", example="SUMMER")
+ *   ),
+ *   @OA\Parameter(
+ *     name="sort_by",
+ *     in="query",
+ *     description="Column to sort by",
+ *     required=false,
+ *     @OA\Schema(type="string", example="created_at")
+ *   ),
+ *   @OA\Parameter(
+ *     name="sort_order",
+ *     in="query",
+ *     description="Sort direction asc/desc",
+ *     required=false,
+ *     @OA\Schema(type="string", example="desc")
+ *   ),
  *   @OA\Response(
  *     response=200,
  *     description="Successful response",
  *     @OA\JsonContent(
- *       type="array",
- *       @OA\Items(ref="#/components/schemas/Coupon")
+ *       type="object",
+ *       @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Coupon")),
+ *       @OA\Property(property="current_page", type="integer"),
+ *       @OA\Property(property="last_page", type="integer"),
+ *       @OA\Property(property="per_page", type="integer"),
+ *       @OA\Property(property="total", type="integer")
  *     )
  *   )
  * )
  */
+public function index(Request $request)
+{
+    $query = Discount::query();
 
-    public function index()
-    {
-        $coupons = Discount::all();
-        return response()->json($coupons);
+    // 🔎 Searching
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('code', 'LIKE', "%{$search}%")
+              ->orWhere('title', 'LIKE', "%{$search}%");
+        });
     }
+
+    // ↕ Sorting
+    $sortBy = $request->get('sort_by', 'created_at');
+    $sortOrder = $request->get('sort_order', 'desc');
+    if (in_array($sortOrder, ['asc', 'desc'])) {
+        $query->orderBy($sortBy, $sortOrder);
+    }
+
+    // 📄 Pagination
+    $perPage = $request->get('per_page', 10);
+    $coupons = $query->paginate($perPage);
+
+    return response()->json($coupons);
+}
 
 /**
  * @OA\Post(
