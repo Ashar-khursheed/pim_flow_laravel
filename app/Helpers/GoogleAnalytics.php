@@ -149,53 +149,62 @@ class GoogleAnalytics
     /**
      * Get sessions by date
      */
-    public function getSessionsByDate($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        try {
-            $request = new RunReportRequest();
-            $request->setDateRanges([
-                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
-            ]);
-            $request->setMetrics([
-                new Metric(['name' => 'sessions']),
-                new Metric(['name' => 'totalUsers'])
-            ]);
-            $request->setDimensions([new Dimension(['name' => 'date'])]);
-            $request->setOrderBys([
-                new OrderBy([
-                    'dimension' => new DimensionOrderBy(['dimension_name' => 'date'])
-                ])
-            ]);
+   public function getSessionsByDate($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers'])
+        ]);
+        $request->setDimensions([new Dimension(['name' => 'date'])]);
 
-            $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+        // ✅ Order by date DESC
+        $request->setOrderBys([
+            new OrderBy([
+                'dimension' => new DimensionOrderBy(['dimension_name' => 'date']),
+                'desc' => true
+            ])
+        ]);
 
-            $data = [];
-            foreach ($response->getRows() as $row) {
-                $dimensions = $row->getDimensionValues();
-                $metrics = $row->getMetricValues();
-                
-                $data[] = [
-                    'date' => $this->safeGetDimension($dimensions, 0, 'unknown'),
-                    'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
-                    'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
-                    'conversions' => 0,
-                    'revenue' => 0.0
-                ];
-            }
-            return $data;
-        } catch (\Exception $e) {
-            return [
-                [
-                    'date' => date('Ymd'),
-                    'sessions' => 0,
-                    'users' => 0,
-                    'conversions' => 0,
-                    'revenue' => 0.0,
-                    'error' => $e->getMessage()
-                ]
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+
+            // ✅ Format date (from 20250721 → 2025-07-21)
+            $rawDate = $this->safeGetDimension($dimensions, 0, 'unknown');
+            $formattedDate = \DateTime::createFromFormat('Ymd', $rawDate)->format('Y-m-d');
+
+            $data[] = [
+                'date' => $formattedDate,
+                'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+                'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
+                'conversions' => 0,
+                'revenue' => 0.0
             ];
         }
+
+        return $data;
+    } catch (\Exception $e) {
+        return [
+            [
+                'date' => date('Y-m-d'),
+                'sessions' => 0,
+                'users' => 0,
+                'conversions' => 0,
+                'revenue' => 0.0,
+                'error' => $e->getMessage()
+            ]
+        ];
     }
+}
+
 
     /**
      * Get device analytics
