@@ -256,7 +256,13 @@ Route::prefix('analytics')->group(function () {
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
-	
+	Route::prefix('coupons')->group(function () {
+    Route::get('/', [F_CouponController::class, 'index']);   // List coupons
+    Route::post('/', [F_CouponController::class, 'store']);  // Create coupon
+    Route::get('/{id}', [F_CouponController::class, 'show']); // Show single coupon
+    Route::put('/{id}', [F_CouponController::class, 'update']); // Update coupon
+    Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
+});
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 

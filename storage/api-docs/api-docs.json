@@ -14218,16 +14218,16 @@
                 }
             }
         },
-        "/api/frontend/coupons": {
+        "/coupons": {
             "get": {
                 "tags": [
-                    "FrontEnd-Coupon"
+                    "Coupons"
                 ],
                 "summary": "Get all coupons",
-                "operationId": "getCoupons",
+                "operationId": "0f96b97445343da27a69244423c7f099",
                 "responses": {
                     "200": {
-                        "description": "List of coupons",
+                        "description": "Successful response",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -14240,7 +14240,9 @@
                         }
                     }
                 }
-            },
+            }
+        },
+        "/api/frontend/coupons": {
             "post": {
                 "tags": [
                     "FrontEnd-Coupon"
@@ -14303,7 +14305,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/coupons/{id}": {
@@ -14338,7 +14345,12 @@
                     "404": {
                         "description": "Coupon not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "put": {
                 "tags": [
@@ -14409,7 +14421,12 @@
                             }
                         }
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             },
             "delete": {
                 "tags": [
@@ -14452,7 +14469,12 @@
                     "404": {
                         "description": "Coupon not found"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/customer-address": {
@@ -33883,52 +33905,6 @@
                 },
                 "type": "object"
             },
-            "Coupon": {
-                "properties": {
-                    "id": {
-                        "type": "integer",
-                        "example": 1
-                    },
-                    "code": {
-                        "type": "string",
-                        "example": "WELCOME10"
-                    },
-                    "value": {
-                        "type": "number",
-                        "example": 50
-                    },
-                    "type": {
-                        "type": "string",
-                        "example": "fixed"
-                    },
-                    "min_order_price": {
-                        "type": "number",
-                        "example": 100
-                    },
-                    "quantity": {
-                        "type": "integer",
-                        "example": 100
-                    },
-                    "total_used": {
-                        "type": "integer",
-                        "example": 10
-                    },
-                    "expires_at": {
-                        "type": "string",
-                        "format": "date",
-                        "example": "2025-12-31"
-                    },
-                    "created_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time"
-                    }
-                },
-                "type": "object"
-            },
             "CategoryHierarchy": {
                 "properties": {
                     "id": {
@@ -34885,6 +34861,52 @@
                 },
                 "type": "object"
             },
+            "Coupon": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "WELCOME10"
+                    },
+                    "value": {
+                        "type": "number",
+                        "example": 50
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "fixed"
+                    },
+                    "min_order_price": {
+                        "type": "number",
+                        "example": 100
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "total_used": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-12-31"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "GuestRecentlyViewedProduct": {
                 "description": "GuestRecentlyViewedProduct model",
                 "type": "object"
@@ -35449,6 +35471,10 @@
         {
             "name": "FrontEnd-Coupon",
             "description": "FrontEnd-Coupon"
+        },
+        {
+            "name": "Coupons",
+            "description": "Coupons"
         },
         {
             "name": "Frontend-Customer-Address",

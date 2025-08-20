@@ -12,22 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 
-/**
- * @OA\Schema(
- *     schema="Coupon",
- *     type="object",
- *     @OA\Property(property="id", type="integer", example=1),
- *     @OA\Property(property="code", type="string", example="WELCOME10"),
- *     @OA\Property(property="value", type="number", example=50),
- *     @OA\Property(property="type", type="string", example="fixed"),
- *     @OA\Property(property="min_order_price", type="number", example=100),
- *     @OA\Property(property="quantity", type="integer", example=100),
- *     @OA\Property(property="total_used", type="integer", example=10),
- *     @OA\Property(property="expires_at", type="string", format="date", example="2025-12-31"),
- *     @OA\Property(property="created_at", type="string", format="date-time"),
- *     @OA\Property(property="updated_at", type="string", format="date-time")
- * )
- */
+
 
 class CouponController extends Controller
 {  
@@ -98,31 +83,35 @@ class CouponController extends Controller
         ]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/frontend/coupons",
-     *     operationId="getCoupons",
-     *     tags={"FrontEnd-Coupon"},
-     *     summary="Get all coupons",
-     *     @OA\Response(
-     *         response=200,
-     *         description="List of coupons",
-     *         @OA\JsonContent(type="array", @OA\Items(ref="#/components/schemas/Coupon"))
-     *     )
-     * )
-     */
+   /**
+ * @OA\Get(
+ *   path="/coupons",
+ *   tags={"Coupons"},
+ *   summary="Get all coupons",
+ *   @OA\Response(
+ *     response=200,
+ *     description="Successful response",
+ *     @OA\JsonContent(
+ *       type="array",
+ *       @OA\Items(ref="#/components/schemas/Coupon")
+ *     )
+ *   )
+ * )
+ */
+
     public function index()
     {
         $coupons = Discount::all();
         return response()->json($coupons);
     }
 
-    /**
+/**
  * @OA\Post(
  *     path="/api/frontend/coupons",
  *     operationId="createCoupon",
  *     tags={"FrontEnd-Coupon"},
  *     summary="Create a new coupon",
+ *     security={{"bearerAuth":{}}},
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
@@ -142,6 +131,7 @@ class CouponController extends Controller
  *     )
  * )
  */
+
     public function store(Request $request)
     {
     $validated = $request->validate([
@@ -167,6 +157,7 @@ class CouponController extends Controller
  *     path="/api/frontend/coupons/{id}",
  *     operationId="getCouponById",
  *     tags={"FrontEnd-Coupon"},
+ *     security={{"bearerAuth":{}}},
  *     summary="Get a coupon by ID",
  *     @OA\Parameter(
  *         name="id",
@@ -196,6 +187,7 @@ public function show($id)
  * @OA\Put(
  *     path="/api/frontend/coupons/{id}",
  *     operationId="updateCoupon",
+ *     security={{"bearerAuth":{}}},
  *     tags={"FrontEnd-Coupon"},
  *     summary="Update a coupon",
  *     @OA\Parameter(
@@ -250,6 +242,7 @@ public function update(Request $request, $id)
  *     path="/api/frontend/coupons/{id}",
  *     operationId="deleteCoupon",
  *     tags={"FrontEnd-Coupon"},
+ *     security={{"bearerAuth":{}}},
  *     summary="Delete a coupon",
  *     @OA\Parameter(
  *         name="id",
