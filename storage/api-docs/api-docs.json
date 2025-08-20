@@ -14218,13 +14218,13 @@
                 }
             }
         },
-        "/coupons": {
+        "/frontend/coupons": {
             "get": {
                 "tags": [
                     "FrontEnd-Coupon"
                 ],
                 "summary": "Get all coupons",
-                "operationId": "0f96b97445343da27a69244423c7f099",
+                "operationId": "3ade1dc4ae61408444bf396dfb213768",
                 "responses": {
                     "200": {
                         "description": "Successful response",
