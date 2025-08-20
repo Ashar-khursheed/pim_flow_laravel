@@ -902,10 +902,10 @@ private function getBiggestDropOff($views, $carts, $checkouts, $purchases)
         ]);
 
         // ✅ Define cohortSpec properly
-        $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
+     $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
         $cohortSpec->setCohorts([
             new \Google\Service\AnalyticsData\Cohort([
-                'name' => 'cohort_1',
+                'name' => 'group1', // ✅ changed name
                 'dimension' => 'firstSessionDate',
                 'dateRange' => new \Google\Service\AnalyticsData\DateRange([
                     'startDate' => $startDate,
@@ -922,6 +922,7 @@ private function getBiggestDropOff($views, $carts, $checkouts, $purchases)
         );
 
         $reportRequest->setCohortSpec($cohortSpec);
+
 
         $response = $this->ga->getAnalyticsData()
             ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
