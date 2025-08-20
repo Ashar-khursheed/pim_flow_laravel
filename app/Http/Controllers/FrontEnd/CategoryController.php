@@ -3328,9 +3328,29 @@ public function getSpecificationFilters1(Request $request)
                             }
 
                             usort($valueCountMap, function($a, $b) {
+                                // Extract numeric values from display values for proper sorting
+                                $aNumeric = null;
+                                $bNumeric = null;
+                                
+                                // Try to extract number from display value
+                                if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $a['display_value'], $matches)) {
+                                    $aNumeric = (float)$matches[1];
+                                }
+                                if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $b['display_value'], $matches)) {
+                                    $bNumeric = (float)$matches[1];
+                                }
+                                
+                                // If both have numeric values, sort numerically
+                                if ($aNumeric !== null && $bNumeric !== null) {
+                                    return $aNumeric - $bNumeric;
+                                }
+                                
+                                // Fallback to converted_value if available
                                 if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
                                     return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
                                 }
+                                
+                                // Final fallback to string comparison
                                 return strcmp($a['display_value'], $b['display_value']);
                             });
 
