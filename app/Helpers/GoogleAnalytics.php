@@ -497,16 +497,51 @@ class GoogleAnalytics
     }
 
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        return [
-            [
-                'ageBracket' => 'Unknown',
-                'gender' => 'Unknown',
-                'users' => 0,
-                'sessions' => 0
-            ]
+{
+    $client = new \Google\Client();
+    $client->setAuthConfig($this->keyFile);
+    $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+
+    $analyticsData = new \Google\Service\AnalyticsData($client);
+
+    $request = new \Google\Service\AnalyticsData\RunReportRequest([
+        'dateRanges' => [
+            new \Google\Service\AnalyticsData\DateRange([
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]),
+        ],
+        'dimensions' => [
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userAgeBracket']),
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userGender']),
+        ],
+        'metrics' => [
+            new \Google\Service\AnalyticsData\Metric(['name' => 'totalUsers']),
+            new \Google\Service\AnalyticsData\Metric(['name' => 'sessions']),
+        ],
+    ]);
+
+    $response = $analyticsData->properties->runReport(
+        'properties/' . $propertyId,
+        $request
+    );
+
+    $data = [];
+    foreach ($response->getRows() as $row) {
+        $dimensions = $row->getDimensionValues();
+        $metrics = $row->getMetricValues();
+
+        $data[] = [
+            'ageBracket' => $dimensions[0]->getValue(),
+            'gender'     => $dimensions[1]->getValue(),
+            'users'      => $metrics[0]->getValue(),
+            'sessions'   => $metrics[1]->getValue(),
         ];
     }
+
+    return $data;
+}
+
     //   public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
     // {
     //     // Example: simple mock/fallback funnel
