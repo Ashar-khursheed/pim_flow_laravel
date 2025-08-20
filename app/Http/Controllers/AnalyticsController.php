@@ -595,15 +595,17 @@ public function ecommerceFunnel(Request $request)
         
         if ($useMock || !method_exists($this->ga, 'getEcommerceFunnel')) {
             // Use basic/mock data for testing or fallback
-            $data = $this->ga->getBasicEcommerceFunnel($this->propertyId, $startDate, $endDate);
+            $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
         } else {
             // Use real GA4 data
             try {
-                $data = $this->ga->getEcommerceFunnel($this->propertyId, $startDate, $endDate);
+                $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
+
             } catch (\Exception $gaException) {
                 // Fallback to basic funnel if GA4 method fails
                 \Log::warning('GA4 ecommerce funnel failed, using basic funnel: ' . $gaException->getMessage());
-                $data = $this->ga->getBasicEcommerceFunnel($this->propertyId, $startDate, $endDate);
+               $data = $this->ga->getRealEcommerceFunnel($this->propertyId, $startDate, $endDate);
+
             }
         }
         
