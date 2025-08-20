@@ -530,6 +530,23 @@
                 }
             }
         },
+        "/api/analytics/test": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Test Analytics Connection",
+                "operationId": "8bbefb3c6a6ce74d04dbb1428503f4a7",
+                "responses": {
+                    "200": {
+                        "description": "Test successful"
+                    },
+                    "500": {
+                        "description": "Test failed"
+                    }
+                }
+            }
+        },
         "/api/analytics/conversions": {
             "get": {
                 "tags": [
@@ -750,41 +767,6 @@
                 "responses": {
                     "200": {
                         "description": "Demographics data"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/api/analytics/complete-dashboard": {
-            "get": {
-                "tags": [
-                    "Analytics"
-                ],
-                "summary": "Get Complete Analytics Dashboard Data",
-                "operationId": "468864321e647f71897f193ccab64ecc",
-                "parameters": [
-                    {
-                        "name": "start_date",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "end_date",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Complete dashboard data"
                     },
                     "500": {
                         "description": "Internal Server Error"
