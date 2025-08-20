@@ -203,6 +203,20 @@
 
 									<td valign="top" width="50%" style="padding-left: 20px;">
 										<table width="100%" cellspacing="0" cellpadding="4" border="0" style="font-size:14px; line-height:20px; font-family: 'Noto Sans',  sans-serif;">
+											@if ($lifeGateCharge > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Life Gate Charge</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($lifeGateCharge, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
+											@if ($residentialAddressCharge > 0)
+											<tr>
+												<td style="font-family: 'Noto Sans',  sans-serif; ">Residential Address Charge</td>
+												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($residentialAddressCharge, 2, '.', ',') }}</td>
+											</tr>
+											@endif
+
 											<tr>
 												<td style="font-family: 'Noto Sans',  sans-serif; ">Subtotal</td>
 												<td style="font-family: 'Noto Sans',  sans-serif; " align="right">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>

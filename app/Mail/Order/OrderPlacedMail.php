@@ -94,6 +94,9 @@ class OrderPlacedMail extends Mailable
 		/* Total saved = original total - actual subtotal */
 		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($order->amount ?? 0));
 
+		$lifeGateCharge = $order->is_life_gate ? 75 : 0;
+		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+
 		$subTotal = $order->amount ?? 0;
 		$shippingCharge = $order->shipping_charge ?? 0;
 		$taxName = config('app.website') == 'UAE' ? 'VAT' : 'SALES TAX';
@@ -124,6 +127,8 @@ class OrderPlacedMail extends Mailable
 			'products' => $products,
 			'totalSaved' => $totalSaved,
 
+			'lifeGateCharge' => $lifeGateCharge,
+			'residentialAddressCharge' => $residentialAddressCharge,
 			'subTotal' => $subTotal,
 			'shippingCharge' => $shippingCharge,
 			'taxName' => $taxName,
