@@ -440,47 +440,49 @@ class AnalyticsController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/analytics/complete-dashboard",
-     *     summary="Get Complete Analytics Dashboard Data",
-     *     tags={"Analytics"},
-     *     @OA\Parameter(name="start_date", in="query", required=false, @OA\Schema(type="string")),
-     *     @OA\Parameter(name="end_date", in="query", required=false, @OA\Schema(type="string")),
-     *     @OA\Response(response=200, description="Complete dashboard data"),
-     *     @OA\Response(response=500, description="Internal Server Error")
-     * )
-     */
-    public function completeDashboard(Request $request)
-    {
-        $startDate = $request->get('start_date', '30daysAgo');
-        $endDate = $request->get('end_date', 'today');
+  public function completeDashboard(Request $request)
+{
+    $startDate = $request->get('start_date', now()->subDays(30)->format('Y-m-d'));
+    $endDate = $request->get('end_date', now()->format('Y-m-d'));
+    $page = max((int) $request->get('page', 1), 1);
+    $perPage = min((int) $request->get('per_page', 10), 100);
 
-        try {
-            $dashboard = [
-                'overview' => $this->ga->getOverview($this->propertyId, $startDate, $endDate),
-                'sessions_by_date' => $this->ga->getSessionsByDate($this->propertyId, $startDate, $endDate),
-                'device_analytics' => $this->ga->getDeviceAnalytics($this->propertyId, $startDate, $endDate),
-                'geographic_data' => $this->ga->getGeographicAnalytics($this->propertyId, $startDate, $endDate),
-                'conversions' => $this->ga->getConversionAnalytics($this->propertyId, $startDate, $endDate),
-                'abandoned_cart' => $this->ga->getAbandonedCartAnalytics($this->propertyId, $startDate, $endDate),
-                'traffic_sources' => $this->ga->getTrafficSources($this->propertyId, $startDate, $endDate),
-                'page_analytics' => $this->ga->getPageAnalytics($this->propertyId, $startDate, $endDate),
-                'event_analytics' => $this->ga->getEventAnalytics($this->propertyId, $startDate, $endDate),
-                'realtime' => $this->ga->getRealTimeAnalytics($this->propertyId),
-                'demographics' => $this->ga->getAudienceDemographics($this->propertyId, $startDate, $endDate),
-                'generated_at' => now()->toISOString(),
-                'period' => ['start' => $startDate, 'end' => $endDate]
-            ];
+    try {
+        $sessions = $this->ga->getSessionsByDate($this->propertyId, $startDate, $endDate);
+        $totalSessions = count($sessions);
+        $paginatedSessions = array_slice($sessions, ($page - 1) * $perPage, $perPage);
 
-            return response()->json([
-                'status' => 'success',
-                'dashboard' => $dashboard
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+        $dashboard = [
+            'overview' => $this->ga->getOverview($this->propertyId, $startDate, $endDate),
+            'sessions_by_date' => $paginatedSessions,
+            'page_info' => [
+                'current_page' => $page,
+                'per_page' => $perPage,
+                'total_items' => $totalSessions,
+                'total_pages' => ceil($totalSessions / $perPage),
+            ],
+            'device_analytics' => $this->ga->getDeviceAnalytics($this->propertyId, $startDate, $endDate),
+            'geographic_data' => $this->ga->getGeographicAnalytics($this->propertyId, $startDate, $endDate),
+            'conversions' => $this->ga->getConversionAnalytics($this->propertyId, $startDate, $endDate),
+            'abandoned_cart' => $this->ga->getAbandonedCartAnalytics($this->propertyId, $startDate, $endDate),
+            'traffic_sources' => $this->ga->getTrafficSources($this->propertyId, $startDate, $endDate),
+            'page_analytics' => $this->ga->getPageAnalytics($this->propertyId, $startDate, $endDate),
+            'event_analytics' => $this->ga->getEventAnalytics($this->propertyId, $startDate, $endDate),
+            'realtime' => $this->ga->getRealTimeAnalytics($this->propertyId),
+            'demographics' => $this->ga->getAudienceDemographics($this->propertyId, $startDate, $endDate),
+            'generated_at' => now()->toISOString(),
+            'period' => ['start' => $startDate, 'end' => $endDate]
+        ];
+
+        return response()->json([
+            'status' => 'success',
+            'dashboard' => $dashboard
+        ]);
+    } catch (\Exception $e) {
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
+
 
     /**
      * @OA\Post(
