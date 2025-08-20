@@ -156,10 +156,12 @@ class GoogleAnalytics
         $request->setDateRanges([
             new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
         ]);
-        $request->setMetrics([
-            new Metric(['name' => 'sessions']),
-            new Metric(['name' => 'totalUsers'])
-        ]);
+       $request->setMetrics([
+                new Metric(['name' => 'sessions']),
+                new Metric(['name' => 'totalUsers']),
+                new Metric(['name' => 'conversions']),
+                new Metric(['name' => 'purchaseRevenue'])
+            ]);
         $request->setDimensions([new Dimension(['name' => 'date'])]);
 
         // ✅ Order by date DESC
@@ -181,12 +183,12 @@ class GoogleAnalytics
             $rawDate = $this->safeGetDimension($dimensions, 0, 'unknown');
             $formattedDate = \DateTime::createFromFormat('Ymd', $rawDate)->format('Y-m-d');
 
-            $data[] = [
+           $data[] = [
                 'date' => $formattedDate,
                 'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
                 'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
-                'conversions' => 0,
-                'revenue' => 0.0
+                'conversions' => $this->safeGetMetric($metrics, 2, 'int', 0),
+                'revenue' => $this->safeGetMetric($metrics, 3, 'float', 0.0)
             ];
         }
 
