@@ -253,179 +253,190 @@ class OrderController extends Controller
 	 * )
 	 */
 	public function store(Request $request)
-	{
-		$request->validate([
-			'customer_id' => 'required|integer|exists:customers,id',
-			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
-			'tax_percentage' => 'required|numeric|min:0',
-			'ship_all_at_once' => 'nullable|boolean',
-			'separate_deliveries' => 'nullable|boolean',
-			'products' => 'required|array|min:1',
-			'products.*.product_id' => 'required|integer|exists:ec_products,id',
-			'products.*.vendor_id' => 'required|integer|exists:vendors,id',
-			'products.*.quantity' => 'required|integer|min:1',
-			'products.*.unit_price' => 'required|numeric|min:0',
-			'products.*.shipping_charge' => 'required|numeric|min:0',
-		]);
+{
+    $request->validate([
+        'customer_id' => 'required|integer|exists:customers,id',
+        'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+        'tax_percentage' => 'required|numeric|min:0',
+        'ship_all_at_once' => 'nullable|boolean',
+        'separate_deliveries' => 'nullable|boolean',
+        'products' => 'required|array|min:1',
+        'products.*.product_id' => 'required|integer|exists:ec_products,id',
+        'products.*.vendor_id' => 'required|integer|exists:vendors,id',
+        'products.*.quantity' => 'required|integer|min:1',
+        'products.*.unit_price' => 'required|numeric|min:0',
+        'products.*.shipping_charge' => 'required|numeric|min:0',
+    ]);
 
-		$address = CustomerAddress::where('id', $request->customer_address_id)->where('customer_id', $request->customer_id)->first();
+    $address = CustomerAddress::where('id', $request->customer_address_id)
+        ->where('customer_id', $request->customer_id)
+        ->first();
 
-		if (!$address) {
-			return response()->json([
-				'success' => false,
-				'message' => 'The selected address does not belong to the customer.'
-			], 422);
-		}
+    if (!$address) {
+        return response()->json([
+            'success' => false,
+            'message' => 'The selected address does not belong to the customer.'
+        ], 422);
+    }
 
-		DB::beginTransaction();
+    DB::beginTransaction();
 
-		try {
-			$totalProducts = 0;
-			$orderAmount = 0;
-			$orderShipping = 0;
+    try {
+        $totalProducts = 0;
+        $orderAmount = 0;
+        $orderShipping = 0;
 
-			foreach ($request->products as $product) {
-				$totalProducts += $product['quantity'];
-				$orderAmount += $product['quantity'] * $product['unit_price'];
-				$orderShipping += $product['shipping_charge'];
-			}
-			/* Get the latest order by ID (most recent) */
-			$latestOrder = Order::orderBy('id', 'desc')->first();
+        foreach ($request->products as $product) {
+            $totalProducts += $product['quantity'];
+            $orderAmount += $product['quantity'] * $product['unit_price'];
+            $orderShipping += $product['shipping_charge'];
+        }
 
-			/* Generate the next order number */
-			if ($latestOrder && is_numeric($latestOrder->order_number)) {
-				$orderNumber = (int) $latestOrder->order_number + 1;
-			} else {
-				$website = config('app.website');
-				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
-			}
+        // Get the latest order by ID (most recent)
+        $latestOrder = Order::orderBy('id', 'desc')->first();
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
+        // Generate the next order number
+        if ($latestOrder && is_numeric($latestOrder->order_number)) {
+            $orderNumber = (int) $latestOrder->order_number + 1;
+        } else {
+            $website = config('app.website');
+            $orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
+        }
 
-			$order = Order::create([
-				'order_number' => $orderNumber,
-				'customer_id' => $request->customer_id,
-				'customer_address_id' => $request->customer_address_id,
-				'shipping_charge' => $orderShipping,
-				'amount' => $orderAmount,
-				'tax_percentage' => $request->tax_percentage,
-				'tax_amount' => $taxAmount,
-				'total_amount' => $totalAmount,
-				'total_products' => $totalProducts,
-				'ship_all_at_once' => $request->get('ship_all_at_once', true),
-				'separate_deliveries' => $request->get('separate_deliveries', false),
-				'paid_amount' => $paidAmount,
-				'is_paid' => $pendingAmount <= 0,
-				'pending_amount' => $pendingAmount,
-				'status' => 'Pending',
-				'created_by' => auth()->id(),
-			]);
+        $taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+        $totalAmount = $orderAmount + $taxAmount + $orderShipping;
+        $paidAmount = $request->paid_amount ?? 0;
+        $pendingAmount = $totalAmount - $paidAmount;
 
-			foreach ($request->products as $product) {
-				$total = $product['quantity'] * $product['unit_price'];
-				OrderProduct::create([
-					'order_id' => $order->id,
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'shipped_quantity' => 0,
-					'remaining_quantity' => $product['quantity'],
-					'unit_price' => $product['unit_price'],
-					'amount' => $total,
-					'shipping_charge' => $product['shipping_charge'],
-					'total_amount' => $total + $product['shipping_charge'],
-					'status' => 'Pending',
-				]);
-			}
+        $order = Order::create([
+            'order_number' => $orderNumber,
+            'customer_id' => $request->customer_id,
+            'customer_address_id' => $request->customer_address_id,
+            'shipping_charge' => $orderShipping,
+            'amount' => $orderAmount,
+            'tax_percentage' => $request->tax_percentage,
+            'tax_amount' => $taxAmount,
+            'total_amount' => $totalAmount,
+            'total_products' => $totalProducts,
+            'ship_all_at_once' => $request->get('ship_all_at_once', true),
+            'separate_deliveries' => $request->get('separate_deliveries', false),
+            'paid_amount' => $paidAmount,
+            'is_paid' => $pendingAmount <= 0,
+            'pending_amount' => $pendingAmount,
+            'status' => 'Pending',
+            'created_by' => auth()->id(),
+        ]);
 
-			OrderTracking::create([
-				'order_id' => $order->id,
-				'status' => 'Order Created By Backend Panel',
-				'description' => 'Order has been successfully created',
-				'created_by' => auth()->id()
-			]);
+        foreach ($request->products as $product) {
+            $total = $product['quantity'] * $product['unit_price'];
+            OrderProduct::create([
+                'order_id' => $order->id,
+                'product_id' => $product['product_id'],
+                'vendor_id' => $product['vendor_id'],
+                'quantity' => $product['quantity'],
+                'shipped_quantity' => 0,
+                'remaining_quantity' => $product['quantity'],
+                'unit_price' => $product['unit_price'],
+                'amount' => $total,
+                'shipping_charge' => $product['shipping_charge'],
+                'total_amount' => $total + $product['shipping_charge'],
+                'status' => 'Pending',
+            ]);
+        }
 
-			DB::commit();
+        OrderTracking::create([
+            'order_id' => $order->id,
+            'status' => 'Order Created By Backend Panel',
+            'description' => 'Order has been successfully created',
+            'created_by' => auth()->id()
+        ]);
 
-			$batch = Bus::batch([])->before(function (Batch $batch) {
-			})->catch(function (Batch $batch, Throwable $e) {
-			})->finally(function (Batch $batch) {
-			})->name('Order Place')->dispatch();
+        // Generate payment link BEFORE committing transaction
+        $paymentLink = null;
+        try {
+            $paymentLink = app(\App\Http\Controllers\SquarePaymentController::class)
+                ->createPaymentLink($order);
 
-			$batch->options['queue'] = config('app.website') . '_ORD_PLC';
-			$batch->add(new OrderPlacedMailJob([
-				'recordId' => $order->id
-			]));
+            if ($paymentLink) {
+                $order->payment_link = $paymentLink;
+                $order->save();
+            }
+        } catch (\Exception $e) {
+            \Log::error('Square payment link generation failed for order ' . $order->id . ': ' . $e->getMessage());
+            // Continue without payment link - business decision whether to fail entire order or not
+        }
 
-			/* Load relationships */
-			$order->load([
-				'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
-				'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-				'orderProducts.product.brand:id,name',
-				'orderProducts.product.currency:id,symbol',
-				'tracking',
-				'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-			]);
+        DB::commit();
 
-			try {
-				$paymentLink = app(\App\Http\Controllers\SquarePaymentController::class)
-					->createPaymentLink($order);
+        // Dispatch jobs AFTER successful commit
+        $batch = Bus::batch([])->before(function (Batch $batch) {
+        })->catch(function (Batch $batch, Throwable $e) {
+        })->finally(function (Batch $batch) {
+        })->name('Order Place')->dispatch();
 
-				$order->payment_link = $paymentLink;
-				$order->save();
-			} catch (\Exception $e) {
-				\Log::error('Square payment link generation failed: '.$e->getMessage());
-				$paymentLink = null;
-			}
+        $batch->options['queue'] = config('app.website') . '_ORD_PLC';
+        $batch->add(new OrderPlacedMailJob([
+            'recordId' => $order->id
+        ]));
 
-			/* Mutate the data for each order product */
-			foreach ($order->orderProducts as $orderProduct) {
-				$product = $orderProduct->product;
-				if ($product) {
-					$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
-					$product->brand_name = $product->brand->name ?? null;
-					$product->currency_symbol = $product->currency->symbol ?? null;
-					unset($product->brand, $product->currency);
-				}
-				$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
-				$orderProduct->expectedShippingDate = $orderProduct->product_supplier
-				? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-				: null;
+        // Load relationships
+        $order->load([
+            'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+            'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+            'orderProducts.product.brand:id,name',
+            'orderProducts.product.currency:id,symbol',
+            'tracking',
+            'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+        ]);
 
-				/* Format numeric values to 2 decimal places */
-				foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
-					if (isset($quoteProduct->$key)) {
-						$quoteProduct->$key = number_format($quoteProduct->$key, 2, '.', '');
-					}
-				}
-			}
+        // Mutate the data for each order product
+        foreach ($order->orderProducts as $orderProduct) {
+            $product = $orderProduct->product;
+            if ($product) {
+                $product->images = is_array($product->images) 
+                    ? $product->images 
+                    : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+                $product->brand_name = $product->brand->name ?? null;
+                $product->currency_symbol = $product->currency->symbol ?? null;
+                unset($product->brand, $product->currency);
+            }
+            
+            $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+                ->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+            $orderProduct->expectedShippingDate = $orderProduct->product_supplier
+                ? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+                : null;
 
-			foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-				if (isset($order->$key)) {
-					$order->$key = number_format($order->$key, 2, '.', '');
-				}
-			}
+            // Format numeric values to 2 decimal places - FIXED variable name
+            foreach (['unit_price', 'amount', 'shipping_charge', 'total_amount'] as $key) {
+                if (isset($orderProduct->$key)) {
+                    $orderProduct->$key = number_format($orderProduct->$key, 2, '.', '');
+                }
+            }
+        }
 
-			return response()->json([
-				'success' => true,
-				'message' => 'Order created successfully',
-				'data' => $order,
-				'payment_link' => $paymentLink
+        foreach (['shipping_charge', 'amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+            if (isset($order->$key)) {
+                $order->$key = number_format($order->$key, 2, '.', '');
+            }
+        }
 
-			], 201);
+        return response()->json([
+            'success' => true,
+            'message' => 'Order created successfully',
+            'data' => $order,
+            'payment_link' => $paymentLink
+        ], 201);
 
-		} catch (\Exception $e) {
-			DB::rollBack();
+    } catch (\Exception $e) {
+        DB::rollBack();
 
-			return response()->json([
-				'success' => false,
-				'message' => 'Failed to create order: ' . $e->getMessage()
-			], 500);
-		}
-	}
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create order: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 	/**
 	 * @OA\Get(

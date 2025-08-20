@@ -153,43 +153,94 @@ class SquarePaymentController extends Controller
             ], 500);
         }
     }
-
-    public function createPaymentLink(Order $order)
-    {
-        try {
-            $lineItems = [];
-
-            foreach ($order->orderProducts as $item) {
-                $lineItems[] = new OrderLineItem($item->quantity, [
-                    'name' => $item->product->name,
-                    'basePriceMoney' => new Money([
-                        'amount' => (int) round($item->unit_price * 100),
-                        'currency' => $item->product->currency->code ?? 'USD'
-                    ])
-                ]);
-            }
-
-            $orderObj = new Order(env('SQUARE_LOCATION_ID'));
-            $orderObj->setLineItems($lineItems);
-
-            $request = new CreatePaymentLinkRequest();
-            $request->setOrder($orderObj);
-            $request->setCheckoutOptions([
-                'redirect_url' => url('/payment-success?order_id=' . $order->id)
+public function createPaymentLink(Order $order)
+{
+    try {
+        \Log::info('Creating payment link for order: ' . $order->id);
+        
+        $lineItems = [];
+        foreach ($order->orderProducts as $item) {
+            \Log::info('Processing item: ' . $item->product->name . ', Price: ' . $item->unit_price);
+            
+            $lineItems[] = new OrderLineItem($item->quantity, [
+                'name' => $item->product->name,
+                'basePriceMoney' => new Money([
+                    'amount' => (int) round($item->unit_price * 100),
+                    'currency' => 'USD' // Hardcode for testing
+                ])
             ]);
-
-            $response = $this->client->getPaymentLinksApi()->createPaymentLink($request);
-
-            if ($response->isSuccess()) {
-                return $response->getResult()->getPaymentLink()->getUrl();
-            }
-
-            $errors = $response->getErrors();
-            throw new \Exception($errors[0]->getDetail() ?? 'Failed to create payment link');
-
-        } catch (\Exception $e) {
-            \Log::error('Square payment link error: ' . $e->getMessage());
-            return null;
         }
+
+        $locationId = env('SQUARE_LOCATION_ID');
+        if (!$locationId) {
+            throw new \Exception('Square location ID not configured');
+        }
+
+        $orderObj = new Order($locationId);
+        $orderObj->setLineItems($lineItems);
+
+        $request = new CreatePaymentLinkRequest();
+        $request->setOrder($orderObj);
+        $request->setCheckoutOptions([
+            'redirect_url' => url('/payment-success?order_id=' . $order->id)
+        ]);
+
+        \Log::info('Sending request to Square API');
+        $response = $this->client->getPaymentLinksApi()->createPaymentLink($request);
+
+        if ($response->isSuccess()) {
+            $url = $response->getResult()->getPaymentLink()->getUrl();
+            \Log::info('Payment link created successfully: ' . $url);
+            return $url;
+        }
+
+        $errors = $response->getErrors();
+        $errorMessage = $errors[0]->getDetail() ?? 'Failed to create payment link';
+        \Log::error('Square API error: ' . $errorMessage);
+        throw new \Exception($errorMessage);
+
+    } catch (\Exception $e) {
+        \Log::error('Square payment link error: ' . $e->getMessage());
+        \Log::error('Stack trace: ' . $e->getTraceAsString());
+        return null;
     }
+}
+    // public function createPaymentLink(Order $order)
+    // {
+    //     try {
+    //         $lineItems = [];
+
+    //         foreach ($order->orderProducts as $item) {
+    //             $lineItems[] = new OrderLineItem($item->quantity, [
+    //                 'name' => $item->product->name,
+    //                 'basePriceMoney' => new Money([
+    //                     'amount' => (int) round($item->unit_price * 100),
+    //                     'currency' => $item->product->currency->code ?? 'USD'
+    //                 ])
+    //             ]);
+    //         }
+
+    //         $orderObj = new Order(env('SQUARE_LOCATION_ID'));
+    //         $orderObj->setLineItems($lineItems);
+
+    //         $request = new CreatePaymentLinkRequest();
+    //         $request->setOrder($orderObj);
+    //         $request->setCheckoutOptions([
+    //             'redirect_url' => url('/payment-success?order_id=' . $order->id)
+    //         ]);
+
+    //         $response = $this->client->getPaymentLinksApi()->createPaymentLink($request);
+
+    //         if ($response->isSuccess()) {
+    //             return $response->getResult()->getPaymentLink()->getUrl();
+    //         }
+
+    //         $errors = $response->getErrors();
+    //         throw new \Exception($errors[0]->getDetail() ?? 'Failed to create payment link');
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('Square payment link error: ' . $e->getMessage());
+    //         return null;
+    //     }
+    // }
 } 
