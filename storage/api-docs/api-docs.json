@@ -853,6 +853,15 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "name": "mock",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "description": "Use mock data for testing",
+                            "type": "boolean"
+                        }
                     }
                 ],
                 "responses": {
