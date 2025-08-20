@@ -455,57 +455,55 @@ class GoogleAnalytics
     //     ];
     // }
     public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-{
-    $client = new \Google\Client();
-    $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
-    $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+    {
+        $client = new \Google\Client();
+        $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+        $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
 
-    $analyticsData = new \Google\Service\AnalyticsData($client);
+        $analyticsData = new \Google\Service\AnalyticsData($client);
 
-    $request = new \Google\Service\AnalyticsData\RunReportRequest([
-        'dateRanges' => [
-            new \Google\Service\AnalyticsData\DateRange([
-                'startDate' => $startDate,
-                'endDate' => $endDate,
-            ]),
-        ],
-        'dimensions' => [
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'userId']),        // only works if you send user_id in GA4
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'userPseudoId']), // fallback if no userId
-            new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']),     // product names
-        ],
-        'metrics' => [
-            new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
-        ],
-    ]);
+        $request = new \Google\Service\AnalyticsData\RunReportRequest([
+            'dateRanges' => [
+                new \Google\Service\AnalyticsData\DateRange([
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                ]),
+            ],
+            'dimensions' => [
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'userPseudoId']), // anonymous GA4 ID
+                new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']),     // product names
+            ],
+            'metrics' => [
+                new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
+            ],
+        ]);
 
-    $response = $analyticsData->properties->runReport(
-        'properties/' . $propertyId,
-        $request
-    );
 
-    $details = [];
-    foreach ($response->getRows() as $row) {
-        $eventName = $row->getDimensionValues()[0]->getValue();
-        $userId    = $row->getDimensionValues()[1]->getValue();
-        $pseudoId  = $row->getDimensionValues()[2]->getValue();
-        $itemName  = $row->getDimensionValues()[3]->getValue();
-        $count     = (int) $row->getMetricValues()[0]->getValue();
+        $response = $analyticsData->properties->runReport(
+            'properties/' . $propertyId,
+            $request
+        );
 
-        // Only track abandoned cart-related events
-        if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
-            $details[] = [
-                'event' => $eventName,
-                'userId' => $userId ?: $pseudoId,
-                'item' => $itemName,
-                'count' => $count,
-            ];
+        $details = [];
+        foreach ($response->getRows() as $row) {
+            $eventName = $row->getDimensionValues()[0]->getValue();
+            $pseudoId  = $row->getDimensionValues()[1]->getValue();
+            $itemName  = $row->getDimensionValues()[2]->getValue();
+            $count     = (int) $row->getMetricValues()[0]->getValue();
+
+            if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
+                $details[] = [
+                    'event'   => $eventName,
+                    'userId'  => $pseudoId, // only available identifier unless you add custom user_id
+                    'item'    => $itemName,
+                    'count'   => $count,
+                ];
+            }
         }
-    }
 
-    return $details;
-}
+        return $details;
+    }
 
 
 
