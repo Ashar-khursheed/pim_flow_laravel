@@ -899,26 +899,29 @@ private function getBiggestDropOff($views, $carts, $checkouts, $purchases)
                 new \Google\Service\AnalyticsData\Dimension(['name' => 'cohortNthDay'])
             ]);
             
-            $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
-            $cohortSpec->setCohorts([
-                new \Google\Service\AnalyticsData\Cohort([
-                    'name' => 'cohort_1',
-                    'date_range' => new \Google\Service\AnalyticsData\DateRange([
-                        'start_date' => $startDate,
-                        'end_date' => $endDate
-                    ])
-                ])
-            ]);
-            $cohortSpec->setCohortsRange(
-                new \Google\Service\AnalyticsData\CohortsRange([
-                    'granularity' => 'DAILY',
-                    'end_offset' => 7
-                ])
-            );
-            $reportRequest->setCohortSpec($cohortSpec);
+          $cohortSpec = new \Google\Service\AnalyticsData\CohortSpec();
+$cohortSpec->setCohorts([
+    new \Google\Service\AnalyticsData\Cohort([
+        'name' => 'cohort_1',
+        'dimension' => 'firstSessionDate', // REQUIRED
+        'dateRange' => new \Google\Service\AnalyticsData\DateRange([
+            'startDate' => $startDate,
+            'endDate' => $endDate
+        ])
+    ])
+]);
+
+$cohortSpec->setCohortsRange(
+    new \Google\Service\AnalyticsData\CohortsRange([
+        'granularity' => 'DAILY',
+        'endOffset' => 7
+    ])
+);
+
+$reportRequest->setCohortSpec($cohortSpec);
 
            $response = $this->ga->getAnalyticsData()
-    ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
+        ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
 
 
             $cohortData = [];
