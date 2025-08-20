@@ -507,34 +507,106 @@ class GoogleAnalytics
             ]
         ];
     }
-      public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
+    //   public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
+    // {
+    //     // Example: simple mock/fallback funnel
+    //     $baseUsers = rand(800, 1500);
+    //     $addToCartUsers = (int)($baseUsers * 0.25);
+    //     $checkoutUsers = (int)($addToCartUsers * 0.5);
+    //     $purchaseUsers = (int)($checkoutUsers * 0.6);
+
+    //     return [
+    //         'funnel_data' => [
+    //             ['step' => 'Product Views', 'users' => $baseUsers, 'conversion_rate' => 100],
+    //             ['step' => 'Add to Cart', 'users' => $addToCartUsers, 'conversion_rate' => round(($addToCartUsers/$baseUsers)*100,2)],
+    //             ['step' => 'Checkout Started', 'users' => $checkoutUsers, 'conversion_rate' => round(($checkoutUsers/$baseUsers)*100,2)],
+    //             ['step' => 'Purchase', 'users' => $purchaseUsers, 'conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)]
+    //         ],
+    //         'conversion_rates' => [
+    //             'view_to_cart' => round(($addToCartUsers/$baseUsers)*100,2),
+    //             'cart_to_checkout' => round(($checkoutUsers/$addToCartUsers)*100,2),
+    //             'checkout_to_purchase' => round(($purchaseUsers/$checkoutUsers)*100,2),
+    //             'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)
+    //         ],
+    //         'insights' => [
+    //             'total_started' => $baseUsers,
+    //             'total_completed' => $purchaseUsers,
+    //             'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2),
+    //             'total_revenue' => $purchaseUsers * rand(50,200),
+    //             'average_order_value' => $purchaseUsers > 0 ? rand(50,200) : 0
+    //         ]
+    //     ];
+    // }
+    
+    public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
     {
-        // Example: simple mock/fallback funnel
-        $baseUsers = rand(800, 1500);
-        $addToCartUsers = (int)($baseUsers * 0.25);
-        $checkoutUsers = (int)($addToCartUsers * 0.5);
-        $purchaseUsers = (int)($checkoutUsers * 0.6);
+        $request = new RunReportRequest([
+            'dateRanges' => [
+                new DateRange([
+                    'startDate' => $startDate,
+                    'endDate' => $endDate,
+                ]),
+            ],
+            'dimensions' => [
+                new Dimension(['name' => 'eventName']),
+            ],
+            'metrics' => [
+                new Metric(['name' => 'eventCount']),
+            ],
+        ]);
+
+        $response = $this->analyticsData->properties->runReport(
+            'properties/' . $propertyId,
+            $request
+        );
+
+        $funnelSteps = [
+            'session_start'   => 0,
+            'view_item'       => 0,
+            'add_to_cart'     => 0,
+            'begin_checkout'  => 0,
+            'purchase'        => 0,
+        ];
+
+        foreach ($response->getRows() as $row) {
+            $event = $row->getDimensionValues()[0]->getValue();
+            $count = (int)$row->getMetricValues()[0]->getValue();
+
+            if (array_key_exists($event, $funnelSteps)) {
+                $funnelSteps[$event] = $count;
+            }
+        }
+
+        // Build funnel data
+        $funnelData = [
+            ['step' => 'Sessions', 'count' => $funnelSteps['session_start']],
+            ['step' => 'Product Views', 'count' => $funnelSteps['view_item']],
+            ['step' => 'Add to Cart', 'count' => $funnelSteps['add_to_cart']],
+            ['step' => 'Checkout', 'count' => $funnelSteps['begin_checkout']],
+            ['step' => 'Purchases', 'count' => $funnelSteps['purchase']],
+        ];
+
+        // Calculate conversion rates
+        $conversionRates = [];
+        $previous = null;
+        foreach ($funnelData as $step) {
+            if ($previous && $previous['count'] > 0) {
+                $conversionRates[$step['step']] = round(
+                    ($step['count'] / $previous['count']) * 100,
+                    2
+                ) . '%';
+            } else {
+                $conversionRates[$step['step']] = 'N/A';
+            }
+            $previous = $step;
+        }
 
         return [
-            'funnel_data' => [
-                ['step' => 'Product Views', 'users' => $baseUsers, 'conversion_rate' => 100],
-                ['step' => 'Add to Cart', 'users' => $addToCartUsers, 'conversion_rate' => round(($addToCartUsers/$baseUsers)*100,2)],
-                ['step' => 'Checkout Started', 'users' => $checkoutUsers, 'conversion_rate' => round(($checkoutUsers/$baseUsers)*100,2)],
-                ['step' => 'Purchase', 'users' => $purchaseUsers, 'conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)]
-            ],
-            'conversion_rates' => [
-                'view_to_cart' => round(($addToCartUsers/$baseUsers)*100,2),
-                'cart_to_checkout' => round(($checkoutUsers/$addToCartUsers)*100,2),
-                'checkout_to_purchase' => round(($purchaseUsers/$checkoutUsers)*100,2),
-                'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2)
-            ],
+            'funnel_data' => $funnelData,
+            'conversion_rates' => $conversionRates,
             'insights' => [
-                'total_started' => $baseUsers,
-                'total_completed' => $purchaseUsers,
-                'overall_conversion_rate' => round(($purchaseUsers/$baseUsers)*100,2),
-                'total_revenue' => $purchaseUsers * rand(50,200),
-                'average_order_value' => $purchaseUsers > 0 ? rand(50,200) : 0
-            ]
+                'drop_off' => 'Biggest drop is usually between views → add to cart',
+            ],
         ];
     }
 }
