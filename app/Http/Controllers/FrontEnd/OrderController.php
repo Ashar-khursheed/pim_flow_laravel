@@ -169,6 +169,8 @@ class OrderController extends BaseController
 	 *         @OA\JsonContent(
 	 *             required={"customer_address_id", "tax_percentage", "products"},
 	 *             @OA\Property(property="customer_address_id", type="integer", example="1"),
+	 *             @OA\Property(property="is_life_gate", type="boolean", example=true),
+	 *             @OA\Property(property="is_residential_address", type="boolean", example=true),
 	 *             @OA\Property(property="tax_percentage", type="number", example=5),
 	 *             @OA\Property(property="ship_all_at_once", type="boolean", example=true),
 	 *             @OA\Property(property="separate_deliveries", type="boolean", example=false),
@@ -196,6 +198,8 @@ class OrderController extends BaseController
 		logger()->info('customer order payload: ', $request->all());
 		$request->validate([
 			'customer_address_id' => 'required|integer|exists:customer_addresses,id',
+			'is_life_gate' => 'nullable|boolean',
+			'is_residential_address' => 'nullable|boolean',
 			'tax_percentage' => 'required|numeric|min:0',
 			'ship_all_at_once' => 'nullable|boolean',
 			'separate_deliveries' => 'nullable|boolean',
@@ -229,6 +233,14 @@ class OrderController extends BaseController
 				$orderAmount += $product['quantity'] * $product['unit_price'];
 				$orderShipping += $product['shipping_charge'];
 			}
+			$orderAmount += $request->boolean('is_life_gate') ? 75 : 0;
+			$orderAmount += $request->boolean('is_residential_address') ? 199 : 0;
+
+			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
+			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
+			$paidAmount = $request->paid_amount ?? 0;
+			$pendingAmount = $totalAmount - $paidAmount;
+
 			/* Get the latest order by ID (most recent) */
 			$latestOrder = Order::orderBy('id', 'desc')->first();
 
@@ -240,16 +252,13 @@ class OrderController extends BaseController
 				$orderNumber = $website === 'US' ? 10001 : ($website === 'UAE' ? 1001 : 101);
 			}
 
-			$taxAmount = round($orderAmount * ($request->tax_percentage / 100), 2);
-			$totalAmount = $orderAmount + $taxAmount + $orderShipping;
-			$paidAmount = $request->paid_amount ?? 0;
-			$pendingAmount = $totalAmount - $paidAmount;
-
 			$order = Order::create([
 				'order_number' => $orderNumber,
 				'customer_id' => $customerId,
 				'customer_address_id' => $request->customer_address_id,
 				'shipping_charge' => $orderShipping,
+				'is_life_gate' => $request->is_life_gate,
+				'is_residential_address' => $request->is_residential_address,
 				'amount' => $orderAmount,
 				'tax_percentage' => $request->tax_percentage,
 				'tax_amount' => $taxAmount,
@@ -353,86 +362,86 @@ class OrderController extends BaseController
 	 *     security={{"bearerAuth":{}}}
 	 * )
 	 */
-public function show($id)
-{
-    $order = Order::where('customer_id', auth()->id())
-        ->where('id', $id)
-        ->first();
+	public function show($id)
+	{
+		$order = Order::where('customer_id', auth()->id())
+		->where('id', $id)
+		->first();
 
-    if (!$order) {
-        return response()->json([
-            'success' => false,
-            'message' => "Order not found."
-        ]);
-    }
+		if (!$order) {
+			return response()->json([
+				'success' => false,
+				'message' => "Order not found."
+			]);
+		}
 
-    /* Load relationships */
-    $order->load([
-        'customer:id,name,email,type,country_code,mobile_number',
-        'customerAddress',
-        'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
-        'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
-        'orderProducts.product.brand:id,name',
-        'orderProducts.product.currency:id,symbol',
-        'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
-        'tracking',
-        'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
-    ]);
+		/* Load relationships */
+		$order->load([
+			'customer:id,name,email,type,country_code,mobile_number',
+			'customerAddress',
+			'orderProducts:id,order_id,product_id,vendor_id,quantity,unit_price,amount,shipping_charge,total_amount,status',
+			'orderProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
+			'orderProducts.product.brand:id,name',
+			'orderProducts.product.currency:id,symbol',
+			'orderProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
+			'tracking',
+			'payments:id,order_id,transaction_id,payment_mode,amount,status,notes,created_at'
+		]);
 
-    /* Mutate the data for each order product */
-    foreach ($order->orderProducts as $orderProduct) {
-        $product = $orderProduct->product;
-        if ($product) {
-            $product->images = is_array($product->images)
-                ? $product->images
-                : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
+		/* Mutate the data for each order product */
+		foreach ($order->orderProducts as $orderProduct) {
+			$product = $orderProduct->product;
+			if ($product) {
+				$product->images = is_array($product->images)
+				? $product->images
+				: (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 
-            $product->brand_name = $product->brand->name ?? null;
-            $product->currency_symbol = $product->currency->symbol ?? null;
+				$product->brand_name = $product->brand->name ?? null;
+				$product->currency_symbol = $product->currency->symbol ?? null;
 
-            // 🔹 Fetch SEO URL directly without relation
-            $seo = \App\Models\SeoManagement::where('relational_id', $product->id)
-                ->where('relational_type', 'Product')
-                ->first();
+			// 🔹 Fetch SEO URL directly without relation
+				$seo = \App\Models\SeoManagement::where('relational_id', $product->id)
+				->where('relational_type', 'Product')
+				->first();
 
-            $product->url = $seo->url ?? null;
+				$product->url = $seo->url ?? null;
 
-            unset($product->brand, $product->currency);
-        }
+				unset($product->brand, $product->currency);
+			}
 
-        $orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
-            ->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
+			$orderProduct->product_supplier = optional($orderProduct->vendor_product_supplier)
+			->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 
-        $orderProduct->expectedShippingDate = $orderProduct->product_supplier
-            ? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
-            : null;
-    }
+			$orderProduct->expectedShippingDate = $orderProduct->product_supplier
+			? getDateRange($order->created_at, $orderProduct->product_supplier['delivery_days'])
+			: null;
+		}
 
-    if (
-        $order->status === 'Delivered' &&
-        $orderProduct->product_supplier &&
-        isset($orderProduct->product_supplier['return_policy'])
-    ) {
-        $returnDays = (int) $orderProduct->product_supplier['return_policy'];
-        $deliveryDate = \Carbon\Carbon::parse($order->updated_at);
-        $returnUntil = $deliveryDate->copy()->addDays($returnDays);
+		if (
+			$order->status === 'Delivered' &&
+			$orderProduct->product_supplier &&
+			isset($orderProduct->product_supplier['return_policy'])
+		) {
+			$returnDays = (int) $orderProduct->product_supplier['return_policy'];
+			$deliveryDate = \Carbon\Carbon::parse($order->updated_at);
+			$returnUntil = $deliveryDate->copy()->addDays($returnDays);
 
-        $orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
-    } else {
-        $orderProduct->is_returnable = 'yes';
-    }
+			$orderProduct->is_returnable = now()->lte($returnUntil) ? 'yes' : 'no';
+		} else {
+			$orderProduct->is_returnable = 'yes';
+		}
 
-    foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
-        if (isset($order->$key)) {
-            $order->$key = number_format($order->$key, 2, '.', '');
-        }
-    }
+		foreach (['amount', 'tax_amount', 'total_amount', 'paid_amount', 'pending_amount'] as $key) {
+			if (isset($order->$key)) {
+				$order->$key = number_format($order->$key, 2, '.', '');
+			}
+		}
 
-    return response()->json([
-        'success' => true,
-        'data' => $order
-    ]);
-}
+		return response()->json([
+			'success' => true,
+			'data' => $order
+		]);
+	}
 
 	/**
 	 * @OA\Put(

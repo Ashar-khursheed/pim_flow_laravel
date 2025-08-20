@@ -15538,6 +15538,14 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
+                                    "is_life_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -23433,6 +23441,14 @@
                                         "type": "integer",
                                         "example": "1"
                                     },
+                                    "is_life_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
                                     "tax_percentage": {
                                         "type": "number",
                                         "example": 5
@@ -23571,6 +23587,14 @@
                                     "customer_address_id": {
                                         "type": "integer",
                                         "example": "1"
+                                    },
+                                    "is_life_gate": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "is_residential_address": {
+                                        "type": "boolean",
+                                        "example": true
                                     },
                                     "tax_percentage": {
                                         "type": "number",
