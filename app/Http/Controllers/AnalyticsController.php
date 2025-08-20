@@ -917,7 +917,9 @@ private function getBiggestDropOff($views, $carts, $checkouts, $purchases)
             );
             $reportRequest->setCohortSpec($cohortSpec);
 
-            $response = $this->ga->analyticsData->properties->runReport("properties/{$this->propertyId}", $reportRequest);
+           $response = $this->ga->getAnalyticsData()
+    ->properties->runReport("properties/{$this->propertyId}", $reportRequest);
+
 
             $cohortData = [];
             foreach ($response->getRows() as $row) {
