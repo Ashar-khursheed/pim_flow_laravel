@@ -12,10 +12,9 @@ use Square\Types\Currency;
 use Illuminate\Support\Str;
 use OpenApi\Annotations as OA;
 use Square\Environment;
-use Square\Models\CreatePaymentLinkRequest;
-use Square\Models\Order;
-use Square\Models\OrderLineItem;
 
+// CORRECT imports for Payment Links
+use Square\Models\CreatePaymentLinkRequest;
 
 class SquarePaymentController extends Controller
 {
@@ -153,7 +152,7 @@ class SquarePaymentController extends Controller
             ], 500);
         }
     }
-  /**
+ /**
      * Create a payment link for an order using Square Checkout API
      */
     public function createPaymentLink(\App\Models\FrontEnd\Order $order)
@@ -161,61 +160,16 @@ class SquarePaymentController extends Controller
         try {
             // Check if Square is properly configured
             $locationId = env('SQUARE_LOCATION_ID');
-            if (!$locationId) {
-                throw new \Exception('Square location ID not configured in environment');
-            }
-
-            \Log::info('Creating payment link for order: ' . $order->id);
-
-            // Calculate total amount for the order
-            $totalAmount = (int) round($order->total_amount * 100); // Convert to cents
-
-            // Option 1: Use Quick Pay (simpler approach - single item)
-            if ($order->orderProducts->count() == 1) {
-                $product = $order->orderProducts->first();
-                
-                $quickPay = new QuickPay(
-                    $product->product->name,
-                    new Money([
-                        'amount' => $totalAmount,
-                        'currency' => 'USD'
-                    ]),
-                    $locationId
-                );
-
-                $request = new CreatePaymentLinkRequest();
-                $request->setIdempotencyKey((string) Str::uuid());
-                $request->setQuickPay($quickPay);
-                
-                // Optional: Set checkout options
-                $request->setCheckoutOptions([
-                    'redirect_url' => url('/payment-success?order_id=' . $order->id)
-                ]);
-
-            } else {
-                // Option 2: Use Order-based checkout (for multiple items)
-                // This requires creating a Square Order object first
-                throw new \Exception('Multiple items payment links not implemented yet. Use quick pay for single items.');
-            }
-
-            \Log::info('Sending request to Square Checkout API');
-            $response = $this->client->getCheckoutApi()->createPaymentLink($request);
-
-            if ($response->isSuccess()) {
-                $paymentLink = $response->getResult()->getPaymentLink();
-                $url = $paymentLink->getUrl();
-                \Log::info('Payment link created successfully: ' . $url);
-                return $url;
-            }
-
-            $errors = $response->getErrors();
-            $errorMessage = '';
-            foreach ($errors as $error) {
-                $errorMessage .= $error->getCategory() . ': ' . $error->getCode() . ' - ' . $error->getDetail() . '; ';
-            }
+            $accessToken = env('SQUARE_ACCESS_TOKEN');
             
-            \Log::error('Square API error: ' . $errorMessage);
-            throw new \Exception($errorMessage);
+            if (!$locationId || !$accessToken) {
+                throw new \Exception('Square credentials not configured: Location ID or Access Token missing');
+            }
+
+            \Log::info('Creating payment link for order: ' . $order->id . ' with location: ' . $locationId);
+
+            // Use cURL method as it's more reliable than SDK for payment links
+            return $this->createPaymentLinkCurl($order);
 
         } catch (\Exception $e) {
             \Log::error('Square payment link error: ' . $e->getMessage());
@@ -227,7 +181,7 @@ class SquarePaymentController extends Controller
     /**
      * Alternative method using cURL for payment links (if SDK doesn't work)
      */
-    public function createPaymentLinkCurl(\App\Models\FrontEnd\Order $order)
+    public function createPaymentLinkCurl($order)
     {
         try {
             $accessToken = env('SQUARE_ACCESS_TOKEN');
@@ -238,12 +192,21 @@ class SquarePaymentController extends Controller
             }
 
             $totalAmount = (int) round($order->total_amount * 100);
-            $product = $order->orderProducts->first();
+            
+            // Handle both real orders and test objects
+            if (is_object($order) && isset($order->orderProducts)) {
+                $product = $order->orderProducts->first();
+                $itemName = $order->orderProducts->count() > 1 
+                    ? "Order #" . $order->order_number . " (" . $order->orderProducts->count() . " items)"
+                    : ($product->product->name ?? "Order #" . $order->order_number);
+            } else {
+                $itemName = "Order #" . $order->order_number;
+            }
 
             $data = [
                 'idempotency_key' => (string) Str::uuid(),
                 'quick_pay' => [
-                    'name' => $product->product->name ?? 'Order #' . $order->order_number,
+                    'name' => $itemName,
                     'price_money' => [
                         'amount' => $totalAmount,
                         'currency' => 'USD'
@@ -255,6 +218,8 @@ class SquarePaymentController extends Controller
                 ]
             ];
 
+            \Log::info('Square payment link request data: ' . json_encode($data));
+
             $ch = curl_init();
             curl_setopt_array($ch, [
                 CURLOPT_URL => 'https://connect.squareup.com/v2/online-checkout/payment-links',
@@ -265,18 +230,34 @@ class SquarePaymentController extends Controller
                     'Authorization: Bearer ' . $accessToken,
                     'Content-Type: application/json',
                     'Square-Version: 2025-07-16'
-                ]
+                ],
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_SSL_VERIFYPEER => true
             ]);
 
             $response = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
             curl_close($ch);
+
+            \Log::info('Square API response code: ' . $httpCode);
+            \Log::info('Square API response: ' . $response);
+
+            if ($curlError) {
+                throw new \Exception('cURL error: ' . $curlError);
+            }
 
             if ($httpCode === 200) {
                 $result = json_decode($response, true);
-                return $result['payment_link']['url'] ?? null;
+                if (isset($result['payment_link']['url'])) {
+                    \Log::info('Payment link created successfully: ' . $result['payment_link']['url']);
+                    return $result['payment_link']['url'];
+                } else {
+                    \Log::error('No payment link URL in response: ' . json_encode($result));
+                    return null;
+                }
             } else {
-                \Log::error('Square cURL error: ' . $response);
+                \Log::error('Square API error (HTTP ' . $httpCode . '): ' . $response);
                 return null;
             }
 
@@ -286,41 +267,3 @@ class SquarePaymentController extends Controller
         }
     }
 }
-    // public function createPaymentLink(Order $order)
-    // {
-    //     try {
-    //         $lineItems = [];
-
-    //         foreach ($order->orderProducts as $item) {
-    //             $lineItems[] = new OrderLineItem($item->quantity, [
-    //                 'name' => $item->product->name,
-    //                 'basePriceMoney' => new Money([
-    //                     'amount' => (int) round($item->unit_price * 100),
-    //                     'currency' => $item->product->currency->code ?? 'USD'
-    //                 ])
-    //             ]);
-    //         }
-
-    //         $orderObj = new Order(env('SQUARE_LOCATION_ID'));
-    //         $orderObj->setLineItems($lineItems);
-
-    //         $request = new CreatePaymentLinkRequest();
-    //         $request->setOrder($orderObj);
-    //         $request->setCheckoutOptions([
-    //             'redirect_url' => url('/payment-success?order_id=' . $order->id)
-    //         ]);
-
-    //         $response = $this->client->getPaymentLinksApi()->createPaymentLink($request);
-
-    //         if ($response->isSuccess()) {
-    //             return $response->getResult()->getPaymentLink()->getUrl();
-    //         }
-
-    //         $errors = $response->getErrors();
-    //         throw new \Exception($errors[0]->getDetail() ?? 'Failed to create payment link');
-
-    //     } catch (\Exception $e) {
-    //         \Log::error('Square payment link error: ' . $e->getMessage());
-    //         return null;
-    //     }
-    // }
