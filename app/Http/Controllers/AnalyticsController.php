@@ -45,38 +45,108 @@ class AnalyticsController extends Controller
      *     )
      * )
      */
-    public function overview(Request $request)
-    {
-        $startDate = $request->get('start_date', '30daysAgo');
-        $endDate = $request->get('end_date', 'today');
+    // public function overview(Request $request)
+    // {
+    //     $startDate = $request->get('start_date', '30daysAgo');
+    //     $endDate = $request->get('end_date', 'today');
 
-        try {
-            // Use the safer method if available, fallback to original
-            $data = method_exists($this->ga, 'getOverviewSafe') 
-                ? $this->ga->getOverviewSafe($this->propertyId, $startDate, $endDate)
-                : $this->ga->getOverview($this->propertyId, $startDate, $endDate);
+    //     try {
+    //         // Use the safer method if available, fallback to original
+    //         $data = method_exists($this->ga, 'getOverviewSafe') 
+    //             ? $this->ga->getOverviewSafe($this->propertyId, $startDate, $endDate)
+    //             : $this->ga->getOverview($this->propertyId, $startDate, $endDate);
             
-            return response()->json([
-                'status' => 'success',
-                'data' => $data,
-                'period' => ['start' => $startDate, 'end' => $endDate]
-            ]);
-        } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 'success',
+    //             'data' => $data,
+    //             'period' => ['start' => $startDate, 'end' => $endDate]
+    //         ]);
+    //     } catch (\Exception $e) {
+    //         return response()->json([
+    //             'status' => 'error',
+    //             'error' => $e->getMessage(),
+    //             'data' => [
+    //                 'sessions' => 0,
+    //                 'totalUsers' => 0,
+    //                 'newUsers' => 0,
+    //                 'returningUsers' => 0,
+    //                 'pageViews' => 0,
+    //                 'bounceRate' => 0,
+    //                 'avgSessionDuration' => 0
+    //             ]
+    //         ], 500);
+    //     }
+    // }
+    public function overview(Request $request)
+{
+    $startDate = $request->get('start_date', '30daysAgo');
+    $endDate = $request->get('end_date', 'today');
+
+    try {
+        // Initialize GA4 client
+        $client = new BetaAnalyticsDataClient([
+            'credentials' => storage_path('app/analytics-key.json')
+        ]);
+
+        // Build request
+        $requestGA = new RunReportRequest([
+            'property' => "properties/{$this->propertyId}",
+            'dateRanges' => [
+                new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+            ],
+            'metrics' => [
+                new Metric(['name' => 'sessions']),
+                new Metric(['name' => 'activeUsers']),
+                new Metric(['name' => 'newUsers']),
+                new Metric(['name' => 'screenPageViews']),
+                new Metric(['name' => 'bounceRate']),
+                new Metric(['name' => 'averageSessionDuration'])
+            ]
+        ]);
+
+        $response = $client->runReport($requestGA);
+
+        // Debug: dump GA response if empty
+        if (count($response->getRows()) === 0) {
             return response()->json([
                 'status' => 'error',
-                'error' => $e->getMessage(),
-                'data' => [
-                    'sessions' => 0,
-                    'totalUsers' => 0,
-                    'newUsers' => 0,
-                    'returningUsers' => 0,
-                    'pageViews' => 0,
-                    'bounceRate' => 0,
-                    'avgSessionDuration' => 0
-                ]
+                'message' => 'GA returned no rows. Check property ID, credentials, metrics, or date range.',
+                'raw_response' => $response->serializeToJsonString()
             ], 500);
         }
+
+        $row = $response->getRows()[0];
+        $metrics = $row->getMetricValues();
+
+        $sessions = isset($metrics[0]) ? (int)$metrics[0]->getValue() : 0;
+        $activeUsers = isset($metrics[1]) ? (int)$metrics[1]->getValue() : 0;
+        $newUsers = isset($metrics[2]) ? (int)$metrics[2]->getValue() : 0;
+        $pageViews = isset($metrics[3]) ? (int)$metrics[3]->getValue() : 0;
+        $bounceRate = isset($metrics[4]) ? round((float)$metrics[4]->getValue() * 100, 2) : 0;
+        $avgSessionDuration = isset($metrics[5]) ? (float)$metrics[5]->getValue() : 0;
+
+        return response()->json([
+            'status' => 'success',
+            'period' => ['start' => $startDate, 'end' => $endDate],
+            'data' => [
+                'sessions' => $sessions,
+                'totalUsers' => $activeUsers,
+                'newUsers' => $newUsers,
+                'returningUsers' => max(0, $activeUsers - $newUsers),
+                'pageViews' => $pageViews,
+                'bounceRate' => $bounceRate,
+                'avgSessionDuration' => $avgSessionDuration
+            ]
+        ]);
+
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * @OA\Get(
