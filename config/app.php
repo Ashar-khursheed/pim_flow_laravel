@@ -10,7 +10,7 @@ switch ($website) {
 
 	case 'TEST':
 		$url = 'https://test.d2gutus2i9fewc.amplifyapp.com';
-		$backendUrl = 'https://tespim.thehorecastore.co';
+		$backendUrl = 'https://testpim.thehorecastore.co';
 		break;
 
 	case 'US':
