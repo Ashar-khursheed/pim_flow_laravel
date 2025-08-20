@@ -387,7 +387,74 @@ class GoogleAnalytics
     /**
      * Get abandoned cart analytics - SAFE VERSION
      */
-  public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    //  public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    // {
+    //     $client = new \Google\Client();
+    //     $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+    //     $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+
+    //     $analyticsData = new \Google\Service\AnalyticsData($client);
+
+    //     $request = new \Google\Service\AnalyticsData\RunReportRequest([
+    //         'dateRanges' => [
+    //             new \Google\Service\AnalyticsData\DateRange([
+    //                 'startDate' => $startDate,
+    //                 'endDate' => $endDate,
+    //             ]),
+    //         ],
+    //         'dimensions' => [
+    //             new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
+    //         ],
+    //         'metrics' => [
+    //             new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
+    //         ],
+    //     ]);
+
+    //     $response = $analyticsData->properties->runReport(
+    //         'properties/' . $propertyId,
+    //         $request
+    //     );
+
+    //     $addToCarts = 0;
+    //     $checkouts = 0;
+    //     $purchases = 0;
+
+    //     foreach ($response->getRows() as $row) {
+    //         $eventName = $row->getDimensionValues()[0]->getValue();
+    //         $count = (int) $row->getMetricValues()[0]->getValue();
+
+    //         if ($eventName === 'add_to_cart') {
+    //             $addToCarts = $count;
+    //         } elseif ($eventName === 'begin_checkout') {
+    //             $checkouts = $count;
+    //         } elseif ($eventName === 'purchase') {
+    //             $purchases = $count;
+    //         }
+    //     }
+
+    //     // Calculate abandonment & conversion
+    //     $abandonedCarts = max(0, $addToCarts - $checkouts);
+    //     $abandonedCheckouts = max(0, $checkouts - $purchases);
+
+    //     $cartAbandonmentRate = $addToCarts > 0 ? round(($abandonedCarts / $addToCarts) * 100, 2) : 0;
+    //     $checkoutAbandonmentRate = $checkouts > 0 ? round(($abandonedCheckouts / $checkouts) * 100, 2) : 0;
+    //     $conversionRate = $addToCarts > 0 ? round(($purchases / $addToCarts) * 100, 2) : 0;
+
+    //     return [
+    //         'addToCarts' => $addToCarts,
+    //         'checkouts' => $checkouts,
+    //         'purchases' => $purchases,
+    //         'abandonedCarts' => $abandonedCarts,
+    //         'abandonedCheckouts' => $abandonedCheckouts,
+    //         'cartAbandonmentRate' => $cartAbandonmentRate,
+    //         'checkoutAbandonmentRate' => $checkoutAbandonmentRate,
+    //         'conversionRate' => $conversionRate,
+    //         'message' => ($addToCarts + $checkouts + $purchases) === 0
+    //             ? 'E-commerce tracking not available or not configured'
+    //             : 'success'
+    //     ];
+    // }
+    public function getAbandonedCartDetails($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
     $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
@@ -404,6 +471,9 @@ class GoogleAnalytics
         ],
         'dimensions' => [
             new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userId']),        // only works if you send user_id in GA4
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userPseudoId']), // fallback if no userId
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']),     // product names
         ],
         'metrics' => [
             new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
@@ -415,45 +485,28 @@ class GoogleAnalytics
         $request
     );
 
-    $addToCarts = 0;
-    $checkouts = 0;
-    $purchases = 0;
-
+    $details = [];
     foreach ($response->getRows() as $row) {
         $eventName = $row->getDimensionValues()[0]->getValue();
-        $count = (int) $row->getMetricValues()[0]->getValue();
+        $userId    = $row->getDimensionValues()[1]->getValue();
+        $pseudoId  = $row->getDimensionValues()[2]->getValue();
+        $itemName  = $row->getDimensionValues()[3]->getValue();
+        $count     = (int) $row->getMetricValues()[0]->getValue();
 
-        if ($eventName === 'add_to_cart') {
-            $addToCarts = $count;
-        } elseif ($eventName === 'begin_checkout') {
-            $checkouts = $count;
-        } elseif ($eventName === 'purchase') {
-            $purchases = $count;
+        // Only track abandoned cart-related events
+        if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
+            $details[] = [
+                'event' => $eventName,
+                'userId' => $userId ?: $pseudoId,
+                'item' => $itemName,
+                'count' => $count,
+            ];
         }
     }
 
-    // Calculate abandonment & conversion
-    $abandonedCarts = max(0, $addToCarts - $checkouts);
-    $abandonedCheckouts = max(0, $checkouts - $purchases);
-
-    $cartAbandonmentRate = $addToCarts > 0 ? round(($abandonedCarts / $addToCarts) * 100, 2) : 0;
-    $checkoutAbandonmentRate = $checkouts > 0 ? round(($abandonedCheckouts / $checkouts) * 100, 2) : 0;
-    $conversionRate = $addToCarts > 0 ? round(($purchases / $addToCarts) * 100, 2) : 0;
-
-    return [
-        'addToCarts' => $addToCarts,
-        'checkouts' => $checkouts,
-        'purchases' => $purchases,
-        'abandonedCarts' => $abandonedCarts,
-        'abandonedCheckouts' => $abandonedCheckouts,
-        'cartAbandonmentRate' => $cartAbandonmentRate,
-        'checkoutAbandonmentRate' => $checkoutAbandonmentRate,
-        'conversionRate' => $conversionRate,
-        'message' => ($addToCarts + $checkouts + $purchases) === 0
-            ? 'E-commerce tracking not available or not configured'
-            : 'success'
-    ];
+    return $details;
 }
+
 
 
     /**
