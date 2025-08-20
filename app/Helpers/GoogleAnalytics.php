@@ -538,7 +538,7 @@ class GoogleAnalytics
     //     ];
     // }
     
-    public function getBasicEcommerceFunnel($propertyId, $startDate, $endDate)
+    public function getEcommerceFunnel($propertyId, $startDate, $endDate)
     {
         $request = new RunReportRequest([
             'dateRanges' => [
