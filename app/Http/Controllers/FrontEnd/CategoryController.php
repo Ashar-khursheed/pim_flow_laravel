@@ -2579,7 +2579,7 @@ private function getAllCategoryProductIds($categoryId)
         ->toArray();
     
     // Get all child categories
-    $childCategoryIds = DB::table('categories')
+    $childCategoryIds = DB::table('ec_categories')
         ->where('parent_id', $categoryId)
         ->pluck('id')
         ->toArray();
@@ -2757,7 +2757,7 @@ private function getOptimizedProducts($productIds, $request, $perPage)
         'currency:id,symbol,is_prefix_symbol',
         'brand:id,name',
         'seoUrl:id,url',
-        'productSuppliers:product_id,vendor_id,price,sale_price,quantity,vendor_sku,map,inventory,in_stock,delivery_days,return_policy,free_shipping,warranty_information',
+        'productSuppliers:product_id,vendor_id,price,sale_price,vendor_sku,map,inventory,in_stock,delivery_days,return_policy,free_shipping,warranty_information',
         'productAttributes' => function($query) {
             $query->select('product_id', 'attribute_id', 'attribute_value')
                   ->with('attributeDetails:id,name');
@@ -2810,7 +2810,7 @@ private function getOptimizedProducts($productIds, $request, $perPage)
             : (array) $product->images;
 
         $firstSupplier = $product->productSuppliers->first();
-        $leftStock = $firstSupplier?->quantity ?? 0;
+        $leftStock = $firstSupplier?->inventory ?? 0;
 
         // Efficient attribute processing
         $unitsPerCase = null;
@@ -3138,7 +3138,6 @@ private function getEmptyResponse()
         ]
     ]);
 }
-
 // public function getSpecificationFilters1(Request $request)
 // {
 //     // Validation
