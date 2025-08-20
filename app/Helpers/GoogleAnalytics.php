@@ -609,4 +609,10 @@ class GoogleAnalytics
             ],
         ];
     }
+
+    public function getAnalyticsData()
+    {
+        return $this->analyticsData;
+    }
+
 }
