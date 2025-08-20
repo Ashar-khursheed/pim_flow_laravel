@@ -454,7 +454,7 @@ class GoogleAnalytics
     //             : 'success'
     //     ];
     // }
-    public function getAbandonedCartDetails($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+    public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
     $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
