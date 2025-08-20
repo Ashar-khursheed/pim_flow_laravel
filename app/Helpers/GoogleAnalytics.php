@@ -454,56 +454,82 @@ class GoogleAnalytics
     //             : 'success'
     //     ];
     // }
-    public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
-        $client = new \Google\Client();
-        $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
-        $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
+  public function getAbandonedCartAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    $client = new \Google\Client();
+    $client->setAuthConfig(base_path('app/Script/analytics-key.json'));
+    $client->addScope('https://www.googleapis.com/auth/analytics.readonly');
 
-        $analyticsData = new \Google\Service\AnalyticsData($client);
+    $analyticsData = new \Google\Service\AnalyticsData($client);
 
-        $request = new \Google\Service\AnalyticsData\RunReportRequest([
-            'dateRanges' => [
-                new \Google\Service\AnalyticsData\DateRange([
-                    'startDate' => $startDate,
-                    'endDate' => $endDate,
-                ]),
-            ],
-            'dimensions' => [
-                new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
-                new \Google\Service\AnalyticsData\Dimension(['name' => 'userPseudoId']), // anonymous GA4 ID
-                new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']),     // product names
-            ],
-            'metrics' => [
-                new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
-            ],
-        ]);
+    $request = new \Google\Service\AnalyticsData\RunReportRequest([
+        'dateRanges' => [
+            new \Google\Service\AnalyticsData\DateRange([
+                'startDate' => $startDate,
+                'endDate'   => $endDate,
+            ]),
+        ],
+        'dimensions' => [
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'eventName']),
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'userId']),   // only works if you set user_id in GA4
+            new \Google\Service\AnalyticsData\Dimension(['name' => 'itemName']), // product name
+        ],
+        'metrics' => [
+            new \Google\Service\AnalyticsData\Metric(['name' => 'eventCount']),
+        ],
+    ]);
 
+    $response = $analyticsData->properties->runReport(
+        'properties/' . $propertyId,
+        $request
+    );
 
-        $response = $analyticsData->properties->runReport(
-            'properties/' . $propertyId,
-            $request
-        );
+    $details = [];
+    $addToCarts = 0;
+    $checkouts = 0;
+    $purchases = 0;
 
-        $details = [];
-        foreach ($response->getRows() as $row) {
-            $eventName = $row->getDimensionValues()[0]->getValue();
-            $pseudoId  = $row->getDimensionValues()[1]->getValue();
-            $itemName  = $row->getDimensionValues()[2]->getValue();
-            $count     = (int) $row->getMetricValues()[0]->getValue();
+    foreach ($response->getRows() as $row) {
+        $eventName = $row->getDimensionValues()[0]->getValue();
+        $userId    = $row->getDimensionValues()[1]->getValue() ?: 'anonymous';
+        $itemName  = $row->getDimensionValues()[2]->getValue();
+        $count     = (int) $row->getMetricValues()[0]->getValue();
 
-            if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
-                $details[] = [
-                    'event'   => $eventName,
-                    'userId'  => $pseudoId, // only available identifier unless you add custom user_id
-                    'item'    => $itemName,
-                    'count'   => $count,
-                ];
-            }
+        if ($eventName === 'add_to_cart') {
+            $addToCarts += $count;
+        } elseif ($eventName === 'begin_checkout') {
+            $checkouts += $count;
+        } elseif ($eventName === 'purchase') {
+            $purchases += $count;
         }
 
-        return $details;
+        if (in_array($eventName, ['add_to_cart', 'begin_checkout'])) {
+            $details[] = [
+                'event'  => $eventName,
+                'userId' => $userId,
+                'item'   => $itemName,
+                'count'  => $count,
+            ];
+        }
     }
+
+    // calculate abandoned carts & checkouts
+    $abandonedCarts = max(0, $addToCarts - $checkouts);
+    $abandonedCheckouts = max(0, $checkouts - $purchases);
+
+    return [
+        'addToCarts'              => $addToCarts,
+        'checkouts'               => $checkouts,
+        'purchases'               => $purchases,
+        'abandonedCarts'          => $abandonedCarts,
+        'abandonedCheckouts'      => $abandonedCheckouts,
+        'cartAbandonmentRate'     => $addToCarts > 0 ? round(($abandonedCarts / $addToCarts) * 100, 2) : 0,
+        'checkoutAbandonmentRate' => $checkouts > 0 ? round(($abandonedCheckouts / $checkouts) * 100, 2) : 0,
+        'conversionRate'          => $checkouts > 0 ? round(($purchases / $checkouts) * 100, 2) : 0,
+        'details'                 => $details,
+    ];
+}
+
 
 
 
