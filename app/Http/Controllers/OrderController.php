@@ -499,7 +499,7 @@ class OrderController extends Controller
 			'payment_method' => 'Square',
 			'amount' => $order->total_amount,
 			'status' => 'Completed',
-			'notes' => 'Payment marked manually/test'
+			'notes' => 'Payment marked through link'
 		]);
 
 		return response()->json(['success' => true, 'message' => 'Order marked as paid.']);
