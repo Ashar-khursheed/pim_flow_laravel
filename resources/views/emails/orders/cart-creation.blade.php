@@ -24,7 +24,7 @@
 <body style="margin: 0; padding: 0; background: #ffffff; font-family: 'Noto Sans', sans-serif; color: black;">
 	<!-- Preheader text: hidden but visible in email previews -->
 	<span style="display: none; font-size: 1px; color: #ffffff; line-height: 1px; max-height: 0px; max-width: 0px; opacity: 0; overflow: hidden;">
-		Thank you! We’ve received your order and will start processing it shortly.
+		We’ve saved your items. Please complete payment to confirm your order.
 	</span>
 
 	<table width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f8f8f8; font-family: 'Noto Sans',  sans-serif;">
@@ -113,7 +113,7 @@
 												</td>
 												<td style="font-family: 'Noto Sans', sans-serif; font-weight: 500; line-height:22px; color:black; font-size: 14px;">
 													Pending
-													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">{{ $paymentUrl }}</a>
+													<a href="{{ $paymentUrl }}" style="color:#186737; font-family: 'Noto Sans', sans-serif; font-size:12px; line-height:18px;">[Pay Now]</a>
 												</td>
 											</tr>
 										</table>

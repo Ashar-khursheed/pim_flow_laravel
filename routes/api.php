@@ -69,6 +69,7 @@ use App\Http\Controllers\AbandonedCartController;
 use App\Http\Controllers\Utmcontroller;
 use App\Http\Controllers\CustomerEventController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\CustomerCartController;
 
 use App\Http\Controllers\FrontEnd\AuthController as F_AuthController;
 use App\Http\Controllers\FrontEnd\CustomerController as F_CustomerController;
@@ -218,25 +219,25 @@ Route::prefix('analytics')->group(function () {
     Route::get('/overview', [AnalyticsController::class, 'overview']);
     Route::get('/sessions-by-date', [AnalyticsController::class, 'sessionsByDate']);
     Route::get('/realtime', [AnalyticsController::class, 'realTimeAnalytics']);
-    
+
     // Detailed Analytics
     Route::get('/device', [AnalyticsController::class, 'deviceAnalytics']);
     Route::get('/geographic', [AnalyticsController::class, 'geographicAnalytics']);
     Route::get('/traffic-sources', [AnalyticsController::class, 'trafficSources']);
     Route::get('/pages', [AnalyticsController::class, 'pageAnalytics']);
     Route::get('/events', [AnalyticsController::class, 'eventAnalytics']);
-    
+
     // E-commerce & Conversions
     Route::get('/conversions', [AnalyticsController::class, 'conversionAnalytics']);
     Route::get('/abandoned-cart', [AnalyticsController::class, 'abandonedCartAnalytics']);
     Route::get('/ecommerce-funnel', [AnalyticsController::class, 'ecommerceFunnel']);
     Route::get('/goal-completions', [AnalyticsController::class, 'goalCompletions']);
-    
+
     // Audience Analytics
     Route::get('/demographics', [AnalyticsController::class, 'audienceDemographics']);
     Route::get('/cohort-analysis', [AnalyticsController::class, 'cohortAnalysis']);
     Route::get('/user-journey', [AnalyticsController::class, 'userJourney']);
-    
+
     // Advanced Features
     Route::get('/time-based', [AnalyticsController::class, 'timeBasedAnalytics']);
     Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
@@ -256,7 +257,7 @@ Route::prefix('analytics')->group(function () {
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
-	
+
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
@@ -501,6 +502,7 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
 	Route::post('/unisource/create-shipment', [UnisourceShipmentController::class, 'createShipment']);
 	Route::post('/unisource/authenticate', [UnisourceShipmentController::class, 'authenticateWithUnisource']);
+    Route::apiResource('carts', CustomerCartController::class);
 
 });
 

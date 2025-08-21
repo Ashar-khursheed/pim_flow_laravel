@@ -17,7 +17,8 @@ class CartCreationMailJob implements ShouldQueue
 {
 	use Dispatchable, InteractsWithQueue, Queueable, SerializesModels, Batchable;
 	public $timeout = 600;
-	public $orderId;
+	public $customerCartID;
+	public $randomPassword;
 
 	public function __construct($data)
 	{

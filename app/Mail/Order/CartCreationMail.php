@@ -14,6 +14,7 @@ class CartCreationMail extends Mailable
 	use Queueable, SerializesModels;
 
 	public $customerCart;
+	public $randomPassword;
 
 	/**
 	 * Create a new message instance.
@@ -94,8 +95,8 @@ class CartCreationMail extends Mailable
 		/* Total saved = original total - actual subtotal */
 		$totalSaved = max(0, ($totalPriceWithoutDiscount ?? 0) - ($customerCart->amount ?? 0));
 
-		$liftGateCharge = $order->is_lift_gate ? 75 : 0;
-		$residentialAddressCharge = $order->is_residential_address ? 199 : 0;
+		$liftGateCharge = $customerCart->is_lift_gate ? 75 : 0;
+		$residentialAddressCharge = $customerCart->is_residential_address ? 199 : 0;
 
 		$subTotal = $customerCart->amount ?? 0;
 		$shippingCharge = $customerCart->shipping_charge ?? 0;
@@ -114,11 +115,9 @@ class CartCreationMail extends Mailable
 			'password' => $password,
 			'paymentUrl' => $paymentUrl,
 
-			'referenceNumber' => $reference_number,
-			'orderDate' => $customerCartDate,
+			'referenceNumber' => $referenceNumber,
+			'customerCartDate' => $customerCartDate,
 			'currency' => $currency,
-			'paidAmount' => $paidAmount,
-			'paymentMethod' => $paymentMethod,
 
 			'address' => $address,
 			'city' => $city,
@@ -141,7 +140,7 @@ class CartCreationMail extends Mailable
 			'siteEmail' => $siteEmail,
 		];
 
-		return $this->subject("Your HorecaStore Order #{$customerCartNumber} Has Been Successfully Placed")
+		return $this->subject("Your HorecaStore Order Ref {$referenceNumber} is Reserved — Awaiting Payment")
 		->markdown('emails.orders.cart-creation')
 		->with($params);
 	}

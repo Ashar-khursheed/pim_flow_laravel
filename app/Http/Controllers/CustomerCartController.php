@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Hash;
 
@@ -10,6 +11,8 @@ use Illuminate\Support\Facades\Bus;
 use Illuminate\Bus\Batch;
 
 use App\Models\FrontEnd\CustomerCart;
+use App\Models\FrontEnd\CustomerCartProduct;
+use App\Models\FrontEnd\CustomerAddress;
 use App\Jobs\Order\CartCreationMailJob;
 
 class CustomerCartController extends Controller
@@ -139,20 +142,10 @@ class CustomerCartController extends Controller
 					'total_amount' => $total + $product['shipping_charge'],
 				]);
 			}
-			$customerCart = CustomerCart::find($request->customer_id);
-			foreach ($request->products as $product) {
-				$cart = Cart::create([
-					'user_id' => $customer->id,
-					'product_id' => $product['product_id'],
-					'vendor_id' => $product['vendor_id'],
-					'quantity' => $product['quantity'],
-					'created_by' => auth()->id()
-				]);
-			}
 
 			$randomPassword = Str::random(8);
 			$hashedPassword = Hash::make($randomPassword);
-			$customer->update(['password' => $hashedPassword]);
+			$customerCart->customer->update(['password' => $hashedPassword]);
 
 			DB::commit();
 
