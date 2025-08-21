@@ -153,19 +153,19 @@ public function index(Request $request)
 
     // ↕ Sorting
    // ↕ Sorting
-$allowedSorts = ['id', 'code', 'title', 'created_at', 'updated_at']; // add other valid columns
-$sortBy = $request->get('sort_by', 'created_at');
-$sortOrder = $request->get('sort_order', 'desc');
+    $allowedSorts = ['id', 'code', 'title', 'created_at', 'updated_at']; // add other valid columns
+    $sortBy = $request->get('sort_by', 'created_at');
+    $sortOrder = $request->get('sort_order', 'desc');
 
-if (!in_array($sortBy, $allowedSorts)) {
-    $sortBy = 'created_at'; // fallback
-}
+    if (!in_array($sortBy, $allowedSorts)) {
+        $sortBy = 'created_at'; // fallback
+    }
 
-if (!in_array($sortOrder, ['asc', 'desc'])) {
-    $sortOrder = 'desc';
-}
+    if (!in_array($sortOrder, ['asc', 'desc'])) {
+        $sortOrder = 'desc';
+    }
 
-$query->orderBy($sortBy, $sortOrder);
+    $query->orderBy($sortBy, $sortOrder);
 
 
     // 📄 Pagination
@@ -174,54 +174,113 @@ $query->orderBy($sortBy, $sortOrder);
 
     return response()->json($coupons);
 }
-
 /**
  * @OA\Post(
  *     path="/api/frontend/coupons",
  *     operationId="createCoupon",
  *     tags={"FrontEnd-Coupon"},
- *     summary="Create a new coupon",
  *     security={{"bearerAuth":{}}},
+ *     summary="Create a new coupon",
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
- *             required={"code", "value"},
- *             @OA\Property(property="code", type="string", example="WELCOME10"),
- *             @OA\Property(property="value", type="number", example=50),
- *             @OA\Property(property="type", type="string", enum={"fixed","percent"}, example="fixed"),
- *             @OA\Property(property="min_order_price", type="number", example=100),
+ *             required={"title", "code", "value", "type", "store_id"},
+ *             @OA\Property(property="title", type="string", example="Welcome Discount"),
+ *             @OA\Property(property="code", type="string", example="WELCOME20"),
+ *             @OA\Property(property="value", type="number", example=20),
+ *             @OA\Property(property="type", type="string", enum={"fixed","percent"}, example="percent"),
+ *             @OA\Property(property="description", type="string", example="New customer welcome discount"),
+ *             @OA\Property(property="start_date", type="string", format="date", example="2025-08-21"),
+ *             @OA\Property(property="end_date", type="string", format="date", example="2025-12-31"),
  *             @OA\Property(property="quantity", type="integer", example=100),
- *             @OA\Property(property="expires_at", type="string", format="date", example="2025-12-31")
+ *             @OA\Property(property="min_order_price", type="number", example=50),
+ *             @OA\Property(property="can_use_with_promotion", type="boolean", example=true),
+ *             @OA\Property(property="discount_on", type="string", enum={"order","product","shipping"}, example="order"),
+ *             @OA\Property(property="product_quantity", type="integer", example=1),
+ *             @OA\Property(property="type_option", type="string", example="general"),
+ *             @OA\Property(property="target", type="string", enum={"all","specific_products","categories"}, example="all"),
+ *             @OA\Property(property="apply_via_url", type="boolean", example=false),
+ *             @OA\Property(property="display_at_checkout", type="boolean", example=true),
+ *             @OA\Property(property="store_id", type="integer", example=1)
  *         )
  *     ),
  *     @OA\Response(
  *         response=201,
  *         description="Coupon created successfully",
- *         @OA\JsonContent(ref="#/components/schemas/Coupon")
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Coupon created successfully"),
+ *             @OA\Property(property="data", ref="#/components/schemas/Coupon")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
  *     )
  * )
  */
+public function store(Request $request)
+{
+    try {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'code' => 'required|string|max:50|unique:ec_discounts,code',
+            'value' => 'required|numeric|min:0',
+            'type' => 'required|in:fixed,percent',
+            'description' => 'nullable|string|max:1000',
+            'start_date' => 'nullable|date|after_or_equal:today',
+            'end_date' => 'nullable|date|after:start_date',
+            'quantity' => 'nullable|integer|min:1|max:10000',
+            'min_order_price' => 'nullable|numeric|min:0',
+            'can_use_with_promotion' => 'boolean',
+            'discount_on' => 'nullable|in:order,product,shipping',
+            'product_quantity' => 'nullable|integer|min:1',
+            'type_option' => 'nullable|string|max:100',
+            'target' => 'nullable|in:all,specific_products,categories',
+            'apply_via_url' => 'boolean',
+            'display_at_checkout' => 'boolean',
+            'store_id' => 'required|integer|exists:stores,id'
+        ]);
 
-    public function store(Request $request)
-    {
-    $validated = $request->validate([
-        'code' => 'required|string|unique:ec_discounts,code',
-        'value' => 'required|numeric|min:0',
-        'min_order_price' => 'nullable|numeric|min:0',
-        'quantity' => 'nullable|integer|min:1',
-        'expires_at' => 'nullable|date|after:today',
-        'type' => 'nullable|in:fixed,percent'
-    ]);
+        // Set default values
+        $validated['total_used'] = 0;
+        $validated['can_use_with_promotion'] = $validated['can_use_with_promotion'] ?? false;
+        $validated['apply_via_url'] = $validated['apply_via_url'] ?? false;
+        $validated['display_at_checkout'] = $validated['display_at_checkout'] ?? true;
+        $validated['discount_on'] = $validated['discount_on'] ?? 'order';
+        $validated['target'] = $validated['target'] ?? 'all';
 
-    $coupon = Discount::create($validated);
+        // Additional validation for percent type
+        if ($validated['type'] === 'percent' && $validated['value'] > 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percentage discount cannot exceed 100%',
+                'errors' => ['value' => ['Percentage discount cannot exceed 100%']]
+            ], 422);
+        }
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Coupon created successfully',
-        'data' => $coupon
-    ], 201);
+        $coupon = Discount::create($validated);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Coupon created successfully',
+            'data' => $coupon->load('store') // Load store relationship if exists
+        ], 201);
+
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to create coupon',
+            'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+        ], 500);
     }
-
+}
 /**
  * @OA\Get(
  *     path="/api/frontend/coupons/{id}",
@@ -270,43 +329,118 @@ public function show($id)
  *     @OA\RequestBody(
  *         required=true,
  *         @OA\JsonContent(
- *             @OA\Property(property="code", type="string", example="WELCOME20"),
- *             @OA\Property(property="value", type="number", example=20),
+ *             @OA\Property(property="title", type="string", example="Updated Welcome Discount"),
+ *             @OA\Property(property="code", type="string", example="WELCOME25"),
+ *             @OA\Property(property="value", type="number", example=25),
  *             @OA\Property(property="type", type="string", enum={"fixed","percent"}, example="percent"),
- *             @OA\Property(property="min_order_price", type="number", example=200),
- *             @OA\Property(property="quantity", type="integer", example=50),
- *             @OA\Property(property="expires_at", type="string", format="date", example="2026-01-01")
+ *             @OA\Property(property="description", type="string", example="Updated description"),
+ *             @OA\Property(property="start_date", type="string", format="date", example="2025-08-21"),
+ *             @OA\Property(property="end_date", type="string", format="date", example="2025-12-31"),
+ *             @OA\Property(property="quantity", type="integer", example=150),
+ *             @OA\Property(property="min_order_price", type="number", example=75),
+ *             @OA\Property(property="can_use_with_promotion", type="boolean", example=false),
+ *             @OA\Property(property="discount_on", type="string", enum={"order","product","shipping"}, example="product"),
+ *             @OA\Property(property="product_quantity", type="integer", example=2),
+ *             @OA\Property(property="type_option", type="string", example="premium"),
+ *             @OA\Property(property="target", type="string", enum={"all","specific_products","categories"}, example="categories"),
+ *             @OA\Property(property="apply_via_url", type="boolean", example=true),
+ *             @OA\Property(property="display_at_checkout", type="boolean", example=false)
  *         )
  *     ),
  *     @OA\Response(
  *         response=200,
  *         description="Coupon updated successfully",
- *         @OA\JsonContent(ref="#/components/schemas/Coupon")
+ *         @OA\JsonContent(
+ *             @OA\Property(property="success", type="boolean", example=true),
+ *             @OA\Property(property="message", type="string", example="Coupon updated successfully"),
+ *             @OA\Property(property="data", ref="#/components/schemas/Coupon")
+ *         )
+ *     ),
+ *     @OA\Response(
+ *         response=404,
+ *         description="Coupon not found"
+ *     ),
+ *     @OA\Response(
+ *         response=422,
+ *         description="Validation error"
  *     )
  * )
  */
 public function update(Request $request, $id)
 {
-    $coupon = Discount::findOrFail($id);
+    try {
+        $coupon = Discount::findOrFail($id);
+        
+        $validated = $request->validate([
+            'title' => 'sometimes|required|string|max:255',
+            'code' => 'sometimes|required|string|max:50|unique:ec_discounts,code,' . $coupon->id,
+            'value' => 'sometimes|required|numeric|min:0',
+            'type' => 'sometimes|required|in:fixed,percent',
+            'description' => 'nullable|string|max:1000',
+            'start_date' => 'nullable|date',
+            'end_date' => 'nullable|date|after:start_date',
+            'quantity' => 'nullable|integer|min:1|max:10000',
+            'min_order_price' => 'nullable|numeric|min:0',
+            'can_use_with_promotion' => 'boolean',
+            'discount_on' => 'nullable|in:order,product,shipping',
+            'product_quantity' => 'nullable|integer|min:1',
+            'type_option' => 'nullable|string|max:100',
+            'target' => 'nullable|in:all,specific_products,categories',
+            'apply_via_url' => 'boolean',
+            'display_at_checkout' => 'boolean',
+            'store_id' => 'sometimes|required|integer|exists:stores,id'
+        ]);
 
-    $validated = $request->validate([
-        'code' => 'sometimes|required|string|unique:ec_discounts,code,' . $coupon->id,
-        'value' => 'sometimes|required|numeric|min:0',
-        'min_order_price' => 'nullable|numeric|min:0',
-        'quantity' => 'nullable|integer|min:1',
-        'expires_at' => 'nullable|date|after:today',
-        'type' => 'nullable|in:fixed,percent'
-    ]);
+        // Additional validation for percent type
+        if (isset($validated['type']) && $validated['type'] === 'percent' && isset($validated['value']) && $validated['value'] > 100) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Percentage discount cannot exceed 100%',
+                'errors' => ['value' => ['Percentage discount cannot exceed 100%']]
+            ], 422);
+        }
 
-    $coupon->update($validated);
+        // Check if coupon type is being changed and validate value accordingly
+        if (isset($validated['value']) && !isset($validated['type'])) {
+            if ($coupon->type === 'percent' && $validated['value'] > 100) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Percentage discount cannot exceed 100%',
+                    'errors' => ['value' => ['Percentage discount cannot exceed 100%']]
+                ], 422);
+            }
+        }
 
-    return response()->json([
-        'success' => true,
-        'message' => 'Coupon updated successfully',
-        'data' => $coupon
-    ]);
+        // Prevent updating total_used directly
+        unset($validated['total_used']);
+
+        $coupon->update($validated);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Coupon updated successfully',
+            'data' => $coupon->fresh()->load('store') // Reload with fresh data and store relationship
+        ]);
+
+    } catch (ModelNotFoundException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Coupon not found'
+        ], 404);
+    } catch (ValidationException $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Validation failed',
+            'errors' => $e->errors()
+        ], 422);
+    } catch (Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Failed to update coupon',
+            'error' => config('app.debug') ? $e->getMessage() : 'Internal server error'
+        ], 500);
+    }
 }
-
 /**
  * @OA\Delete(
  *     path="/api/frontend/coupons/{id}",
