@@ -163,7 +163,7 @@ class CustomerCartController extends Controller
 
 			$batch->options['queue'] = config('app.website') . '_CART_ADD';
 			$batch->add(new CartCreationMailJob([
-				'recordId' => $customerCart->id
+				'recordId' => $customerCart->id,
 				'randomPassword' => $randomPassword,
 			]));
 
