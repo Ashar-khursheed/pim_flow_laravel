@@ -471,7 +471,7 @@ class AnalyticsController extends Controller
         $propertyId = '441790093'; // Your GA4 Property ID
         
         // Check credentials file exists
-        $credentialsPath = storage_path('app/Script/analytics-key.json');
+        $credentialsPath = base_path('app/Script/analytics-key.json');
         if (!file_exists($credentialsPath)) {
             throw new \Exception('Credentials file not found');
         }

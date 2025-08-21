@@ -667,7 +667,7 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
     }
  private function getAccessToken()
     {
-        $credentialsPath = storage_path('app/Script/analytics-key.json');
+        $credentialsPath =base_path('app/Script/analytics-key.json');
         
         if (!file_exists($credentialsPath)) {
             throw new \Exception('Credentials file not found');
