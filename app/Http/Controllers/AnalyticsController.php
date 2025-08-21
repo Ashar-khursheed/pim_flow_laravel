@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Helpers\GoogleAnalytics;
+use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
 
 class AnalyticsController extends Controller
 {
@@ -464,51 +465,71 @@ class AnalyticsController extends Controller
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-public function realTimeAnalytics()
+   public function realTimeAnalytics()
 {
     try {
-        // Get your GA4 Property ID from step 1 above
-        $propertyId = '441790093'; // Replace with your actual Property ID
+        $propertyId = '441790093'; // Your GA4 Property ID
         
-        // For now, we'll generate realistic mock data
-        // Later you can integrate with GA4 properly if needed
+        // Check credentials file exists
+        $credentialsPath = storage_path('app/Script/analytics-key.json');
+        if (!file_exists($credentialsPath)) {
+            throw new \Exception('Credentials file not found');
+        }
         
-        $countries = ['United States', 'United Kingdom', 'Canada', 'Germany', 'France', 'Australia', 'Japan'];
-        $devices = ['desktop', 'mobile', 'tablet'];
+        // Initialize GA4 client
+        $client = new BetaAnalyticsDataClient([
+            'credentials' => $credentialsPath
+        ]);
+
+        // Create real-time request
+        $request = new RunRealtimeReportRequest([
+            'property' => "properties/{$propertyId}",
+            'dimensions' => [
+                ['name' => 'country'],
+                ['name' => 'deviceCategory'],
+            ],
+            'metrics' => [
+                ['name' => 'activeUsers'],
+            ],
+        ]);
+
+        $response = $client->runRealtimeReport($request);
         
         $data = [];
         $totalActiveUsers = 0;
-        
-        // Generate 3-7 random entries
-        $numEntries = rand(3, 7);
-        
-        for ($i = 0; $i < $numEntries; $i++) {
-            $activeUsers = rand(1, 25);
+
+        // Process real data
+        foreach ($response->getRows() as $row) {
+            $country = $row->getDimensionValues()[0]->getValue();
+            $device = $row->getDimensionValues()[1]->getValue();
+            $activeUsers = (int)$row->getMetricValues()[0]->getValue();
+
             $data[] = [
-                'country' => $countries[array_rand($countries)],
-                'device' => $devices[array_rand($devices)],
+                'country' => $country,
+                'device' => $device,
                 'activeUsers' => $activeUsers,
             ];
             $totalActiveUsers += $activeUsers;
         }
-        
+
         return response()->json([
             'status' => 'success',
             'total_active_users' => $totalActiveUsers,
             'data' => $data,
             'timestamp' => now()->toISOString(),
-            'property_id' => $propertyId,
-            'note' => 'Real-time simulation data. Visit your website to see changes.'
+            'is_real_data' => true,
+            'property_id' => $propertyId
         ]);
-        
+
     } catch (\Exception $e) {
         return response()->json([
             'status' => 'error',
-            'message' => $e->getMessage()
+            'message' => $e->getMessage(),
+            'line' => $e->getLine()
         ], 500);
     }
 }
-
+ 
 
     /**
      * @OA\Get(
