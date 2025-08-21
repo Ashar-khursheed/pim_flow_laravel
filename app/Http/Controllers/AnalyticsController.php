@@ -464,23 +464,24 @@ class AnalyticsController extends Controller
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-    public function realTimeAnalytics()
-    {
-        try {
-            $data = $this->ga->getRealTimeAnalytics($this->propertyId);
-            
-            $totalActiveUsers = array_sum(array_column($data, 'activeUsers'));
-            
-            return response()->json([
-                'status' => 'success',
-                'total_active_users' => $totalActiveUsers,
-                'data' => $data,
-                'timestamp' => now()->toISOString()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
+   public function realTimeAnalytics()
+{
+    try {
+        $data = $this->ga->getRealTimeAnalytics($this->propertyId);
+        return response()->json([
+            'status' => 'success',
+            'total_active_users' => $data['total_active_users'],
+            'data' => $data['data'],
+            'timestamp' => $data['timestamp']
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'status' => 'error',
+            'message' => $e->getMessage()
+        ], 500);
     }
+}
+
 
     /**
      * @OA\Get(

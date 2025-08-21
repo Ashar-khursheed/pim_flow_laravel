@@ -15,6 +15,7 @@ use Google\Service\AnalyticsData\StringFilter;
 use Google\Service\AnalyticsData\OrderBy;
 use Google\Service\AnalyticsData\DimensionOrderBy;
 use Google\Service\AnalyticsData\MetricOrderBy;
+use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
 
 class GoogleAnalytics
 {
@@ -670,6 +671,7 @@ public function getRealTimeAnalytics($propertyId)
         'credentials' => storage_path('app/Script/analytics-key.json')
     ]);
 
+    // Request metrics only first (safer for live data)
     $request = new RunRealtimeReportRequest([
         'property' => "properties/{$propertyId}",
         'dimensions' => [
@@ -677,23 +679,36 @@ public function getRealTimeAnalytics($propertyId)
             ['name' => 'deviceCategory'],
         ],
         'metrics' => [
-            ['name' => 'activeUsers']
+            ['name' => 'activeUsers'],
         ],
     ]);
 
     $response = $client->runRealtimeReport($request);
 
     $data = [];
+    $totalActiveUsers = 0;
 
-    foreach ($response->rows as $row) {
-        $data[] = [
-            'country' => $row->dimensionValues[0]->value,
-            'device' => $row->dimensionValues[1]->value,
-            'activeUsers' => (int)$row->metricValues[0]->value
-        ];
+    if (!empty($response->rows)) {
+        foreach ($response->rows as $row) {
+            $country = $row->dimensionValues[0]->value ?? 'Unknown';
+            $device = $row->dimensionValues[1]->value ?? 'Unknown';
+            $activeUsers = isset($row->metricValues[0]->value) ? (int)$row->metricValues[0]->value : 0;
+
+            $data[] = [
+                'country' => $country,
+                'device' => $device,
+                'activeUsers' => $activeUsers,
+            ];
+
+            $totalActiveUsers += $activeUsers;
+        }
     }
 
-    return $data;
+    return [
+        'total_active_users' => $totalActiveUsers,
+        'data' => $data,
+        'timestamp' => now()->toISOString(),
+    ];
 }
 
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
