@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Helpers\GoogleAnalytics;
-use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
 use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
 
 class AnalyticsController extends Controller
@@ -467,112 +467,102 @@ class AnalyticsController extends Controller
      * )
      */
  public function realTimeAnalytics()
-{
-    try {
-        $propertyId = '441790093'; // Your GA4 Property ID
-        
-        // Check credentials file exists
-        $credentialsPath = base_path('app/Script/analytics-key.json');
-        if (!file_exists($credentialsPath)) {
-            throw new \Exception('Credentials file not found at: ' . $credentialsPath);
-        }
-        
-        // Initialize GA4 client with proper error handling
-        $client = new \Google\Analytics\Data\V1beta\BetaAnalyticsDataClient([
-            'credentials' => $credentialsPath
-        ]);
-
-        // Create real-time request with proper namespace
-        $request = new \Google\Analytics\Data\V1beta\RunRealtimeReportRequest();
-        $request->setProperty("properties/{$propertyId}");
-        
-        // Set dimensions
-        $request->setDimensions([
-            new \Google\Analytics\Data\V1beta\Dimension(['name' => 'country']),
-            new \Google\Analytics\Data\V1beta\Dimension(['name' => 'deviceCategory']),
-        ]);
-        
-        // Set metrics
-        $request->setMetrics([
-            new \Google\Analytics\Data\V1beta\Metric(['name' => 'activeUsers']),
-        ]);
-
-        $response = $client->runRealtimeReport($request);
-        
-        $data = [];
-        $totalActiveUsers = 0;
-
-        // Process real data
-        foreach ($response->getRows() as $row) {
-            $dimensionValues = $row->getDimensionValues();
-            $metricValues = $row->getMetricValues();
+    {
+        try {
+            $propertyId = '441790093';
             
-            $country = isset($dimensionValues[0]) ? $dimensionValues[0]->getValue() : 'Unknown';
-            $device = isset($dimensionValues[1]) ? $dimensionValues[1]->getValue() : 'Unknown';
-            $activeUsers = isset($metricValues[0]) ? (int)$metricValues[0]->getValue() : 0;
+            // Check credentials file exists
+            $credentialsPath = base_path('app/Script/analytics-key.json');
+            if (!file_exists($credentialsPath)) {
+                throw new \Exception('Credentials file not found at: ' . $credentialsPath);
+            }
+            
+            // Initialize GA4 client with correct namespace
+            $client = new BetaAnalyticsDataClient([
+                'credentials' => $credentialsPath
+            ]);
 
-            $data[] = [
-                'country' => $country,
-                'device' => $device,
-                'activeUsers' => $activeUsers,
+            // Create real-time request
+            $request = [
+                'property' => "properties/{$propertyId}",
+                'dimensions' => [
+                    ['name' => 'country'],
+                    ['name' => 'deviceCategory'],
+                ],
+                'metrics' => [
+                    ['name' => 'activeUsers'],
+                ],
             ];
-            $totalActiveUsers += $activeUsers;
+
+            $response = $client->runRealtimeReport($request);
+            
+            $data = [];
+            $totalActiveUsers = 0;
+
+            // Process real data
+            foreach ($response->getRows() as $row) {
+                $dimensionValues = $row->getDimensionValues();
+                $metricValues = $row->getMetricValues();
+                
+                $country = isset($dimensionValues[0]) ? $dimensionValues[0]->getValue() : 'Unknown';
+                $device = isset($dimensionValues[1]) ? $dimensionValues[1]->getValue() : 'Unknown';
+                $activeUsers = isset($metricValues[0]) ? (int)$metricValues[0]->getValue() : 0;
+
+                $data[] = [
+                    'country' => $country,
+                    'device' => $device,
+                    'activeUsers' => $activeUsers,
+                ];
+                $totalActiveUsers += $activeUsers;
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'total_active_users' => $totalActiveUsers,
+                'data' => $data,
+                'timestamp' => now()->toISOString(),
+                'is_real_data' => true,
+                'property_id' => $propertyId
+            ]);
+
+        } catch (\Google\ApiCore\ValidationException $e) {
+            return response()->json([
+                'status' => 'error',
+                'error_type' => 'validation',
+                'message' => 'Invalid request parameters: ' . $e->getMessage(),
+                'suggestions' => [
+                    'Check if property ID is correct',
+                    'Verify real-time reporting is enabled in GA4'
+                ]
+            ], 400);
+            
+        } catch (\Google\ApiCore\ApiException $e) {
+            return response()->json([
+                'status' => 'error',
+                'error_type' => 'api',
+                'message' => 'Google Analytics API error: ' . $e->getMessage(),
+                'code' => $e->getCode()
+            ], 500);
+            
+        } catch (\Exception $e) {
+            \Log::error('Real-time Analytics Error', [
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'file' => $e->getFile()
+            ]);
+            
+            return response()->json([
+                'status' => 'error',
+                'error_type' => 'general',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine(),
+                'debug_info' => [
+                    'credentials_path' => $credentialsPath ?? 'not_set',
+                    'credentials_exists' => isset($credentialsPath) ? file_exists($credentialsPath) : false
+                ]
+            ], 500);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'total_active_users' => $totalActiveUsers,
-            'data' => $data,
-            'timestamp' => now()->toISOString(),
-            'is_real_data' => true,
-            'property_id' => $propertyId
-        ]);
-
-    } catch (\Google\ApiCore\ValidationException $e) {
-        return response()->json([
-            'status' => 'error',
-            'error_type' => 'validation',
-            'message' => 'Invalid request parameters: ' . $e->getMessage(),
-            'suggestions' => [
-                'Check if property ID is correct',
-                'Verify real-time reporting is enabled in GA4',
-                'Ensure proper permissions are set'
-            ]
-        ], 400);
-        
-    } catch (\Google\ApiCore\ApiException $e) {
-        return response()->json([
-            'status' => 'error',
-            'error_type' => 'api',
-            'message' => 'Google Analytics API error: ' . $e->getMessage(),
-            'code' => $e->getCode(),
-            'suggestions' => [
-                'Check API credentials',
-                'Verify property access permissions',
-                'Check if real-time API is enabled'
-            ]
-        ], 500);
-        
-    } catch (\Exception $e) {
-        \Log::error('Real-time Analytics Error', [
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'file' => $e->getFile(),
-            'property_id' => $propertyId ?? 'unknown'
-        ]);
-        
-        return response()->json([
-            'status' => 'error',
-            'error_type' => 'general',
-            'message' => $e->getMessage(),
-            'line' => $e->getLine(),
-            'debug_info' => [
-                'credentials_path' => $credentialsPath ?? 'not_set',
-                'credentials_exists' => isset($credentialsPath) ? file_exists($credentialsPath) : false
-            ]
-        ], 500);
     }
-}
 
     /**
      * @OA\Get(
