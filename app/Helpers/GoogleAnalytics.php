@@ -667,50 +667,87 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
     }
 public function getRealTimeAnalytics($propertyId)
 {
+    // Step 1: Check if credentials file exists
+    $credentialsPath = storage_path('app/Script/analytics-key.json');
+    if (!file_exists($credentialsPath)) {
+        throw new \Exception('Credentials file not found at: ' . $credentialsPath);
+    }
+
+    // Step 2: Initialize client
     $client = new BetaAnalyticsDataClient([
-        'credentials' => storage_path('app/Script/analytics-key.json')
+        'credentials' => $credentialsPath
     ]);
 
-    // Request metrics only first (safer for live data)
+    // Step 3: Create the simplest possible request first
     $request = new RunRealtimeReportRequest([
         'property' => "properties/{$propertyId}",
-        'dimensions' => [
-            ['name' => 'country'],
-            ['name' => 'deviceCategory'],
-        ],
         'metrics' => [
             ['name' => 'activeUsers'],
         ],
     ]);
 
-    $response = $client->runRealtimeReport($request);
+    try {
+        $response = $client->runRealtimeReport($request);
+        
+        // Step 4: Debug what we got back
+        $rowCount = 0;
+        $rows = $response->getRows();
+        if ($rows) {
+            $rowCount = count($rows);
+        }
 
-    $data = [];
-    $totalActiveUsers = 0;
+        // Log everything for debugging
+        \Log::info('GA4 Debug Info:', [
+            'property_id' => $propertyId,
+            'full_property_string' => "properties/{$propertyId}",
+            'credentials_file_exists' => file_exists($credentialsPath),
+            'response_row_count' => $rowCount,
+            'has_rows' => $rowCount > 0
+        ]);
 
-    if (!empty($response->rows)) {
-        foreach ($response->rows as $row) {
-            $country = $row->dimensionValues[0]->value ?? 'Unknown';
-            $device = $row->dimensionValues[1]->value ?? 'Unknown';
-            $activeUsers = isset($row->metricValues[0]->value) ? (int)$row->metricValues[0]->value : 0;
-
-            $data[] = [
-                'country' => $country,
-                'device' => $device,
-                'activeUsers' => $activeUsers,
+        if ($rowCount === 0) {
+            return [
+                'total_active_users' => 0,
+                'data' => [],
+                'timestamp' => now()->toISOString(),
+                'debug' => [
+                    'message' => 'No real-time data available',
+                    'property_id' => $propertyId,
+                    'suggestions' => [
+                        'Check if there is current traffic to your website',
+                        'Verify the property ID is correct',
+                        'Real-time data can have 1-4 minute delays'
+                    ]
+                ]
             ];
+        }
 
+        // If we have data, process it
+        $totalActiveUsers = 0;
+        foreach ($rows as $row) {
+            $activeUsers = (int)($row->getMetricValues()[0]->getValue() ?? 0);
             $totalActiveUsers += $activeUsers;
         }
+
+        return [
+            'total_active_users' => $totalActiveUsers,
+            'data' => [['activeUsers' => $totalActiveUsers]], // Simplified for now
+            'timestamp' => now()->toISOString(),
+            'debug' => [
+                'rows_processed' => $rowCount,
+                'property_id' => $propertyId
+            ]
+        ];
+
+    } catch (\Exception $e) {
+        \Log::error('GA4 API Error:', [
+            'error' => $e->getMessage(),
+            'property_id' => $propertyId,
+            'line' => $e->getLine()
+        ]);
+        throw new \Exception('GA4 API Error: ' . $e->getMessage());
     }
-
-    return [
-        'total_active_users' => $totalActiveUsers,
-        'data' => $data,
-        'timestamp' => now()->toISOString(),
-    ];
 }
-
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
