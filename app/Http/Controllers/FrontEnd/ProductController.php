@@ -262,6 +262,9 @@ class ProductController extends Controller
                         $product->images = collect(json_decode($product->images, true))->map(function ($image) {
                             return  $image;
                         });
+                          $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+                            return  $alt_tags;
+                        });
 
                         // Custom sorting for documents
                          // Custom sorting for documents
