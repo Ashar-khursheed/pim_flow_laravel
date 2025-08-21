@@ -3021,6 +3021,7 @@ public function getSpecificationFilters1(Request $request)
             'id' => $product->id,
             'name' => $product->name,
             'images' => $cleanedImages,
+            'alt_tags' =>$product->alt_tags,
             'url' => $product->seoUrl?->url ?? null,
             'video_url' => $product->video_url,
             'video_path' => is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []),
