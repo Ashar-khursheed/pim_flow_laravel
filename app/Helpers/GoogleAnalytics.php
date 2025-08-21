@@ -668,7 +668,7 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
 public function getRealTimeAnalytics($propertyId)
 {
     // Step 1: Check if credentials file exists
-    $credentialsPath = storage_path('app/Script/analytics-key.json');
+    $credentialsPath = base_path('app/Script/analytics-key.json');
     if (!file_exists($credentialsPath)) {
         throw new \Exception('Credentials file not found at: ' . $credentialsPath);
     }
