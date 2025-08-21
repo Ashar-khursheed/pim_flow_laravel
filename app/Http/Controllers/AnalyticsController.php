@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Helpers\GoogleAnalytics;
 use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\RunRealtimeReportRequest;
 
 class AnalyticsController extends Controller
 {
@@ -466,70 +467,70 @@ class AnalyticsController extends Controller
      * )
      */
    public function realTimeAnalytics()
-{
-    try {
-        $propertyId = '441790093'; // Your GA4 Property ID
-        
-        // Check credentials file exists
-        $credentialsPath = base_path('app/Script/analytics-key.json');
-        if (!file_exists($credentialsPath)) {
-            throw new \Exception('Credentials file not found');
+    {
+        try {
+            $propertyId = '441790093'; // Your GA4 Property ID
+            
+            // Check credentials file exists
+            $credentialsPath = base_path('app/Script/analytics-key.json');
+            if (!file_exists($credentialsPath)) {
+                throw new \Exception('Credentials file not found');
+            }
+            
+            // Initialize GA4 client
+            $client = new BetaAnalyticsDataClient([
+                'credentials' => $credentialsPath
+            ]);
+
+            // Create real-time request
+            $request = new RunRealtimeReportRequest([
+                'property' => "properties/{$propertyId}",
+                'dimensions' => [
+                    ['name' => 'country'],
+                    ['name' => 'deviceCategory'],
+                ],
+                'metrics' => [
+                    ['name' => 'activeUsers'],
+                ],
+            ]);
+
+            $response = $client->runRealtimeReport($request);
+            
+            $data = [];
+            $totalActiveUsers = 0;
+
+            // Process real data
+            foreach ($response->getRows() as $row) {
+                $country = $row->getDimensionValues()[0]->getValue();
+                $device = $row->getDimensionValues()[1]->getValue();
+                $activeUsers = (int)$row->getMetricValues()[0]->getValue();
+
+                $data[] = [
+                    'country' => $country,
+                    'device' => $device,
+                    'activeUsers' => $activeUsers,
+                ];
+                $totalActiveUsers += $activeUsers;
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'total_active_users' => $totalActiveUsers,
+                'data' => $data,
+                'timestamp' => now()->toISOString(),
+                'is_real_data' => true,
+                'property_id' => $propertyId
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage(),
+                'line' => $e->getLine()
+            ], 500);
         }
-        
-        // Initialize GA4 client
-        $client = new BetaAnalyticsDataClient([
-            'credentials' => $credentialsPath
-        ]);
-
-        // Create real-time request
-        $request = new RunRealtimeReportRequest([
-            'property' => "properties/{$propertyId}",
-            'dimensions' => [
-                ['name' => 'country'],
-                ['name' => 'deviceCategory'],
-            ],
-            'metrics' => [
-                ['name' => 'activeUsers'],
-            ],
-        ]);
-
-        $response = $client->runRealtimeReport($request);
-        
-        $data = [];
-        $totalActiveUsers = 0;
-
-        // Process real data
-        foreach ($response->getRows() as $row) {
-            $country = $row->getDimensionValues()[0]->getValue();
-            $device = $row->getDimensionValues()[1]->getValue();
-            $activeUsers = (int)$row->getMetricValues()[0]->getValue();
-
-            $data[] = [
-                'country' => $country,
-                'device' => $device,
-                'activeUsers' => $activeUsers,
-            ];
-            $totalActiveUsers += $activeUsers;
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'total_active_users' => $totalActiveUsers,
-            'data' => $data,
-            'timestamp' => now()->toISOString(),
-            'is_real_data' => true,
-            'property_id' => $propertyId
-        ]);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'status' => 'error',
-            'message' => $e->getMessage(),
-            'line' => $e->getLine()
-        ], 500);
     }
-}
- 
+    
 
     /**
      * @OA\Get(
