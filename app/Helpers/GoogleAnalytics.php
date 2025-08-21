@@ -15,7 +15,8 @@ use Google\Service\AnalyticsData\StringFilter;
 use Google\Service\AnalyticsData\OrderBy;
 use Google\Service\AnalyticsData\DimensionOrderBy;
 use Google\Service\AnalyticsData\MetricOrderBy;
-use Google\Analytics\Data\V1beta\BetaAnalyticsDataClient;
+use Google\Analytics\Data\V1beta\Client\BetaAnalyticsDataClient;
+
 
 class GoogleAnalytics
 {
@@ -665,7 +666,7 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
             ]
         ];
     }
- private function getAccessToken()
+    private function getAccessToken()
     {
         $credentialsPath =base_path('app/Script/analytics-key.json');
         
