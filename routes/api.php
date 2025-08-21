@@ -427,7 +427,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('roles', RoleController::class);
 
 
-
 	Route::apiResource('reviews', ReviewController::class);
 	Route::apiResource('sliders', SliderController::class);
 
@@ -472,7 +471,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
 
-
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
@@ -489,7 +487,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::put('/redirect-links/{id}', [RedirectLinkController::class, 'update']);
 	Route::post('/redirect-links', [RedirectLinkController::class, 'store']);
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
-
 
 
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
@@ -600,9 +597,6 @@ Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
 	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
-
-
-
 
 
 	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
