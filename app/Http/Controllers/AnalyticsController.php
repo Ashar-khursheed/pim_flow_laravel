@@ -464,10 +464,14 @@ class AnalyticsController extends Controller
      *     @OA\Response(response=500, description="Internal Server Error")
      * )
      */
-   public function realTimeAnalytics()
+public function realTimeAnalytics()
 {
     try {
-        $data = $this->ga->getRealTimeAnalytics($this->propertyId);
+        // Note: You need to use View ID (from Universal Analytics), not Property ID (from GA4)
+        $viewId = 'YOUR_VIEW_ID_HERE'; // Replace with your actual view ID
+        
+        $data = $this->ga->getRealTimeAnalytics($viewId);
+        
         return response()->json([
             'status' => 'success',
             'total_active_users' => $data['total_active_users'],
