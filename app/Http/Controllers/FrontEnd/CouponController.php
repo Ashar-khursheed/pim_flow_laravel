@@ -152,11 +152,21 @@ public function index(Request $request)
     }
 
     // ↕ Sorting
-    $sortBy = $request->get('sort_by', 'created_at');
-    $sortOrder = $request->get('sort_order', 'desc');
-    if (in_array($sortOrder, ['asc', 'desc'])) {
-        $query->orderBy($sortBy, $sortOrder);
-    }
+   // ↕ Sorting
+$allowedSorts = ['id', 'code', 'title', 'created_at', 'updated_at']; // add other valid columns
+$sortBy = $request->get('sort_by', 'created_at');
+$sortOrder = $request->get('sort_order', 'desc');
+
+if (!in_array($sortBy, $allowedSorts)) {
+    $sortBy = 'created_at'; // fallback
+}
+
+if (!in_array($sortOrder, ['asc', 'desc'])) {
+    $sortOrder = 'desc';
+}
+
+$query->orderBy($sortBy, $sortOrder);
+
 
     // 📄 Pagination
     $perPage = $request->get('per_page', 10);

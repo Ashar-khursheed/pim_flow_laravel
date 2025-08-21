@@ -19,7 +19,7 @@
         "/api/abandoned-carts": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get list of abandoned carts",
                 "description": "Returns a paginated list of abandoned carts with customer info, addresses, product, and brand",
@@ -175,7 +175,7 @@
         "/api/abandoned-carts/{id}": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get details of a specific abandoned cart",
                 "description": "Returns abandoned cart details by ID with customer info, addresses, product, and brand",
@@ -291,7 +291,7 @@
         "/api/customers-by-date-range": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get customer IDs with carts within a date range",
                 "operationId": "6800d1c03134b2778a78d98896d49521",
@@ -35413,8 +35413,8 @@
             "description": "API for managing sliders"
         },
         {
-            "name": "Carts",
-            "description": "Carts"
+            "name": "Abandoned Carts",
+            "description": "Abandoned Carts"
         },
         {
             "name": "Analytics",
