@@ -180,6 +180,35 @@ class AnalyticsController extends Controller
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
+    
+    /**
+     * @OA\Get(
+     *     path="/api/analytics/demographics",
+     *     summary="Get Audience Demographics",
+     *     tags={"Analytics"},
+     *     @OA\Parameter(name="start_date", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Parameter(name="end_date", in="query", required=false, @OA\Schema(type="string")),
+     *     @OA\Response(response=200, description="Demographics data"),
+     *     @OA\Response(response=500, description="Internal Server Error")
+     * )
+     */
+    public function audienceDemographics(Request $request)
+    {
+        $startDate = $request->get('start_date', '30daysAgo');
+        $endDate = $request->get('end_date', 'today');
+
+        try {
+            $data = $this->ga->getAudienceDemographics($this->propertyId, $startDate, $endDate);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
 
     /**
      * @OA\Get(

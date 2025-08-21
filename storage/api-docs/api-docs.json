@@ -460,6 +460,41 @@
                 }
             }
         },
+        "/api/analytics/demographics": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Audience Demographics",
+                "operationId": "9915e46db2313b33c749bcadef4d9871",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Demographics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/analytics/device": {
             "get": {
                 "tags": [
