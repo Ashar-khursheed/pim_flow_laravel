@@ -665,89 +665,132 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
             ]
         ];
     }
-public function getRealTimeAnalytics($propertyId)
-{
-    // Step 1: Check if credentials file exists
-    $credentialsPath = base_path('app/Script/analytics-key.json');
-    if (!file_exists($credentialsPath)) {
-        throw new \Exception('Credentials file not found at: ' . $credentialsPath);
-    }
-
-    // Step 2: Initialize client
-    $client = new BetaAnalyticsDataClient([
-        'credentials' => $credentialsPath
-    ]);
-
-    // Step 3: Create the simplest possible request first
-    $request = new RunRealtimeReportRequest([
-        'property' => "properties/{$propertyId}",
-        'metrics' => [
-            ['name' => 'activeUsers'],
-        ],
-    ]);
-
-    try {
-        $response = $client->runRealtimeReport($request);
+ private function getAccessToken()
+    {
+        $credentialsPath = storage_path('app/Script/analytics-key.json');
         
-        // Step 4: Debug what we got back
-        $rowCount = 0;
-        $rows = $response->getRows();
-        if ($rows) {
-            $rowCount = count($rows);
+        if (!file_exists($credentialsPath)) {
+            throw new \Exception('Credentials file not found');
         }
-
-        // Log everything for debugging
-        \Log::info('GA4 Debug Info:', [
-            'property_id' => $propertyId,
-            'full_property_string' => "properties/{$propertyId}",
-            'credentials_file_exists' => file_exists($credentialsPath),
-            'response_row_count' => $rowCount,
-            'has_rows' => $rowCount > 0
+        
+        $credentials = json_decode(file_get_contents($credentialsPath), true);
+        
+        // Create JWT token
+        $header = json_encode(['typ' => 'JWT', 'alg' => 'RS256']);
+        
+        $now = time();
+        $payload = json_encode([
+            'iss' => $credentials['client_email'],
+            'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
+            'aud' => 'https://oauth2.googleapis.com/token',
+            'exp' => $now + 3600,
+            'iat' => $now
         ]);
-
-        if ($rowCount === 0) {
-            return [
-                'total_active_users' => 0,
-                'data' => [],
-                'timestamp' => now()->toISOString(),
-                'debug' => [
-                    'message' => 'No real-time data available',
-                    'property_id' => $propertyId,
-                    'suggestions' => [
-                        'Check if there is current traffic to your website',
-                        'Verify the property ID is correct',
-                        'Real-time data can have 1-4 minute delays'
-                    ]
-                ]
-            ];
-        }
-
-        // If we have data, process it
-        $totalActiveUsers = 0;
-        foreach ($rows as $row) {
-            $activeUsers = (int)($row->getMetricValues()[0]->getValue() ?? 0);
-            $totalActiveUsers += $activeUsers;
-        }
-
-        return [
-            'total_active_users' => $totalActiveUsers,
-            'data' => [['activeUsers' => $totalActiveUsers]], // Simplified for now
-            'timestamp' => now()->toISOString(),
-            'debug' => [
-                'rows_processed' => $rowCount,
-                'property_id' => $propertyId
-            ]
-        ];
-
-    } catch (\Exception $e) {
-        \Log::error('GA4 API Error:', [
-            'error' => $e->getMessage(),
-            'property_id' => $propertyId,
-            'line' => $e->getLine()
+        
+        $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+        $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payload));
+        
+        $signature = '';
+        openssl_sign(
+            $base64Header . "." . $base64Payload,
+            $signature,
+            $credentials['private_key'],
+            'SHA256'
+        );
+        
+        $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+        
+        $jwt = $base64Header . "." . $base64Payload . "." . $base64Signature;
+        
+        // Exchange JWT for access token
+        $curl = curl_init();
+        curl_setopt_array($curl, [
+            CURLOPT_URL => 'https://oauth2.googleapis.com/token',
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_POST => true,
+            CURLOPT_POSTFIELDS => http_build_query([
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt
+            ]),
+            CURLOPT_HTTPHEADER => ['Content-Type: application/x-www-form-urlencoded'],
         ]);
-        throw new \Exception('GA4 API Error: ' . $e->getMessage());
+        
+        $response = curl_exec($curl);
+        $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        curl_close($curl);
+        
+        if ($httpCode !== 200) {
+            throw new \Exception('Failed to get access token: ' . $response);
+        }
+        
+        $tokenData = json_decode($response, true);
+        return $tokenData['access_token'];
     }
-}
+
+    public function getRealTimeAnalytics($viewId)
+    {
+        try {
+            // Get access token
+            $accessToken = $this->getAccessToken();
+            
+            // Make API request
+            $url = "https://www.googleapis.com/analytics/v3/data/realtime";
+            $params = [
+                'ids' => 'ga:' . $viewId,
+                'metrics' => 'rt:activeUsers',
+                'dimensions' => 'rt:country,rt:deviceCategory',
+                'access_token' => $accessToken
+            ];
+
+            $curl = curl_init();
+            curl_setopt_array($curl, [
+                CURLOPT_URL => $url . '?' . http_build_query($params),
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                ],
+            ]);
+
+            $response = curl_exec($curl);
+            $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+            curl_close($curl);
+
+            if ($httpCode !== 200) {
+                throw new \Exception('API request failed with status: ' . $httpCode . ' Response: ' . $response);
+            }
+
+            $data = json_decode($response, true);
+            
+            // Process the response
+            $processedData = [];
+            $totalActiveUsers = 0;
+
+            if (isset($data['rows']) && !empty($data['rows'])) {
+                foreach ($data['rows'] as $row) {
+                    $country = $row[0] ?? 'Unknown';
+                    $device = $row[1] ?? 'Unknown';
+                    $activeUsers = (int)($row[2] ?? 0);
+
+                    $processedData[] = [
+                        'country' => $country,
+                        'device' => $device,
+                        'activeUsers' => $activeUsers,
+                    ];
+
+                    $totalActiveUsers += $activeUsers;
+                }
+            }
+
+            return [
+                'total_active_users' => $totalActiveUsers,
+                'data' => $processedData,
+                'timestamp' => now()->toISOString(),
+            ];
+
+        } catch (\Exception $e) {
+            throw new \Exception('Real-time Analytics Error: ' . $e->getMessage());
+        }
+    }
     public function getAudienceDemographics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
 {
     $client = new \Google\Client();
