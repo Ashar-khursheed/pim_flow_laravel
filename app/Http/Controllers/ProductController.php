@@ -1849,6 +1849,13 @@ class ProductController extends BaseController
 					} elseif ($request->hasFile("video_path.$key")) {
 						// It's an uploaded file, upload to S3
 						$file = $request->file("video_path.$key");
+									// ✅ Check file size (max 1 MB = 1024 KB = 1048576 bytes)
+							if ($file->getSize() > 1048576) {
+								return response()->json([
+									'success' => false,
+									'message' => 'Video size must not exceed 1 MB.'
+								], 422);
+							}
 						$path = $file->store($videoPath, 's3');
 						$finalVideos[] = Storage::disk('s3')->url($path);
 					}
