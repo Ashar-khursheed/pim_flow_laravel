@@ -242,7 +242,8 @@ Route::prefix('analytics')->group(function () {
     Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
     Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
-
+Route::get('/analytics/landing-pages', [AnalyticsController::class, 'landingPageAnalytics']);
+Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerformance']);
 
 // Route::prefix('analytics')->group(function () {
 //     Route::get('/sessions', [AnalyticsController::class, 'sessions']);

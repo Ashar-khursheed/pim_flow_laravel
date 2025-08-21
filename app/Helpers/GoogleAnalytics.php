@@ -640,19 +640,227 @@ public function getOverviewWithSpecificConversions($propertyId, $startDate = '30
     /**
      * Placeholder methods for other analytics
      */
-    public function getPageAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
-    {
+  /**
+ * Get page analytics data from GA4
+ */
+public function getPageAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'averageSessionDuration']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'engagementRate'])
+        ]);
+        
+        $request->setDimensions([
+            new Dimension(['name' => 'pageTitle']),
+            new Dimension(['name' => 'pagePath'])
+        ]);
+
+        // Order by page views descending
+        $request->setOrderBys([
+            new OrderBy([
+                'metric' => new MetricOrderBy(['metric_name' => 'screenPageViews']),
+                'desc' => true
+            ])
+        ]);
+
+        // Limit to top 50 pages
+        $request->setLimit(50);
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $pageTitle = $this->safeGetDimension($dimensions, 0, 'Unknown Page');
+            $pagePath = $this->safeGetDimension($dimensions, 1, '/');
+            
+            $data[] = [
+                'pageTitle' => $pageTitle,
+                'pagePath' => $pagePath,
+                'pageViews' => $this->safeGetMetric($metrics, 0, 'int', 0),
+                'sessions' => $this->safeGetMetric($metrics, 1, 'int', 0),
+                'avgTimeOnPage' => round($this->safeGetMetric($metrics, 2, 'float', 0), 2),
+                'bounceRate' => round($this->safeGetMetric($metrics, 3, 'float', 0) * 100, 2),
+                'engagementRate' => round($this->safeGetMetric($metrics, 4, 'float', 0) * 100, 2),
+                'uniquePageViews' => $this->safeGetMetric($metrics, 0, 'int', 0), // GA4 doesn't have unique pageviews, using pageviews
+                'exits' => 0 // GA4 doesn't directly provide exit data in this context
+            ];
+        }
+        
+        return $data;
+        
+    } catch (\Exception $e) {
         return [
             [
-                'pageTitle' => 'Data not available',
+                'pageTitle' => 'Error fetching data',
                 'pagePath' => '/',
                 'pageViews' => 0,
-                'uniquePageViews' => 0,
+                'sessions' => 0,
                 'avgTimeOnPage' => 0,
-                'exits' => 0
+                'bounceRate' => 0,
+                'engagementRate' => 0,
+                'uniquePageViews' => 0,
+                'exits' => 0,
+                'error' => $e->getMessage()
             ]
         ];
     }
+}
+
+/**
+ * Get top landing pages
+ */
+public function getLandingPageAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'sessions']),
+            new Metric(['name' => 'totalUsers']),
+            new Metric(['name' => 'bounceRate']),
+            new Metric(['name' => 'averageSessionDuration']),
+            new Metric(['name' => 'conversions'])
+        ]);
+        
+        $request->setDimensions([
+            new Dimension(['name' => 'landingPage']),
+            new Dimension(['name' => 'landingPagePlusQueryString'])
+        ]);
+
+        $request->setOrderBys([
+            new OrderBy([
+                'metric' => new MetricOrderBy(['metric_name' => 'sessions']),
+                'desc' => true
+            ])
+        ]);
+
+        $request->setLimit(25);
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $data[] = [
+                'landingPage' => $this->safeGetDimension($dimensions, 0, '/'),
+                'landingPageWithQuery' => $this->safeGetDimension($dimensions, 1, '/'),
+                'sessions' => $this->safeGetMetric($metrics, 0, 'int', 0),
+                'users' => $this->safeGetMetric($metrics, 1, 'int', 0),
+                'bounceRate' => round($this->safeGetMetric($metrics, 2, 'float', 0) * 100, 2),
+                'avgSessionDuration' => round($this->safeGetMetric($metrics, 3, 'float', 0), 2),
+                'conversions' => $this->safeGetMetric($metrics, 4, 'int', 0)
+            ];
+        }
+        
+        return $data;
+        
+    } catch (\Exception $e) {
+        return [
+            [
+                'landingPage' => '/',
+                'landingPageWithQuery' => '/',
+                'sessions' => 0,
+                'users' => 0,
+                'bounceRate' => 0,
+                'avgSessionDuration' => 0,
+                'conversions' => 0,
+                'error' => $e->getMessage()
+            ]
+        ];
+    }
+}
+
+/**
+ * Get page performance metrics
+ */
+public function getPagePerformance($propertyId, $startDate = '30daysAgo', $endDate = 'today')
+{
+    try {
+        $request = new RunReportRequest();
+        $request->setDateRanges([
+            new DateRange(['start_date' => $startDate, 'end_date' => $endDate])
+        ]);
+        
+        $request->setMetrics([
+            new Metric(['name' => 'screenPageViews']),
+            new Metric(['name' => 'userEngagementDuration']),
+            new Metric(['name' => 'engagedSessions']),
+            new Metric(['name' => 'totalUsers'])
+        ]);
+        
+        $request->setDimensions([
+            new Dimension(['name' => 'pageTitle']),
+            new Dimension(['name' => 'pagePath'])
+        ]);
+
+        $request->setOrderBys([
+            new OrderBy([
+                'metric' => new MetricOrderBy(['metric_name' => 'userEngagementDuration']),
+                'desc' => true
+            ])
+        ]);
+
+        $request->setLimit(30);
+
+        $response = $this->analyticsData->properties->runReport("properties/{$propertyId}", $request);
+
+        $data = [];
+        foreach ($response->getRows() as $row) {
+            $dimensions = $row->getDimensionValues();
+            $metrics = $row->getMetricValues();
+            
+            $pageViews = $this->safeGetMetric($metrics, 0, 'int', 0);
+            $engagementDuration = $this->safeGetMetric($metrics, 1, 'float', 0);
+            $engagedSessions = $this->safeGetMetric($metrics, 2, 'int', 0);
+            $users = $this->safeGetMetric($metrics, 3, 'int', 0);
+            
+            $data[] = [
+                'pageTitle' => $this->safeGetDimension($dimensions, 0, 'Unknown'),
+                'pagePath' => $this->safeGetDimension($dimensions, 1, '/'),
+                'pageViews' => $pageViews,
+                'totalEngagementTime' => round($engagementDuration, 2),
+                'avgEngagementTime' => $pageViews > 0 ? round($engagementDuration / $pageViews, 2) : 0,
+                'engagedSessions' => $engagedSessions,
+                'users' => $users,
+                'engagementRate' => $users > 0 ? round(($engagedSessions / $users) * 100, 2) : 0
+            ];
+        }
+        
+        return $data;
+        
+    } catch (\Exception $e) {
+        return [
+            [
+                'pageTitle' => 'Error',
+                'pagePath' => '/',
+                'pageViews' => 0,
+                'totalEngagementTime' => 0,
+                'avgEngagementTime' => 0,
+                'engagedSessions' => 0,
+                'users' => 0,
+                'engagementRate' => 0,
+                'error' => $e->getMessage()
+            ]
+        ];
+    }
+}
 
     public function getEventAnalytics($propertyId, $startDate = '30daysAgo', $endDate = 'today')
     {
