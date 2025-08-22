@@ -2918,7 +2918,7 @@ $convertAttributeValue = function($attributeName, $originalValue) use ($category
         'depth' => ['symbol' => 'cm', 'name' => 'centimeters'],
         'diameter' => ['symbol' => 'cm', 'name' => 'centimeters'],
         'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
-        'capacity' => ['symbol' => 'L', 'name' => 'liters'],
+        'capacity' => ['symbol' => 'cb3', 'name' => 'cubic feet'],
         'volume' => ['symbol' => 'L', 'name' => 'liters'],
         'voltage' => ['symbol' => 'V', 'name' => 'volts'],
         'current' => ['symbol' => 'A', 'name' => 'amperes'],
