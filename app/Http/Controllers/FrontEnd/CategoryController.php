@@ -2930,7 +2930,6 @@ $convertAttributeValue = function($attributeName, $originalValue) use ($category
         'speed' => ['symbol' => 'm/s', 'name' => 'meters per second'],
         'rpm' => ['symbol' => 'RPM', 'name' => 'revolutions per minute'],
         'disc' => ['symbol' => 'Discs', 'name' => 'discs'],
-        'disk' => ['symbol' => 'Discs', 'name' => 'discs'],
     ];
     
     foreach ($fallbackUnits as $unitType => $unitInfo) {
