@@ -511,8 +511,6 @@ class OrderController extends Controller
 		return response()->json(['success' => true, 'message' => 'Order marked as paid.']);
 	}
 
-
-
 	/**
 	 * @OA\Get(
 	 *     path="/api/orders/{id}",
