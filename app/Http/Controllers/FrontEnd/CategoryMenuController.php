@@ -252,7 +252,7 @@ private function getCategoryWithChildren($category)
 
             $query = Category::select(['id', 'name', 'parent_id', 'image'])
                 ->withCount('products')
-                ->with(['seoUrl:id,relational_id,url']) // Eager load URL
+                ->with(['seoUrl']) // Eager load URL
                 ->where('status', 'published');
 
             if ($filterId) {
