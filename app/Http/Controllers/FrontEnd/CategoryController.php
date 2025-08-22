@@ -2647,7 +2647,26 @@ public function getSpecificationFilters1(Request $request)
                             'conversion_applied' => true
                         ];
                     }
-                } else if (is_numeric($originalValue)) {
+                }
+                // if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+                //     $numericValue = (float)$matches[1];
+                //     $originalUnit = $matches[2];
+                //     $targetUnit = $priority->primary_unit;
+                    
+                //     $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
+                    
+                //     if (is_numeric($convertedValue)) {
+                //         $roundedValue = (int)round($convertedValue);
+                //         return [
+                //             'converted_value' => $roundedValue,
+                //             'unit' => $targetUnit,
+                //             'symbol' => $priority->primary_symbol,
+                //             'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                //             'original_value' => $originalValue,
+                //             'conversion_applied' => true
+                //         ];
+                //     }
+                 else if (is_numeric($originalValue)) {
                     $roundedValue = (int)round((float)$originalValue);
                     return [
                         'converted_value' => $roundedValue,
