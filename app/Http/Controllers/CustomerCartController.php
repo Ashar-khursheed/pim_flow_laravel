@@ -41,7 +41,7 @@ class CustomerCartController extends Controller
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
 
-		$recordsQuery = CustomerCart::where('customer_id', auth()->id());
+		$recordsQuery = CustomerCart::query();
 		/* Check if pagination requested */
 		if ($request->filled('page') && $request->filled('length')) {
 			/* Eager load relationships */
@@ -361,7 +361,6 @@ class CustomerCartController extends Controller
 			'customerCartProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'creator',
 			'updator',
-			'utm'
 		]);
 
 		/* Mutate the data for each customer cart product */
@@ -411,10 +410,32 @@ class CustomerCartController extends Controller
 	}
 
 	/**
-	 * Remove the specified resource from storage.
+	 * @OA\Delete(
+	 *     path="/api/carts/{id}",
+	 *     summary="Delete a cart",
+	 *     tags={"Carts"},
+	 *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="integer")),
+	 *     @OA\Response(response=200, description="Deleted successfully", @OA\MediaType(mediaType="application/json")),
+	 *     security={{"bearerAuth":{}}}
+	 * )
 	 */
-	public function destroy(CustomerCart $customerCart)
+	public function destroy($id)
 	{
-		//
+		$customerCart = CustomerCart::find($id);
+
+		if (!$customerCart) {
+			return response()->json([
+				'success' => false,
+				'message' => __("err_exist")
+			]);
+		}
+
+		$customerCart->customerCartProducts()->delete();
+		$customerCart->delete();
+
+		return response()->json([
+			'success' => true,
+			'message' => 'Cart deleted successfully',
+		]);
 	}
 }
