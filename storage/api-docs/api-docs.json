@@ -6976,6 +6976,7 @@
                             "type": "string",
                             "enum": [
                                 "id",
+                                "category_name",
                                 "created_at",
                                 "updated_at"
                             ]

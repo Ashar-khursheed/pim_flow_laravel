@@ -22,7 +22,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	 *     @OA\Parameter(name="global", in="query", description="Global search for All field", @OA\Schema(type="string")),
 	 *     @OA\Parameter(name="id", in="query", description="Search by id", @OA\Schema(type="integer")),
 	 *     @OA\Response(response=200, description="List of priorities", @OA\MediaType(mediaType="application/json")),
-	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "created_at", "updated_at"})),
+	 *     @OA\Parameter(name="sort_by", in="query", description="Column name to sort by", @OA\Schema(type="string", enum={"id", "category_name", "created_at", "updated_at"})),
 	 *     @OA\Parameter(name="sort_dir", in="query", description="Sort direction (asc or desc)", example="asc", @OA\Schema(type="string", enum={"asc", "desc"})),
 	 *     security={{"bearerAuth":{}}}
 	 * )
@@ -31,7 +31,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 	{
 		$data = CategoryMeasurementUnitPriority::all();
 
-		$searchableColumns = ['id'];
+		$searchableColumns = ['id', 'category_name'];
 		$sortableColumns = array_merge($searchableColumns, ['created_at', 'updated_at']);
 		$sortBy = in_array($request->input('sort_by'), $sortableColumns) ? $request->input('sort_by') : 'id';
 		$sortDir = strtolower($request->input('sort_dir', 'desc')) === 'asc' ? 'asc' : 'desc';
@@ -40,6 +40,12 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 
 		/* Pagination */
 		if ($request->filled('page') && $request->filled('length')) {
+
+			if ($sortBy === 'category_name' || ($request->filled('global') && in_array('category_name', $searchableColumns))) {
+				$recordsQuery->leftJoin('categories', 'category_measurement_unit_priorities.category_id', '=', 'categories.id');
+				$recordsQuery->select('category_measurement_unit_priorities.*');
+			}
+
 			$recordsQuery->with(['measurementType', 'category', 'primaryMeasurementUnit', 'secondaryMeasurementUnit','creator:id,first_name,last_name']);
 
 			/* Apply global or column-specific filters */
@@ -47,7 +53,13 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 				$search = $request->input('global');
 				$recordsQuery->where(function ($q) use ($searchableColumns, $search) {
 					foreach ($searchableColumns as $col) {
-						$q->orWhere($col, 'LIKE', '%' . $search . '%');
+						if ($col === 'category_name') {
+							$q->orWhereHas('category', function ($sub) use ($search) {
+								$sub->where('name', 'like', '%' . $search . '%');
+							});
+						} else {
+							$q->orWhere("category_measurement_unit_priorities.$col", 'like', '%' . $search . '%');
+						}
 					}
 				});
 			} else {
@@ -59,7 +71,11 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 			}
 
 			/* Apply sorting */
-			$recordsQuery->orderBy($sortBy, $sortDir);
+			if ($sortBy === 'category_name') {
+				$recordsQuery->orderBy('categories.name', $sortDir);
+			} else {
+				$recordsQuery->orderBy("category_measurement_unit_priorities.$sortBy", $sortDir);
+			}
 
 			/* Clone query for counting */
 			$totalRecords = (clone $recordsQuery)->count();
@@ -72,9 +88,7 @@ class CategoryMeasurementUnitPriorityController extends BaseController
 				$page = 1;
 			}
 
-			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get([
-				'id', 'measurement_type_id', 'category_id', 'measurement_unit_primary_id', 'measurement_unit_secondary_id', 'created_by', 'created_at', 'updated_at'
-			]);
+			$records = $recordsQuery->offset(($page - 1) * $length)->limit($length)->get();
 			$records->transform(function ($record) {
 				$record->measurement_type = $record->measurementType->name ?? '';
 				$record->category_name = $record->category->name ?? '';
