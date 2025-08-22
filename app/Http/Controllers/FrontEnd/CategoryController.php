@@ -2759,7 +2759,7 @@ public function getSpecificationFilters1(Request $request)
     //     ];
     // };
     // Enhanced helper function to convert attribute values with fallback units
-$convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+    $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
     // First try the database-configured measurement priorities
@@ -2929,7 +2929,6 @@ $convertAttributeValue = function($attributeName, $originalValue) use ($category
         'pressure' => ['symbol' => 'Pa', 'name' => 'pascals'],
         'speed' => ['symbol' => 'm/s', 'name' => 'meters per second'],
         'rpm' => ['symbol' => 'RPM', 'name' => 'revolutions per minute'],
-        'disc' => ['symbol' => 'Discs', 'name' => 'discs'],
     ];
     
     foreach ($fallbackUnits as $unitType => $unitInfo) {
@@ -2981,7 +2980,7 @@ $convertAttributeValue = function($attributeName, $originalValue) use ($category
         'original_value' => $originalValue,
         'conversion_applied' => false
     ];
-};
+    };
 
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
