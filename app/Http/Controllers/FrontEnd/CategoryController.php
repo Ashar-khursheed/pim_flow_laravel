@@ -2518,7 +2518,6 @@ public function getSpecificationFilters1(Request $request)
         // First try the database-configured measurement priorities
         foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
             $shouldConvert = false;
-            
             switch (strtolower($measurementType)) {
                 case 'length':
                     $shouldConvert = (
@@ -2544,10 +2543,90 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'capacity') !== false
                     );
                     break;
+                case 'voltage':
+                case 'electric_potential':
+                    $shouldConvert = (
+                        stripos($attributeName, 'voltage') !== false ||
+                        stripos($attributeName, 'volt') !== false
+                    );
+                    break;
+                case 'current':
+                case 'electric_current':
+                    $shouldConvert = (
+                        stripos($attributeName, 'current') !== false ||
+                        stripos($attributeName, 'ampere') !== false ||
+                        stripos($attributeName, 'amp') !== false
+                    );
+                    break;
+                case 'power':
+                    $shouldConvert = (
+                        stripos($attributeName, 'power') !== false ||
+                        stripos($attributeName, 'watt') !== false
+                    );
+                    break;
+                case 'frequency':
+                    $shouldConvert = (
+                        stripos($attributeName, 'frequency') !== false ||
+                        stripos($attributeName, 'freq') !== false ||
+                        stripos($attributeName, 'hz') !== false ||
+                        stripos($attributeName, 'hertz') !== false
+                    );
+                    break;
+                case 'temperature':
+                    $shouldConvert = (
+                        stripos($attributeName, 'temperature') !== false ||
+                        stripos($attributeName, 'temp') !== false
+                    );
+                    break;
+                case 'pressure':
+                    $shouldConvert = (
+                        stripos($attributeName, 'pressure') !== false ||
+                        stripos($attributeName, 'psi') !== false ||
+                        stripos($attributeName, 'bar') !== false
+                    );
+                    break;
+                case 'speed':
+                case 'velocity':
+                    $shouldConvert = (
+                        stripos($attributeName, 'speed') !== false ||
+                        stripos($attributeName, 'velocity') !== false ||
+                        stripos($attributeName, 'rpm') !== false
+                    );
+                    break;
                 default:
                     $shouldConvert = stripos($attributeName, $measurementType) !== false;
                     break;
             }
+            
+            // switch (strtolower($measurementType)) {
+            //     case 'length':
+            //         $shouldConvert = (
+            //             stripos($attributeName, 'length') !== false ||
+            //             stripos($attributeName, 'height') !== false ||
+            //             stripos($attributeName, 'width') !== false ||
+            //             stripos($attributeName, 'depth') !== false ||
+            //             stripos($attributeName, 'diameter') !== false ||
+            //             stripos($attributeName, 'dimension') !== false ||
+            //             stripos($attributeName, 'size') !== false
+            //         );
+            //         break;
+            //     case 'mass':
+            //     case 'weight':
+            //         $shouldConvert = (
+            //             stripos($attributeName, 'weight') !== false ||
+            //             stripos($attributeName, 'mass') !== false
+            //         );
+            //         break;
+            //     case 'volume':
+            //         $shouldConvert = (
+            //             stripos($attributeName, 'volume') !== false ||
+            //             stripos($attributeName, 'capacity') !== false
+            //         );
+            //         break;
+            //     default:
+            //         $shouldConvert = stripos($attributeName, $measurementType) !== false;
+            //         break;
+            // }
             
             if ($shouldConvert) {
                 if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
@@ -2583,7 +2662,7 @@ public function getSpecificationFilters1(Request $request)
         }
         
         // Fallback: Assign common units based on attribute names if no database config found
-        $fallbackUnits = [
+      $fallbackUnits = [
             'width' => ['symbol' => 'cm', 'name' => 'centimeters'],
             'length' => ['symbol' => 'cm', 'name' => 'centimeters'], 
             'height' => ['symbol' => 'cm', 'name' => 'centimeters'],
@@ -2592,8 +2671,15 @@ public function getSpecificationFilters1(Request $request)
             'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
             'capacity' => ['symbol' => 'L', 'name' => 'liters'],
             'volume' => ['symbol' => 'L', 'name' => 'liters'],
+            'voltage' => ['symbol' => 'V', 'name' => 'volts'],
+            'current' => ['symbol' => 'A', 'name' => 'amperes'],
+            'power' => ['symbol' => 'W', 'name' => 'watts'],
+            'frequency' => ['symbol' => 'Hz', 'name' => 'hertz'],
+            'temperature' => ['symbol' => '°C', 'name' => 'celsius'],
+            'pressure' => ['symbol' => 'Pa', 'name' => 'pascals'],
+            'speed' => ['symbol' => 'm/s', 'name' => 'meters per second'],
+            'rpm' => ['symbol' => 'RPM', 'name' => 'revolutions per minute'],
         ];
-        
         foreach ($fallbackUnits as $unitType => $unitInfo) {
             if (stripos($attributeName, $unitType) !== false) {
                 if (is_numeric($originalValue)) {
