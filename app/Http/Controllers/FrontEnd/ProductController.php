@@ -262,6 +262,9 @@ class ProductController extends Controller
                         $product->images = collect(json_decode($product->images, true))->map(function ($image) {
                             return  $image;
                         });
+                          $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+                            return  $alt_tags;
+                        });
 
                         // Custom sorting for documents
                          // Custom sorting for documents
@@ -745,6 +748,10 @@ class ProductController extends Controller
                             return  $image;
                         });
 
+                        $product->alt_tags = collect(json_decode($product->alt_tags, true))->map(function ($alt_tags) {
+                            return  $alt_tags;
+                        });
+
                         // Custom sorting for documents
                         $desiredOrder = [
                             'Technical Specification Sheet',
@@ -1030,6 +1037,15 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+               $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($imageArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
+
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
                         return $video;
@@ -1049,6 +1065,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $cleanedImages,
+                'alt_tags' => $cleanedAlt,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1182,6 +1199,10 @@ class ProductController extends Controller
                 return $image;
             });
 
+            $product->alt_tags = collect($product->alt_tags)->map(function ($alt_tags) {
+                return $alt_tags;
+            });
+
             $videoPaths = json_decode($product->video_path, true);
             $product->video_path = collect($videoPaths)->map(function ($video) {
                 return $video;
@@ -1199,6 +1220,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                 'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1344,6 +1366,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 'images' => $product->images,
+                'alt_tags' => $product->alt_tags,
                 "url" => $product->seoUrl->url ?? null,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
@@ -1618,6 +1641,15 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+              $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($AltArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
+
             $sellingType = null;
             if ($product->sellingUnitAttribute && $product->sellingUnitAttribute->attribute_value) {
                 $fullValue = $product->sellingUnitAttribute->attribute_value;
@@ -1662,6 +1694,7 @@ class ProductController extends Controller
                 "left_stock" => $product->left_stock ?? 0,
                 "currency" => $product->currency->symbol ?? '$',
                 "images" => $cleanedImages,
+                 "alt_tags" => $cleanedAlt,
                 'vendor_sku' => $firstSupplier->vendor_sku ?? null,
                 'price' => (float) ($firstSupplier->price ?? 0),
                 "sale_price" => (float) ($firstSupplier->sale_price ?? 0),
@@ -1807,6 +1840,14 @@ class ProductController extends Controller
                 return [$item];
             })->flatten()->filter()->values();
 
+            $AltArray = is_array($product->alt_tags) ? $product->alt_tags : json_decode($product->alt_tags, true);
+            $cleanedAlt = collect($AltArray)->map(function ($item) {
+                if (is_string($item) && str_starts_with($item, '[')) {
+                    $decoded = json_decode($item, true);
+                    return is_array($decoded) ? $decoded : [$item];
+                }
+                return [$item];
+            })->flatten()->filter()->values();
                     $videoPaths = json_decode($product->video_path, true);
                     $product->video_path = collect($videoPaths)->map(function ($video) {
                         return $video;
@@ -1855,6 +1896,7 @@ class ProductController extends Controller
                 'id' => $product->id,
                 'name' => $product->name,
                 "images" => $cleanedImages,
+                "alt_tags" => $cleanedAlt,
                 'video_url' => $product->video_url,
                 'video_path' => $product->video_path,
                 'sku' => $product->sku,

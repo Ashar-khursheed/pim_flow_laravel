@@ -2976,6 +2976,10 @@ public function getSpecificationFilters1(Request $request)
             ? json_decode($product->images, true)
             : (array) $product->images;
 
+        $cleanedAlt= is_string($product->alt_tags)
+            ? json_decode($product->alt_tags, true)
+            : (array) $product->alt_tags;    
+
         $firstSupplier = $product->productSuppliers->first();
         $leftStock = $firstSupplier?->inventory ?? 0;
 
@@ -3021,6 +3025,7 @@ public function getSpecificationFilters1(Request $request)
             'id' => $product->id,
             'name' => $product->name,
             'images' => $cleanedImages,
+            'alt_tags' => $cleanedAlt,
             'url' => $product->seoUrl?->url ?? null,
             'video_url' => $product->video_url,
             'video_path' => is_array($product->video_path) ? $product->video_path : (json_decode($product->video_path, true) ?: []),
@@ -5444,6 +5449,11 @@ public function fetchCategories(Request $request)
 					$imageUrls = is_string($details->images)
 					? json_decode($details->images, true)
 					: (array) $details->images;
+                    	
+                    $cleanedAlt = is_string($details->alt_tags)
+					? json_decode($details->alt_tags, true)
+					: (array) $details->alt_tags;
+
 
 					$sellingType = null;
 
@@ -5507,6 +5517,7 @@ public function fetchCategories(Request $request)
 						'currency' => $currencyTitle,
 						'in_wishlist' => $isInWishlist,
 						'images' => $imageUrls,
+                        'alt_tags' => $cleanedAlt,
 						"original_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
 						'front_sale_price' => $firstSupplier ? (float) $firstSupplier->sale_price : null,
 						"best_price"=> $firstSupplier ? (float) $firstSupplier->price : null,
@@ -5639,6 +5650,9 @@ public function fetchCategories(Request $request)
 					$imageUrls = is_string($details->images)
 					? json_decode($details->images, true)
 					: (array) $details->images;
+                    $cleanedAlt = is_string($details->alt_tags)
+					? json_decode($details->alt_tags, true)
+					: (array) $details->alt_tags;
 
 					$sellingType = null;
 
@@ -5694,6 +5708,7 @@ public function fetchCategories(Request $request)
 						'left_stock' => $leftStock,
 						'currency' => $currencyTitle,
 						'images' => $imageUrls,
+                        'alt_tags' => $cleanedAlt,
 						"original_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,
 						'front_sale_price' => $firstSupplier?->sale_price ? (float) $firstSupplier->sale_price : (float) $details->price,
 						"best_price" => $firstSupplier?->price ? (float) $firstSupplier->price : (float) $details->price,

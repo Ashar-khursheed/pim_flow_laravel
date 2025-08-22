@@ -243,7 +243,8 @@ Route::prefix('analytics')->group(function () {
     Route::get('/complete-dashboard', [AnalyticsController::class, 'completeDashboard']);
     Route::post('/custom-report', [AnalyticsController::class, 'customReport']);
 });
-
+Route::get('/analytics/landing-pages', [AnalyticsController::class, 'landingPageAnalytics']);
+Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerformance']);
 
 // Route::prefix('analytics')->group(function () {
 //     Route::get('/sessions', [AnalyticsController::class, 'sessions']);
@@ -257,7 +258,16 @@ Route::prefix('analytics')->group(function () {
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
+	Route::prefix('/frontend/coupons')->group(function () {
+        Route::get('/', [F_CouponController::class, 'index']);   // List coupons
+        Route::post('/', [F_CouponController::class, 'store']);  // Create coupon
+        Route::get('/{id}', [F_CouponController::class, 'show']); // Show single coupon
+        Route::put('/{id}', [F_CouponController::class, 'update']); // Update coupon
+        Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
+    });
 
+	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
+	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
 
 	Route::apiResource('customer-events', CustomerEventController::class);
 
@@ -418,7 +428,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::apiResource('roles', RoleController::class);
 
 
-
 	Route::apiResource('reviews', ReviewController::class);
 	Route::apiResource('sliders', SliderController::class);
 
@@ -463,7 +472,6 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/reorder', [CategoryController::class ,'reorder']);
 	Route::apiResource('categories', CategoryController::class);
 
-
 	Route::put('return-products/{id}/inspect', [ReturnOrderProductController::class, 'inspectReturn']);
 	Route::put('return-products/{id}/refund', [ReturnOrderProductController::class, 'refundReturn']);
 
@@ -482,15 +490,11 @@ Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 	Route::post('/redirect-links/import', [RedirectLinkController::class, 'import']);
 
 
-
 	Route::post('/product/upload-images', [ProductImageUploadController::class, 'uploadProductImages']);
 	Route::post('/product/upload-documents', [DocumentUploadController::class, 'uploadProductDocuments']);
 
 
 	Route::post('/supplier-score', [SupplierScoreController::class, 'store']);
-
-
-	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 
 	Route::get('/dashboard/stats', [DashboardController::class, 'stats']);
 	Route::post('/logout', [AuthController::class, 'logout']);
@@ -592,9 +596,6 @@ Route::post('/screen-transaction', [NoFraudController::class, 'screenTransaction
 
 	Route::post('/frontend/recent-products/add', [F_RecentlyViewedProductController::class, 'addToRecent']);
 	Route::get('/frontend/recent-products', [F_RecentlyViewedProductController::class, 'getRecentProducts']);
-
-
-
 
 
 	Route::get('/frontend/discounts', [F_DiscountController::class, 'getDiscountsForProduct']);
@@ -700,7 +701,7 @@ Route::get('/frontend/countries/{id}', [F_CountryController::class, 'show']);
 Route::get('/frontend/country-phonecodes', [F_CountryController::class, 'getPhoneCodes']);
 
 
-Route::get('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
+Route::post('/frontend/coupons/apply', [F_CouponController::class, 'applyCoupon']);
 
 Route::prefix('/frontend/blogs')->group(function () {
 	Route::get('/', [F_BlogController::class, 'index']);

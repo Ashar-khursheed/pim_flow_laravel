@@ -19,7 +19,7 @@
         "/api/abandoned-carts": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get list of abandoned carts",
                 "description": "Returns a paginated list of abandoned carts with customer info, addresses, product, and brand",
@@ -175,7 +175,7 @@
         "/api/abandoned-carts/{id}": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get details of a specific abandoned cart",
                 "description": "Returns abandoned cart details by ID with customer info, addresses, product, and brand",
@@ -291,7 +291,7 @@
         "/api/customers-by-date-range": {
             "get": {
                 "tags": [
-                    "Carts"
+                    "Abandoned Carts"
                 ],
                 "summary": "Get customer IDs with carts within a date range",
                 "operationId": "6800d1c03134b2778a78d98896d49521",
@@ -453,6 +453,41 @@
                 "responses": {
                     "200": {
                         "description": "Successful Response"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/demographics": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Audience Demographics",
+                "operationId": "9915e46db2313b33c749bcadef4d9871",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Demographics data"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -687,6 +722,76 @@
                 }
             }
         },
+        "/api/analytics/landing-pages": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Landing Page Analytics",
+                "operationId": "af56c9c00c3ceab849c23e64928bfce9",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Landing page analytics data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
+        "/api/analytics/page-performance": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Page Performance Analytics",
+                "operationId": "9aa37ccadb5e9d462f69f195ac654b98",
+                "parameters": [
+                    {
+                        "name": "start_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "end_date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Page performance data"
+                    },
+                    "500": {
+                        "description": "Internal Server Error"
+                    }
+                }
+            }
+        },
         "/api/analytics/events": {
             "get": {
                 "tags": [
@@ -732,41 +837,6 @@
                 "responses": {
                     "200": {
                         "description": "Real-time analytics data"
-                    },
-                    "500": {
-                        "description": "Internal Server Error"
-                    }
-                }
-            }
-        },
-        "/api/analytics/demographics": {
-            "get": {
-                "tags": [
-                    "Analytics"
-                ],
-                "summary": "Get Audience Demographics",
-                "operationId": "9915e46db2313b33c749bcadef4d9871",
-                "parameters": [
-                    {
-                        "name": "start_date",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    },
-                    {
-                        "name": "end_date",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Demographics data"
                     },
                     "500": {
                         "description": "Internal Server Error"
@@ -14312,6 +14382,481 @@
                         }
                     }
                 }
+            }
+        },
+        "/api/frontend/coupons": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Coupon"
+                ],
+                "summary": "Get paginated coupons with search & sorting",
+                "operationId": "0157f95d4dae30e9b0193a58c9e0681f",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number (pagination)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Items per page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "example": 10
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Search by coupon code or title",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "SUMMER"
+                        }
+                    },
+                    {
+                        "name": "sort_by",
+                        "in": "query",
+                        "description": "Column to sort by",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "created_at"
+                        }
+                    },
+                    {
+                        "name": "sort_order",
+                        "in": "query",
+                        "description": "Sort direction asc/desc",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Successful response",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Coupon"
+                                            }
+                                        },
+                                        "current_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "per_page": {
+                                            "type": "integer"
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "FrontEnd-Coupon"
+                ],
+                "summary": "Create a new coupon",
+                "operationId": "createCoupon",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "title",
+                                    "code",
+                                    "value",
+                                    "type",
+                                    "store_id"
+                                ],
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Welcome Discount"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "WELCOME20"
+                                    },
+                                    "value": {
+                                        "type": "number",
+                                        "example": 20
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percent"
+                                        ],
+                                        "example": "percent"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "New customer welcome discount"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-08-21"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "min_order_price": {
+                                        "type": "number",
+                                        "example": 50
+                                    },
+                                    "can_use_with_promotion": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "discount_on": {
+                                        "type": "string",
+                                        "enum": [
+                                            "order",
+                                            "product",
+                                            "shipping"
+                                        ],
+                                        "example": "order"
+                                    },
+                                    "product_quantity": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "type_option": {
+                                        "type": "string",
+                                        "example": "general"
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "specific_products",
+                                            "categories"
+                                        ],
+                                        "example": "all"
+                                    },
+                                    "apply_via_url": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "display_at_checkout": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "store_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Coupon created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coupon created successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Coupon"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/frontend/coupons/{id}": {
+            "get": {
+                "tags": [
+                    "FrontEnd-Coupon"
+                ],
+                "summary": "Get a coupon by ID",
+                "operationId": "getCouponById",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Coupon ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coupon details",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Coupon"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Coupon not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "FrontEnd-Coupon"
+                ],
+                "summary": "Update a coupon",
+                "operationId": "updateCoupon",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Coupon ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "title": {
+                                        "type": "string",
+                                        "example": "Updated Welcome Discount"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "WELCOME25"
+                                    },
+                                    "value": {
+                                        "type": "number",
+                                        "example": 25
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "fixed",
+                                            "percent"
+                                        ],
+                                        "example": "percent"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Updated description"
+                                    },
+                                    "start_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-08-21"
+                                    },
+                                    "end_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2025-12-31"
+                                    },
+                                    "quantity": {
+                                        "type": "integer",
+                                        "example": 150
+                                    },
+                                    "min_order_price": {
+                                        "type": "number",
+                                        "example": 75
+                                    },
+                                    "can_use_with_promotion": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "discount_on": {
+                                        "type": "string",
+                                        "enum": [
+                                            "order",
+                                            "product",
+                                            "shipping"
+                                        ],
+                                        "example": "product"
+                                    },
+                                    "product_quantity": {
+                                        "type": "integer",
+                                        "example": 2
+                                    },
+                                    "type_option": {
+                                        "type": "string",
+                                        "example": "premium"
+                                    },
+                                    "target": {
+                                        "type": "string",
+                                        "enum": [
+                                            "all",
+                                            "specific_products",
+                                            "categories"
+                                        ],
+                                        "example": "categories"
+                                    },
+                                    "apply_via_url": {
+                                        "type": "boolean",
+                                        "example": true
+                                    },
+                                    "display_at_checkout": {
+                                        "type": "boolean",
+                                        "example": false
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Coupon updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coupon updated successfully"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Coupon"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Coupon not found"
+                    },
+                    "422": {
+                        "description": "Validation error"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "FrontEnd-Coupon"
+                ],
+                "summary": "Delete a coupon",
+                "operationId": "deleteCoupon",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Coupon ID",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Coupon deleted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "example": "Coupon deleted successfully"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Coupon not found"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
             }
         },
         "/api/frontend/customer-address": {
@@ -34722,6 +35267,52 @@
                 },
                 "type": "object"
             },
+            "Coupon": {
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "code": {
+                        "type": "string",
+                        "example": "WELCOME10"
+                    },
+                    "value": {
+                        "type": "number",
+                        "example": 50
+                    },
+                    "type": {
+                        "type": "string",
+                        "example": "fixed"
+                    },
+                    "min_order_price": {
+                        "type": "number",
+                        "example": 100
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "example": 100
+                    },
+                    "total_used": {
+                        "type": "integer",
+                        "example": 10
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date",
+                        "example": "2025-12-31"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "type": "object"
+            },
             "GuestRecentlyViewedProduct": {
                 "description": "GuestRecentlyViewedProduct model",
                 "type": "object"
@@ -35156,8 +35747,8 @@
             "description": "API for managing sliders"
         },
         {
-            "name": "Carts",
-            "description": "Carts"
+            "name": "Abandoned Carts",
+            "description": "Abandoned Carts"
         },
         {
             "name": "Analytics",
