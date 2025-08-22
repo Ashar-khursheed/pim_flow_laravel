@@ -2629,25 +2629,6 @@ public function getSpecificationFilters1(Request $request)
             // }
             
             if ($shouldConvert) {
-                if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
-                    $numericValue = (float)$matches[1];
-                    $originalUnit = $matches[2];
-                    $targetUnit = $priority->primary_unit;
-                    
-                    $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
-                    
-                    if (is_numeric($convertedValue)) {
-                        $roundedValue = (int)round($convertedValue);
-                        return [
-                            'converted_value' => $roundedValue,
-                            'unit' => $targetUnit,
-                            'symbol' => $priority->primary_symbol,
-                            'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => true
-                        ];
-                    }
-                }
                 // if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
                 //     $numericValue = (float)$matches[1];
                 //     $originalUnit = $matches[2];
@@ -2666,16 +2647,68 @@ public function getSpecificationFilters1(Request $request)
                 //             'conversion_applied' => true
                 //         ];
                 //     }
-                 else if (is_numeric($originalValue)) {
-                    $roundedValue = (int)round((float)$originalValue);
-                    return [
-                        'converted_value' => $roundedValue,
-                        'unit' => $priority->primary_unit,
-                        'symbol' => $priority->primary_symbol,
-                        'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
-                        'original_value' => $originalValue,
-                        'conversion_applied' => false
-                    ];
+                // }
+                // if (preg_match('/^(\d+(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+                //     $numericValue = (float)$matches[1];
+                //     $originalUnit = $matches[2];
+                //     $targetUnit = $priority->primary_unit;
+                    
+                //     $convertedValue = convert_unit($measurementType, $numericValue, $originalUnit, $targetUnit);
+                    
+                //     if (is_numeric($convertedValue)) {
+                //         $roundedValue = (int)round($convertedValue);
+                //         return [
+                //             'converted_value' => $roundedValue,
+                //             'unit' => $targetUnit,
+                //             'symbol' => $priority->primary_symbol,
+                //             'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                //             'original_value' => $originalValue,
+                //             'conversion_applied' => true
+                //         ];
+                //     }
+                //  else if (is_numeric($originalValue)) {
+                //     $roundedValue = (int)round((float)$originalValue);
+                //     return [
+                //         'converted_value' => $roundedValue,
+                //         'unit' => $priority->primary_unit,
+                //         'symbol' => $priority->primary_symbol,
+                //         'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                //         'original_value' => $originalValue,
+                //         'conversion_applied' => false
+                //     ];
+                // }
+                // Handle values with slashes (like 208/220 V) or regular values (like 120 V)
+                if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z]+)$/', trim($originalValue), $matches)) {
+                    $numericValue = $matches[1]; // This will be "208/220" instead of just "208"
+                    $originalUnit = $matches[2];
+                    $targetUnit = $priority->primary_unit;
+                    
+                    // For values with slashes, use the original value as display since conversion might be complex
+                    if (strpos($numericValue, '/') !== false) {
+                        return [
+                            'converted_value' => $numericValue,
+                            'unit' => $targetUnit,
+                            'symbol' => $priority->primary_symbol,
+                            'display_value' => $numericValue . ' ' . $priority->primary_symbol,
+                            'original_value' => $originalValue,
+                            'conversion_applied' => false
+                        ];
+                    } else {
+                        // Handle single numeric values as before
+                        $convertedValue = convert_unit($measurementType, (float)$numericValue, $originalUnit, $targetUnit);
+                        
+                        if (is_numeric($convertedValue)) {
+                            $roundedValue = (int)round($convertedValue);
+                            return [
+                                'converted_value' => $roundedValue,
+                                'unit' => $targetUnit,
+                                'symbol' => $priority->primary_symbol,
+                                'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                                'original_value' => $originalValue,
+                                'conversion_applied' => true
+                            ];
+                        }
+                    }
                 }
             }
         }
