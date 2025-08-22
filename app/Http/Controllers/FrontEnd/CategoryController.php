@@ -2759,7 +2759,7 @@ public function getSpecificationFilters1(Request $request)
     //     ];
     // };
     // Enhanced helper function to convert attribute values with fallback units
-    $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
     // First try the database-configured measurement priorities
@@ -2849,12 +2849,12 @@ public function getSpecificationFilters1(Request $request)
         
         if ($shouldConvert) {
             // Handle values with units (like "208/220 V", "120V", "1.5W")
-            if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z]+)$/', $originalValue, $matches)) {
+            if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
                 $numericValue = $matches[1];
                 $originalUnit = $matches[2];
                 $targetUnit = $priority->primary_unit;
                 
-                // For values with slashes, preserve the format
+                // For values with slashes, preserve the format but add target unit
                 if (strpos($numericValue, '/') !== false) {
                     return [
                         'converted_value' => $numericValue,
@@ -2865,18 +2865,45 @@ public function getSpecificationFilters1(Request $request)
                         'conversion_applied' => false
                     ];
                 } else {
-                    // Single numeric values with units
-                    $convertedValue = convert_unit($measurementType, (float)$numericValue, $originalUnit, $targetUnit);
-                    
-                    if (is_numeric($convertedValue)) {
-                        $roundedValue = (int)round($convertedValue);
+                    // Single numeric values with units - ACTUAL CONVERSION
+                    try {
+                        $convertedValue = convert_unit($measurementType, (float)$numericValue, $originalUnit, $targetUnit);
+                        
+                        if (is_numeric($convertedValue) && $convertedValue !== false) {
+                            // Round appropriately based on measurement type
+                            $roundedValue = $this->roundByMeasurementType($measurementType, $convertedValue);
+                            
+                            return [
+                                'converted_value' => $roundedValue,
+                                'unit' => $targetUnit,
+                                'symbol' => $priority->primary_symbol,
+                                'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                                'original_value' => $originalValue,
+                                'conversion_applied' => true
+                            ];
+                        } else {
+                            // Conversion failed, use original value with target unit
+                            return [
+                                'converted_value' => $numericValue,
+                                'unit' => $targetUnit,
+                                'symbol' => $priority->primary_symbol,
+                                'display_value' => $numericValue . ' ' . $priority->primary_symbol,
+                                'original_value' => $originalValue,
+                                'conversion_applied' => false
+                            ];
+                        }
+                    } catch (Exception $e) {
+                        // Log conversion error for debugging
+                        \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
+                        
+                        // Return original value with target unit
                         return [
-                            'converted_value' => $roundedValue,
+                            'converted_value' => $numericValue,
                             'unit' => $targetUnit,
                             'symbol' => $priority->primary_symbol,
-                            'display_value' => $roundedValue . ' ' . $priority->primary_symbol,
+                            'display_value' => $numericValue . ' ' . $priority->primary_symbol,
                             'original_value' => $originalValue,
-                            'conversion_applied' => true
+                            'conversion_applied' => false
                         ];
                     }
                 }
@@ -2910,68 +2937,7 @@ public function getSpecificationFilters1(Request $request)
         }
     }
     
-    // Fallback: Assign common units based on attribute names if no database config found
-    $fallbackUnits = [
-        'width' => ['symbol' => 'cm', 'name' => 'centimeters'],
-        'length' => ['symbol' => 'cm', 'name' => 'centimeters'], 
-        'height' => ['symbol' => 'cm', 'name' => 'centimeters'],
-        'depth' => ['symbol' => 'cm', 'name' => 'centimeters'],
-        'diameter' => ['symbol' => 'cm', 'name' => 'centimeters'],
-        'weight' => ['symbol' => 'kg', 'name' => 'kilograms'],
-        'capacity' => ['symbol' => 'cb3', 'name' => 'cubic feet'],
-        'volume' => ['symbol' => 'L', 'name' => 'liters'],
-        'voltage' => ['symbol' => 'V', 'name' => 'volts'],
-        'current' => ['symbol' => 'A', 'name' => 'amperes'],
-        'power' => ['symbol' => 'W', 'name' => 'watts'],
-        'horsepower' => ['symbol' => 'HP', 'name' => 'horsepower'],
-        'frequency' => ['symbol' => 'Hz', 'name' => 'hertz'],
-        'temperature' => ['symbol' => '°C', 'name' => 'celsius'],
-        'pressure' => ['symbol' => 'Pa', 'name' => 'pascals'],
-        'speed' => ['symbol' => 'm/s', 'name' => 'meters per second'],
-        'rpm' => ['symbol' => 'RPM', 'name' => 'revolutions per minute'],
-    ];
-    
-    foreach ($fallbackUnits as $unitType => $unitInfo) {
-        if (stripos($attributeName, $unitType) !== false) {
-            // Handle values with existing units
-            if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z]+)$/', $originalValue, $matches)) {
-                $numericValue = $matches[1];
-                return [
-                    'converted_value' => $numericValue,
-                    'unit' => $unitInfo['name'],
-                    'symbol' => $unitInfo['symbol'],
-                    'display_value' => $numericValue . ' ' . $unitInfo['symbol'],
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            // Handle numeric values without units
-            else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
-                $numericValue = $matches[1];
-                return [
-                    'converted_value' => $numericValue,
-                    'unit' => $unitInfo['name'],
-                    'symbol' => $unitInfo['symbol'],
-                    'display_value' => $numericValue . ' ' . $unitInfo['symbol'],
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            // Handle values that already have the unit (like "2 Discs")
-            else if (stripos($originalValue, $unitInfo['symbol']) !== false) {
-                return [
-                    'converted_value' => $originalValue,
-                    'unit' => $unitInfo['name'],
-                    'symbol' => $unitInfo['symbol'],
-                    'display_value' => $originalValue,
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-        }
-    }
-    
-    // Return original value if no conversion needed/possible
+    // Return original value if no database config found and no conversion needed
     return [
         'converted_value' => $originalValue,
         'unit' => null,
@@ -2980,7 +2946,8 @@ public function getSpecificationFilters1(Request $request)
         'original_value' => $originalValue,
         'conversion_applied' => false
     ];
-    };
+};
+
 
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
@@ -4351,6 +4318,37 @@ private function getBrandsOptimized($allProductIds, $filteredProductIds, $select
             ];
         })
         ->toArray();
+}
+private function roundByMeasurementType($measurementType, $value) {
+    switch (strtolower($measurementType)) {
+        case 'length':
+        case 'mass':
+        case 'weight':
+        case 'volume':
+            // For physical measurements, round to 2 decimal places if less than 10, otherwise to integer
+            return $value < 10 ? round($value, 2) : round($value);
+        
+        case 'voltage':
+        case 'current':
+        case 'power':
+        case 'frequency':
+            // For electrical measurements, round to 1 decimal place if less than 100, otherwise to integer
+            return $value < 100 ? round($value, 1) : round($value);
+        
+        case 'temperature':
+            // Temperature usually to 1 decimal place
+            return round($value, 1);
+        
+        case 'pressure':
+        case 'speed':
+        case 'velocity':
+            // These can be integers for most cases
+            return round($value);
+        
+        default:
+            // Default to 2 decimal places
+            return round($value, 2);
+    }
 }
 
 private function getPriceRangeOptimized($productIds)
