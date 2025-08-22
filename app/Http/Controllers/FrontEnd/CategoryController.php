@@ -2759,7 +2759,8 @@ public function getSpecificationFilters1(Request $request)
     //     ];
     // };
     // Enhanced helper function to convert attribute values with fallback units
-   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+  // Enhanced helper function to convert attribute values using database priorities
+$convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
     // First try the database-configured measurement priorities
@@ -2948,6 +2949,38 @@ public function getSpecificationFilters1(Request $request)
     ];
 };
 
+    // Helper function to round values appropriately by measurement type
+    $roundByMeasurementType = function($measurementType, $value) {
+        switch (strtolower($measurementType)) {
+            case 'length':
+            case 'mass':
+            case 'weight':
+            case 'volume':
+                // For physical measurements, round to 2 decimal places if less than 10, otherwise to integer
+                return $value < 10 ? round($value, 2) : round($value);
+            
+            case 'voltage':
+            case 'current':
+            case 'power':
+            case 'frequency':
+                // For electrical measurements, round to 1 decimal place if less than 100, otherwise to integer
+                return $value < 100 ? round($value, 1) : round($value);
+            
+            case 'temperature':
+                // Temperature usually to 1 decimal place
+                return round($value, 1);
+            
+            case 'pressure':
+            case 'speed':
+            case 'velocity':
+                // These can be integers for most cases
+                return round($value);
+            
+            default:
+                // Default to 2 decimal places
+                return round($value, 2);
+        }
+    };
 
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
