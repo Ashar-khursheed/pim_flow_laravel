@@ -233,15 +233,20 @@ class ProductController extends Controller
                         }
                         
                         
-                        
-                        
-                        
-                        
-
-                        if ($product->brand) {
+            
+                      if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
                             $product->brand_logo = $product->brand->logo;
+
+                            if ($product->brand->seoUrl) {
+                                $product->brand_url = $product->brand->seoUrl->url;
+                            } else {
+                                $product->brand_url = null;
+                            }
+                        
+
+    
                         
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
@@ -722,10 +727,18 @@ class ProductController extends Controller
                         
                         
                     
-                        if ($product->brand) {
+                      if ($product->brand) {
                             $product->brand_id = $product->brand->id;
                             $product->brand_name = $product->brand->name;
                             $product->brand_logo = $product->brand->logo;
+
+                            if ($product->brand->seoUrl) {
+                                $product->brand_url = $product->brand->seoUrl->url;
+                            } else {
+                                $product->brand_url = null;
+                            }
+                        
+
                         
                             // Get review stats directly from the database
                             $brandProductIds = \DB::table('ec_products')
