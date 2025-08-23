@@ -150,7 +150,6 @@ class GeoController extends Controller
             'details' => $details,
         ]);
     }
-
 public function addressAutocompleteGCC(Request $request)
 {
     $request->validate([
@@ -165,6 +164,7 @@ public function addressAutocompleteGCC(Request $request)
 
     $allPredictions = [];
 
+    // Collect predictions for all GCC countries
     foreach ($gccCountries as $country) {
         $response = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
             'input'      => $input,
@@ -176,7 +176,6 @@ public function addressAutocompleteGCC(Request $request)
             $data = $response->json();
             if (!empty($data['predictions'])) {
                 foreach ($data['predictions'] as $prediction) {
-                    // Avoid duplicates
                     if (!in_array($prediction['place_id'], array_column($allPredictions, 'place_id'))) {
                         $allPredictions[] = $prediction;
                     }
@@ -186,46 +185,46 @@ public function addressAutocompleteGCC(Request $request)
     }
 
     if (empty($allPredictions)) {
-        return response()->json(['predictions' => []]);
+        return response()->json(['predictions' => [], 'details' => null]);
     }
 
     // ✅ Limit to first 5 predictions
     $limitedPredictions = array_slice($allPredictions, 0, 5);
 
-    $resultsWithDetails = [];
+    // Get Place Details for the first prediction
+    $firstPrediction = $limitedPredictions[0];
+    $placeId = $firstPrediction['place_id'];
 
-    foreach ($limitedPredictions as $prediction) {
-        $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
-            'place_id' => $prediction['place_id'],
-            'key'      => $apiKey,
-            'fields'   => 'address_component,formatted_address',
-        ]);
+    $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
+        'place_id' => $placeId,
+        'key'      => $apiKey,
+        'fields'   => 'address_component,formatted_address',
+    ]);
 
-        if ($placeResponse->successful()) {
-            $placeData = $placeResponse->json()['result'] ?? [];
-            $componentsData = $placeData['address_components'] ?? [];
+    $details = null;
+    if ($placeResponse->successful()) {
+        $placeData = $placeResponse->json()['result'] ?? [];
+        $components = $placeData['address_components'] ?? [];
 
-            $resultsWithDetails[] = [
-                'description' => $prediction['description'],
-                'place_id'    => $prediction['place_id'],
-                'address'     => $placeData['formatted_address'] ?? null,
-                'zip'         => $this->getComponent1($componentsData, 'postal_code'),
-                'city'        => $this->getComponent1($componentsData, 'locality')
-                                  ?? $this->getComponent1($componentsData, 'administrative_area_level_2'),
-                'state'       => $this->getComponent1($componentsData, 'administrative_area_level_1')
-                                  ?? $this->getComponent1($componentsData, 'administrative_area_level_2'),
-                'country'     => $this->getComponent1($componentsData, 'country'),
-            ];
-        }
+        $details = [
+            'address' => $placeData['formatted_address'] ?? null,
+            'zip'     => $this->getComponent1($components, 'postal_code'),
+            'city'    => $this->getComponent1($components, 'locality')
+                           ?? $this->getComponent1($components, 'administrative_area_level_2'),
+            'state'   => $this->getComponent1($components, 'administrative_area_level_1')
+                           ?? $this->getComponent1($components, 'administrative_area_level_2'),
+            'country' => $this->getComponent1($components, 'country'),
+        ];
     }
 
     return response()->json([
-        'predictions' => $resultsWithDetails,
+        'predictions' => $limitedPredictions,
+        'details'     => $details,
     ]);
 }
 
 /**
- * Extract component value from Google API response
+ * Helper to extract components
  */
 private function getComponent1(array $components, string $type): ?string
 {
