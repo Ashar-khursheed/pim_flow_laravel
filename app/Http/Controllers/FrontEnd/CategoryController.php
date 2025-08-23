@@ -3635,8 +3635,8 @@ public function getSpecificationFilters1(Request $request)
            // Handle count-based capacity attributes 
            // Handle count-based capacity attributes 
          // Handle count-based capacity attributes 
-            if (preg_match('/capacity\b/i', $attributeName) && 
-                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
+           if (preg_match('/capacity\b/i', $attributeName) && 
+                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
                 
                 // If the original value already has the unit, don't add it again
                 $unitName = ucfirst($matches[1]) . 's';
@@ -4438,7 +4438,7 @@ public function getSpecificationFilters1(Request $request)
                         });
                         // BUT NOT for count-based capacity attributes
                         $isCountBasedCapacity = (preg_match('/capacity\b/i', $attributeName) && 
-                        preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName));
+                        preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName));
 
                         // Generate range filters for numeric values with more than 2 unique values
                         
