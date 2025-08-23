@@ -66,12 +66,16 @@ class StripeController extends Controller
                 'amount' => $request->amount * 100, // Stripe uses cents
                 'currency' => 'aed',
                 'description' => 'Test Payment',
-                'payment_method_types' => ['card'],
+                'payment_method_types' => ['Credit Card'],
             ]);
 
             return response()->json([
                 'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
+                'payment_mode' => 'Cradit Card',
+                'status' => 'Completed',
+                'payment_method' => 'Stripe'
+
             ]);
 
         } catch (\Exception $e) {
