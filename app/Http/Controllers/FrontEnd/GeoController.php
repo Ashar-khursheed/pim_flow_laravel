@@ -161,8 +161,8 @@ public function addressAutocompleteGCC(Request $request)
     $apiKey = config('services.google_maps.key');
 
     // GCC country codes
-    $gccCountries = ['sa', 'ae', 'qa', 'kw', 'bh', 'om'];
-
+    // $gccCountries = ['sa', 'ae', 'qa', 'kw', 'bh', 'om'];
+        $gccCountries = ['ae'];
     $allPredictions = [];
 
     foreach ($gccCountries as $country) {
