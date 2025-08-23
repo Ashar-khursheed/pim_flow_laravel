@@ -64,17 +64,20 @@ class StripeController extends Controller
         try {
             $paymentIntent = PaymentIntent::create([
                 'amount' => $request->amount * 100, // Stripe uses cents
-                'currency' => 'usd',
+                'currency' => 'aed',
                 'description' => 'Test Payment',
                 'payment_method_types' => ['card'],
             ]);
 
             return response()->json([
+                'sucess' => true,
                 'clientSecret' => $paymentIntent->client_secret,
             ]);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'sucess' => false,
+                'error' => $e->getMessage()], 500);
         }
     }
 }
