@@ -2720,39 +2720,13 @@ public function getSpecificationFilters1(Request $request)
 //     ];
 // };
 
-   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+  $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
-    // Check if this is a product quantity/count attribute (these are not measurements)
-    $isQuantityAttribute = false;
-    $quantityPatterns = [
-        '/\b\d+\s*(oz|ml|l|liter|litre)\.\s*(stein|mug|cup|plate|bowl|glass|bottle)\s+capacity\b/i',
-        '/\b\d+"\s*(mug|plate|bowl)\s+capacity\b/i',
-        '/\b(stein|mug|cup|plate|bowl|glass|bottle)\s+capacity\b/i',
-        '/\b(pack|case|box)\s+(size|count|quantity)\b/i',
-        '/\b(piece|pieces|count|quantity)\b/i'
-    ];
+    // Only apply conversion logic if this attribute is explicitly configured in measurement priorities
+    $matchedMeasurementType = null;
+    $matchedPriority = null;
     
-    foreach ($quantityPatterns as $pattern) {
-        if (preg_match($pattern, $attributeName)) {
-            $isQuantityAttribute = true;
-            break;
-        }
-    }
-    
-    // If it's a quantity attribute, return original value without units
-    if ($isQuantityAttribute) {
-        return [
-            'converted_value' => $originalValue,
-            'unit' => null,
-            'symbol' => '',
-            'display_value' => $originalValue,
-            'original_value' => $originalValue,
-            'conversion_applied' => false
-        ];
-    }
-    
-    // First try the database-configured measurement priorities
     foreach ($categoryMeasurementPriorities as $measurementType => $priority) {
         $shouldConvert = false;
         
@@ -2765,7 +2739,7 @@ public function getSpecificationFilters1(Request $request)
                     stripos($attributeName, 'depth') !== false ||
                     stripos($attributeName, 'diameter') !== false ||
                     stripos($attributeName, 'dimension') !== false ||
-                    (stripos($attributeName, 'size') !== false && !preg_match('/\b(pack|case|box)\s+size\b/i', $attributeName))
+                    stripos($attributeName, 'size') !== false
                 );
                 break;
             case 'mass':
@@ -2778,8 +2752,7 @@ public function getSpecificationFilters1(Request $request)
             case 'volume':
                 $shouldConvert = (
                     stripos($attributeName, 'volume') !== false ||
-                    (stripos($attributeName, 'capacity') !== false && 
-                     !preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|container|pack|case|box)\s+capacity\b/i', $attributeName))
+                    stripos($attributeName, 'capacity') !== false
                 );
                 break;
             case 'voltage':
@@ -2839,100 +2812,54 @@ public function getSpecificationFilters1(Request $request)
         }
         
         if ($shouldConvert) {
-            // Handle values with units (like "208/220 V", "120V", "1.5W")
+            $matchedMeasurementType = $measurementType;
+            $matchedPriority = $priority;
+            break;
+        }
+    }
+    
+    // If no measurement type matched, return original value without units
+    if (!$matchedMeasurementType || !$matchedPriority) {
+        return [
+            'converted_value' => $originalValue,
+            'unit' => null,
+            'symbol' => '',
+            'display_value' => $originalValue,
+            'original_value' => $originalValue,
+            'conversion_applied' => false
+        ];
+    }
+    
+    // Check if the value actually looks like it needs measurement conversion
+    // Only convert values that have units or are pure numbers that make sense for the measurement type
+    $hasUnits = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue);
+    $isPureNumber = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
+    
+    // For capacity attributes, be more selective - only convert if it actually has volume units
+    if (strtolower($matchedMeasurementType) === 'volume' && stripos($attributeName, 'capacity') !== false) {
+        if ($hasUnits) {
+            // Check if the unit is actually a volume unit
             if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-                $numericValue = $matches[1];
-                $originalUnit = $matches[2];
-                $targetUnit = $priority->primary_unit;
-                $targetSymbol = $priority->primary_symbol;
-                
-                // For values with slashes, preserve the format but standardize unit
-                if (strpos($numericValue, '/') !== false) {
+                $unit = strtolower($matches[2]);
+                $volumeUnits = ['l', 'ml', 'liter', 'litre', 'gallon', 'gal', 'quart', 'qt', 'pint', 'pt', 'cup', 'fl', 'oz', 'm3', 'cm3', 'mm3'];
+                if (!in_array($unit, $volumeUnits)) {
+                    // Not a volume unit, don't convert
                     return [
-                        'converted_value' => $numericValue,
-                        'unit' => $targetUnit,
-                        'symbol' => $targetSymbol,
-                        'display_value' => $numericValue . ' ' . $targetSymbol,
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
                         'original_value' => $originalValue,
                         'conversion_applied' => false
                     ];
-                } else {
-                    // Single numeric values with units - ACTUAL CONVERSION
-                    try {
-                        $convertedValue = convert_unit($measurementType, (float)$numericValue, $originalUnit, $targetUnit);
-                        
-                        if (is_numeric($convertedValue) && $convertedValue !== false) {
-                            // Round appropriately based on measurement type
-                            $roundedValue = $this->roundByMeasurementType($measurementType, $convertedValue);
-                            
-                            return [
-                                'converted_value' => $roundedValue,
-                                'unit' => $targetUnit,
-                                'symbol' => $targetSymbol,
-                                'display_value' => $roundedValue . ' ' . $targetSymbol,
-                                'original_value' => $originalValue,
-                                'conversion_applied' => true
-                            ];
-                        } else {
-                            // Conversion failed, use original value but standardize unit symbol
-                            return [
-                                'converted_value' => $numericValue,
-                                'unit' => $targetUnit,
-                                'symbol' => $targetSymbol,
-                                'display_value' => $numericValue . ' ' . $targetSymbol,
-                                'original_value' => $originalValue,
-                                'conversion_applied' => false
-                            ];
-                        }
-                    } catch (Exception $e) {
-                        // Log conversion error for debugging
-                        \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
-                        
-                        // Return original value with standardized unit symbol
-                        return [
-                            'converted_value' => $numericValue,
-                            'unit' => $targetUnit,
-                            'symbol' => $targetSymbol,
-                            'display_value' => $numericValue . ' ' . $targetSymbol,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => false
-                        ];
-                    }
                 }
             }
-            // Handle values without units but should have them (like "208/220", "120")
-            else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
-                $numericValue = $matches[1];
-                $targetUnit = $priority->primary_unit;
-                $targetSymbol = $priority->primary_symbol;
-                
-                return [
-                    'converted_value' => $numericValue,
-                    'unit' => $targetUnit,
-                    'symbol' => $targetSymbol,
-                    'display_value' => $numericValue . ' ' . $targetSymbol,
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            // Handle fractional values (like "3/4")
-            else if (preg_match('/^(\d+\/\d+)$/', $originalValue, $matches)) {
-                $fractionValue = $matches[1];
-                $targetUnit = $priority->primary_unit;
-                $targetSymbol = $priority->primary_symbol;
-                
-                return [
-                    'converted_value' => $fractionValue,
-                    'unit' => $targetUnit,
-                    'symbol' => $targetSymbol,
-                    'display_value' => $fractionValue . ' ' . $targetSymbol,
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-            // If shouldConvert is true but value doesn't match expected patterns,
-            // just return original without adding units
-            else {
+        } else if ($isPureNumber) {
+            // Pure numbers for capacity might be counts, not measurements
+            // Only convert if the numbers are in a range that makes sense for volume
+            $numericValue = (float)$originalValue;
+            if ($numericValue < 100 && !strpos($originalValue, '.')) {
+                // Small whole numbers for capacity are likely counts
                 return [
                     'converted_value' => $originalValue,
                     'unit' => null,
@@ -2945,16 +2872,106 @@ public function getSpecificationFilters1(Request $request)
         }
     }
     
-    // Return original value if no database config found and no conversion needed
-    // FIXED: Don't add hardcoded units for non-measurement attributes
-    return [
-        'converted_value' => $originalValue,
-        'unit' => null,
-        'symbol' => '',
-        'display_value' => $originalValue,
-        'original_value' => $originalValue,
-        'conversion_applied' => false
-    ];
+    // Now proceed with the conversion logic for matched measurement types
+    $targetUnit = $matchedPriority->primary_unit;
+    $targetSymbol = $matchedPriority->primary_symbol;
+    
+    // Handle values with units (like "208/220 V", "120V", "1.5W")
+    if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
+        $numericValue = $matches[1];
+        $originalUnit = $matches[2];
+        
+        // For values with slashes, preserve the format but standardize unit
+        if (strpos($numericValue, '/') !== false) {
+            return [
+                'converted_value' => $numericValue,
+                'unit' => $targetUnit,
+                'symbol' => $targetSymbol,
+                'display_value' => $numericValue . ' ' . $targetSymbol,
+                'original_value' => $originalValue,
+                'conversion_applied' => false
+            ];
+        } else {
+            // Single numeric values with units - ACTUAL CONVERSION
+            try {
+                $convertedValue = convert_unit($matchedMeasurementType, (float)$numericValue, $originalUnit, $targetUnit);
+                
+                if (is_numeric($convertedValue) && $convertedValue !== false) {
+                    // Round appropriately based on measurement type
+                    $roundedValue = $this->roundByMeasurementType($matchedMeasurementType, $convertedValue);
+                    
+                    return [
+                        'converted_value' => $roundedValue,
+                        'unit' => $targetUnit,
+                        'symbol' => $targetSymbol,
+                        'display_value' => $roundedValue . ' ' . $targetSymbol,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => true
+                    ];
+                } else {
+                    // Conversion failed, use original value but standardize unit symbol
+                    return [
+                        'converted_value' => $numericValue,
+                        'unit' => $targetUnit,
+                        'symbol' => $targetSymbol,
+                        'display_value' => $numericValue . ' ' . $targetSymbol,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => false
+                    ];
+                }
+            } catch (Exception $e) {
+                // Log conversion error for debugging
+                \Log::warning("Unit conversion failed for {$attributeName}: {$originalValue}. Error: " . $e->getMessage());
+                
+                // Return original value with standardized unit symbol
+                return [
+                    'converted_value' => $numericValue,
+                    'unit' => $targetUnit,
+                    'symbol' => $targetSymbol,
+                    'display_value' => $numericValue . ' ' . $targetSymbol,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
+        }
+    }
+    // Handle values without units but should have them (like "208/220", "120")
+    else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
+        $numericValue = $matches[1];
+        
+        return [
+            'converted_value' => $numericValue,
+            'unit' => $targetUnit,
+            'symbol' => $targetSymbol,
+            'display_value' => $numericValue . ' ' . $targetSymbol,
+            'original_value' => $originalValue,
+            'conversion_applied' => false
+        ];
+    }
+    // Handle fractional values (like "3/4")
+    else if (preg_match('/^(\d+\/\d+)$/', $originalValue, $matches)) {
+        $fractionValue = $matches[1];
+        
+        return [
+            'converted_value' => $fractionValue,
+            'unit' => $targetUnit,
+            'symbol' => $targetSymbol,
+            'display_value' => $fractionValue . ' ' . $targetSymbol,
+            'original_value' => $originalValue,
+            'conversion_applied' => false
+        ];
+    }
+    // If value doesn't match expected patterns, return original without units
+    else {
+        return [
+            'converted_value' => $originalValue,
+            'unit' => null,
+            'symbol' => '',
+            'display_value' => $originalValue,
+            'original_value' => $originalValue,
+            'conversion_applied' => false
+        ];
+    }
 };
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
