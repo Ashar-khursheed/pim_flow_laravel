@@ -161,8 +161,8 @@ public function addressAutocompleteGCC(Request $request)
     $apiKey = config('services.google_maps.key');
 
     // GCC country codes
-    // $gccCountries = ['sa', 'ae', 'qa', 'kw', 'bh', 'om'];
-        $gccCountries = ['ae'];
+    $gccCountries = [ 'ae'];
+
     $allPredictions = [];
 
     foreach ($gccCountries as $country) {
@@ -185,7 +185,6 @@ public function addressAutocompleteGCC(Request $request)
         }
     }
 
-    // If no predictions found in any GCC country
     if (empty($allPredictions)) {
         return response()->json(['predictions' => []]);
     }
@@ -193,10 +192,51 @@ public function addressAutocompleteGCC(Request $request)
     // ✅ Limit to first 5 predictions
     $limitedPredictions = array_slice($allPredictions, 0, 5);
 
+    $resultsWithDetails = [];
+
+    foreach ($limitedPredictions as $prediction) {
+        $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
+            'place_id' => $prediction['place_id'],
+            'key'      => $apiKey,
+            'fields'   => 'address_component,formatted_address',
+        ]);
+
+        if ($placeResponse->successful()) {
+            $placeData = $placeResponse->json()['result'] ?? [];
+            $componentsData = $placeData['address_components'] ?? [];
+
+            $resultsWithDetails[] = [
+                'description' => $prediction['description'],
+                'place_id'    => $prediction['place_id'],
+                'address'     => $placeData['formatted_address'] ?? null,
+                'zip'         => $this->getComponent1($componentsData, 'postal_code'),
+                'city'        => $this->getComponent1($componentsData, 'locality')
+                                  ?? $this->getComponent1($componentsData, 'administrative_area_level_2'),
+                'state'       => $this->getComponent1($componentsData, 'administrative_area_level_1')
+                                  ?? $this->getComponent1($componentsData, 'administrative_area_level_2'),
+                'country'     => $this->getComponent1($componentsData, 'country'),
+            ];
+        }
+    }
+
     return response()->json([
-        'predictions' => $limitedPredictions,
+        'predictions' => $resultsWithDetails,
     ]);
 }
+
+/**
+ * Extract component value from Google API response
+ */
+private function getComponent1(array $components, string $type): ?string
+{
+    foreach ($components as $component) {
+        if (in_array($type, $component['types'])) {
+            return $component['long_name'];
+        }
+    }
+    return null;
+}
+
 
   
 
