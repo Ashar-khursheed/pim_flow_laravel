@@ -3656,10 +3656,15 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'mass') !== false
                     );
                     break;
-                case 'volume':
+               case 'volume':
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
-                        stripos($attributeName, 'capacity') !== false
+                        (stripos($attributeName, 'capacity') !== false && 
+                        stripos($attributeName, 'tank') !== false) ||
+                        (stripos($attributeName, 'capacity') !== false && 
+                        stripos($attributeName, 'container') !== false) ||
+                        (stripos($attributeName, 'capacity') !== false && 
+                        stripos($attributeName, 'storage') !== false)
                     );
                     break;
                 case 'voltage':
@@ -4406,7 +4411,7 @@ public function getSpecificationFilters1(Request $request)
                     $attributeName = $attribute->name;
                     $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-                    $productIdsToUse = $isFilterSelected ? $allCategoryProductIds : $filteredProductIds;
+                    $productIdsToUse = $allCategoryProductIds; // Always use all products for filter generation
 
                     $attributeValues = DB::table('product_attributes as pa')
                         ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
