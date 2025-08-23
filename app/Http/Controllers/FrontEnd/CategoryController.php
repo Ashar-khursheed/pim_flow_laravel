@@ -4544,7 +4544,9 @@ public function getSpecificationFilters1(Request $request)
                                     'unit' => $correspondingItem->unit,
                                     'symbol' => $correspondingItem->symbol,
                                     'product_count' => $productCount,
-                                    'display_with_count' => $displayValue . ' (' . $productCount . ')',
+                                    'display_with_count' => ($correspondingItem->symbol ? 
+                                    $correspondingItem->converted_value . ' ' . $correspondingItem->symbol : 
+                                    $displayValue) . ' (' . $productCount . ')',
                                     'conversion_applied' => $correspondingItem->conversion_applied
                                 ];
                             }
