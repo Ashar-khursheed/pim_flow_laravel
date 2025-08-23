@@ -3632,16 +3632,17 @@ public function getSpecificationFilters1(Request $request)
         // Handle count-based capacity attributes with their own units
            // Handle count-based capacity attributes 
       // Handle count-based capacity attributes 
+           // Handle count-based capacity attributes 
             if (preg_match('/capacity\b/i', $attributeName) && 
                 preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
                 
                 $unitName = ucfirst($matches[1]) . 's';
                 
                 return [
-                    'converted_value' => $originalValue,
+                    'converted_value' => $originalValue, // Just the number
                     'unit' => $unitName,
                     'symbol' => $unitName,
-                    'display_value' => $originalValue, // Just the number, no unit here
+                    'display_value' => $originalValue . ' ' . $unitName, // Number + unit
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
@@ -4545,9 +4546,7 @@ public function getSpecificationFilters1(Request $request)
                                     'unit' => $correspondingItem->unit,
                                     'symbol' => $correspondingItem->symbol,
                                     'product_count' => $productCount,
-                                    'display_with_count' => ($correspondingItem->symbol ? 
-                                    $correspondingItem->converted_value . ' ' . $correspondingItem->symbol : 
-                                    $displayValue) . ' (' . $productCount . ')',
+                                    'display_with_count' => $correspondingItem->display_value . ' (' . $productCount . ')',
                                     'conversion_applied' => $correspondingItem->conversion_applied
                                 ];
                             }
