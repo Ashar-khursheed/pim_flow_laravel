@@ -3634,19 +3634,30 @@ public function getSpecificationFilters1(Request $request)
       // Handle count-based capacity attributes 
            // Handle count-based capacity attributes 
            // Handle count-based capacity attributes 
-          if (preg_match('/capacity\b/i', $attributeName) && 
+         // Handle count-based capacity attributes 
+            if (preg_match('/capacity\b/i', $attributeName) && 
                 preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
                 
+                // If the original value already has the unit, don't add it again
                 $unitName = ucfirst($matches[1]) . 's';
+                if (stripos($originalValue, $unitName) !== false) {
+                    // Value already has unit, return as-is
+                    return [
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => false
+                    ];
+                }
                 
-                // Extract just the number from values like "227 Steins"
-                $numberOnly = preg_replace('/\s*(steins|mugs|cups|plates|bowls|glasses|bottles|kegs|barrels)\s*/i', '', $originalValue);
-                
+                // Value doesn't have unit, add it
                 return [
-                    'converted_value' => $numberOnly, // Just "227"
+                    'converted_value' => $originalValue,
                     'unit' => $unitName,
                     'symbol' => $unitName,
-                    'display_value' => $numberOnly . ' ' . $unitName, // "227 Steins"
+                    'display_value' => $originalValue . ' ' . $unitName,
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
