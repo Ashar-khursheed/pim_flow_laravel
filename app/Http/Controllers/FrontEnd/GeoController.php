@@ -190,9 +190,11 @@ public function addressAutocompleteGCC(Request $request)
         return response()->json(['predictions' => []]);
     }
 
-    // Return predictions (without fetching details for each to save API calls)
+    // ✅ Limit to first 5 predictions
+    $limitedPredictions = array_slice($allPredictions, 0, 5);
+
     return response()->json([
-        'predictions' => $allPredictions,
+        'predictions' => $limitedPredictions,
     ]);
 }
 
