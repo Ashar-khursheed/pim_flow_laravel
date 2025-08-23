@@ -3656,15 +3656,13 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'mass') !== false
                     );
                     break;
-               case 'volume':
+                case 'volume':
+                    // Only treat as volume if it's a generic "Capacity" or has volume-related keywords
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
+                        ($attributeName === 'Capacity') ||
                         (stripos($attributeName, 'capacity') !== false && 
-                        stripos($attributeName, 'tank') !== false) ||
-                        (stripos($attributeName, 'capacity') !== false && 
-                        stripos($attributeName, 'container') !== false) ||
-                        (stripos($attributeName, 'capacity') !== false && 
-                        stripos($attributeName, 'storage') !== false)
+                         preg_match('/\b(tank|container|storage|liquid|fluid|reservoir)\b/i', $attributeName))
                     );
                     break;
                 case 'voltage':
@@ -3742,32 +3740,15 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
         
-        // For volume/capacity attributes, check if values are actually measurements or just counts
-        if (strtolower($matchedMeasurementType) === 'volume' && stripos($attributeName, 'capacity') !== false) {
-            $hasUnits = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue);
-            $isPureNumber = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
+        // For volume measurement type, check if values are counts vs actual volumes
+        if (strtolower($matchedMeasurementType) === 'volume') {
+            $isPureNumber = preg_match('/^(\d+(?:\.\d+)?)$/', $originalValue);
             
-            if ($hasUnits) {
-                // Check if the unit is actually a volume unit
-                if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
-                    $unit = strtolower($matches[2]);
-                    $volumeUnits = ['l', 'ml', 'liter', 'litre', 'gallon', 'gal', 'quart', 'qt', 'pint', 'pt', 'cup', 'fl', 'oz', 'm3', 'cm3', 'mm3'];
-                    if (!in_array($unit, $volumeUnits)) {
-                        // Not a volume unit, treat as regular attribute
-                        return [
-                            'converted_value' => $originalValue,
-                            'unit' => null,
-                            'symbol' => '',
-                            'display_value' => $originalValue,
-                            'original_value' => $originalValue,
-                            'conversion_applied' => false
-                        ];
-                    }
-                }
-            } else if ($isPureNumber) {
-                // Small whole numbers for capacity are likely counts, not measurements
+            // If it's a pure number and small, it's likely a count
+            if ($isPureNumber) {
                 $numericValue = (float)$originalValue;
-                if ($numericValue < 100 && !strpos($originalValue, '.')) {
+                if ($numericValue <= 20 && floor($numericValue) == $numericValue) {
+                    // Small whole numbers are likely counts, don't convert
                     return [
                         'converted_value' => $originalValue,
                         'unit' => null,
@@ -3889,28 +3870,19 @@ public function getSpecificationFilters1(Request $request)
             case 'mass':
             case 'weight':
             case 'volume':
-                // For physical measurements, round to 2 decimal places if less than 10, otherwise to integer
                 return $value < 10 ? round($value, 2) : round($value);
-            
             case 'voltage':
             case 'current':
             case 'power':
             case 'frequency':
-                // For electrical measurements, round to 1 decimal place if less than 100, otherwise to integer
                 return $value < 100 ? round($value, 1) : round($value);
-            
             case 'temperature':
-                // Temperature usually to 1 decimal place
                 return round($value, 1);
-            
             case 'pressure':
             case 'speed':
             case 'velocity':
-                // These can be integers for most cases
                 return round($value);
-            
             default:
-                // Default to 2 decimal places
                 return round($value, 2);
         }
     };
@@ -3957,7 +3929,6 @@ public function getSpecificationFilters1(Request $request)
     $rangeFiltersByAttribute = [];
     $selectedFilters = [];
 
-    // FIXED: Enhanced filter parsing to handle both start/end and min/max formats
     if ($request->has('filters') && is_array($request->filters)) {
         foreach ($request->filters as $filter) {
             if (!isset($filter['specification_name']) || !isset($filter['specification_value']) || empty($filter['specification_value'])) {
@@ -3971,7 +3942,6 @@ public function getSpecificationFilters1(Request $request)
 
             $isRangeFilter = false;
             
-            // Handle YOUR URL format: start/end
             if (is_array($filter['specification_value']) && 
                 isset($filter['specification_value']['start']) && 
                 isset($filter['specification_value']['end'])) {
@@ -3990,7 +3960,6 @@ public function getSpecificationFilters1(Request $request)
                     'max' => (int)$filter['specification_value']['end']
                 ]];
             } else {
-                // Handle standard min/max format
                 foreach ($specValues as $value) {
                     if (is_array($value) && isset($value['min']) && isset($value['max'])) {
                         $isRangeFilter = true;
@@ -4050,14 +4019,13 @@ public function getSpecificationFilters1(Request $request)
         }
     }
 
-    // FIXED: Apply range filters with better error handling
+    // Apply range filters
     foreach ($rangeFiltersByAttribute as $specName => $ranges) {
         $attribute = Attribute::where('name', $specName)->first();
         if (!$attribute) {
             continue;
         }
 
-        // Get all products that have this attribute
         $productsWithAttribute = DB::table('product_attributes as pa')
             ->where('pa.attribute_id', $attribute->id)
             ->whereIn('pa.product_id', $filteredProductIds)
@@ -4073,17 +4041,14 @@ public function getSpecificationFilters1(Request $request)
             $min = (int)$range['min'];
             $max = (int)$range['max'];
 
-            // Filter products in PHP instead of complex SQL
             $rangeMatches = $productsWithAttribute->filter(function($item) use ($min, $max) {
                 $value = trim($item->attribute_value);
                 
-                // Handle pure numbers
                 if (is_numeric($value)) {
                     $numericValue = (int)round((float)$value);
                     return $numericValue >= $min && $numericValue <= $max;
                 }
                 
-                // Handle numbers with units (e.g., "25 cm", "30cm")
                 if (preg_match('/^(\d+(?:\.\d+)?)\s*[a-zA-Z]*$/', $value, $matches)) {
                     $numericValue = (int)round((float)$matches[1]);
                     return $numericValue >= $min && $numericValue <= $max;
@@ -4095,12 +4060,9 @@ public function getSpecificationFilters1(Request $request)
             $allMatchingProductIds = $allMatchingProductIds->merge($rangeMatches);
         }
 
-        // Apply the filter
         $filteredProductIds = $filteredProductIds->intersect($allMatchingProductIds->unique());
 
-        // If no products found, continue to show available filters instead of returning empty
         if ($filteredProductIds->isEmpty()) {
-            // Log for debugging but don't break
             \Log::info("No products match range filter for: $specName");
             continue;
         }
@@ -4357,16 +4319,12 @@ public function getSpecificationFilters1(Request $request)
 
     $paginatedProducts->setCollection($modifiedProducts);
 
-    // Build filters - ALWAYS process all attributes from subcategory
+    // Build filters - ALWAYS show all filters
     $filters = [];
 
     $subCategory = DB::table('sub_categories')
         ->where('category_id', $category->id)
         ->first();
-
-    // Add debug logging to understand what's happening
-    \Log::info("Building filters for category: {$category->id}");
-    \Log::info("Found subcategory: " . ($subCategory ? 'YES' : 'NO'));
 
     if ($subCategory) {
         $attributeIdsField = null;
@@ -4377,8 +4335,6 @@ public function getSpecificationFilters1(Request $request)
         } else if (property_exists($subCategory, 'attributes_jd') || isset($subCategory->attributes_jd)) {
             $attributeIdsField = 'attributes_jd';
         }
-
-        \Log::info("Attribute IDs field: $attributeIdsField");
 
         if ($attributeIdsField && !empty($subCategory->$attributeIdsField)) {
             $attributeIdsValue = $subCategory->$attributeIdsField;
@@ -4396,22 +4352,19 @@ public function getSpecificationFilters1(Request $request)
             }
 
             $attributeIds = array_map('intval', (array)$attributeIds);
-            \Log::info("Parsed attribute IDs: " . json_encode($attributeIds));
 
             if (!empty($attributeIds)) {
                 foreach ($attributeIds as $attributeId) {
                     $attribute = Attribute::find($attributeId);
                     if (!$attribute) {
-                        \Log::warning("Attribute not found: $attributeId");
                         continue;
                     }
-
-                    \Log::info("Processing attribute: {$attribute->name} (ID: $attributeId)");
 
                     $attributeName = $attribute->name;
                     $isFilterSelected = isset($selectedFilters[$attributeName]);
 
-                    $productIdsToUse = $allCategoryProductIds; // Always use all products for filter generation
+                    // ALWAYS use all category products for filter generation
+                    $productIdsToUse = $allCategoryProductIds;
 
                     $attributeValues = DB::table('product_attributes as pa')
                         ->join('attributes as at', 'at.id', '=', 'pa.attribute_id')
@@ -4420,8 +4373,6 @@ public function getSpecificationFilters1(Request $request)
                         ->orderBy('pa.attribute_value', 'asc')
                         ->select('at.name as attribute_name', 'pa.attribute_value', 'at.id as attribute_id', 'pa.product_id')
                         ->get();
-
-                    \Log::info("Found {$attributeValues->count()} values for attribute: {$attribute->name}");
 
                     if ($attributeValues->count() > 0) {
                         $convertedAttributeValues = $attributeValues->map(function($item) use ($convertAttributeValue, $attributeName) {
@@ -4467,7 +4418,6 @@ public function getSpecificationFilters1(Request $request)
                                 return (int)$val;
                             })->unique()->sort()->values();
 
-                            // Only proceed if we have more than 2 unique values
                             if ($sorted->count() > 2) {
                                 $chunkCount = min(5, ceil($sorted->count() / 2));
                                 $chunkSize = ceil($sorted->count() / $chunkCount);
@@ -4478,7 +4428,6 @@ public function getSpecificationFilters1(Request $request)
                                     $min = (int)$chunk->first();
                                     $max = (int)$chunk->last();
 
-                                    // Skip ranges where min equals max (same value ranges)
                                     if ($min == $max && $chunk->count() == 1) {
                                         return null;
                                     }
@@ -4502,27 +4451,11 @@ public function getSpecificationFilters1(Request $request)
                                         'display_value' => $displayValue,
                                         'symbol' => $unit
                                     ];
-                                })->filter(function($range) use ($isFilterSelected) {
-                                    // Filter out null ranges and ranges with same min/max (unless selected)
-                                    return $range !== null && ($isFilterSelected || $range['product_count'] > 0);
+                                })->filter(function($range) {
+                                    return $range !== null;
                                 })->values()->toArray();
 
-                                // Merge consecutive ranges if they have same min/max to avoid duplicates
-                                $mergedRanges = [];
-                                foreach ($ranges as $range) {
-                                    $isDuplicate = false;
-                                    foreach ($mergedRanges as $existingRange) {
-                                        if ($existingRange['min'] == $range['min'] && $existingRange['max'] == $range['max']) {
-                                            $isDuplicate = true;
-                                            break;
-                                        }
-                                    }
-                                    if (!$isDuplicate) {
-                                        $mergedRanges[] = $range;
-                                    }
-                                }
-                                $ranges = $mergedRanges;
-
+                                // Add selected ranges
                                 foreach ($selectedRanges as $selectedRange) {
                                     if (is_array($selectedRange) && isset($selectedRange['min']) && isset($selectedRange['max'])) {
                                         $selectedMin = (int)$selectedRange['min'];
@@ -4565,18 +4498,16 @@ public function getSpecificationFilters1(Request $request)
                                     return $a['min'] - $b['min'];
                                 });
 
-                                // Only add if we have valid ranges (more than 1)
                                 if (count($ranges) > 1) {
                                     $filters[] = [
                                         'specification_name' => $attributeName,
                                         'specification_type' => 'range',
                                         'specification_value' => $ranges,
                                     ];
-                                    \Log::info("Added range filter for: $attributeName with " . count($ranges) . " ranges");
                                 }
                             }
                         } else {
-                            // For fixed values - always show if there are values
+                            // For fixed values - show all values
                             $valueCountMap = [];
                             $selectedValues = isset($selectedFilters[$attributeName]) ? $selectedFilters[$attributeName] : [];
 
@@ -4592,18 +4523,16 @@ public function getSpecificationFilters1(Request $request)
                                     ->unique()
                                     ->count();
 
-                                if ($isFilterSelected || $productCount > 0) {
-                                    $valueCountMap[] = [
-                                        'value' => $correspondingItem->attribute_value,
-                                        'display_value' => $displayValue,
-                                        'converted_value' => $correspondingItem->converted_value,
-                                        'unit' => $correspondingItem->unit,
-                                        'symbol' => $correspondingItem->symbol,
-                                        'product_count' => $productCount,
-                                        'display_with_count' => $displayValue . ' (' . $productCount . ')',
-                                        'conversion_applied' => $correspondingItem->conversion_applied
-                                    ];
-                                }
+                                $valueCountMap[] = [
+                                    'value' => $correspondingItem->attribute_value,
+                                    'display_value' => $displayValue,
+                                    'converted_value' => $correspondingItem->converted_value,
+                                    'unit' => $correspondingItem->unit,
+                                    'symbol' => $correspondingItem->symbol,
+                                    'product_count' => $productCount,
+                                    'display_with_count' => $displayValue . ' (' . $productCount . ')',
+                                    'conversion_applied' => $correspondingItem->conversion_applied
+                                ];
                             }
 
                             foreach ($selectedValues as $selectedValue) {
@@ -4640,11 +4569,9 @@ public function getSpecificationFilters1(Request $request)
                             }
 
                             usort($valueCountMap, function($a, $b) {
-                                // Extract numeric values from display values for proper sorting
                                 $aNumeric = null;
                                 $bNumeric = null;
                                 
-                                // Try to extract number from display value
                                 if (preg_match('/^(\d+(?:\.\d+)?)\s*/', $a['display_value'], $matches)) {
                                     $aNumeric = (float)$matches[1];
                                 }
@@ -4652,43 +4579,31 @@ public function getSpecificationFilters1(Request $request)
                                     $bNumeric = (float)$matches[1];
                                 }
                                 
-                                // If both have numeric values, sort numerically
                                 if ($aNumeric !== null && $bNumeric !== null) {
                                     return $aNumeric - $bNumeric;
                                 }
                                 
-                                // Fallback to converted_value if available
                                 if (is_numeric($a['converted_value']) && is_numeric($b['converted_value'])) {
                                     return (int)round((float)$a['converted_value']) - (int)round((float)$b['converted_value']);
                                 }
                                 
-                                // Final fallback to string comparison
                                 return strcmp($a['display_value'], $b['display_value']);
                             });
 
-                            // Add fixed filter - always show filters with values
+                            // Always add filters if they have values
                             if (count($valueCountMap) > 0) {
                                 $filters[] = [
                                     'specification_name' => $attributeName,
                                     'specification_type' => 'fixed',
                                     'specification_value' => $valueCountMap,
                                 ];
-                                \Log::info("Added fixed filter for: $attributeName with " . count($valueCountMap) . " values");
                             }
                         }
-                    } else {
-                        \Log::warning("No attribute values found for: {$attribute->name}");
                     }
                 }
             }
-        } else {
-            \Log::warning("No attribute IDs found in subcategory");
         }
-    } else {
-        \Log::warning("No subcategory found for category: {$category->id}");
     }
-
-    \Log::info("Total filters generated: " . count($filters));
 
     // Get brands
     $selectedBrandIds = $request->brand_id ?? [];
