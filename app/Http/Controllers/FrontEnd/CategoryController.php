@@ -4577,7 +4577,9 @@ public function getSpecificationFilters1(Request $request)
                                         'unit' => $conversionResult['unit'],
                                         'symbol' => $conversionResult['symbol'],
                                         'product_count' => $productCount,
-                                        'display_with_count' => $conversionResult['display_value'] . ' (' . $productCount . ')',
+                                        'display_with_count' => ($conversionResult['symbol'] ? 
+                                        $conversionResult['converted_value'] . ' ' . $conversionResult['symbol'] : 
+                                        $conversionResult['display_value']) . ' (' . $productCount . ')',
                                         'selected' => true,
                                         'conversion_applied' => $conversionResult['conversion_applied']
                                     ];
