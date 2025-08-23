@@ -170,10 +170,10 @@ class GeoController extends Controller
 
     // Step 1: Autocomplete API
     $autocompleteResponse = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-        'input' => $input,
-        'key'   => $apiKey,
-        'components' => $components,
-    ]);
+    'input' => $input,
+    'key'   => $apiKey,
+    // no components
+]);
 
     if ($autocompleteResponse->failed()) {
         return response()->json(['error' => 'Failed to fetch autocomplete suggestions'], 500);
