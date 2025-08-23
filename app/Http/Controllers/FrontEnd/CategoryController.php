@@ -3631,20 +3631,21 @@ public function getSpecificationFilters1(Request $request)
         $originalValue = trim($originalValue);
         // Handle count-based capacity attributes with their own units
            // Handle count-based capacity attributes 
-        if (preg_match('/capacity\b/i', $attributeName) && 
-            preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
-            
-            $unitName = ucfirst($matches[1]) . 's';
-            
-            return [
-                'converted_value' => $originalValue,
-                'unit' => $unitName,
-                'symbol' => $unitName,
-                'display_value' => $originalValue, // Remove unit from here
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
-        }
+      // Handle count-based capacity attributes 
+            if (preg_match('/capacity\b/i', $attributeName) && 
+                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
+                
+                $unitName = ucfirst($matches[1]) . 's';
+                
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => $unitName,
+                    'symbol' => $unitName,
+                    'display_value' => $originalValue, // Just the number, no unit here
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
                 
         // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
