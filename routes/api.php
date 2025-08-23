@@ -756,6 +756,7 @@ Route::post('frontend/tamara/webhook', [F_TamaraController::class, 'handleWebhoo
 
 Route::get('frontend/location-info', [F_GeoController::class, 'getLocationInfo']);
 Route::get('/address-autocomplete', [F_GeoController::class, 'addressAutocomplete']);
+Route::get('/addressgcc-autocomplete', [F_GeoController::class, 'addressAutocompleteGCC']);
 
 Route::get('frontend/lookup', [F_LookupController::class, 'lookup']);
 Route::get('frontend/tax/rate', [F_TaxController::class, 'getRate']);
