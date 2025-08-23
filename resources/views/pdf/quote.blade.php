@@ -181,8 +181,8 @@ $pageNumber = 1;
 
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->quantity }}</td>
 						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->sellingType }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->unitPrice }}</td>
-						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $product->total}}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($product->unitPrice, 2, '.', ',') }}</td>
+						<td style="border-top:1px solid black; border-bottom:1px solid black;  text-align:center; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($product->total, 2, '.', ',') }}</td>
 					</tr>
 					@endforeach
 				</tbody>
@@ -274,15 +274,15 @@ $pageNumber = 1;
 								<tbody>
 									<tr>
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">INVOICE SUBTOTAL</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $subTotal }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($subTotal, 2, '.', ',') }}</td>
 									</tr>
 									<tr>
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">TOTAL W/O TAX</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-family: 'Inter', sans-serif;">{{ $shippingCharge }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($shippingCharge, 2, '.', ',') }}</td>
 									</tr>
 									<tr>
 										<td style="text-align: left; padding-top: 4px; padding-bottom: 4px; font-weight: 600; font-family: 'Inter', sans-serif;">{{ $taxName }} ({{ $taxPercent }}%)</td>
-										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $taxAmount }}</td>
+										<td style="text-align: right; padding-top: 4px; padding-bottom: 4px; font-family: 'Inter', sans-serif;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 									</tr>
 								</tbody>
 							</table>
@@ -292,7 +292,7 @@ $pageNumber = 1;
 						<table width="100%" style="color: #FF0000; background-color: #E7E7E7; padding: 8px; font-weight: 600; font-family: 'Inter', sans-serif; border-collapse: collapse; margin: 0;">
 							<tr>
 								<td style="text-align: left;">NET TOTAL INCL.{{ $taxName }}</td>
-								<td style="text-align: right;">{{ $total }}</td>
+								<td style="text-align: right;">{{ $currency }} {{ number_format($taxAmount, 2, '.', ',') }}</td>
 							</tr>
 						</table>
 
