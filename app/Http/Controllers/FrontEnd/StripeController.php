@@ -70,13 +70,13 @@ class StripeController extends Controller
             ]);
 
             return response()->json([
-                'sucess' => true,
+                'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'sucess' => false,
+                'success' => false,
                 'error' => $e->getMessage()], 500);
         }
     }
