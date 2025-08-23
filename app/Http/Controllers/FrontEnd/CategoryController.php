@@ -3633,16 +3633,17 @@ public function getSpecificationFilters1(Request $request)
            // Handle count-based capacity attributes 
       // Handle count-based capacity attributes 
            // Handle count-based capacity attributes 
+           // Handle count-based capacity attributes 
             if (preg_match('/capacity\b/i', $attributeName) && 
                 preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
                 
                 $unitName = ucfirst($matches[1]) . 's';
                 
                 return [
-                    'converted_value' => $originalValue, // Just the number
+                    'converted_value' => $originalValue, // Just "85", not "85 Steins"
                     'unit' => $unitName,
                     'symbol' => $unitName,
-                    'display_value' => $originalValue . ' ' . $unitName, // Number + unit
+                    'display_value' => $originalValue . ' ' . $unitName, // "85 Steins"
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
@@ -4543,8 +4544,8 @@ public function getSpecificationFilters1(Request $request)
                                     'value' => $correspondingItem->attribute_value,
                                     'display_value' => $displayValue,
                                     'converted_value' => $correspondingItem->converted_value,
-                                    // 'unit' => $correspondingItem->unit,
-                                    // 'symbol' => $correspondingItem->symbol,
+                                    'unit' => $correspondingItem->unit,
+                                    'symbol' => $correspondingItem->symbol,
                                     'product_count' => $productCount,
                                     'display_with_count' => $correspondingItem->display_value . ' (' . $productCount . ')',
                                     'conversion_applied' => $correspondingItem->conversion_applied
