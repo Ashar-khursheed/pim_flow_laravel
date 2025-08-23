@@ -2720,10 +2720,11 @@ public function getSpecificationFilters1(Request $request)
 //     ];
 // };
 
-    $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
-    // Skip conversion for product quantity/count attributes (these are not measurements)
+    // Check if this is a product quantity/count attribute (these are not measurements)
+    $isQuantityAttribute = false;
     $quantityPatterns = [
         '/\b\d+\s*(oz|ml|l|liter|litre)\.\s*(stein|mug|cup|plate|bowl|glass|bottle)\s+capacity\b/i',
         '/\b\d+"\s*(mug|plate|bowl)\s+capacity\b/i',
@@ -2734,15 +2735,21 @@ public function getSpecificationFilters1(Request $request)
     
     foreach ($quantityPatterns as $pattern) {
         if (preg_match($pattern, $attributeName)) {
-            return [
-                'converted_value' => $originalValue,
-                'unit' => null,
-                'symbol' => '',
-                'display_value' => $originalValue,
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
+            $isQuantityAttribute = true;
+            break;
         }
+    }
+    
+    // If it's a quantity attribute, return original value without units
+    if ($isQuantityAttribute) {
+        return [
+            'converted_value' => $originalValue,
+            'unit' => null,
+            'symbol' => '',
+            'display_value' => $originalValue,
+            'original_value' => $originalValue,
+            'conversion_applied' => false
+        ];
     }
     
     // First try the database-configured measurement priorities
@@ -2949,39 +2956,6 @@ public function getSpecificationFilters1(Request $request)
         'conversion_applied' => false
     ];
 };
-    // Helper function to round values appropriately by measurement type
-    $roundByMeasurementType = function($measurementType, $value) {
-        switch (strtolower($measurementType)) {
-            case 'length':
-            case 'mass':
-            case 'weight':
-            case 'volume':
-                // For physical measurements, round to 2 decimal places if less than 10, otherwise to integer
-                return $value < 10 ? round($value, 2) : round($value);
-            
-            case 'voltage':
-            case 'current':
-            case 'power':
-            case 'frequency':
-                // For electrical measurements, round to 1 decimal place if less than 100, otherwise to integer
-                return $value < 100 ? round($value, 1) : round($value);
-            
-            case 'temperature':
-                // Temperature usually to 1 decimal place
-                return round($value, 1);
-            
-            case 'pressure':
-            case 'speed':
-            case 'velocity':
-                // These can be integers for most cases
-                return round($value);
-            
-            default:
-                // Default to 2 decimal places
-                return round($value, 2);
-        }
-    };
-
     // Get products from current category
     $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
     
