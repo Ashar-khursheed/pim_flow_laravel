@@ -4419,9 +4419,13 @@ public function getSpecificationFilters1(Request $request)
                             }
                             return $cleanedVal;
                         });
+                        // BUT NOT for count-based capacity attributes
+                        $isCountBasedCapacity = (preg_match('/capacity\b/i', $attributeName) && 
+                        preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName));
 
                         // Generate range filters for numeric values with more than 2 unique values
-                        if ($numericValues && $cleanedValues->count() > 2) {
+                        
+                        if ($numericValues && $cleanedValues->count() > 2 && !$isCountBasedCapacity) {
                             $sorted = $cleanedValues->filter(function($value) {
                                 return is_numeric($value);
                             })->map(function($val) {
