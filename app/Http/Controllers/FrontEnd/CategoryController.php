@@ -3642,7 +3642,7 @@ public function getSpecificationFilters1(Request $request)
                     'converted_value' => $originalValue, // Just the number
                     'unit' => $unitName,
                     'symbol' => $unitName,
-                    'display_value' => $originalValue ,// Number + unit
+                    'display_value' => $originalValue . ' ' . $unitName, // Number + unit
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
@@ -4543,8 +4543,8 @@ public function getSpecificationFilters1(Request $request)
                                     'value' => $correspondingItem->attribute_value,
                                     'display_value' => $displayValue,
                                     'converted_value' => $correspondingItem->converted_value,
-                                    'unit' => $correspondingItem->unit,
-                                    'symbol' => $correspondingItem->symbol,
+                                    // 'unit' => $correspondingItem->unit,
+                                    // 'symbol' => $correspondingItem->symbol,
                                     'product_count' => $productCount,
                                     'display_with_count' => $correspondingItem->display_value . ' (' . $productCount . ')',
                                     'conversion_applied' => $correspondingItem->conversion_applied
