@@ -3630,20 +3630,6 @@ public function getSpecificationFilters1(Request $request)
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
         $originalValue = trim($originalValue);
         
-        // Handle count-based capacity attributes with their own units
-        if (preg_match('/\b\d+\s*(oz|ml|l|liter|litre|")\.\s*(\w+)\s+capacity\b/i', $attributeName, $matches)) {
-            $unitName = $matches[2]; // Extract "Stein", "Mug", etc.
-            
-            return [
-                'converted_value' => $originalValue,
-                'unit' => $unitName . 's', // Make it plural
-                'symbol' => ucfirst($unitName) . 's', // "Steins", "Mugs"
-                'display_value' => $originalValue . ' ' . ucfirst($unitName) . 's',
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
-        }
-        
         // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
         $matchedPriority = null;
@@ -3670,13 +3656,14 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'mass') !== false
                     );
                     break;
-                case 'volume':
-                    // Only treat as volume if it's a generic "Capacity" or has volume-related keywords
+               case 'volume':
+                    // More specific volume detection
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
-                        ($attributeName === 'Capacity') ||
-                        (stripos($attributeName, 'capacity') !== false && 
-                         preg_match('/\b(tank|container|storage|liquid|fluid|reservoir)\b/i', $attributeName))
+                        ($attributeName === 'Capacity') 
+                        //|| // Generic capacity IS a volume measurement
+                        // (stripos($attributeName, 'capacity') !== false && 
+                        // !preg_match('/\b\d+\s*(oz|ml|l|liter|litre|")\.\s*\w+\s+capacity\b/i', $attributeName))
                     );
                     break;
                 case 'voltage':
@@ -3756,22 +3743,15 @@ public function getSpecificationFilters1(Request $request)
         
         // For volume measurement type, check if values are counts vs actual volumes
         if (strtolower($matchedMeasurementType) === 'volume') {
-            $isPureNumber = preg_match('/^(\d+(?:\.\d+)?)$/', $originalValue);
-            
-            // If it's a pure number and small, it's likely a count
-            if ($isPureNumber) {
-                $numericValue = (float)$originalValue;
-                if ($numericValue <= 20 && floor($numericValue) == $numericValue) {
-                    // Small whole numbers are likely counts, don't convert
-                    return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
-                        'original_value' => $originalValue,
-                        'conversion_applied' => false
-                    ];
-                }
+             if (preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\s+capacity\b/i', $attributeName)) {
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => null,
+                    'symbol' => '',
+                    'display_value' => $originalValue,
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                 ];
             }
         }
         
