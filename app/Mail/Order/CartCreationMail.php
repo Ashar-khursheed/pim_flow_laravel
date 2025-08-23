@@ -34,7 +34,7 @@ class CartCreationMail extends Mailable
 		$name = $customerCart->customer->name ?? 'User';
 		$username = $customerCart->customer->email;
 		$password = $this->randomPassword;
-		$paymentUrl = url("/my-order");
+		$paymentUrl = url("/login-source");
 
 		$referenceNumber = $customerCart->reference_number;
 		$customerCartDate = Carbon::parse($customerCart->created_at)->format('D, M d, Y');
