@@ -3640,9 +3640,9 @@ public function getSpecificationFilters1(Request $request)
                 
                 return [
                     'converted_value' => $originalValue, // Just the number
-                    // 'unit' => $unitName,
-                    // 'symbol' => $unitName,
-                    'display_value' => $originalValue . ' ' . $unitName, // Number + unit
+                    'unit' => $unitName,
+                    'symbol' => $unitName,
+                    'display_value' => $originalValue ,// Number + unit
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
