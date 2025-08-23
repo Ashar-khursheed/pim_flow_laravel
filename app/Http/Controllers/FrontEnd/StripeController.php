@@ -72,7 +72,7 @@ class StripeController extends Controller
             return response()->json([
                  'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
-                'payment_mode' => 'Cradit Card',
+                'payment_mode' => 'Credit Card',
                 'status' => 'Completed',
                 'payment_method' => 'Stripe'
             ]);
