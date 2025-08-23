@@ -3629,18 +3629,21 @@ public function getSpecificationFilters1(Request $request)
 
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
         $originalValue = trim($originalValue);
-        if (preg_match('/\b\d+\s*(oz|ml|l|liter|litre|")\.\s*(\w+)\s+capacity\b/i', $attributeName, $matches)) {
-        $unitName = $matches[2]; // Extract "Stein", "Mug", etc.
-        
-        return [
-            'converted_value' => $originalValue,
-            'unit' => $unitName . 's', // Make it plural
-            'symbol' => ucfirst($unitName) . 's', // "Steins", "Mugs"
-            'display_value' => $originalValue . ' ' . ucfirst($unitName) . 's',
-            'original_value' => $originalValue,
-            'conversion_applied' => false
-        ];
-    }
+        // Handle count-based capacity attributes with their own units
+            if (preg_match('/\b(\d+)\s*(oz|ml|l|liter|litre|"|\'\')\.\s*(\w+)\s+capacity\b/i', $attributeName, $matches) ||
+                preg_match('/\b(\d+)("|\'\')\s+(\w+)\s+capacity\b/i', $attributeName, $matches)) {
+                
+                $unitName = end($matches); // Get the last capture group (Stein, Mug, etc.)
+                
+                return [
+                    'converted_value' => $originalValue,
+                    'unit' => ucfirst($unitName) . 's',
+                    'symbol' => ucfirst($unitName) . 's', 
+                    'display_value' => $originalValue . ' ' . ucfirst($unitName) . 's',
+                    'original_value' => $originalValue,
+                    'conversion_applied' => false
+                ];
+            }
         
         // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
