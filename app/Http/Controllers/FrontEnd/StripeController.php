@@ -73,7 +73,7 @@ class StripeController extends Controller
                  'success' => true,
                 'clientSecret' => $paymentIntent->client_secret,
                 'payment_mode' => 'Credit Card',
-                'status' => 'Completed',
+                'status' => 'completed',
                 'payment_method' => 'Stripe'
             ]);
 
