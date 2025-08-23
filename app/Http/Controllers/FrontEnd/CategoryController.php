@@ -3630,21 +3630,22 @@ public function getSpecificationFilters1(Request $request)
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
         $originalValue = trim($originalValue);
         // Handle count-based capacity attributes with their own units
-            if (preg_match('/\b(\d+)\s*(oz|ml|l|liter|litre|"|\'\')\.\s*(\w+)\s+capacity\b/i', $attributeName, $matches) ||
-                preg_match('/\b(\d+)("|\'\')\s+(\w+)\s+capacity\b/i', $attributeName, $matches)) {
+           // Handle count-based capacity attributes 
+        if (preg_match('/capacity\b/i', $attributeName) && 
+            preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\b/i', $attributeName, $matches)) {
+            
+            $unitName = ucfirst($matches[1]) . 's';
+            
+            return [
+                'converted_value' => $originalValue,
+                'unit' => $unitName,
+                'symbol' => $unitName,
+                'display_value' => $originalValue, // Remove unit from here
+                'original_value' => $originalValue,
+                'conversion_applied' => false
+            ];
+        }
                 
-                $unitName = end($matches); // Get the last capture group (Stein, Mug, etc.)
-                
-                return [
-                    'converted_value' => $originalValue,
-                    'unit' => ucfirst($unitName) . 's',
-                    'symbol' => ucfirst($unitName) . 's', 
-                    'display_value' => $originalValue . ' ' . ucfirst($unitName) . 's',
-                    'original_value' => $originalValue,
-                    'conversion_applied' => false
-                ];
-            }
-        
         // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
         $matchedPriority = null;
