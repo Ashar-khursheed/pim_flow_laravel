@@ -151,7 +151,7 @@ class GeoController extends Controller
         ]);
     }
 
-  public function addressAutocompleteGCC(Request $request)
+public function addressAutocompleteGCC(Request $request)
 {
     $request->validate([
         'input' => 'required|string',
@@ -163,65 +163,39 @@ class GeoController extends Controller
     // GCC country codes
     $gccCountries = ['sa', 'ae', 'qa', 'kw', 'bh', 'om'];
 
-    // Build components string for multiple countries
-    $components = collect($gccCountries)
-        ->map(fn($code) => "country:$code")
-        ->implode('|');
+    $allPredictions = [];
 
-    // Step 1: Autocomplete API
-    $autocompleteResponse = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-    'input' => $input,
-    'key'   => $apiKey,
-    // no components
-]);
+    foreach ($gccCountries as $country) {
+        $response = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            'input'      => $input,
+            'key'        => $apiKey,
+            'components' => "country:$country",
+        ]);
 
-    if ($autocompleteResponse->failed()) {
-        return response()->json(['error' => 'Failed to fetch autocomplete suggestions'], 500);
+        if ($response->successful()) {
+            $data = $response->json();
+            if (!empty($data['predictions'])) {
+                foreach ($data['predictions'] as $prediction) {
+                    // Avoid duplicates
+                    if (!in_array($prediction['place_id'], array_column($allPredictions, 'place_id'))) {
+                        $allPredictions[] = $prediction;
+                    }
+                }
+            }
+        }
     }
 
-    $autocompleteData = $autocompleteResponse->json();
-
-    if (empty($autocompleteData['predictions'])) {
+    // If no predictions found in any GCC country
+    if (empty($allPredictions)) {
         return response()->json(['predictions' => []]);
     }
 
-    $firstPrediction = $autocompleteData['predictions'][0];
-    $placeId = $firstPrediction['place_id'];
-
-    // Step 2: Place Details API for first suggestion
-    $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
-        'place_id' => $placeId,
-        'key'      => $apiKey,
-        'fields'   => 'address_component,formatted_address',
-    ]);
-
-    if ($placeResponse->failed()) {
-        return response()->json([
-            'predictions' => $autocompleteData['predictions'],
-            'details' => null,
-            'error' => 'Failed to fetch place details'
-        ], 500);
-    }
-
-    $placeData = $placeResponse->json()['result'] ?? [];
-    $componentsData = $placeData['address_components'] ?? [];
-
-    // Handle GCC region/state fallback logic
-    $details = [
-        'address' => $placeData['formatted_address'] ?? null,
-        'zip'     => $this->getComponent($componentsData, 'postal_code'),
-        'city'    => $this->getComponent($componentsData, 'locality')
-                     ?? $this->getComponent($componentsData, 'administrative_area_level_2'),
-        'state'   => $this->getComponent($componentsData, 'administrative_area_level_1')
-                     ?? $this->getComponent($componentsData, 'administrative_area_level_2'),
-        'country' => $this->getComponent($componentsData, 'country'),
-    ];
-
+    // Return predictions (without fetching details for each to save API calls)
     return response()->json([
-        'predictions' => $autocompleteData['predictions'],
-        'details'     => $details,
+        'predictions' => $allPredictions,
     ]);
 }
+
   
 
 
