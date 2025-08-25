@@ -1131,11 +1131,38 @@ public function getCategories($id)
         }
 
         // 🔎 Filter by category
-        $filteredProducts = is_null($categoryId)
-            ? $brand->products
-            : $brand->products->filter(function ($product) use ($categoryId) {
-                return $product->categories->contains('id', $categoryId);
-            })->values();
+        // $filteredProducts = is_null($categoryId)
+        //     ? $brand->products
+        //     : $brand->products->filter(function ($product) use ($categoryId) {
+        //         return $product->categories->contains('id', $categoryId);
+        //     })->values();
+        // 🔎 Filter by category (works with both ID or URL)
+if (!is_null($categoryId)) {
+    if (!is_numeric($categoryId)) {
+        // If slug, resolve to category ID
+        $seoCategory = DB::table('seo_management')
+            ->where('url', $categoryId)
+            ->where('relational_type', 'Category')
+            ->first();
+
+        if (!$seoCategory) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Category not found'
+            ], 404);
+        }
+
+        $categoryId = $seoCategory->relational_id;
+    }
+
+    // Now always filter by ID (whether original or resolved)
+    $filteredProducts = $brand->products->filter(function ($product) use ($categoryId) {
+        return $product->categories->contains('id', $categoryId);
+    })->values();
+} else {
+    $filteredProducts = $brand->products;
+}
+
 
         // 🔍 Filter by search term
         if (!empty($searchTerm)) {
