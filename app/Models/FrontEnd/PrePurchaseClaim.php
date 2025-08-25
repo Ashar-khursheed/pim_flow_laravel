@@ -11,7 +11,6 @@ class PrePurchaseClaim extends Model
 		'customer_id',
 		'customer_address_id',
 		'product_id',
-		'product_price',
 		'product_quantity',
 		'competitor_product_url',
 		'competitor_product_price',

@@ -17586,7 +17586,6 @@
                                     "customer_name",
                                     "customer_email",
                                     "product_url",
-                                    "product_price",
                                     "product_quantity",
                                     "competitor_product_url",
                                     "competitor_product_price",
@@ -17641,11 +17640,6 @@
                                     "product_url": {
                                         "type": "string",
                                         "example": "https://www.thehorecastore.com/products/abc"
-                                    },
-                                    "product_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 200
                                     },
                                     "product_quantity": {
                                         "type": "integer",

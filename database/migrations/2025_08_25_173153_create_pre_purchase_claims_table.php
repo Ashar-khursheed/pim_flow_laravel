@@ -16,7 +16,6 @@ return new class extends Migration
 			$table->integer('customer_id');
 			$table->integer('customer_address_id')->nullable();
 			$table->string('product_id');
-			$table->decimal('product_price', 10, 2);
 			$table->string('product_quantity');
 			$table->text('competitor_product_url');
 			$table->decimal('competitor_product_price', 10, 2);

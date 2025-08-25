@@ -31,7 +31,7 @@ class PrePurchaseClaimController extends BaseController
 	 *         @OA\MediaType(
 	 *             mediaType="multipart/form-data",
 	 *             @OA\Schema(
-	 *                 required={"customer_name", "customer_email", "product_url", "product_price", "product_quantity", "competitor_product_url", "competitor_product_price", "customer_address", "customer_country", "customer_city", "is_confirm", "is_agree"},
+	 *                 required={"customer_name", "customer_email", "product_url", "product_quantity", "competitor_product_url", "competitor_product_price", "customer_address", "customer_country", "customer_city", "is_confirm", "is_agree"},
 	 *
 	 *                 @OA\Property(property="customer_name", type="string", example="John Doe"),
 	 *                 @OA\Property(property="customer_business_name", type="string", example="Doe Enterprises"),
@@ -44,7 +44,6 @@ class PrePurchaseClaimController extends BaseController
 	 *                 @OA\Property(property="customer_city", type="string", example="Dubai"),
 	 *                 @OA\Property(property="customer_zipcode", type="string", example="560001"),
 	 *                 @OA\Property(property="product_url", type="string", example="https://www.thehorecastore.com/products/abc"),
-	 *                 @OA\Property(property="product_price", type="number", format="float", example=200.00),
 	 *                 @OA\Property(property="product_quantity", type="integer", example=2),
 	 *                 @OA\Property(property="competitor_product_url", type="string", example="https://competitor.com/product/xyz"),
 	 *                 @OA\Property(property="competitor_product_price", type="number", format="float", example=180.00),
@@ -79,7 +78,6 @@ class PrePurchaseClaimController extends BaseController
 				},
 			],
 			'product_quantity' => 'required|integer|min:1',
-			'product_price' => 'required|numeric|min:0',
 			'competitor_product_url' => 'required|url',
 			'competitor_product_price' => 'required|numeric|min:0',
 			'competitor_product_shipping_charge' => 'nullable|numeric|min:0',
@@ -175,7 +173,6 @@ class PrePurchaseClaimController extends BaseController
 			'customer_id' => $customer->id,
 			'customer_address_id' => $customerAddress->id ?? null,
 			'product_id' => $productID,
-			'product_price' => $request->product_price,
 			'product_quantity' => $request->product_quantity,
 			'competitor_product_url' => $request->competitor_product_url,
 			'competitor_product_price' => $request->competitor_product_price,
