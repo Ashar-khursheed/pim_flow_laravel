@@ -25,7 +25,7 @@ return new class extends Migration
             $table->unsignedBigInteger('customer_id')->references('id')->on('users')->onDelete('cascade');
             $table->unsignedBigInteger('order_id')->references('id')->on('orders')->onDelete('set null');
             
-            $table->index(['coupon_id', 'customer_id']);
+         
             $table->index(['used_at']);
         });
     }

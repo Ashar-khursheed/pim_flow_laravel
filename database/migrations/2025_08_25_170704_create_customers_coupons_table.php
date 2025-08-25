@@ -20,8 +20,7 @@ return new class extends Migration
             
             $table->unsignedBigInteger('coupon_id')->references('id')->on('coupons')->onDelete('cascade');
             $table->unsignedBigInteger('customer_id')->references('id')->on('users')->onDelete('cascade');
-            
-            $table->unique(['coupon_id', 'customer_id']);
+       
         });
     }
 
