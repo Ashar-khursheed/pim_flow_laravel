@@ -3906,7 +3906,7 @@ public function getSpecificationFilters1(Request $request)
 //         ];
 //     }
 // };
-$convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
+   $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
     $originalValue = trim($originalValue);
     
     // Handle count-based capacity attributes with their own units
