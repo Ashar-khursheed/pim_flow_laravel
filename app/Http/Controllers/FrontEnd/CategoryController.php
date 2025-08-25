@@ -4760,13 +4760,13 @@ private function getAllCategoryProductIds($categoryId)
         ->toArray();
 
     // Get products from child categories
-    // Get all products from child categories
     $childProductIds = [];
-    if (!empty($allChildCategoryIds)) {
-        $childProductIds = DB::table('ec_products')
-            ->whereIn('category_id', $allChildCategoryIds)
-            ->where('status', 'published')
-            ->pluck('id')
+    if (!empty($childCategoryIds)) {
+        $childProductIds = DB::table('ec_products as p')
+            ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
+            ->whereIn('pc.category_id', $childCategoryIds)
+            ->where('p.status', 'published')
+            ->pluck('p.id')
             ->toArray();
     }
 
