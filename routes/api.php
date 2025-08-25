@@ -257,13 +257,20 @@ Route::get('/analytics/page-performance', [AnalyticsController::class, 'pagePerf
 /* Protect routes with authentication */
 Route::middleware(['auth:back-end-api', 'user.guard'])->group(function () {
 
-	Route::prefix('/frontend/coupons')->group(function () {
-    Route::get('/', [F_CouponController::class, 'index']);   // List coupons
-    Route::post('/', [F_CouponController::class, 'store']);  // Create coupon
-    Route::get('/{id}', [F_CouponController::class, 'show']); // Show single coupon
-    Route::put('/{id}', [F_CouponController::class, 'update']); // Update coupon
-    Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
-});
+// 	Route::prefix('/frontend/coupons')->group(function () {
+//     Route::get('/', [F_CouponController::class, 'index']);   // List coupons
+//     Route::post('/', [F_CouponController::class, 'store']);  // Create coupon
+//     Route::get('/{id}', [F_CouponController::class, 'show']); // Show single coupon
+//     Route::put('/{id}', [F_CouponController::class, 'update']); // Update coupon
+//     Route::delete('/{id}', [F_CouponController::class, 'destroy']); // Delete coupon
+// });
+
+    Route::apiResource('/coupons', F_CouponController::class);
+    Route::post('/coupons/{coupon}/approve', [F_CouponController::class, 'approve']);
+    Route::post('/coupons/{coupon}/reject', [F_CouponController::class, 'reject']);
+    Route::post('/coupons/validate', [F_CouponController::class, 'validate']);
+    Route::post('/coupons/apply', [F_CouponController::class, 'apply']);
+    Route::get('/coupons/{coupon}/usage-report', [F_CouponController::class, 'usageReport']);
 
 	Route::post('/webhook/square', [OrderController::class, 'handleSquareWebhook']);
 	Route::get('/payment/{orderId}', [OrderController::class, 'markOrderPaid']);
