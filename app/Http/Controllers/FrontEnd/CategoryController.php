@@ -3922,7 +3922,7 @@ public function getSpecificationFilters1(Request $request)
             'conversion_applied' => false
         ];
     }
-};
+    };
 
     // Helper function to round values appropriately by measurement type
     $roundByMeasurementType = function($measurementType, $value) {
@@ -3949,23 +3949,40 @@ public function getSpecificationFilters1(Request $request)
     };
 
     // Get products from current category
-    $currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
+   // Get products from current category
+$currentCategoryProducts = $category->products()->where('status', 'published')->pluck('id')->all();
+
+// Recursive function to get all descendant category IDs
+$getAllDescendantCategoryIds = function($parentCategoryId) use (&$getAllDescendantCategoryIds) {
+    $childCategories = Category::where('parent_id', $parentCategoryId)->get();
+    $allDescendantIds = [];
     
-    // Get all child categories
-    $childCategories = Category::where('parent_id', $category->id)->get();
-    $childCategoryIds = $childCategories->pluck('id')->toArray();
-
-    // Get all products from child categories
-    $childProductIds = [];
-    if (!empty($childCategoryIds)) {
-        foreach ($childCategories as $childCategory) {
-            $childProductIds = array_merge($childProductIds, $childCategory->products()->where('status', 'published')->pluck('id')->all());
-        }
+    foreach ($childCategories as $childCategory) {
+        $allDescendantIds[] = $childCategory->id;
+        // Recursively get children of this child category
+        $grandChildrenIds = $getAllDescendantCategoryIds($childCategory->id);
+        $allDescendantIds = array_merge($allDescendantIds, $grandChildrenIds);
     }
+    
+    return $allDescendantIds;
+};
 
-    // Combine products from current category and all child categories
-    $allCategoryProductIds = array_unique(array_merge($currentCategoryProducts, $childProductIds));
+// Get all descendant category IDs (children, grandchildren, great-grandchildren, etc.)
+$allChildCategoryIds = $getAllDescendantCategoryIds($category->id);
 
+// Get all products from all descendant categories
+$childProductIds = [];
+if (!empty($allChildCategoryIds)) {
+    $childProductIds = DB::table('ec_products')
+        ->join('ec_product_categories', 'ec_products.id', '=', 'ec_product_categories.product_id')
+        ->whereIn('ec_product_categories.category_id', $allChildCategoryIds)
+        ->where('ec_products.status', 'published')
+        ->pluck('ec_products.id')
+        ->toArray();
+}
+
+// Combine products from current category and all descendant categories
+$allCategoryProductIds = array_unique(array_merge($currentCategoryProducts, $childProductIds));
     if (empty($allCategoryProductIds)) {
         return response()->json([
             'success' => true,
