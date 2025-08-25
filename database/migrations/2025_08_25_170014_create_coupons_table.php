@@ -45,9 +45,7 @@ return new class extends Migration
             
             $table->timestamps();
             
-            // Foreign keys
-            $table->unsignedBigInteger('created_by')->references('id')->on('users')->onDelete('cascade');
-            $table->unsignedBigInteger('approved_by')->references('id')->on('users')->onDelete('set null');
+      
             
             // Indexes
             $table->index(['code', 'is_active']);
