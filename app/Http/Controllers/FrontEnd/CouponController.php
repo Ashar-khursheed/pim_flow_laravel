@@ -261,7 +261,7 @@ public function index(Request $request): JsonResponse
             'expire_date' => 'sometimes|required|date|after:start_date',
             'is_active' => 'boolean',
             'customer_ids' => 'nullable|array',
-            'customer_ids.*' => 'exists:users,id',
+            'customer_ids.*' => 'exists:customers,id',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
             'product_ids' => 'nullable|array',
@@ -463,7 +463,7 @@ public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'code' => 'required|string',
-            'customer_id' => 'required|exists:users,id',
+            'customer_id' => 'required|exists:customers,id',
             'order_value' => 'required|numeric|min:0',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'exists:categories,id',
@@ -619,7 +619,7 @@ public function index(Request $request): JsonResponse
     {
         $validated = $request->validate([
             'code' => 'required|string',
-            'customer_id' => 'required|exists:users,id',
+            'customer_id' => 'required|exists:customers,id',
             'order_value' => 'required|numeric|min:0',
             'order_id' => 'nullable|exists:orders,id',
         ]);
