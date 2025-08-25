@@ -150,8 +150,7 @@ class GeoController extends Controller
             'details' => $details,
         ]);
     }
-
-  public function addressAutocompleteGCC(Request $request)
+public function addressAutocompleteGCC(Request $request)
 {
     $request->validate([
         'input' => 'required|string',
@@ -161,67 +160,83 @@ class GeoController extends Controller
     $apiKey = config('services.google_maps.key');
 
     // GCC country codes
-    $gccCountries = ['sa', 'ae', 'qa', 'kw', 'bh', 'om'];
+    $gccCountries = [ 'ae'];
 
-    // Build components string for multiple countries
-    $components = collect($gccCountries)
-        ->map(fn($code) => "country:$code")
-        ->implode('|');
+    $allPredictions = [];
 
-    // Step 1: Autocomplete API
-    $autocompleteResponse = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
-    'input' => $input,
-    'key'   => $apiKey,
-    // no components
-]);
+    // Collect predictions for all GCC countries
+    foreach ($gccCountries as $country) {
+        $response = Http::get('https://maps.googleapis.com/maps/api/place/autocomplete/json', [
+            'input'      => $input,
+            'key'        => $apiKey,
+            'components' => "country:$country",
+        ]);
 
-    if ($autocompleteResponse->failed()) {
-        return response()->json(['error' => 'Failed to fetch autocomplete suggestions'], 500);
+        if ($response->successful()) {
+            $data = $response->json();
+            if (!empty($data['predictions'])) {
+                foreach ($data['predictions'] as $prediction) {
+                    if (!in_array($prediction['place_id'], array_column($allPredictions, 'place_id'))) {
+                        $allPredictions[] = $prediction;
+                    }
+                }
+            }
+        }
     }
 
-    $autocompleteData = $autocompleteResponse->json();
-
-    if (empty($autocompleteData['predictions'])) {
-        return response()->json(['predictions' => []]);
+    if (empty($allPredictions)) {
+        return response()->json(['predictions' => [], 'details' => null]);
     }
 
-    $firstPrediction = $autocompleteData['predictions'][0];
+    // ✅ Limit to first 5 predictions
+    $limitedPredictions = array_slice($allPredictions, 0, 5);
+
+    // Get Place Details for the first prediction
+    $firstPrediction = $limitedPredictions[0];
     $placeId = $firstPrediction['place_id'];
 
-    // Step 2: Place Details API for first suggestion
     $placeResponse = Http::get('https://maps.googleapis.com/maps/api/place/details/json', [
         'place_id' => $placeId,
         'key'      => $apiKey,
         'fields'   => 'address_component,formatted_address',
     ]);
 
-    if ($placeResponse->failed()) {
-        return response()->json([
-            'predictions' => $autocompleteData['predictions'],
-            'details' => null,
-            'error' => 'Failed to fetch place details'
-        ], 500);
+    $details = null;
+    if ($placeResponse->successful()) {
+        $placeData = $placeResponse->json()['result'] ?? [];
+        $components = $placeData['address_components'] ?? [];
+
+        $details = [
+            'address' => $placeData['formatted_address'] ?? null,
+            'zip'     => $this->getComponent1($components, 'postal_code'),
+            'city'    => $this->getComponent1($components, 'locality')
+                           ?? $this->getComponent1($components, 'administrative_area_level_2'),
+            'state'   => $this->getComponent1($components, 'administrative_area_level_1')
+                           ?? $this->getComponent1($components, 'administrative_area_level_2'),
+            'country' => $this->getComponent1($components, 'country'),
+        ];
     }
 
-    $placeData = $placeResponse->json()['result'] ?? [];
-    $componentsData = $placeData['address_components'] ?? [];
-
-    // Handle GCC region/state fallback logic
-    $details = [
-        'address' => $placeData['formatted_address'] ?? null,
-        'zip'     => $this->getComponent($componentsData, 'postal_code'),
-        'city'    => $this->getComponent($componentsData, 'locality')
-                     ?? $this->getComponent($componentsData, 'administrative_area_level_2'),
-        'state'   => $this->getComponent($componentsData, 'administrative_area_level_1')
-                     ?? $this->getComponent($componentsData, 'administrative_area_level_2'),
-        'country' => $this->getComponent($componentsData, 'country'),
-    ];
-
     return response()->json([
-        'predictions' => $autocompleteData['predictions'],
+        'predictions' => $limitedPredictions,
         'details'     => $details,
     ]);
 }
+
+/**
+ * Helper to extract components
+ */
+private function getComponent1(array $components, string $type): ?string
+{
+    foreach ($components as $component) {
+        if (in_array($type, $component['types'])) {
+            return $component['long_name'];
+        }
+    }
+    return null;
+}
+
+
   
 
 

@@ -59,6 +59,7 @@ class QuoteController extends BaseController
 				'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 				'quoteProducts.product.brand:id,name',
 				'quoteProducts.product.currency:id,symbol',
+				'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 				'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 				'quoteEmails',
 			]);
@@ -118,7 +119,8 @@ class QuoteController extends BaseController
 						$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 						$product->brand_name = $product->brand->name ?? null;
 						$product->currency_symbol = $product->currency->symbol ?? null;
-						unset($product->brand, $product->currency);
+						$product->url = $product->seoProductUrl->url ?? null;
+						unset($product->brand, $product->currency, $product->seoProductUrl);
 					}
 					$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 					$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
@@ -394,6 +396,7 @@ class QuoteController extends BaseController
 			'quoteProducts.product:id,name,images,sku,brand_id,currency_id,barcode',
 			'quoteProducts.product.brand:id,name',
 			'quoteProducts.product.currency:id,symbol',
+			'quoteProducts.product.seoProductUrl:id,relational_id,relational_type,url',
 			'quoteProducts.product.sellingUnitAttribute:id,product_id,attribute_value',
 			'quoteEmails',
 		]);
@@ -405,7 +408,8 @@ class QuoteController extends BaseController
 				$product->images = is_array($product->images) ? $product->images : (is_array($decoded = json_decode($product->images, true)) ? $decoded : null);
 				$product->brand_name = $product->brand->name ?? null;
 				$product->currency_symbol = $product->currency->symbol ?? null;
-				unset($product->brand, $product->currency);
+				$product->url = $product->seoProductUrl->url ?? null;
+				unset($product->brand, $product->currency, $product->seoProductUrl);
 			}
 			$quoteProduct->product_supplier = optional($quoteProduct->vendor_product_supplier)->only(['price', 'sale_price', 'delivery_days', 'return_policy']);
 			$quoteProduct->expectedShippingDate = $quoteProduct->product_supplier
