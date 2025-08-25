@@ -17,9 +17,7 @@ return new class extends Migration
             $table->unsignedBigInteger('customer_id');
             $table->integer('usage_count')->default(0);
             $table->timestamps();
-            
-            $table->unsignedBigInteger('coupon_id')->references('id')->on('coupons')->onDelete('cascade');
-            $table->unsignedBigInteger('customer_id')->references('id')->on('users')->onDelete('cascade');
+       
        
         });
     }
