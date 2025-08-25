@@ -4745,7 +4745,7 @@ public function getSpecificationFilters1(Request $request)
 
 private function getAllCategoryProductIds($categoryId)
 {
-    // Get products from current category
+    // Get products from current category using the relationship
     $currentCategoryProducts = DB::table('ec_products as p')
         ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
         ->where('pc.category_id', $categoryId)
@@ -4753,27 +4753,39 @@ private function getAllCategoryProductIds($categoryId)
         ->pluck('p.id')
         ->toArray();
     
-    // Get all child categories
-    $childCategoryIds = DB::table('ec_categories')
-        ->where('parent_id', $categoryId)
-        ->pluck('id')
-        ->toArray();
+    // Get all child categories recursively
+    $childCategoryIds = $this->getAllChildCategoryIds($categoryId);
 
-    // Get products from child categories
-    // Get all products from child categories
+    // Get products from child categories using the same relationship pattern
     $childProductIds = [];
-    if (!empty($allChildCategoryIds)) {
-        $childProductIds = DB::table('ec_products')
-            ->whereIn('category_id', $allChildCategoryIds)
-            ->where('status', 'published')
-            ->pluck('id')
+    if (!empty($childCategoryIds)) {
+        $childProductIds = DB::table('ec_products as p')
+            ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
+            ->whereIn('pc.category_id', $childCategoryIds)
+            ->where('p.status', 'published')
+            ->pluck('p.id')
             ->toArray();
     }
 
     // Combine and return unique product IDs
     return array_unique(array_merge($currentCategoryProducts, $childProductIds));
 }
-
+private function getAllChildCategoryIds($categoryId)
+{
+    $childIds = [];
+    $directChildren = DB::table('ec_categories')
+        ->where('parent_id', $categoryId)
+        ->pluck('id')
+        ->toArray();
+    
+    foreach ($directChildren as $childId) {
+        $childIds[] = $childId;
+        // Recursively get grandchildren
+        $childIds = array_merge($childIds, $this->getAllChildCategoryIds($childId));
+    }
+    
+    return array_unique($childIds);
+}
 private function parseFilters($filters)
 {
     $groupedFilters = [];
