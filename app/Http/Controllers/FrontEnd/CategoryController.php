@@ -4185,7 +4185,7 @@ private function getAllChildCategoryIds($categoryId)
     $childCategoryIds = [];
     
     // Get direct children
-    $directChildren = DB::table('ec_categories')
+    $directChildren = DB::table('categories')
         ->where('parent_id', $categoryId)
         ->pluck('id')
         ->toArray();
