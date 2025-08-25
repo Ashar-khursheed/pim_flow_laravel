@@ -1850,10 +1850,10 @@ class ProductController extends BaseController
 						// It's an uploaded file, upload to S3
 						$file = $request->file("video_path.$key");
 									// ✅ Check file size (max 1 MB = 1024 KB = 1048576 bytes)
-						if ($file->getSize() > 16777216) { // 15 MB = 15 * 1024 * 1024
+						if ($file->getSize() > 20971520) { // 20 MB = 20 * 1024 * 1024
 							return response()->json([
 								'success' => false,
-								'message' => 'Video size must not exceed 15 MB.'
+								'message' => 'Video size must not exceed 20 MB.'
 							], 422);
 						}
 

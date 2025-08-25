@@ -3627,41 +3627,42 @@ public function getSpecificationFilters1(Request $request)
         ->get()
         ->keyBy('measurement_type');
 
+
     $convertAttributeValue = function($attributeName, $originalValue) use ($categoryMeasurementPriorities) {
         $originalValue = trim($originalValue);
+        
         // Handle count-based capacity attributes with their own units
-           // Handle count-based capacity attributes 
-      // Handle count-based capacity attributes 
-           // Handle count-based capacity attributes 
-           // Handle count-based capacity attributes 
-         // Handle count-based capacity attributes 
-           if (preg_match('/capacity\b/i', $attributeName) && 
-                preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
-                
-                // If the original value already has the unit, don't add it again
-                $unitName = ucfirst($matches[1]) . 's';
-                if (stripos($originalValue, $unitName) !== false) {
-                    // Value already has unit, return as-is
-                    return [
-                        'converted_value' => $originalValue,
-                        'unit' => null,
-                        'symbol' => '',
-                        'display_value' => $originalValue,
-                        'original_value' => $originalValue,
-                        'conversion_applied' => false
-                    ];
-                }
-                
-                // Value doesn't have unit, add it
+        if (preg_match('/capacity\b/i', $attributeName) && 
+            preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel|pan)\b/i', $attributeName, $matches)) {
+            
+            $containerType = $matches[1];
+            $unitName = ucfirst($containerType) . 's';
+            
+            // Check if the original value already contains the unit name or container type
+            if (stripos($originalValue, $unitName) !== false || 
+                stripos($originalValue, $containerType) !== false ||
+                preg_match('/\b' . preg_quote($containerType, '/') . 's?\b/i', $originalValue)) {
+                // Value already has unit, return as-is
                 return [
                     'converted_value' => $originalValue,
-                    'unit' => $unitName,
-                    'symbol' => $unitName,
-                    'display_value' => $originalValue . ' ' . $unitName,
+                    'unit' => null,
+                    'symbol' => '',
+                    'display_value' => $originalValue,
                     'original_value' => $originalValue,
                     'conversion_applied' => false
                 ];
             }
+            
+            // Value doesn't have unit, add it
+            return [
+                'converted_value' => $originalValue,
+                'unit' => $unitName,
+                'symbol' => $unitName,
+                'display_value' => $originalValue . ' ' . $unitName,
+                'original_value' => $originalValue,
+                'conversion_applied' => false
+            ];
+        }
                 
         // Check if this attribute matches any measurement type in the database
         $matchedMeasurementType = null;
@@ -3689,14 +3690,11 @@ public function getSpecificationFilters1(Request $request)
                         stripos($attributeName, 'mass') !== false
                     );
                     break;
-               case 'volume':
+            case 'volume':
                     // More specific volume detection
                     $shouldConvert = (
                         stripos($attributeName, 'volume') !== false ||
                         ($attributeName === 'Capacity') 
-                        //|| // Generic capacity IS a volume measurement
-                        // (stripos($attributeName, 'capacity') !== false && 
-                        // !preg_match('/\b\d+\s*(oz|ml|l|liter|litre|")\.\s*\w+\s+capacity\b/i', $attributeName))
                     );
                     break;
                 case 'voltage':
@@ -3762,7 +3760,7 @@ public function getSpecificationFilters1(Request $request)
             }
         }
         
-        // If no measurement type matched, return as-is (this will show all filters)
+        // If no measurement type matched, return as-is with empty units
         if (!$matchedMeasurementType || !$matchedPriority) {
             return [
                 'converted_value' => $originalValue,
@@ -3776,7 +3774,7 @@ public function getSpecificationFilters1(Request $request)
         
         // For volume measurement type, check if values are counts vs actual volumes
         if (strtolower($matchedMeasurementType) === 'volume') {
-             if (preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\s+capacity\b/i', $attributeName)) {
+            if (preg_match('/\b(stein|mug|cup|plate|bowl|glass|bottle|keg|barrel)\s+capacity\b/i', $attributeName)) {
                 return [
                     'converted_value' => $originalValue,
                     'unit' => null,
@@ -3784,7 +3782,44 @@ public function getSpecificationFilters1(Request $request)
                     'display_value' => $originalValue,
                     'original_value' => $originalValue,
                     'conversion_applied' => false
-                 ];
+                ];
+            }
+        }
+        
+        // Check if the value actually contains a unit - if not, it's probably not a measurement
+        $hasUnit = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches);
+        $isNumericOnly = preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue);
+        
+        // If it's just a number without units and doesn't look like a measurement value, 
+        // don't add units (this handles cases like "Brand A", "Model 123", etc.)
+        if ($isNumericOnly && !$hasUnit) {
+            // Additional check: if it's a small integer, it might be a model number or count, not a measurement
+            if (is_numeric($originalValue) && (float)$originalValue < 1000 && floor((float)$originalValue) == (float)$originalValue) {
+                // Check if the attribute name strongly suggests it's a measurement
+                $strongMeasurementIndicators = [
+                    'voltage', 'volt', 'current', 'amp', 'ampere', 'power', 'watt', 'frequency', 'hz', 'hertz',
+                    'temperature', 'temp', 'pressure', 'psi', 'bar', 'speed', 'velocity', 'rpm',
+                    'length', 'height', 'width', 'depth', 'diameter', 'dimension', 'weight', 'mass', 'volume'
+                ];
+                
+                $hasStrongIndicator = false;
+                foreach ($strongMeasurementIndicators as $indicator) {
+                    if (stripos($attributeName, $indicator) !== false) {
+                        $hasStrongIndicator = true;
+                        break;
+                    }
+                }
+                
+                if (!$hasStrongIndicator) {
+                    return [
+                        'converted_value' => $originalValue,
+                        'unit' => null,
+                        'symbol' => '',
+                        'display_value' => $originalValue,
+                        'original_value' => $originalValue,
+                        'conversion_applied' => false
+                    ];
+                }
             }
         }
         
@@ -3793,7 +3828,7 @@ public function getSpecificationFilters1(Request $request)
         $targetSymbol = $matchedPriority->primary_symbol;
         
         // Handle values with units (like "208/220 V", "120V", "1.5W")
-        if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)\s*([a-zA-Z°]+)$/', $originalValue, $matches)) {
+        if ($hasUnit) {
             $numericValue = $matches[1];
             $originalUnit = $matches[2];
             
@@ -3851,28 +3886,15 @@ public function getSpecificationFilters1(Request $request)
                 }
             }
         }
-        // Handle values without units but should have them (like "208/220", "120")
-        else if (preg_match('/^(\d+(?:\/\d+)?(?:\.\d+)?)$/', $originalValue, $matches)) {
-            $numericValue = $matches[1];
+        // Handle values without units but should have them (like "208/220", "120") - only if they're likely measurements
+        else if ($isNumericOnly) {
+            $numericValue = $originalValue;
             
             return [
                 'converted_value' => $numericValue,
                 'unit' => $targetUnit,
                 'symbol' => $targetSymbol,
                 'display_value' => $numericValue . ' ' . $targetSymbol,
-                'original_value' => $originalValue,
-                'conversion_applied' => false
-            ];
-        }
-        // Handle fractional values (like "3/4")
-        else if (preg_match('/^(\d+\/\d+)$/', $originalValue, $matches)) {
-            $fractionValue = $matches[1];
-            
-            return [
-                'converted_value' => $fractionValue,
-                'unit' => $targetUnit,
-                'symbol' => $targetSymbol,
-                'display_value' => $fractionValue . ' ' . $targetSymbol,
                 'original_value' => $originalValue,
                 'conversion_applied' => false
             ];
@@ -3889,7 +3911,6 @@ public function getSpecificationFilters1(Request $request)
             ];
         }
     };
-
     // Helper function to round values appropriately by measurement type
     $roundByMeasurementType = function($measurementType, $value) {
         switch (strtolower($measurementType)) {
@@ -4739,13 +4760,13 @@ private function getAllCategoryProductIds($categoryId)
         ->toArray();
 
     // Get products from child categories
+    // Get all products from child categories
     $childProductIds = [];
-    if (!empty($childCategoryIds)) {
-        $childProductIds = DB::table('ec_products as p')
-            ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
-            ->whereIn('pc.category_id', $childCategoryIds)
-            ->where('p.status', 'published')
-            ->pluck('p.id')
+    if (!empty($allChildCategoryIds)) {
+        $childProductIds = DB::table('ec_products')
+            ->whereIn('category_id', $allChildCategoryIds)
+            ->where('status', 'published')
+            ->pluck('id')
             ->toArray();
     }
 
