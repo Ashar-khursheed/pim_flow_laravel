@@ -4743,33 +4743,29 @@ public function getSpecificationFilters1(Request $request)
     ]);
 }
 
+
 private function getAllCategoryProductIds($categoryId)
 {
-    // Get products from current category using the relationship
-    $currentCategoryProducts = DB::table('ec_products as p')
+    // Get all category IDs (current + all children recursively)
+    $allCategoryIds = array_merge([$categoryId], $this->getAllChildCategoryIds($categoryId));
+    
+    // Get products from all categories using the many-to-many relationship
+    $allProductIds = DB::table('ec_products as p')
         ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
-        ->where('pc.category_id', $categoryId)
+        ->whereIn('pc.category_id', $allCategoryIds)
         ->where('p.status', 'published')
         ->pluck('p.id')
+        ->unique()
         ->toArray();
     
-    // Get all child categories recursively
-    $childCategoryIds = $this->getAllChildCategoryIds($categoryId);
-
-    // Get products from child categories using the same relationship pattern
-    $childProductIds = [];
-    if (!empty($childCategoryIds)) {
-        $childProductIds = DB::table('ec_products as p')
-            ->join('product_categories as pc', 'p.id', '=', 'pc.product_id')
-            ->whereIn('pc.category_id', $childCategoryIds)
-            ->where('p.status', 'published')
-            ->pluck('p.id')
-            ->toArray();
-    }
-
-    // Combine and return unique product IDs
-    return array_unique(array_merge($currentCategoryProducts, $childProductIds));
+    // Debug logging
+    \Log::info("Category {$categoryId} - Total categories checked: " . count($allCategoryIds));
+    \Log::info("Category {$categoryId} - Category IDs: " . implode(',', $allCategoryIds));
+    \Log::info("Category {$categoryId} - Total products found: " . count($allProductIds));
+    
+    return $allProductIds;
 }
+
 private function getAllChildCategoryIds($categoryId)
 {
     $childIds = [];
