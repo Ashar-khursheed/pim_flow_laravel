@@ -639,7 +639,78 @@ class BrandController extends Controller
     //         'categories' => $categories
     //     ]);
     // }
-    public function getCategories($id)
+//     public function getCategories($id)
+// {
+//     // 🧠 Determine if $id is numeric (brand ID) or a slug
+//     if (is_numeric($id)) {
+//         $brand = Brand::with([
+//             'products' => function ($query) {
+//                 $query->where('status', 'published')
+//                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
+//             },
+//             'products.categories' => function ($query) {
+//                 $query->where('status', 'published');
+//             }
+//         ])->findOrFail($id);
+//     } else {
+//         $seoEntry = DB::table('seo_management')
+//             ->where('url', $id)
+//             ->where('relational_type', 'Brand')
+//             ->first();
+
+//         if (!$seoEntry) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Brand not found with slug',
+//             ], 404);
+//         }
+
+//         $brand = Brand::with([
+//             'products' => function ($query) {
+//                 $query->where('status', 'published')
+//                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
+//             },
+//             'products.categories' => function ($query) {
+//                 $query->where('status', 'published');
+//             }
+//         ])->findOrFail($seoEntry->relational_id);
+//     }
+
+//     $categoryCounts = [];
+
+//     foreach ($brand->products as $product) {
+//         foreach ($product->categories as $category) {
+//             // Check if this category is a published leaf
+//             $hasPublishedChildren = Category::where('parent_id', $category->id)
+//                                             ->where('status', 'published')
+//                                             ->exists();
+
+//             if ($hasPublishedChildren) {
+//                 continue; // Skip non-leaf categories
+//             }
+
+//             if (!isset($categoryCounts[$category->id])) {
+//                 $categoryCounts[$category->id] = [
+//                     'id' => $category->id,
+//                     'name' => $category->name,
+//                     'image' => $category->image,
+//                     'product_count' => 0
+//                 ];
+//             }
+
+//             $categoryCounts[$category->id]['product_count']++;
+//         }
+//     }
+
+//     $categories = array_values($categoryCounts);
+
+//     return response()->json([
+//         'success' => true,
+//         'brand_id' => $brand->id,
+//         'categories' => $categories
+//     ]);
+// }
+public function getCategories($id)
 {
     // 🧠 Determine if $id is numeric (brand ID) or a slug
     if (is_numeric($id)) {
@@ -648,9 +719,7 @@ class BrandController extends Controller
                 $query->where('status', 'published')
                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
             },
-            'products.categories' => function ($query) {
-                $query->where('status', 'published');
-            }
+            'products.categories.seoURL' // ✅ Load seoURL for categories
         ])->findOrFail($id);
     } else {
         $seoEntry = DB::table('seo_management')
@@ -670,9 +739,7 @@ class BrandController extends Controller
                 $query->where('status', 'published')
                       ->whereHas('categories', fn($q) => $q->where('status', 'published'));
             },
-            'products.categories' => function ($query) {
-                $query->where('status', 'published');
-            }
+            'products.categories.seoURL' // ✅ Load seoURL for categories
         ])->findOrFail($seoEntry->relational_id);
     }
 
@@ -694,6 +761,7 @@ class BrandController extends Controller
                     'id' => $category->id,
                     'name' => $category->name,
                     'image' => $category->image,
+                    'url' => optional($category->seoURL)->url, // ✅ Add category URL
                     'product_count' => 0
                 ];
             }
